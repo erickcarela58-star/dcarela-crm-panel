@@ -1712,11 +1712,10 @@ body.role-viewer #agnSave,body.role-viewer .ag-row button{pointer-events:none!im
      </div>
 
      <div class="cfg-card">
-      <h3>🤖 Asistente IA — guardar key</h3>
-      <p>Pega tu Gemini API key (de Google AI Studio). Se guarda en BD (tabla <code>settings</code>), no en config.js.</p>
+      <h3>🤖 Asistente IA — credencial protegida</h3>
+      <p>La Gemini API key vive como secreto del servidor. El navegador y la tabla <code>settings</code> no pueden leerla.</p>
       <div class="cfg-actions">
-       <input id="cfgGemKey" type="password" placeholder="AIzaSy..." style="flex:1;background:var(--bg);border:1px solid var(--line);color:var(--ink);padding:9px 11px;border-radius:8px;font-size:12px">
-       <button class="cfg-btn primary" onclick="setGeminiKey(document.getElementById('cfgGemKey').value).then(()=>{document.getElementById('cfgGemKey').value='';})">Guardar</button>
+       <span class="cfg-hint">✓ Configurada en Supabase Edge Functions.</span>
       </div>
      </div>
 
@@ -1887,16 +1886,7 @@ body.role-viewer #agnSave,body.role-viewer .ag-row button{pointer-events:none!im
    <button class="ag-x" id="aiX" aria-label="Cerrar">×</button>
   </div>
   <div class="ag-body">
-   <div id="aiKeyWrap" style="display:none;margin-bottom:14px;padding:11px;background:rgba(255,255,255,.04);border:1px solid var(--line);border-radius:10px">
-    <div style="font-size:11.5px;color:var(--mut);margin-bottom:7px">
-     Aún no hay Gemini API key guardada. Pégala aquí (se guarda en BD, no en config.js):
-    </div>
-    <div style="display:flex;gap:6px">
-     <input id="aiKeyInput" type="password" placeholder="AIzaSy..." style="flex:1;background:var(--bg);border:1px solid var(--line);color:var(--ink);padding:8px 10px;border-radius:8px;font-size:12px">
-     <button id="aiKeySave" style="background:var(--accent);color:#fff;border:0;padding:8px 14px;border-radius:8px;font-weight:700;cursor:pointer;font-size:12px">Guardar</button>
-    </div>
-    <div style="font-size:10.5px;color:var(--mut);margin-top:6px">Sácala gratis en <span style="color:var(--accent)">aistudio.google.com/apikey</span></div>
-   </div>
+   <div id="aiKeyWrap" style="display:none"></div>
    <div id="aiInstWrap">
     <div class="bc-warn" style="margin-bottom:13px"><b>Cómo funciona</b><br><span style="font-size:11.5px">1) Describe a quién quieres llegar y qué mensaje base. 2) Adjunta imagen o documento si quieres. 3) El asistente genera el plan + variaciones personalizadas por contacto. 4) Pre-carga el Broadcast para que tú revises y envíes con baja/STOP automática.</span></div>
 
@@ -2047,8 +2037,6 @@ function applyPanelAccess() {
   document.querySelectorAll('[data-permission]').forEach(el => {
     el.classList.toggle('role-hidden', !hasPermission(el.dataset.permission));
   });
-  const geminiCard = $('cfgGemKey') && $('cfgGemKey').closest('.cfg-card');
-  if (geminiCard) geminiCard.classList.toggle('role-hidden', !hasPermission('manage_settings'));
   const readonly = !hasPermission('operate');
   ['modeBtn','surveyBtn','closeBtn','atTpl','atImg','atHd','atDoc','atMic','sendBtn','agnSave'].forEach(id => {
     const el = $(id); if (el) el.disabled = readonly;
@@ -4853,6 +4841,22 @@ if (_aiDocIn) _aiDocIn.addEventListener('change', e => {
   aiRenderAttachPrev();
 });
 
+async function requestAssistantPlan(instruction, options = {}) {
+  const { data: { session } } = await sb.auth.getSession();
+  if (!session) return { ok:false, error:'sesion vencida' };
+  try {
+    const response = await fetch(SUPABASE_URL + '/functions/v1/followup-cron?mode=assistant', {
+      method:'POST',
+      headers:{ 'Content-Type':'application/json', 'Authorization':'Bearer ' + session.access_token },
+      body:JSON.stringify({ instruction, ...options }),
+    });
+    const result = await response.json().catch(() => ({ error:'respuesta invalida' }));
+    return { ...result, ok:response.ok && result.ok !== false };
+  } catch (e) {
+    return { ok:false, error:'no se pudo conectar con el asistente' };
+  }
+}
+
 async function openAi() {
   if (!requirePermission('broadcast')) return;
   $('aiInst').value = '';
@@ -4864,44 +4868,15 @@ async function openAi() {
   document.querySelectorAll('label[for="aiImgIn"], label[for="aiDocIn"]').forEach(l => l.classList.remove('has-file'));
   const ail = document.getElementById('aiImgLbl'); if (ail) ail.textContent = 'Adjuntar imagen';
   const adl = document.getElementById('aiDocLbl'); if (adl) adl.textContent = 'Adjuntar documento';
-  // Detectar si ya hay key (BD primero, config como fallback)
-  let hasKey = false;
-  try {
-    const { data } = await sb.from('settings').select('value').eq('key', 'gemini_api_key').maybeSingle();
-    if (data && data.value) hasKey = true;
-  } catch {}
-  if (!hasKey && (window.CRM_CONFIG || {}).geminiApiKey) hasKey = true;
-  $('aiKeyWrap').style.display  = hasKey ? 'none' : 'block';
-  $('aiInstWrap').style.opacity = hasKey ? '1' : '.5';
-  $('aiGo').disabled = !hasKey;
+  // La credencial vive como secret del Edge Function y nunca llega al navegador.
+  $('aiKeyWrap').style.display  = 'none';
+  $('aiInstWrap').style.opacity = '1';
+  $('aiGo').disabled = false;
   $('aiModal').classList.add('on');
-  setTimeout(() => { if (hasKey) $('aiInst').focus(); else $('aiKeyInput').focus(); }, 100);
+  setTimeout(() => $('aiInst').focus(), 100);
 }
 
-$('aiKeySave').onclick = async () => {
-  if (!requirePermission('manage_settings')) return;
-  const key = $('aiKeyInput').value.trim();
-  if (!key) { $('aiKeyInput').focus(); return; }
-  $('aiKeySave').disabled = true;
-  $('aiKeySave').textContent = 'Guardando...';
-  try {
-    const { error } = await sb.from('settings').upsert(
-      { key: 'gemini_api_key', value: key, updated_at: new Date().toISOString() },
-      { onConflict: 'key' }
-    );
-    if (error) throw error;
-    $('aiKeyWrap').style.display = 'none';
-    $('aiInstWrap').style.opacity = '1';
-    $('aiGo').disabled = false;
-    $('aiKeyInput').value = '';
-    $('aiInst').focus();
-  } catch (e) {
-    alert('Error guardando key: ' + (e.message || e));
-  } finally {
-    $('aiKeySave').disabled = false;
-    $('aiKeySave').textContent = 'Guardar';
-  }
-};
+if ($('aiKeySave')) $('aiKeySave').onclick = () => alert('La credencial de IA se administra como secreto del servidor y no se guarda en el navegador.');
 
 $('aiGo').onclick = async () => {
   const inst = $('aiInst').value.trim();
@@ -4925,14 +4900,7 @@ $('aiGo').onclick = async () => {
   $('aiResult').style.display = 'block';
   $('aiResult').textContent = '...';
   try {
-    // Lee key
-    let key = null;
-    try {
-      const { data } = await sb.from('settings').select('value').eq('key', 'gemini_api_key').maybeSingle();
-      key = data && data.value;
-    } catch {}
-    if (!key) key = (window.CRM_CONFIG || {}).geminiApiKey;
-    if (!key) { $('aiResult').textContent = 'Falta la API key.'; return; }
+    // La key nunca sale del Edge Function.
 
     const sysPrompt = `Eres un asistente que parsea instrucciones del dueño de un estudio fotográfico para enviar mensajes a sus clientes vía WhatsApp.
 Devuelve SOLO un JSON con este esquema exacto:
@@ -4947,20 +4915,14 @@ Etapas validas: nuevo, interesado, cotizando, pendiente_reserva, reservado, clie
 Categorias validas: xv, infantil, graduacion, cumpleanos, embarazadas.
 Si la instruccion es ambigua o falta info clave, action="info_only" y explica en rationale qué falta.
 NO uses markdown ni texto adicional. SOLO el JSON.`;
-    const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${encodeURIComponent(key)}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        systemInstruction: { parts: [{ text: sysPrompt }] },
-        contents: [{ role: 'user', parts: [{ text: richInst }] }],
-        generationConfig: { temperature: 0.3, maxOutputTokens: 800, responseMimeType: 'application/json' }
-      })
+    const jr = await requestAssistantPlan(inst, {
+      tone: aiTone,
+      purpose: aiPurpose,
+      personalize: aiPersonalize,
+      attachments: [hasImg ? window.__aiAttach.image.name : '', hasDoc ? window.__aiAttach.doc.name : ''].filter(Boolean),
     });
-    const jr = await r.json();
-    if (jr.error) { $('aiResult').textContent = 'Gemini error: ' + (jr.error.message || JSON.stringify(jr.error)); return; }
-    const text = jr?.candidates?.[0]?.content?.parts?.[0]?.text || '';
-    let plan;
-    try { plan = JSON.parse(text); } catch { $('aiResult').textContent = 'No pude parsear el plan:\n' + text.slice(0, 400); return; }
+    if (!jr.ok || !jr.plan) { $('aiResult').textContent = 'Asistente: ' + (jr.error || 'respuesta invalida'); return; }
+    const plan = jr.plan;
     if (plan.action === 'info_only') {
       $('aiResult').textContent = '💡 ' + (plan.rationale || JSON.stringify(plan, null, 2));
       return;
@@ -6660,49 +6622,14 @@ window.autoCloseHumans14d = async function(dryRun = false) {
   return { closed: data?.length || 0 };
 };
 
-// #10 — Asistente Gemini. Pide instruccion en lenguaje natural, Gemini la parsea
-// en un plan estructurado y pre-carga el modal de Broadcast con esos valores
-// para que tu revises antes de Enviar. Requiere `geminiApiKey` en crm-config.js
-// (sacarla en Google AI Studio -> Get API key).
+// Asistente seguro: el navegador solicita un plan al Edge Function y nunca recibe la key.
 window.askAssistant = async function(instruction) {
-  // Lee la key desde BD primero (discreto, no expuesta en config.js). Fallback a config.
-  let key = null;
-  try {
-    const { data } = await sb.from('settings').select('value').eq('key', 'gemini_api_key').maybeSingle();
-    key = data && data.value;
-  } catch {}
-  if (!key) key = (window.CRM_CONFIG || {}).geminiApiKey;
-  if (!key) { alert('Falta la Gemini API key.\n\nDesde la consola del panel:\n  setGeminiKey("AIza...")\n\nSe guarda en BD (tabla settings), no en config.js.\nGenérala en https://aistudio.google.com/apikey'); return; }
   if (!instruction) instruction = prompt('¿Qué quieres hacer?\nEj: "manda un saludo informal a interesados de xv"');
   if (!instruction) return;
-  const sysPrompt = `Eres un asistente que parsea instrucciones del dueño de un estudio fotográfico para enviar mensajes a sus clientes vía WhatsApp.
-Devuelve SOLO un JSON con este esquema exacto:
-{
-  "action": "broadcast" | "info_only",
-  "filter": {"lifecycle_stage": "<etapa o null>", "interested_category": "<categoria o null>", "priority": "<alta|normal|baja o null>"},
-  "message_text": "<texto del mensaje libre o null>",
-  "purpose": "marketing" | "followup" | "session_reminder",
-  "rationale": "<explicacion corta en espanol>"
-}
-Etapas validas: nuevo, interesado, cotizando, pendiente_reserva, reservado, cliente, perdido, descalificado, no_agendo.
-Categorias validas: xv, infantil, graduacion, cumpleanos, embarazadas.
-Si la instruccion es ambigua o falta info clave, action="info_only" y explica en rationale qué falta.
-NO uses markdown ni texto adicional. SOLO el JSON.`;
   try {
-    const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${encodeURIComponent(key)}`, {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({
-        systemInstruction: { parts: [{ text: sysPrompt }] },
-        contents: [{ role: 'user', parts: [{ text: instruction }] }],
-        generationConfig: { temperature: 0.2, maxOutputTokens: 600, responseMimeType: 'application/json' }
-      })
-    });
-    const jr = await r.json();
-    if (jr.error) { alert('Gemini error: ' + (jr.error.message || JSON.stringify(jr.error))); return jr; }
-    const text = jr?.candidates?.[0]?.content?.parts?.[0]?.text || '';
-    let plan;
-    try { plan = JSON.parse(text); } catch { console.error('plan no parseable:', text); alert('No pude parsear el plan:\n' + text.slice(0, 400)); return; }
+    const jr = await requestAssistantPlan(instruction);
+    if (!jr.ok || !jr.plan) { alert('Asistente: ' + (jr.error || 'respuesta invalida')); return jr; }
+    const plan = jr.plan;
     console.log('[askAssistant] plan:', plan);
     if (plan.action !== 'broadcast') { alert('Asistente:\n\n' + (plan.rationale || JSON.stringify(plan))); return plan; }
     const f = plan.filter || {};
@@ -6731,18 +6658,7 @@ NO uses markdown ni texto adicional. SOLO el JSON.`;
     return { error: e.message };
   }
 };
-// Guardar la Gemini API key en BD (tabla settings, clave gemini_api_key).
-// Uso: setGeminiKey("AIzaSy...") en la consola del panel. Se persiste y la lee askAssistant.
-window.setGeminiKey = async function(key) {
-  key = (key || '').trim();
-  if (!key) { alert('Pega la key como argumento: setGeminiKey("AIzaSy...")'); return; }
-  try {
-    const { error } = await sb.from('settings').upsert({ key: 'gemini_api_key', value: key, updated_at: new Date().toISOString() }, { onConflict: 'key' });
-    if (error) { alert('Error guardando: ' + error.message); return; }
-    alert('✓ Gemini key guardada en BD. Ya puedes usar askAssistant("tu instrucción").');
-  } catch (e) { alert('Error: ' + e.message); }
-};
-console.log('[CRM] Mantenimiento listo: autoCloseHumans14d(dryRun=false) · askAssistant("instrucción") · setGeminiKey("AIza...")');
+console.log('[CRM] Mantenimiento listo: autoCloseHumans14d(dryRun=false) · askAssistant("instrucción")');
 
 // ============================================================
 // Reseñas + Satisfacción (Fase 2): equipo, enviar encuesta, scorecard
