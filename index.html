@@ -263,6 +263,27 @@ body.role-viewer #agnSave,body.role-viewer .ag-row button{pointer-events:none!im
 @media(max-width:1000px){.panel-user-form{grid-template-columns:1fr 1fr}.panel-user-form .cfg-btn{grid-column:1/-1}.pu-row{grid-template-columns:1fr 1fr}.pu-actions{justify-content:flex-start}}
 @media(max-width:620px){.panel-user-form,.pu-row{grid-template-columns:1fr}.audit-row{grid-template-columns:1fr}.cfg-card[data-wide]{grid-column:auto!important}}
 
+/* ===== Prospeccion comercial - modulo aislado ===== */
+.pros-wrap{padding:26px 30px 80px;max-width:1480px;margin:0 auto}
+.pros-hero{display:flex;align-items:flex-start;justify-content:space-between;gap:20px;padding:24px 25px;margin-bottom:18px;background:radial-gradient(100% 150% at 0 0,rgba(139,92,246,.18),transparent 58%),linear-gradient(160deg,rgba(22,31,53,.88),rgba(11,17,30,.94));border:1px solid rgba(139,92,246,.20);border-radius:20px;box-shadow:0 22px 55px rgba(0,0,0,.30);backdrop-filter:blur(20px)}
+.pros-hero h2{font-size:22px;color:#fff;letter-spacing:-.5px;margin:5px 0 7px}.pros-hero p{font-size:12.5px;line-height:1.6;color:var(--mut);max-width:740px}
+.pros-stage{display:inline-flex;align-items:center;gap:7px;padding:5px 9px;border-radius:8px;background:rgba(16,185,129,.12);border:1px solid rgba(16,185,129,.24);color:#86efac;font-size:10px;font-weight:850;text-transform:uppercase;letter-spacing:.7px}
+.pros-stage::before{content:'';width:6px;height:6px;border-radius:50%;background:#34d399;box-shadow:0 0 10px #34d399}.pros-hero-actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+.pros-kpis{display:grid;grid-template-columns:repeat(5,minmax(140px,1fr));gap:12px;margin-bottom:16px}.pros-kpi{padding:16px 17px;border-radius:14px;background:rgba(18,26,46,.72);border:1px solid var(--line);box-shadow:0 10px 28px rgba(0,0,0,.20)}
+.pros-kpi span{display:block;color:var(--mut);font-size:10px;text-transform:uppercase;letter-spacing:.8px;font-weight:800}.pros-kpi b{display:block;color:#fff;font-size:25px;margin-top:7px;letter-spacing:-.6px}
+.pros-panel{background:linear-gradient(180deg,rgba(18,26,46,.82),rgba(11,17,30,.92));border:1px solid var(--line);border-radius:17px;overflow:hidden;box-shadow:0 18px 45px rgba(0,0,0,.28)}
+.pros-toolbar{display:grid;grid-template-columns:minmax(220px,1.5fr) repeat(3,minmax(130px,.65fr));gap:9px;padding:14px 16px;border-bottom:1px solid var(--line)}
+.pros-toolbar input,.pros-toolbar select{width:100%;background:#0d1423;border:1px solid var(--line);color:var(--ink);border-radius:9px;padding:10px 11px;font-size:11.5px;outline:none}.pros-toolbar input:focus,.pros-toolbar select:focus{border-color:var(--accent)}
+.pros-scroll{overflow:auto;max-height:62vh}.pros-table{width:100%;border-collapse:collapse;min-width:930px}.pros-table th{position:sticky;top:0;z-index:2;background:#111a2b;color:var(--mut);font-size:9.5px;text-align:left;text-transform:uppercase;letter-spacing:.7px;padding:11px 13px;border-bottom:1px solid var(--line)}
+.pros-table td{padding:12px 13px;border-bottom:1px solid rgba(255,255,255,.045);font-size:11.5px;color:#cbd5e1;vertical-align:middle}.pros-table tr:hover td{background:rgba(139,92,246,.055)}
+.pros-name b{display:block;color:#fff;font-size:12.5px}.pros-name span{display:block;color:var(--mut);font-size:10.5px;margin-top:3px}.pros-phone{font-variant-numeric:tabular-nums;white-space:nowrap}
+.pros-badge{display:inline-flex;padding:3px 8px;border-radius:7px;background:rgba(59,130,246,.13);color:#93c5fd;border:1px solid rgba(59,130,246,.18);font-size:9.5px;font-weight:800;white-space:nowrap}.pros-badge.s-interested,.pros-badge.s-converted{background:rgba(16,185,129,.14);color:#86efac;border-color:rgba(16,185,129,.22)}
+.pros-badge.s-do_not_contact,.pros-badge.s-discarded,.pros-badge.s-wrong_number{background:rgba(239,68,68,.12);color:#fca5a5;border-color:rgba(239,68,68,.20)}.pros-rating{color:#fcd34d;font-weight:800;white-space:nowrap}
+.pros-empty{padding:64px 24px;text-align:center}.pros-empty .ico{font-size:32px;opacity:.7;margin-bottom:12px}.pros-empty h3{font-size:15px;color:#fff;margin-bottom:7px}.pros-empty p{font-size:11.5px;color:var(--mut);line-height:1.6;max-width:580px;margin:0 auto}
+.pros-footnote{display:flex;align-items:center;gap:8px;padding:10px 16px;color:var(--mut);font-size:10.5px;background:rgba(0,0,0,.12);border-top:1px solid var(--line)}
+@media(max-width:1050px){.pros-kpis{grid-template-columns:repeat(3,1fr)}.pros-toolbar{grid-template-columns:1fr 1fr}.pros-hero{flex-direction:column}.pros-hero-actions{justify-content:flex-start}}
+@media(max-width:650px){.pros-wrap{padding:17px 13px 70px}.pros-kpis{grid-template-columns:1fr 1fr}.pros-toolbar{grid-template-columns:1fr}.pros-hero{padding:19px}.pros-hero h2{font-size:19px}}
+
 /* ===== Funnel / Kanban ===== */
 #funnelInline{padding:26px 30px 80px;max-width:1480px;margin:0 auto}
 .funnel-stats{display:grid;grid-template-columns:repeat(4,minmax(180px,1fr));gap:16px;margin-bottom:26px}
@@ -1212,6 +1233,11 @@ body.role-viewer #agnSave,body.role-viewer .ag-row button{pointer-events:none!im
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 3H2l8 9.5V19l4 2v-8.5L22 3z"/></svg>
     <span>Funnel · Kanban</span>
    </button>
+   <button class="sb-item" data-view="prospecting" data-permission="prospecting_view">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4M11 7v8M7 11h8"/></svg>
+    <span>Prospección</span>
+    <span class="sb-badge" id="sbProsCnt" style="display:none">0</span>
+   </button>
    <button class="sb-item" data-view="satisfaccion">
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 17.3l-5.5 3 1-6.1L3 9.8l6.1-.9L12 3.3l2.9 5.6 6.1.9-4.5 4.4 1 6.1z"/></svg>
     <span>Satisfacción</span>
@@ -1420,6 +1446,22 @@ body.role-viewer #agnSave,body.role-viewer .ag-row button{pointer-events:none!im
   <!-- Vista Funnel · Kanban -->
   <section class="view view-funnel" id="viewFunnel" style="display:none">
    <div class="view-inner"><div id="funnelInline"></div></div>
+  </section>
+
+  <!-- Prospeccion comercial: modulo separado del inbox y del bot -->
+  <section class="view view-prospecting" id="viewProspecting" style="display:none">
+   <div class="pros-wrap">
+    <div class="pros-hero">
+     <div><span class="pros-stage">Etapa 1 · estructura activa</span><h2>Prospección comercial</h2><p>Base independiente para negocios e instituciones potenciales. Comparte usuarios, permisos y auditoría con el CRM, pero no modifica conversaciones hasta una conversión explícita.</p></div>
+     <div class="pros-hero-actions"><button class="cfg-btn" id="prosRefresh">Actualizar</button><button class="cfg-btn primary" id="prosExternalSearch" data-permission="prospecting_search" disabled title="Se habilita en la Etapa 2 al configurar Google Places">Buscar con Google Places · Etapa 2</button></div>
+    </div>
+    <div class="pros-kpis" id="prosKpis"><div class="pros-kpi"><span>Prospectos</span><b>0</b></div><div class="pros-kpi"><span>Con teléfono</span><b>0</b></div><div class="pros-kpi"><span>Pendientes</span><b>0</b></div><div class="pros-kpi"><span>Contactados</span><b>0</b></div><div class="pros-kpi"><span>Convertidos</span><b>0</b></div></div>
+    <div class="pros-panel">
+     <div class="pros-toolbar"><input id="prosFilterText" placeholder="Buscar nombre, categoría, teléfono o ubicación..."><select id="prosFilterStatus"><option value="">Todos los estados</option></select><input id="prosFilterCity" placeholder="Ciudad o sector"><input id="prosFilterCategory" placeholder="Categoría"></div>
+     <div class="pros-scroll" id="prosTableWrap"><div class="pros-empty"><div class="ico">⌖</div><h3>Preparando el módulo...</h3><p>La tabla de prospectos está conectándose con la base.</p></div></div>
+     <div class="pros-footnote"><span>🛡</span><span>Sin scraping y sin envíos automáticos. La búsqueda externa se habilitará únicamente con una fuente autorizada y límites configurados.</span></div>
+    </div>
+   </div>
   </section>
 
   <!-- Vista Satisfacción · reseñas -->
@@ -1967,7 +2009,7 @@ const ROLE_LABELS = { admin:'Administrador', supervisor:'Supervisor', agent:'Age
 let PANEL_ACCESS = {
   user: null,
   role: null,
-  permissions: { view:false, operate:false, broadcast:false, automation:false, manage_team:false, manage_settings:false, manage_users:false },
+  permissions: { view:false, operate:false, broadcast:false, automation:false, manage_team:false, manage_settings:false, manage_users:false, prospecting_view:false, prospecting_search:false, prospecting_manage:false, prospecting_operate:false, prospecting_export:false },
 };
 
 function hasPermission(name) { return !!(PANEL_ACCESS.permissions && PANEL_ACCESS.permissions[name]); }
@@ -2073,6 +2115,7 @@ function setView(view) {
   const map = {
     dashboard:    {eyebrow:'Inicio',     h1:'Dashboard',          el:'viewDashboard'},
     conversations:{eyebrow:'Inbox',      h1:'Conversaciones',     el:'viewConversations'},
+    prospecting:  {eyebrow:'Comercial',  h1:'Prospección',        el:'viewProspecting'},
     funnel:       {eyebrow:'Pipeline',   h1:'Funnel · Kanban',    el:'viewFunnel'},
     satisfaccion: {eyebrow:'Calidad',    h1:'Satisfacción',       el:'viewSatisfaccion'},
     plantillas:   {eyebrow:'Mensajería', h1:'Plantillas WhatsApp', el:'viewPlantillas'},
@@ -2081,7 +2124,7 @@ function setView(view) {
   };
   const v = map[view] || map.dashboard;
   currentView = view;
-  ['viewDashboard','viewConversations','viewFunnel','viewSatisfaccion','viewPlantillas','viewEstados','viewConfig'].forEach(id => {
+  ['viewDashboard','viewConversations','viewFunnel','viewProspecting','viewSatisfaccion','viewPlantillas','viewEstados','viewConfig'].forEach(id => {
     const e = document.getElementById(id);
     if (e) e.style.display = (id === v.el) ? '' : 'none';
   });
@@ -2092,6 +2135,7 @@ function setView(view) {
   document.getElementById('sb').classList.remove('open');
   // Refrescos
   if (view === 'dashboard') setTimeout(renderDashInline, 30);
+  if (view === 'prospecting') setTimeout(() => loadProspects(false), 30);
   if (view === 'plantillas') setTimeout(renderPlantillasInline, 30);
   if (view === 'funnel') setTimeout(renderFunnelInline, 30);
   if (view === 'satisfaccion') setTimeout(() => { try { renderSatisfaccion(); } catch(e){} }, 30);
@@ -2102,6 +2146,70 @@ function setView(view) {
 }
 
 // ===== Campaña re-consent (marketing opt-in masivo) =====
+// ===== PROSPECCION COMERCIAL - Etapa 1 (lectura segura) =====
+const PROSPECT_STATUS_LABELS = {
+  new:'Nuevo', unreviewed:'Sin revisar', incomplete:'Datos incompletos', pending_contact:'Pendiente de contacto',
+  message_prepared:'Mensaje preparado', contacted:'Contactado', replied:'Respondió', interested:'Interesado',
+  info_requested:'Solicita información', quote_sent:'Cotización enviada', followup_pending:'Seguimiento pendiente',
+  not_interested:'No interesado', wrong_number:'Número incorrecto', do_not_contact:'No contactar', converted:'Cliente convertido', discarded:'Descartado',
+};
+let prospectRows = [], prospectsLoaded = false, prospectMeta = { campaigns:0, blocked:0 };
+
+async function loadProspects(force = false) {
+  if (!hasPermission('prospecting_view')) return;
+  if (prospectsLoaded && !force) { renderProspecting(); return; }
+  const wrap = $('prosTableWrap');
+  if (wrap) wrap.innerHTML = '<div class="pros-empty"><div class="ico">⌖</div><h3>Cargando prospectos...</h3><p>Consultando la base comercial con los permisos de tu cuenta.</p></div>';
+  const [prospectsResult, campaignsResult, blockedResult] = await Promise.all([
+    sb.from('crm_prospects').select('id,business_name,category,address,sector,city,province,phone_primary,whatsapp_possible,email_public,website,instagram,facebook,tiktok,maps_url,rating,review_count,status,source,assigned_to,tags,first_found_at,updated_at').order('updated_at',{ascending:false}).limit(500),
+    sb.from('crm_prospect_campaigns').select('id',{count:'exact',head:true}),
+    sb.from('crm_do_not_contact').select('id',{count:'exact',head:true}).eq('active',true),
+  ]);
+  if (prospectsResult.error) {
+    if (wrap) wrap.innerHTML = `<div class="pros-empty"><div class="ico">!</div><h3>No se pudo abrir Prospección</h3><p>${esc(prospectsResult.error.message || 'Error de base de datos')}</p></div>`;
+    return;
+  }
+  prospectRows = prospectsResult.data || [];
+  prospectMeta = { campaigns:campaignsResult.count || 0, blocked:blockedResult.count || 0 };
+  prospectsLoaded = true;
+  renderProspecting();
+}
+
+function renderProspecting() {
+  const textFilter = (($('prosFilterText') && $('prosFilterText').value) || '').trim().toLowerCase();
+  const statusFilter = ($('prosFilterStatus') && $('prosFilterStatus').value) || '';
+  const cityFilter = (($('prosFilterCity') && $('prosFilterCity').value) || '').trim().toLowerCase();
+  const categoryFilter = (($('prosFilterCategory') && $('prosFilterCategory').value) || '').trim().toLowerCase();
+  const filtered = prospectRows.filter(row => {
+    const haystack = [row.business_name,row.category,row.phone_primary,row.address,row.sector,row.city,row.province].filter(Boolean).join(' ').toLowerCase();
+    const place = [row.city,row.sector,row.province].filter(Boolean).join(' ').toLowerCase();
+    return (!textFilter || haystack.includes(textFilter)) && (!statusFilter || row.status === statusFilter) && (!cityFilter || place.includes(cityFilter)) && (!categoryFilter || String(row.category||'').toLowerCase().includes(categoryFilter));
+  });
+  const total = prospectRows.length;
+  const withPhone = prospectRows.filter(row => !!row.phone_primary).length;
+  const pending = prospectRows.filter(row => ['new','unreviewed','incomplete','pending_contact','message_prepared','followup_pending'].includes(row.status)).length;
+  const contacted = prospectRows.filter(row => ['contacted','replied','interested','info_requested','quote_sent'].includes(row.status)).length;
+  const converted = prospectRows.filter(row => row.status === 'converted').length;
+  if ($('prosKpis')) $('prosKpis').innerHTML = [['Prospectos',total],['Con teléfono',withPhone],['Pendientes',pending],['Contactados',contacted],['Convertidos',converted]].map(([label,value]) => `<div class="pros-kpi"><span>${label}</span><b>${value}</b></div>`).join('');
+  const badge = $('sbProsCnt'); if (badge) { badge.textContent = total || ''; badge.style.display = total ? '' : 'none'; }
+  const wrap = $('prosTableWrap'); if (!wrap) return;
+  if (!filtered.length) {
+    const filteredOut = total > 0;
+    wrap.innerHTML = `<div class="pros-empty"><div class="ico">⌖</div><h3>${filteredOut ? 'Sin coincidencias' : 'Módulo listo para recibir prospectos'}</h3><p>${filteredOut ? 'Ajusta los filtros para volver a ver resultados.' : 'La estructura, permisos, deduplicación por fuente y auditoría ya están activos. Google Places y las búsquedas externas siguen deshabilitadas hasta la Etapa 2.'}</p></div>`;
+    return;
+  }
+  wrap.innerHTML = `<table class="pros-table"><thead><tr><th>Negocio</th><th>Ubicación</th><th>Teléfono público</th><th>Valoración</th><th>Estado</th><th>Fuente</th><th>Referencia</th></tr></thead><tbody>${filtered.map(row => {
+    const place = [row.sector,row.city,row.province].filter(Boolean).join(' · ') || row.address || '—';
+    const refs = [row.maps_url ? `<a href="${escAttr(row.maps_url)}" target="_blank" rel="noopener" style="color:#93c5fd">Mapa</a>` : '', row.website ? `<a href="${escAttr(row.website)}" target="_blank" rel="noopener" style="color:#c4b5fd">Web</a>` : ''].filter(Boolean).join(' · ') || '—';
+    const rating = row.rating != null ? `★ ${Number(row.rating).toFixed(1)}${row.review_count != null ? ` <span style="color:var(--mut);font-weight:500">(${row.review_count})</span>` : ''}` : '—';
+    return `<tr><td class="pros-name"><b>${esc(row.business_name)}</b><span>${esc(row.category || 'Sin categoría')}</span></td><td>${esc(place)}</td><td class="pros-phone">${esc(row.phone_primary || '—')}${row.whatsapp_possible ? ' <span title="Posible WhatsApp" style="color:#34d399">●</span>' : ''}</td><td class="pros-rating">${rating}</td><td><span class="pros-badge s-${escAttr(row.status)}">${esc(PROSPECT_STATUS_LABELS[row.status] || row.status)}</span></td><td>${esc(row.source || 'manual')}</td><td>${refs}</td></tr>`;
+  }).join('')}</tbody></table>`;
+}
+
+if ($('prosFilterStatus')) $('prosFilterStatus').innerHTML = '<option value="">Todos los estados</option>' + Object.entries(PROSPECT_STATUS_LABELS).map(([value,label]) => `<option value="${value}">${label}</option>`).join('');
+['prosFilterText','prosFilterStatus','prosFilterCity','prosFilterCategory'].forEach(id => { const el = $(id); if (el) { el.addEventListener('input', renderProspecting); el.addEventListener('change', renderProspecting); } });
+if ($('prosRefresh')) $('prosRefresh').onclick = () => { prospectsLoaded = false; loadProspects(true); };
+
 window.verEstadoConsent = async function() {
   try {
     const { data: cs, count: total } = await sb.from('conversations')
