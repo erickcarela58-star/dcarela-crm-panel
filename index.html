@@ -1375,6 +1375,7 @@ body.role-viewer #agnSave,body.role-viewer .ag-row button{pointer-events:none!im
       <div class="ch-labels" id="chLabels"></div>
      </div>
      <button class="modebtn" id="modeBtn"></button>
+     <button class="modebtn" id="manualWaBtn" title="Abrir el chat en WhatsApp y escribirle a mano (fuera de la API — sirve aunque Meta bloquee el envío)" style="background:rgba(37,211,102,.16);border-color:rgba(37,211,102,.4);color:#a7f3d0">✍️ Escribir a mano</button>
      <button class="modebtn" id="surveyBtn" title="Enviar encuesta de satisfacción">★ Encuesta</button>
      <button class="modebtn close-conv" id="closeBtn" title="Cerrar conversación">Cerrar</button>
      <button class="detail-toggle" id="detTog" title="Detalles del lead" aria-label="Detalles del lead">
@@ -6806,6 +6807,32 @@ function openSurvey(conv){
 }
 function closeSurvey(){ const m=$('svModal'); if(m) m.classList.remove('on'); surveyConv = null; }
 if ($('surveyBtn')) $('surveyBtn').onclick = () => { if (sel) openSurvey(sel); };
+
+// ✍️ Escribir a mano: abre el chat del cliente en WhatsApp (Web o app) con el texto
+// del cuadro ya puesto, para que el AGENTE lo envíe él mismo. No pasa por la API de
+// Meta -> sirve para clientes que Meta bloquea (#130472) o cualquier caso puntual.
+// El envío real lo hace la persona en su WhatsApp; el CRM solo deja constancia honesta.
+if ($('manualWaBtn')) $('manualWaBtn').onclick = async () => {
+  if (!sel) return;
+  const phone = String(sel.wa_phone || '').replace(/\D/g, '');
+  if (!phone) { alert('Este contacto no tiene número válido.'); return; }
+  const draft = ($('reply') ? $('reply').value : '').trim();
+  const url = 'https://wa.me/' + phone + (draft ? ('?text=' + encodeURIComponent(draft)) : '');
+  window.open(url, '_blank', 'noopener');
+  const doLog = confirm('Se abrió WhatsApp para escribirle a mano a ' + (sel.customer_name || sel.contact_name || ('+' + phone)) + '.\n\n'
+    + 'Cuando ya le hayas enviado el mensaje, pulsa Aceptar para dejar constancia en el CRM (queda como "contacto manual" en el historial).\n\n'
+    + 'Pulsa Cancelar si solo abriste el chat y no enviaste nada.');
+  if (!doLog) return;
+  const r = await callFn({ action: 'manualContact', conversation_id: sel.id, note: draft.slice(0, 300) });
+  if (r && r.ok) {
+    if ($('reply')) { $('reply').value = ''; $('reply').dispatchEvent(new Event('input')); }
+    sel.mode = 'human'; updateModeBtn();
+    toast('Registrado', 'Quedó como contacto manual en el historial.');
+    try { await loadMsgs(); loadTimeline(sel.id); } catch (e) {}
+  } else {
+    alert('No se pudo registrar: ' + ((r && r.error) || 'error') + '\n(El mensaje que enviaste por WhatsApp igual llegó; esto es solo la constancia interna.)');
+  }
+};
 if ($('svX')) $('svX').onclick = closeSurvey;
 if ($('svCancel')) $('svCancel').onclick = closeSurvey;
 if ($('svModal')) $('svModal').addEventListener('click', e=>{ if(e.target===$('svModal')) closeSurvey(); });
