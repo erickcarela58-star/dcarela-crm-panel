@@ -3049,6 +3049,8 @@ function msgSig(m) {
 // Traduce los códigos de error de WhatsApp a algo entendible.
 function humanWaError(raw) {
   const s = String(raw || '');
+  if (/130472|experiment/i.test(s)) return 'No entregado: Meta tiene este número en un "experimento" y NO le entrega mensajes de marketing/promoción a propósito (no es culpa del panel ni de la plantilla). Se le podrá escribir normal cuando el cliente escriba primero.';
+  if (/131049/.test(s)) return 'No entregado: Meta limitó cuántas promos puede recibir este número por ahora (límite de frecuencia de marketing). Reintentar en unos días o esperar a que el cliente escriba.';
   if (/131047|re-?engagement/i.test(s)) return 'No entregado: pasaron más de 24 h desde el último mensaje del cliente. Fuera de la ventana de 24 h solo se entregan plantillas aprobadas.';
   if (/131026/.test(s)) return 'No entregado: el número no puede recibir mensajes (no usa WhatsApp o bloqueó el negocio).';
   if (/131051/.test(s)) return 'No entregado: tipo de mensaje no soportado para este número.';
@@ -3068,7 +3070,14 @@ function deliveryMark(m) {
   const s = (m.delivery_status || '').toLowerCase();
   if (s === 'failed' || s === 'error') {
     const why = humanWaError(m.error_message).replace(/"/g, '&quot;');
-    return ` · <span style="color:#ff6b6b;font-weight:600" title="${why}">⚠ no entregado</span>`;
+    // Etiqueta corta VISIBLE (el title/hover no existe en el celular).
+    const raw = String(m.error_message || '');
+    let short = '';
+    if (/130472|experiment/i.test(raw)) short = ' — Meta no entrega promos a este número (experimento de Meta)';
+    else if (/131049/.test(raw)) short = ' — límite de promos de Meta para este número';
+    else if (/131047|re-?engagement/i.test(raw)) short = ' — ventana de 24 h cerrada';
+    else if (/131026/.test(raw)) short = ' — número sin WhatsApp o bloqueó el negocio';
+    return ` · <span style="color:#ff6b6b;font-weight:600" title="${why}">⚠ no entregado${short}</span>`;
   }
   if (s === 'read')      return ' · <span style="color:#34b7f1">✓✓</span>';
   if (s === 'delivered') return ' · ✓✓';
