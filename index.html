@@ -5682,7 +5682,7 @@ window.copyAgendaFeedUrl = async function() {
   try {
     const { data } = await sb.from('settings').select('value').eq('key', 'agenda_feed_key').maybeSingle();
     const key = typeof data?.value === 'string' ? data.value : (data?.value?.key || '');
-    if (!key) { alert('No hay key de suscripción configurada (settings.agenda_feed_key).'); return; }
+    if (!key) { alert('Solo el administrador puede ver el link de suscripción (o falta settings.agenda_feed_key).'); return; }
     const url = SUPABASE_URL.replace(/\/$/, '') + '/functions/v1/agenda-ics?key=' + encodeURIComponent(key);
     await navigator.clipboard.writeText(url);
     toast('Agenda', 'Link de suscripción copiado. Pégalo en iPhone: Ajustes → Calendario → Cuentas → Agregar calendario por suscripción.');
