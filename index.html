@@ -1453,8 +1453,8 @@ body.role-viewer #agnSave,body.role-viewer .ag-row button{pointer-events:none!im
   <section class="view view-prospecting" id="viewProspecting" style="display:none">
    <div class="pros-wrap">
     <div class="pros-hero">
-     <div><span class="pros-stage">Etapa 1 · estructura activa</span><h2>Prospección comercial</h2><p>Base independiente para negocios e instituciones potenciales. Comparte usuarios, permisos y auditoría con el CRM, pero no modifica conversaciones hasta una conversión explícita.</p></div>
-     <div class="pros-hero-actions"><button class="cfg-btn" id="prosRefresh">Actualizar</button><button class="cfg-btn primary" id="prosExternalSearch" data-permission="prospecting_search" disabled title="Se habilita en la Etapa 2 al configurar Google Places">Buscar con Google Places · Etapa 2</button></div>
+     <div><span class="pros-stage">Etapa 2 · búsqueda activa</span><h2>Prospección comercial</h2><p>Encuentra negocios e instituciones por zona con Google Places, guárdalos como prospectos y prepáralos para contacto manual. No toca conversaciones ni bot hasta una conversión explícita.</p></div>
+     <div class="pros-hero-actions"><button class="cfg-btn" id="prosRefresh">Actualizar</button><button class="cfg-btn primary" id="prosExternalSearch" data-permission="prospecting_search" title="Buscar negocios en Google Places por zona">🔎 Buscar con Google Places</button></div>
     </div>
     <div class="pros-kpis" id="prosKpis"><div class="pros-kpi"><span>Prospectos</span><b>0</b></div><div class="pros-kpi"><span>Con teléfono</span><b>0</b></div><div class="pros-kpi"><span>Pendientes</span><b>0</b></div><div class="pros-kpi"><span>Contactados</span><b>0</b></div><div class="pros-kpi"><span>Convertidos</span><b>0</b></div></div>
     <div class="pros-panel">
@@ -2006,7 +2006,7 @@ const $ = (id) => document.getElementById(id);
 // Sello de versión: si el panel "no hace nada", casi siempre es caché vieja del
 // navegador. Este sello permite confirmar de un vistazo qué versión está corriendo
 // (compárala con la fecha del último deploy). Actualízalo en cada publicación.
-const BUILD = '2026-07-16e';
+const BUILD = '2026-07-16f';
 try { console.log('CRM panel build', BUILD); const _b = document.getElementById('buildStamp'); if (_b) _b.textContent = BUILD; } catch (e) {}
 let convs = [], sel = null, msgTimer = null, listTimer = null;
 let prevUnread = null, audioCtx = null;
@@ -2212,6 +2212,42 @@ function renderProspecting() {
 if ($('prosFilterStatus')) $('prosFilterStatus').innerHTML = '<option value="">Todos los estados</option>' + Object.entries(PROSPECT_STATUS_LABELS).map(([value,label]) => `<option value="${value}">${label}</option>`).join('');
 ['prosFilterText','prosFilterStatus','prosFilterCity','prosFilterCategory'].forEach(id => { const el = $(id); if (el) { el.addEventListener('input', renderProspecting); el.addEventListener('change', renderProspecting); } });
 if ($('prosRefresh')) $('prosRefresh').onclick = () => { prospectsLoaded = false; loadProspects(true); };
+
+// 🔎 Buscar con Google Places (Etapa 2). El navegador NUNCA ve la API key: llama a la
+// Edge Function prospect-search, que consulta Google, deduplica y guarda en crm_prospects.
+if ($('prosExternalSearch')) $('prosExternalSearch').onclick = async () => {
+  if (!requirePermission('prospecting_search')) return;
+  // Prefill con los filtros de ciudad/categoría si están escritos.
+  const city = ($('prosFilterCity') && $('prosFilterCity').value || '').trim();
+  const cat = ($('prosFilterCategory') && $('prosFilterCategory').value || '').trim();
+  const ejemplo = [cat || 'centros educativos', city ? ('en ' + city) : 'en La Romana'].join(' ');
+  const query = prompt('¿Qué negocios buscar? Escríbelo natural, con la zona.\n\nEjemplos:\n• centros educativos en La Romana\n• salones de belleza en Villa Hermosa\n• iglesias en La Romana', ejemplo);
+  if (query === null) return;
+  const q = query.trim();
+  if (q.length < 4) { alert('Escribe qué buscar y la zona.'); return; }
+  const btn = $('prosExternalSearch'); const prev = btn.textContent;
+  btn.disabled = true; btn.textContent = 'Buscando…';
+  try {
+    const { data: { session } } = await sb.auth.getSession();
+    if (!session) { alert('Sesión vencida, vuelve a entrar.'); return; }
+    const r = await fetch(SUPABASE_URL + '/functions/v1/prospect-search', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + session.access_token },
+      body: JSON.stringify({ query: q, city, category: cat }),
+    });
+    const d = await r.json().catch(() => ({ error: 'respuesta inválida' }));
+    if (!r.ok || !d.ok) {
+      alert('No se pudo buscar: ' + (d.error || 'error') + (d.needs_enable ? '\n\n(Debes habilitar "Places API (New)" en Google Cloud.)' : ''));
+      return;
+    }
+    toast('Prospección', `${d.imported} nuevos · ${d.duplicates || 0} ya estaban · ${d.found} encontrados`);
+    prospectsLoaded = false; loadProspects(true);
+  } catch (e) {
+    alert('Error de conexión con el buscador.');
+  } finally {
+    btn.disabled = false; btn.textContent = prev;
+  }
+};
 
 window.verEstadoConsent = async function() {
   try {
