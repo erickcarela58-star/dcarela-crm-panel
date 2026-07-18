@@ -1204,6 +1204,7 @@ body.role-viewer #agnSave,body.role-viewer .ag-row button{pointer-events:none!im
   <div class="fld"><label>Contraseña</label><input id="pass" type="password" autocomplete="current-password" placeholder="••••••••"></div>
   <button class="btn" id="loginBtn">Entrar</button>
   <div class="err" id="loginErr"></div>
+  <div style="margin-top:14px;text-align:center;font-size:10.5px;color:var(--mut);opacity:.7">versión <span id="buildStamp">—</span></div>
  </div>
 </div>
 
@@ -2002,6 +2003,11 @@ if (!SUPABASE_URL || !SUPABASE_KEY) CONFIG_ERRORS.push('Falta configurar supabas
 const sb = createClient(SUPABASE_URL || 'https://example.invalid', SUPABASE_KEY || 'missing');
 
 const $ = (id) => document.getElementById(id);
+// Sello de versión: si el panel "no hace nada", casi siempre es caché vieja del
+// navegador. Este sello permite confirmar de un vistazo qué versión está corriendo
+// (compárala con la fecha del último deploy). Actualízalo en cada publicación.
+const BUILD = '2026-07-16e';
+try { console.log('CRM panel build', BUILD); const _b = document.getElementById('buildStamp'); if (_b) _b.textContent = BUILD; } catch (e) {}
 let convs = [], sel = null, msgTimer = null, listTimer = null;
 let prevUnread = null, audioCtx = null;
 const ROLE_LABELS = { admin:'Administrador', supervisor:'Supervisor', agent:'Agente', viewer:'Solo lectura' };
@@ -2948,6 +2954,7 @@ async function loadConvs() {
       const body = hot.last_inbound_preview || hot.last_message_preview || 'Nuevo mensaje';
       beep(); toast(nm, body);
       notify('Nuevo mensaje · ' + nm, body);
+      startTitleFlash(nm + ': ' + body);   // parpadea el título si la pestaña está en 2do plano
     }
   }
   prevUnread = totalUnread;
@@ -2958,7 +2965,8 @@ async function loadConvs() {
   const titleBits = [];
   if (totalUnread > 0) titleBits.push(`${totalUnread} sin leer`);
   if (pending > 0) titleBits.push(`${pending} pendientes`);
-  document.title = titleBits.length ? `(${titleBits.join(' · ')}) ${appTitle()}` : appTitle();
+  // No pisar el parpadeo de aviso mientras la pestaña esté en 2do plano.
+  if (!_titleFlashTimer) document.title = titleBits.length ? `(${titleBits.join(' · ')}) ${appTitle()}` : appTitle();
   // Badge de Conversaciones en sidebar = no leídos
   const sbCC = document.getElementById('sbConvCnt');
   if (sbCC) { sbCC.textContent = totalUnread > 0 ? totalUnread : ''; sbCC.style.display = totalUnread > 0 ? '' : 'none'; }
@@ -2997,7 +3005,7 @@ function renderConvs() {
       ${avatarHtml(c, name)}
       <div class="cv-b">
         <div class="cv-top"><div class="cv-name">${esc(name)}${pending ? ' <span class="cv-flag">●</span>' : ''}</div><div class="cv-time">${fmtTime(c.last_message_at)}</div></div>
-        <div class="cv-prev">${esc(c.last_inbound_preview || c.last_message_preview || '')}</div>
+        <div class="cv-prev">${esc(c.last_message_preview || '')}</div>
         <div class="cv-tags">
           <span class="pill ${c.mode === 'human' ? 'human' : 'bot'}">${c.mode === 'human' ? 'Humano' : 'Bot'}</span>
           <span class="cv-stage" data-s="${stage}">${esc(stageLabel)}</span>
@@ -3653,13 +3661,49 @@ function beep() {
   } catch (e) {}
 }
 function notify(title, body) {
+  // Vibra en móvil (aunque el navegador silencie el sonido).
+  try { if (navigator.vibrate) navigator.vibrate([120, 60, 120]); } catch (e) {}
   try {
     if ('Notification' in window && Notification.permission === 'granted') {
-      const n = new Notification(title, { body: body || '', tag: cfg('notificationTag', 'crm-panel'), renotify: true });
-      n.onclick = () => { window.focus(); n.close(); };
+      const hidden = document.visibilityState === 'hidden';
+      const n = new Notification(title, {
+        body: body || '', tag: cfg('notificationTag', 'crm-panel'), renotify: true,
+        // Si la pestaña está en segundo plano, la notificación se queda fija hasta
+        // que el agente la vea (no se auto-cierra a los pocos segundos).
+        requireInteraction: hidden,
+      });
+      n.onclick = () => { window.focus(); n.close(); stopTitleFlash(); };
     }
   } catch (e) {}
 }
+// ===== Refuerzo de notificaciones: parpadeo del título + re-aviso =====
+// Si llega un mensaje y la pestaña NO está enfocada, el título de la pestaña parpadea
+// y el sonido se repite cada ~25 s hasta que el agente vuelve a la pestaña. Así no se
+// pierde un cliente por tener el panel en segundo plano.
+let _titleFlashTimer = null, _reAlertTimer = null, _pendingAlert = null;
+function startTitleFlash(label) {
+  if (document.visibilityState === 'visible') return;
+  _pendingAlert = label || 'Nuevo mensaje';
+  if (_titleFlashTimer) return;
+  let on = false;
+  _titleFlashTimer = setInterval(() => {
+    document.title = (on = !on) ? '🔔 ' + _pendingAlert : appTitle();
+  }, 900);
+  if (!_reAlertTimer) {
+    _reAlertTimer = setInterval(() => {
+      if (document.visibilityState === 'visible') return;
+      try { beep(); } catch (e) {}
+      try { if (navigator.vibrate) navigator.vibrate([120, 60, 120]); } catch (e) {}
+    }, 25000);
+  }
+}
+function stopTitleFlash() {
+  if (_titleFlashTimer) { clearInterval(_titleFlashTimer); _titleFlashTimer = null; }
+  if (_reAlertTimer) { clearInterval(_reAlertTimer); _reAlertTimer = null; }
+  _pendingAlert = null;
+  try { document.title = appTitle(); } catch (e) {}
+}
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') stopTitleFlash(); });
 function toast(title, body) {
   const el = document.createElement('div');
   el.className = 'toast';
