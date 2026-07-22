@@ -2006,7 +2006,7 @@ const $ = (id) => document.getElementById(id);
 // Sello de versión: si el panel "no hace nada", casi siempre es caché vieja del
 // navegador. Este sello permite confirmar de un vistazo qué versión está corriendo
 // (compárala con la fecha del último deploy). Actualízalo en cada publicación.
-const BUILD = '2026-07-16f';
+const BUILD = '2026-07-16g';
 try { console.log('CRM panel build', BUILD); const _b = document.getElementById('buildStamp'); if (_b) _b.textContent = BUILD; } catch (e) {}
 let convs = [], sel = null, msgTimer = null, listTimer = null;
 let prevUnread = null, audioCtx = null;
@@ -2059,8 +2059,13 @@ function applyPanelAccess() {
   if ($('reply')) { $('reply').readOnly = readonly; $('reply').placeholder = readonly ? 'Cuenta en modo solo lectura' : 'Escribe tu respuesta...'; }
 }
 // filtro de número del inbox: '' = 1er número (oficial) · 'qr' = 2do número (WhatsApp Web) · 'all' = todos
-let inboxNumFilter = '';
-try { inboxNumFilter = localStorage.getItem('inboxNumFilter') || ''; } catch (e) {}
+// La réplica "sesiones fotográficas" arranca en 'qr' via config (defaultNumFilter). La clave de
+// localStorage se aísla por panel (mismo origen github.io) para que no se pisen entre sí.
+const NUMFILTER_KEY = 'inboxNumFilter_' + (CRM_CONFIG.notificationTag || 'crm');
+const LOCK_NUMFILTER = CRM_CONFIG.lockNumFilter === true;
+let inboxNumFilter = (CRM_CONFIG.defaultNumFilter || '');
+try { const _s = localStorage.getItem(NUMFILTER_KEY); if (_s !== null && !LOCK_NUMFILTER) inboxNumFilter = _s; } catch (e) {}
+if (LOCK_NUMFILTER) inboxNumFilter = CRM_CONFIG.defaultNumFilter || 'qr';
 let renderedSig = new Map(), lastDay = '';
 let msgById = new Map();        // id -> mensaje (para acciones por mensaje)
 let lastInboundAt = 0;          // ts del último mensaje entrante del cliente (ventana 24h de WhatsApp)
@@ -2950,6 +2955,7 @@ async function checkWaHealth() {
 let _numFilterLast = 0;
 async function maybeShowNumFilter() {
   const el = $('numFilter'); if (!el) return;
+  if (LOCK_NUMFILTER) { el.style.display = 'none'; return; } // panel fijo a un número (réplica fotos)
   if (el.value !== inboxNumFilter) el.value = inboxNumFilter;
   if (el.style.display !== 'none') return;        // ya visible
   if (inboxNumFilter) { el.style.display = ''; return; } // el usuario ya eligió un filtro
@@ -2962,7 +2968,7 @@ async function maybeShowNumFilter() {
 }
 if ($('numFilter')) $('numFilter').onchange = function () {
   inboxNumFilter = this.value || '';
-  try { localStorage.setItem('inboxNumFilter', inboxNumFilter); } catch (e) {}
+  try { localStorage.setItem(NUMFILTER_KEY, inboxNumFilter); } catch (e) {}
   document.body.classList.remove('chatopen'); sel = null; clearInterval(msgTimer);
   try { showDetail(false); } catch (e) {}
   loadConvs();
