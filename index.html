@@ -2006,7 +2006,17 @@ const $ = (id) => document.getElementById(id);
 // Sello de versión: si el panel "no hace nada", casi siempre es caché vieja del
 // navegador. Este sello permite confirmar de un vistazo qué versión está corriendo
 // (compárala con la fecha del último deploy). Actualízalo en cada publicación.
-const BUILD = '2026-07-16g';
+const BUILD = '2026-07-16h';
+// PDFs de venta por categoría (generados de las tarjetas aprobadas; hosteados en el catálogo).
+// Se regeneran con dcarela-catalogo/scripts/build_combo_pdfs.py + push del catálogo.
+const COMBO_PDF_BASE = 'https://erickcarela58-star.github.io/carela-compufoto/pdf/';
+const COMBO_PDFS = [
+  { cat: 'xv',          label: 'XV',          n: 5  },
+  { cat: 'infantil',    label: 'Infantil',    n: 8  },
+  { cat: 'graduacion',  label: 'Graduación',  n: 3  },
+  { cat: 'cumpleanos',  label: 'Cumpleaños',  n: 15 },
+  { cat: 'embarazadas', label: 'Embarazadas', n: 8  },
+];
 try { console.log('CRM panel build', BUILD); const _b = document.getElementById('buildStamp'); if (_b) _b.textContent = BUILD; } catch (e) {}
 let convs = [], sel = null, msgTimer = null, listTimer = null;
 let prevUnread = null, audioCtx = null;
@@ -2206,12 +2216,43 @@ function renderProspecting() {
     wrap.innerHTML = `<div class="pros-empty"><div class="ico">⌖</div><h3>${filteredOut ? 'Sin coincidencias' : 'Módulo listo para recibir prospectos'}</h3><p>${filteredOut ? 'Ajusta los filtros para volver a ver resultados.' : 'La estructura, permisos, deduplicación por fuente y auditoría ya están activos. Google Places y las búsquedas externas siguen deshabilitadas hasta la Etapa 2.'}</p></div>`;
     return;
   }
-  wrap.innerHTML = `<table class="pros-table"><thead><tr><th>Negocio</th><th>Ubicación</th><th>Teléfono público</th><th>Valoración</th><th>Estado</th><th>Fuente</th><th>Referencia</th></tr></thead><tbody>${filtered.map(row => {
+  wrap.innerHTML = `<table class="pros-table"><thead><tr><th>Negocio</th><th>Ubicación</th><th>Teléfono público</th><th>Valoración</th><th>Estado</th><th>Fuente</th><th>Referencia</th><th>Acción</th></tr></thead><tbody>${filtered.map(row => {
     const place = [row.sector,row.city,row.province].filter(Boolean).join(' · ') || row.address || '—';
     const refs = [row.maps_url ? `<a href="${escAttr(row.maps_url)}" target="_blank" rel="noopener" style="color:#93c5fd">Mapa</a>` : '', row.website ? `<a href="${escAttr(row.website)}" target="_blank" rel="noopener" style="color:#c4b5fd">Web</a>` : ''].filter(Boolean).join(' · ') || '—';
     const rating = row.rating != null ? `★ ${Number(row.rating).toFixed(1)}${row.review_count != null ? ` <span style="color:var(--mut);font-weight:500">(${row.review_count})</span>` : ''}` : '—';
-    return `<tr><td class="pros-name"><b>${esc(row.business_name)}</b><span>${esc(row.category || 'Sin categoría')}</span></td><td>${esc(place)}</td><td class="pros-phone">${esc(row.phone_primary || '—')}${row.whatsapp_possible ? ' <span title="Posible WhatsApp" style="color:#34d399">●</span>' : ''}</td><td class="pros-rating">${rating}</td><td><span class="pros-badge s-${escAttr(row.status)}">${esc(PROSPECT_STATUS_LABELS[row.status] || row.status)}</span></td><td>${esc(row.source || 'manual')}</td><td>${refs}</td></tr>`;
+    const canMsg = row.status !== 'do_not_contact';
+    const accion = canMsg ? `<button class="cfg-btn pros-msg" data-pid="${escAttr(row.id)}" title="Generar borrador personalizado con IA (tú lo revisas y envías)">✍️ Mensaje</button>` : '—';
+    return `<tr><td class="pros-name"><b>${esc(row.business_name)}</b><span>${esc(row.category || 'Sin categoría')}</span></td><td>${esc(place)}</td><td class="pros-phone">${esc(row.phone_primary || '—')}${row.whatsapp_possible ? ' <span title="Posible WhatsApp" style="color:#34d399">●</span>' : ''}</td><td class="pros-rating">${rating}</td><td><span class="pros-badge s-${escAttr(row.status)}">${esc(PROSPECT_STATUS_LABELS[row.status] || row.status)}</span></td><td>${esc(row.source || 'manual')}</td><td>${refs}</td><td>${accion}</td></tr>`;
   }).join('')}</tbody></table>`;
+  // ✍️ Preparar mensaje personalizado (IA). El agente lo revisa/edita y lo envía él mismo.
+  wrap.querySelectorAll('.pros-msg[data-pid]').forEach(btn => {
+    btn.onclick = async () => {
+      if (!requirePermission('prospecting_operate')) return;
+      const pid = btn.dataset.pid;
+      btn.disabled = true; const prev = btn.textContent; btn.textContent = '⏳ Generando…';
+      try {
+        const { data: { session } } = await sb.auth.getSession();
+        if (!session) { alert('Sesión vencida.'); return; }
+        const r = await fetch(SUPABASE_URL + '/functions/v1/prospect-search', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + session.access_token },
+          body: JSON.stringify({ action: 'prepare_message', prospect_id: pid }),
+        });
+        const d = await r.json().catch(() => ({ error: 'respuesta inválida' }));
+        if (!r.ok || !d.ok) { alert('No se pudo generar: ' + (d.error || 'error')); return; }
+        const edited = prompt('Mensaje preparado para ' + (d.prospect?.business_name || 'el prospecto') + '.\n\nEdítalo si quieres y pulsa Aceptar para COPIARLO (tú lo envías desde tu WhatsApp):', d.message);
+        if (edited !== null && edited.trim()) {
+          try { await navigator.clipboard.writeText(edited.trim()); toast('Copiado', 'Mensaje en el portapapeles. Estado: Mensaje preparado.'); }
+          catch (e) { alert('No se pudo copiar automático. Copia manual:\n\n' + edited.trim()); }
+        }
+        prospectsLoaded = false; loadProspects(true);
+      } catch (e) {
+        alert('Error de conexión.');
+      } finally {
+        btn.disabled = false; btn.textContent = prev;
+      }
+    };
+  });
 }
 
 if ($('prosFilterStatus')) $('prosFilterStatus').innerHTML = '<option value="">Todos los estados</option>' + Object.entries(PROSPECT_STATUS_LABELS).map(([value,label]) => `<option value="${value}">${label}</option>`).join('');
@@ -4581,10 +4622,16 @@ function renderTplPopup() {
        <button class="tpl-x" data-del="${t.id}" title="Borrar respuesta rápida">×</button>
       </div>`).join('')
     : '<div class="tpl"><div class="tpl-b" style="color:var(--mut)">Sin respuestas rápidas todavía.</div></div>';
+  // 3) Combos por categoría — adjunta el PDF de venta oficial (hosteado en el catálogo)
+  const comboItems = COMBO_PDFS.map(c => `<div class="tpl tpl-combo" data-cat="${c.cat}">
+     <div class="tpl-t">📦 Combos ${esc(c.label)}</div><div class="tpl-b">Adjunta el PDF con los ${c.n} combos de ${esc(c.label)} (precios e incluye). Revisas y envías tú.</div>
+    </div>`).join('');
   w.innerHTML = `
    <div class="tpl-list">
     <div class="tpl-sec">📋 Plantillas aprobadas (Meta) · llegan aunque pasen las 24 h</div>
     ${apItems}
+    <div class="tpl-sec">📦 Combos en PDF · se adjuntan al mensaje (solo dentro de las 24 h)</div>
+    ${comboItems}
     <div class="tpl-sec">⚡ Respuestas rápidas · solo dentro de las 24 h</div>
     ${qrItems}
    </div>
@@ -4610,6 +4657,32 @@ function renderTplPopup() {
         toast('Plantilla enviada', 'WhatsApp la entregará aunque la ventana esté cerrada.');
       } else {
         serrShow('No se pudo enviar la plantilla: ' + sendErrText(r && r.error) + ' · debe estar APROBADA en Meta.');
+      }
+    };
+  });
+  // COMBOS en PDF: descarga el PDF oficial (catálogo público) y lo ADJUNTA al composer.
+  // El agente ve el adjunto, puede escribir su mensaje, y envía él mismo (nada automático).
+  w.querySelectorAll('.tpl-combo[data-cat]').forEach(el => {
+    el.onclick = async () => {
+      const c = COMBO_PDFS.find(x => x.cat === el.dataset.cat); if (!c) return;
+      const t0 = el.querySelector('.tpl-t'); const orig = t0 ? t0.textContent : '';
+      if (t0) t0.textContent = '⏳ Descargando PDF…';
+      try {
+        const r = await fetch(COMBO_PDF_BASE + 'combos-' + c.cat + '.pdf', { cache: 'force-cache' });
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        const blob = await r.blob();
+        addPending({ kind: 'document', blob, mime: 'application/pdf', name: 'Combos ' + c.label + " - D'Carela.pdf" });
+        if (!ta.value.trim()) {
+          ta.value = cfg('privateCombosMessage', 'Te comparto los combos por aquí.');
+          ta.style.height = 'auto'; ta.style.height = Math.min(ta.scrollHeight, 120) + 'px';
+        }
+        $('tplWrap').classList.remove('on');
+        ta.focus();
+        toast('Combos ' + c.label, 'PDF adjuntado. Revisa el mensaje y pulsa enviar.');
+      } catch (e) {
+        alert('No se pudo descargar el PDF de ' + c.label + ': ' + (e.message || e));
+      } finally {
+        if (t0) t0.textContent = orig;
       }
     };
   });
