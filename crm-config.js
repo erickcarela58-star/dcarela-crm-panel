@@ -8,8 +8,8 @@
   accent: "#3b82f6",
   accent2: "#06b6d4",
 
-  supabaseUrl: "https://rdmhyhsrewvrpqygtufa.supabase.co",
-  supabaseAnonKey: "sb_publishable_XgucPR_5tPklv6sdUFAhDQ_6NbSf8fQ",
+  supabaseUrl: "https://meiychvlpoxuyrypyfgz.supabase.co",
+  supabaseAnonKey: "sb_publishable_sAW8Zj7XJp_ZV5n7b2f-9w_Yl7TVAGb",
 
   notificationTag: "dcarela-crm",
   publicPortfolioUrl: "https://erickcarela58-star.github.io/carela-compufoto/portafolio.html",
@@ -28,4 +28,3 @@
   businessNumber: "18495245620",
   businessDisplayNumber: "849-524-5620"
 };
-
