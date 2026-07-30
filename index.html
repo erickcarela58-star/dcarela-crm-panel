@@ -159,6 +159,8 @@ input,textarea{font-family:inherit}
 .sb-foot{padding:13px 14px;border-top:1px solid rgba(255,255,255,.05);background:rgba(255,255,255,.02)}
 .sb-live{display:flex;align-items:center;gap:8px;font-size:11.5px;color:var(--mut);font-weight:700;margin-bottom:10px}
 .dotpulse{width:8px;height:8px;border-radius:50%;background:#10b981;box-shadow:0 0 0 0 rgba(16,185,129,.6);animation:pulseDot 2s infinite}
+.sb-live.warn{color:#f0a020}
+.sb-live.warn .dotpulse{background:#f0a020;box-shadow:0 0 0 5px rgba(240,160,32,.1);animation:none}
 @keyframes pulseDot{0%{box-shadow:0 0 0 0 rgba(16,185,129,.6)}70%{box-shadow:0 0 0 8px rgba(16,185,129,0)}100%{box-shadow:0 0 0 0 rgba(16,185,129,0)}}
 .sb-logout{width:100%;background:rgba(255,255,255,.04);border:1px solid var(--line);color:var(--mut);
  font-size:11.5px;font-weight:800;padding:8px 12px;border-radius:9px;cursor:pointer;display:flex;align-items:center;gap:8px;justify-content:center}
@@ -1289,7 +1291,7 @@ body.role-viewer #agnSave,body.role-viewer .ag-row button{pointer-events:none!im
    </button>
   </nav>
   <div class="sb-foot">
-   <div class="sb-live"><span class="dotpulse"></span><span>Bot en vivo · Supabase</span></div>
+   <div class="sb-live" id="crmSyncStatus"><span class="dotpulse"></span><span>Verificando sincronizacion...</span></div>
    <button class="sb-logout" id="logout" title="Cerrar sesión">
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 17l5-5-5-5M21 12H9M13 21H5a2 2 0 01-2-2V5a2 2 0 012-2h8"/></svg>
     Salir
@@ -2006,7 +2008,7 @@ const $ = (id) => document.getElementById(id);
 // Sello de versión: si el panel "no hace nada", casi siempre es caché vieja del
 // navegador. Este sello permite confirmar de un vistazo qué versión está corriendo
 // (compárala con la fecha del último deploy). Actualízalo en cada publicación.
-const BUILD = '2026-07-16h';
+const BUILD = '2026-07-30-sync1';
 // PDFs de venta por categoría (generados de las tarjetas aprobadas; hosteados en el catálogo).
 // Se regeneran con dcarela-catalogo/scripts/build_combo_pdfs.py + push del catálogo.
 const COMBO_PDF_BASE = 'https://erickcarela58-star.github.io/carela-compufoto/pdf/';
@@ -2026,6 +2028,65 @@ let PANEL_ACCESS = {
   role: null,
   permissions: { view:false, operate:false, broadcast:false, automation:false, manage_team:false, manage_settings:false, manage_users:false, prospecting_view:false, prospecting_search:false, prospecting_manage:false, prospecting_operate:false, prospecting_export:false },
 };
+let PANEL_FUNCTIONS_AVAILABLE = true;
+
+function permissionsForLocalRole(role) {
+  return {
+    view: true,
+    operate: ['admin','supervisor','agent'].includes(role),
+    broadcast: ['admin','supervisor'].includes(role),
+    automation: ['admin','supervisor'].includes(role),
+    manage_team: ['admin','supervisor'].includes(role),
+    manage_settings: role === 'admin',
+    manage_users: role === 'admin' && PANEL_FUNCTIONS_AVAILABLE,
+    prospecting_view: true,
+    prospecting_search: ['admin','supervisor'].includes(role),
+    prospecting_manage: ['admin','supervisor'].includes(role),
+    prospecting_operate: ['admin','supervisor','agent'].includes(role),
+    prospecting_export: role === 'admin',
+  };
+}
+
+function updatePanelSyncStatus() {
+  const status = $('crmSyncStatus');
+  if (!status) return;
+  status.classList.toggle('warn', !PANEL_FUNCTIONS_AVAILABLE);
+  status.querySelector('span:last-child').textContent = PANEL_FUNCTIONS_AVAILABLE
+    ? 'Bot en vivo · sincronizacion completa'
+    : 'Datos sincronizados · automatizaciones pendientes';
+}
+
+async function callPanelUsersDirect(action, session) {
+  if (action === 'me') {
+    const { data: member, error } = await sb.from('crm_panel_users')
+      .select('user_id,email,display_name,role,active')
+      .eq('user_id', session.user.id)
+      .maybeSingle();
+    if (error) return { ok:false, error:error.message };
+    if (!member || !member.active) return { ok:false, error:'cuenta sin acceso activo al panel' };
+    return {
+      ok:true,
+      degraded:true,
+      user:{
+        id:session.user.id,
+        email:member.email || session.user.email,
+        display_name:member.display_name,
+        role:member.role,
+        active:member.active,
+      },
+      permissions:permissionsForLocalRole(member.role),
+    };
+  }
+  if (action === 'list' && PANEL_ACCESS.role === 'admin') {
+    const [{ data:users, error:usersError }, { data:audit, error:auditError }] = await Promise.all([
+      sb.from('crm_panel_users').select('user_id,email,display_name,role,active,created_at,updated_at').order('created_at'),
+      sb.from('crm_audit_logs').select('id,actor_email,actor_role,action,entity_type,entity_id,detail,created_at').order('created_at',{ ascending:false }).limit(40),
+    ]);
+    if (usersError || auditError) return { ok:false, error:(usersError || auditError).message };
+    return { ok:true, degraded:true, users:users || [], audit:audit || [] };
+  }
+  return { ok:false, error:'Esta accion requiere las automatizaciones del servidor.' };
+}
 
 function hasPermission(name) { return !!(PANEL_ACCESS.permissions && PANEL_ACCESS.permissions[name]); }
 function requirePermission(name) {
@@ -2043,9 +2104,18 @@ async function callPanelUsers(body) {
       body:JSON.stringify(body || {}),
     });
     const result = await response.json().catch(() => ({ error:'respuesta inválida' }));
+    if (response.status === 404 || response.status === 502 || response.status === 503) {
+      PANEL_FUNCTIONS_AVAILABLE = false;
+      updatePanelSyncStatus();
+      return callPanelUsersDirect(String(body?.action || 'me'), session);
+    }
+    PANEL_FUNCTIONS_AVAILABLE = response.ok;
+    updatePanelSyncStatus();
     return { ...result, ok: response.ok && result.ok !== false, status: response.status };
   } catch (error) {
-    return { ok:false, error:'no se pudo conectar con el control de acceso' };
+    PANEL_FUNCTIONS_AVAILABLE = false;
+    updatePanelSyncStatus();
+    return callPanelUsersDirect(String(body?.action || 'me'), session);
   }
 }
 async function loadPanelAccess() {
