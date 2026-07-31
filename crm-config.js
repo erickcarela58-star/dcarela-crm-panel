@@ -1,4 +1,4 @@
-﻿window.CRM_CONFIG = window.DCARELA_CRM_CONFIG = {
+window.CRM_CONFIG = window.DCARELA_CRM_CONFIG = {
   brandName: "D'Carela Compufoto",
   productName: "CRM",
   appTitle: "D'Carela CRM",
@@ -8,22 +8,22 @@
   accent: "#3b82f6",
   accent2: "#06b6d4",
 
-  supabaseUrl: "https://meiychvlpoxuyrypyfgz.supabase.co",
-  supabaseAnonKey: "sb_publishable_sAW8Zj7XJp_ZV5n7b2f-9w_Yl7TVAGb",
+  supabaseUrl: "https://rdmhyhsrewvrpqygtufa.supabase.co",
+  supabaseAnonKey: "sb_publishable_XgucPR_5tPklv6sdUFAhDQ_6NbSf8fQ",
 
   notificationTag: "dcarela-crm",
   publicPortfolioUrl: "https://dcarelacompufoto.com/portafolio.html",
-  // URL de la home/catalogo/wizard para combos, precios y reservas.
+  // URL de la home/catÃ¡logo/wizard para combos, precios y reservas.
   publicCatalogUrl: "https://dcarelacompufoto.com/combos.html",
-  // URL para ver trabajos, fotos, galeria o portafolio.
+  // URL para ver trabajos, fotos, galerÃ­a o portafolio.
   publicGalleryUrl: "https://dcarelacompufoto.com/portafolio.html",
 
-  // Meta Pixel para tracking de eventos del panel (mismo pixel que el catalogo).
+  // Meta Pixel para tracking de eventos del panel (mismo pixel que el catÃ¡logo)
   metaPixelId: "1377359270081777",
   privateCombosMessage: "Te comparto los combos por aqui. Antes de confirmar disponibilidad necesito saber categoria, fecha tentativa y nombre.",
 
   addressText: "Estamos en C/ Juan Pablo Duarte, esquina Freddy Prestol Castillo, Los Mulos, Piedra Linda, Villa Hermosa, La Romana.",
-  mapsUrl: "https://maps.app.goo.gl/WcmjureAxNySXza59",
+  mapsUrl: "https://maps.app.goo.gl/HwabKLVeUr7czfp16",
 
   businessNumber: "18495245620",
   businessDisplayNumber: "849-524-5620"
