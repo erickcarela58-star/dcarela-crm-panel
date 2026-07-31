@@ -4,7 +4,7 @@ window.CRM_CONFIG = window.DCARELA_CRM_CONFIG = {
   appTitle: "D'Carela CRM",
   subtitle: "CRM comercial - Bot WhatsApp 849-524-5620",
   logoText: "DC",
-  logoUrl: "",
+  logoUrl: "https://dcarelacompufoto.com/img/logo.webp",
   accent: "#3b82f6",
   accent2: "#06b6d4",
 
