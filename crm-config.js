@@ -12,6 +12,7 @@ window.CRM_CONFIG = window.DCARELA_CRM_CONFIG = {
   supabaseAnonKey: "sb_publishable_XgucPR_5tPklv6sdUFAhDQ_6NbSf8fQ",
 
   notificationTag: "dcarela-crm",
+  appVersionUrl: "./app-version.json",
   publicPortfolioUrl: "https://dcarelacompufoto.com/portafolio.html",
   // URL de la home/catÃ¡logo/wizard para combos, precios y reservas.
   publicCatalogUrl: "https://dcarelacompufoto.com/combos.html",
