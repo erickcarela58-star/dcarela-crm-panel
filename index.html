@@ -1491,6 +1491,59 @@ button[onclick^="exportAgendaIcs"]{background:rgba(127,127,127,.14)!important;bo
 .mfile-card .mf-ico{min-width:34px;font-size:9px;font-weight:900;letter-spacing:.8px;text-align:center;color:var(--ink)}
 input[type="checkbox"],input[type="radio"]{accent-color:var(--ink)}
 .tl .tb{color:var(--mut)}
+[data-bridge-only]{display:none!important}
+.bridge-code-enabled .sb-item[data-bridge-only]:not(.role-hidden){display:flex!important}
+.bridge-code-enabled .sb-item[data-bridge-only].role-hidden{display:none!important}
+.bridge-code-enabled .sb-sep[data-bridge-only]{display:block!important}
+.bridge-wrap{max-width:1120px;margin:0 auto;padding:26px;display:grid;gap:18px}
+.bridge-hero,.bridge-card{border:1px solid var(--line);background:linear-gradient(160deg,var(--card),var(--panel));border-radius:22px;box-shadow:var(--shadow)}
+.bridge-hero{padding:28px;display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:22px;overflow:hidden;position:relative}
+.bridge-hero::after{content:"";position:absolute;width:240px;height:240px;border-radius:50%;right:-110px;top:-130px;background:radial-gradient(circle,rgba(127,127,127,.18),transparent 68%);pointer-events:none}
+.bridge-kicker{font-size:10px;letter-spacing:1.6px;text-transform:uppercase;font-weight:900;color:var(--mut);margin-bottom:7px}
+.bridge-hero h2{font-size:clamp(22px,3vw,36px);letter-spacing:-1.2px;margin:0;color:var(--ink)}
+.bridge-hero p{max-width:700px;margin:9px 0 0;color:var(--mut);font-size:13px;line-height:1.65}
+.bridge-state{display:flex;align-items:center;gap:9px;border:1px solid var(--line2);background:rgba(127,127,127,.09);border-radius:999px;padding:10px 14px;font-size:11px;font-weight:850;white-space:nowrap;position:relative;z-index:1}
+.bridge-state-dot{width:9px;height:9px;border-radius:50%;background:var(--mut);box-shadow:0 0 0 5px rgba(127,127,127,.12)}
+.bridge-state[data-state="connected"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.bridge-state[data-state="connected"] .bridge-state-dot{background:var(--bg);box-shadow:0 0 0 5px rgba(127,127,127,.22)}
+.bridge-grid{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(280px,.65fr);gap:18px}
+.bridge-card{padding:22px}
+.bridge-card h3{font-size:14px;margin:0 0 7px;color:var(--ink)}
+.bridge-card>p{font-size:11.5px;line-height:1.55;color:var(--mut);margin:0 0 16px}
+.bridge-phone-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:9px}
+.bridge-phone-row input{width:100%;min-width:0;border:1px solid var(--line2);background:var(--input);color:var(--ink);border-radius:12px;padding:12px 13px;font:750 14px/1.2 inherit;outline:none}
+.bridge-phone-row input:focus{border-color:var(--ink);box-shadow:0 0 0 3px rgba(127,127,127,.15)}
+.bridge-phone-row .cfg-btn{min-height:44px}
+.bridge-hint{font-size:10.5px;color:var(--mut);line-height:1.5;margin-top:9px}
+.bridge-code-panel{margin-top:16px;border:1px solid var(--line2);background:rgba(127,127,127,.075);border-radius:16px;padding:18px;display:none}
+.bridge-code-panel.on{display:block;animation:fadeUp .25s ease both}
+.bridge-code-label{font-size:10px;text-transform:uppercase;letter-spacing:1.3px;color:var(--mut);font-weight:900;text-align:center}
+.bridge-code{font:900 clamp(28px,6vw,48px)/1.05 ui-monospace,SFMono-Regular,Consolas,monospace;letter-spacing:clamp(3px,1vw,8px);text-align:center;color:var(--ink);padding:14px 0 9px;overflow-wrap:anywhere}
+.bridge-code-meta{text-align:center;color:var(--mut);font-size:10.5px}
+.bridge-code-actions{display:flex;justify-content:center;gap:8px;margin-top:13px;flex-wrap:wrap}
+.bridge-error{min-height:18px;margin-top:10px;font-size:11px;line-height:1.45;color:var(--ink)}
+.bridge-steps{counter-reset:bridge-step;display:grid;gap:10px;margin-top:14px}
+.bridge-step{counter-increment:bridge-step;display:grid;grid-template-columns:30px minmax(0,1fr);gap:10px;align-items:start;border:1px solid var(--line);background:rgba(127,127,127,.045);border-radius:13px;padding:11px}
+.bridge-step::before{content:counter(bridge-step);width:28px;height:28px;border-radius:50%;display:grid;place-items:center;background:var(--ink);color:var(--bg);font-size:11px;font-weight:900}
+.bridge-step b{font-size:11.5px;color:var(--ink);display:block;margin-bottom:2px}.bridge-step span{font-size:10.5px;color:var(--mut);line-height:1.45}
+.bridge-controls{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px;padding-top:15px;border-top:1px solid var(--line)}
+.bridge-update{display:grid;gap:12px}
+.bridge-version-row{display:flex;align-items:center;justify-content:space-between;gap:12px;border:1px solid var(--line);border-radius:13px;padding:12px;background:rgba(127,127,127,.045)}
+.bridge-version-row span{font-size:10.5px;color:var(--mut)}.bridge-version-row code{font-size:10px;color:var(--ink);word-break:break-all;text-align:right}
+.bridge-update-state{font-size:11px;color:var(--mut);line-height:1.45}
+.bridge-update .cfg-btn{width:100%;justify-content:center}
+:root[data-theme="light"] .bridge-hero,:root[data-theme="light"] .bridge-card{background:linear-gradient(160deg,#fff,#f2f2f2);box-shadow:0 22px 60px rgba(0,0,0,.11),inset 0 1px #fff}
+@media(max-width:760px){
+ .bridge-wrap{padding:14px;gap:13px}
+ .bridge-hero{grid-template-columns:1fr;padding:20px;border-radius:18px}
+ .bridge-state{justify-self:start}
+ .bridge-grid{grid-template-columns:1fr}
+ .bridge-card{padding:17px;border-radius:18px}
+ .bridge-phone-row{grid-template-columns:1fr}
+ .bridge-phone-row .cfg-btn{width:100%;justify-content:center}
+ .bridge-code{font-size:clamp(27px,11vw,42px);letter-spacing:4px}
+ .bridge-controls .cfg-btn{flex:1;min-width:130px}
+}
 @media(max-width:560px){
  #agenda{padding:8px;align-items:flex-start}
  #agenda .ag-card{max-width:none;border-radius:16px}
@@ -1566,8 +1619,14 @@ input[type="checkbox"],input[type="radio"]{accent-color:var(--ink)}
    </button>
    <button class="sb-item" data-view="conversations">
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
-    <span>Conversaciones</span>
-    <span class="sb-badge" id="sbConvCnt" style="display:none">0</span>
+   <span>Conversaciones</span>
+   <span class="sb-badge" id="sbConvCnt" style="display:none">0</span>
+   </button>
+   <div class="sb-sep" data-bridge-only>ConexiÃ³n</div>
+   <button class="sb-item" data-view="bridge" data-bridge-only data-permission="manage_settings">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 12a5 5 0 017-4.58M17 12a5 5 0 01-7 4.58"/><path d="M14 5l.5 3.5L18 8M10 19l-.5-3.5L6 16"/><rect x="8" y="2" width="8" height="20" rx="3"/></svg>
+    <span>Vincular WhatsApp</span>
+    <span class="sb-badge" id="sbBridgeState">â€”</span>
    </button>
    <button class="sb-item" data-view="funnel">
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 3H2l8 9.5V19l4 2v-8.5L22 3z"/></svg>
@@ -1986,6 +2045,68 @@ input[type="checkbox"],input[type="radio"]{accent-color:var(--ink)}
    </div>
   </div>
 
+  <!-- Vista exclusiva del CRM WhatsApp Web: vinculación por código, sin QR -->
+  <section class="view" id="viewBridge" style="display:none">
+   <div class="bridge-wrap">
+    <div class="bridge-hero">
+     <div>
+      <div class="bridge-kicker">Conexión del segundo número</div>
+      <h2>Vincula WhatsApp con tu teléfono</h2>
+      <p>Escribe el número, genera el código y colócalo en WhatsApp desde el mismo teléfono. No necesitas escanear nada y la sesión queda guardada solamente en el equipo que ejecuta el puente.</p>
+     </div>
+     <div class="bridge-state" id="bridgeStatePill" data-state="loading" role="status" aria-live="polite"><span class="bridge-state-dot"></span><span id="bridgeStateText">Comprobando puente...</span></div>
+    </div>
+
+    <div class="bridge-grid">
+     <div class="bridge-card">
+      <h3>Generar código de vinculación</h3>
+      <p>Solo el administrador puede iniciar este proceso. Usa el número completo con código de país.</p>
+      <div class="bridge-phone-row">
+       <input id="bridgePhone" type="tel" inputmode="tel" autocomplete="tel" maxlength="24" placeholder="Ejemplo: 18495550101" aria-label="Número de WhatsApp con código de país">
+       <button class="cfg-btn primary" id="bridgePairBtn">Generar código</button>
+      </div>
+      <div class="bridge-hint">Puedes escribir +, espacios o guiones; el sistema los normaliza antes de solicitar el código.</div>
+      <div class="bridge-code-panel" id="bridgeCodePanel">
+       <div class="bridge-code-label">Código para colocar en el teléfono</div>
+       <div class="bridge-code" id="bridgePairCode">--</div>
+       <div class="bridge-code-meta" id="bridgeCodeMeta">Esperando...</div>
+       <div class="bridge-code-actions">
+        <button class="cfg-btn primary" id="bridgeCopyCode">Copiar código</button>
+        <button class="cfg-btn" id="bridgeCancelPair">Cancelar</button>
+       </div>
+      </div>
+      <div class="bridge-error" id="bridgeError" role="status" aria-live="polite"></div>
+     </div>
+
+     <div class="bridge-card">
+      <h3>Pasos en el teléfono</h3>
+      <p>El código se muestra aquí y se escribe dentro de WhatsApp.</p>
+      <div class="bridge-steps">
+       <div class="bridge-step"><div><b>Abre WhatsApp</b><span>Entra a Configuración o al menú principal.</span></div></div>
+       <div class="bridge-step"><div><b>Dispositivos vinculados</b><span>Toca "Vincular un dispositivo".</span></div></div>
+       <div class="bridge-step"><div><b>Vincular con número de teléfono</b><span>Elige esta opción en vez de abrir el escáner.</span></div></div>
+       <div class="bridge-step"><div><b>Escribe el código</b><span>Coloca los ocho caracteres que aparecen en este panel.</span></div></div>
+      </div>
+      <div class="bridge-controls">
+       <button class="cfg-btn" id="bridgePauseBtn">Pausar envíos</button>
+       <button class="cfg-btn" id="bridgeRefreshBtn">Actualizar estado</button>
+      </div>
+     </div>
+    </div>
+
+    <div class="bridge-card bridge-update">
+     <div>
+      <h3>Actualización del panel</h3>
+      <p>Comprueba la versión publicada sin depender de la caché del navegador.</p>
+     </div>
+     <div class="bridge-version-row"><span>Versión abierta</span><code id="bridgeCurrentBuild">--</code></div>
+     <div class="bridge-version-row"><span>Versión disponible</span><code id="bridgeRemoteBuild">Comprobando...</code></div>
+     <div class="bridge-update-state" id="bridgeUpdateState">Comprobando actualizaciones...</div>
+     <button class="cfg-btn" id="bridgeUpdateNow">Actualizar ahora</button>
+    </div>
+   </div>
+  </section>
+
   <!-- Vista Recordatorios: revisión previa antes de ejecutar el proceso manual -->
   <section class="view view-reminders" id="viewReminders" style="display:none">
    <div class="plan-wrap" id="remindersInline"></div>
@@ -2360,7 +2481,7 @@ input[type="checkbox"],input[type="radio"]{accent-color:var(--ink)}
 
 <!-- opus-recorder: graba OGG/Opus REAL via WASM. MediaRecorder no puede en Chrome (sale webm o mp4-opus, ambos rechazados por WhatsApp). -->
 <script>window.__CRMBUST__ = Date.now();</script>
-<script src="./crm-config.js?v=20260801"></script>
+<script src="./crm-config.js?v=20260801v2"></script>
 <script src="https://cdn.jsdelivr.net/npm/opus-recorder@8.0.5/dist/recorder.min.js"></script>
 
 <script type="module">
@@ -2377,7 +2498,7 @@ const $ = (id) => document.getElementById(id);
 // Sello de versión: si el panel "no hace nada", casi siempre es caché vieja del
 // navegador. Este sello permite confirmar de un vistazo qué versión está corriendo
 // (compárala con la fecha del último deploy). Actualízalo en cada publicación.
-const BUILD = '2026-08-01-crm-superpowers-v1';
+const BUILD = '2026-08-01-crm-superpowers-v2';
 // PDFs de venta por categoría (generados de las tarjetas aprobadas; hosteados en el catálogo).
 // Se regeneran con dcarela-catalogo/scripts/build_combo_pdfs.py + push del catálogo.
 const COMBO_PDF_BASE = 'https://erickcarela58-star.github.io/carela-compufoto/pdf/';
@@ -2512,6 +2633,11 @@ function applyPanelAccess() {
 // localStorage se aísla por panel (mismo origen github.io) para que no se pisen entre sí.
 const NUMFILTER_KEY = 'inboxNumFilter_' + (CRM_CONFIG.notificationTag || 'crm');
 const LOCK_NUMFILTER = CRM_CONFIG.lockNumFilter === true;
+const BRIDGE_SETUP_ENABLED = (
+  LOCK_NUMFILTER &&
+  CRM_CONFIG.showBridgeSetup === true &&
+  CRM_CONFIG.bridgePairingMode === 'phone_code'
+);
 let inboxNumFilter = (CRM_CONFIG.defaultNumFilter || '');
 try { const _s = localStorage.getItem(NUMFILTER_KEY); if (_s !== null && !LOCK_NUMFILTER) inboxNumFilter = _s; } catch (e) {}
 if (LOCK_NUMFILTER) inboxNumFilter = CRM_CONFIG.defaultNumFilter || 'qr';
@@ -2519,6 +2645,7 @@ if (LOCK_NUMFILTER) {
   document.body.classList.add('channel-qr-locked');
   document.querySelectorAll('[data-official-only]').forEach(el => { el.hidden = true; });
 }
+if (BRIDGE_SETUP_ENABLED) document.body.classList.add('bridge-code-enabled');
 let renderedSig = new Map(), lastDay = '';
 let msgById = new Map();        // id -> mensaje (para acciones por mensaje)
 let lastInboundAt = 0;          // ts del último mensaje entrante del cliente (ventana 24h de WhatsApp)
@@ -2541,16 +2668,278 @@ function normalizePhoneClient(value) {
   return String(value || '').replace(/[^\d]/g, '');
 }
 const PANEL_BUSINESS_NUMBER = normalizePhoneClient(cfg('businessNumber', ''));
+let bridgeRuntimeBusinessNumber = '';
 function qrChannelActive() {
   return LOCK_NUMFILTER || inboxNumFilter === 'qr';
 }
 function agendaChannelBusinessNumber() {
   if (!qrChannelActive()) return PANEL_BUSINESS_NUMBER || '18495245620';
+  if (bridgeRuntimeBusinessNumber) return bridgeRuntimeBusinessNumber;
   const configured = normalizePhoneClient(cfg('bridgeBusinessNumber', ''));
   if (configured) return configured;
   const existingQr = (convs || []).find(c => c && c.source === 'whatsapp_qr' && c.business_number);
   return normalizePhoneClient(existingQr && existingQr.business_number);
 }
+
+let bridgeControlState = null;
+let bridgeCodeExpiresAt = 0;
+let bridgeStatusTimer = null;
+let bridgeCountdownTimer = null;
+let bridgeVersionTimer = null;
+let bridgeRemoteVersion = '';
+
+function bridgeStatusLabel(status) {
+  return ({
+    offline: 'Puente apagado',
+    idle: 'Listo para vincular',
+    requested: 'Solicitud recibida',
+    generating: 'Generando codigo',
+    code_ready: 'Esperando el telefono',
+    connecting: 'Conectando',
+    connected: 'WhatsApp conectado',
+    disconnected: 'WhatsApp desconectado',
+    canceled: 'Vinculacion cancelada',
+    expired: 'Codigo vencido',
+    error: 'Requiere atencion',
+  })[status] || 'Estado desconocido';
+}
+
+function formatBridgeCode(value) {
+  const raw = String(value || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+  return (raw.match(/.{1,4}/g) || []).join('-');
+}
+
+async function callBridgeControl(action, payload = {}) {
+  const { data: { session } } = await sb.auth.getSession();
+  if (!session) return { ok:false, error:'sesion vencida' };
+  try {
+    const response = await fetch(`${SUPABASE_URL}/functions/v1/wa-bridge-control`, {
+      method: 'POST',
+      cache: 'no-store',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${session.access_token}`,
+      },
+      body: JSON.stringify({ action, ...payload }),
+    });
+    const result = await response.json().catch(() => ({}));
+    return {
+      ...result,
+      ok: response.ok && result.ok !== false,
+      statusCode: response.status,
+      error: result.error || (response.ok ? null : 'control del puente no disponible'),
+    };
+  } catch {
+    return { ok:false, error:'no se pudo conectar con el control del puente' };
+  }
+}
+
+function renderBridgeControlState(state, explicitError = '') {
+  if (!BRIDGE_SETUP_ENABLED) return;
+  bridgeControlState = state || {};
+  const status = String(bridgeControlState.status || 'offline');
+  const connectedPhone = normalizePhoneClient(bridgeControlState.connected_phone || '');
+  if (connectedPhone) bridgeRuntimeBusinessNumber = connectedPhone;
+
+  const pill = $('bridgeStatePill');
+  if (pill) pill.dataset.state = status;
+  const stateText = $('bridgeStateText');
+  if (stateText) stateText.textContent = bridgeStatusLabel(status);
+  const badge = $('sbBridgeState');
+  if (badge) {
+    badge.textContent = status === 'connected' ? 'ON' : (bridgeControlState.host_online ? 'LISTO' : 'OFF');
+    badge.style.display = '';
+  }
+
+  const phone = $('bridgePhone');
+  const statePhone = bridgeControlState.connected_phone || bridgeControlState.requested_phone || '';
+  if (
+    phone && statePhone &&
+    document.activeElement !== phone &&
+    !normalizePhoneClient(phone.value)
+  ) phone.value = statePhone;
+
+  const active = ['requested','generating','code_ready','connecting'].includes(status);
+  const pairButton = $('bridgePairBtn');
+  if (pairButton) {
+    pairButton.disabled = !bridgeControlState.host_online || active || status === 'connected';
+    pairButton.textContent = active ? 'Procesando...' : (status === 'connected' ? 'Ya vinculado' : 'Generar codigo');
+  }
+  if (phone) phone.disabled = active || status === 'connected';
+
+  const code = formatBridgeCode(bridgeControlState.pairing_code);
+  bridgeCodeExpiresAt = bridgeControlState.pairing_code_expires_at
+    ? Date.parse(bridgeControlState.pairing_code_expires_at)
+    : 0;
+  const codePanel = $('bridgeCodePanel');
+  if (codePanel) codePanel.classList.toggle('on', !!code || active);
+  if ($('bridgePairCode')) $('bridgePairCode').textContent = code || '--';
+  if ($('bridgeCopyCode')) $('bridgeCopyCode').disabled = !code;
+  if ($('bridgeCancelPair')) $('bridgeCancelPair').disabled = !active;
+
+  const pauseButton = $('bridgePauseBtn');
+  if (pauseButton) {
+    pauseButton.textContent = bridgeControlState.paused ? 'Reanudar envios' : 'Pausar envios';
+    pauseButton.disabled = !bridgeControlState.host_online && !bridgeControlState.paused;
+  }
+
+  const errorText = explicitError ||
+    bridgeControlState.last_error ||
+    (!bridgeControlState.host_online
+      ? 'El proceso local o VPS esta apagado. Inicia el puente para poder generar el codigo.'
+      : (status === 'connected'
+        ? `Conectado${connectedPhone ? ` con el numero terminado en ${connectedPhone.slice(-4)}` : ''}.`
+        : 'El puente esta en linea y listo.'));
+  if ($('bridgeError')) $('bridgeError').textContent = errorText;
+  updateBridgeCountdown();
+}
+
+function updateBridgeCountdown() {
+  const meta = $('bridgeCodeMeta');
+  if (!meta || !$('bridgeCodePanel')?.classList.contains('on')) return;
+  const remaining = Math.max(0, Math.ceil((bridgeCodeExpiresAt - Date.now()) / 1000));
+  if (!remaining) {
+    meta.textContent = 'El codigo vencio. Solicita uno nuevo.';
+    return;
+  }
+  const min = Math.floor(remaining / 60);
+  const sec = String(remaining % 60).padStart(2, '0');
+  meta.textContent = `Valido en este panel por ${min}:${sec}. Escribelo ahora en el telefono.`;
+}
+
+async function refreshBridgeStatus(showLoading = false) {
+  if (!BRIDGE_SETUP_ENABLED || !hasPermission('manage_settings')) return;
+  if (showLoading && $('bridgeStateText')) $('bridgeStateText').textContent = 'Comprobando puente...';
+  const result = await callBridgeControl('status');
+  if (result.bridge) renderBridgeControlState(result.bridge, result.ok ? '' : result.error);
+  else renderBridgeControlState({ status:'offline', host_online:false }, result.error);
+}
+
+function ensureBridgePolling() {
+  if (!BRIDGE_SETUP_ENABLED) return;
+  if (!bridgeStatusTimer) {
+    bridgeStatusTimer = setInterval(() => {
+      if (currentView === 'bridge' && !document.hidden) void refreshBridgeStatus(false);
+    }, 3000);
+  }
+  if (!bridgeCountdownTimer) bridgeCountdownTimer = setInterval(updateBridgeCountdown, 1000);
+  if (!bridgeVersionTimer) {
+    bridgeVersionTimer = setInterval(() => {
+      if (!document.hidden) void checkBridgePanelVersion(false);
+    }, 300000);
+  }
+}
+
+async function requestBridgePairing() {
+  if (!requirePermission('manage_settings')) return;
+  const phone = normalizePhoneClient($('bridgePhone')?.value);
+  if (!/^[1-9]\d{7,14}$/.test(phone)) {
+    if ($('bridgeError')) $('bridgeError').textContent = 'Escribe un numero valido con codigo de pais.';
+    return;
+  }
+  const button = $('bridgePairBtn');
+  if (button) { button.disabled = true; button.textContent = 'Solicitando...'; }
+  const result = await callBridgeControl('request_pairing', { phone });
+  if (result.bridge) renderBridgeControlState(result.bridge, result.ok ? '' : result.error);
+  else renderBridgeControlState(bridgeControlState, result.error);
+  if (result.ok) setTimeout(() => void refreshBridgeStatus(false), 700);
+  else if (button) { button.disabled = false; button.textContent = 'Generar codigo'; }
+}
+
+async function cancelBridgePairing() {
+  if (!requirePermission('manage_settings')) return;
+  const result = await callBridgeControl('cancel');
+  if (result.bridge) renderBridgeControlState(result.bridge, result.ok ? '' : result.error);
+  else if ($('bridgeError')) $('bridgeError').textContent = result.error || 'No se pudo cancelar.';
+}
+
+async function toggleBridgePause() {
+  if (!requirePermission('manage_settings')) return;
+  const action = bridgeControlState?.paused ? 'resume' : 'pause';
+  const result = await callBridgeControl(action);
+  if (result.bridge) renderBridgeControlState(result.bridge, result.ok ? '' : result.error);
+  else if ($('bridgeError')) $('bridgeError').textContent = result.error || 'No se pudo cambiar la pausa.';
+}
+
+async function copyBridgePairingCode() {
+  const code = String(bridgeControlState?.pairing_code || '');
+  if (!code) return;
+  try {
+    await navigator.clipboard.writeText(code);
+    if ($('bridgeCodeMeta')) $('bridgeCodeMeta').textContent = 'Codigo copiado. Ahora escribelo en el telefono.';
+  } catch {
+    const input = document.createElement('textarea');
+    input.value = code;
+    input.style.position = 'fixed';
+    input.style.opacity = '0';
+    document.body.appendChild(input);
+    input.select();
+    document.execCommand('copy');
+    input.remove();
+  }
+}
+
+async function checkBridgePanelVersion(showLoading = true) {
+  if (!BRIDGE_SETUP_ENABLED) return;
+  if ($('bridgeCurrentBuild')) $('bridgeCurrentBuild').textContent = BUILD;
+  const url = String(CRM_CONFIG.appVersionUrl || '').trim();
+  if (!url) {
+    if ($('bridgeRemoteBuild')) $('bridgeRemoteBuild').textContent = 'No configurada';
+    if ($('bridgeUpdateState')) $('bridgeUpdateState').textContent = 'La recarga segura esta disponible.';
+    return;
+  }
+  if (showLoading && $('bridgeUpdateState')) $('bridgeUpdateState').textContent = 'Comprobando actualizaciones...';
+  try {
+    const versionUrl = new URL(url, location.href);
+    versionUrl.searchParams.set('_cache_bust', String(Date.now()));
+    const response = await fetch(versionUrl.href, { cache:'no-store' });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    const data = await response.json();
+    bridgeRemoteVersion = String(data.version || '').trim();
+    if (!bridgeRemoteVersion) throw new Error('version vacia');
+    if ($('bridgeRemoteBuild')) $('bridgeRemoteBuild').textContent = bridgeRemoteVersion;
+    const current = bridgeRemoteVersion === BUILD;
+    if ($('bridgeUpdateState')) {
+      $('bridgeUpdateState').textContent = current
+        ? 'Panel al dia. Puedes recargar de forma segura si necesitas renovar la vista.'
+        : 'Hay una version nueva disponible. Pulsa Actualizar ahora.';
+    }
+    const button = $('bridgeUpdateNow');
+    if (button) {
+      button.classList.toggle('primary', !current);
+      button.textContent = current ? 'Recargar panel' : 'Actualizar ahora';
+    }
+  } catch {
+    if ($('bridgeRemoteBuild')) $('bridgeRemoteBuild').textContent = 'Sin respuesta';
+    if ($('bridgeUpdateState')) $('bridgeUpdateState').textContent = 'No se pudo comprobar la version. La recarga segura sigue disponible.';
+  }
+}
+
+async function updateBridgePanelNow() {
+  const button = $('bridgeUpdateNow');
+  if (button) { button.disabled = true; button.textContent = 'Actualizando...'; }
+  if ($('bridgeUpdateState')) $('bridgeUpdateState').textContent = 'Buscando archivos nuevos y renovando el panel...';
+  try {
+    if ('serviceWorker' in navigator) {
+      const registration = await navigator.serviceWorker.getRegistration();
+      if (registration) {
+        await registration.update();
+        if (registration.waiting) registration.waiting.postMessage({ type:'SKIP_WAITING' });
+      }
+    }
+  } catch {}
+  const next = new URL(location.href);
+  next.searchParams.set('_app_update', String(Date.now()));
+  location.replace(next.href);
+}
+
+if ($('bridgePairBtn')) $('bridgePairBtn').onclick = requestBridgePairing;
+if ($('bridgeCancelPair')) $('bridgeCancelPair').onclick = cancelBridgePairing;
+if ($('bridgePauseBtn')) $('bridgePauseBtn').onclick = toggleBridgePause;
+if ($('bridgeRefreshBtn')) $('bridgeRefreshBtn').onclick = () => refreshBridgeStatus(true);
+if ($('bridgeCopyCode')) $('bridgeCopyCode').onclick = copyBridgePairingCode;
+if ($('bridgeUpdateNow')) $('bridgeUpdateNow').onclick = updateBridgePanelNow;
+
 function applyBrandConfig() {
   document.title = appTitle();
   const brandName = cfg('brandName', 'CRM');
@@ -2619,7 +3008,11 @@ function trackPixel(event, params) {
 // ===== Sidebar + view switcher (rediseño Fixora) =====
 let currentView = 'planning';
 function setView(view) {
+  if (view === 'bridge' && (!BRIDGE_SETUP_ENABLED || !hasPermission('manage_settings'))) {
+    view = 'planning';
+  }
   const map = {
+    bridge:       {eyebrow:'Conexion',   h1:'Vincular WhatsApp',  el:'viewBridge'},
     dashboard:    {eyebrow:'Inicio',     h1:'Dashboard',          el:'viewDashboard'},
     planning:     {eyebrow:'Centro operativo', h1:'Planificación', el:'viewPlanning'},
     conversations:{eyebrow:'Inbox',      h1:'Conversaciones',     el:'viewConversations'},
@@ -2633,7 +3026,7 @@ function setView(view) {
   };
   const v = map[view] || map.dashboard;
   currentView = view;
-  ['viewDashboard','viewPlanning','viewConversations','viewFunnel','viewProspecting','viewSatisfaccion','viewPlantillas','viewEstados','viewReminders','viewConfig'].forEach(id => {
+  ['viewDashboard','viewPlanning','viewConversations','viewFunnel','viewProspecting','viewSatisfaccion','viewPlantillas','viewEstados','viewReminders','viewBridge','viewConfig'].forEach(id => {
     const e = document.getElementById(id);
     if (e) e.style.display = (id === v.el) ? '' : 'none';
   });
@@ -2648,6 +3041,13 @@ function setView(view) {
   if (view === 'prospecting') setTimeout(() => loadProspects(false), 30);
   if (view === 'plantillas') setTimeout(renderPlantillasInline, 30);
   if (view === 'funnel') setTimeout(renderFunnelInline, 30);
+  if (view === 'bridge') {
+    ensureBridgePolling();
+    setTimeout(() => {
+      void refreshBridgeStatus(true);
+      void checkBridgePanelVersion(true);
+    }, 30);
+  }
   if (view === 'satisfaccion') setTimeout(() => { try { renderSatisfaccion(); } catch(e){} }, 30);
   if (view === 'reminders') setTimeout(renderRemindersView, 30);
   if (view === 'config') setTimeout(() => {
