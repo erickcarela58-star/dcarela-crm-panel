@@ -2252,7 +2252,7 @@ input[type="checkbox"],input[type="radio"]{accent-color:var(--ink)}
     </div>
    </div>
     <div class="bc-row">
-     <div class="df"><label>Forma de envio</label><select id="bcMode"><option value="freeform">Mensaje libre - solo 24 h</option><option value="template">Plantilla aprobada por Meta</option></select></div>
+     <div class="df"><label>Forma de envio</label><select id="bcMode"><option value="freeform">Mensaje libre - solo 24 h</option><option value="template">Plantilla aprobada por Meta</option><option value="bridge">2do numero (WhatsApp Web) - sin limite de 24 h</option></select></div>
      <div class="df"><label>Objetivo</label><select id="bcPurpose"><option value="marketing">Marketing</option><option value="followup">Seguimiento</option><option value="session_reminder">Recordatorio</option></select></div>
      <div class="df"><label>Idioma</label><input id="bcTplLang" value="es_DO" placeholder="es_DO"></div>
     </div>
@@ -2498,7 +2498,7 @@ const $ = (id) => document.getElementById(id);
 // Sello de versión: si el panel "no hace nada", casi siempre es caché vieja del
 // navegador. Este sello permite confirmar de un vistazo qué versión está corriendo
 // (compárala con la fecha del último deploy). Actualízalo en cada publicación.
-const BUILD = '2026-08-01-crm-superpowers-v2';
+const BUILD = '2026-08-02-broadcast-2do-numero';
 // PDFs de venta por categoría (generados de las tarjetas aprobadas; hosteados en el catálogo).
 // Se regeneran con dcarela-catalogo/scripts/build_combo_pdfs.py + push del catálogo.
 const COMBO_PDF_BASE = 'https://erickcarela58-star.github.io/carela-compufoto/pdf/';
@@ -2646,6 +2646,13 @@ if (LOCK_NUMFILTER) {
   document.querySelectorAll('[data-official-only]').forEach(el => { el.hidden = true; });
 }
 if (BRIDGE_SETUP_ENABLED) document.body.classList.add('bridge-code-enabled');
+// El mismo index.html sirve a los dos paneles. Donde no hay puente configurado
+// (panel principal, numero oficial) se quita la opcion de canal en vez de
+// ofrecer un envio que ahi no existe.
+if (!BRIDGE_SETUP_ENABLED) {
+  const opcionPuente = document.querySelector('#bcMode option[value="bridge"]');
+  if (opcionPuente) opcionPuente.remove();
+}
 let renderedSig = new Map(), lastDay = '';
 let msgById = new Map();        // id -> mensaje (para acciones por mensaje)
 let lastInboundAt = 0;          // ts del último mensaje entrante del cliente (ventana 24h de WhatsApp)
@@ -7807,14 +7814,70 @@ async function openBroadcast() {
   renderApprovedTemplateOptions();
 }
 
+function bcCanal() { return $('bcMode').value; }   // freeform | template | bridge
+
 function updateBcMode() {
-  const isTpl = $('bcMode').value === 'template';
+  const modo = bcCanal();
+  const isTpl = modo === 'template';
+  const isBridge = modo === 'bridge';
   $('bcTplFields').classList.toggle('on', isTpl);
   $('bcFreeTools').style.display = isTpl ? 'none' : '';
   $('bcTextLabel').textContent = isTpl ? 'Nota interna opcional' : 'Mensaje libre';
-  $('bcText').placeholder = isTpl ? 'Opcional: nota interna. WhatsApp enviara el texto oficial de la plantilla elegida.' : 'Escribe el mensaje libre para clientes dentro de 24 h.';
-  if (isTpl) { bcPendingImg = null; renderBcImgPrev(); }
+  $('bcText').placeholder = isTpl
+    ? 'Opcional: nota interna. WhatsApp enviara el texto oficial de la plantilla elegida.'
+    : (isBridge
+      // El spintax es parte del anti-baneo: si todos reciben el MISMO texto es la
+      // senal mas facil de detectar como envio masivo.
+      ? 'Escribe el mensaje. Usa {Hola|Buenas} para variantes al azar y {{nombre}} para personalizar.'
+      : 'Escribe el mensaje libre para clientes dentro de 24 h.');
+  // El 2do numero se encola en wa_outbox como texto: la imagen todavia no pasa
+  // por wa-bulk, asi que se quita en vez de fingir que se enviaria.
+  if (isTpl || isBridge) { bcPendingImg = null; renderBcImgPrev(); }
+  $('bcImgBtn').style.display = isBridge ? 'none' : '';
   $('bcSend').disabled = true;
+}
+
+/** Llama a wa-bulk (envio masivo por el 2do numero con las capas anti-baneo). */
+async function callWaBulk(action, extra) {
+  if (!hasPermission('broadcast')) return { ok:false, error:'permiso insuficiente' };
+  const { data: { session } } = await sb.auth.getSession();
+  if (!session) return { ok:false, error:'sesion vencida' };
+  try {
+    const r = await fetch(SUPABASE_URL + '/functions/v1/wa-bulk', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + session.access_token },
+      body: JSON.stringify({ action, ...extra }),
+    });
+    return await r.json();
+  } catch (e) {
+    return { ok:false, error: e.message || 'no se pudo contactar wa-bulk' };
+  }
+}
+
+/**
+ * Destinatarios para el 2do numero.
+ *
+ * Reusa el MISMO filtro del servidor (broadcast en dry-run devuelve los ids que
+ * cumplen etapa/categoria/prioridad/antiguedad) y despues resuelve telefono y
+ * nombre desde la BD. No se toma de `convs` en memoria porque esa lista esta
+ * paginada y dejaria gente fuera sin avisar.
+ */
+async function bcDestinatariosBridge(filter) {
+  const dry = await callBroadcastFn({ text:'preview', filter, dry:true, send_mode:'freeform', purpose: $('bcPurpose').value || 'marketing' });
+  if (!dry || !dry.ok) return { error: (dry && dry.error) || 'no se pudo calcular la audiencia' };
+  const ids = Array.isArray(dry.ids) ? dry.ids : [];
+  if (!ids.length) return { targets: [] };
+  const targets = [];
+  for (let i = 0; i < ids.length; i += 300) {
+    const { data, error } = await sb.from('conversations')
+      .select('id,wa_phone,customer_name,contact_name')
+      .in('id', ids.slice(i, i + 300));
+    if (error) return { error: error.message };
+    for (const c of data || []) {
+      if (c.wa_phone) targets.push({ phone: c.wa_phone, name: c.customer_name || c.contact_name || '' });
+    }
+  }
+  return { targets };
 }
 
 function insertIntoBcText(s) {
@@ -7909,6 +7972,45 @@ $('bcCalc').onclick = async () => {
     cold_min_days: ($('bcCold') && $('bcCold').value) ? Number($('bcCold').value) : undefined,
     business_number: PANEL_BUSINESS_NUMBER || undefined,
   };
+
+  // --- 2do numero (WhatsApp Web): lo calcula wa-bulk con sus capas anti-baneo ---
+  if (bcCanal() === 'bridge') {
+    const texto = $('bcText').value.trim();
+    if (texto.length < 2) {
+      $('bcPreview').innerHTML = '<span style="color:#ffb454">⚠️ Escribe el mensaje (minimo 2 caracteres).</span>';
+      $('bcCalc').disabled = false; $('bcSend').disabled = true; return;
+    }
+    $('bcPreview').textContent = 'Calculando audiencia y ritmo de envio…';
+    const dest = await bcDestinatariosBridge(filter);
+    if (dest.error) {
+      $('bcPreview').innerHTML = '<span style="color:#ff6b6b">❌ ' + esc(dest.error) + '</span>';
+      $('bcCalc').disabled = false; $('bcSend').disabled = true; return;
+    }
+    const r = await callWaBulk('preview', { name: 'Campana 2do numero', template: texto, targets: dest.targets });
+    $('bcCalc').disabled = false;
+    if (!r || !r.ok) {
+      $('bcPreview').innerHTML = '<span style="color:#ff6b6b">❌ ' + esc((r && r.error) || 'no se pudo calcular') + '</span>';
+      $('bcSend').disabled = true; return;
+    }
+    const motivos = Object.entries(r.motivos || {}).map(([k, n]) => `${esc(k)}: ${n}`).join(' · ') || 'ninguno';
+    const puenteListo = r.puente && r.puente.listo;
+    let html = `Llegará a <b>${r.elegibles}</b> contactos por el <b>2do número</b>, sin límite de 24 h.` +
+      `<br>Omitidos: <b>${r.saltados}</b> (${motivos}).` +
+      `<br>Ritmo anti-bloqueo: ${r.ritmo.send_min_sec}-${r.ritmo.send_max_sec}s entre mensajes, pausa de ` +
+      `${Math.round(r.ritmo.long_pause_sec / 60)} min cada ${r.ritmo.long_pause_every}, tope ${r.ritmo.daily_cap}/día.` +
+      `<br>Tardará aproximadamente <b>${r.duracion_estimada_horas} h</b> en salir completa.`;
+    if ((r.ejemplos || []).length) {
+      html += '<br><small style="color:var(--mut)">Ejemplo: ' + esc(r.ejemplos[0].body.slice(0, 120)) + '</small>';
+    }
+    if (!puenteListo) {
+      html += '<br><span style="color:#ffb454">⚠️ El 2do número no está vinculado todavía. ' +
+        'Enlaza WhatsApp Web en <b>Conexión</b> para poder enviar; si no, los mensajes quedarían en cola sin salir.</span>';
+    }
+    $('bcPreview').innerHTML = html;
+    $('bcSend').disabled = !(puenteListo && r.elegibles > 0);
+    return;
+  }
+
   const payload = buildBroadcastPayload(filter, true);
   const r = payload.error ? payload : await callBroadcastFn(payload);
   $('bcCalc').disabled = false;
@@ -7944,6 +8046,42 @@ $('bcCalc').onclick = async () => {
 $('bcText').addEventListener('input', () => { $('bcSend').disabled = true; });
 ['bcStage','bcCat','bcPri','bcCold'].forEach(id => $(id).addEventListener('change', () => { $('bcSend').disabled = true; }));
 $('bcSend').onclick = async () => {
+  // --- 2do numero (WhatsApp Web) ---
+  if (bcCanal() === 'bridge') {
+    const texto = $('bcText').value.trim();
+    if (texto.length < 2) return;
+    if (!confirm('¿Encolar esta campaña por el 2do número?\n\n"' + texto.slice(0, 200) + '"\n\n' +
+      'Sale escalonada con el ritmo anti-bloqueo, no de golpe.')) return;
+    $('bcSend').disabled = true; $('bcCalc').disabled = true;
+    const filter = {
+      lifecycle_stage: $('bcStage').value || undefined,
+      interested_category: $('bcCat').value || undefined,
+      priority: $('bcPri').value || undefined,
+      cold_min_days: ($('bcCold') && $('bcCold').value) ? Number($('bcCold').value) : undefined,
+      business_number: PANEL_BUSINESS_NUMBER || undefined,
+    };
+    $('bcPreview').textContent = 'Encolando…';
+    const dest = await bcDestinatariosBridge(filter);
+    if (dest.error) {
+      $('bcPreview').innerHTML = '<span style="color:#ff6b6b">❌ ' + esc(dest.error) + '</span>';
+      $('bcSend').disabled = false; $('bcCalc').disabled = false; return;
+    }
+    const nombre = 'Campana ' + new Date().toLocaleDateString('es-DO');
+    const r = await callWaBulk('send', { name: nombre, template: texto, targets: dest.targets });
+    $('bcCalc').disabled = false;
+    if (!r || !r.ok) {
+      $('bcPreview').innerHTML = '<span style="color:#ff6b6b">❌ ' + esc((r && r.error) || 'no se pudo encolar') + '</span>';
+      $('bcSend').disabled = false; return;
+    }
+    const fin = r.ultimo_envio ? new Date(r.ultimo_envio).toLocaleString('es-DO') : '—';
+    $('bcPreview').innerHTML =
+      `✅ <b>${r.encolados}</b> mensajes encolados por el 2do número. Omitidos: <b>${r.saltados}</b>.` +
+      `<br>Salen escalonados; el último está programado para <b>${esc(fin)}</b> (~${r.duracion_estimada_horas} h).` +
+      `<br><small style="color:var(--mut)">El puente los va enviando solo. Puedes pausarlo desde <b>Conexión</b>.</small>`;
+    $('bcSend').disabled = true;
+    return;
+  }
+
   const sendMode = $('bcMode').value === 'template' ? 'template' : 'freeform';
   const txt = $('bcText').value.trim();
   if (sendMode === 'freeform' && txt.length < 2 && !bcPendingImg) return;
