@@ -14,12 +14,12 @@ window.CRM_CONFIG = window.DCARELA_CRM_CONFIG = {
   notificationTag: "dcarela-crm",
   appVersionUrl: "./app-version.json",
   publicPortfolioUrl: "https://dcarelacompufoto.com/portafolio.html",
-  // URL de la home/catÃ¡logo/wizard para combos, precios y reservas.
+  // URL de la home/catálogo/wizard para combos, precios y reservas.
   publicCatalogUrl: "https://dcarelacompufoto.com/combos.html",
-  // URL para ver trabajos, fotos, galerÃ­a o portafolio.
+  // URL para ver trabajos, fotos, galería o portafolio.
   publicGalleryUrl: "https://dcarelacompufoto.com/portafolio.html",
 
-  // Meta Pixel para tracking de eventos del panel (mismo pixel que el catÃ¡logo)
+  // Meta Pixel para tracking de eventos del panel (mismo pixel que el catálogo)
   metaPixelId: "1377359270081777",
   privateCombosMessage: "Te comparto los combos por aqui. Antes de confirmar disponibilidad necesito saber categoria, fecha tentativa y nombre.",
 
@@ -27,5 +27,6 @@ window.CRM_CONFIG = window.DCARELA_CRM_CONFIG = {
   mapsUrl: "https://maps.app.goo.gl/HwabKLVeUr7czfp16",
 
   businessNumber: "18495245620",
-  businessDisplayNumber: "849-524-5620"
+  businessDisplayNumber: "849-524-5620",
+  defaultView: "conversations"
 };
