@@ -1552,6 +1552,9 @@ input[type="checkbox"],input[type="radio"]{accent-color:var(--ink)}
 .bridge-version-row span{font-size:10.5px;color:var(--mut)}.bridge-version-row code{font-size:10px;color:var(--ink);word-break:break-all;text-align:right}
 .bridge-update-state{font-size:11px;color:var(--mut);line-height:1.45}
 .bridge-update .cfg-btn{width:100%;justify-content:center}
+.bridge-history{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:18px;align-items:center}
+.bridge-history-state{font-size:11px;color:var(--mut);line-height:1.55;margin-top:7px}
+.bridge-history .cfg-btn{min-width:210px;justify-content:center}
 :root[data-theme="light"] .bridge-hero,:root[data-theme="light"] .bridge-card{background:linear-gradient(160deg,#fff,#f2f2f2);box-shadow:0 22px 60px rgba(0,0,0,.11),inset 0 1px #fff}
 @media(max-width:760px){
  .bridge-wrap{padding:14px;gap:13px}
@@ -1559,6 +1562,7 @@ input[type="checkbox"],input[type="radio"]{accent-color:var(--ink)}
  .bridge-state{justify-self:start}
  .bridge-grid{grid-template-columns:1fr}
  .bridge-card{padding:17px;border-radius:18px}
+ .bridge-history{grid-template-columns:1fr}.bridge-history .cfg-btn{width:100%}
  .bridge-phone-row{grid-template-columns:1fr}
  .bridge-phone-row .cfg-btn{width:100%;justify-content:center}
  .bridge-code{font-size:clamp(27px,11vw,42px);letter-spacing:4px}
@@ -2117,6 +2121,15 @@ input[type="checkbox"],input[type="radio"]{accent-color:var(--ink)}
        <button class="cfg-btn" id="bridgeRefreshBtn">Actualizar estado</button>
       </div>
      </div>
+    </div>
+
+    <div class="bridge-card bridge-history">
+     <div>
+      <h3>Historial de conversaciones</h3>
+      <p>Importa mensajes anteriores y los enviados desde el teléfono al mismo inbox, conservando su fecha y evitando duplicados.</p>
+      <div class="bridge-history-state" id="bridgeHistoryState" role="status" aria-live="polite">Sin sincronización solicitada.</div>
+     </div>
+     <button class="cfg-btn primary" id="bridgeHistoryBtn">Sincronizar historial</button>
     </div>
 
     <div class="bridge-card bridge-update">
@@ -2934,6 +2947,34 @@ function renderBridgeControlState(state, explicitError = '') {
     pauseButton.disabled = !bridgeControlState.host_online && !bridgeControlState.paused;
   }
 
+  const historyStatus = String(bridgeControlState.history_sync_status || 'idle');
+  const historyActive = ['requested','running','waiting'].includes(historyStatus);
+  const historyButton = $('bridgeHistoryBtn');
+  if (historyButton) {
+    historyButton.disabled = status !== 'connected' || !bridgeControlState.host_online || historyActive;
+    historyButton.textContent = historyActive ? 'Sincronizando...' : 'Sincronizar historial';
+  }
+  const historyState = $('bridgeHistoryState');
+  if (historyState) {
+    const imported = Number(bridgeControlState.history_sync_imported || 0);
+    const duplicates = Number(bridgeControlState.history_sync_duplicates || 0);
+    const chats = Number(bridgeControlState.history_sync_requested_chats || 0);
+    const progress = Number(bridgeControlState.history_sync_progress || 0);
+    const completedAt = bridgeControlState.history_sync_completed_at
+      ? new Date(bridgeControlState.history_sync_completed_at).toLocaleString('es-DO')
+      : '';
+    const labels = {
+      idle: 'Sin sincronización solicitada.',
+      requested: 'Solicitud enviada al puente.',
+      running: `Solicitando bloques anteriores · ${progress}% · ${chats} chats`,
+      waiting: `Procesando respuestas de WhatsApp · ${progress}% · ${imported} nuevos`,
+      completed: `Completado${completedAt ? ` ${completedAt}` : ''} · ${imported} nuevos · ${duplicates} duplicados omitidos`,
+      unavailable: bridgeControlState.history_sync_last_error || 'WhatsApp no ofreció historial adicional.',
+      error: bridgeControlState.history_sync_last_error || 'La sincronización no pudo completarse.',
+    };
+    historyState.textContent = labels[historyStatus] || 'Estado de historial desconocido.';
+  }
+
   const errorText = explicitError ||
     bridgeControlState.last_error ||
     (!bridgeControlState.host_online
@@ -3012,6 +3053,15 @@ async function toggleBridgePause() {
   else if ($('bridgeError')) $('bridgeError').textContent = result.error || 'No se pudo cambiar la pausa.';
 }
 
+async function requestBridgeHistorySync() {
+  if (!requirePermission('manage_settings')) return;
+  const button = $('bridgeHistoryBtn');
+  if (button) { button.disabled = true; button.textContent = 'Solicitando...'; }
+  const result = await callBridgeControl('sync_history');
+  if (result.bridge) renderBridgeControlState(result.bridge, result.ok ? '' : result.error);
+  else if ($('bridgeHistoryState')) $('bridgeHistoryState').textContent = result.error || 'No se pudo solicitar el historial.';
+}
+
 async function copyBridgePairingCode() {
   const code = String(bridgeControlState?.pairing_code || '');
   if (!code) return;
@@ -3088,6 +3138,7 @@ if ($('bridgePairBtn')) $('bridgePairBtn').onclick = requestBridgePairing;
 if ($('bridgeCancelPair')) $('bridgeCancelPair').onclick = cancelBridgePairing;
 if ($('bridgePauseBtn')) $('bridgePauseBtn').onclick = toggleBridgePause;
 if ($('bridgeRefreshBtn')) $('bridgeRefreshBtn').onclick = () => refreshBridgeStatus(true);
+if ($('bridgeHistoryBtn')) $('bridgeHistoryBtn').onclick = requestBridgeHistorySync;
 if ($('bridgeCopyCode')) $('bridgeCopyCode').onclick = copyBridgePairingCode;
 if ($('bridgeUpdateNow')) $('bridgeUpdateNow').onclick = updateBridgePanelNow;
 
