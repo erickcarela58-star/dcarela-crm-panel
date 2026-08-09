@@ -2694,7 +2694,7 @@ const $ = (id) => document.getElementById(id);
 // Sello de versión: si el panel "no hace nada", casi siempre es caché vieja del
 // navegador. Este sello permite confirmar de un vistazo qué versión está corriendo
 // (compárala con la fecha del último deploy). Actualízalo en cada publicación.
-const BUILD = '2026-08-09-crm-full-tools-v9';
+const BUILD = '2026-08-09-whatsapp-full-history-v10';
 // PDFs de venta por categoría (generados de las tarjetas aprobadas; hosteados en el catálogo).
 // Se regeneran con dcarela-catalogo/scripts/build_combo_pdfs.py + push del catálogo.
 const COMBO_PDF_BASE = 'https://erickcarela58-star.github.io/carela-compufoto/pdf/';
@@ -2880,6 +2880,7 @@ function normalizePhoneClient(value) {
   return String(value || '').replace(/[^\d]/g, '');
 }
 const PANEL_BUSINESS_NUMBER = normalizePhoneClient(cfg('businessNumber', ''));
+const CONFIGURED_BRIDGE_BUSINESS_NUMBER = normalizePhoneClient(cfg('bridgeBusinessNumber', ''));
 let bridgeRuntimeBusinessNumber = '';
 function qrChannelActive() {
   return LOCK_NUMFILTER || inboxNumFilter === 'qr';
@@ -4370,6 +4371,58 @@ if ($('numFilter')) $('numFilter').onchange = function () {
 
 // ---- conversaciones ----
 let conversationsLoadError = '';
+const conversationNameHints = new Map();
+let conversationNameHintsLoadedAt = 0;
+let conversationNameHintsSignature = '';
+
+function cleanConversationName(value) {
+  const name = String(value || '').replace(/\s+/g, ' ').trim();
+  if (!name || /^\+?[\d\s().-]+$/.test(name)) return '';
+  return name;
+}
+
+function conversationDisplayName(c) {
+  if (!c) return 'Cliente';
+  const phone = normalizePhoneClient(c.wa_phone);
+  return cleanConversationName(c.customer_name)
+    || cleanConversationName(c.contact_name)
+    || cleanConversationName(c.display_name)
+    || cleanConversationName(conversationNameHints.get(phone))
+    || (phone ? `+${phone}` : 'Cliente');
+}
+
+// Si WhatsApp entrega el historial sin pushName, reutiliza el nombre que ya
+// conoce el CRM oficial para ese telefono. Solo cambia la presentacion; cada
+// conversacion y sus mensajes conservan su canal e identificador originales.
+async function refreshConversationNameHints(rows) {
+  if (!qrChannelActive()) return;
+  const phones = [...new Set((rows || [])
+    .map(row => normalizePhoneClient(row && row.wa_phone))
+    .filter(Boolean))].sort();
+  const signature = phones.join(',');
+  if (!phones.length) return;
+  if (signature === conversationNameHintsSignature && Date.now() - conversationNameHintsLoadedAt < 60000) return;
+  conversationNameHintsSignature = signature;
+  conversationNameHintsLoadedAt = Date.now();
+  for (let i = 0; i < phones.length; i += 100) {
+    const chunk = phones.slice(i, i + 100);
+    const { data, error } = await sb.from('conversations')
+      .select('wa_phone,customer_name,contact_name,display_name,last_message_at,source')
+      .in('wa_phone', chunk)
+      .or('source.is.null,source.neq.whatsapp_qr')
+      .order('last_message_at', { ascending:false, nullsFirst:false });
+    if (error) continue;
+    for (const row of data || []) {
+      const phone = normalizePhoneClient(row.wa_phone);
+      if (!phone || conversationNameHints.has(phone)) continue;
+      const name = cleanConversationName(row.customer_name)
+        || cleanConversationName(row.contact_name)
+        || cleanConversationName(row.display_name);
+      if (name) conversationNameHints.set(phone, name);
+    }
+  }
+}
+
 async function fetchConversationRows() {
   const all = [];
   const pageSize = 500;
@@ -4377,9 +4430,16 @@ async function fetchConversationRows() {
     const from = page * pageSize;
     let query = sb.from('conversations').select('*')
       .order('last_message_at', { ascending: false })
+      .order('id', { ascending: true })
       .range(from, from + pageSize - 1);
-    if (inboxNumFilter === 'qr') query = query.eq('source', 'whatsapp_qr');
-    else if (inboxNumFilter !== 'all') query = query.or('source.is.null,source.neq.whatsapp_qr');
+    const bridgeNumber = normalizePhoneClient(bridgeRuntimeBusinessNumber || CONFIGURED_BRIDGE_BUSINESS_NUMBER);
+    if (inboxNumFilter === 'qr') {
+      query = bridgeNumber
+        ? query.eq('business_number', bridgeNumber)
+        : query.eq('source', 'whatsapp_qr');
+    } else if (inboxNumFilter !== 'all') {
+      query = query.or('source.is.null,source.neq.whatsapp_qr');
+    }
     const { data, error } = await query;
     if (error) return { data:null, error };
     all.push(...(data || []));
@@ -4398,12 +4458,13 @@ async function loadConvs() {
     return;
   }
   convs = data || [];
+  await refreshConversationNameHints(convs);
   const totalUnread = convs.reduce((s, c) => s + (c.unread || 0), 0);
   if (prevUnread !== null && totalUnread > prevUnread) {
     const hot = convs.filter(c => c.unread > 0)
       .sort((a, b) => new Date(b.last_message_at) - new Date(a.last_message_at))[0];
     if (hot) {
-      const nm = hot.contact_name || hot.wa_phone;
+      const nm = conversationDisplayName(hot);
       // La notificacion y el preview de la lista muestran lo que dijo el CLIENTE
       // (last_inbound_preview), no la respuesta del bot (esa pisaria last_message_preview).
       const body = hot.last_inbound_preview || hot.last_message_preview || 'Nuevo mensaje';
@@ -4447,7 +4508,7 @@ function renderConvs() {
   const list = convs.filter(c =>
     passesFilter(c) &&
     (!q ||
-      (c.customer_name || c.contact_name || '').toLowerCase().includes(q) ||
+      conversationDisplayName(c).toLowerCase().includes(q) ||
       (c.wa_phone || '').includes(q) ||
       (c.selected_combo_name || '').toLowerCase().includes(q))
   );
@@ -4458,7 +4519,7 @@ function renderConvs() {
     return;
   }
   for (const c of list) {
-    const name = c.customer_name || c.contact_name || c.wa_phone;
+    const name = conversationDisplayName(c);
     const stage = c.lifecycle_stage || 'nuevo';
     const stageLabel = (STAGES.find(s => s[0] === stage) || [stage, stage])[1];
     const isUrgente = c.priority === 'urgente';
@@ -4494,7 +4555,7 @@ async function openConv(c) {
   $('empty').style.display = 'none';
   $('chatBox').style.display = 'flex';
   lastInboundAt = 0; $('winWarn').classList.remove('on'); // se recalcula al cargar mensajes
-  const chatName = c.customer_name || c.contact_name || c.wa_phone;
+  const chatName = conversationDisplayName(c);
   $('chName').textContent = chatName;
   $('chPhone').textContent = '+' + c.wa_phone;
   $('chAv').innerHTML = avatarHtml(c, chatName);
@@ -4562,7 +4623,7 @@ function quoteHtml(m) {
   const rep = m.metadata && m.metadata.reply;
   if (!rep) return '';
   const who = rep.sender === 'bot' ? 'Bot' : rep.sender === 'agent' ? 'Tú'
-    : ((sel && (sel.customer_name || sel.contact_name)) || 'Cliente');
+    : conversationDisplayName(sel);
   const sn = String(rep.snippet || '').trim() || '(mensaje)';
   return `<div class="mquote"><div class="qh">${esc(who)}</div>${esc(sn)}</div>`;
 }
@@ -4602,22 +4663,33 @@ async function fetchConversationMessages(conversationId, fresh) {
     const { data, error } = await sb.from('messages').select('*')
       .eq('conversation_id', conversationId)
       .order('created_at', { ascending: false })
+      .order('id', { ascending: false })
       .limit(500);
     return { data:(data || []).reverse(), error };
   }
   const all = [];
   const pageSize = 500;
-  for (let page = 0; page < 20; page++) {
+  // Lee hasta 100 000 mensajes por chat. El orden secundario evita saltos
+  // cuando WhatsApp entrega muchos mensajes con la misma marca de tiempo.
+  for (let page = 0; page < 200; page++) {
     const from = page * pageSize;
     const { data, error } = await sb.from('messages').select('*')
       .eq('conversation_id', conversationId)
       .order('created_at', { ascending: true })
+      .order('id', { ascending: true })
       .range(from, from + pageSize - 1);
     if (error) return { data:null, error };
     all.push(...(data || []));
     if (!data || data.length < pageSize) break;
   }
-  return { data:all, error:null };
+  const unique = [];
+  const seen = new Set();
+  for (const row of all) {
+    if (!row || seen.has(row.id)) continue;
+    seen.add(row.id);
+    unique.push(row);
+  }
+  return { data:unique, error:null };
 }
 
 async function loadMsgs(fresh) {
@@ -4864,7 +4936,12 @@ async function callFn(body) {
 // ===== 2do número (WhatsApp Web / puente local): encolar en wa_outbox =====
 // El 1er número usa Cloud API (panel-send). El 2do número (source='whatsapp_qr')
 // lo maneja el puente local: el panel solo encola y el puente envía respetando tiempos.
-function isBridgeConv(c) { return !!(c && c.source === 'whatsapp_qr'); }
+function isBridgeConv(c) {
+  if (!c) return false;
+  if (c.source === 'whatsapp_qr') return true;
+  const bridgeNumber = normalizePhoneClient(bridgeRuntimeBusinessNumber || CONFIGURED_BRIDGE_BUSINESS_NUMBER);
+  return !!bridgeNumber && normalizePhoneClient(c.business_number) === bridgeNumber;
+}
 async function enqueueBridge(conv, { text = '', mediaUrl = null, msgType = 'text' } = {}) {
   if (!hasPermission('operate')) return { ok:false, error:'permiso insuficiente' };
   try {
