@@ -1,6 +1,6 @@
 {
   "version": "2026-08-09-crm-logout-control",
   "channel": "crm",
-  "released_at": "2026-08-09T03:30:00Z",
+  "released_at": "2026-08-09T03:55:00Z",
   "summary": "CRM multicaja con cierre verificable de la sesion del segundo WhatsApp, proteccion contra puentes duplicados y control de sincronizacion."
 }
