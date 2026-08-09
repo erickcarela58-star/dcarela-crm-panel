@@ -2119,7 +2119,9 @@ input[type="checkbox"],input[type="radio"]{accent-color:var(--ink)}
       <div class="bridge-controls">
        <button class="cfg-btn" id="bridgePauseBtn">Pausar envíos</button>
        <button class="cfg-btn" id="bridgeRefreshBtn">Actualizar estado</button>
+       <button class="cfg-btn warn" id="bridgeLogoutBtn">Cerrar sesión de WhatsApp</button>
       </div>
+      <div class="bridge-hint">Cerrar la sesión desvincula solamente este segundo número; las conversaciones guardadas en el CRM se conservan.</div>
      </div>
     </div>
 
@@ -2902,13 +2904,14 @@ function renderBridgeControlState(state, explicitError = '') {
   if (!BRIDGE_SETUP_ENABLED) return;
   bridgeControlState = state || {};
   const status = String(bridgeControlState.status || 'offline');
+  const logoutPending = bridgeControlState.last_error_code === 'logout_requested';
   const connectedPhone = normalizePhoneClient(bridgeControlState.connected_phone || '');
   if (connectedPhone) bridgeRuntimeBusinessNumber = connectedPhone;
 
   const pill = $('bridgeStatePill');
   if (pill) pill.dataset.state = status;
   const stateText = $('bridgeStateText');
-  if (stateText) stateText.textContent = bridgeStatusLabel(status);
+  if (stateText) stateText.textContent = logoutPending ? 'Cerrando sesión...' : bridgeStatusLabel(status);
   const badge = $('sbBridgeState');
   if (badge) {
     badge.textContent = status === 'connected' ? 'ON' : (bridgeControlState.host_online ? 'LISTO' : 'OFF');
@@ -2926,10 +2929,10 @@ function renderBridgeControlState(state, explicitError = '') {
   const active = ['requested','generating','code_ready','connecting'].includes(status);
   const pairButton = $('bridgePairBtn');
   if (pairButton) {
-    pairButton.disabled = !bridgeControlState.host_online || active || status === 'connected';
-    pairButton.textContent = active ? 'Procesando...' : (status === 'connected' ? 'Ya vinculado' : 'Generar codigo');
+    pairButton.disabled = !bridgeControlState.host_online || active || status === 'connected' || logoutPending;
+    pairButton.textContent = logoutPending ? 'Cerrando sesión...' : (active ? 'Procesando...' : (status === 'connected' ? 'Ya vinculado' : 'Generar codigo'));
   }
-  if (phone) phone.disabled = active || status === 'connected';
+  if (phone) phone.disabled = active || status === 'connected' || logoutPending;
 
   const code = formatBridgeCode(bridgeControlState.pairing_code);
   bridgeCodeExpiresAt = bridgeControlState.pairing_code_expires_at
@@ -2953,6 +2956,12 @@ function renderBridgeControlState(state, explicitError = '') {
   if (historyButton) {
     historyButton.disabled = status !== 'connected' || !bridgeControlState.host_online || historyActive;
     historyButton.textContent = historyActive ? 'Sincronizando...' : 'Sincronizar historial';
+  }
+
+  const logoutButton = $('bridgeLogoutBtn');
+  if (logoutButton) {
+    logoutButton.disabled = logoutPending || (!connectedPhone && !['connected','disconnected','error'].includes(status));
+    logoutButton.textContent = logoutPending ? 'Cerrando sesión...' : 'Cerrar sesión de WhatsApp';
   }
   const historyState = $('bridgeHistoryState');
   if (historyState) {
@@ -3062,6 +3071,20 @@ async function requestBridgeHistorySync() {
   else if ($('bridgeHistoryState')) $('bridgeHistoryState').textContent = result.error || 'No se pudo solicitar el historial.';
 }
 
+async function logoutBridgeWhatsApp() {
+  if (!requirePermission('manage_settings')) return;
+  const confirmed = window.confirm(
+    'Se cerrará solamente la sesión del segundo número de WhatsApp. Las conversaciones guardadas en el CRM no se borrarán. ¿Continuar?'
+  );
+  if (!confirmed) return;
+  const button = $('bridgeLogoutBtn');
+  if (button) { button.disabled = true; button.textContent = 'Cerrando sesión...'; }
+  const result = await callBridgeControl('logout');
+  if (result.bridge) renderBridgeControlState(result.bridge, result.ok ? '' : result.error);
+  else if ($('bridgeError')) $('bridgeError').textContent = result.error || 'No se pudo cerrar la sesión.';
+  if (result.ok) setTimeout(() => void refreshBridgeStatus(false), 900);
+}
+
 async function copyBridgePairingCode() {
   const code = String(bridgeControlState?.pairing_code || '');
   if (!code) return;
@@ -3139,6 +3162,7 @@ if ($('bridgeCancelPair')) $('bridgeCancelPair').onclick = cancelBridgePairing;
 if ($('bridgePauseBtn')) $('bridgePauseBtn').onclick = toggleBridgePause;
 if ($('bridgeRefreshBtn')) $('bridgeRefreshBtn').onclick = () => refreshBridgeStatus(true);
 if ($('bridgeHistoryBtn')) $('bridgeHistoryBtn').onclick = requestBridgeHistorySync;
+if ($('bridgeLogoutBtn')) $('bridgeLogoutBtn').onclick = logoutBridgeWhatsApp;
 if ($('bridgeCopyCode')) $('bridgeCopyCode').onclick = copyBridgePairingCode;
 if ($('bridgeUpdateNow')) $('bridgeUpdateNow').onclick = updateBridgePanelNow;
 
