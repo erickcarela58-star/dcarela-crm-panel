@@ -1,6 +1,6 @@
 {
-  "version": "2026-08-10-photo-bot-rebuild-v16",
+  "version": "2026-08-10-visible-photo-bot-v17",
   "channel": "crm",
-  "released_at": "2026-08-10T15:30:00Z",
-  "summary": "Control visible del bot Fotos, reconstruccion segura del dispositivo Desktop e importacion de historial sin borrar datos del CRM."
+  "released_at": "2026-08-10T05:51:04Z",
+  "summary": "Control global visible del Bot Fotos en todas las vistas; estado ACTIVO o INACTIVO leido del puente real y textos operativos sin indicadores estaticos."
 }
