@@ -1,6 +1,6 @@
 {
-  "version": "2026-08-10-visible-photo-bot-v17",
+  "version": "2026-08-10-per-chat-photo-bot-v18",
   "channel": "crm",
-  "released_at": "2026-08-10T05:51:04Z",
-  "summary": "Control global visible del Bot Fotos en todas las vistas; estado ACTIVO o INACTIVO leido del puente real y textos operativos sin indicadores estaticos."
+  "released_at": "2026-08-10T10:15:58Z",
+  "summary": "Bot Fotos independiente por conversacion: cada chat alterna Bot o Humano sin modificar los demas; el control superior informa el estado del motor general."
 }
