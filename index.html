@@ -2239,7 +2239,7 @@ input[type="checkbox"],input[type="radio"]{accent-color:var(--ink)}
      <div class="man-gallery" aria-label="Guías visuales interactivas">
       <button class="man-visual" data-man-jump="conversations" type="button" title="Abrir conversaciones">
        <svg viewBox="0 0 320 180" role="img" aria-label="Vista del inbox con lista de clientes e historial"><rect x="0" y="0" width="320" height="180" fill="currentColor" opacity=".04"/><rect x="10" y="10" width="62" height="160" rx="8" fill="currentColor" opacity=".18"/><rect x="82" y="10" width="88" height="160" rx="8" fill="currentColor" opacity=".10"/><rect x="180" y="10" width="130" height="160" rx="8" fill="currentColor" opacity=".07"/><circle cx="96" cy="35" r="8" fill="currentColor" opacity=".55"/><path d="M111 31h44M111 39h31M91 66h64M91 82h53M91 98h64" stroke="currentColor" stroke-width="5" stroke-linecap="round" opacity=".35"/><rect x="194" y="28" width="75" height="23" rx="11" fill="currentColor" opacity=".18"/><rect x="222" y="62" width="73" height="25" rx="12" fill="currentColor" opacity=".35"/><rect x="194" y="99" width="86" height="28" rx="13" fill="currentColor" opacity=".18"/><path d="M193 151h98" stroke="currentColor" stroke-width="9" stroke-linecap="round" opacity=".16"/></svg>
-       <span><b>1. Recuperar conversaciones</b>Abre el inbox completo, busca un cliente y revisa todo su historial.</span>
+       <span><b>1. Recuperar conversaciones</b>Abre el inbox, busca un cliente y revisa todo el historial que WhatsApp entregó al dispositivo vinculado.</span>
       </button>
       <button class="man-visual" data-man-jump="bridge" data-bridge-only type="button" title="Abrir vinculación">
        <svg viewBox="0 0 320 180" role="img" aria-label="Proceso de vinculación por teléfono"><rect x="0" y="0" width="320" height="180" fill="currentColor" opacity=".04"/><rect x="30" y="22" width="96" height="136" rx="18" fill="none" stroke="currentColor" stroke-width="7" opacity=".35"/><circle cx="78" cy="138" r="7" fill="currentColor" opacity=".5"/><rect x="48" y="43" width="60" height="55" rx="8" fill="currentColor" opacity=".13"/><path d="M151 55h126M151 76h95" stroke="currentColor" stroke-width="8" stroke-linecap="round" opacity=".22"/><rect x="151" y="101" width="126" height="39" rx="12" fill="currentColor" opacity=".28"/><text x="214" y="126" text-anchor="middle" font-size="18" font-weight="900" fill="currentColor" opacity=".7">AB12-CD34</text></svg>
@@ -2255,13 +2255,13 @@ input[type="checkbox"],input[type="radio"]{accent-color:var(--ink)}
       <h2>Conversaciones</h2>
       <p>Es el corazón del panel: todos los chats de WhatsApp en un solo lugar.</p>
       <ul>
-       <li><b>Responder:</b> escribe abajo y pulsa enviar. El bot se calla automáticamente en cuanto una persona responde un chat.</li>
+       <li><b>Responder:</b> escribe abajo y pulsa enviar. El control <i>Bot activo / Atención humana</i> cambia solo la conversación abierta.</li>
        <li><b>Respuestas rápidas:</b> el botón de plantillas inserta textos guardados. Se editan en Configuración.</li>
        <li><b>Combos:</b> se envían como imagen desde el mismo botón.</li>
        <li><b>Por mensaje:</b> pasa el cursor por encima para responder, reenviar o eliminar.</li>
        <li><b>Etiquetas y etapa:</b> se cambian en el panel derecho. La etapa decide si el lead entra en seguimientos y campañas.</li>
       </ul>
-      <p class="man-tip"><b>Ojo:</b> si pones un chat en <i>modo humano</i>, deja de recibir seguimientos automáticos hasta que vuelva al bot. Revisa de vez en cuando que no se te queden leads congelados ahí.</p>
+      <p class="man-tip"><b>Ojo:</b> el indicador <i>BOT FOTOS</i> de la barra superior muestra el estado general del motor; no enciende ni apaga todos los chats. En modo humano, ese chat deja de recibir respuestas y seguimientos automáticos hasta que lo devuelvas al bot.</p>
      </article>
 
      <article class="man-sec">
@@ -2289,14 +2289,12 @@ input[type="checkbox"],input[type="radio"]{accent-color:var(--ink)}
       <ul>
        <li data-official-only><b>Mensaje libre — solo 24 h:</b> texto normal, pero WhatsApp solo lo permite si el cliente te escribió en las últimas 24 horas.</li>
        <li data-official-only><b>Plantilla aprobada por Meta:</b> para clientes fuera de esas 24 h. Solo textos ya aprobados por Meta, y deben incluir opción de baja.</li>
-       <li data-bridge-only><b>2do número (WhatsApp Web):</b> sin límite de 24 horas y sin plantillas. Sale escalonado, no de golpe.</li>
+       <li data-bridge-only><b>2do número (WhatsApp Web):</b> solo contactos con consentimiento, horario comercial, límite diario y revisión. No dispone de plantillas ni botones de Meta.</li>
       </ul>
       <div data-bridge-only>
        <h3>Cómo escribir para el 2do número</h3>
-       <p>Usa variantes para que no salgan todos iguales, que es lo que más llama la atención de WhatsApp:</p>
-       <p class="man-code">{Hola|Buenas|Saludos} {{nombre}}, {te escribo de|aquí de} D'Carela…</p>
-       <p>Cada persona recibe una combinación distinta. <code>{{nombre}}</code> se reemplaza por su primer nombre real; si no hay nombre bueno, se omite sin dejar hueco.</p>
-       <p class="man-tip"><b>Salen ~80 mensajes al día</b>, con pausas de 40 a 120 segundos y un descanso largo cada 20. El panel te dice cuántas horas tardará la campaña completa. No es instantáneo <b>a propósito</b>: así es como no bloquean el número.</p>
+       <p>Usa solo información real del contacto y un mensaje pertinente a su etapa. <code>{{nombre}}</code> se reemplaza por el nombre guardado; si no existe uno confiable, se omite.</p>
+       <p class="man-tip"><b>El sistema limita y pausa los envíos</b>, excluye bajas y se detiene ante fallos o respuestas. Estas medidas reducen spam y errores, pero no garantizan que WhatsApp nunca limite el número.</p>
       </div>
      </article>
 
@@ -2498,7 +2496,7 @@ input[type="checkbox"],input[type="radio"]{accent-color:var(--ink)}
     </div>
    </div>
     <div class="bc-row">
-     <div class="df"><label>Forma de envio</label><select id="bcMode"><option value="freeform">Mensaje libre - solo 24 h</option><option value="template">Plantilla aprobada por Meta</option><option value="bridge">2do numero (WhatsApp Web) - sin limite de 24 h</option></select></div>
+     <div class="df"><label>Forma de envio</label><select id="bcMode"><option value="freeform">Mensaje libre - solo 24 h</option><option value="template">Plantilla aprobada por Meta</option><option value="bridge">2do numero (WhatsApp Web) - consentimiento requerido</option></select></div>
      <div class="df"><label>Objetivo</label><select id="bcPurpose"><option value="marketing">Marketing</option><option value="followup">Seguimiento</option><option value="session_reminder">Recordatorio</option></select></div>
      <div class="df"><label>Idioma</label><input id="bcTplLang" value="es_DO" placeholder="es_DO"></div>
     </div>
@@ -2744,7 +2742,7 @@ const $ = (id) => document.getElementById(id);
 // Sello de versión: si el panel "no hace nada", casi siempre es caché vieja del
 // navegador. Este sello permite confirmar de un vistazo qué versión está corriendo
 // (compárala con la fecha del último deploy). Actualízalo en cada publicación.
-const BUILD = '2026-08-10-per-chat-photo-bot-v19';
+const BUILD = '2026-08-10-per-chat-photo-bot-v20';
 // PDFs de venta por categoría (generados de las tarjetas aprobadas; hosteados en el catálogo).
 // Se regeneran con dcarela-catalogo/scripts/build_combo_pdfs.py + push del catálogo.
 const COMBO_PDF_BASE = 'https://erickcarela58-star.github.io/carela-compufoto/pdf/';
