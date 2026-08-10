@@ -229,6 +229,9 @@ input,textarea{font-family:inherit}
 .photo-bot-global[data-enabled="true"] .photo-bot-global-copy span,.photo-bot-global[data-enabled="true"] .photo-bot-global-copy strong{color:var(--bg)}
 .photo-bot-global[data-enabled="true"] .photo-bot-switch{border-color:rgba(127,127,127,.46);background:rgba(127,127,127,.28)}
 .photo-bot-global[data-enabled="true"] .photo-bot-switch::after{background:var(--bg);transform:translateX(14px)}
+.photo-bot-global[role="status"]{cursor:default}
+.photo-bot-global[role="status"]:hover{transform:none;background:rgba(127,127,127,.07)}
+.photo-bot-global[role="status"][data-enabled="true"]:hover{background:var(--ink)}
 @media(max-width:880px){.tb-c{display:none}}
 
 /* Dashboard welcome banner + quick actions */
@@ -1784,10 +1787,10 @@ input[type="checkbox"],input[type="radio"]{accent-color:var(--ink)}
     <input id="tbSearch" placeholder="Buscar conversación, cliente, combo...">
    </div>
   </div>
-  <button class="photo-bot-global" id="photoBotGlobalBtn" type="button" data-bridge-only data-permission="manage_settings" data-photo-bot-toggle data-enabled="false" data-loading="true" aria-pressed="false" title="Comprobando el estado real del bot de Fotos" disabled>
+  <div class="photo-bot-global" id="photoBotGlobalBtn" data-bridge-only role="status" aria-live="polite" data-enabled="false" data-loading="true" title="Comprobando el estado general del bot de Fotos">
    <span class="photo-bot-global-copy"><span>BOT FOTOS</span><strong id="photoBotGlobalState">COMPROBANDO</strong></span>
    <span class="photo-bot-switch" aria-hidden="true"></span>
-  </button>
+  </div>
   <div class="tb-r">
    <div class="who" id="who"></div>
   </div>
@@ -2741,7 +2744,7 @@ const $ = (id) => document.getElementById(id);
 // Sello de versión: si el panel "no hace nada", casi siempre es caché vieja del
 // navegador. Este sello permite confirmar de un vistazo qué versión está corriendo
 // (compárala con la fecha del último deploy). Actualízalo en cada publicación.
-const BUILD = '2026-08-10-visible-photo-bot-v17';
+const BUILD = '2026-08-10-per-chat-photo-bot-v18';
 // PDFs de venta por categoría (generados de las tarjetas aprobadas; hosteados en el catálogo).
 // Se regeneran con dcarela-catalogo/scripts/build_combo_pdfs.py + push del catálogo.
 const COMBO_PDF_BASE = 'https://erickcarela58-star.github.io/carela-compufoto/pdf/';
@@ -3144,15 +3147,13 @@ function renderBridgeControlState(state, explicitError = '') {
   const globalBotButton = $('photoBotGlobalBtn');
   const globalBotState = $('photoBotGlobalState');
   if (globalBotButton) {
-    globalBotButton.disabled = botEnabled ? false : !botCanActivate;
     globalBotButton.dataset.enabled = String(botEnabled);
     globalBotButton.dataset.loading = 'false';
-    globalBotButton.setAttribute('aria-pressed', String(botEnabled));
     globalBotButton.title = botEnabled
-      ? 'Bot Fotos ACTIVO. Pulsa para apagarlo en todas las conversaciones de Fotos.'
+      ? 'Motor general del Bot Fotos activo. Cada conversación se controla desde su propio botón Bot/Humano.'
       : (botCanActivate
-        ? 'Bot Fotos INACTIVO. Pulsa para encenderlo únicamente para sesiones fotográficas.'
-        : 'Bot Fotos INACTIVO. WhatsApp debe estar conectado con la línea Fotos para encenderlo.');
+        ? 'Motor general del Bot Fotos inactivo. Un administrador puede encenderlo desde Vincular WhatsApp.'
+        : 'Motor general del Bot Fotos inactivo. WhatsApp debe estar conectado con la línea Fotos.');
   }
   if (globalBotState) globalBotState.textContent = botEnabled ? 'ACTIVO' : 'INACTIVO';
   updatePanelSyncStatus();
@@ -3286,7 +3287,7 @@ async function rebuildBridgeLinkAndHistory() {
 async function togglePhotoBot() {
   if (!requirePermission('manage_settings')) return;
   const enabled = bridgeControlState?.bot_enabled === true;
-  const buttons = [...document.querySelectorAll('[data-photo-bot-toggle]')];
+  const buttons = [...document.querySelectorAll('button[data-photo-bot-toggle]')];
   buttons.forEach(button => {
     button.disabled = true;
     button.dataset.loading = 'true';
@@ -3385,7 +3386,6 @@ if ($('bridgeRefreshBtn')) $('bridgeRefreshBtn').onclick = () => refreshBridgeSt
 if ($('bridgeHistoryBtn')) $('bridgeHistoryBtn').onclick = requestBridgeHistorySync;
 if ($('bridgeRebuildBtn')) $('bridgeRebuildBtn').onclick = rebuildBridgeLinkAndHistory;
 if ($('bridgeBotBtn')) $('bridgeBotBtn').onclick = togglePhotoBot;
-if ($('photoBotGlobalBtn')) $('photoBotGlobalBtn').onclick = togglePhotoBot;
 if ($('bridgeLogoutBtn')) $('bridgeLogoutBtn').onclick = logoutBridgeWhatsApp;
 if ($('bridgeCopyCode')) $('bridgeCopyCode').onclick = copyBridgePairingCode;
 if ($('bridgeUpdateNow')) $('bridgeUpdateNow').onclick = updateBridgePanelNow;
@@ -4943,23 +4943,25 @@ function updateModeBtn() {
   const b = $('modeBtn');
   if (isBridgeConv(sel)) {
     const stateKnown = !!bridgeControlState && typeof bridgeControlState.bot_enabled === 'boolean';
-    const botEnabled = stateKnown && bridgeControlState.bot_enabled === true;
-    b.className = `modebtn ${botEnabled ? 'bot' : 'human'}`;
-    b.textContent = stateKnown ? `Bot Fotos · ${botEnabled ? 'ACTIVO' : 'INACTIVO'}` : 'Bot Fotos · comprobando';
-    b.title = stateKnown
-      ? `Control global del Bot Fotos. Pulsa para ${botEnabled ? 'apagarlo' : 'encenderlo'}.`
-      : 'Comprobando el estado real del Bot Fotos.';
-    b.disabled = !stateKnown || !hasPermission('manage_settings');
+    const engineEnabled = stateKnown && bridgeControlState.bot_enabled === true;
+    const chatEnabled = sel?.mode === 'bot' && sel?.bot_paused !== true && sel?.human_handoff_required !== true;
+    b.className = `modebtn ${chatEnabled ? 'bot' : 'human'}`;
+    b.textContent = chatEnabled ? 'Bot en este chat · ACTIVO' : 'Humano en este chat';
+    b.title = !stateKnown
+      ? 'Comprobando el motor general del Bot Fotos.'
+      : (!engineEnabled
+        ? 'El motor general está apagado. Un administrador debe encenderlo desde Vincular WhatsApp.'
+        : `Pulsa para ${chatEnabled ? 'pasar solo este chat a atención humana' : 'reactivar el bot solo en este chat'}.`);
+    b.disabled = !stateKnown || !engineEnabled || !hasPermission('operate');
     const h = $('hint');
     if (h) {
-      const handedToHuman = sel?.mode === 'human' || sel?.bot_paused === true || sel?.human_handoff_required === true;
       h.textContent = !stateKnown
         ? 'Comprobando el estado real del Bot Fotos...'
-        : (!botEnabled
-          ? 'Bot Fotos INACTIVO. La atención de este chat queda completamente en manos de la colaboradora.'
-          : (handedToHuman
-            ? 'Bot Fotos ACTIVO globalmente, pero este chat ya fue derivado a atención humana.'
-            : 'Bot Fotos ACTIVO. Solo precalifica sesiones fotográficas y se retira cuando debe intervenir la colaboradora.'));
+        : (!engineEnabled
+          ? 'Motor general inactivo. Este chat permanece en atención humana.'
+          : (chatEnabled
+            ? 'Bot activo solo en este chat. Precalifica sesiones y se retira cuando debe intervenir la colaboradora.'
+            : 'Atención humana solo en este chat. Los demás chats conservan su propio estado.'));
     }
     return;
   }
@@ -4974,7 +4976,24 @@ function updateModeBtn() {
 }
 $('modeBtn').onclick = async () => {
   if (isBridgeConv(sel)) {
-    await togglePhotoBot();
+    if (!sel || !hasPermission('operate')) return;
+    const chatEnabled = sel.mode === 'bot' && sel.bot_paused !== true && sel.human_handoff_required !== true;
+    const newMode = chatEnabled ? 'human' : 'bot';
+    const button = $('modeBtn');
+    button.disabled = true;
+    button.textContent = newMode === 'bot' ? 'Reactivando este chat...' : 'Pasando a humano...';
+    const result = await callFn({ action: 'mode', conversation_id: sel.id, mode: newMode });
+    if (!result?.ok) {
+      toast('No se pudo cambiar este chat', result?.error || 'Intenta nuevamente.');
+      updateModeBtn();
+      return;
+    }
+    sel.mode = newMode;
+    sel.bot_paused = newMode === 'human';
+    sel.human_handoff_required = newMode === 'human';
+    updateModeBtn();
+    renderConvs();
+    toast(newMode === 'bot' ? 'Bot reactivado' : 'Atención humana activada', 'El cambio se aplicó únicamente a esta conversación.');
     return;
   }
   const newMode = sel.mode === 'human' ? 'bot' : 'human';
