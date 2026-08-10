@@ -1,6 +1,6 @@
 {
-  "version": "2026-08-10-per-chat-photo-bot-v18",
+  "version": "2026-08-10-per-chat-photo-bot-v19",
   "channel": "crm",
-  "released_at": "2026-08-10T10:15:58Z",
-  "summary": "Bot Fotos independiente por conversacion: cada chat alterna Bot o Humano sin modificar los demas; el control superior informa el estado del motor general."
+  "released_at": "2026-08-10T11:54:00Z",
+  "summary": "Bot Fotos independiente por conversacion; navegacion del CRM principal corregida y control superior limitado al estado del motor general."
 }
