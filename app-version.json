@@ -1,6 +1,6 @@
 {
-  "version": "2026-08-09-whatsapp-full-history-v10",
+  "version": "2026-08-10-whatsapp-recovery-v15",
   "channel": "crm",
-  "released_at": "2026-08-09T15:30:00Z",
-  "summary": "Nombres cruzados, historial del chat paginado hasta 100000 mensajes y alcance estable por numero vinculado."
+  "released_at": "2026-08-10T04:05:00Z",
+  "summary": "Recuperacion de nombres desde contactos cifrados, historial FULL correlacionado, paginacion segura y diagnostico verificable para sesiones antiguas."
 }
