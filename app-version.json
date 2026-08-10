@@ -1,6 +1,6 @@
 {
-  "version": "2026-08-10-whatsapp-recovery-v15",
+  "version": "2026-08-10-photo-bot-rebuild-v16",
   "channel": "crm",
-  "released_at": "2026-08-10T04:05:00Z",
-  "summary": "Recuperacion de nombres desde contactos cifrados, historial FULL correlacionado, paginacion segura y diagnostico verificable para sesiones antiguas."
+  "released_at": "2026-08-10T15:30:00Z",
+  "summary": "Control visible del bot Fotos, reconstruccion segura del dispositivo Desktop e importacion de historial sin borrar datos del CRM."
 }
