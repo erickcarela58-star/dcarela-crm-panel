@@ -1563,6 +1563,10 @@ input[type="checkbox"],input[type="radio"]{accent-color:var(--ink)}
 .bridge-history{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:18px;align-items:center}
 .bridge-history-state{font-size:11px;color:var(--mut);line-height:1.55;margin-top:7px}
 .bridge-history .cfg-btn{min-width:210px;justify-content:center}
+.bridge-actions{display:flex;gap:8px;align-items:center;justify-content:flex-end;flex-wrap:wrap}
+.bridge-bot{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:18px;align-items:center}
+.bridge-bot-state{font-size:11px;color:var(--mut);line-height:1.55;margin-top:7px}
+.bridge-bot .cfg-btn{min-width:210px;justify-content:center}
 .bridge-official{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:16px;align-items:center}
 .bridge-official-mark{width:48px;height:48px;border-radius:15px;display:grid;place-items:center;background:var(--ink);color:var(--bg);font-size:22px;font-weight:950}
 .bridge-official h3{margin-bottom:4px}.bridge-official p{margin:0;font-size:11px;line-height:1.55;color:var(--mut)}
@@ -1574,7 +1578,8 @@ input[type="checkbox"],input[type="radio"]{accent-color:var(--ink)}
  .bridge-state{justify-self:start}
  .bridge-grid{grid-template-columns:1fr}
  .bridge-card{padding:17px;border-radius:18px}
- .bridge-history{grid-template-columns:1fr}.bridge-history .cfg-btn{width:100%}
+ .bridge-history,.bridge-bot{grid-template-columns:1fr}.bridge-history .cfg-btn,.bridge-bot .cfg-btn{width:100%}
+ .bridge-actions{display:grid;grid-template-columns:1fr;width:100%}
  .bridge-official{grid-template-columns:auto minmax(0,1fr)}.bridge-official .cfg-btn{grid-column:1/-1;width:100%}
  .bridge-phone-row{grid-template-columns:1fr}
  .bridge-phone-row .cfg-btn{width:100%;justify-content:center}
@@ -2147,13 +2152,26 @@ input[type="checkbox"],input[type="radio"]{accent-color:var(--ink)}
      <a class="cfg-btn primary" href="https://web.whatsapp.com/" target="_blank" rel="noopener noreferrer">Abrir WhatsApp Web</a>
     </div>
 
+    <div class="bridge-card bridge-bot">
+     <div>
+      <h3>Bot de precalificación · solo Fotos</h3>
+      <p>Saluda, identifica el servicio y continúa únicamente con sesiones fotográficas. Recopila los datos esenciales, deja un informe interno y deriva el chat a la colaboradora cuando corresponde; nunca inventa precios.</p>
+      <div class="bridge-bot-state" id="bridgeBotState" role="status" aria-live="polite">Comprobando el bot de sesiones...</div>
+     </div>
+     <button class="cfg-btn primary" id="bridgeBotBtn">Activar bot</button>
+    </div>
+
     <div class="bridge-card bridge-history">
      <div>
       <h3>Historial de conversaciones</h3>
       <p>Importa mensajes anteriores y los enviados desde el teléfono al mismo inbox, conservando su fecha y evitando duplicados.</p>
       <div class="bridge-history-state" id="bridgeHistoryState" role="status" aria-live="polite">Sin sincronización solicitada.</div>
+      <div class="bridge-history-state" id="bridgeRebuildState" role="status" aria-live="polite">Vínculo actual sin reconstrucción solicitada.</div>
      </div>
-     <button class="cfg-btn primary" id="bridgeHistoryBtn">Sincronizar historial</button>
+     <div class="bridge-actions">
+      <button class="cfg-btn primary" id="bridgeHistoryBtn">Sincronizar historial</button>
+      <button class="cfg-btn warn" id="bridgeRebuildBtn">Reconstruir vínculo e historial</button>
+     </div>
     </div>
 
     <div class="bridge-card bridge-update">
@@ -2694,7 +2712,7 @@ const $ = (id) => document.getElementById(id);
 // Sello de versión: si el panel "no hace nada", casi siempre es caché vieja del
 // navegador. Este sello permite confirmar de un vistazo qué versión está corriendo
 // (compárala con la fecha del último deploy). Actualízalo en cada publicación.
-const BUILD = '2026-08-10-whatsapp-recovery-v15';
+const BUILD = '2026-08-10-photo-bot-rebuild-v16';
 // PDFs de venta por categoría (generados de las tarjetas aprobadas; hosteados en el catálogo).
 // Se regeneran con dcarela-catalogo/scripts/build_combo_pdfs.py + push del catálogo.
 const COMBO_PDF_BASE = 'https://erickcarela58-star.github.io/carela-compufoto/pdf/';
@@ -2909,6 +2927,8 @@ function bridgeStatusLabel(status) {
     generating: 'Generando codigo',
     code_ready: 'Esperando el telefono',
     connecting: 'Finalizando vinculación',
+    rebuild_requested: 'Preparando reconstrucción',
+    rebuild_clearing: 'Renovando dispositivo',
     connected: 'WhatsApp conectado',
     disconnected: 'WhatsApp desconectado',
     canceled: 'Vinculacion cancelada',
@@ -2973,7 +2993,9 @@ function renderBridgeControlState(state, explicitError = '') {
     !normalizePhoneClient(phone.value)
   ) phone.value = statePhone;
 
-  const active = ['requested','generating','code_ready','connecting'].includes(status);
+  const rebuildStatus = String(bridgeControlState.rebuild_status || 'idle');
+  const rebuildActive = ['requested','clearing','awaiting_code','awaiting_phone','syncing'].includes(rebuildStatus);
+  const active = ['requested','generating','code_ready','connecting','rebuild_requested','rebuild_clearing'].includes(status);
   const pairButton = $('bridgePairBtn');
   if (pairButton) {
     pairButton.disabled = !bridgeControlState.host_online || active || status === 'connected' || logoutPending;
@@ -3025,10 +3047,49 @@ function renderBridgeControlState(state, explicitError = '') {
       running: `Solicitando bloques anteriores · ${progress}% · ${chats} chats`,
       waiting: `Procesando respuestas de WhatsApp · ${progress}% · ${imported} nuevos`,
       completed: `Completado${completedAt ? ` ${completedAt}` : ''} · ${imported} nuevos · ${duplicates} duplicados omitidos`,
-      unavailable: bridgeControlState.history_sync_last_error || 'WhatsApp no ofreció historial adicional.',
+      unavailable: bridgeControlState.history_sync_last_error || 'La sesión antigua no entregó historial adicional. Usa Reconstruir vínculo e historial.',
       error: bridgeControlState.history_sync_last_error || 'La sincronización no pudo completarse.',
     };
     historyState.textContent = labels[historyStatus] || 'Estado de historial desconocido.';
+  }
+
+  const rebuildButton = $('bridgeRebuildBtn');
+  if (rebuildButton) {
+    rebuildButton.disabled = rebuildActive || historyActive || !bridgeControlState.host_online || status !== 'connected';
+    rebuildButton.textContent = rebuildActive ? 'Reconstruyendo...' : 'Reconstruir vínculo e historial';
+  }
+  const rebuildState = $('bridgeRebuildState');
+  if (rebuildState) {
+    const rebuildLabels = {
+      idle: 'Vínculo actual sin reconstrucción solicitada.',
+      requested: 'Solicitud recibida. Se conservarán todos los chats y mensajes del CRM.',
+      clearing: 'Renovando únicamente las credenciales locales del dispositivo.',
+      awaiting_code: 'Preparando el nuevo código de vinculación Desktop.',
+      awaiting_phone: 'Código listo: escríbelo ahora en Dispositivos vinculados de WhatsApp.',
+      syncing: 'Dispositivo renovado. WhatsApp está enviando historial y nombres al CRM.',
+      completed: 'Reconstrucción completada y sincronización inicial procesada.',
+      canceled: 'Reconstrucción cancelada; los datos guardados permanecen intactos.',
+      error: bridgeControlState.rebuild_last_error || 'No se completó la reconstrucción. Puedes volver a intentarlo.',
+    };
+    rebuildState.textContent = rebuildLabels[rebuildStatus] || 'Estado de reconstrucción desconocido.';
+  }
+
+  const botEnabled = bridgeControlState.bot_enabled === true;
+  const botButton = $('bridgeBotBtn');
+  const isPhotoLine = connectedPhone === '18094785620';
+  if (botButton) {
+    botButton.disabled = botEnabled ? false : (status !== 'connected' || !bridgeControlState.host_online || !isPhotoLine);
+    botButton.textContent = botEnabled ? 'Desactivar bot' : 'Activar bot';
+    botButton.classList.toggle('primary', !botEnabled);
+    botButton.classList.toggle('warn', botEnabled);
+  }
+  const botState = $('bridgeBotState');
+  if (botState) {
+    botState.textContent = botEnabled
+      ? 'Activo exclusivamente para Sesiones Fotográficas · deriva por conversación y documenta internamente para la colaboradora.'
+      : (isPhotoLine
+        ? 'Inactivo · las conversaciones permanecen disponibles para atención humana.'
+        : 'Bloqueado: solo puede usarse con la línea Fotos terminada en 5620.');
   }
 
   const stablePending = status === 'connecting' && !code;
@@ -3046,6 +3107,13 @@ function renderBridgeControlState(state, explicitError = '') {
 function updateBridgeCountdown() {
   const meta = $('bridgeCodeMeta');
   if (!meta || !$('bridgeCodePanel')?.classList.contains('on')) return;
+  if (!bridgeControlState?.pairing_code) {
+    const rebuilding = ['requested','clearing','awaiting_code'].includes(String(bridgeControlState?.rebuild_status || ''));
+    meta.textContent = rebuilding
+      ? 'Preparando un vínculo Desktop nuevo sin borrar las conversaciones guardadas...'
+      : 'Generando el código seguro de vinculación...';
+    return;
+  }
   const remaining = Math.max(0, Math.ceil((bridgeCodeExpiresAt - Date.now()) / 1000));
   if (!remaining) {
     meta.textContent = 'El codigo vencio. Solicita uno nuevo.';
@@ -3133,6 +3201,30 @@ async function requestBridgeHistorySync() {
   else if ($('bridgeHistoryState')) $('bridgeHistoryState').textContent = result.error || 'No se pudo solicitar el historial.';
 }
 
+async function rebuildBridgeLinkAndHistory() {
+  if (!requirePermission('manage_settings')) return;
+  const confirmed = window.confirm(
+    'Se renovará únicamente el dispositivo local de WhatsApp para solicitar el historial completo. Los chats y mensajes guardados NO se borrarán. Necesitarás escribir un nuevo código en el teléfono. ¿Continuar?'
+  );
+  if (!confirmed) return;
+  const button = $('bridgeRebuildBtn');
+  if (button) { button.disabled = true; button.textContent = 'Preparando código...'; }
+  const result = await callBridgeControl('rebuild_link');
+  if (result.bridge) renderBridgeControlState(result.bridge, result.ok ? '' : result.error);
+  else if ($('bridgeRebuildState')) $('bridgeRebuildState').textContent = result.error || 'No se pudo iniciar la reconstrucción.';
+  if (result.ok) setTimeout(() => void refreshBridgeStatus(false), 700);
+}
+
+async function togglePhotoBot() {
+  if (!requirePermission('manage_settings')) return;
+  const enabled = bridgeControlState?.bot_enabled === true;
+  const button = $('bridgeBotBtn');
+  if (button) { button.disabled = true; button.textContent = enabled ? 'Desactivando...' : 'Activando...'; }
+  const result = await callBridgeControl(enabled ? 'disable_photo_bot' : 'enable_photo_bot');
+  if (result.bridge) renderBridgeControlState(result.bridge, result.ok ? '' : result.error);
+  else if ($('bridgeBotState')) $('bridgeBotState').textContent = result.error || 'No se pudo cambiar el estado del bot.';
+}
+
 async function copyBridgePairingCode() {
   const code = String(bridgeControlState?.pairing_code || '');
   if (!code) return;
@@ -3210,6 +3302,8 @@ if ($('bridgeCancelPair')) $('bridgeCancelPair').onclick = cancelBridgePairing;
 if ($('bridgePauseBtn')) $('bridgePauseBtn').onclick = toggleBridgePause;
 if ($('bridgeRefreshBtn')) $('bridgeRefreshBtn').onclick = () => refreshBridgeStatus(true);
 if ($('bridgeHistoryBtn')) $('bridgeHistoryBtn').onclick = requestBridgeHistorySync;
+if ($('bridgeRebuildBtn')) $('bridgeRebuildBtn').onclick = rebuildBridgeLinkAndHistory;
+if ($('bridgeBotBtn')) $('bridgeBotBtn').onclick = togglePhotoBot;
 if ($('bridgeLogoutBtn')) $('bridgeLogoutBtn').onclick = logoutBridgeWhatsApp;
 if ($('bridgeCopyCode')) $('bridgeCopyCode').onclick = copyBridgePairingCode;
 if ($('bridgeUpdateNow')) $('bridgeUpdateNow').onclick = updateBridgePanelNow;
