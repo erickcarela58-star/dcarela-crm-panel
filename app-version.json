@@ -1,6 +1,6 @@
 {
-  "version": "2026-08-10-per-chat-photo-bot-v19",
+  "version": "2026-08-10-per-chat-photo-bot-v20",
   "channel": "crm",
-  "released_at": "2026-08-10T11:54:00Z",
-  "summary": "Bot Fotos independiente por conversacion; navegacion del CRM principal corregida y control superior limitado al estado del motor general."
+  "released_at": "2026-08-10T12:00:00Z",
+  "summary": "Bot Fotos independiente por conversacion, navegacion corregida y manual operativo actualizado con historial verificable y campanas con consentimiento."
 }
