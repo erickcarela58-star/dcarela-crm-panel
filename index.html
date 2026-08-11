@@ -215,6 +215,10 @@ input,textarea{font-family:inherit}
 .tb-search input:focus{border-color:var(--accent);background:rgba(255,255,255,.07);box-shadow:0 0 0 3px rgba(59,130,246,.10)}
 .tb-r{display:flex;align-items:center;gap:14px}
 .tb .who{font-size:11.5px;color:var(--mut);max-width:240px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.manual-web-link{display:inline-flex;align-items:center;justify-content:center;min-height:36px;padding:0 13px;border:1px solid var(--line2);border-radius:10px;color:var(--ink);font-size:11px;font-weight:850;text-decoration:none;background:rgba(127,127,127,.07);white-space:nowrap;transition:.16s}
+.manual-web-link:hover{transform:translateY(-1px);background:rgba(127,127,127,.14);border-color:var(--ink)}
+.login-manual-link{display:inline-flex;margin-top:12px;color:var(--ink);font-size:11.5px;font-weight:800;text-decoration:none;border-bottom:1px solid var(--line2);padding:4px 2px}
+.login-manual-link:hover{border-color:var(--ink)}
 .photo-bot-global{display:none;align-items:center;gap:10px;min-height:40px;padding:5px 7px 5px 12px;border:1px solid var(--line2);border-radius:12px;background:rgba(127,127,127,.07);color:var(--ink);font:inherit;cursor:pointer;white-space:nowrap;box-shadow:inset 0 1px rgba(255,255,255,.07);transition:transform .16s ease,background .2s ease,color .2s ease,border-color .2s ease}
 .photo-bot-global:not(:disabled):hover{transform:translateY(-1px);background:rgba(127,127,127,.14)}
 .photo-bot-global:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
@@ -1661,6 +1665,7 @@ input[type="checkbox"],input[type="radio"]{accent-color:var(--ink)}
   <div class="fld"><label>Contraseña</label><input id="pass" type="password" autocomplete="current-password" placeholder="••••••••"></div>
   <button class="btn" id="loginBtn">Entrar</button>
   <div class="err" id="loginErr"></div>
+  <a class="login-manual-link" href="./manual.html">Abrir manual web completo</a>
   <div style="margin-top:14px;text-align:center;font-size:10.5px;color:var(--mut);opacity:.7">versión <span id="buildStamp">—</span></div>
  </div>
 </div>
@@ -1716,7 +1721,7 @@ input[type="checkbox"],input[type="radio"]{accent-color:var(--ink)}
     <span>Plantillas</span>
    </button>
     <div class="sb-sep" data-official-only>Operación</div>
-    <button class="sb-item" data-action="ai" data-permission="broadcast" data-official-only>
+    <button class="sb-item" data-action="ai" data-permission="broadcast">
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.5 4.5L18 9l-4.5 1.5L12 15l-1.5-4.5L6 9l4.5-1.5z"/><path d="M19 14l.7 2.3L22 17l-2.3.7L19 20l-.7-2.3L16 17l2.3-.7z"/></svg>
      <span>Planificador IA</span>
    </button>
@@ -1792,6 +1797,7 @@ input[type="checkbox"],input[type="radio"]{accent-color:var(--ink)}
    <span class="photo-bot-switch" aria-hidden="true"></span>
   </div>
   <div class="tb-r">
+   <a class="manual-web-link" href="./manual.html" target="_blank" rel="noopener">Manual</a>
    <div class="who" id="who"></div>
   </div>
  </header>
@@ -2742,7 +2748,7 @@ const $ = (id) => document.getElementById(id);
 // Sello de versión: si el panel "no hace nada", casi siempre es caché vieja del
 // navegador. Este sello permite confirmar de un vistazo qué versión está corriendo
 // (compárala con la fecha del último deploy). Actualízalo en cada publicación.
-const BUILD = '2026-08-10-per-chat-photo-bot-v20';
+const BUILD = '2026-08-11-manual-ai-reports-v21';
 // PDFs de venta por categoría (generados de las tarjetas aprobadas; hosteados en el catálogo).
 // Se regeneran con dcarela-catalogo/scripts/build_combo_pdfs.py + push del catálogo.
 const COMBO_PDF_BASE = 'https://erickcarela58-star.github.io/carela-compufoto/pdf/';
@@ -4256,6 +4262,11 @@ window.reviewPlanningBroadcast = function() {
     if (p.purpose && $('bcPurpose')) $('bcPurpose').value = p.purpose;
     if ($('bcMode')) $('bcMode').value = 'freeform';
     if (p.message_text && $('bcText')) $('bcText').value = p.message_text;
+    if (window.__aiAttach && window.__aiAttach.image) {
+      const image = window.__aiAttach.image;
+      bcPendingImg = { blob:image, mime:image.type || 'image/jpeg', name:image.name };
+      if (typeof renderBcImgPrev === 'function') renderBcImgPrev();
+    }
     if (typeof updateBcMode === 'function') updateBcMode();
   }, 200);
 };
@@ -6002,6 +6013,7 @@ function renderDetail(c) {
    <div class="qa-grid" id="quickActions">
     <button data-act="take" data-official-only>Tomar conversacion</button>
     <button data-act="reactivate" data-official-only>Reactivar bot</button>
+    <button data-act="aiReport">Informe IA</button>
     <button data-act="summary">Ver resumen</button>
     <button data-act="files">Ver archivos</button>
     <button data-act="reserve">Crear reserva</button>
@@ -6098,6 +6110,8 @@ function wireQuickActions(c) {
       } else if (act === 'reactivate') {
         await callFn({ action:'mode', conversation_id:c.id, mode:'bot' });
         sel.mode = 'bot'; sel.bot_paused = false; updateModeBtn(); renderConvs(); dsavShow();
+      } else if (act === 'aiReport') {
+        await generateContactReport(c);
       } else if (act === 'summary') {
         alert(c.conversation_summary || 'Aun no hay resumen.');
       } else if (act === 'files') {
@@ -6872,6 +6886,165 @@ async function requestAssistantPlan(instruction, options = {}) {
   }
 }
 
+function readFileAsDataUrl(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result || ''));
+    reader.onerror = () => reject(reader.error || new Error('No se pudo leer el archivo.'));
+    reader.readAsDataURL(file);
+  });
+}
+
+function readFileAsText(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result || ''));
+    reader.onerror = () => reject(reader.error || new Error('No se pudo leer el texto.'));
+    reader.readAsText(file, 'utf-8');
+  });
+}
+
+async function compressAiImage(file) {
+  const bitmap = await createImageBitmap(file);
+  const scale = Math.min(1, 1600 / Math.max(bitmap.width, bitmap.height));
+  const canvas = document.createElement('canvas');
+  canvas.width = Math.max(1, Math.round(bitmap.width * scale));
+  canvas.height = Math.max(1, Math.round(bitmap.height * scale));
+  canvas.getContext('2d', { alpha:false }).drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+  bitmap.close();
+  const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', .84));
+  if (!blob) throw new Error('No se pudo preparar la imagen.');
+  if (blob.size > 3_000_000) throw new Error('La imagen sigue siendo demasiado grande. Recortala o usa una version menor de 3 MB.');
+  const url = await readFileAsDataUrl(blob);
+  return { name:file.name || 'imagen.jpg', mime:'image/jpeg', data:url.split(',')[1] || '' };
+}
+
+async function prepareAssistantAttachments() {
+  const payloads = [];
+  let textContext = '';
+  const image = window.__aiAttach && window.__aiAttach.image;
+  const doc = window.__aiAttach && window.__aiAttach.doc;
+  if (image) payloads.push(await compressAiImage(image));
+  if (doc) {
+    const mime = String(doc.type || '').toLowerCase();
+    const lower = String(doc.name || '').toLowerCase();
+    if (mime === 'application/pdf' || lower.endsWith('.pdf')) {
+      if (doc.size > 2_500_000) throw new Error('El PDF supera 2.5 MB. Reduce el archivo antes de analizarlo.');
+      const url = await readFileAsDataUrl(doc);
+      payloads.push({ name:doc.name, mime:'application/pdf', data:url.split(',')[1] || '' });
+    } else if (mime.startsWith('text/') || lower.endsWith('.txt')) {
+      textContext = (await readFileAsText(doc)).slice(0, 14000);
+    } else {
+      throw new Error('Para analizar el contenido del documento, conviertelo a PDF o TXT. DOC/DOCX no se envia como un nombre vacio.');
+    }
+  }
+  return { payloads, textContext };
+}
+
+function listLines(title, values) {
+  return Array.isArray(values) && values.length ? `\n${title}:\n${values.map(v => '• ' + v).join('\n')}` : '';
+}
+
+function contactReportText(report) {
+  const r = report || {};
+  const lines = [
+    'INFORME IA DEL CONTACTO',
+    '',
+    'Resumen: ' + (r.summary || 'Sin resumen'),
+    'Etapa: ' + (r.current_stage || 'sin clasificar'),
+    'Servicio: ' + (r.service || 'sin confirmar'),
+    'Intencion: ' + (r.intent || 'sin confirmar'),
+    listLines('Datos confirmados', r.confirmed_data),
+    listLines('Datos pendientes', r.missing_data),
+    listLines('Objeciones', r.objections),
+    listLines('Riesgos / handoff', r.risks),
+    '',
+    'Siguiente paso: ' + (r.recommended_next_step || 'Revisar manualmente.'),
+    'Marketing: ' + (r.marketing_eligible ? 'elegible segun los datos actuales; revisar otra vez antes de enviar' : 'no elegible'),
+    listLines('Criterio de marketing', r.marketing_reasons),
+    listLines('Etiquetas sugeridas', r.suggested_tags),
+  ];
+  return lines.filter(v => v !== '').join('\n').replace(/\n{3,}/g, '\n\n');
+}
+
+function appendAiPlanDetails(lines, plan) {
+  if (plan.asset_summary) { lines.push(''); lines.push('Lectura del adjunto: ' + plan.asset_summary); }
+  const decision = plan.audience_decision || {};
+  if (Array.isArray(decision.include) && decision.include.length) { lines.push(''); lines.push('Incluir si:'); decision.include.forEach(x => lines.push('• ' + x)); }
+  if (Array.isArray(decision.exclude) && decision.exclude.length) { lines.push(''); lines.push('Excluir si:'); decision.exclude.forEach(x => lines.push('• ' + x)); }
+  if (Array.isArray(decision.recheck_before_send) && decision.recheck_before_send.length) { lines.push(''); lines.push('Revisar justo antes de enviar:'); decision.recheck_before_send.forEach(x => lines.push('• ' + x)); }
+  const campaign = plan.campaign || {};
+  if (campaign.start_date || campaign.end_date) {
+    lines.push('');
+    lines.push(`Ventana de campaña: ${campaign.start_date || 'por definir'} → ${campaign.end_date || 'por definir'}`);
+    lines.push(`Reevaluar antes de cada envío: ${campaign.reevaluate_before_send !== false ? 'sí' : 'no'} · Pausa mínima: ${campaign.cooldown_days || 7} días · Detener al responder: ${campaign.stop_on_reply !== false ? 'sí' : 'no'}`);
+  }
+  if (plan.flyer_prompt) { lines.push(''); lines.push('Prompt para flyer:'); lines.push(plan.flyer_prompt); }
+  if (plan.video_prompt) { lines.push(''); lines.push('Prompt para video:'); lines.push(plan.video_prompt); }
+}
+
+function appendAiPlanActions(plan) {
+  window.__aiLastPlan = plan;
+  const actions = document.createElement('div');
+  actions.style.cssText = 'display:flex;gap:8px;flex-wrap:wrap;margin-top:12px';
+  if (Array.isArray(plan.steps) && plan.steps.length) {
+    const tasks = document.createElement('button'); tasks.className = 'plan-btn primary'; tasks.textContent = 'Guardar pasos como tareas';
+    tasks.onclick = async () => { planningLastPlan = plan; await createPlanningTasksFromPlan(); };
+    actions.appendChild(tasks);
+  }
+  if (plan.action === 'broadcast' && !LOCK_NUMFILTER) {
+    const review = document.createElement('button'); review.className = 'plan-btn primary'; review.textContent = 'Revisar en Broadcast';
+    review.onclick = () => { $('aiModal').classList.remove('on'); planningLastPlan = plan; reviewPlanningBroadcast(); };
+    actions.appendChild(review);
+  }
+  const copy = document.createElement('button'); copy.className = 'plan-btn'; copy.textContent = 'Copiar plan completo';
+  copy.onclick = async () => { const value = $('aiResult').innerText; try { await navigator.clipboard.writeText(value); toast('Planificador IA','Plan copiado.'); } catch { alert(value); } };
+  actions.appendChild(copy);
+  $('aiResult').appendChild(actions);
+}
+
+async function generateContactReport(c) {
+  if (!requirePermission('broadcast')) return;
+  $('aiModal').classList.add('on');
+  $('aiInstWrap').style.opacity = '1';
+  $('aiResult').style.display = 'block';
+  $('aiResult').textContent = 'Analizando historial y ficha del contacto...';
+  const { data:messages, error } = await sb.from('messages')
+    .select('direction,msg_type,body,transcription,image_description,detected_intent,created_at')
+    .eq('conversation_id', c.id).order('created_at', { ascending:false }).limit(80);
+  if (error) { $('aiResult').textContent = 'No se pudo leer el historial: ' + error.message; return; }
+  const history = (messages || []).reverse().map(m => {
+    const body = m.body || m.transcription || m.image_description || `[${m.msg_type || 'mensaje'}]`;
+    return `${m.direction === 'in' ? 'CLIENTE' : 'EQUIPO'}: ${String(body).slice(0, 900)}`;
+  }).join('\n').slice(-15000);
+  const context = [
+    `Nombre=${c.customer_name || c.contact_name || 'sin confirmar'}`,
+    `Telefono=${c.wa_phone || ''}`,
+    `Canal=${c.source || c.channel || 'whatsapp'}`,
+    `Etapa=${c.lifecycle_stage || ''}`,
+    `Categoria=${c.interested_category || ''}`,
+    `Prioridad=${c.priority || ''}`,
+    `Modo=${c.mode || 'bot'}`,
+    `Handoff=${c.human_handoff_required ? 'si' : 'no'}; motivo=${c.human_handoff_reason || ''}`,
+    `Marketing_opt_in=${c.marketing_opt_in === true ? 'si' : 'no/no confirmado'}`,
+    `Baja_total=${c.all_messages_opt_out_at ? 'si' : 'no'}`,
+    `Resumen_actual=${c.conversation_summary || ''}`,
+    '', 'HISTORIAL:', history,
+  ].join('\n');
+  const result = await requestAssistantPlan('Genera el informe detallado de este contacto.', { task:'contact_report', contact_context:context });
+  if (!result.ok || !result.plan?.report) { $('aiResult').textContent = 'No se pudo generar el informe: ' + (result.error || 'respuesta invalida'); return; }
+  const text = contactReportText(result.plan.report);
+  $('aiResult').textContent = text;
+  const actions = document.createElement('div');
+  actions.className = 'ai-result-actions';
+  actions.style.cssText = 'display:flex;gap:8px;flex-wrap:wrap;margin-top:12px';
+  const save = document.createElement('button'); save.className = 'plan-btn primary'; save.textContent = 'Guardar como nota interna';
+  save.onclick = async () => { const saved = await callFn({ action:'addNote', conversation_id:c.id, body:'[INFORME IA]\n' + text }); if (saved?.ok) { toast('Informe IA','Guardado en notas internas.'); loadNotes(c.id); } else alert(saved?.error || 'No se pudo guardar.'); };
+  const copy = document.createElement('button'); copy.className = 'plan-btn'; copy.textContent = 'Copiar informe';
+  copy.onclick = async () => { try { await navigator.clipboard.writeText(text); toast('Informe IA','Copiado.'); } catch { alert(text); } };
+  actions.append(save, copy); $('aiResult').appendChild(actions);
+}
+
 async function openAi() {
   if (!requirePermission('broadcast')) return;
   $('aiInst').value = '';
@@ -6902,39 +7075,24 @@ $('aiGo').onclick = async () => {
   const aiPersonalize = $('aiPersonalize').value === 'yes';
   const hasImg = !!window.__aiAttach.image;
   const hasDoc = !!window.__aiAttach.doc;
-  const richInst = `${inst}
-
-[META]
-- Tono: ${aiTone}
-- Propósito: ${aiPurpose}
-- Personalizar por nombre/combo: ${aiPersonalize ? 'sí' : 'no'}
-- Adjuntos: ${hasImg ? '1 imagen ' + window.__aiAttach.image.name : ''}${hasDoc ? ' + 1 documento ' + window.__aiAttach.doc.name : ''}
-- Recuerda incluir frase de baja/STOP al final ("Responde BAJA para no recibir más mensajes.").`;
   $('aiGo').disabled = true;
   $('aiGo').textContent = 'Generando...';
   $('aiResult').style.display = 'block';
   $('aiResult').textContent = '...';
   try {
-    // La key nunca sale del Edge Function.
-
-    const sysPrompt = `Eres un asistente que parsea instrucciones del dueño de un estudio fotográfico para enviar mensajes a sus clientes vía WhatsApp.
-Devuelve SOLO un JSON con este esquema exacto:
-{
-  "action": "broadcast" | "info_only",
-  "filter": {"lifecycle_stage": "<etapa o null>", "interested_category": "<categoria o null>", "priority": "<alta|normal|baja o null>"},
-  "message_text": "<texto del mensaje libre o null>",
-  "purpose": "marketing" | "followup" | "session_reminder",
-  "rationale": "<explicacion corta en espanol>"
-}
-Etapas validas: nuevo, interesado, cotizando, pendiente_reserva, reservado, cliente, perdido, descalificado, no_agendo.
-Categorias validas: xv, infantil, graduacion, cumpleanos, embarazadas.
-Si la instruccion es ambigua o falta info clave, action="info_only" y explica en rationale qué falta.
-NO uses markdown ni texto adicional. SOLO el JSON.`;
-    const jr = await requestAssistantPlan(inst, {
+    // La credencial nunca sale del Edge Function. Los adjuntos se preparan
+    // con contenido real para que el asistente pueda analizarlos.
+    $('aiResult').textContent = 'Preparando adjuntos y contexto...';
+    const prepared = await prepareAssistantAttachments();
+    const enrichedInstruction = prepared.textContext
+      ? `${inst}\n\nContenido TXT adjunto:\n${prepared.textContext}`
+      : inst;
+    const jr = await requestAssistantPlan(enrichedInstruction, {
       tone: aiTone,
       purpose: aiPurpose,
       personalize: aiPersonalize,
       attachments: [hasImg ? window.__aiAttach.image.name : '', hasDoc ? window.__aiAttach.doc.name : ''].filter(Boolean),
+      attachment_payloads: prepared.payloads,
     });
     if (!jr.ok || !jr.plan) { $('aiResult').textContent = 'Asistente: ' + (jr.error || 'respuesta invalida'); return; }
     const plan = jr.plan;
@@ -6945,7 +7103,9 @@ NO uses markdown ni texto adicional. SOLO el JSON.`;
       if (Array.isArray(plan.steps) && plan.steps.length) info.push('\nPasos:\n' + plan.steps.map((x,i) => `${i+1}. ${x}`).join('\n'));
       if (Array.isArray(plan.risks) && plan.risks.length) info.push('\nConfirma antes de actuar:\n' + plan.risks.map(x => '• ' + x).join('\n'));
       if (plan.rationale) info.push('\nCriterio: ' + plan.rationale);
+      appendAiPlanDetails(info, plan);
       $('aiResult').textContent = info.join('\n') || JSON.stringify(plan, null, 2);
+      appendAiPlanActions(plan);
       return;
     }
     const f = plan.filter || {};
@@ -6962,30 +7122,11 @@ NO uses markdown ni texto adicional. SOLO el JSON.`;
     if (plan.rationale) { lines.push(''); lines.push('Razón: ' + plan.rationale); }
     if (Array.isArray(plan.steps) && plan.steps.length) { lines.push(''); lines.push('Pasos:'); plan.steps.forEach((x,i) => lines.push(`${i+1}. ${x}`)); }
     if (Array.isArray(plan.risks) && plan.risks.length) { lines.push(''); lines.push('Confirma antes de enviar:'); plan.risks.forEach(x => lines.push('• ' + x)); }
+    appendAiPlanDetails(lines, plan);
     lines.push('');
-    lines.push('→ Abriendo Broadcast con estos valores...');
+    lines.push('→ Plan listo. Pulsa “Revisar en Broadcast” para continuar; nada se envía solo.');
     $('aiResult').textContent = lines.join('\n');
-    setTimeout(() => {
-      $('aiModal').classList.remove('on');
-      if (typeof openBroadcast === 'function') openBroadcast();
-      setTimeout(() => {
-        try {
-          if (f.lifecycle_stage && $('bcStage')) $('bcStage').value = f.lifecycle_stage;
-          if (f.interested_category && $('bcCat')) $('bcCat').value = f.interested_category;
-          if (f.priority && $('bcPri')) $('bcPri').value = f.priority;
-          if (plan.purpose && $('bcPurpose')) $('bcPurpose').value = plan.purpose;
-          if ($('bcMode')) $('bcMode').value = 'freeform';
-          if (plan.message_text && $('bcText')) $('bcText').value = plan.message_text;
-          // Si el asistente trajo adjuntos, pre-cargarlos en el broadcast
-          if (window.__aiAttach && window.__aiAttach.image) {
-            const f = window.__aiAttach.image;
-            bcPendingImg = { blob: f, mime: f.type || 'image/jpeg', name: f.name };
-            if (typeof renderBcImgPrev === 'function') renderBcImgPrev();
-          }
-          if (typeof updateBcMode === 'function') updateBcMode();
-        } catch (e) { console.warn('No se pudo pre-cargar:', e); }
-      }, 250);
-    }, 1200);
+    appendAiPlanActions(plan);
   } catch (e) {
     $('aiResult').textContent = 'Error: ' + (e.message || e);
   } finally {
