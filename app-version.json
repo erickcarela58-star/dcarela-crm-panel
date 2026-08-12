@@ -1,6 +1,6 @@
 {
-  "version": "2026-08-11-workspace-organizado-v22",
+  "version": "2026-08-12-clientes-pos-workspace-v23",
   "channel": "crm",
-  "released_at": "2026-08-11T19:45:00Z",
-  "summary": "Navegacion reorganizada por flujo, bandeja de tres columnas alineada y experiencia movil corregida, conservando los temas claro y oscuro."
+  "released_at": "2026-08-12T12:00:00Z",
+  "summary": "Nuevo espacio visual y acceso compartido a 870 clientes de caja con servicios, saldos, seguimiento y consentimiento de marketing."
 }
