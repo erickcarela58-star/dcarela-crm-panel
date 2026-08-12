@@ -1708,6 +1708,33 @@ input[type="checkbox"],input[type="radio"]{accent-color:var(--ink)}
  #aiModal #aiGo{width:100%;justify-content:center}
  body:has(.agenda.on)>.theme-toggle,body:has(.bc.on)>.theme-toggle{display:none}
 }
+
+/* v23 · reorganización visual final. Va al final del CSS para prevalecer
+   sobre el legado sin romper los temas claro/oscuro. */
+#app.on{grid-template-columns:258px minmax(0,1fr);grid-template-rows:78px minmax(0,1fr);background:var(--bg)}
+.sb{width:258px;padding:15px 12px;border-right:1px solid var(--line2);background:linear-gradient(180deg,var(--panel),var(--bg));box-shadow:18px 0 55px rgba(0,0,0,.12)}
+.sb-brand{min-height:68px;margin:0 4px 12px;padding:10px 8px;border-bottom:1px solid var(--line)}
+.sb-user{margin:0 4px 16px;padding:12px;border:1px solid var(--line);border-radius:16px;background:var(--card);box-shadow:0 10px 25px rgba(0,0,0,.08)}
+.sb-nav{padding:0 3px 18px;gap:4px}.sb-sep{margin:15px 10px 6px;color:var(--mut);letter-spacing:1.5px}
+.sb-item{min-height:43px;padding:0 12px;border:1px solid transparent;border-radius:13px;font-weight:750;letter-spacing:-.1px}
+.sb-item:hover{background:var(--card);border-color:var(--line)}.sb-item.on{background:var(--ink);color:var(--bg);border-color:var(--ink);box-shadow:0 10px 26px rgba(0,0,0,.18)}
+.sb-item.on .sb-badge{background:var(--bg);color:var(--ink)}.sb-foot{padding:12px 5px 2px;border-top:1px solid var(--line)}
+.tb{height:78px;padding:0 22px;border-bottom:1px solid var(--line2);background:color-mix(in srgb,var(--panel) 88%,transparent);backdrop-filter:blur(20px);box-shadow:0 12px 32px rgba(0,0,0,.06)}
+.tb-h1{font-size:20px;letter-spacing:-.55px}.tb-search{height:42px;border-radius:13px;background:var(--input);border-color:var(--line2)}
+.views{background:linear-gradient(135deg,color-mix(in srgb,var(--bg) 93%,var(--ink)),var(--bg) 42%);padding:0}
+.view{animation:fadeUp .22s ease both}.view-conv .main{margin:16px;height:calc(100dvh - 110px);border:1px solid var(--line2);border-radius:20px;overflow:hidden;background:var(--panel);box-shadow:0 24px 70px rgba(0,0,0,.14)}
+.view-conv .list{width:350px;border-right:1px solid var(--line2);background:var(--panel)}.view-conv .search{padding:16px 14px 9px}.view-conv .filters{padding:5px 12px 13px}
+.view-conv .conv{margin:5px 9px;padding:13px 10px;border:1px solid transparent;border-radius:15px}.view-conv .conv:hover{background:var(--card);border-color:var(--line)}.view-conv .conv.sel{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.view-conv .conv.sel .cv-name,.view-conv .conv.sel .cv-time,.view-conv .conv.sel .cv-prev{color:var(--bg)}
+.view-conv .chat{background:color-mix(in srgb,var(--bg) 96%,var(--ink))}.view-conv .ch-head{min-height:72px;padding:11px 16px;background:var(--panel);border-bottom:1px solid var(--line2)}
+.view-conv .detail{width:340px;background:var(--panel);border-left:1px solid var(--line2)}.view-conv .composer{margin:9px 13px 13px;padding:7px;border:1px solid var(--line2);border-radius:16px;background:var(--panel);box-shadow:0 12px 30px rgba(0,0,0,.09)}
+.posc-wrap{max-width:1560px;margin:0 auto;padding:24px;display:grid;gap:16px}.posc-hero{display:flex;align-items:flex-end;justify-content:space-between;gap:22px;padding:27px;border:1px solid var(--line2);border-radius:22px;background:var(--ink);color:var(--bg);box-shadow:0 24px 60px rgba(0,0,0,.18)}
+.posc-kicker{font-size:10px;text-transform:uppercase;letter-spacing:1.7px;font-weight:900;opacity:.65}.posc-hero h2{margin:6px 0;font-size:clamp(24px,3vw,40px);letter-spacing:-1.5px}.posc-hero p{margin:0;max-width:750px;font-size:12px;line-height:1.65;opacity:.72}.posc-hero-actions{display:flex;gap:8px;flex-wrap:wrap}.posc-hero .cfg-btn{border-color:color-mix(in srgb,var(--bg) 35%,transparent);color:var(--bg)}.posc-hero .cfg-btn.primary{background:var(--bg);color:var(--ink)}
+.posc-kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}.posc-kpis>div{min-height:104px;padding:17px;border:1px solid var(--line);border-radius:18px;background:var(--card);box-shadow:0 12px 34px rgba(0,0,0,.07)}.posc-kpis span{display:block;color:var(--mut);font-size:10px;text-transform:uppercase;letter-spacing:1px;font-weight:800}.posc-kpis b{display:block;margin-top:8px;font-size:27px;letter-spacing:-1px}.posc-kpis small{display:block;margin-top:4px;color:var(--mut)}
+.posc-panel{padding:14px;border:1px solid var(--line2);border-radius:20px;background:var(--panel);box-shadow:0 20px 60px rgba(0,0,0,.1)}.posc-toolbar{display:grid;grid-template-columns:minmax(260px,1fr) minmax(190px,.5fr) minmax(170px,.35fr);gap:9px}.posc-toolbar input,.posc-toolbar select{min-height:44px;border:1px solid var(--line2);border-radius:12px;background:var(--input);color:var(--ink);padding:0 12px;font:650 12px inherit}.posc-context{display:flex;justify-content:space-between;gap:15px;padding:11px 3px;color:var(--mut);font-size:10.5px}.posc-context span:first-child{font-weight:850;color:var(--ink)}
+.posc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(315px,1fr));gap:11px}.posc-card{display:grid;gap:13px;padding:16px;border:1px solid var(--line);border-radius:18px;background:var(--card);transition:.18s ease}.posc-card:hover{transform:translateY(-2px);border-color:var(--line2);box-shadow:0 18px 42px rgba(0,0,0,.1)}.posc-card[data-debt="true"]{border-left:4px solid var(--ink)}.posc-card-top{display:grid;grid-template-columns:42px minmax(0,1fr) auto;gap:10px;align-items:center}.posc-avatar{width:42px;height:42px;display:grid;place-items:center;border-radius:13px;background:var(--ink);color:var(--bg);font-weight:900}.posc-card h3{margin:0;font-size:14px}.posc-card-top div span{font-size:10.5px;color:var(--mut)}.posc-branch{padding:5px 7px;border:1px solid var(--line);border-radius:999px;font-size:9px!important}.posc-service{padding:11px;border-radius:13px;background:var(--input)}.posc-service span,.posc-numbers span{display:block;font-size:9px;color:var(--mut);text-transform:uppercase;font-weight:800}.posc-service b{display:block;margin-top:3px;font-size:12px}.posc-tags{display:flex;gap:5px;flex-wrap:wrap}.posc-tags span{padding:5px 7px;border:1px solid var(--line);border-radius:8px;font-size:9px}.posc-numbers{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}.posc-numbers>div{padding:8px;border-right:1px solid var(--line)}.posc-numbers>div:last-child{border:0}.posc-numbers b{display:block;margin-top:4px;font-size:11px}.posc-numbers .due b{color:var(--danger)}.posc-consent{font-size:10px;color:var(--mut);display:flex;align-items:center;gap:7px}.posc-actions{display:flex;gap:6px;flex-wrap:wrap}.posc-actions button{flex:1;min-width:100px;min-height:36px;border:1px solid var(--line2);border-radius:10px;background:var(--input);color:var(--ink);font:750 10px inherit;cursor:pointer}.posc-actions button:first-child{background:var(--ink);color:var(--bg);border-color:var(--ink)}.posc-actions button:disabled{opacity:.4;cursor:not-allowed}.posc-empty{grid-column:1/-1;padding:80px 20px;text-align:center;color:var(--mut)}
+@media(max-width:1100px){#app.on{grid-template-columns:84px minmax(0,1fr)}.sb{width:84px}.sb-bn,.sb-uinfo,.sb-item span:not(.sb-badge),.sb-sep,.sb-live span:last-child,.sb-logout{display:none}.sb-item{justify-content:center}.sb-user{padding:9px}.view-conv .detail{width:310px}.posc-kpis{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:760px){#app.on{display:block}.sb{width:270px}.tb{height:66px;padding:0 12px}.views{padding-top:66px}.view-conv .main{margin:0;height:calc(100dvh - 66px);border:0;border-radius:0}.view-conv .list{width:100%}.posc-wrap{padding:12px}.posc-hero{align-items:flex-start;flex-direction:column;padding:20px}.posc-hero-actions{width:100%}.posc-hero-actions button{flex:1}.posc-kpis{grid-template-columns:1fr 1fr}.posc-toolbar{grid-template-columns:1fr}.posc-context{display:grid}.posc-grid{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
@@ -1770,6 +1797,11 @@ input[type="checkbox"],input[type="radio"]{accent-color:var(--ink)}
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4M11 7v8M7 11h8"/></svg>
     <span>Prospección</span>
     <span class="sb-badge" id="sbProsCnt" style="display:none">0</span>
+   </button>
+   <button class="sb-item" data-view="poscustomers">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M19 8v6M22 11h-6"/></svg>
+    <span>Clientes de caja</span>
+    <span class="sb-badge" id="sbPosCnt">0</span>
    </button>
     <button class="sb-item" data-view="satisfaccion" data-official-only>
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 17.3l-5.5 3 1-6.1L3 9.8l6.1-.9L12 3.3l2.9 5.6 6.1.9-4.5 4.4 1 6.1z"/></svg>
@@ -2015,6 +2047,21 @@ input[type="checkbox"],input[type="radio"]{accent-color:var(--ink)}
      <div class="pros-scroll" id="prosTableWrap"><div class="pros-empty"><div class="ico">⌖</div><h3>Preparando el módulo...</h3><p>La tabla de prospectos está conectándose con la base.</p></div></div>
      <div class="pros-insights" id="prosInsights" style="display:none"></div>
      <div class="pros-footnote"><span>Control humano</span><span>Google Places se consulta con límite de costo. La IA solo prepara material; WhatsApp, llamadas y campañas requieren revisión explícita.</span></div>
+    </div>
+   </div>
+  </section>
+
+  <section class="view view-poscustomers" id="viewPosCustomers" style="display:none">
+   <div class="posc-wrap">
+    <div class="posc-hero">
+     <div><span class="posc-kicker">Base comercial compartida · POS en vivo</span><h2>Clientes, servicios y cobros en un solo lugar</h2><p>Ambos CRM leen la misma ficha de la caja. Filtra por servicio, prepara seguimientos y abre el chat correcto sin duplicar clientes.</p></div>
+     <div class="posc-hero-actions"><button class="cfg-btn" id="poscRefresh">Actualizar</button><button class="cfg-btn primary" id="poscCampaign">Preparar campaña</button></div>
+    </div>
+    <div class="posc-kpis" id="poscKpis"></div>
+    <div class="posc-panel">
+     <div class="posc-toolbar"><input id="poscSearch" placeholder="Buscar cliente, teléfono o servicio..."><select id="poscService"><option value="">Todos los servicios</option></select><select id="poscState"><option value="">Todos</option><option value="debt">Con saldo pendiente</option><option value="optin">Con permiso de marketing</option><option value="contactable">Con WhatsApp</option></select></div>
+     <div class="posc-context"><span id="poscResultCount">0 clientes</span><span>Marketing solo con permiso · recordatorios siempre quedan revisables antes del envío.</span></div>
+     <div class="posc-grid" id="poscGrid"><div class="posc-empty">Cargando la base de clientes de la caja...</div></div>
     </div>
    </div>
   </section>
@@ -2811,7 +2858,7 @@ const $ = (id) => document.getElementById(id);
 // Sello de versión: si el panel "no hace nada", casi siempre es caché vieja del
 // navegador. Este sello permite confirmar de un vistazo qué versión está corriendo
 // (compárala con la fecha del último deploy). Actualízalo en cada publicación.
-const BUILD = '2026-08-11-workspace-organizado-v22';
+const BUILD = '2026-08-12-clientes-pos-workspace-v23';
 // PDFs de venta por categoría (generados de las tarjetas aprobadas; hosteados en el catálogo).
 // Se regeneran con dcarela-catalogo/scripts/build_combo_pdfs.py + push del catálogo.
 const COMBO_PDF_BASE = 'https://erickcarela58-star.github.io/carela-compufoto/pdf/';
@@ -3537,6 +3584,7 @@ function setView(view) {
     planning:     {eyebrow:'Centro operativo', h1:'Planificación', el:'viewPlanning'},
     conversations:{eyebrow:'Inbox',      h1:'Conversaciones',     el:'viewConversations'},
     prospecting:  {eyebrow:'Comercial',  h1:'Prospección',        el:'viewProspecting'},
+    poscustomers: {eyebrow:'Base compartida', h1:'Clientes de caja', el:'viewPosCustomers'},
     funnel:       {eyebrow:'Pipeline',   h1:'Funnel · Kanban',    el:'viewFunnel'},
     satisfaccion: {eyebrow:'Calidad',    h1:'Satisfacción',       el:'viewSatisfaccion'},
     plantillas:   {eyebrow:'Mensajería', h1:'Plantillas WhatsApp', el:'viewPlantillas'},
@@ -3547,7 +3595,7 @@ function setView(view) {
   };
   const v = map[view] || map.dashboard;
   currentView = view;
-  ['viewDashboard','viewPlanning','viewConversations','viewFunnel','viewProspecting','viewSatisfaccion','viewPlantillas','viewEstados','viewReminders','viewBridge','viewConfig','viewManual'].forEach(id => {
+  ['viewDashboard','viewPlanning','viewConversations','viewFunnel','viewProspecting','viewPosCustomers','viewSatisfaccion','viewPlantillas','viewEstados','viewReminders','viewBridge','viewConfig','viewManual'].forEach(id => {
     const e = document.getElementById(id);
     if (e) e.style.display = (id === v.el) ? '' : 'none';
   });
@@ -3560,6 +3608,7 @@ function setView(view) {
   if (view === 'dashboard') setTimeout(renderDashInline, 30);
   if (view === 'planning') setTimeout(() => loadPlanningData(false), 30);
   if (view === 'prospecting') setTimeout(() => loadProspects(false), 30);
+  if (view === 'poscustomers') setTimeout(() => loadPosCustomers(false), 30);
   if (view === 'plantillas') setTimeout(renderPlantillasInline, 30);
   if (view === 'funnel') setTimeout(renderFunnelInline, 30);
   if (view === 'bridge') {
@@ -3581,6 +3630,43 @@ function setView(view) {
 document.querySelectorAll('[data-man-jump]').forEach(button => {
   button.addEventListener('click', () => setView(button.dataset.manJump || 'conversations'));
 });
+
+// ===== CLIENTES DE CAJA · base compartida entre ambos CRM =====
+let posCustomerRows = [], posCustomersLoaded = false;
+const posMoney = cents => new Intl.NumberFormat('es-DO',{style:'currency',currency:'DOP'}).format((Number(cents)||0)/100).replace('DOP','RD$');
+function posCustomerFiltered() {
+  const text = ($('poscSearch')?.value || '').trim().toLowerCase(), service = $('poscService')?.value || '', state = $('poscState')?.value || '';
+  return posCustomerRows.filter(c => {
+    const hay = [c.name,c.phone,c.phone_normalized,c.last_service,...(Array.isArray(c.services)?c.services:[])].join(' ').toLowerCase();
+    return (!text || hay.includes(text)) && (!service || (Array.isArray(c.services)&&c.services.includes(service)))
+      && (state!=='debt'||Number(c.balance_centavos||0)>0) && (state!=='optin'||c.marketing_opt_in)
+      && (state!=='contactable'||c.phone_normalized);
+  });
+}
+async function loadPosCustomers(force=false) {
+  if(posCustomersLoaded&&!force){renderPosCustomers();return;} const grid=$('poscGrid');
+  if(grid)grid.innerHTML='<div class="posc-empty">Sincronizando clientes, servicios y saldos de la caja...</div>';
+  const all=[];for(let from=0;from<10000;from+=1000){const {data,error}=await sb.from('crm_pos_customers').select('*').order('last_sale_at',{ascending:false,nullsFirst:false}).range(from,from+999);if(error){if(grid)grid.innerHTML=`<div class="posc-empty"><b>No se pudo abrir la base POS.</b><br>${esc(error.message)}<br><button class="cfg-btn" onclick="loadPosCustomers(true)">Reintentar</button></div>`;return;}all.push(...(data||[]));if(!data||data.length<1000)break;}
+  posCustomerRows=all;posCustomersLoaded=true;const badge=$('sbPosCnt');if(badge)badge.textContent=String(all.length);
+  const services=[...new Set(all.flatMap(c=>Array.isArray(c.services)?c.services:[]).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'es'));
+  const select=$('poscService');if(select){const keep=select.value;select.innerHTML='<option value="">Todos los servicios</option>'+services.map(s=>`<option value="${escAttr(s)}">${esc(s)}</option>`).join('');select.value=keep;}renderPosCustomers();
+}
+function renderPosCustomers(){
+  const list=posCustomerFiltered(),debt=posCustomerRows.filter(c=>Number(c.balance_centavos)>0),contactable=posCustomerRows.filter(c=>c.phone_normalized),optin=posCustomerRows.filter(c=>c.marketing_opt_in);
+  if($('poscKpis'))$('poscKpis').innerHTML=`<div><span>Clientes POS</span><b>${posCustomerRows.length}</b></div><div><span>Con WhatsApp</span><b>${contactable.length}</b></div><div><span>Saldos pendientes</span><b>${debt.length}</b><small>${posMoney(debt.reduce((s,c)=>s+Number(c.balance_centavos||0),0))}</small></div><div><span>Marketing autorizado</span><b>${optin.length}</b></div>`;
+  if($('poscResultCount'))$('poscResultCount').textContent=`${list.length} cliente${list.length===1?'':'s'}`;const grid=$('poscGrid');if(!grid)return;if(!list.length){grid.innerHTML='<div class="posc-empty">No hay clientes para estos filtros.</div>';return;}
+  grid.innerHTML=list.slice(0,500).map(c=>{const services=(Array.isArray(c.services)?c.services:[]).slice(0,3);return `<article class="posc-card" data-debt="${Number(c.balance_centavos)>0}"><div class="posc-card-top"><div class="posc-avatar">${esc(initials(c.name))}</div><div><h3>${esc(c.name||'Cliente POS')}</h3><span>${c.phone_normalized?'+'+esc(c.phone_normalized):'Sin WhatsApp registrado'}</span></div><span class="posc-branch">${esc(c.pos_business_id==='dcarela'?'Central':c.pos_business_id)}</span></div><div class="posc-service"><span>Último servicio</span><b>${esc(c.last_service||'Sin venta ligada')}</b></div><div class="posc-tags">${services.map(s=>`<span>${esc(s)}</span>`).join('')||'<span>Sin historial de servicios</span>'}</div><div class="posc-numbers"><div><span>Compras</span><b>${Number(c.sale_count||0)}</b></div><div><span>Total registrado</span><b>${posMoney(c.total_spent_centavos)}</b></div><div class="${Number(c.balance_centavos)>0?'due':''}"><span>Saldo</span><b>${posMoney(c.balance_centavos)}</b></div></div><label class="posc-consent"><input type="checkbox" ${c.marketing_opt_in?'checked':''} onchange="togglePosMarketing('${escAttr(c.pos_business_id)}','${escAttr(c.customer_id)}',this.checked)"> Marketing autorizado</label><div class="posc-actions"><button onclick="openPosCustomerChat('${escAttr(c.pos_business_id)}','${escAttr(c.customer_id)}','chat')" ${c.phone_normalized?'':'disabled'}>Abrir conversación</button>${Number(c.balance_centavos)>0?`<button onclick="openPosCustomerChat('${escAttr(c.pos_business_id)}','${escAttr(c.customer_id)}','payment')" ${c.phone_normalized?'':'disabled'}>Preparar cobro</button>`:''}<button onclick="openPosCustomerChat('${escAttr(c.pos_business_id)}','${escAttr(c.customer_id)}','followup')" ${c.phone_normalized?'':'disabled'}>Seguimiento</button></div></article>`;}).join('');
+}
+window.togglePosMarketing=async function(businessId,customerId,enabled){if(!requirePermission('broadcast')){renderPosCustomers();return;}const {error}=await sb.from('crm_pos_customers').update({marketing_opt_in:enabled,marketing_opt_in_at:enabled?new Date().toISOString():null}).eq('pos_business_id',businessId).eq('customer_id',customerId);if(error){alert('No se pudo guardar el consentimiento: '+error.message);renderPosCustomers();return;}const row=posCustomerRows.find(x=>x.pos_business_id===businessId&&x.customer_id===customerId);if(row){row.marketing_opt_in=enabled;}renderPosCustomers();};
+async function ensurePosConversation(c){
+  const phone=normalizePhoneClient(c.phone_normalized||c.phone);if(!phone)throw new Error('Este cliente no tiene WhatsApp registrado.');const businessNumber=agendaChannelBusinessNumber();if(!businessNumber)throw new Error('No hay un número de WhatsApp activo para este panel.');
+  let query=sb.from('conversations').select('*').eq('wa_phone',phone).eq('business_number',businessNumber);query=qrChannelActive()?query.eq('source','whatsapp_qr'):query.or('source.is.null,source.neq.whatsapp_qr');let {data:existing,error:readError}=await query.maybeSingle();if(readError)throw readError;
+  const patch={customer_name:c.name,contact_name:c.name,pos_business_id:c.pos_business_id,pos_customer_id:c.customer_id,pos_balance_centavos:c.balance_centavos,pos_last_service:c.last_service,pos_services:c.services||[],interested_category:c.last_service||null};
+  if(existing){const {data,error}=await sb.from('conversations').update(patch).eq('id',existing.id).select('*').single();if(error)throw error;return data;}const {data,error}=await sb.from('conversations').insert({wa_phone:phone,business_number:businessNumber,source:qrChannelActive()?'whatsapp_qr':'whatsapp_cloud',...patch,mode:'human',lifecycle_stage:'nuevo',last_message_at:new Date().toISOString(),last_message_preview:'Cliente importado desde la caja'}).select('*').single();if(error)throw error;return data;
+}
+window.openPosCustomerChat=async function(businessId,customerId,intent){if(!requirePermission('operate'))return;const c=posCustomerRows.find(x=>x.pos_business_id===businessId&&x.customer_id===customerId);if(!c)return;try{const conv=await ensurePosConversation(c);convs=[conv,...convs.filter(x=>x.id!==conv.id)];await openConv(conv);const first=String(c.name||'cliente').split(/\s+/)[0];let draft='';if(intent==='payment')draft=`Hola ${first}, esperamos que estés bien. Vemos un saldo pendiente de ${posMoney(c.balance_centavos)} relacionado con ${c.last_service||'tu servicio'}. ¿Deseas que te compartamos las opciones para completarlo?`;if(intent==='followup')draft=`Hola ${first}, ¿cómo estás? Queríamos dar seguimiento a ${c.last_service||'tu servicio reciente'} y saber si necesitas orientación adicional.`;if(draft&&$('reply')){$('reply').value=draft;$('reply').dispatchEvent(new Event('input'));$('reply').focus();}}catch(error){alert(error.message||String(error));}};
+window.preparePosCampaign=function(){const eligible=posCustomerFiltered().filter(c=>c.marketing_opt_in&&c.phone_normalized);if(!eligible.length){alert('Este filtro no tiene clientes con permiso de marketing. Activa el permiso solo cuando el cliente lo haya autorizado.');return;}alert(`${eligible.length} cliente(s) elegibles. Abre Broadcast para revisar contenido, ritmo y plantilla antes de enviar.`);if(!LOCK_NUMFILTER)$('bcBtn')?.click();};
+$('poscSearch')?.addEventListener('input',renderPosCustomers);$('poscService')?.addEventListener('change',renderPosCustomers);$('poscState')?.addEventListener('change',renderPosCustomers);$('poscRefresh')?.addEventListener('click',()=>loadPosCustomers(true));$('poscCampaign')?.addEventListener('click',preparePosCampaign);
 
 // ===== Campaña re-consent (marketing opt-in masivo) =====
 // ===== PROSPECCION COMERCIAL - centro operativo =====
