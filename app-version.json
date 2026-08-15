@@ -1,6 +1,6 @@
 {
-  "version": "2026-08-12-clientes-pos-workspace-v24",
+  "version": "2026-08-14-links-boda-v25",
   "channel": "crm",
-  "released_at": "2026-08-12T12:00:00Z",
-  "summary": "Clientes de caja organizados por categorias, canal de WhatsApp seleccionable y saldo revalidado antes de preparar cualquier cobro."
+  "released_at": "2026-08-14T21:10:00Z",
+  "summary": "Enlaces oficiales del sitio y textos de boda corregidos; las conversaciones de boda ya no se presentan como cumpleaños."
 }

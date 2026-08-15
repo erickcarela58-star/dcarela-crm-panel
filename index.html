@@ -2592,8 +2592,8 @@ input[type="checkbox"],input[type="radio"]{accent-color:var(--ink)}
 
      <div class="cfg-card">
        <h3>Catálogo público</h3>
-      <p>URL en vivo: <a href="https://erickcarela58-star.github.io/carela-compufoto/" target="_blank" style="color:var(--accent2)">erickcarela58-star.github.io/carela-compufoto</a></p>
-      <p>Portafolio: <a href="https://erickcarela58-star.github.io/carela-compufoto/portafolio.html" target="_blank" style="color:var(--accent2)">/portafolio.html</a></p>
+      <p>URL en vivo: <a href="https://dcarelacompufoto.com/" target="_blank" rel="noopener" style="color:var(--accent2)">dcarelacompufoto.com</a></p>
+      <p>Portafolio: <a href="https://dcarelacompufoto.com/portafolio.html" target="_blank" rel="noopener" style="color:var(--accent2)">/portafolio.html</a></p>
       <p class="cfg-hint">Meta Pixel ID: <code>1377359270081777</code> (atribución cross-página).</p>
      </div>
 
@@ -2861,10 +2861,10 @@ const $ = (id) => document.getElementById(id);
 // Sello de versión: si el panel "no hace nada", casi siempre es caché vieja del
 // navegador. Este sello permite confirmar de un vistazo qué versión está corriendo
 // (compárala con la fecha del último deploy). Actualízalo en cada publicación.
-const BUILD = '2026-08-12-clientes-pos-workspace-v24';
+const BUILD = '2026-08-14-links-boda-v25';
 // PDFs de venta por categoría (generados de las tarjetas aprobadas; hosteados en el catálogo).
 // Se regeneran con dcarela-catalogo/scripts/build_combo_pdfs.py + push del catálogo.
-const COMBO_PDF_BASE = 'https://erickcarela58-star.github.io/carela-compufoto/pdf/';
+const COMBO_PDF_BASE = 'https://dcarelacompufoto.com/pdf/';
 const COMBO_PDFS = [
   { cat: 'xv',          label: 'XV',          n: 5  },
   { cat: 'infantil',    label: 'Infantil',    n: 8  },
@@ -4026,7 +4026,7 @@ window.openSeguimientoWizard = async function() {
     const sinceTxt = since >= 48 ? Math.round(since/24) + ' días' : since + ' h';
     const firstName = (name || '').split(/\s+/)[0] || 'amigo/a';
     // Construye mensaje personalizado por combo + categoría disponibles
-    const CAT_NICE = {xv:'tu sesión de XV', infantil:'tu sesión infantil', graduacion:'tu sesión de graduación', cumpleanos:'tu sesión de cumpleaños', embarazadas:'tu sesión de embarazada'};
+    const CAT_NICE = {xv:'tu sesión de XV', infantil:'tu sesión infantil', graduacion:'tu sesión de graduación', cumpleanos:'tu sesión de cumpleaños', embarazadas:'tu sesión de maternidad', boda:'tu sesión de boda'};
     let context = '';
     if (c.selected_combo_name) context = ` sobre el combo *${c.selected_combo_name}*`;
     else if (c.interested_category && CAT_NICE[c.interested_category.toLowerCase()]) context = ` sobre ${CAT_NICE[c.interested_category.toLowerCase()]}`;
@@ -6069,7 +6069,7 @@ const MAKEUP_OPTIONS = [
   ['','Pendiente'],['incluido','Incluido'],['extra','Extra desde RD$2,500'],['no_solicitado','No solicitado'],
 ];
 const PRIORITIES = ['urgente','alta','media','baja'];
-const CATEGORIES = ['XV','Infantil','Graduación','Cumpleaños','Embarazadas','Sesiones/Retratos','Maquillaje'];
+const CATEGORIES = ['XV','Infantil','Graduación','Cumpleaños','Embarazadas','Boda','Sesiones/Retratos','Maquillaje'];
 
 function isOverdueOrPending(c) {
   const now = Date.now();
@@ -6353,7 +6353,11 @@ function wireQuickActions(c) {
       } else if (act === 'location') {
         insertTemplate([cfg('addressText', 'Te comparto nuestra ubicacion.'), cfg('mapsUrl', '')].filter(Boolean).join(' '));
       } else if (act === 'portfolio') {
-        insertTemplate('Puedes ver parte de nuestro portafolio aqui: ' + cfg('publicPortfolioUrl', ''));
+        const isWedding = /\b(boda|matrimonio|preboda|civil)\b/i.test(String(c.interested_category || '') + ' ' + String(c.last_intent || ''));
+        const publicUrl = isWedding
+          ? cfg('publicWeddingUrl', 'https://dcarelacompufoto.com/boda.html')
+          : cfg('publicPortfolioUrl', 'https://dcarelacompufoto.com/portafolio.html');
+        insertTemplate((isWedding ? 'Puedes ver nuestros combos y trabajos de boda aquí: ' : 'Puedes ver parte de nuestro portafolio aquí: ') + publicUrl);
       } else if (act === 'privateCombos') {
         insertTemplate(cfg('privateCombosMessage', 'Te comparto los combos por aqui. Antes de confirmar disponibilidad necesito saber categoria, fecha tentativa y nombre.'));
       } else if (act === 'close') {

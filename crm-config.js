@@ -18,6 +18,7 @@ window.CRM_CONFIG = window.DCARELA_CRM_CONFIG = {
   publicCatalogUrl: "https://dcarelacompufoto.com/combos.html",
   // URL para ver trabajos, fotos, galería o portafolio.
   publicGalleryUrl: "https://dcarelacompufoto.com/portafolio.html",
+  publicWeddingUrl: "https://dcarelacompufoto.com/boda.html",
 
   // Meta Pixel para tracking de eventos del panel (mismo pixel que el catálogo)
   metaPixelId: "1377359270081777",
