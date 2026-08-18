@@ -1,6 +1,6 @@
 {
-  "version": "2026-08-14-links-boda-v25",
+  "version": "2026-08-17-domain-redirect-v26",
   "channel": "crm",
-  "released_at": "2026-08-14T21:10:00Z",
-  "summary": "Enlaces oficiales del sitio y textos de boda corregidos; las conversaciones de boda ya no se presentan como cumpleaños."
+  "released_at": "2026-08-18T00:40:00Z",
+  "summary": "La URL anterior redirige al CRM oficial en dcarelacompufoto.com/crm/."
 }
