@@ -1,6 +1,6 @@
 {
-  "version": "2026-08-17-domain-redirect-v26",
+  "version": "2026-08-22-firebase-ads-v27",
   "channel": "crm",
-  "released_at": "2026-08-18T00:40:00Z",
-  "summary": "La URL anterior redirige al CRM oficial en dcarelacompufoto.com/crm/."
+  "released_at": "2026-08-22T23:30:00Z",
+  "summary": "Acceso principal restaurado con Firebase y nuevo Estudio de Anuncios para ventas, segmentación, presupuesto, pruebas A/B y exportación segura."
 }
