@@ -1,6 +1,6 @@
 {
-  "version": "2026-08-22-firebase-ads-v27",
+  "version": "2026-08-22-client-bank-v28",
   "channel": "crm",
-  "released_at": "2026-08-22T23:30:00Z",
-  "summary": "Acceso principal restaurado con Firebase y nuevo Estudio de Anuncios para ventas, segmentación, presupuesto, pruebas A/B y exportación segura."
+  "released_at": "2026-08-23T00:55:00Z",
+  "summary": "Banco de clientes POS conectado directamente a Firebase en ambos CRM, con acceso dual y conservación del historial comercial."
 }
