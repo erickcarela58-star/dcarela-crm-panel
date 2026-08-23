@@ -16,7 +16,7 @@ import {
   where,
 } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 
-const BUILD = "2026-08-23-saleads-phase1-v3";
+const BUILD = "2026-08-23-saleads-operations-v4";
 const saleAds = window.SaleAdsCore;
 if (!saleAds) throw new Error("No se cargó el motor seguro de SaleAds.");
 const SALEADS_UI = new URLSearchParams(location.search).get("saleads_ui") === "classic" ? "classic" : "phase1";
@@ -50,10 +50,32 @@ let member = null,
   clients = [],
   products = [],
   campaigns = [],
+  creativeAssets = [],
+  capacityEntries = [],
+  experimentRecords = [],
+  attributionEvents = [],
   current = null,
   wizardStep = 0,
   wizardTemplateId = "T01";
 const WIZARD_KEY = "dcarela_saleads_wizard_v3";
+const OPERATIONS_KEY = "dcarela_saleads_operations_v1";
+
+function operationStore() {
+  try { return JSON.parse(localStorage.getItem(OPERATIONS_KEY) || "{}"); }
+  catch { return {}; }
+}
+function operationRows(name) {
+  return operationStore()?.[selectedBusiness()]?.[name] || [];
+}
+function saveOperationRows(name, rows) {
+  const all = operationStore();
+  const bid = selectedBusiness();
+  all[bid] = { ...(all[bid] || {}), [name]: rows.slice(0, 500) };
+  localStorage.setItem(OPERATIONS_KEY, JSON.stringify(all));
+}
+function roleForBusiness() {
+  return clean(member?.roles?.[selectedBusiness()] || member?.role || "viewer").toLowerCase();
+}
 
 const PRESETS = {
   xv: {
@@ -441,6 +463,7 @@ function renderBusinessData() {
       )
       .join("");
   renderAudience();
+  loadOperationData();
 }
 async function loadCampaigns() {
   const bid = selectedBusiness();
@@ -467,6 +490,8 @@ async function loadCampaigns() {
   $("overviewDrafts").textContent = campaigns.length.toLocaleString("es-DO");
   $("historyBadge").textContent = campaigns.length.toLocaleString("es-DO");
   renderHistory();
+  renderApprovals();
+  renderAnalytics();
 }
 
 function formValues() {
@@ -611,7 +636,7 @@ function renderOutput() {
 }
 async function saveCurrent() {
   if (!current) return;
-  const role = clean(member.role).toLowerCase();
+  const role = roleForBusiness();
   if (!["owner", "admin"].includes(role)) {
     saveLocal(current);
     toast(
@@ -632,10 +657,135 @@ async function saveCurrent() {
   toast("Borrador guardado en Firebase.");
 }
 
+function loadOperationData() {
+  creativeAssets = operationRows("creative_assets");
+  capacityEntries = operationRows("capacity_entries");
+  experimentRecords = operationRows("experiments");
+  attributionEvents = operationRows("attribution_events");
+  renderCreativeAssets();
+  renderCapacity();
+  renderExperiments();
+  renderAnalytics();
+  renderApprovals();
+}
+
+function assetFormValue() {
+  return {
+    name: clean($("assetName").value),
+    family: $("assetFamily").value,
+    rights_expires_at: $("assetRightsUntil").value,
+    rights_scope: clean($("assetRightsScope").value),
+    people_visible: $("assetPeople").checked,
+    model_release: $("assetModelRelease").checked,
+    contains_minor: $("assetMinor").checked,
+    guardian_release: $("assetGuardian").checked,
+  };
+}
+function updateAssetQa() {
+  const result = saleAds.validateCreativeAsset(assetFormValue());
+  $("assetQa").innerHTML = result.issues.length
+    ? result.issues.map((x) => `<div class="qa-item ${x.severity === "block" ? "danger-text" : "warning-text"}">${escapeHtml(x.message)}</div>`).join("")
+    : '<span class="success-text">Activo apto para biblioteca; todavía requiere preview final por placement.</span>';
+  return result;
+}
+function renderCreativeAssets() {
+  $("assetLibrary").innerHTML = creativeAssets.length
+    ? creativeAssets.map((x) => {
+        const qa = saleAds.validateCreativeAsset(x);
+        return `<article class="record-row"><div><b>${escapeHtml(x.name)}</b><span>${escapeHtml(x.family)} · derechos: ${escapeHtml(x.rights_expires_at || "sin vencimiento registrado")}</span><small>${escapeHtml(x.rights_scope || "Alcance pendiente")}</small></div><span class="status-chip ${qa.blocked ? "danger-text" : "success-text"}">${qa.blocked ? "Bloqueado" : "QA base"}</span></article>`;
+      }).join("")
+    : '<div class="empty-state-inline">No hay activos registrados para esta sucursal.</div>';
+}
+
+function renderCapacity() {
+  const summary = saleAds.capacitySummary(capacityEntries);
+  $("capacityDays").textContent = summary.days;
+  $("capacitySlots").textContent = summary.slots;
+  $("capacityReserved").textContent = summary.reserved;
+  $("capacityAvailable").textContent = summary.available;
+  $("capacityList").innerHTML = capacityEntries.length
+    ? [...capacityEntries].sort((a, b) => a.date.localeCompare(b.date)).map((x) => {
+        const available = Math.max(0, Number(x.slots) - Math.min(Number(x.slots), Number(x.reserved)));
+        return `<article class="record-row"><div><b>${escapeHtml(x.date)} · ${escapeHtml(x.service)}</b><span>${x.reserved} reservado(s) de ${x.slots}</span></div><span class="status-chip">${available} libres</span></article>`;
+      }).join("")
+    : '<div class="empty-state-inline">Carga fechas reales antes de usar urgencia o cupos en un anuncio.</div>';
+}
+
+function experimentFormValue() {
+  return {
+    hypothesis: clean($("experimentHypothesis").value),
+    variable: $("experimentVariable").value,
+    metric: $("experimentMetric").value,
+    minimum_events: $("experimentMinimum").value,
+    control_events: $("experimentControlEvents").value,
+    control_spend: $("experimentControlSpend").value,
+    challenger_events: $("experimentVariantEvents").value,
+    challenger_spend: $("experimentVariantSpend").value,
+  };
+}
+function updateExperimentDecision() {
+  const result = saleAds.evaluateExperiment(experimentFormValue());
+  $("experimentDecision").innerHTML = `<b>${escapeHtml(result.decision)}</b><div class="qa-item">${escapeHtml(result.reason)}</div><small>Control: ${result.control_cost === null ? "sin dato" : money(result.control_cost)} · Variante: ${result.challenger_cost === null ? "sin dato" : money(result.challenger_cost)} · confianza ${escapeHtml(result.confidence)}</small>`;
+  return result;
+}
+function renderExperiments() {
+  $("experimentList").innerHTML = experimentRecords.length
+    ? experimentRecords.map((x) => `<article class="record-row"><div><b>${escapeHtml(x.hypothesis)}</b><span>${escapeHtml(x.variable)} · ${escapeHtml(x.metric)}</span><small>${escapeHtml(x.result.reason)}</small></div><span class="status-chip">${escapeHtml(x.result.decision)}</span></article>`).join("")
+    : '<div class="empty-state-inline">Sin experimentos registrados. Diseña una prueba con una sola variable.</div>';
+}
+
+function renderAnalytics() {
+  const metrics = saleAds.funnelMetrics(attributionEvents);
+  const cards = [
+    ["Leads", metrics.lead], ["Calificados", metrics.qualified], ["Reservas", metrics.booking],
+    ["Sesiones", metrics.completed], ["Pagadas", metrics.paid], ["Ingreso", money(metrics.revenue)],
+  ];
+  $("funnelGrid").innerHTML = cards.map(([label, value], index) => `<article><span>${escapeHtml(label)}</span><b>${escapeHtml(value)}</b><small>${index === 5 ? "confirmado manualmente" : "eventos registrados"}</small></article>`).join("");
+  $("attributionCampaign").innerHTML = '<option value="">Sin campaña asignada</option>' + campaigns.map((x) => `<option value="${escapeHtml(x.id)}">${escapeHtml(x.product || x.campaign_name || x.id)}</option>`).join("");
+  $("attributionList").innerHTML = attributionEvents.length
+    ? attributionEvents.map((x) => `<article class="record-row"><div><b>${escapeHtml(x.stage)} · ${escapeHtml(x.reference || "sin referencia")}</b><span>${escapeHtml(campaigns.find((c) => c.id === x.campaign_id)?.campaign_name || "Sin campaña")}</span><small>${new Date(x.created_at).toLocaleString("es-DO")}</small></div><span class="status-chip">${x.value ? escapeHtml(money(x.value)) : "señal"}</span></article>`).join("")
+    : '<div class="empty-state-inline">Sin eventos atribuidos. No se calcula ROAS hasta conectar gasto Meta verificable.</div>';
+}
+
+function renderApprovals() {
+  if (!$("approvalList")) return;
+  const rows = campaigns.filter((x) => ["draft_review_required", "saved", "qa_ready", "approved"].includes(x.status));
+  $("approvalList").innerHTML = rows.length
+    ? rows.map((x) => `<article class="record-row"><div><b>${escapeHtml(x.product || x.campaign_name || x.id)}</b><span>${escapeHtml(x.status)}</span><small>${escapeHtml(x.approval?.note || "Sin decisión registrada")}</small></div><span class="status-chip">${escapeHtml(x.status)}</span></article>`).join("")
+    : '<div class="empty-state-inline">No hay campañas pendientes de revisión.</div>';
+  $("approvalCampaign").innerHTML = rows.map((x) => `<option value="${escapeHtml(x.id)}">${escapeHtml(x.product || x.campaign_name || x.id)} · ${escapeHtml(x.status)}</option>`).join("");
+}
+
+async function registerApproval() {
+  if (!["owner", "admin"].includes(roleForBusiness()))
+    throw new Error("Solo owner/admin puede registrar una aprobación.");
+  const campaign = campaigns.find((x) => x.id === $("approvalCampaign").value);
+  if (!campaign) throw new Error("Selecciona una campaña pendiente.");
+  const target = $("approvalAction").value;
+  const humanApproval = target !== "approved" || clean($("approvalPhrase").value) === "APROBAR BORRADOR";
+  if (target === "approved" && !humanApproval)
+    throw new Error("Escribe exactamente APROBAR BORRADOR.");
+  const note = clean($("approvalNote").value);
+  if (!note) throw new Error("La nota de auditoría es obligatoria.");
+  const transition = saleAds.canTransitionCampaign(campaign.status, target, { human_approval: humanApproval, meta_backend_connected: false });
+  if (!transition.ok) throw new Error(transition.reason);
+  const updated = { ...campaign, status: target, updated_at: new Date().toISOString(), approval: { required: true, approved: target === "approved", approved_by_uid: auth.currentUser.uid, approved_by_email: auth.currentUser.email, approved_at: new Date().toISOString(), note } };
+  await setDoc(doc(db, "crm_campaigns", updated.id), updated);
+  saveLocal(updated);
+  await loadCampaigns();
+  $("approvalForm").reset();
+  toast(target === "approved" ? "Borrador aprobado; no se publicó ni activó gasto." : "QA registrado.");
+}
+
 function renderAudience() {
+  const businessRows = clients.filter((x) => x.business_id === selectedBusiness());
+  const summary = saleAds.summarizeAudience(businessRows);
+  $("audienceTotal").textContent = summary.total.toLocaleString("es-DO");
+  $("audienceConsented").textContent = summary.consented.toLocaleString("es-DO");
+  $("audienceExcluded").textContent = (summary.excluded + summary.expired).toLocaleString("es-DO");
+  $("audienceContactable").textContent = summary.contactable.toLocaleString("es-DO");
   const q = clean($("clientSearch").value).toLowerCase(),
-    rows = clients
-      .filter((x) => x.business_id === selectedBusiness())
+    rows = businessRows
       .filter(
         (x) =>
           !q ||
@@ -650,18 +800,23 @@ function renderAudience() {
         .map((x) => {
           const name = x.nombre || x.name || "Cliente",
             phone = x.telefono || x.phone || "",
-            balance = Number(x.saldoCentavos ?? x.balanceCentavos ?? 0);
-          return `<article class="client-card"><h3>${escapeHtml(name)}</h3><span>${phone ? escapeHtml(phone) : "Sin teléfono"}</span><small>${escapeHtml(x.email || "Sin correo")}</small>${balance > 0 ? `<span class="balance">Saldo: ${escapeHtml(money(balance / 100))}</span>` : ""}</article>`;
+            consent = saleAds.consentState(x),
+            digits = normalizePhone(phone),
+            maskedPhone = digits ? `•••-•••-${digits.slice(-4)}` : "Sin teléfono";
+          const labels = { consented: "Consentimiento vigente", excluded: "Excluido", expired: "Consentimiento vencido", unknown: "Sin consentimiento explícito" };
+          return `<article class="client-card"><h3>${escapeHtml(name)}</h3><span class="masked">${escapeHtml(maskedPhone)}</span><small>Referencia interna: ${escapeHtml(x.folio || x.id || "—")}</small><span class="consent-state ${consent === "consented" ? "success-text" : consent === "unknown" ? "warning-text" : "danger-text"}">${escapeHtml(labels[consent])}</span></article>`;
         })
         .join("")
     : '<div class="empty-list">No hay clientes para esta búsqueda.</div>';
 }
 function renderHistory() {
-  $("historyGrid").innerHTML = campaigns.length
-    ? campaigns
+  const filter = $("campaignStatusFilter")?.value || "";
+  const visible = campaigns.filter((x) => !filter || x.status === filter);
+  $("historyGrid").innerHTML = visible.length
+    ? visible
         .map(
           (x) =>
-            `<article class="history-card" data-id="${escapeHtml(x.id)}"><h3>${escapeHtml(x.product || x.campaign_name || "Campaña")}</h3><span>${escapeHtml(x.offer || "")}</span><small>${new Date(x.updated_at || x.created_at).toLocaleString("es-DO")} · ${escapeHtml(money(x.budget))}</small></article>`,
+            `<article class="history-card" data-id="${escapeHtml(x.id)}"><span class="status-chip">${escapeHtml(x.status || "draft")}</span><h3>${escapeHtml(x.product || x.campaign_name || "Campaña")}</h3><span>${escapeHtml(x.offer || "")}</span><small>${new Date(x.updated_at || x.created_at).toLocaleString("es-DO")} · ${escapeHtml(money(x.budget))}</small></article>`,
         )
         .join("")
     : '<div class="empty-list">Todavía no hay campañas guardadas en esta sucursal.</div>';
@@ -696,7 +851,11 @@ function showView(view) {
       creatives: "Creativos y QA",
       builder: "Crear campaña",
       audience: "Banco de clientes",
+      calendar: "Calendario y capacidad",
+      experiments: "Experimentos",
+      analytics: "Medición y ventas",
       history: "Campañas guardadas",
+      approvals: "Aprobaciones",
       connections: "Conexiones",
     }[view] || "Centro de Anuncios";
 }
@@ -800,6 +959,63 @@ $("creative").onchange = () => {
 $("clientSearch").oninput = renderAudience;
 $("refreshHistory").onclick = () =>
   loadCampaigns().then(() => toast("Campañas actualizadas."));
+$("campaignStatusFilter").onchange = renderHistory;
+$("creativeAssetForm").addEventListener("input", updateAssetQa);
+$("creativeAssetForm").addEventListener("change", updateAssetQa);
+$("creativeAssetForm").addEventListener("submit", (event) => {
+  event.preventDefault();
+  const asset = assetFormValue();
+  const qa = updateAssetQa();
+  if (qa.blocked) return toast("Corrige los bloqueos de derechos antes de guardar.");
+  creativeAssets.unshift({ id: `asset_${Date.now()}`, business_id: selectedBusiness(), created_at: new Date().toISOString(), ...asset });
+  saveOperationRows("creative_assets", creativeAssets);
+  $("creativeAssetForm").reset();
+  updateAssetQa();
+  renderCreativeAssets();
+  toast("Metadatos del creativo guardados; el archivo no salió del equipo.");
+});
+$("capacityForm").addEventListener("submit", (event) => {
+  event.preventDefault();
+  const slots = Math.max(0, Math.floor(Number($("capacitySlotsInput").value)));
+  const reserved = Math.max(0, Math.floor(Number($("capacityReservedInput").value)));
+  if (reserved > slots) return toast("Los reservados no pueden superar los cupos reales.");
+  const date = $("capacityDate").value;
+  const service = clean($("capacityService").value);
+  if (!date || !service) return toast("Completa fecha y servicio.");
+  capacityEntries = capacityEntries.filter((x) => !(x.date === date && x.service.toLowerCase() === service.toLowerCase()));
+  capacityEntries.unshift({ id: `capacity_${Date.now()}`, date, service, slots, reserved, updated_at: new Date().toISOString() });
+  saveOperationRows("capacity_entries", capacityEntries);
+  renderCapacity();
+  toast("Capacidad registrada.");
+});
+$("experimentForm").addEventListener("input", updateExperimentDecision);
+$("experimentForm").addEventListener("change", updateExperimentDecision);
+$("experimentForm").addEventListener("submit", (event) => {
+  event.preventDefault();
+  const input = experimentFormValue();
+  if (!input.hypothesis) return toast("La hipótesis es obligatoria.");
+  const result = saleAds.evaluateExperiment(input);
+  experimentRecords.unshift({ id: `experiment_${Date.now()}`, created_at: new Date().toISOString(), ...input, result });
+  saveOperationRows("experiments", experimentRecords);
+  renderExperiments();
+  toast(result.decision === "insufficient_data" ? "Evaluación guardada como señal insuficiente." : "Evaluación direccional guardada.");
+});
+$("attributionForm").addEventListener("submit", (event) => {
+  event.preventDefault();
+  const stage = $("attributionStage").value;
+  const reference = clean($("attributionReference").value);
+  const value = Math.max(0, Number($("attributionValue").value) || 0);
+  if (stage === "paid" && value <= 0) return toast("Una venta pagada requiere valor confirmado.");
+  attributionEvents.unshift({ id: `event_${Date.now()}`, campaign_id: $("attributionCampaign").value, stage, reference, value, created_at: new Date().toISOString(), source: "manual_verified" });
+  saveOperationRows("attribution_events", attributionEvents);
+  $("attributionForm").reset();
+  renderAnalytics();
+  toast("Evento comercial registrado sin datos personales.");
+});
+$("approvalForm").addEventListener("submit", (event) => {
+  event.preventDefault();
+  registerApproval().catch((error) => toast(error.message || String(error)));
+});
 document
   .querySelectorAll(".nav-item")
   .forEach((x) => (x.onclick = () => showView(x.dataset.view)));
@@ -829,6 +1045,9 @@ if (!$("wizardDeadline").value) {
   date.setDate(date.getDate() + 14);
   $("wizardDeadline").value = date.toISOString().slice(0, 10);
 }
+if (!$("capacityDate").value) $("capacityDate").value = new Date().toISOString().slice(0, 10);
+updateAssetQa();
+updateExperimentDecision();
 updateWizard();
 
 onAuthStateChanged(auth, async (user) => {

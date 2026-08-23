@@ -124,5 +124,117 @@
     return { rows, missing, valid: rows.length > 0 && missing.length === 0 };
   }
 
-  return { templates, creativeSpecs, recommendTemplates, calculateBudget, lintPolicy, validatePlacements };
+  function consentState(client = {}) {
+    const optedOut = client.marketing_opt_out === true || client.opt_out === true
+      || client.consent_status === "revoked";
+    if (optedOut) return "excluded";
+    const explicit = client.marketing_consent === true || client.consent_marketing === true
+      || client.consent_status === "granted";
+    const expires = client.marketing_consent_expires_at || client.consent_expires_at;
+    if (explicit && expires && new Date(expires).getTime() < Date.now()) return "expired";
+    return explicit ? "consented" : "unknown";
+  }
+
+  function summarizeAudience(rows = []) {
+    const result = { total: rows.length, consented: 0, excluded: 0, expired: 0, unknown: 0, contactable: 0 };
+    for (const row of rows) {
+      const state = consentState(row);
+      result[state] += 1;
+      if (state === "consented" && String(row.telefono || row.phone || row.email || "").trim())
+        result.contactable += 1;
+    }
+    result.exportable = result.contactable;
+    return result;
+  }
+
+  function validateCreativeAsset(input = {}) {
+    const issues = [];
+    const family = String(input.family || "");
+    if (!creativeSpecs.some((x) => x.id === family))
+      issues.push({ code: "family", severity: "block", message: "Selecciona una familia creativa vigente." });
+    if (!String(input.name || "").trim())
+      issues.push({ code: "name", severity: "block", message: "Identifica el activo sin exponer datos personales." });
+    if (input.people_visible && !input.model_release)
+      issues.push({ code: "model_release", severity: "block", message: "Falta autorización comercial de las personas visibles." });
+    if (input.contains_minor && !input.guardian_release)
+      issues.push({ code: "guardian_release", severity: "block", message: "Falta autorización comercial del tutor." });
+    if (input.rights_expires_at && new Date(input.rights_expires_at).getTime() < Date.now())
+      issues.push({ code: "rights_expired", severity: "block", message: "Los derechos registrados están vencidos." });
+    if (!input.rights_scope)
+      issues.push({ code: "rights_scope", severity: "warning", message: "Documenta el alcance de uso del activo." });
+    return { issues, blocked: issues.some((x) => x.severity === "block") };
+  }
+
+  function capacitySummary(entries = [], from = "", to = "") {
+    const start = from ? new Date(`${from}T00:00:00`) : null;
+    const end = to ? new Date(`${to}T23:59:59`) : null;
+    const selected = entries.filter((x) => {
+      const date = new Date(`${x.date}T12:00:00`);
+      return (!start || date >= start) && (!end || date <= end);
+    });
+    return selected.reduce((acc, row) => {
+      const slots = Math.max(0, Math.floor(n(row.slots)));
+      const reserved = Math.max(0, Math.min(slots, Math.floor(n(row.reserved))));
+      acc.slots += slots;
+      acc.reserved += reserved;
+      acc.available += slots - reserved;
+      return acc;
+    }, { days: selected.length, slots: 0, reserved: 0, available: 0 });
+  }
+
+  function evaluateExperiment(input = {}) {
+    const minEvents = Math.max(1, Math.floor(n(input.minimum_events) || 20));
+    const controlEvents = Math.max(0, Math.floor(n(input.control_events)));
+    const challengerEvents = Math.max(0, Math.floor(n(input.challenger_events)));
+    const controlSpend = Math.max(0, n(input.control_spend));
+    const challengerSpend = Math.max(0, n(input.challenger_spend));
+    const controlCost = controlEvents ? controlSpend / controlEvents : null;
+    const challengerCost = challengerEvents ? challengerSpend / challengerEvents : null;
+    if (controlEvents < minEvents || challengerEvents < minEvents)
+      return { decision: "insufficient_data", confidence: "low", control_cost: controlCost, challenger_cost: challengerCost, reason: `Cada variante necesita al menos ${minEvents} eventos comparables.` };
+    if (controlCost === null || challengerCost === null)
+      return { decision: "insufficient_data", confidence: "low", control_cost: controlCost, challenger_cost: challengerCost, reason: "Falta gasto o resultado comparable." };
+    const delta = (challengerCost - controlCost) / Math.max(controlCost, 0.01);
+    if (Math.abs(delta) < 0.1)
+      return { decision: "keep_test", confidence: "medium", control_cost: round2(controlCost), challenger_cost: round2(challengerCost), reason: "La diferencia de costo es menor al 10%." };
+    return { decision: delta < 0 ? "challenger" : "control", confidence: "directional", control_cost: round2(controlCost), challenger_cost: round2(challengerCost), reason: "Decisión direccional; validar calidad y sesiones completadas antes de escalar." };
+  }
+
+  function funnelMetrics(events = []) {
+    const stages = ["lead", "qualified", "booking", "completed", "paid"];
+    const counts = Object.fromEntries(stages.map((stage) => [stage, 0]));
+    let revenue = 0;
+    for (const event of events) {
+      if (stages.includes(event.stage)) counts[event.stage] += 1;
+      if (event.stage === "paid") revenue += Math.max(0, n(event.value));
+    }
+    return { ...counts, revenue: round2(revenue) };
+  }
+
+  const campaignTransitions = Object.freeze({
+    draft_review_required: ["qa_ready"],
+    saved: ["qa_ready"],
+    qa_ready: ["approved"],
+    approved: ["publish_paused_requested"],
+    publish_paused_requested: ["paused"],
+    paused: ["active", "archived"],
+    active: ["paused"],
+    archived: [],
+  });
+
+  function canTransitionCampaign(from, to, options = {}) {
+    const allowed = (campaignTransitions[from] || []).includes(to);
+    if (!allowed) return { ok: false, reason: "Transición de estado no permitida." };
+    if (["publish_paused_requested", "paused", "active"].includes(to) && !options.meta_backend_connected)
+      return { ok: false, reason: "Meta backend no conectado; no se puede crear ni activar objetos remotos." };
+    if (["approved", "publish_paused_requested", "active"].includes(to) && !options.human_approval)
+      return { ok: false, reason: "Esta transición exige aprobación humana registrada." };
+    return { ok: true, reason: "Transición permitida." };
+  }
+
+  return {
+    templates, creativeSpecs, recommendTemplates, calculateBudget, lintPolicy, validatePlacements,
+    consentState, summarizeAudience, validateCreativeAsset, capacitySummary, evaluateExperiment,
+    funnelMetrics, campaignTransitions, canTransitionCampaign,
+  };
 });

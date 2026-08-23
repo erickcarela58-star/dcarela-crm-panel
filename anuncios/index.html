@@ -13,7 +13,7 @@
     />
     <title>D'Carela · Centro de Anuncios</title>
     <link rel="manifest" href="./manifest.webmanifest" />
-    <link rel="stylesheet" href="./styles.css?v=20260823v3" />
+    <link rel="stylesheet" href="./styles.css?v=20260823v4" />
   </head>
   <body>
     <div class="login" id="login">
@@ -59,11 +59,15 @@
           <button class="nav-item" data-view="templates">Plantillas</button>
           <button class="nav-item" data-view="creatives">Creativos y QA</button>
           <button class="nav-item" data-view="audience">
-            Banco de clientes <span id="clientBadge">0</span>
+            Audiencias CRM <span id="clientBadge">0</span>
           </button>
+          <button class="nav-item" data-view="calendar">Calendario y capacidad</button>
+          <button class="nav-item" data-view="experiments">Experimentos</button>
+          <button class="nav-item" data-view="analytics">Medición y ventas</button>
           <button class="nav-item" data-view="history">
-            Campañas guardadas <span id="historyBadge">0</span>
+            Campañas <span id="historyBadge">0</span>
           </button>
+          <button class="nav-item" data-view="approvals">Aprobaciones</button>
           <button class="nav-item" data-view="connections">Conexiones</button>
           <button class="nav-item" data-view="builder">Constructor clásico</button>
         </nav>
@@ -116,7 +120,7 @@
         <section class="view" id="viewWizard">
           <div class="section-hero compact-section">
             <div><span class="eyebrow">Wizard rector · guardado local automático</span><h1>Construir una campaña vendible</h1><p>Ocho pasos, economía primero y revisión antes de guardar.</p></div>
-            <span class="phase-badge">Fase 1 · sin publicación Meta</span>
+            <span class="phase-badge">Operación segura · publicación Meta bloqueada</span>
           </div>
           <div class="wizard-shell">
             <aside class="wizard-steps" aria-label="Pasos de campaña">
@@ -218,7 +222,25 @@
 
         <section class="view" id="viewTemplates"><div class="section-hero compact-section"><div><span class="eyebrow">Biblioteca versionada</span><h1>Plantillas T01–T12</h1><p>Patrones para fotografía tratados como hipótesis medibles.</p></div></div><div class="template-library" id="templateLibrary"></div></section>
 
-        <section class="view" id="viewCreatives"><div class="section-hero compact-section"><div><span class="eyebrow">QA por placement</span><h1>Tres familias, cero recortes silenciosos</h1><p>Feed 4:5, Stories/Reels 9:16 y Marketplace 1:1. Las fuentes deben revalidarse en Meta antes de publicar.</p></div></div><div class="spec-grid" id="creativeSpecGrid"></div></section>
+        <section class="view" id="viewCreatives">
+          <div class="section-hero compact-section"><div><span class="eyebrow">Biblioteca y QA por placement</span><h1>Creativos con derechos verificables</h1><p>Registra metadatos, permisos y familia visual. SaleAds bloquea usos sin autorización.</p></div></div>
+          <div class="spec-grid" id="creativeSpecGrid"></div>
+          <div class="operations-grid">
+            <form class="panel" id="creativeAssetForm">
+              <div class="panel-heading section"><div><span>Activo nuevo</span><h3>Registro comercial</h3></div></div>
+              <div class="form-grid">
+                <label class="wide">Nombre interno<input id="assetName" maxlength="100" required placeholder="Ej. Maternidad estudio agosto" /></label>
+                <label>Familia<select id="assetFamily"><option value="feed_portrait">4:5 Feed</option><option value="fullscreen_vertical">9:16 Stories/Reels</option><option value="marketplace_square">1:1 Marketplace</option></select></label>
+                <label>Derechos hasta<input id="assetRightsUntil" type="date" /></label>
+                <label class="wide">Alcance del permiso<input id="assetRightsScope" placeholder="Meta orgánico/pagado, sucursal y territorio" /></label>
+              </div>
+              <div class="asset-checks"><label><input id="assetPeople" type="checkbox" /> Personas visibles</label><label><input id="assetModelRelease" type="checkbox" /> Release comercial</label><label><input id="assetMinor" type="checkbox" /> Menor visible</label><label><input id="assetGuardian" type="checkbox" /> Permiso del tutor</label></div>
+              <div class="qa-box" id="assetQa">Completa el registro para ejecutar QA.</div>
+              <button class="primary" type="submit">Guardar metadatos</button>
+            </form>
+            <div class="panel"><div class="panel-heading section"><div><span>Biblioteca local por sucursal</span><h3>Activos registrados</h3></div></div><div class="asset-library" id="assetLibrary"></div></div>
+          </div>
+        </section>
 
         <section class="view" id="viewBuilder">
           <div class="hero">
@@ -505,9 +527,28 @@
                 a Meta desde esta herramienta.
               </p>
             </div>
-            <input id="clientSearch" placeholder="Buscar nombre o teléfono" />
+            <input id="clientSearch" placeholder="Buscar por referencia interna" />
           </div>
+          <div class="kpis" id="audienceSummary"><article><span>Total CRM</span><b id="audienceTotal">—</b><small>solo esta sucursal</small></article><article><span>Consentidos</span><b id="audienceConsented">—</b><small>uso publicitario explícito</small></article><article><span>Excluidos/expirados</span><b id="audienceExcluded">—</b><small>nunca exportables</small></article><article><span>Listos para contacto</span><b id="audienceContactable">—</b><small>consentimiento + contacto</small></article></div>
+          <p class="notice">La ausencia de consentimiento se trata como “no utilizable”. La vista enmascara los datos de contacto y nunca exporta deudores por ese atributo.</p>
           <div class="audience-grid" id="audienceGrid"></div>
+        </section>
+
+        <section class="view" id="viewCalendar">
+          <div class="section-hero compact-section"><div><span class="eyebrow">Capacidad real</span><h1>Calendario comercial</h1><p>Los cupos declarados alimentan la viabilidad y evitan urgencia ficticia.</p></div></div>
+          <div class="kpis"><article><span>Días cargados</span><b id="capacityDays">0</b><small>plan local</small></article><article><span>Cupos totales</span><b id="capacitySlots">0</b><small>capacidad</small></article><article><span>Reservados</span><b id="capacityReserved">0</b><small>confirmados</small></article><article><span>Disponibles</span><b id="capacityAvailable">0</b><small>ofertables</small></article></div>
+          <div class="operations-grid"><form class="panel" id="capacityForm"><div class="panel-heading section"><div><span>Disponibilidad</span><h3>Registrar jornada</h3></div></div><div class="form-grid"><label>Fecha<input id="capacityDate" type="date" required /></label><label>Servicio<input id="capacityService" required placeholder="Ej. maternidad" /></label><label>Cupos<input id="capacitySlotsInput" type="number" min="0" required /></label><label>Reservados<input id="capacityReservedInput" type="number" min="0" value="0" /></label></div><button class="primary" type="submit">Guardar capacidad</button></form><div class="panel"><div class="panel-heading section"><div><span>Próximas fechas</span><h3>Disponibilidad registrada</h3></div></div><div id="capacityList" class="record-list"></div></div></div>
+        </section>
+
+        <section class="view" id="viewExperiments">
+          <div class="section-hero compact-section"><div><span class="eyebrow">Aprendizaje propio</span><h1>Experimentos controlados</h1><p>Una variable por prueba; ninguna variante se llama ganadora sin señal suficiente.</p></div></div>
+          <div class="operations-grid"><form class="panel" id="experimentForm"><div class="panel-heading section"><div><span>Nueva prueba</span><h3>Control vs. variante</h3></div></div><div class="form-grid"><label class="wide">Hipótesis<input id="experimentHypothesis" required placeholder="Un Reel del proceso reducirá el costo por reserva" /></label><label>Variable<select id="experimentVariable"><option value="creative">Creativo</option><option value="copy">Copy</option><option value="destination">Destino</option><option value="audience">Audiencia</option></select></label><label>Métrica principal<select id="experimentMetric"><option value="qualified_lead">Lead calificado</option><option value="booking">Reserva</option><option value="completed">Sesión completada</option></select></label><label>Eventos mínimos<input id="experimentMinimum" type="number" min="1" value="20" /></label><label>Control eventos<input id="experimentControlEvents" type="number" min="0" value="0" /></label><label>Control gasto<input id="experimentControlSpend" type="number" min="0" value="0" /></label><label>Variante eventos<input id="experimentVariantEvents" type="number" min="0" value="0" /></label><label>Variante gasto<input id="experimentVariantSpend" type="number" min="0" value="0" /></label></div><div id="experimentDecision" class="qa-box"></div><button class="primary" type="submit">Guardar evaluación</button></form><div class="panel"><div class="panel-heading section"><div><span>Memoria de aprendizaje</span><h3>Pruebas registradas</h3></div></div><div id="experimentList" class="record-list"></div></div></div>
+        </section>
+
+        <section class="view" id="viewAnalytics">
+          <div class="section-hero compact-section"><div><span class="eyebrow">CRM y atribución propia</span><h1>Medición hasta ingreso</h1><p>Registra señales verificables. Sin conexión Insights no se inventan gasto, ROAS ni conversiones.</p></div></div>
+          <div class="funnel-grid" id="funnelGrid"></div>
+          <div class="operations-grid"><form class="panel" id="attributionForm"><div class="panel-heading section"><div><span>Evento comercial</span><h3>Registrar conversión</h3></div></div><div class="form-grid"><label>Campaña<select id="attributionCampaign"></select></label><label>Etapa<select id="attributionStage"><option value="lead">Lead</option><option value="qualified">Calificado</option><option value="booking">Reserva</option><option value="completed">Sesión completada</option><option value="paid">Venta pagada</option></select></label><label>Valor confirmado (RD$)<input id="attributionValue" type="number" min="0" value="0" /></label><label>Referencia no personal<input id="attributionReference" maxlength="80" placeholder="Ticket o folio interno" /></label></div><button class="primary" type="submit">Registrar evento</button></form><div class="panel"><div class="panel-heading section"><div><span>Auditoría local</span><h3>Eventos atribuidos</h3></div></div><div id="attributionList" class="record-list"></div></div></div>
         </section>
 
         <section class="view" id="viewHistory">
@@ -519,9 +560,14 @@
                 Borradores por sucursal, con autor, fecha y paquete exportable.
               </p>
             </div>
-            <button class="secondary" id="refreshHistory">Actualizar</button>
+            <div class="inline-actions"><select id="campaignStatusFilter"><option value="">Todos los estados</option><option value="saved">Guardados</option><option value="qa_ready">QA listo</option><option value="approved">Aprobados</option></select><button class="secondary" id="refreshHistory">Actualizar</button></div>
           </div>
           <div class="history-grid" id="historyGrid"></div>
+        </section>
+
+        <section class="view" id="viewApprovals">
+          <div class="section-hero compact-section"><div><span class="eyebrow">Control humano y auditoría</span><h1>Aprobaciones</h1><p>QA y aprobación son estados separados. Crear objetos Meta PAUSED continúa bloqueado hasta disponer de backend seguro.</p></div></div>
+          <div class="operations-grid"><div class="panel"><div class="panel-heading section"><div><span>Cola de revisión</span><h3>Borradores y QA</h3></div></div><div id="approvalList" class="record-list"></div></div><form class="panel" id="approvalForm"><div class="panel-heading section"><div><span>Aprobación explícita</span><h3>Registrar decisión</h3></div></div><label>Campaña<select id="approvalCampaign"></select></label><label>Acción<select id="approvalAction"><option value="qa_ready">Marcar QA listo</option><option value="approved">Aprobar borrador</option></select></label><label>Confirmación<input id="approvalPhrase" autocomplete="off" placeholder="Escribe APROBAR BORRADOR" /></label><label>Nota de auditoría<textarea id="approvalNote" required placeholder="Qué se revisó y por qué se aprueba"></textarea></label><button class="primary" type="submit">Registrar aprobación</button><p class="notice">Esta acción no publica, no activa gasto y no cambia Meta Ads.</p></form></div>
         </section>
 
         <section class="view" id="viewConnections">
@@ -533,7 +579,7 @@
 
     <div class="toast" id="toast" role="status"></div>
     <script src="https://panel.dcarelacompufoto.com/firebase-config.js"></script>
-    <script src="./saleads-core.js?v=20260823v3"></script>
-    <script type="module" src="./app.js?v=20260823v3"></script>
+    <script src="./saleads-core.js?v=20260823v4"></script>
+    <script type="module" src="./app.js?v=20260823v4"></script>
   </body>
 </html>
