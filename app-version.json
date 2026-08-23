@@ -1,6 +1,6 @@
 {
-  "version": "2026-08-22-client-bank-v28",
+  "version": "2026-08-22-ads-link-v29",
   "channel": "crm",
   "released_at": "2026-08-23T00:55:00Z",
-  "summary": "Banco de clientes POS conectado directamente a Firebase en ambos CRM, con acceso dual y conservación del historial comercial."
+  "summary": "CRM enlazado al Centro de Anuncios independiente con Firebase, sucursales, productos, clientes y borradores cloud."
 }
