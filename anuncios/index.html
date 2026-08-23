@@ -1,0 +1,402 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width,initial-scale=1,viewport-fit=cover"
+    />
+    <meta name="theme-color" content="#0b0d10" />
+    <meta
+      name="description"
+      content="Centro independiente de publicidad y ventas de D'Carela Compufoto"
+    />
+    <title>D'Carela · Centro de Anuncios</title>
+    <link rel="manifest" href="./manifest.webmanifest" />
+    <link rel="stylesheet" href="./styles.css?v=20260822v1" />
+  </head>
+  <body>
+    <div class="login" id="login">
+      <form class="login-card" id="loginForm">
+        <img
+          src="https://dcarelacompufoto.com/img/logo.webp"
+          alt="D'Carela Compufoto"
+        />
+        <span class="eyebrow">Acceso administrativo</span>
+        <h1>Centro de Anuncios</h1>
+        <p>Usa la misma cuenta del panel, CRM y Fotos.</p>
+        <label
+          >Correo<input
+            id="email"
+            type="email"
+            autocomplete="username"
+            required
+            placeholder="tu correo"
+        /></label>
+        <label
+          >Contraseña<input
+            id="password"
+            type="password"
+            autocomplete="current-password"
+            required
+            placeholder="••••••••"
+        /></label>
+        <button class="primary" id="loginButton" type="submit">Entrar</button>
+        <div class="form-error" id="loginError" role="alert"></div>
+      </form>
+    </div>
+
+    <div class="app" id="app" hidden>
+      <aside class="sidebar">
+        <a class="brand" href="./"
+          ><img src="https://dcarelacompufoto.com/img/logo.webp" alt="" /><span
+            ><b>D'Carela</b><small>Anuncios & Ventas</small></span
+          ></a
+        >
+        <nav>
+          <button class="nav-item active" data-view="builder">
+            Crear campaña
+          </button>
+          <button class="nav-item" data-view="audience">
+            Banco de clientes <span id="clientBadge">0</span>
+          </button>
+          <button class="nav-item" data-view="history">
+            Campañas guardadas <span id="historyBadge">0</span>
+          </button>
+        </nav>
+        <div class="connections">
+          <span>Herramientas conectadas</span>
+          <a href="https://panel.dcarelacompufoto.com/">Panel oficial</a>
+          <a href="https://crm.dcarelacompufoto.com/">CRM</a>
+          <a href="https://fotos.dcarelacompufoto.com/">CRM Fotos</a>
+          <a href="https://dcarelacompufoto.com/combos.html">Combos web</a>
+        </div>
+        <button class="logout" id="logoutButton">Cerrar sesión</button>
+      </aside>
+
+      <main>
+        <header class="topbar">
+          <div>
+            <span class="eyebrow">Centro comercial independiente</span>
+            <h2 id="viewTitle">Crear campaña</h2>
+          </div>
+          <div class="top-actions">
+            <label>Sucursal<select id="businessSelect"></select></label>
+            <div class="user">
+              <b id="userName"></b
+              ><small id="syncStatus">Conectando Firebase…</small>
+            </div>
+          </div>
+        </header>
+
+        <section class="view active" id="viewBuilder">
+          <div class="hero">
+            <div>
+              <span class="eyebrow"
+                >Publicidad automatizada con control humano</span
+              >
+              <h1>De una oferta a una campaña lista para vender.</h1>
+              <p>
+                Usa productos, sucursales y clientes reales de Firebase para
+                preparar audiencia, copys, destinos, presupuesto, pruebas A/B y
+                seguimiento.
+              </p>
+            </div>
+            <div class="safety">
+              <b>Sin gasto accidental</b
+              ><span
+                >Genera y guarda borradores. Meta Ads Manager se abre solo para
+                revisión; este panel nunca confirma pagos ni publica por sí
+                solo.</span
+              >
+            </div>
+          </div>
+
+          <div class="kpis" id="kpis">
+            <article>
+              <span>Clientes de caja</span><b id="kpiClients">—</b
+              ><small>sincronizados</small>
+            </article>
+            <article>
+              <span>Con teléfono</span><b id="kpiPhones">—</b
+              ><small>audiencia contactable</small>
+            </article>
+            <article>
+              <span>Productos y servicios</span><b id="kpiProducts">—</b
+              ><small>catálogo real</small>
+            </article>
+            <article>
+              <span>Borradores nube</span><b id="kpiDrafts">—</b
+              ><small>Firestore</small>
+            </article>
+          </div>
+
+          <div class="workspace">
+            <form class="panel form-panel" id="campaignForm">
+              <div class="panel-heading">
+                <div>
+                  <span>01</span>
+                  <h3>Oferta y objetivo</h3>
+                </div>
+                <button type="button" class="ghost" id="resetButton">
+                  Limpiar
+                </button>
+              </div>
+              <div class="form-grid">
+                <label
+                  >Producto o servicio<select id="productSelect">
+                    <option value="">Escribir manualmente</option>
+                  </select></label
+                >
+                <label
+                  >Nombre comercial<input
+                    id="product"
+                    maxlength="140"
+                    required
+                    placeholder="Ej.: Combo Embarazada Premium"
+                /></label>
+                <label class="wide"
+                  >Oferta principal<input
+                    id="offer"
+                    maxlength="220"
+                    required
+                    placeholder="Ej.: Sesión + 10 fotos retocadas; reserva con RD$1,000"
+                /></label>
+                <label
+                  >Precio desde (RD$)<input
+                    id="price"
+                    type="number"
+                    min="0"
+                    step="1"
+                    placeholder="Opcional"
+                /></label>
+                <label
+                  >Objetivo<select id="objective">
+                    <option value="messages">Mensajes por WhatsApp</option>
+                    <option value="leads">Clientes potenciales</option>
+                    <option value="traffic">Visitas al catálogo</option>
+                    <option value="awareness">Reconocimiento local</option>
+                  </select></label
+                >
+                <label
+                  >Etapa<select id="funnel">
+                    <option value="cold">Descubrimiento</option>
+                    <option value="warm">Consideración</option>
+                    <option value="hot">Conversión</option>
+                    <option value="remarketing">Remarketing</option>
+                    <option value="loyalty">Recompra</option>
+                  </select></label
+                >
+                <label
+                  >Destino<select id="destination">
+                    <option value="whatsapp">WhatsApp oficial</option>
+                    <option value="web">Catálogo web</option>
+                    <option value="both">WhatsApp + web A/B</option>
+                  </select></label
+                >
+                <label
+                  >Segmento del banco<select id="segment">
+                    <option value="all">Todos los clientes visibles</option>
+                    <option value="phone">Con teléfono registrado</option>
+                    <option value="debt_free">Sin saldo pendiente</option>
+                    <option value="debt">
+                      Con saldo pendiente (no usar para anuncios)
+                    </option>
+                  </select></label
+                >
+                <label
+                  >Tono<select id="tone">
+                    <option value="emotional">Emocional</option>
+                    <option value="premium">Premium</option>
+                    <option value="direct">Directo</option>
+                  </select></label
+                >
+              </div>
+
+              <div class="panel-heading section">
+                <div>
+                  <span>02</span>
+                  <h3>Distribución y presupuesto</h3>
+                </div>
+              </div>
+              <div class="form-grid">
+                <label
+                  >Presupuesto total (RD$)<input
+                    id="budget"
+                    type="number"
+                    min="1"
+                    value="3000"
+                    required
+                /></label>
+                <label
+                  >Duración (días)<input
+                    id="days"
+                    type="number"
+                    min="1"
+                    max="90"
+                    value="7"
+                    required
+                /></label>
+                <label>Inicio<input id="startDate" type="date" /></label>
+                <label
+                  >Formato<select id="format">
+                    <option value="automatic">Automático</option>
+                    <option value="image">Imagen</option>
+                    <option value="video">Video / reel</option>
+                    <option value="carousel">Carrusel</option>
+                    <option value="story">Historia vertical</option>
+                  </select></label
+                >
+                <label
+                  >Ubicaciones<select id="placements">
+                    <option value="advantage">Advantage+ automático</option>
+                    <option value="all">Facebook + Instagram</option>
+                    <option value="instagram">Solo Instagram</option>
+                    <option value="facebook">Solo Facebook</option>
+                  </select></label
+                >
+                <label
+                  >Zona<input
+                    id="location"
+                    value="La Romana, República Dominicana"
+                /></label>
+                <label
+                  >Radio (km)<input
+                    id="radius"
+                    type="number"
+                    min="1"
+                    max="80"
+                    value="25"
+                /></label>
+                <label
+                  >Edades
+                  <div class="inline">
+                    <input
+                      id="ageMin"
+                      type="number"
+                      min="18"
+                      max="65"
+                      value="18"
+                    /><span>a</span
+                    ><input
+                      id="ageMax"
+                      type="number"
+                      min="18"
+                      max="65"
+                      value="55"
+                    /></div
+                ></label>
+                <label class="wide"
+                  >Prueba social<input
+                    id="proof"
+                    maxlength="180"
+                    placeholder="Ej.: Más de 500 familias fotografiadas"
+                /></label>
+                <label class="wide"
+                  >Urgencia real<input
+                    id="urgency"
+                    maxlength="180"
+                    placeholder="Ej.: 8 espacios hasta el 30 de agosto"
+                /></label>
+                <label class="wide"
+                  >Notas del creativo<textarea
+                    id="notes"
+                    maxlength="700"
+                    placeholder="Colores, vigencia, restricciones o indicaciones"
+                  ></textarea>
+                </label>
+                <label class="wide upload"
+                  >Creativo de referencia<input
+                    id="creative"
+                    type="file"
+                    accept="image/*,video/*"
+                  /><span id="creativeName"
+                    >Ningún archivo seleccionado</span
+                  ></label
+                >
+              </div>
+              <div class="form-actions">
+                <button class="primary" type="submit">Generar paquete</button
+                ><button
+                  class="secondary"
+                  id="saveButton"
+                  type="button"
+                  disabled
+                >
+                  Guardar en Firebase
+                </button>
+              </div>
+            </form>
+
+            <section class="panel output-panel">
+              <div class="panel-heading">
+                <div>
+                  <span>03</span>
+                  <h3>Paquete automatizado</h3>
+                </div>
+                <em id="draftState">Sin generar</em>
+              </div>
+              <div class="output-empty" id="outputEmpty">
+                <b>Tu campaña aparecerá aquí</b
+                ><span
+                  >Completa la oferta para generar copys, público, presupuesto
+                  diario, destinos medibles, prueba A/B y seguimiento.</span
+                >
+              </div>
+              <div id="output" hidden></div>
+              <div class="output-actions">
+                <button class="secondary" id="copyButton" disabled>
+                  Copiar resumen</button
+                ><button class="secondary" id="txtButton" disabled>
+                  Exportar TXT</button
+                ><button class="secondary" id="jsonButton" disabled>
+                  Exportar JSON</button
+                ><a
+                  class="primary disabled"
+                  id="metaButton"
+                  href="https://business.facebook.com/adsmanager/manage/campaigns"
+                  target="_blank"
+                  rel="noopener"
+                  >Abrir Meta Ads Manager</a
+                >
+              </div>
+            </section>
+          </div>
+        </section>
+
+        <section class="view" id="viewAudience">
+          <div class="section-hero">
+            <div>
+              <span class="eyebrow">Firebase · clients</span>
+              <h1>Banco de clientes conectado</h1>
+              <p>
+                Vista de segmentación interna. Los datos personales no se envían
+                a Meta desde esta herramienta.
+              </p>
+            </div>
+            <input id="clientSearch" placeholder="Buscar nombre o teléfono" />
+          </div>
+          <div class="audience-grid" id="audienceGrid"></div>
+        </section>
+
+        <section class="view" id="viewHistory">
+          <div class="section-hero">
+            <div>
+              <span class="eyebrow">Firestore · crm_campaigns</span>
+              <h1>Campañas guardadas</h1>
+              <p>
+                Borradores por sucursal, con autor, fecha y paquete exportable.
+              </p>
+            </div>
+            <button class="secondary" id="refreshHistory">Actualizar</button>
+          </div>
+          <div class="history-grid" id="historyGrid"></div>
+        </section>
+      </main>
+    </div>
+
+    <div class="toast" id="toast" role="status"></div>
+    <script src="https://panel.dcarelacompufoto.com/firebase-config.js"></script>
+    <script type="module" src="./app.js?v=20260822v1"></script>
+  </body>
+</html>

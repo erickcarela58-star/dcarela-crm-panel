@@ -1,6 +1,6 @@
 {
-  "version": "2026-08-22-ads-link-v29",
+  "version": "2026-08-23-ads-live-v30",
   "channel": "crm",
-  "released_at": "2026-08-23T00:55:00Z",
-  "summary": "CRM enlazado al Centro de Anuncios independiente con Firebase, sucursales, productos, clientes y borradores cloud."
+  "released_at": "2026-08-23T04:18:25Z",
+  "summary": "Centro de Anuncios independiente publicado dentro del dominio CRM, con Firebase, sucursales, productos, clientes y borradores cloud."
 }
