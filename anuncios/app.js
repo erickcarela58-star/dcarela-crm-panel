@@ -16,7 +16,10 @@ import {
   where,
 } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 
-const BUILD = "2026-08-23-ads-standalone-v2";
+const BUILD = "2026-08-23-saleads-phase1-v3";
+const saleAds = window.SaleAdsCore;
+if (!saleAds) throw new Error("No se cargó el motor seguro de SaleAds.");
+const SALEADS_UI = new URLSearchParams(location.search).get("saleads_ui") === "classic" ? "classic" : "phase1";
 const firebaseConfig = window.__DCARELA_FIREBASE_CONFIG || {};
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
@@ -47,7 +50,10 @@ let member = null,
   clients = [],
   products = [],
   campaigns = [],
-  current = null;
+  current = null,
+  wizardStep = 0,
+  wizardTemplateId = "T01";
+const WIZARD_KEY = "dcarela_saleads_wizard_v3";
 
 const PRESETS = {
   xv: {
@@ -91,6 +97,216 @@ const PRESETS = {
     audience: "Personas interesadas en fotografía profesional",
   },
 };
+
+const wizardIds = [
+  "wizardService", "wizardSlots", "wizardDeadline", "wizardGoal", "wizardPrice",
+  "wizardDeposit", "wizardVariableCost", "wizardProfit", "wizardRoas", "wizardOffer",
+  "wizardStage", "wizardAudienceSource", "wizardLocation", "wizardRadius", "wizardAgeMin",
+  "wizardAgeMax", "wizardConsent", "wizardCreativeMode", "wizardConcept", "wizardPeopleVisible",
+  "wizardModelRelease", "wizardContainsMinor", "wizardGuardianRelease", "wizardCopy",
+  "wizardAvailabilityVerified", "wizardProofVerified", "wizardCashCap", "wizardDays",
+  "wizardHistoricalCost", "wizardQualifiedRate", "wizardCompletedRate", "wizardNoShowRate",
+  "wizardDestination", "wizardSla", "wizardQuestions",
+];
+
+function wizardValues() {
+  const values = {};
+  for (const id of wizardIds) {
+    const el = $(id);
+    if (el) values[id] = el.type === "checkbox" ? el.checked : el.value;
+  }
+  values.assetFamilies = Array.from(document.querySelectorAll("[data-asset-family]:checked")).map((x) => x.dataset.assetFamily);
+  values.templateId = wizardTemplateId;
+  values.step = wizardStep;
+  return values;
+}
+
+function saveWizard() {
+  try {
+    const all = JSON.parse(localStorage.getItem(WIZARD_KEY) || "{}");
+    all[selectedBusiness()] = wizardValues();
+    localStorage.setItem(WIZARD_KEY, JSON.stringify(all));
+  } catch (error) {
+    console.warn("wizard-autosave", error);
+  }
+}
+
+function restoreWizard() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(WIZARD_KEY) || "{}")[selectedBusiness()];
+    if (!saved) return;
+    for (const id of wizardIds) {
+      const el = $(id);
+      if (!el || saved[id] === undefined) continue;
+      if (el.type === "checkbox") el.checked = Boolean(saved[id]);
+      else el.value = saved[id];
+    }
+    document.querySelectorAll("[data-asset-family]").forEach((el) => {
+      el.checked = (saved.assetFamilies || []).includes(el.dataset.assetFamily);
+    });
+    wizardTemplateId = saved.templateId || wizardTemplateId;
+    wizardStep = Math.max(0, Math.min(7, Number(saved.step) || 0));
+  } catch (error) {
+    console.warn("wizard-restore", error);
+  }
+}
+
+function wizardBudget() {
+  return saleAds.calculateBudget({
+    price: $("wizardPrice").value,
+    variable_cost: $("wizardVariableCost").value,
+    desired_profit_after_ads: $("wizardProfit").value,
+    target_revenue_roas: $("wizardRoas").value,
+    available_slots: $("wizardSlots").value,
+    campaign_days: $("wizardDays").value,
+    cash_budget_cap: $("wizardCashCap").value,
+    historical_cost_per_event: $("wizardHistoricalCost").value,
+    qualified_to_booking_rate: $("wizardQualifiedRate").value,
+    booking_to_completed_rate: $("wizardCompletedRate").value,
+    refund_or_no_show_rate: $("wizardNoShowRate").value,
+  });
+}
+
+function wizardLint() {
+  return saleAds.lintPolicy({
+    copy: $("wizardCopy").value,
+    availability_verified: $("wizardAvailabilityVerified").checked,
+    proof_verified: $("wizardProofVerified").checked,
+    people_visible: $("wizardPeopleVisible").checked,
+    model_release: $("wizardModelRelease").checked,
+    contains_minor: $("wizardContainsMinor").checked,
+    guardian_release: $("wizardGuardianRelease").checked,
+    destination_https: true,
+  });
+}
+
+function renderWizardTemplates() {
+  const recommendations = saleAds.recommendTemplates({ service: $("wizardService").value, stage: $("wizardStage").value });
+  if (!recommendations.some((x) => x.id === wizardTemplateId)) wizardTemplateId = recommendations[0]?.id || "T01";
+  $("wizardTemplatePicker").innerHTML = recommendations.map((x) =>
+    `<article class="template-card selectable ${x.id === wizardTemplateId ? "selected" : ""}" data-template-id="${x.id}" tabindex="0"><span class="template-id">${x.id} · v${x.version}</span><b>${escapeHtml(x.name)}</b><span>${escapeHtml(x.evidence)}</span><small>KPI: ${escapeHtml(x.primary_metric)}</small><small>Riesgo: ${escapeHtml(x.risk)}</small></article>`,
+  ).join("");
+  $("wizardTemplatePicker").querySelectorAll("[data-template-id]").forEach((el) => {
+    const choose = () => { wizardTemplateId = el.dataset.templateId; updateWizard(); };
+    el.onclick = choose;
+    el.onkeydown = (event) => { if (event.key === "Enter" || event.key === " ") choose(); };
+  });
+}
+
+function renderTemplateLibrary() {
+  $("templateLibrary").innerHTML = saleAds.templates.map((x) =>
+    `<article class="template-card"><span class="template-id">${x.id} · versión ${x.version}</span><b>${escapeHtml(x.name)}</b><span>Etapas: ${escapeHtml(x.stages.join(", "))}</span><span>Destino: ${escapeHtml(x.destination)}</span><small>KPI: ${escapeHtml(x.primary_metric)}</small><small>Evidencia: ${escapeHtml(x.evidence)}</small><small>Riesgo: ${escapeHtml(x.risk)}</small></article>`,
+  ).join("");
+}
+
+function renderCreativeSpecs() {
+  $("creativeSpecGrid").innerHTML = saleAds.creativeSpecs.map((x) =>
+    `<article class="spec-card"><span class="template-id">${escapeHtml(x.ratio)}</span><b>${escapeHtml(x.label)}</b><span>${x.width}×${x.height}</span><span>${escapeHtml(x.placements.join(" · "))}</span><small>Fuente registrada: Meta Ads Guide</small><small>Estado: requiere revalidación autenticada antes de publicar</small></article>`,
+  ).join("");
+}
+
+function renderBudgetResult(result) {
+  $("wizardBudgetResult").innerHTML = `<div class="budget-cards"><article><span>CAC tolerable</span><b>${escapeHtml(money(result.allowable_cac))}</b></article><article><span>Tope por capacidad</span><b>${escapeHtml(money(result.capacity_budget_cap))}</b></article><article><span>Tope diario sugerido</span><b>${escapeHtml(money(result.recommended_daily_cap))}</b></article></div>${result.scenarios.map((x) => `<div class="qa-item"><b>${escapeHtml(x.label)}</b> · ${escapeHtml(money(x.total))}${x.feasible === false ? " · no viable con el tope actual" : ""}</div>`).join("")}${result.warnings.map((x) => `<div class="qa-item warning-text">${escapeHtml(x)}</div>`).join("")}`;
+}
+
+function renderLint(result) {
+  $("wizardLint").innerHTML = result.issues.length
+    ? result.issues.map((x) => `<div class="qa-item ${x.severity === "block" ? "danger-text" : "warning-text"}">${escapeHtml(x.message)}</div>`).join("")
+    : '<span class="success-text">Sin bloqueos detectados en los campos disponibles.</span>';
+}
+
+function renderWizardReview(budget, lint) {
+  const template = saleAds.templates.find((x) => x.id === wizardTemplateId);
+  const assets = wizardValues().assetFamilies || [];
+  const placementRows = saleAds.validatePlacements(
+    ["facebook_feed", "instagram_feed", "facebook_stories", "instagram_stories", "facebook_reels", "instagram_reels", "facebook_marketplace"],
+    assets,
+  );
+  const blocks = [...lint.issues.filter((x) => x.severity === "block").map((x) => x.message)];
+  if (!budget.sufficient) blocks.push("Economía incompleta: precio, capacidad y tope de caja son obligatorios.");
+  if (!$("wizardDeadline").value) blocks.push("Falta fecha límite real.");
+  if ($("wizardAudienceSource").value === "crm_consented" && !$("wizardConsent").checked) blocks.push("La audiencia CRM requiere consentimiento confirmado.");
+  if (placementRows.missing.length) blocks.push(`Faltan variantes: ${[...new Set(placementRows.missing.map((x) => x.family))].join(", ")}.`);
+  $("wizardReview").innerHTML = [
+    ["Servicio", $("wizardService").selectedOptions[0]?.textContent || ""],
+    ["Plantilla", `${template?.id || "—"} · ${template?.name || "—"}`],
+    ["Economía", `Margen ${money(budget.contribution_margin)} · CAC ${money(budget.allowable_cac)}`],
+    ["Activos", assets.length ? assets.join(", ") : "Ninguno"],
+    ["Destino", $("wizardDestination").selectedOptions[0]?.textContent || ""],
+    ["Estado", blocks.length ? `${blocks.length} bloqueo(s)` : "Borrador apto para guardar"],
+  ].map(([a, b]) => `<article><b>${escapeHtml(a)}</b><span>${escapeHtml(b)}</span></article>`).join("")
+    + (blocks.length ? `<article class="wide"><b class="danger-text">Antes de guardar</b><span>${blocks.map(escapeHtml).join(" · ")}</span></article>` : "");
+  $("wizardCreateDraft").disabled = blocks.length > 0;
+  return { blocks, placementRows };
+}
+
+function updateWizard() {
+  document.querySelectorAll("[data-wizard-panel]").forEach((el) => el.classList.toggle("active", Number(el.dataset.wizardPanel) === wizardStep));
+  document.querySelectorAll("[data-wizard-step]").forEach((el) => el.classList.toggle("active", Number(el.dataset.wizardStep) === wizardStep));
+  $("wizardPrev").disabled = wizardStep === 0;
+  $("wizardNext").hidden = wizardStep === 7;
+  $("wizardProgress").textContent = `Paso ${wizardStep + 1} de 8`;
+  renderWizardTemplates();
+  const budget = wizardBudget();
+  const lint = wizardLint();
+  renderBudgetResult(budget);
+  renderLint(lint);
+  const review = renderWizardReview(budget, lint);
+  const template = saleAds.templates.find((x) => x.id === wizardTemplateId);
+  $("wizardPreviewTitle").textContent = clean($("wizardOffer").value) || template?.name || "Campaña sin nombre";
+  $("wizardPreviewBody").innerHTML = `<div class="preview-stat"><span>Plantilla</span><b>${escapeHtml(template?.id || "—")} · ${escapeHtml(template?.name || "—")}</b></div><div class="preview-stat"><span>Tope total</span><b>${escapeHtml(money(budget.recommended_total_cap))}</b></div><div class="preview-stat"><span>Calidad de señal</span><b>${escapeHtml(budget.sample_quality)}</b></div><div class="preview-stat"><span>QA</span><b class="${review.blocks.length ? "danger-text" : "success-text"}">${review.blocks.length ? `${review.blocks.length} bloqueo(s)` : "Apto como borrador"}</b></div>`;
+  saveWizard();
+}
+
+function validateWizardStep(step) {
+  if (step === 1 && (!$("wizardOffer").value.trim() || Number($("wizardPrice").value) <= 0 || Number($("wizardSlots").value) <= 0 || !$("wizardDeadline").value)) return "Completa oferta, precio, espacios y fecha límite reales.";
+  if (step === 2 && Number($("wizardAgeMin").value) > Number($("wizardAgeMax").value)) return "La edad mínima no puede superar la máxima.";
+  if (step === 2 && $("wizardAudienceSource").value === "crm_consented" && !$("wizardConsent").checked) return "Confirma el consentimiento aplicable para usar el CRM.";
+  if (step === 4 && wizardLint().blocked) return "Corrige los bloqueos del linter antes de continuar.";
+  if (step === 5 && !wizardBudget().sufficient) return "Completa la economía y la capacidad antes de continuar.";
+  return "";
+}
+
+function createWizardDraft() {
+  const budget = wizardBudget();
+  const lint = wizardLint();
+  const review = renderWizardReview(budget, lint);
+  if (review.blocks.length) throw new Error("La revisión todavía contiene bloqueos.");
+  const template = saleAds.templates.find((x) => x.id === wizardTemplateId);
+  $("product").value = $("wizardService").selectedOptions[0]?.textContent || $("wizardService").value;
+  $("offer").value = $("wizardOffer").value;
+  $("price").value = $("wizardPrice").value;
+  $("objective").value = $("wizardGoal").value === "paid_order" ? "traffic" : "leads";
+  $("funnel").value = ["cold", "warm", "hot", "remarketing", "loyalty"].includes($("wizardStage").value) ? $("wizardStage").value : "cold";
+  $("destination").value = $("wizardDestination").value === "web" ? "web" : "whatsapp";
+  $("budget").value = budget.recommended_total_cap;
+  $("days").value = $("wizardDays").value;
+  $("startDate").value = new Date().toISOString().slice(0, 10);
+  $("location").value = $("wizardLocation").value;
+  $("radius").value = $("wizardRadius").value;
+  $("ageMin").value = $("wizardAgeMin").value;
+  $("ageMax").value = $("wizardAgeMax").value;
+  $("urgency").value = $("wizardAvailabilityVerified").checked ? `Disponibilidad verificada hasta ${$("wizardDeadline").value}` : "";
+  $("notes").value = $("wizardConcept").value;
+  current = {
+    ...generatePackage(),
+    schema_version: 3,
+    builder: "saleads_wizard_v3",
+    template_ref: { id: template.id, version: template.version },
+    business_goal: $("wizardGoal").value,
+    capacity_snapshot: { available_slots: Number($("wizardSlots").value), deadline: $("wizardDeadline").value },
+    economics_snapshot: { price: Number($("wizardPrice").value), deposit: Number($("wizardDeposit").value), variable_cost: Number($("wizardVariableCost").value), desired_profit_after_ads: Number($("wizardProfit").value), ...budget },
+    audience_definition: { stage: $("wizardStage").value, source: $("wizardAudienceSource").value, consent_confirmed: $("wizardConsent").checked },
+    creative_asset_families: wizardValues().assetFamilies,
+    policy_qa: { blocked: lint.blocked, issues: lint.issues },
+    remote_status: "not_connected",
+    approval: { required: true, approved: false },
+  };
+  saveLocal(current);
+  renderOutput();
+  showView("builder");
+  toast("Borrador rector creado. Revísalo y guárdalo si corresponde.");
+}
 
 function toast(message) {
   const el = $("toast");
@@ -206,6 +422,8 @@ function renderBusinessData() {
     .filter((x) => normalizePhone(x.telefono || x.phone).length >= 10)
     .length.toLocaleString("es-DO");
   $("kpiProducts").textContent = p.length.toLocaleString("es-DO");
+  $("overviewClients").textContent = c.length.toLocaleString("es-DO");
+  $("overviewProducts").textContent = p.length.toLocaleString("es-DO");
   $("clientBadge").textContent = c.length.toLocaleString("es-DO");
   $("productSelect").innerHTML =
     '<option value="">Escribir manualmente</option>' +
@@ -246,6 +464,7 @@ async function loadCampaigns() {
     campaigns = localCampaigns().filter((x) => x.business_id === bid);
   }
   $("kpiDrafts").textContent = campaigns.length.toLocaleString("es-DO");
+  $("overviewDrafts").textContent = campaigns.length.toLocaleString("es-DO");
   $("historyBadge").textContent = campaigns.length.toLocaleString("es-DO");
   renderHistory();
 }
@@ -471,9 +690,14 @@ function showView(view) {
     .forEach((x) => x.classList.toggle("active", x.dataset.view === view));
   $("viewTitle").textContent =
     {
+      overview: "Resumen",
+      wizard: "Crear campaña",
+      templates: "Plantillas",
+      creatives: "Creativos y QA",
       builder: "Crear campaña",
       audience: "Banco de clientes",
       history: "Campañas guardadas",
+      connections: "Conexiones",
     }[view] || "Centro de Anuncios";
 }
 function download(content, name, type) {
@@ -508,6 +732,8 @@ $("logoutButton").onclick = () => signOut(auth);
 $("businessSelect").onchange = async () => {
   renderBusinessData();
   await loadCampaigns();
+  restoreWizard();
+  updateWizard();
 };
 $("productSelect").onchange = () => {
   const p = products.find((x) => x.id === $("productSelect").value);
@@ -577,6 +803,33 @@ $("refreshHistory").onclick = () =>
 document
   .querySelectorAll(".nav-item")
   .forEach((x) => (x.onclick = () => showView(x.dataset.view)));
+document
+  .querySelectorAll("[data-go-view]")
+  .forEach((x) => (x.onclick = () => showView(x.dataset.goView)));
+document.querySelectorAll("[data-wizard-step]").forEach((x) => {
+  x.onclick = () => { wizardStep = Number(x.dataset.wizardStep); updateWizard(); };
+});
+$("wizardPrev").onclick = () => { wizardStep = Math.max(0, wizardStep - 1); updateWizard(); };
+$("wizardNext").onclick = () => {
+  const error = validateWizardStep(wizardStep);
+  if (error) return toast(error);
+  wizardStep = Math.min(7, wizardStep + 1);
+  updateWizard();
+};
+$("wizardCreateDraft").onclick = () => {
+  try { createWizardDraft(); } catch (error) { toast(error.message || String(error)); }
+};
+$("wizardForm").addEventListener("input", updateWizard);
+$("wizardForm").addEventListener("change", updateWizard);
+
+renderTemplateLibrary();
+renderCreativeSpecs();
+if (!$("wizardDeadline").value) {
+  const date = new Date();
+  date.setDate(date.getDate() + 14);
+  $("wizardDeadline").value = date.toISOString().slice(0, 10);
+}
+updateWizard();
 
 onAuthStateChanged(auth, async (user) => {
   if (!user) {
@@ -589,6 +842,12 @@ onAuthStateChanged(auth, async (user) => {
     $("login").hidden = true;
     $("app").hidden = false;
     await loadBusinessData();
+    $("preflightFirebase").textContent = `Activo · ${businesses.length} sucursal(es)`;
+    $("preflightFirebase").className = "success-text";
+    $("connectionFirebase").textContent = `Activo · ${businesses.length} sucursal(es)`;
+    restoreWizard();
+    updateWizard();
+    showView(SALEADS_UI === "classic" ? "builder" : "overview");
     console.log("DCARELA ADS", BUILD);
   } catch (error) {
     await signOut(auth);

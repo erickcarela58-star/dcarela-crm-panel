@@ -13,7 +13,7 @@
     />
     <title>D'Carela · Centro de Anuncios</title>
     <link rel="manifest" href="./manifest.webmanifest" />
-    <link rel="stylesheet" href="./styles.css?v=20260823v2" />
+    <link rel="stylesheet" href="./styles.css?v=20260823v3" />
   </head>
   <body>
     <div class="login" id="login">
@@ -54,15 +54,18 @@
           ></a
         >
         <nav>
-          <button class="nav-item active" data-view="builder">
-            Crear campaña
-          </button>
+          <button class="nav-item active" data-view="overview">Resumen</button>
+          <button class="nav-item" data-view="wizard">Crear campaña</button>
+          <button class="nav-item" data-view="templates">Plantillas</button>
+          <button class="nav-item" data-view="creatives">Creativos y QA</button>
           <button class="nav-item" data-view="audience">
             Banco de clientes <span id="clientBadge">0</span>
           </button>
           <button class="nav-item" data-view="history">
             Campañas guardadas <span id="historyBadge">0</span>
           </button>
+          <button class="nav-item" data-view="connections">Conexiones</button>
+          <button class="nav-item" data-view="builder">Constructor clásico</button>
         </nav>
         <div class="connections">
           <span>Herramientas conectadas</span>
@@ -78,7 +81,7 @@
         <header class="topbar">
           <div>
             <span class="eyebrow">Centro comercial independiente</span>
-            <h2 id="viewTitle">Crear campaña</h2>
+            <h2 id="viewTitle">Resumen</h2>
           </div>
           <div class="top-actions">
             <label>Sucursal<select id="businessSelect"></select></label>
@@ -89,7 +92,135 @@
           </div>
         </header>
 
-        <section class="view active" id="viewBuilder">
+        <section class="view active" id="viewOverview">
+          <div class="hero compact-hero">
+            <div>
+              <span class="eyebrow">SaleAds · decisiones comerciales</span>
+              <h1>Vende sesiones, no métricas vacías.</h1>
+              <p>Planifica desde margen, capacidad y consentimiento. Los borradores requieren revisión humana y nunca activan gasto automáticamente.</p>
+            </div>
+            <button class="primary" type="button" data-go-view="wizard">Crear campaña guiada</button>
+          </div>
+          <div class="kpis" id="overviewKpis">
+            <article><span>Clientes sincronizados</span><b id="overviewClients">—</b><small>Firebase</small></article>
+            <article><span>Servicios activos</span><b id="overviewProducts">—</b><small>catálogo real</small></article>
+            <article><span>Borradores</span><b id="overviewDrafts">—</b><small>sin gasto activo</small></article>
+            <article><span>Campañas activas</span><b>0</b><small>Meta aún no conectada</small></article>
+          </div>
+          <div class="overview-grid">
+            <article class="panel"><span class="eyebrow">Embudo canónico</span><h3>Gasto → Calificados → Reservas → Sesiones → Ingreso</h3><p class="muted-copy">No se mostrarán ROAS ni costo por sesión hasta que existan métricas remotas y atribución verificable.</p><div class="empty-state-inline">Insights: sin conexión Meta de solo lectura</div></article>
+            <article class="panel"><span class="eyebrow">Controles activos</span><h3>Gasto protegido</h3><ul class="check-list"><li>Borradores locales y Firebase</li><li>Sin tokens Meta en el navegador</li><li>Sin activación automática</li><li>Plantillas tratadas como hipótesis</li></ul></article>
+          </div>
+        </section>
+
+        <section class="view" id="viewWizard">
+          <div class="section-hero compact-section">
+            <div><span class="eyebrow">Wizard rector · guardado local automático</span><h1>Construir una campaña vendible</h1><p>Ocho pasos, economía primero y revisión antes de guardar.</p></div>
+            <span class="phase-badge">Fase 1 · sin publicación Meta</span>
+          </div>
+          <div class="wizard-shell">
+            <aside class="wizard-steps" aria-label="Pasos de campaña">
+              <button type="button" data-wizard-step="0" class="active"><span>0</span>Preflight</button>
+              <button type="button" data-wizard-step="1"><span>1</span>Meta comercial</button>
+              <button type="button" data-wizard-step="2"><span>2</span>Público</button>
+              <button type="button" data-wizard-step="3"><span>3</span>Plantilla</button>
+              <button type="button" data-wizard-step="4"><span>4</span>Creativos</button>
+              <button type="button" data-wizard-step="5"><span>5</span>Presupuesto</button>
+              <button type="button" data-wizard-step="6"><span>6</span>Destino</button>
+              <button type="button" data-wizard-step="7"><span>7</span>Revisión</button>
+            </aside>
+            <form class="panel wizard-form" id="wizardForm">
+              <div class="wizard-panel active" data-wizard-panel="0">
+                <span class="eyebrow">Paso 0</span><h3>Preflight operativo</h3>
+                <div class="health-grid">
+                  <article><b>Firebase y CRM</b><span id="preflightFirebase">Validando sesión…</span></article>
+                  <article><b>Meta</b><span class="warning-text">No conectada · publicación bloqueada</span></article>
+                  <article><b>Medición</b><span class="warning-text">Sin Insights/CAPI verificados</span></article>
+                  <article><b>Modo seguro</b><span class="success-text">Borradores, gasto cero</span></article>
+                </div>
+                <p class="notice">Puedes terminar el plan y exportarlo. Conectar Meta, crear objetos PAUSED o activar campañas pertenece a fases posteriores y requiere backend seguro.</p>
+              </div>
+              <div class="wizard-panel" data-wizard-panel="1">
+                <span class="eyebrow">Paso 1</span><h3>Meta y economía del servicio</h3>
+                <div class="form-grid">
+                  <label>Servicio<select id="wizardService"><option value="birthday">Cumpleaños</option><option value="maternity">Maternidad</option><option value="xv">XV años</option><option value="graduation">Graduación</option><option value="wedding">Boda</option><option value="family">Familiar</option><option value="corporate">Corporativo</option><option value="documents">2x2 / documentos</option><option value="frames">Enmarcados</option><option value="general">Otro</option></select></label>
+                  <label>Espacios reales<input id="wizardSlots" type="number" min="1" value="5" required /></label>
+                  <label>Fecha límite<input id="wizardDeadline" type="date" required /></label>
+                  <label>Objetivo de negocio<select id="wizardGoal"><option value="qualified_lead">Lead calificado</option><option value="booking">Reserva</option><option value="completed_session">Sesión completada</option><option value="paid_order">Venta pagada</option></select></label>
+                  <label>Precio (RD$)<input id="wizardPrice" type="number" min="0" required /></label>
+                  <label>Depósito (RD$)<input id="wizardDeposit" type="number" min="0" /></label>
+                  <label>Costo variable (RD$)<input id="wizardVariableCost" type="number" min="0" required /></label>
+                  <label>Beneficio deseado tras anuncios<input id="wizardProfit" type="number" min="0" /></label>
+                  <label>ROAS de ingreso objetivo<input id="wizardRoas" type="number" min="1" step="0.1" value="3" /></label>
+                  <label class="wide">Oferta verificable<input id="wizardOffer" maxlength="220" placeholder="Entregables, depósito y vigencia reales" required /></label>
+                </div>
+              </div>
+              <div class="wizard-panel" data-wizard-panel="2">
+                <span class="eyebrow">Paso 2</span><h3>Público permitido y etapa</h3>
+                <div class="form-grid">
+                  <label>Etapa<select id="wizardStage"><option value="cold">Frío</option><option value="warm">Cálido</option><option value="hot">Decisión</option><option value="remarketing">Retargeting</option><option value="loyalty">Cliente anterior</option></select></label>
+                  <label>Fuente<select id="wizardAudienceSource"><option value="broad_local">Público local amplio</option><option value="crm_consented">CRM con consentimiento</option><option value="engagement">Interacción Meta</option><option value="website">Visitantes web</option></select></label>
+                  <label>Ubicación<input id="wizardLocation" value="La Romana, República Dominicana" /></label>
+                  <label>Radio km<input id="wizardRadius" type="number" min="1" max="80" value="25" /></label>
+                  <label>Edad mínima<input id="wizardAgeMin" type="number" min="18" max="65" value="18" /></label>
+                  <label>Edad máxima<input id="wizardAgeMax" type="number" min="18" max="65" value="55" /></label>
+                </div>
+                <label class="consent-row"><input id="wizardConsent" type="checkbox" /> Confirmo consentimiento aplicable si se usa el banco CRM.</label>
+              </div>
+              <div class="wizard-panel" data-wizard-panel="3">
+                <span class="eyebrow">Paso 3</span><h3>Plantillas recomendadas</h3>
+                <p class="muted-copy">Son hipótesis, nunca “ganadoras” sin resultados propios.</p>
+                <div class="template-picker" id="wizardTemplatePicker"></div>
+              </div>
+              <div class="wizard-panel" data-wizard-panel="4">
+                <span class="eyebrow">Paso 4</span><h3>Plan de creativos y derechos</h3>
+                <div class="form-grid">
+                  <label>Modo<select id="wizardCreativeMode"><option value="mixed">Mixto</option><option value="image">Flyer</option><option value="video">Video</option></select></label>
+                  <label>Concepto<input id="wizardConcept" placeholder="Resultado, proceso u oferta" /></label>
+                </div>
+                <div class="asset-checks"><label><input type="checkbox" data-asset-family="feed_portrait" /> 4:5 Feed</label><label><input type="checkbox" data-asset-family="fullscreen_vertical" /> 9:16 Stories/Reels</label><label><input type="checkbox" data-asset-family="marketplace_square" /> 1:1 Marketplace</label></div>
+                <div class="asset-checks"><label><input id="wizardPeopleVisible" type="checkbox" /> Personas visibles</label><label><input id="wizardModelRelease" type="checkbox" /> Release comercial</label><label><input id="wizardContainsMinor" type="checkbox" /> Contiene menor</label><label><input id="wizardGuardianRelease" type="checkbox" /> Permiso del tutor</label></div>
+                <label>Copy a validar<textarea id="wizardCopy" placeholder="Escribe el texto principal para ejecutar el linter"></textarea></label>
+                <div class="asset-checks"><label><input id="wizardAvailabilityVerified" type="checkbox" /> Cupos/fecha verificados</label><label><input id="wizardProofVerified" type="checkbox" /> Prueba social verificada</label></div>
+                <div id="wizardLint" class="qa-box"></div>
+              </div>
+              <div class="wizard-panel" data-wizard-panel="5">
+                <span class="eyebrow">Paso 5</span><h3>Presupuesto y señal</h3>
+                <div class="form-grid">
+                  <label>Tope de caja (RD$)<input id="wizardCashCap" type="number" min="1" value="3000" /></label>
+                  <label>Días<input id="wizardDays" type="number" min="1" max="90" value="7" /></label>
+                  <label>Costo histórico por evento<input id="wizardHistoricalCost" type="number" min="0" placeholder="Si existe" /></label>
+                  <label>Calificado → reserva<input id="wizardQualifiedRate" type="number" min="0" max="1" step="0.01" value="0.5" /></label>
+                  <label>Reserva → sesión<input id="wizardCompletedRate" type="number" min="0" max="1" step="0.01" value="0.8" /></label>
+                  <label>No-show/reembolso<input id="wizardNoShowRate" type="number" min="0" max="1" step="0.01" value="0.1" /></label>
+                </div>
+                <div id="wizardBudgetResult" class="budget-result"></div>
+              </div>
+              <div class="wizard-panel" data-wizard-panel="6">
+                <span class="eyebrow">Paso 6</span><h3>Destino y seguimiento</h3>
+                <div class="form-grid">
+                  <label>Destino<select id="wizardDestination"><option value="whatsapp">WhatsApp</option><option value="instant_form">Formulario instantáneo</option><option value="web">Landing web</option><option value="booking">Reserva</option></select></label>
+                  <label>SLA de respuesta (min)<input id="wizardSla" type="number" min="1" value="15" /></label>
+                  <label class="wide">Preguntas de calificación<textarea id="wizardQuestions">Fecha de la sesión, tipo de servicio y cantidad de personas.</textarea></label>
+                </div>
+                <p class="notice">SaleAds añadirá UTMs y un código estable al borrador. No exportará teléfonos ni conversaciones del CRM.</p>
+              </div>
+              <div class="wizard-panel" data-wizard-panel="7">
+                <span class="eyebrow">Paso 7</span><h3>Revisión y borrador</h3>
+                <div id="wizardReview" class="review-grid"></div>
+                <button class="primary" id="wizardCreateDraft" type="button">Crear borrador compatible</button>
+              </div>
+              <div class="wizard-actions"><button class="secondary" id="wizardPrev" type="button">Anterior</button><span id="wizardProgress">Paso 1 de 8</span><button class="primary" id="wizardNext" type="button">Siguiente</button></div>
+            </form>
+            <aside class="panel wizard-preview"><span class="eyebrow">Resumen vivo</span><h3 id="wizardPreviewTitle">Campaña sin nombre</h3><div id="wizardPreviewBody"></div></aside>
+          </div>
+        </section>
+
+        <section class="view" id="viewTemplates"><div class="section-hero compact-section"><div><span class="eyebrow">Biblioteca versionada</span><h1>Plantillas T01–T12</h1><p>Patrones para fotografía tratados como hipótesis medibles.</p></div></div><div class="template-library" id="templateLibrary"></div></section>
+
+        <section class="view" id="viewCreatives"><div class="section-hero compact-section"><div><span class="eyebrow">QA por placement</span><h1>Tres familias, cero recortes silenciosos</h1><p>Feed 4:5, Stories/Reels 9:16 y Marketplace 1:1. Las fuentes deben revalidarse en Meta antes de publicar.</p></div></div><div class="spec-grid" id="creativeSpecGrid"></div></section>
+
+        <section class="view" id="viewBuilder">
           <div class="hero">
             <div>
               <span class="eyebrow"
@@ -392,11 +523,17 @@
           </div>
           <div class="history-grid" id="historyGrid"></div>
         </section>
+
+        <section class="view" id="viewConnections">
+          <div class="section-hero compact-section"><div><span class="eyebrow">Preflight de proveedores</span><h1>Conexiones</h1><p>Una sesión de SaleAds no concede permisos publicitarios.</p></div></div>
+          <div class="connection-grid"><article class="panel"><b>Firebase Auth + CRM</b><span class="success-text" id="connectionFirebase">Validando…</span><p>Membresía y sucursal verificadas en el panel.</p></article><article class="panel"><b>Meta Marketing API</b><span class="warning-text">No conectada</span><p>OAuth, Insights, CAPI y publicación PAUSED requieren backend seguro.</p></article><article class="panel"><b>IA estratégica</b><span class="warning-text">No conectada</span><p>El motor actual es determinista y no envía clientes a servicios generativos.</p></article><article class="panel"><b>Gasto publicitario</b><span class="success-text">Bloqueado por diseño</span><p>Solo exportación y apertura manual de Ads Manager.</p></article></div>
+        </section>
       </main>
     </div>
 
     <div class="toast" id="toast" role="status"></div>
     <script src="https://panel.dcarelacompufoto.com/firebase-config.js"></script>
-    <script type="module" src="./app.js?v=20260823v2"></script>
+    <script src="./saleads-core.js?v=20260823v3"></script>
+    <script type="module" src="./app.js?v=20260823v3"></script>
   </body>
 </html>
