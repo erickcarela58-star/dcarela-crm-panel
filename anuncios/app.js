@@ -16,7 +16,7 @@ import {
   where,
 } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 
-const BUILD = "2026-08-22-ads-standalone-v1";
+const BUILD = "2026-08-23-ads-standalone-v2";
 const firebaseConfig = window.__DCARELA_FIREBASE_CONFIG || {};
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
