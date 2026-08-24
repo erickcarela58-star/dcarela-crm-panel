@@ -905,6 +905,26 @@ body.role-viewer #agnSave,body.role-viewer .ag-row button{pointer-events:none!im
 .tpl-new button{background:var(--accent);color:#fff;border:none;border-radius:8px;padding:7px;font-size:11px;font-weight:700;cursor:pointer}
 .tpl-new button:disabled{opacity:.5;cursor:not-allowed}
 
+/* Biblioteca comercial dentro de cada chat: categorías como carpetas y tarjetas reales. */
+.combo-lib-tools{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:center;margin-bottom:12px}
+.combo-lib-tools input{width:100%;background:var(--bg);border:1px solid var(--line);color:var(--ink);border-radius:10px;padding:10px 12px;font:inherit;outline:none}
+.combo-lib-tools input:focus{border-color:var(--accent)}
+.combo-folders{display:flex;gap:7px;overflow-x:auto;padding:2px 0 12px;scrollbar-width:thin}
+.combo-folder{display:inline-flex;align-items:center;gap:6px;white-space:nowrap;background:var(--card);border:1px solid var(--line);color:var(--mut);border-radius:10px;padding:8px 11px;font-size:11px;font-weight:800;cursor:pointer}
+.combo-folder.on{background:var(--ink);border-color:var(--ink);color:var(--bg)}
+.combo-lib-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(235px,1fr));gap:12px}
+.combo-lib-card{overflow:hidden;background:var(--card);border:1px solid var(--line);border-radius:14px;display:flex;flex-direction:column;min-width:0}
+.combo-lib-card img{width:100%;aspect-ratio:4/5;object-fit:cover;background:var(--bg-soft);border-bottom:1px solid var(--line)}
+.combo-lib-info{display:flex;flex-direction:column;gap:6px;padding:11px;flex:1}
+.combo-lib-name{display:flex;justify-content:space-between;gap:8px;align-items:start}.combo-lib-name strong{font-size:13px}.combo-lib-name b{font-size:12px;white-space:nowrap}
+.combo-lib-digital{font-size:10.5px;color:var(--mut);font-weight:700}
+.combo-lib-items{font-size:10.5px;line-height:1.45;color:var(--mut);display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden}
+.combo-lib-includes{font-size:10.5px;line-height:1.4;border-top:1px solid var(--line);padding-top:6px}
+.combo-lib-card button{margin:0 11px 11px;border:0;border-radius:9px;background:var(--ink);color:var(--bg);padding:9px 10px;font-size:11px;font-weight:800;cursor:pointer}
+.combo-lib-card button:disabled{opacity:.55;cursor:wait}
+.combo-lib-empty{grid-column:1/-1;padding:32px 12px;text-align:center;color:var(--mut);font-size:12px}
+.combo-lib-source{font-size:10px;color:var(--mut);text-align:right}.combo-lib-source a{color:var(--accent2)}
+
 /* agenda overlay */
 .agbtn{background:rgba(255,255,255,.025);border:1px solid var(--line);color:var(--ink);font-size:11.5px;font-weight:800;
  padding:9px 14px;border-radius:10px;cursor:pointer;display:flex;align-items:center;gap:7px;white-space:nowrap;
@@ -1456,10 +1476,10 @@ body::before{box-shadow:0 0 18px rgba(255,255,255,.18)}
 @media(max-width:650px){.pros-toolbar{grid-template-columns:1fr}.pros-viewbar,.pros-bulk{align-items:stretch;flex-direction:column}.pros-bulk .cfg-btn{width:100%}.pros-detail-grid,.pros-detail-actions,.planning-form-grid{grid-template-columns:1fr}.pros-detail-grid .wide{grid-column:auto}.crm-drawer-head{padding:14px}.crm-drawer-body{padding:14px 14px 70px}.plan-agenda-row{grid-template-columns:48px 8px minmax(0,1fr)}.plan-agenda-row button{grid-column:3}.plan-forecast{grid-template-columns:1fr}}
 @media(max-width:560px){.plan-wrap{padding:12px}.plan-metrics{grid-template-columns:1fr 1fr}.plan-metric{padding:13px}.plan-tools{grid-template-columns:1fr}.plan-task{grid-template-columns:8px minmax(0,1fr)}.plan-task .plan-btn,.plan-task .plan-task-actions-inline{grid-column:2}.mfile-card{align-items:flex-start;flex-wrap:wrap}.mfile-actions{width:100%}.theme-toggle{top:auto;bottom:14px;right:14px;width:42px;height:42px;padding:0;justify-content:center}.theme-toggle span{display:none}#app.on .tb-r{margin-right:0}.pros-kpis{grid-template-columns:1fr 1fr}.pros-hero-actions .cfg-btn{width:100%}.plan-focus{align-items:stretch;flex-direction:column}}
 @media(max-width:560px){
- .composer{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px;padding:8px;align-items:center}
+ .composer{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:6px;padding:8px;align-items:center}
  .composer .attach,.composer .attach.hd-toggle{width:100%;min-width:0;height:38px;padding:0;align-self:center}
- .composer textarea{grid-column:1/5;width:100%;min-width:0;max-height:88px}
- .composer .send{grid-column:5;width:100%;height:42px}
+ .composer textarea{grid-column:1/6;width:100%;min-width:0;max-height:88px}
+ .composer .send{grid-column:6;width:100%;height:42px}
  .composer .tpl-wrap{grid-column:1/-1}
  .tpl-hd{display:none}
  .tpl-row{grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;align-items:start}
@@ -1470,6 +1490,7 @@ body::before{box-shadow:0 0 18px rgba(255,255,255,.18)}
  .ag-actions{width:100%;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:5px}
  .ag-actions button{min-width:0;padding:7px 5px}
  .ch-head{gap:6px;padding:9px 8px;flex-wrap:wrap}
+ .combo-lib-tools{grid-template-columns:1fr}.combo-lib-source{text-align:left}.combo-lib-grid{grid-template-columns:1fr 1fr;gap:8px}.combo-lib-card img{aspect-ratio:1/1}.combo-lib-name{display:block}.combo-lib-name b{display:block;margin-top:3px}.combo-lib-items{-webkit-line-clamp:3}
  .ch-head>div:nth-child(3){flex:1;min-width:105px}
  .modebtn{margin-left:0;padding:7px 8px;font-size:10px}
  .theme-toggle{top:8px;bottom:auto;right:8px}
@@ -2058,6 +2079,9 @@ input[type="checkbox"],input[type="radio"]{accent-color:var(--ink)}
      <button class="attach" id="atTpl" title="Plantillas" aria-label="Plantillas">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5a2 2 0 012-2h2a2 2 0 012 2"/><rect x="5" y="5" width="14" height="16" rx="2"/><path d="M9 11h6M9 15h6"/></svg>
      </button>
+     <button class="attach" id="atCombo" title="Combos por categoría" aria-label="Combos por categoría">
+      <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 012-2h5l2 2h7a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><path d="M8 12h8M12 10v4"/></svg>
+     </button>
      <button class="attach" id="atImg" title="Enviar imágenes (puedes elegir varias)" aria-label="Enviar imágenes">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.6"/><path d="M21 15l-5-5L5 21"/></svg>
      </button>
@@ -2309,6 +2333,23 @@ input[type="checkbox"],input[type="radio"]{accent-color:var(--ink)}
    <div class="ag-card" style="max-width:880px">
     <div class="ag-h"><h2 id="comboDrillH2">Combo · contactos</h2><button class="ag-x" onclick="document.getElementById('comboDrill').classList.remove('on')">×</button></div>
     <div class="ag-body" id="comboDrillBody"></div>
+   </div>
+  </div>
+
+  <div class="agenda" id="comboLibrary" aria-hidden="true">
+   <div class="ag-card" style="max-width:1080px">
+    <div class="ag-h">
+     <h2>Combos para este chat</h2>
+     <button class="ag-x" id="comboLibraryX" aria-label="Cerrar combos">×</button>
+    </div>
+    <div class="ag-body">
+     <div class="combo-lib-tools">
+      <input id="comboLibrarySearch" type="search" placeholder="Buscar combo, precio o artículo incluido" aria-label="Buscar combos">
+      <div class="combo-lib-source">Fuente comercial: <a id="comboLibraryCatalogLink" href="https://dcarelacompufoto.com/combos.html" target="_blank" rel="noopener">combos oficiales</a></div>
+     </div>
+     <div class="combo-folders" id="comboLibraryFolders" aria-label="Categorías de combos"></div>
+     <div class="combo-lib-grid" id="comboLibraryGrid"><div class="combo-lib-empty">Cargando combos e imágenes oficiales…</div></div>
+    </div>
    </div>
   </div>
 
@@ -2662,7 +2703,7 @@ input[type="checkbox"],input[type="radio"]{accent-color:var(--ink)}
      <div class="cfg-card">
        <h3>Catálogo público</h3>
       <p>URL en vivo: <a href="https://dcarelacompufoto.com/" target="_blank" rel="noopener" style="color:var(--accent2)">dcarelacompufoto.com</a></p>
-      <p>Portafolio: <a href="https://dcarelacompufoto.com/portafolio.html" target="_blank" rel="noopener" style="color:var(--accent2)">/portafolio.html</a></p>
+      <p>Catálogo visual y combos: <a href="https://dcarelacompufoto.com/combos.html" target="_blank" rel="noopener" style="color:var(--accent2)">/combos.html</a></p>
       <p class="cfg-hint">Meta Pixel ID: <code>1377359270081777</code> (atribución cross-página).</p>
      </div>
 
@@ -2948,7 +2989,7 @@ const $ = (id) => document.getElementById(id);
 // Sello de versión: si el panel "no hace nada", casi siempre es caché vieja del
 // navegador. Este sello permite confirmar de un vistazo qué versión está corriendo
 // (compárala con la fecha del último deploy). Actualízalo en cada publicación.
-const BUILD = '2026-08-24-crm-safe-marketing-v31';
+const BUILD = '2026-08-24-combo-library-v32';
 // PDFs de venta por categoría (generados de las tarjetas aprobadas; hosteados en el catálogo).
 // Se regeneran con dcarela-catalogo/scripts/build_combo_pdfs.py + push del catálogo.
 const COMBO_PDF_BASE = 'https://dcarelacompufoto.com/pdf/';
@@ -3124,7 +3165,7 @@ function applyPanelAccess() {
     el.classList.toggle('role-hidden', !hasPermission(el.dataset.permission));
   });
   const readonly = !hasPermission('operate');
-  ['modeBtn','surveyBtn','closeBtn','atTpl','atImg','atHd','atDoc','atMic','sendBtn','agnSave'].forEach(id => {
+  ['modeBtn','surveyBtn','closeBtn','atTpl','atCombo','atImg','atHd','atDoc','atMic','sendBtn','agnSave'].forEach(id => {
     const el = $(id); if (el) el.disabled = readonly;
   });
   if ($('reply')) { $('reply').readOnly = readonly; $('reply').placeholder = readonly ? 'Cuenta en modo solo lectura' : 'Escribe tu respuesta...'; }
@@ -7066,8 +7107,8 @@ function wireQuickActions(c) {
         const isWedding = /\b(boda|matrimonio|preboda|civil)\b/i.test(String(c.interested_category || '') + ' ' + String(c.last_intent || ''));
         const publicUrl = isWedding
           ? cfg('publicWeddingUrl', 'https://dcarelacompufoto.com/boda.html')
-          : cfg('publicPortfolioUrl', 'https://dcarelacompufoto.com/portafolio.html');
-        insertTemplate((isWedding ? 'Puedes ver nuestros combos y trabajos de boda aquí: ' : 'Puedes ver parte de nuestro portafolio aquí: ') + publicUrl);
+          : cfg('publicPortfolioUrl', 'https://dcarelacompufoto.com/combos.html');
+        insertTemplate((isWedding ? 'Puedes ver nuestros combos y trabajos de boda aquí: ' : 'Puedes ver nuestros combos, imágenes y todo lo que incluye cada opción aquí: ') + publicUrl);
       } else if (act === 'privateCombos') {
         insertTemplate(cfg('privateCombosMessage', 'Te comparto los combos por aqui. Antes de confirmar disponibilidad necesito saber categoria, fecha tentativa y nombre.'));
       } else if (act === 'close') {
@@ -7354,6 +7395,142 @@ function applySelectedApprovedTemplate() {
   }
   $('bcSend').disabled = true;
 }
+const COMBO_CATALOG_PAGE = 'https://dcarelacompufoto.com/combos.html';
+const COMBO_CARD_BASE = 'https://dcarelacompufoto.com/combos-img/';
+const COMBO_CATEGORY_LABELS = { xv:'XV', infantil:'Infantil', graduacion:'Graduación', cumpleanos:'Cumpleaños', embarazadas:'Embarazadas' };
+let comboCatalogRows = [];
+let comboCatalogCategory = 'all';
+let comboCatalogLoadedAt = 0;
+
+function comboCardSlug(category, name) {
+  const asciiDrop = String(name || '').toLowerCase().replace(/[^a-z0-9\s-]/g, '')
+    .trim().replace(/\s+/g, '-').replace(/-+/g, '-');
+  return `${category}-${asciiDrop}`;
+}
+
+async function loadComboCatalog(force = false) {
+  if (!force && comboCatalogRows.length && Date.now() - comboCatalogLoadedAt < 10 * 60 * 1000) return comboCatalogRows;
+  const catalogUrl = cfg('publicCatalogUrl', COMBO_CATALOG_PAGE);
+  const response = await fetch(catalogUrl, { cache:force ? 'reload' : 'default' });
+  if (!response.ok) throw new Error(`catálogo HTTP ${response.status}`);
+  const html = await response.text();
+  const parsed = new DOMParser().parseFromString(html, 'text/html');
+  const rows = [];
+  for (const section of parsed.querySelectorAll('section.sec[id]')) {
+    const category = String(section.id || '').toLowerCase();
+    if (!COMBO_CATEGORY_LABELS[category]) continue;
+    for (const card of section.querySelectorAll('article.combo')) {
+      const name = String(card.querySelector('.cname')?.textContent || '').trim();
+      if (!name) continue;
+      const priceText = String(card.querySelector('.cprice b')?.textContent || card.querySelector('.cprice')?.textContent || '').trim();
+      const price = priceText ? (priceText.startsWith('RD$') ? priceText : `RD$${priceText}`) : '';
+      const digital = String(card.querySelector('.cinc-total')?.textContent || '').trim();
+      const items = [...card.querySelectorAll('.cinc li')].map(node => String(node.textContent || '').trim()).filter(Boolean);
+      const includedLabel = String(card.querySelector('.incbox .il')?.textContent || 'Incluye').trim();
+      const included = String(card.querySelector('.incbox .iv')?.textContent || '').trim();
+      const rawPath = String(card.querySelector('.ph')?.dataset.bg || '').trim();
+      const rawImage = rawPath ? new URL(rawPath, catalogUrl).href : '';
+      const slug = comboCardSlug(category, name);
+      rows.push({
+        id:`${category}:${slug}`,
+        category,
+        categoryLabel:COMBO_CATEGORY_LABELS[category],
+        name,
+        price,
+        digital,
+        items,
+        includedLabel,
+        included,
+        rawImage,
+        cardImage:`${COMBO_CARD_BASE}${slug}.png`,
+        search:normalizeLabel([category, name, price, digital, ...items, includedLabel, included].join(' ')),
+      });
+    }
+  }
+  if (!rows.length) throw new Error('el catálogo no devolvió combos verificables');
+  comboCatalogRows = rows;
+  comboCatalogLoadedAt = Date.now();
+  return rows;
+}
+
+function renderComboLibrary() {
+  const folders = $('comboLibraryFolders'), grid = $('comboLibraryGrid');
+  if (!folders || !grid) return;
+  const catalogUrl = cfg('publicCatalogUrl', COMBO_CATALOG_PAGE);
+  const source = $('comboLibraryCatalogLink'); if (source) source.href = catalogUrl;
+  const counts = Object.fromEntries(Object.keys(COMBO_CATEGORY_LABELS).map(cat => [cat, comboCatalogRows.filter(row => row.category === cat).length]));
+  folders.innerHTML = `<button class="combo-folder ${comboCatalogCategory === 'all' ? 'on' : ''}" data-combo-folder="all">Carpetas · todos <span>${comboCatalogRows.length}</span></button>`
+    + Object.entries(COMBO_CATEGORY_LABELS).map(([cat, label]) => `<button class="combo-folder ${comboCatalogCategory === cat ? 'on' : ''}" data-combo-folder="${cat}">${esc(label)} <span>${counts[cat] || 0}</span></button>`).join('');
+  folders.querySelectorAll('[data-combo-folder]').forEach(button => {
+    button.onclick = () => { comboCatalogCategory = button.dataset.comboFolder || 'all'; renderComboLibrary(); };
+  });
+  const search = normalizeLabel($('comboLibrarySearch')?.value || '');
+  const visible = comboCatalogRows.filter(row => (comboCatalogCategory === 'all' || row.category === comboCatalogCategory) && (!search || row.search.includes(search)));
+  if (!visible.length) {
+    grid.innerHTML = '<div class="combo-lib-empty">No hay combos que coincidan con esta carpeta y búsqueda.</div>';
+    return;
+  }
+  grid.innerHTML = visible.map(row => {
+    const index = comboCatalogRows.indexOf(row);
+    const items = row.items.length ? row.items.join(' · ') : 'Paquete digital';
+    const includes = row.included ? `<div class="combo-lib-includes"><b>${esc(row.includedLabel)}:</b> ${esc(row.included)}</div>` : '';
+    return `<article class="combo-lib-card">
+      <img src="${escAttr(row.cardImage)}" data-fallback="${escAttr(row.rawImage)}" alt="${escAttr(row.name)}" loading="lazy">
+      <div class="combo-lib-info">
+       <div class="combo-lib-name"><strong>${esc(row.name)}</strong><b>${esc(row.price)}</b></div>
+       <div class="combo-lib-digital">${esc(row.categoryLabel)} · ${esc(row.digital || 'Detalles en la tarjeta')}</div>
+       <div class="combo-lib-items">${esc(items)}</div>${includes}
+      </div>
+      <button data-combo-prepare="${index}" ${sel ? '' : 'disabled'}>${sel ? 'Preparar imagen + información' : 'Abre un chat para preparar'}</button>
+     </article>`;
+  }).join('');
+  grid.querySelectorAll('img[data-fallback]').forEach(img => img.onerror = () => { if (img.dataset.fallback && img.src !== img.dataset.fallback) img.src = img.dataset.fallback; });
+  grid.querySelectorAll('[data-combo-prepare]').forEach(button => button.onclick = () => prepareComboForChat(Number(button.dataset.comboPrepare), button));
+}
+
+function comboSalesMessage(combo) {
+  const lines = [`Te comparto el combo ${combo.name}${combo.price ? ` (${combo.price})` : ''}.`];
+  if (combo.digital) lines.push('', combo.digital + '.');
+  if (combo.items.length) lines.push(...combo.items.map(item => `• ${item}`));
+  if (combo.included) lines.push('', `${combo.includedLabel}: ${combo.included}.`);
+  lines.push('', `Mira todos los combos e imágenes aquí: ${cfg('publicCatalogUrl', COMBO_CATALOG_PAGE)}`);
+  lines.push('Si te interesa, dime tu fecha tentativa y te confirmamos disponibilidad.');
+  return lines.join('\n');
+}
+
+async function prepareComboForChat(index, button) {
+  const combo = comboCatalogRows[index];
+  if (!combo || !sel) return;
+  const previous = button?.textContent || '';
+  if (button) { button.disabled = true; button.textContent = 'Preparando tarjeta…'; }
+  try {
+    let response = await fetch(combo.cardImage, { cache:'force-cache' });
+    let imageUrl = combo.cardImage;
+    if (!response.ok && combo.rawImage) { response = await fetch(combo.rawImage, { cache:'force-cache' }); imageUrl = combo.rawImage; }
+    if (!response.ok) throw new Error(`imagen HTTP ${response.status}`);
+    const blob = await response.blob();
+    addPending({ kind:'image', blob, mime:blob.type || 'image/png', name:`${combo.name} - DCarela.${imageUrl.endsWith('.webp') ? 'webp' : 'png'}` });
+    const text = comboSalesMessage(combo);
+    ta.value = ta.value.trim() ? `${ta.value.trim()}\n\n${text}` : text;
+    ta.style.height = 'auto'; ta.style.height = Math.min(ta.scrollHeight, 120) + 'px';
+    $('comboLibrary').classList.remove('on'); $('comboLibrary').setAttribute('aria-hidden', 'true');
+    ta.focus();
+    toast(combo.name, 'Imagen oficial e información adjuntadas. Revisa y pulsa enviar.');
+  } catch (error) {
+    alert(`No se pudo preparar ${combo.name}: ${error?.message || error}`);
+  } finally {
+    if (button) { button.disabled = false; button.textContent = previous; }
+  }
+}
+
+async function openComboLibrary() {
+  const modal = $('comboLibrary'), grid = $('comboLibraryGrid');
+  modal.classList.add('on'); modal.setAttribute('aria-hidden', 'false');
+  if (!comboCatalogRows.length) grid.innerHTML = '<div class="combo-lib-empty">Cargando combos e imágenes oficiales…</div>';
+  try { await loadComboCatalog(false); renderComboLibrary(); }
+  catch (error) { grid.innerHTML = `<div class="combo-lib-empty"><b>No se pudo abrir el catálogo.</b><br>${esc(error?.message || error)}<br><button class="cfg-btn" id="comboLibraryRetry">Reintentar</button></div>`; $('comboLibraryRetry')?.addEventListener('click', () => { comboCatalogRows = []; void openComboLibrary(); }); }
+}
+
 function renderTplPopup() {
   const w = $('tplWrap');
   const bridgeChat = isBridgeConv(sel);
@@ -7526,10 +7703,21 @@ $('atTpl').onclick = async (e) => {
     if ($('tplWrap').classList.contains('on')) renderTplPopup();
   }
 };
+$('atCombo').onclick = e => { e.stopPropagation(); void openComboLibrary(); };
+$('comboLibraryX').onclick = () => { $('comboLibrary').classList.remove('on'); $('comboLibrary').setAttribute('aria-hidden', 'true'); };
+$('comboLibrarySearch').addEventListener('input', renderComboLibrary);
+$('comboLibrary').addEventListener('click', e => {
+  if (e.target === $('comboLibrary')) { $('comboLibrary').classList.remove('on'); $('comboLibrary').setAttribute('aria-hidden', 'true'); }
+});
 document.addEventListener('click', e => {
   if ($('tplWrap').classList.contains('on') &&
       !e.target.closest('#tplWrap') && !e.target.closest('#atTpl'))
     $('tplWrap').classList.remove('on');
+});
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && $('comboLibrary').classList.contains('on')) {
+    $('comboLibrary').classList.remove('on'); $('comboLibrary').setAttribute('aria-hidden', 'true');
+  }
 });
 
 // ===== DASHBOARD · métricas reales del CRM =====

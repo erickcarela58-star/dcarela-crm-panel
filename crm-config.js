@@ -13,11 +13,11 @@ window.CRM_CONFIG = window.DCARELA_CRM_CONFIG = {
 
   notificationTag: "dcarela-crm",
   appVersionUrl: "./app-version.json",
-  publicPortfolioUrl: "https://dcarelacompufoto.com/portafolio.html",
+  publicPortfolioUrl: "https://dcarelacompufoto.com/combos.html",
   // URL de la home/catálogo/wizard para combos, precios y reservas.
   publicCatalogUrl: "https://dcarelacompufoto.com/combos.html",
   // URL para ver trabajos, fotos, galería o portafolio.
-  publicGalleryUrl: "https://dcarelacompufoto.com/portafolio.html",
+  publicGalleryUrl: "https://dcarelacompufoto.com/combos.html",
   publicWeddingUrl: "https://dcarelacompufoto.com/boda.html",
 
   // Meta Pixel para tracking de eventos del panel (mismo pixel que el catálogo)

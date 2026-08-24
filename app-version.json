@@ -1,6 +1,6 @@
 {
-  "version": "2026-08-24-crm-safe-marketing-v31",
+  "version": "2026-08-24-combo-library-v32",
   "channel": "crm",
   "released_at": "2026-08-24T09:30:00Z",
-  "summary": "CRM minimalista con controles independientes de bot y contexto, exclusión permanente por contacto o etiquetas y descarte tras tres seguimientos más 72 horas."
+  "summary": "CRM con controles seguros y biblioteca de 39 combos oficiales por carpetas, imagen, precio e inclusiones dentro de cada chat."
 }
