@@ -446,6 +446,117 @@
     };
   }
 
+  function recommendationNextStep(recommendation = {}, input = {}) {
+    const action = aiActions.includes(recommendation.action) ? recommendation.action : "insufficient_data";
+    const campaignId = String(input.campaign_id || "").trim();
+    const steps = {
+      insufficient_data: {
+        view: "analytics",
+        label: "Completar medición",
+        message: "Registra señales verificables antes de cambiar una campaña.",
+      },
+      pause_proposal: campaignId
+        ? { view: "approvals", label: "Revisar propuesta de pausa", message: "Lleva la propuesta a revisión humana; no se pausó nada." }
+        : { view: "calendar", label: "Revisar capacidad", message: "Verifica primero los cupos; no se pausó nada." },
+      new_creative: {
+        view: "creatives",
+        label: "Abrir taller creativo",
+        message: "Prepara una variante y cambia solamente el creativo.",
+      },
+      budget_change_proposal: {
+        view: "wizard",
+        label: "Preparar borrador guiado",
+        message: "Traslada la economía al wizard; el presupuesto no cambia hasta aprobar y publicar fuera de SaleAds.",
+      },
+      keep: {
+        view: "analytics",
+        label: "Seguir midiendo",
+        message: "Conserva el plan y agrega resultados verificables.",
+      },
+    };
+    return { action, requires_human_approval: true, executed: false, ...steps[action] };
+  }
+
+  function draftCreativeBrief(input = {}, recommendation = {}) {
+    const validation = validateAiRecommendation(recommendation);
+    const offer = String(input.offer || "").trim().slice(0, 220);
+    const serviceLabel = String(input.service || "servicio fotográfico").trim().slice(0, 80) || "servicio fotográfico";
+    const goal = ["qualified_lead", "booking", "completed_session", "paid_order"].includes(input.goal)
+      ? input.goal
+      : "booking";
+    const tone = ["warm", "elegant", "direct", "celebratory"].includes(input.tone) ? input.tone : "warm";
+    const destination = ["whatsapp", "web", "crm"].includes(input.destination) ? input.destination : "whatsapp";
+    const issues = [];
+    if (!validation.valid) issues.push("La recomendación de origen no cumple el contrato.");
+    if (!offer) issues.push("Falta una oferta verificable.");
+    if (input.offer_verified !== true) issues.push("La oferta todavía no fue confirmada por una persona.");
+    if (issues.length) {
+      return {
+        schema_version: 1,
+        status: "insufficient_data",
+        issues,
+        requires_human_approval: true,
+        publish_enabled: false,
+        spend_enabled: false,
+      };
+    }
+
+    const goalLabels = {
+      qualified_lead: "solicitud calificada",
+      booking: "reserva",
+      completed_session: "sesión completada",
+      paid_order: "venta pagada",
+    };
+    const ctas = {
+      whatsapp: "Reservar por WhatsApp",
+      web: "Ver la oferta",
+      crm: "Dar seguimiento en CRM",
+    };
+    const toneDirections = {
+      warm: "Luz cercana, gesto natural y detalle humano; composición limpia.",
+      elegant: "Jerarquía editorial, fondo sobrio y tipografía con alto contraste.",
+      direct: "Oferta legible en el primer vistazo, producto protagonista y CTA visible.",
+      celebratory: "Energía, color controlado y momento de celebración auténtico.",
+    };
+    const service = serviceLabel.replace(/\s+/g, " ");
+    const now = Number.isFinite(Date.parse(String(input.now || ""))) ? new Date(input.now) : new Date();
+    const brief = {
+      brief_id: `brief_${now.toISOString().replace(/[^0-9]/g, "").slice(0, 14)}_${slugKey(service)}`,
+      schema_version: 1,
+      status: "ready_for_human_review",
+      source_recommendation_id: recommendation.recommendation_id,
+      service,
+      verified_offer: offer,
+      objective: goal,
+      hypothesis: `Probar si una presentación ${tone} de ${service} mejora la ${goalLabels[goal]}; no asumir impacto hasta completar la muestra.`,
+      headline_options: [
+        offer,
+        `Conoce ${service} con D' Carela`,
+        `Consulta disponibilidad para ${service}`,
+      ],
+      primary_text_draft: `${offer}. Conoce los detalles y confirma disponibilidad antes de reservar.`,
+      cta: ctas[destination],
+      destination,
+      visual_direction: toneDirections[tone],
+      experiment: {
+        variable: "creative",
+        control: "Creativo vigente",
+        challenger: `Nueva dirección ${tone}`,
+        minimum_events_per_arm: 20,
+      },
+      evidence_refs: recommendation.evidence.map((item) => ({ metric: item.metric, source: item.source, window: item.window })),
+      policy_constraints: [
+        "No inventar precio, disponibilidad, resultados, reseñas o beneficios.",
+        "No usar atributos personales del público ni datos del banco de clientes.",
+        "Verificar derechos de imagen, destino y oferta antes de exportar.",
+      ],
+      requires_human_approval: true,
+      publish_enabled: false,
+      spend_enabled: false,
+    };
+    return brief;
+  }
+
   const campaignTransitions = Object.freeze({
     draft_review_required: ["qa_ready"],
     saved: ["qa_ready"],
@@ -601,7 +712,7 @@
     consentState, summarizeAudience, validateCreativeAsset, capacitySummary, evaluateExperiment,
     funnelMetrics, campaignTransitions, canTransitionCampaign,
     aiActions, aiSampleQuality, buildAiContext, validateAiRecommendation,
-    planStrategicRecommendation, planExperiment,
+    planStrategicRecommendation, planExperiment, recommendationNextStep, draftCreativeBrief,
     operationCollections, operationDocId, mergeOperationRows, planOperationMigration,
     syncStates, syncStateLabel, describeSyncError, summarizeSync, auditEntry, slugKey,
   };

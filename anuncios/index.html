@@ -13,7 +13,7 @@
     />
     <title>D'Carela · Centro de Anuncios</title>
     <link rel="manifest" href="./manifest.webmanifest" />
-    <link rel="stylesheet" href="./styles.css?v=20260824v7" />
+    <link rel="stylesheet" href="./styles.css?v=20260824v8" />
   </head>
   <body>
     <div class="login" id="login">
@@ -562,57 +562,65 @@
           <div class="operations-grid"><form class="panel" id="experimentForm"><div class="panel-heading section"><div><span>Nueva prueba</span><h3>Control vs. variante</h3></div></div><div class="form-grid"><label class="wide">Hipótesis<input id="experimentHypothesis" required placeholder="Un Reel del proceso reducirá el costo por reserva" /></label><label>Variable<select id="experimentVariable"><option value="creative">Creativo</option><option value="copy">Copy</option><option value="destination">Destino</option><option value="audience">Audiencia</option></select></label><label>Métrica principal<select id="experimentMetric"><option value="qualified_lead">Lead calificado</option><option value="booking">Reserva</option><option value="completed">Sesión completada</option></select></label><label>Eventos mínimos<input id="experimentMinimum" type="number" min="1" value="20" /></label><label>Control eventos<input id="experimentControlEvents" type="number" min="0" value="0" /></label><label>Control gasto<input id="experimentControlSpend" type="number" min="0" value="0" /></label><label>Variante eventos<input id="experimentVariantEvents" type="number" min="0" value="0" /></label><label>Variante gasto<input id="experimentVariantSpend" type="number" min="0" value="0" /></label></div><div id="experimentDecision" class="qa-box"></div><button class="primary" type="submit">Guardar evaluación</button></form><div class="panel"><div class="panel-heading section"><div><span>Memoria de aprendizaje</span><h3>Pruebas registradas</h3></div></div><div id="experimentList" class="record-list"></div></div></div>
         </section>
 
-        <section class="view" id="viewAiLab">
-          <div class="section-hero compact-section"><div><span class="eyebrow">Cerebro local v1 · contrato IA estricto</span><h1>Recomendaciones con evidencia</h1><p>Analiza economía, capacidad y resultados agregados. Nunca recibe clientes, conversaciones o fotografías y no puede publicar, activar ni cambiar presupuesto.</p></div><span class="phase-badge">Experimental · aprobación humana obligatoria</span></div>
-          <div class="ai-guard-grid">
-            <article><b>Datos</b><span class="success-text">Solo agregados</span><small>Sin nombres, teléfonos, correo o chats</small></article>
-            <article><b>Motor activo</b><span class="success-text">Cerebro local explicable</span><small>Salida reproducible y validada por esquema</small></article>
-            <article><b>IA remota</b><span class="warning-text">Backend no configurado</span><small>Contrato preparado; ninguna clave en el navegador</small></article>
-            <article><b>Permisos</b><span class="success-text">Recomendar y redactar</span><small>Activar, publicar y aumentar están prohibidos</small></article>
+        <section class="view ai-lab-view" id="viewAiLab">
+          <div class="section-hero compact-section ai-hero">
+            <div><span class="eyebrow">SaleAds Intelligence · cerebro local v2</span><h1>Decisiones claras. Trabajo listo.</h1><p>Convierte economía, capacidad y resultados agregados en una recomendación explicable, un brief creativo y una prueba medible.</p></div>
+            <div class="ai-hero-status"><span class="phase-badge">Experimental</span><span class="status-chip success-text">Gasto protegido</span><small>Aprobación humana obligatoria</small></div>
           </div>
-          <div class="operations-grid ai-workspace">
-            <form class="panel" id="aiRecommendationForm">
-              <div class="panel-heading section"><div><span>Analista estratégico</span><h3>Contexto verificable</h3></div><span class="status-chip" id="aiSampleChip">Sin analizar</span></div>
-              <div class="form-grid">
-                <label class="wide">Campaña base<select id="aiCampaign"><option value="">Contexto manual</option></select></label>
-                <label>Servicio<input id="aiService" value="general" maxlength="60" /></label>
-                <label>Ventana (días)<input id="aiWindowDays" type="number" min="1" max="90" value="7" /></label>
-                <label>Precio (RD$)<input id="aiPrice" type="number" min="0" /></label>
-                <label>Costo variable<input id="aiVariableCost" type="number" min="0" /></label>
-                <label>Beneficio deseado<input id="aiDesiredProfit" type="number" min="0" /></label>
-                <label>ROAS objetivo<input id="aiTargetRoas" type="number" min="0" step="0.1" value="3" /></label>
-                <label>Cupos disponibles<input id="aiAvailableSlots" type="number" min="0" value="0" /></label>
-                <label>Presupuesto total<input id="aiBudgetTotal" type="number" min="0" value="0" /></label>
-                <label>Gasto verificado<input id="aiSpend" type="number" min="0" value="0" /></label>
-                <label>Leads calificados<input id="aiQualified" type="number" min="0" value="0" /></label>
-                <label>Reservas<input id="aiBookings" type="number" min="0" value="0" /></label>
-                <label>Sesiones completadas<input id="aiCompleted" type="number" min="0" value="0" /></label>
-                <label>Frecuencia<input id="aiFrequency" type="number" min="0" step="0.1" value="0" /></label>
-                <label>Edad del creativo (días)<input id="aiCreativeAge" type="number" min="0" value="0" /></label>
-              </div>
-              <label class="consent-row"><input id="aiEvidenceVerified" type="checkbox" /> Confirmo que gasto, resultados y capacidad son agregados verificados.</label>
-              <div class="inline-actions"><button class="primary" type="submit">Analizar con cerebro local</button><button class="secondary" id="aiExportContext" type="button">Exportar contexto seguro</button></div>
-            </form>
-            <div class="panel ai-result-panel">
-              <div class="panel-heading section"><div><span>Recomendación estructurada</span><h3>Decisión asistida</h3></div><span class="status-chip success-text">Gasto cero</span></div>
-              <div id="aiRecommendationResult" class="ai-recommendation-empty">Completa agregados verificables. Si falta señal, el resultado correcto será “datos insuficientes”.</div>
-              <div class="inline-actions"><button class="secondary" id="aiCopyRecommendation" type="button" disabled>Copiar recomendación</button><button class="secondary" id="aiExportRecommendation" type="button" disabled>Exportar JSON</button></div>
-            </div>
+          <div class="ai-guard-grid" aria-label="Controles de seguridad de IA">
+            <article><span class="ai-guard-icon" aria-hidden="true">01</span><div><b>Privacidad</b><span class="success-text">Solo agregados</span><small>Sin nombres, teléfonos, correo, chats o fotos</small></div></article>
+            <article><span class="ai-guard-icon" aria-hidden="true">02</span><div><b>Motor</b><span class="success-text">Local y explicable</span><small>Misma evidencia, misma decisión reproducible</small></div></article>
+            <article><span class="ai-guard-icon" aria-hidden="true">03</span><div><b>Proveedor remoto</b><span class="warning-text">No configurado</span><small>Ninguna clave ni llamada generativa en el navegador</small></div></article>
+            <article><span class="ai-guard-icon" aria-hidden="true">04</span><div><b>Permisos</b><span class="success-text">Borradores solamente</span><small>Publicar, activar y aumentar gasto están prohibidos</small></div></article>
           </div>
-          <div class="operations-grid ai-experiment-lab">
-            <form class="panel" id="aiExperimentForm">
-              <div class="panel-heading section"><div><span>Función experimental</span><h3>Diseñador de muestra A/B</h3></div></div>
-              <div class="form-grid">
-                <label>Variable<select id="aiExperimentVariable"><option value="creative">Creativo</option><option value="copy">Copy</option><option value="destination">Destino</option><option value="audience">Audiencia</option></select></label>
-                <label>Eventos por brazo<input id="aiExperimentMinimum" type="number" min="5" value="20" /></label>
-                <label>Costo histórico por evento<input id="aiExperimentCost" type="number" min="0" value="0" /></label>
-                <label>Presupuesto diario<input id="aiExperimentDaily" type="number" min="0" value="500" /></label>
-                <label>Días<input id="aiExperimentDays" type="number" min="1" max="90" value="7" /></label>
-              </div>
-              <button class="primary" type="submit">Calcular viabilidad</button>
-              <div id="aiExperimentResult" class="qa-box">Registra un costo histórico para calcular dos brazos comparables.</div>
+
+          <div class="ai-dashboard-grid">
+            <form class="panel ai-input-panel" id="aiRecommendationForm">
+              <div class="panel-heading section"><div><span>01 · contexto</span><h3>Señales verificables</h3></div><button class="ghost" id="aiReset" type="button">Limpiar</button></div>
+              <section class="ai-form-section" aria-labelledby="aiCampaignContextTitle">
+                <div class="ai-section-title"><span>Campaña y oferta</span><small id="aiCampaignContextTitle">La base comercial que sí conocemos</small></div>
+                <div class="form-grid">
+                  <label class="wide">Campaña base<select id="aiCampaign"><option value="">Contexto manual</option></select></label>
+                  <label>Servicio<input id="aiService" value="general" maxlength="60" /></label>
+                  <label>Objetivo<select id="aiGoal"><option value="qualified_lead">Lead calificado</option><option value="booking" selected>Reserva</option><option value="completed_session">Sesión completada</option><option value="paid_order">Venta pagada</option></select></label>
+                  <label class="wide">Oferta real<input id="aiOffer" maxlength="220" placeholder="Entregables, precio o depósito exactamente como se ofrecerán" /></label>
+                  <label>Tono<select id="aiTone"><option value="warm">Cercano</option><option value="elegant">Elegante</option><option value="direct">Directo</option><option value="celebratory">Celebración</option></select></label>
+                  <label>Destino<select id="aiDestination"><option value="whatsapp">WhatsApp</option><option value="web">Página web</option><option value="crm">Seguimiento CRM</option></select></label>
+                  <label>Ventana de análisis<input id="aiWindowDays" type="number" min="1" max="90" value="7" /><small>días</small></label>
+                  <label>Cupos disponibles<input id="aiAvailableSlots" type="number" min="0" value="0" /></label>
+                </div>
+              </section>
+              <details class="ai-form-section ai-collapsible" name="aiInputGroup">
+                <summary><span>Economía de la oferta</span><small>Margen y límite de inversión</small></summary>
+                <div class="form-grid"><label>Precio (RD$)<input id="aiPrice" type="number" min="0" /></label><label>Costo variable<input id="aiVariableCost" type="number" min="0" /></label><label>Beneficio deseado<input id="aiDesiredProfit" type="number" min="0" /></label><label>ROAS objetivo<input id="aiTargetRoas" type="number" min="0" step="0.1" value="3" /></label><label class="wide">Presupuesto total disponible<input id="aiBudgetTotal" type="number" min="0" value="0" /></label></div>
+              </details>
+              <details class="ai-form-section ai-collapsible" name="aiInputGroup">
+                <summary><span>Resultados observados</span><small>Señales agregadas, nunca personas</small></summary>
+                <div class="form-grid"><label>Gasto verificado<input id="aiSpend" type="number" min="0" value="0" /></label><label>Leads calificados<input id="aiQualified" type="number" min="0" value="0" /></label><label>Reservas<input id="aiBookings" type="number" min="0" value="0" /></label><label>Sesiones completadas<input id="aiCompleted" type="number" min="0" value="0" /></label><label>Frecuencia<input id="aiFrequency" type="number" min="0" step="0.1" value="0" /></label><label>Edad del creativo<input id="aiCreativeAge" type="number" min="0" value="0" /><small>días</small></label></div>
+              </details>
+              <div class="ai-readiness" id="aiReadiness" aria-live="polite"><div><b>Preparación del análisis</b><span id="aiReadinessLabel">0%</span></div><div class="ai-readiness-track"><i id="aiReadinessBar"></i></div><small id="aiReadinessHint">Completa economía, capacidad y resultados verificables.</small></div>
+              <div class="ai-confirm-grid"><label><input id="aiOfferVerified" type="checkbox" /> La oferta fue revisada y es real.</label><label><input id="aiEvidenceVerified" type="checkbox" /> Gasto, resultados y capacidad están verificados.</label></div>
+              <div class="ai-primary-actions"><button class="primary" type="submit">Analizar ahora</button><button class="secondary" id="aiExportContext" type="button">Exportar contexto seguro</button></div>
             </form>
-            <div class="panel"><div class="panel-heading section"><div><span>Memoria en este dispositivo</span><h3>Recomendaciones recientes</h3></div></div><div id="aiRecommendationHistory" class="record-list"></div><p class="notice">La memoria guarda el resultado estructurado por sucursal; no contiene banco de clientes ni ejecuta acciones.</p></div>
+
+            <aside class="panel ai-result-panel" aria-labelledby="aiDecisionTitle">
+              <div class="panel-heading section"><div><span>02 · decisión</span><h3 id="aiDecisionTitle">Recomendación asistida</h3></div><span class="status-chip" id="aiSampleChip">Sin analizar</span></div>
+              <div id="aiRecommendationResult" class="ai-recommendation-empty" aria-live="polite"><span class="ai-empty-orbit" aria-hidden="true">✦</span><b>Tu siguiente decisión aparecerá aquí</b><p>SaleAds mostrará datos insuficientes antes que inventar rendimiento.</p></div>
+              <div class="ai-result-actions"><button class="primary" id="aiNextStep" type="button" disabled>Preparar siguiente paso</button><button class="secondary" id="aiGenerateBrief" type="button" disabled>Generar brief seguro</button></div>
+              <div class="ai-utility-actions"><button class="ghost" id="aiCopyRecommendation" type="button" disabled>Copiar decisión</button><button class="ghost" id="aiExportRecommendation" type="button" disabled>Exportar JSON</button></div>
+              <section class="ai-brief-panel" id="aiBriefPanel" hidden aria-labelledby="aiBriefTitle"><div class="ai-section-title"><span>03 · brief local</span><small id="aiBriefTitle">Listo para revisión creativa</small></div><div id="aiBriefResult"></div><div class="ai-primary-actions"><button class="primary" id="aiOpenStudio" type="button">Abrir taller creativo</button><button class="secondary" id="aiCopyBrief" type="button">Copiar brief</button><button class="ghost" id="aiExportBrief" type="button">Exportar</button></div></section>
+            </aside>
+          </div>
+
+          <div class="ai-lower-grid">
+            <form class="panel ai-experiment-lab" id="aiExperimentForm">
+              <div class="panel-heading section"><div><span>04 · laboratorio</span><h3>Diseñador A/B</h3></div><span class="status-chip">2 brazos</span></div>
+              <p class="ai-panel-copy">Cambia una sola variable y calcula si el presupuesto alcanza para aprender.</p>
+              <div class="form-grid"><label>Variable<select id="aiExperimentVariable"><option value="creative">Creativo</option><option value="copy">Copy</option><option value="destination">Destino</option><option value="audience">Audiencia</option></select></label><label>Métrica<select id="aiExperimentMetric"><option value="qualified_lead">Lead calificado</option><option value="booking">Reserva</option><option value="completed_session">Sesión completada</option></select></label><label>Eventos por brazo<input id="aiExperimentMinimum" type="number" min="5" value="20" /></label><label>Costo histórico por evento<input id="aiExperimentCost" type="number" min="0" value="0" /></label><label>Presupuesto diario<input id="aiExperimentDaily" type="number" min="0" value="500" /></label><label>Días<input id="aiExperimentDays" type="number" min="1" max="90" value="7" /></label></div>
+              <div class="ai-primary-actions"><button class="primary" type="submit">Calcular viabilidad</button><button class="secondary" id="aiExperimentUseObserved" type="button">Usar costo observado</button></div>
+              <div id="aiExperimentResult" class="ai-experiment-result">Registra un costo histórico para calcular dos brazos comparables.</div>
+            </form>
+            <div class="panel ai-memory-panel"><div class="panel-heading section"><div><span>Memoria privada</span><h3>Decisiones recientes</h3></div><button class="ghost" id="aiExportHistory" type="button">Exportar memoria</button></div><div id="aiRecommendationHistory" class="record-list"></div><p class="notice">Hasta 25 resultados por sucursal en este dispositivo. Sin clientes y sin acciones automáticas.</p></div>
           </div>
         </section>
 
@@ -653,7 +661,7 @@
 
     <div class="toast" id="toast" role="status"></div>
     <script src="https://panel.dcarelacompufoto.com/firebase-config.js"></script>
-    <script src="./saleads-core.js?v=20260824v7"></script>
-    <script type="module" src="./app.js?v=20260824v7"></script>
+    <script src="./saleads-core.js?v=20260824v8"></script>
+    <script type="module" src="./app.js?v=20260824v8"></script>
   </body>
 </html>
