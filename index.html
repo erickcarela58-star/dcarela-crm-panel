@@ -1720,6 +1720,7 @@ input[type="checkbox"],input[type="radio"]{accent-color:var(--ink)}
 .sb-item:hover{background:var(--card);border-color:var(--line)}.sb-item.on{background:var(--ink);color:var(--bg);border-color:var(--ink);box-shadow:0 10px 26px rgba(0,0,0,.18)}
 .sb-item.on .sb-badge{background:var(--bg);color:var(--ink)}.sb-foot{padding:12px 5px 2px;border-top:1px solid var(--line)}
 .tb{height:78px;padding:0 22px;border-bottom:1px solid var(--line2);background:color-mix(in srgb,var(--panel) 88%,transparent);backdrop-filter:blur(20px);box-shadow:0 12px 32px rgba(0,0,0,.06)}
+.tb-l{min-width:180px}
 .tb-h1{font-size:20px;letter-spacing:-.55px}.tb-search{height:42px;border-radius:13px;background:var(--input);border-color:var(--line2)}
 .views{background:linear-gradient(135deg,color-mix(in srgb,var(--bg) 93%,var(--ink)),var(--bg) 42%);padding:0}
 .view{animation:fadeUp .22s ease both}.view-conv .main{margin:16px;height:calc(100dvh - 110px);border:1px solid var(--line2);border-radius:20px;overflow:hidden;background:var(--panel);box-shadow:0 24px 70px rgba(0,0,0,.14)}
@@ -1735,8 +1736,23 @@ input[type="checkbox"],input[type="radio"]{accent-color:var(--ink)}
 .posc-channel{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:11px;padding:12px 14px;border:1px solid var(--line);border-radius:15px;background:var(--card)}.posc-channel-copy b,.posc-channel-copy span{display:block}.posc-channel-copy b{font-size:12px}.posc-channel-copy span{margin-top:3px;color:var(--mut);font-size:9.5px}.posc-channel-switch{display:flex;gap:5px;padding:4px;border:1px solid var(--line);border-radius:12px;background:var(--input)}.posc-channel-switch button{min-height:34px;padding:0 11px;border:0;border-radius:8px;background:transparent;color:var(--mut);font:800 10px inherit;cursor:pointer}.posc-channel-switch button.on{background:var(--ink);color:var(--bg);box-shadow:0 5px 14px rgba(0,0,0,.15)}
 .posc-service-filter{position:relative}.posc-service-toggle{width:100%;display:flex;align-items:center;justify-content:space-between;cursor:pointer;text-align:left}.posc-service-toggle:after{content:'⌄';font-size:16px}.posc-service-menu{position:absolute;z-index:20;top:calc(100% + 6px);left:0;right:0;display:none;max-height:430px;overflow:auto;padding:8px;border:1px solid var(--line2);border-radius:15px;background:var(--panel);box-shadow:0 22px 60px rgba(0,0,0,.22)}.posc-service-menu.on{display:block}.posc-service-all,.posc-service-option{width:100%;min-height:35px;padding:7px 9px;border:0;border-radius:8px;background:transparent;color:var(--ink);font:700 10px inherit;text-align:left;cursor:pointer}.posc-service-all:hover,.posc-service-option:hover,.posc-service-option.on{background:var(--ink);color:var(--bg)}.posc-service-group{margin:3px 0;border:1px solid var(--line);border-radius:10px;overflow:hidden}.posc-service-group summary{padding:9px;cursor:pointer;font-size:10px;font-weight:850;background:var(--input);list-style:none}.posc-service-group summary span{float:right;color:var(--mut);font-size:9px}.posc-service-group>div{padding:4px}.posc-channels{display:flex;gap:4px;flex-wrap:wrap}.posc-channels span{padding:4px 6px;border-radius:7px;background:var(--input);color:var(--mut);font-size:8.5px;font-weight:800}.posc-channels span.available{background:var(--ink);color:var(--bg)}
 .posc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(315px,1fr));gap:11px}.posc-card{display:grid;gap:13px;padding:16px;border:1px solid var(--line);border-radius:18px;background:var(--card);transition:.18s ease}.posc-card:hover{transform:translateY(-2px);border-color:var(--line2);box-shadow:0 18px 42px rgba(0,0,0,.1)}.posc-card[data-debt="true"]{border-left:4px solid var(--ink)}.posc-card-top{display:grid;grid-template-columns:42px minmax(0,1fr) auto;gap:10px;align-items:center}.posc-avatar{width:42px;height:42px;display:grid;place-items:center;border-radius:13px;background:var(--ink);color:var(--bg);font-weight:900}.posc-card h3{margin:0;font-size:14px}.posc-card-top div span{font-size:10.5px;color:var(--mut)}.posc-branch{padding:5px 7px;border:1px solid var(--line);border-radius:999px;font-size:9px!important}.posc-service{padding:11px;border-radius:13px;background:var(--input)}.posc-service span,.posc-numbers span{display:block;font-size:9px;color:var(--mut);text-transform:uppercase;font-weight:800}.posc-service b{display:block;margin-top:3px;font-size:12px}.posc-tags{display:flex;gap:5px;flex-wrap:wrap}.posc-tags span{padding:5px 7px;border:1px solid var(--line);border-radius:8px;font-size:9px}.posc-numbers{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}.posc-numbers>div{padding:8px;border-right:1px solid var(--line)}.posc-numbers>div:last-child{border:0}.posc-numbers b{display:block;margin-top:4px;font-size:11px}.posc-numbers .due b{color:var(--danger)}.posc-consent{font-size:10px;color:var(--mut);display:flex;align-items:center;gap:7px}.posc-actions{display:flex;gap:6px;flex-wrap:wrap}.posc-actions button{flex:1;min-width:100px;min-height:36px;border:1px solid var(--line2);border-radius:10px;background:var(--input);color:var(--ink);font:750 10px inherit;cursor:pointer}.posc-actions button:first-child{background:var(--ink);color:var(--bg);border-color:var(--ink)}.posc-actions button:disabled{opacity:.4;cursor:not-allowed}.posc-empty{grid-column:1/-1;padding:80px 20px;text-align:center;color:var(--mut)}
+/* Marketing y permisos: controles operativos explicados sin sobrecargar el inbox. */
+.photo-bot-global[data-official-only]:not([hidden]){display:flex}
+.marketing-wrap{max-width:1260px;margin:0 auto;padding:24px;display:grid;gap:15px}
+.marketing-hero{display:flex;justify-content:space-between;align-items:flex-end;gap:22px;padding:27px;border:1px solid var(--line2);border-radius:22px;background:var(--ink);color:var(--bg)}
+.marketing-hero h2{margin:5px 0 7px;font-size:clamp(24px,3vw,38px);letter-spacing:-1.25px}.marketing-hero p{max-width:760px;margin:0;font-size:12px;line-height:1.65;opacity:.72}.marketing-kicker{font-size:9.5px;text-transform:uppercase;letter-spacing:1.65px;font-weight:900;opacity:.62}
+.marketing-context{display:flex;gap:8px;flex-wrap:wrap}.marketing-context span{padding:7px 9px;border:1px solid color-mix(in srgb,var(--bg) 28%,transparent);border-radius:9px;font-size:9px;font-weight:800}
+.marketing-rules{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}.marketing-rule,.marketing-card{padding:17px;border:1px solid var(--line);border-radius:17px;background:var(--card)}
+.marketing-rule b{display:block;font-size:12px}.marketing-rule span{display:block;margin-top:6px;color:var(--mut);font-size:10.5px;line-height:1.55}
+.marketing-grid{display:grid;grid-template-columns:minmax(0,.8fr) minmax(420px,1.2fr);gap:12px}.marketing-card{display:grid;gap:13px}.marketing-card h3{margin:0;font-size:15px}.marketing-card>p{margin:-6px 0 0;color:var(--mut);font-size:10.5px;line-height:1.55}
+.marketing-kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:7px}.marketing-kpi{padding:12px;border:1px solid var(--line);border-radius:12px;background:var(--input)}.marketing-kpi span{display:block;color:var(--mut);font-size:8.5px;text-transform:uppercase;letter-spacing:.7px;font-weight:850}.marketing-kpi b{display:block;margin-top:5px;font-size:18px}
+.marketing-channel{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:12px;padding:13px;border:1px solid var(--line);border-radius:13px;background:var(--input)}.marketing-channel strong,.marketing-channel span{display:block}.marketing-channel strong{font-size:12px}.marketing-channel span{margin-top:4px;color:var(--mut);font-size:9.5px;line-height:1.45}.marketing-channel button,.marketing-actions button{min-height:38px;padding:0 13px;border:1px solid var(--line2);border-radius:10px;background:var(--ink);color:var(--bg);font:800 10px inherit;cursor:pointer}.marketing-channel button:disabled,.marketing-actions button:disabled{opacity:.48;cursor:not-allowed}
+.marketing-channel[hidden]{display:none!important}
+.marketing-tag-field{display:grid;gap:6px}.marketing-tag-field label{font-size:10px;font-weight:850}.marketing-tag-field input{min-height:44px;padding:0 12px;border:1px solid var(--line2);border-radius:11px;background:var(--input);color:var(--ink);font:650 12px inherit}.marketing-tag-field small{color:var(--mut);font-size:9.5px;line-height:1.45}.marketing-actions{display:flex;gap:8px;flex-wrap:wrap}.marketing-actions button:first-child{background:var(--input);color:var(--ink)}.marketing-result{min-height:48px;padding:12px;border:1px dashed var(--line2);border-radius:11px;color:var(--mut);font-size:10.5px;line-height:1.5}.marketing-result strong{color:var(--ink)}
+.view-conv .cv-tags{flex-wrap:nowrap;overflow:hidden}.view-conv .ch-labels{flex-wrap:nowrap;overflow:hidden;max-width:min(38vw,360px)}
 @media(max-width:1100px){#app.on{grid-template-columns:84px minmax(0,1fr)}.sb{width:84px}.sb-bn,.sb-uinfo,.sb-item span:not(.sb-badge),.sb-sep,.sb-live span:last-child,.sb-logout{display:none}.sb-item{justify-content:center}.sb-user{padding:9px}.view-conv .detail{width:310px}.posc-kpis{grid-template-columns:repeat(2,1fr)}}
-@media(max-width:760px){#app.on{display:block}.sb{width:270px}.tb{height:66px;padding:0 12px}.views{padding-top:66px}.view-conv .main{margin:0;height:calc(100dvh - 66px);border:0;border-radius:0}.view-conv .list{width:100%}.posc-wrap{padding:12px}.posc-hero{align-items:flex-start;flex-direction:column;padding:20px}.posc-hero-actions{width:100%}.posc-hero-actions button{flex:1}.posc-kpis{grid-template-columns:1fr 1fr}.posc-toolbar{grid-template-columns:1fr}.posc-channel{align-items:flex-start;flex-direction:column}.posc-channel-switch{width:100%}.posc-channel-switch button{flex:1}.posc-context{display:grid}.posc-grid{grid-template-columns:1fr}}
+@media(max-width:1100px){.marketing-rules{grid-template-columns:repeat(2,1fr)}.marketing-grid{grid-template-columns:1fr}}
+@media(max-width:760px){#app.on{display:block}.sb{width:270px}.tb{height:66px;padding:0 12px}.tb-l{min-width:0}.views{padding-top:66px}.view-conv .main{margin:0;height:calc(100dvh - 66px);border:0;border-radius:0}.view-conv .list{width:100%}.posc-wrap,.marketing-wrap{padding:12px}.posc-hero,.marketing-hero{align-items:flex-start;flex-direction:column;padding:20px}.posc-hero-actions{width:100%}.posc-hero-actions button{flex:1}.posc-kpis{grid-template-columns:1fr 1fr}.posc-toolbar{grid-template-columns:1fr}.posc-channel{align-items:flex-start;flex-direction:column}.posc-channel-switch{width:100%}.posc-channel-switch button{flex:1}.posc-context{display:grid}.posc-grid{grid-template-columns:1fr}.marketing-rules{grid-template-columns:1fr}.marketing-grid{grid-template-columns:1fr}.marketing-kpis{grid-template-columns:1fr 1fr}.marketing-channel{grid-template-columns:1fr}.marketing-channel button{width:100%}}
 </style>
 </head>
 <body>
@@ -1820,8 +1836,12 @@ input[type="checkbox"],input[type="radio"]{accent-color:var(--ink)}
    </button>
     <button class="sb-item" data-view="ads" data-permission="broadcast">
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11v2a2 2 0 002 2h2l4 4V5L7 9H5a2 2 0 00-2 2z"/><path d="M15 9a4 4 0 010 6M18 6a8 8 0 010 12"/></svg>
-    <span>Estudio de Anuncios</span>
-   </button>
+     <span>Estudio de Anuncios</span>
+    </button>
+    <button class="sb-item" data-view="marketing" data-permission="broadcast">
+     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22a10 10 0 100-20 10 10 0 000 20z"/><path d="M8.5 12l2.2 2.2 4.8-5.1"/></svg>
+     <span>Marketing y permisos</span>
+    </button>
     <button class="sb-item" data-action="bc" data-permission="broadcast" data-official-only>
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l18-8-7 18-2-8-9-2z"/></svg>
     <span>Broadcast</span>
@@ -1893,10 +1913,14 @@ input[type="checkbox"],input[type="radio"]{accent-color:var(--ink)}
     <input id="tbSearch" placeholder="Buscar conversación, cliente, combo...">
    </div>
   </div>
-  <div class="photo-bot-global" id="photoBotGlobalBtn" data-bridge-only role="status" aria-live="polite" data-enabled="false" data-loading="true" title="Comprobando el estado general del bot de Fotos">
-   <span class="photo-bot-global-copy"><span>BOT FOTOS</span><strong id="photoBotGlobalState">COMPROBANDO</strong></span>
-   <span class="photo-bot-switch" aria-hidden="true"></span>
-  </div>
+   <button class="photo-bot-global" id="officialBotGlobalBtn" data-official-only data-permission="manage_settings" type="button" aria-live="polite" data-enabled="false" data-loading="true" title="Comprobando el estado general del bot oficial">
+    <span class="photo-bot-global-copy"><span>BOT OFICIAL</span><strong id="officialBotGlobalState">COMPROBANDO</strong></span>
+    <span class="photo-bot-switch" aria-hidden="true"></span>
+   </button>
+   <button class="photo-bot-global" id="photoBotGlobalBtn" data-bridge-only data-photo-bot-toggle data-permission="manage_settings" type="button" aria-live="polite" data-enabled="false" data-loading="true" title="Comprobando el estado general del bot de Fotos">
+    <span class="photo-bot-global-copy"><span>BOT FOTOS</span><strong id="photoBotGlobalState">COMPROBANDO</strong></span>
+    <span class="photo-bot-switch" aria-hidden="true"></span>
+   </button>
   <div class="tb-r">
    <a class="manual-web-link" href="./manual.html" target="_blank" rel="noopener">Manual</a>
    <div class="who" id="who"></div>
@@ -1936,6 +1960,44 @@ input[type="checkbox"],input[type="radio"]{accent-color:var(--ink)}
 
   <section class="view view-ads" id="viewAds" style="display:none">
    <a href="https://crm.dcarelacompufoto.com/anuncios/">Abrir Centro de Anuncios independiente</a>
+  </section>
+  <section class="view view-marketing" id="viewMarketing" style="display:none">
+   <div class="marketing-wrap">
+    <div class="marketing-hero">
+     <div><span class="marketing-kicker">Marketing responsable · dos canales</span><h2>Decide quién puede recibir qué</h2><p>Los controles del bot, las campañas y el aprendizaje de contexto son independientes. Puedes apagar respuestas automáticas sin perder el historial ni dejar de entender qué necesita cada cliente.</p></div>
+     <div class="marketing-context"><span>Contexto entrante siempre activo</span><span>Campañas revisables</span><span>Baja permanente respetada</span></div>
+    </div>
+    <div class="marketing-rules">
+     <div class="marketing-rule"><b>Bot apagado</b><span>No responde automáticamente. Los mensajes entrantes, preferencias y contexto siguen guardándose.</span></div>
+     <div class="marketing-rule"><b>Promociones</b><span>Solo se envían con permiso de marketing. Una exclusión permanente siempre tiene prioridad.</span></div>
+     <div class="marketing-rule"><b>Seguimientos</b><span>Máximo tres intentos. Tras 72 horas sin respuesta, el contacto se descarta automáticamente.</span></div>
+     <div class="marketing-rule"><b>Atención humana</b><span>Los chats, campañas y herramientas permanecen accesibles aunque cualquiera de los bots esté apagado.</span></div>
+    </div>
+    <div class="marketing-grid">
+     <article class="marketing-card">
+      <h3>Canal activo en este panel</h3><p>Este interruptor solo controla respuestas automáticas del número indicado.</p>
+      <div class="marketing-channel" id="marketingOfficialChannel">
+       <div><strong>WhatsApp oficial · 849-524-5620</strong><span id="marketingOfficialState">Comprobando estado…</span></div>
+       <button id="marketingOfficialToggle" type="button" data-permission="manage_settings">Cambiar estado</button>
+      </div>
+      <div class="marketing-channel" id="marketingPhotosChannel" hidden>
+       <div><strong>WhatsApp Fotos · 809-478-5620</strong><span id="marketingPhotosState">Comprobando estado…</span></div>
+       <button id="marketingPhotosToggle" type="button" data-permission="manage_settings">Cambiar estado</button>
+      </div>
+      <div class="marketing-kpis">
+       <div class="marketing-kpi"><span>Exclusiones permanentes</span><b id="marketingBlockedCount">—</b></div>
+       <div class="marketing-kpi"><span>Esperando descarte</span><b id="marketingThirdCount">—</b></div>
+       <div class="marketing-kpi"><span>Regla de seguimiento</span><b>3 + 72 h</b></div>
+      </div>
+     </article>
+     <article class="marketing-card">
+      <h3>Desactivar una lista etiquetada</h3><p>Busca coincidencias en etiquetas internas sin mostrar todas esas etiquetas dentro del chat. La vista previa no cambia datos.</p>
+      <div class="marketing-tag-field"><label for="marketingBlockTags">Etiquetas, separadas por coma</label><input id="marketingBlockTags" placeholder="ej. no_promocionar, familiar, solo_factura"><small>Al aplicar, se desactivan bot, promociones y seguimientos para todos los contactos coincidentes del número actual. Los mensajes entrantes siguen acumulando contexto.</small></div>
+      <div class="marketing-actions"><button id="marketingBlockPreview" type="button">Calcular sin aplicar</button><button id="marketingBlockApply" type="button" data-permission="manage_settings">Desactivar permanentemente</button></div>
+      <div class="marketing-result" id="marketingBlockResult">Escribe una o varias etiquetas y calcula primero la audiencia.</div>
+     </article>
+    </div>
+   </div>
   </section>
   <!-- Vista Conversaciones (lista + chat + detalle) -->
   <section class="view view-conv" id="viewConversations" style="display:none">
@@ -2611,19 +2673,19 @@ input[type="checkbox"],input[type="radio"]{accent-color:var(--ink)}
 </div>
 
 <div class="bc" id="bc">
- <div class="bc-card">
-  <div class="bc-h"><h2>Mensaje a varios contactos</h2><button class="bc-x" id="bcX" aria-label="Cerrar">×</button></div>
+  <div class="bc-card">
+   <div class="bc-h"><h2>Campaña de mensajería revisable</h2><button class="bc-x" id="bcX" aria-label="Cerrar">×</button></div>
   <div class="bc-body">
    <div class="bc-warn">
-    <div class="bc-help-title">Antes de enviar, elige como debe salir el mensaje</div>
+     <div class="bc-help-title">Elige el canal y el objetivo: el sistema excluirá siempre las bajas permanentes</div>
     <div class="bc-help-grid">
-     <div class="bc-help-item"><b>Mensaje libre</b><span>Solo clientes que escribieron en las ultimas 24 horas.</span></div>
-     <div class="bc-help-item"><b>Plantilla aprobada</b><span>Para seguimiento, recordatorios o marketing fuera de 24 horas. Debe existir en Meta y permitir baja/STOP.</span></div>
+      <div class="bc-help-item"><b>Canal de salida</b><span>Mensaje libre: solo dentro de 24 horas. Plantilla Meta: fuera de 24 horas. Segundo número: WhatsApp Web con consentimiento.</span></div>
+      <div class="bc-help-item"><b>Objetivo comercial</b><span>Promoción exige permiso. Seguimiento cuenta como uno de tres intentos. Recordatorio se limita a una sesión concreta.</span></div>
     </div>
    </div>
     <div class="bc-row">
-     <div class="df"><label>Forma de envio</label><select id="bcMode"><option value="freeform">Mensaje libre - solo 24 h</option><option value="template">Plantilla aprobada por Meta</option><option value="bridge">2do numero (WhatsApp Web) - consentimiento requerido</option></select></div>
-     <div class="df"><label>Objetivo</label><select id="bcPurpose"><option value="marketing">Marketing</option><option value="followup">Seguimiento</option><option value="session_reminder">Recordatorio</option></select></div>
+     <div class="df"><label>Canal y ventana de entrega</label><select id="bcMode"><option value="freeform">WhatsApp oficial · mensaje libre · solo 24 h</option><option value="template">WhatsApp oficial · plantilla aprobada por Meta</option><option value="bridge">WhatsApp Fotos · segundo número · consentimiento requerido</option></select></div>
+     <div class="df"><label>Objetivo y regla aplicable</label><select id="bcPurpose"><option value="marketing">Promoción o publicidad · requiere permiso</option><option value="followup">Seguimiento comercial · máximo 3 intentos</option><option value="session_reminder">Recordatorio · sesión concreta</option></select></div>
      <div class="df"><label>Idioma</label><input id="bcTplLang" value="es_DO" placeholder="es_DO"></div>
     </div>
     <div class="bc-template-fields" id="bcTplFields">
@@ -2859,7 +2921,7 @@ input[type="checkbox"],input[type="radio"]{accent-color:var(--ink)}
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { initializeApp, getApps } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js';
 import { getAuth, onAuthStateChanged, signInWithEmailAndPassword as firebaseSignIn, signOut as firebaseSignOut } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js';
-import { getFirestore, doc, getDoc, collection, getDocs, query, where } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
+import { getFirestore, doc, getDoc, setDoc, updateDoc, collection, getDocs, query, where, writeBatch, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
 
 const CRM_CONFIG = window.CRM_CONFIG || window.DCARELA_CRM_CONFIG || {};
 const SUPABASE_URL = CRM_CONFIG.supabaseUrl || '';
@@ -2873,12 +2935,20 @@ const firebaseAuth = getAuth(firebaseApp);
 const firebaseDb = getFirestore(firebaseApp);
 let AUTH_PROVIDER = 'none';
 let CRM_DATA_SESSION_AVAILABLE = false;
+let FIREBASE_CRM_AVAILABLE = false;
+
+async function panelAuthToken() {
+  const { data:{ session } } = await sb.auth.getSession();
+  if (session?.access_token) return session.access_token;
+  if (firebaseAuth.currentUser) return await firebaseAuth.currentUser.getIdToken();
+  return '';
+}
 
 const $ = (id) => document.getElementById(id);
 // Sello de versión: si el panel "no hace nada", casi siempre es caché vieja del
 // navegador. Este sello permite confirmar de un vistazo qué versión está corriendo
 // (compárala con la fecha del último deploy). Actualízalo en cada publicación.
-const BUILD = '2026-08-23-ads-live-v30';
+const BUILD = '2026-08-24-crm-safe-marketing-v31';
 // PDFs de venta por categoría (generados de las tarjetas aprobadas; hosteados en el catálogo).
 // Se regeneran con dcarela-catalogo/scripts/build_combo_pdfs.py + push del catálogo.
 const COMBO_PDF_BASE = 'https://dcarelacompufoto.com/pdf/';
@@ -2946,8 +3016,10 @@ function updatePanelSyncStatus() {
   if (!status) return;
   const label = status.querySelector('span:last-child');
   if (AUTH_PROVIDER === 'firebase' && !CRM_DATA_SESSION_AVAILABLE) {
-    status.classList.add('warn');
-    label.textContent = 'Acceso Firebase activo · historial CRM en recuperación';
+    status.classList.toggle('warn', !FIREBASE_CRM_AVAILABLE);
+    label.textContent = FIREBASE_CRM_AVAILABLE
+      ? 'CRM Firebase activo · controles, campañas revisables y contexto disponibles'
+      : 'Acceso Firebase activo · comprobando historial CRM';
     return;
   }
   if (BRIDGE_SETUP_ENABLED) {
@@ -3012,19 +3084,20 @@ function requirePermission(name) {
   return false;
 }
 async function callPanelUsers(body) {
-  const { data: { session } } = await sb.auth.getSession();
-  if (!session) return { ok:false, error:'sesión vencida' };
+  const { data:{ session } } = await sb.auth.getSession();
+  const token = await panelAuthToken();
+  if (!token) return { ok:false, error:'sesión vencida' };
   try {
     const response = await fetch(SUPABASE_URL + '/functions/v1/panel-users', {
       method:'POST',
-      headers:{ 'Content-Type':'application/json', 'Authorization':'Bearer ' + session.access_token },
+      headers:{ 'Content-Type':'application/json', 'Authorization':'Bearer ' + token },
       body:JSON.stringify(body || {}),
     });
     const result = await response.json().catch(() => ({ error:'respuesta inválida' }));
     if (response.status === 404 || response.status === 502 || response.status === 503) {
       PANEL_FUNCTIONS_AVAILABLE = false;
       updatePanelSyncStatus();
-      return callPanelUsersDirect(String(body?.action || 'me'), session);
+      return session ? callPanelUsersDirect(String(body?.action || 'me'), session) : { ok:false, error:result.error || 'servidor no disponible' };
     }
     PANEL_FUNCTIONS_AVAILABLE = response.ok;
     updatePanelSyncStatus();
@@ -3032,7 +3105,7 @@ async function callPanelUsers(body) {
   } catch (error) {
     PANEL_FUNCTIONS_AVAILABLE = false;
     updatePanelSyncStatus();
-    return callPanelUsersDirect(String(body?.action || 'me'), session);
+    return session ? callPanelUsersDirect(String(body?.action || 'me'), session) : { ok:false, error:'servidor no disponible' };
   }
 }
 async function loadPanelAccess() {
@@ -3056,6 +3129,7 @@ function applyPanelAccess() {
   });
   if ($('reply')) { $('reply').readOnly = readonly; $('reply').placeholder = readonly ? 'Cuenta en modo solo lectura' : 'Escribe tu respuesta...'; }
   updatePanelSyncStatus();
+  void refreshCommunicationControls(false);
 }
 // filtro de número del inbox: '' = 1er número (oficial) · 'qr' = 2do número (WhatsApp Web) · 'all' = todos
 // La réplica "sesiones fotográficas" arranca en 'qr' via config (defaultNumFilter). La clave de
@@ -3136,6 +3210,352 @@ let bridgeStatusTimer = null;
 let bridgeCountdownTimer = null;
 let bridgeVersionTimer = null;
 let bridgeRemoteVersion = '';
+let communicationControlsState = null;
+let communicationControlsTimer = null;
+
+function currentMarketingBusinessNumber() {
+  return LOCK_NUMFILTER
+    ? normalizePhoneClient(bridgeRuntimeBusinessNumber || CONFIGURED_BRIDGE_BUSINESS_NUMBER || '18094785620')
+    : normalizePhoneClient(PANEL_BUSINESS_NUMBER || '18495245620');
+}
+
+function firebaseBusinessIds() {
+  const ids = Array.isArray(PANEL_ACCESS?.business_ids) ? PANEL_ACCESS.business_ids.filter(Boolean) : [];
+  return ids.length ? ids : ['dcarela'];
+}
+
+function firebasePrimaryBusinessId() {
+  return firebaseBusinessIds()[0];
+}
+
+function firebaseChannelName() {
+  return LOCK_NUMFILTER ? 'photos' : 'official';
+}
+
+function firestoreIso(value) {
+  if (!value) return value ?? null;
+  try {
+    if (typeof value.toDate === 'function') return value.toDate().toISOString();
+    if (value instanceof Date) return value.toISOString();
+  } catch (e) {}
+  return value;
+}
+
+function firestoreRow(snapshot) {
+  const raw = snapshot.data() || {};
+  const row = { ...raw, id:raw.id || snapshot.id, _firestore_id:snapshot.id, _backend:'firebase' };
+  for (const [key, value] of Object.entries(row)) row[key] = firestoreIso(value);
+  return row;
+}
+
+function normalizeMarketingTag(value) {
+  return String(value || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
+}
+
+function conversationMarketingTags(row) {
+  const values = [...(Array.isArray(row?.labels) ? row.labels : []), ...(Array.isArray(row?.tags) ? row.tags : [])];
+  return [...new Set(values.map(normalizeMarketingTag).filter(Boolean))];
+}
+
+function conversationMatchesChannel(row, channel = firebaseChannelName()) {
+  const source = String(row?.source || row?.channel || '').toLowerCase();
+  const number = normalizePhoneClient(row?.business_number || '');
+  const photosNumber = normalizePhoneClient(CONFIGURED_BRIDGE_BUSINESS_NUMBER || '18094785620');
+  if (channel === 'photos') return source === 'whatsapp_qr' || source === 'photos' || number === photosNumber;
+  return source !== 'whatsapp_qr' && source !== 'photos' && (!photosNumber || number !== photosNumber);
+}
+
+function firebaseControlDocId(channel = firebaseChannelName(), businessId = firebasePrimaryBusinessId()) {
+  return `${String(businessId).replace(/[^a-zA-Z0-9_-]/g, '_')}_${channel}`;
+}
+
+async function loadFirebaseChannelControl(channel = firebaseChannelName()) {
+  const businessId = firebasePrimaryBusinessId();
+  let snap = await getDoc(doc(firebaseDb, 'wa_bridge_control', firebaseControlDocId(channel, businessId)));
+  if (!snap.exists()) {
+    try {
+      const list = await getDocs(query(collection(firebaseDb, 'wa_bridge_control'), where('business_id', '==', businessId)));
+      const match = list.docs.find(item => {
+        const data = item.data() || {};
+        return String(data.channel || '').toLowerCase() === channel
+          || normalizePhoneClient(data.business_number || '') === currentMarketingBusinessNumber();
+      });
+      if (match) snap = match;
+    } catch (e) {}
+  }
+  const data = snap.exists() ? firestoreRow(snap) : {};
+  return {
+    ...data,
+    ok:true,
+    backend:'firebase',
+    business_id:businessId,
+    business_number:data.business_number || currentMarketingBusinessNumber(),
+    channel,
+    bot_enabled:data.bot_enabled === true,
+    context_learning_enabled:data.context_learning_enabled !== false,
+  };
+}
+
+async function saveFirebaseChannelBot(enabled, channel = firebaseChannelName()) {
+  if (!firebaseAuth.currentUser) return { ok:false, error:'sesión Firebase vencida' };
+  const businessId = firebasePrimaryBusinessId();
+  const ref = doc(firebaseDb, 'wa_bridge_control', firebaseControlDocId(channel, businessId));
+  if (enabled === true) {
+    const current = await loadFirebaseChannelControl(channel);
+    if (current.host_online !== true && current.runtime_online !== true) {
+      return { ok:false, error:'El motor de WhatsApp no está conectado. Puedes mantenerlo desactivado y usar campañas en borrador, pero no activarlo hasta recuperar el canal.' };
+    }
+  }
+  await setDoc(ref, {
+    business_id:businessId,
+    business_number:currentMarketingBusinessNumber(),
+    channel,
+    bot_enabled:enabled === true,
+    context_learning_enabled:true,
+    campaigns_review_enabled:true,
+    updated_by_uid:firebaseAuth.currentUser.uid,
+    updated_at:serverTimestamp(),
+  }, { merge:true });
+  FIREBASE_CRM_AVAILABLE = true;
+  updatePanelSyncStatus();
+  return { ok:true, backend:'firebase', bot_enabled:enabled === true };
+}
+
+async function firebaseCommunicationControls(channel = firebaseChannelName()) {
+  let control;
+  try { control = await loadFirebaseChannelControl(channel); }
+  catch (error) {
+    control = {
+      ok:true,
+      backend:'firebase-safe-default',
+      business_id:firebasePrimaryBusinessId(),
+      business_number:currentMarketingBusinessNumber(),
+      channel,
+      bot_enabled:false,
+      context_learning_enabled:true,
+      control_warning:error?.message || String(error),
+    };
+  }
+  let rows = convs.filter(row => row?._backend === 'firebase' && conversationMatchesChannel(row, channel));
+  if (!rows.length) {
+    try { rows = await fetchFirebaseConversationRows(channel); }
+    catch (error) { rows = []; control.control_warning ||= error?.message || String(error); }
+  }
+  const now = Date.now();
+  FIREBASE_CRM_AVAILABLE = true;
+  updatePanelSyncStatus();
+  return {
+    ...control,
+    ok:true,
+    blocked_count:rows.filter(row => !!row.proactive_blocked_at).length,
+    third_attempt_waiting:rows.filter(row => Number(row.followup_attempts || 0) >= 3 && !row.followup_discarded_at && Date.parse(row.followup_discard_after || '') > now).length,
+  };
+}
+
+function paintOfficialBotState() {
+  const known = communicationControlsState && typeof communicationControlsState.bot_enabled === 'boolean';
+  const enabled = known && communicationControlsState.bot_enabled === true;
+  const button = $('officialBotGlobalBtn');
+  const label = $('officialBotGlobalState');
+  if (button) {
+    button.dataset.enabled = String(enabled);
+    button.dataset.loading = String(!known);
+    button.disabled = !known || !hasPermission('manage_settings');
+    button.title = !known
+      ? 'Comprobando el motor general del WhatsApp oficial.'
+      : `${enabled ? 'Bot oficial activo' : 'Bot oficial inactivo'}. Los mensajes entrantes y el contexto se siguen guardando.`;
+  }
+  if (label) label.textContent = known ? (enabled ? 'ACTIVO' : 'INACTIVO') : 'COMPROBANDO';
+  if ($('marketingOfficialState')) {
+    $('marketingOfficialState').textContent = known
+      ? `${enabled ? 'Bot activo' : 'Bot inactivo'} · historial y contexto entrante activos.`
+      : 'Comprobando estado real…';
+  }
+  if ($('marketingOfficialToggle')) {
+    $('marketingOfficialToggle').textContent = enabled ? 'Desactivar bot' : 'Activar bot';
+    $('marketingOfficialToggle').disabled = !known || !hasPermission('manage_settings');
+  }
+}
+
+async function refreshCommunicationControls(showLoading = false) {
+  if (!PANEL_ACCESS?.role || !hasPermission('operate')) return;
+  if (showLoading && $('officialBotGlobalState')) $('officialBotGlobalState').textContent = 'COMPROBANDO';
+  let result = null;
+  if (!(AUTH_PROVIDER === 'firebase' && PANEL_FUNCTIONS_AVAILABLE === false)) {
+    result = await callFn({ action:'getCommunicationControls', business_number:currentMarketingBusinessNumber() });
+  }
+  if (!result?.ok && firebaseAuth.currentUser) {
+    try { result = await firebaseCommunicationControls(firebaseChannelName()); }
+    catch (error) { result = { ok:false, error:error?.message || String(error) }; }
+  }
+  if (result?.ok) communicationControlsState = result;
+  paintOfficialBotState();
+  if ($('marketingBlockedCount')) $('marketingBlockedCount').textContent = result?.ok ? String(result.blocked_count || 0) : '—';
+  if ($('marketingThirdCount')) $('marketingThirdCount').textContent = result?.ok ? String(result.third_attempt_waiting || 0) : '—';
+  if (!communicationControlsTimer) {
+    communicationControlsTimer = setInterval(() => {
+      if (!document.hidden) void refreshCommunicationControls(false);
+    }, 30000);
+  }
+  return result;
+}
+
+async function toggleOfficialBot() {
+  if (!requirePermission('manage_settings') || !communicationControlsState) return;
+  const enabled = communicationControlsState.bot_enabled === true;
+  const verb = enabled ? 'desactivar' : 'activar';
+  if (!window.confirm(`¿Quieres ${verb} las respuestas automáticas del WhatsApp oficial? El historial, los mensajes entrantes y el aprendizaje de contexto seguirán activos.`)) return;
+  const button = $('officialBotGlobalBtn');
+  if (button) button.disabled = true;
+  if ($('officialBotGlobalState')) $('officialBotGlobalState').textContent = enabled ? 'APAGANDO…' : 'ENCENDIENDO…';
+  let result = await callFn({ action:'setOfficialBot', business_number:normalizePhoneClient(PANEL_BUSINESS_NUMBER), enabled:!enabled });
+  if (!result?.ok && firebaseAuth.currentUser) {
+    try { result = await saveFirebaseChannelBot(!enabled, 'official'); }
+    catch (error) { result = { ok:false, error:error?.message || String(error) }; }
+  }
+  if (!result?.ok) {
+    toast('No se pudo cambiar el bot oficial', result?.error || 'Intenta nuevamente.');
+  } else {
+    communicationControlsState = { ...communicationControlsState, bot_enabled:result.bot_enabled === true };
+    toast(result.bot_enabled ? 'Bot oficial activo' : 'Bot oficial inactivo', 'El contexto entrante continúa guardándose.');
+  }
+  paintOfficialBotState();
+}
+
+function paintPhotoMarketingState() {
+  const fallbackEnabled = typeof communicationControlsState?.bot_enabled === 'boolean'
+    ? communicationControlsState.bot_enabled : null;
+  const known = typeof bridgeControlState?.bot_enabled === 'boolean' || typeof fallbackEnabled === 'boolean';
+  const enabled = typeof bridgeControlState?.bot_enabled === 'boolean'
+    ? bridgeControlState.bot_enabled === true : fallbackEnabled === true;
+  if ($('marketingPhotosState')) $('marketingPhotosState').textContent = known
+    ? `${enabled ? 'Bot activo' : 'Bot inactivo'} · historial y contexto entrante activos.`
+    : 'Comprobando estado real…';
+  if ($('marketingPhotosToggle')) {
+    $('marketingPhotosToggle').textContent = enabled ? 'Desactivar bot' : 'Activar bot';
+    $('marketingPhotosToggle').disabled = !known || !hasPermission('manage_settings');
+  }
+}
+
+async function renderMarketingControls(refresh = false) {
+  const official = $('marketingOfficialChannel'), photos = $('marketingPhotosChannel');
+  if (official) official.hidden = LOCK_NUMFILTER;
+  if (photos) photos.hidden = !LOCK_NUMFILTER;
+  if (refresh || !communicationControlsState) await refreshCommunicationControls(refresh);
+  else paintOfficialBotState();
+  if (LOCK_NUMFILTER) {
+    if (typeof communicationControlsState?.bot_enabled === 'boolean'
+        && typeof bridgeControlState?.bot_enabled !== 'boolean') {
+      bridgeControlState = { ...(bridgeControlState || {}), bot_enabled:communicationControlsState.bot_enabled };
+    }
+    paintPhotoMarketingState();
+    ensureBridgePolling();
+    if (refresh) void refreshBridgeStatus(false);
+  }
+}
+
+function marketingTags() {
+  return String($('marketingBlockTags')?.value || '').split(',').map(value => value.trim()).filter(Boolean);
+}
+
+function paintMarketingBulkResult(result) {
+  const box = $('marketingBlockResult'); if (!box) return;
+  if (!result?.ok) {
+    box.innerHTML = `<strong>No se pudo calcular.</strong><br>${esc(result?.error || 'Error desconocido')}`;
+    return;
+  }
+  const sample = (result.sample || []).map(row => esc(row.name || 'Sin nombre')).join(', ');
+  box.innerHTML = result.dry
+    ? `<strong>${Number(result.to_block || 0)} contacto(s) quedarían excluidos.</strong><br>${Number(result.matched || 0)} coincidencias; ${Number(result.already_blocked || 0)} ya estaban bloqueadas.${sample ? `<br>Muestra: ${sample}` : ''}`
+    : `<strong>Exclusión aplicada a ${Number(result.blocked || 0)} contacto(s).</strong><br>El historial entrante seguirá acumulando contexto.`;
+}
+
+async function firebaseUpdateConversation(row, fields) {
+  if (!firebaseAuth.currentUser || !row?._firestore_id) return { ok:false, error:'La conversación no está disponible en Firebase.' };
+  const safe = Object.fromEntries(Object.entries(fields || {}).filter(([, value]) => value !== undefined));
+  await updateDoc(doc(firebaseDb, 'crm_conversations', row._firestore_id), {
+    ...safe,
+    updated_by_uid:firebaseAuth.currentUser.uid,
+    updated_at:serverTimestamp(),
+  });
+  Object.assign(row, safe);
+  return { ok:true, backend:'firebase' };
+}
+
+function permanentFirebaseBlockPatch(reason) {
+  const now = new Date().toISOString();
+  return {
+    proactive_blocked_at:now,
+    proactive_blocked_reason:reason,
+    proactive_blocked_by:PANEL_ACCESS.user?.email || firebaseAuth.currentUser?.email || 'admin',
+    marketing_opt_in:false,
+    marketing_opt_out_at:now,
+    followups_opt_in:false,
+    followups_opt_out_at:now,
+    auto_template_paused:true,
+    bot_paused:true,
+    mode:'human',
+  };
+}
+
+async function firebaseMarketingBulk(tags, dry) {
+  const normalized = [...new Set((tags || []).map(normalizeMarketingTag).filter(Boolean))];
+  const rows = await fetchFirebaseConversationRows(firebaseChannelName());
+  const matches = rows.filter(row => normalized.some(tag => conversationMarketingTags(row).includes(tag)));
+  const pending = matches.filter(row => !row.proactive_blocked_at);
+  const result = {
+    ok:true,
+    backend:'firebase',
+    dry:!!dry,
+    matched:matches.length,
+    already_blocked:matches.length - pending.length,
+    to_block:pending.length,
+    sample:pending.slice(0, 8).map(row => ({ id:row.id, name:conversationDisplayName(row) })),
+  };
+  if (dry || !pending.length) return result;
+  const reason = `Lista etiquetada: ${normalized.join(', ')}`.slice(0, 240);
+  for (let offset = 0; offset < pending.length; offset += 400) {
+    const batch = writeBatch(firebaseDb);
+    for (const row of pending.slice(offset, offset + 400)) {
+      batch.update(doc(firebaseDb, 'crm_conversations', row._firestore_id), {
+        ...permanentFirebaseBlockPatch(reason),
+        updated_by_uid:firebaseAuth.currentUser.uid,
+        updated_at:serverTimestamp(),
+      });
+    }
+    await batch.commit();
+  }
+  return { ...result, dry:false, blocked:pending.length };
+}
+
+async function runMarketingBulk(dry) {
+  if (!requirePermission(dry ? 'broadcast' : 'manage_settings')) return;
+  const tags = marketingTags();
+  if (!tags.length) {
+    paintMarketingBulkResult({ error:'Escribe al menos una etiqueta.' });
+    return;
+  }
+  let confirmation = '';
+  if (!dry) {
+    confirmation = window.prompt('Esta acción es permanente para la lista coincidente. Escribe DESACTIVAR LISTA para confirmar:') || '';
+    if (confirmation !== 'DESACTIVAR LISTA') return;
+  }
+  const previewButton = $('marketingBlockPreview'), applyButton = $('marketingBlockApply');
+  if (previewButton) previewButton.disabled = true;
+  if (applyButton) applyButton.disabled = true;
+  let result = PANEL_FUNCTIONS_AVAILABLE === false
+    ? { ok:false, error:'funciones del servidor no disponibles' }
+    : await callFn({ action:'communicationPolicyBulk', business_number:currentMarketingBusinessNumber(), tags, dry, confirmation });
+  if (!result?.ok && firebaseAuth.currentUser) {
+    try { result = await firebaseMarketingBulk(tags, dry); }
+    catch (error) { result = { ok:false, error:error?.message || String(error) }; }
+  }
+  paintMarketingBulkResult(result);
+  if (previewButton) previewButton.disabled = false;
+  if (applyButton) applyButton.disabled = !hasPermission('manage_settings');
+  if (result?.ok && !dry) await refreshCommunicationControls(false);
+}
 
 function bridgeStatusLabel(status) {
   return ({
@@ -3161,19 +3581,23 @@ function formatBridgeCode(value) {
 }
 
 async function callBridgeControl(action, payload = {}) {
-  const { data: { session } } = await sb.auth.getSession();
-  if (!session) return { ok:false, error:'sesion vencida' };
+  const token = await panelAuthToken();
+  if (!token) return { ok:false, error:'sesion vencida' };
   try {
     const response = await fetch(`${SUPABASE_URL}/functions/v1/wa-bridge-control`, {
       method: 'POST',
       cache: 'no-store',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${session.access_token}`,
+        'Authorization': `Bearer ${token}`,
       },
       body: JSON.stringify({ action, ...payload }),
     });
     const result = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      PANEL_FUNCTIONS_AVAILABLE = false;
+      updatePanelSyncStatus();
+    }
     return {
       ...result,
       ok: response.ok && result.ok !== false,
@@ -3308,7 +3732,7 @@ function renderBridgeControlState(state, explicitError = '') {
     botState.textContent = botEnabled
       ? 'Activo exclusivamente para Sesiones Fotográficas · deriva por conversación y documenta internamente para la colaboradora.'
       : (isPhotoLine
-         ? 'Inactivo · las conversaciones permanecen disponibles para atención humana.'
+         ? 'Inactivo · no responde, pero conserva mensajes, historial y aprendizaje de contexto para atención humana y campañas revisables.'
          : 'Bloqueado: solo puede usarse con la línea Fotos terminada en 5620.');
   }
   const globalBotButton = $('photoBotGlobalBtn');
@@ -3323,6 +3747,8 @@ function renderBridgeControlState(state, explicitError = '') {
         : 'Motor general del Bot Fotos inactivo. WhatsApp debe estar conectado con la línea Fotos.');
   }
   if (globalBotState) globalBotState.textContent = botEnabled ? 'ACTIVO' : 'INACTIVO';
+  if (globalBotButton) globalBotButton.disabled = !hasPermission('manage_settings') || (!botEnabled && !botCanActivate);
+  paintPhotoMarketingState();
   updatePanelSyncStatus();
   if (sel && isBridgeConv(sel)) updateModeBtn();
 
@@ -3361,9 +3787,23 @@ function updateBridgeCountdown() {
 async function refreshBridgeStatus(showLoading = false) {
   if (!BRIDGE_SETUP_ENABLED || !hasPermission('manage_settings')) return;
   if (showLoading && $('bridgeStateText')) $('bridgeStateText').textContent = 'Comprobando puente...';
-  const result = await callBridgeControl('status');
-  if (result.bridge) renderBridgeControlState(result.bridge, result.ok ? '' : result.error);
-  else renderBridgeControlState({ status:'offline', host_online:false }, result.error);
+  let result = PANEL_FUNCTIONS_AVAILABLE === false
+    ? { ok:false, error:'control del puente no disponible' }
+    : await callBridgeControl('status');
+  if (result.ok && result.bridge) {
+    renderBridgeControlState(result.bridge, '');
+    return;
+  }
+  if (firebaseAuth.currentUser) {
+    try {
+      const fallback = await loadFirebaseChannelControl('photos');
+      renderBridgeControlState({ status:'offline', host_online:false, ...fallback }, 'Estado seguro guardado en Firebase; el puente de WhatsApp está sin conexión.');
+      return;
+    } catch (error) {
+      result = { ok:false, error:error?.message || String(error) };
+    }
+  }
+  renderBridgeControlState({ status:'offline', host_online:false }, result.error);
 }
 
 function ensureBridgePolling() {
@@ -3453,7 +3893,9 @@ async function rebuildBridgeLinkAndHistory() {
 
 async function togglePhotoBot() {
   if (!requirePermission('manage_settings')) return;
-  const enabled = bridgeControlState?.bot_enabled === true;
+  const enabled = typeof bridgeControlState?.bot_enabled === 'boolean'
+    ? bridgeControlState.bot_enabled === true : communicationControlsState?.bot_enabled === true;
+  if (!window.confirm(`¿Quieres ${enabled ? 'desactivar' : 'activar'} las respuestas automáticas del WhatsApp Fotos? El historial y el contexto entrante continuarán guardándose.`)) return;
   const buttons = [...document.querySelectorAll('button[data-photo-bot-toggle]')];
   buttons.forEach(button => {
     button.disabled = true;
@@ -3461,7 +3903,16 @@ async function togglePhotoBot() {
     if (button.id === 'bridgeBotBtn') button.textContent = enabled ? 'Desactivando...' : 'Activando...';
   });
   if ($('photoBotGlobalState')) $('photoBotGlobalState').textContent = enabled ? 'APAGANDO...' : 'ENCENDIENDO...';
-  const result = await callBridgeControl(enabled ? 'disable_photo_bot' : 'enable_photo_bot');
+  let result = PANEL_FUNCTIONS_AVAILABLE === false
+    ? { ok:false, error:'control del puente no disponible' }
+    : await callBridgeControl(enabled ? 'disable_photo_bot' : 'enable_photo_bot');
+  if (!result?.ok && firebaseAuth.currentUser) {
+    try {
+      const fallback = await saveFirebaseChannelBot(!enabled, 'photos');
+      if (fallback.ok) result = { ...fallback, bridge:{ ...(bridgeControlState || {}), bot_enabled:fallback.bot_enabled } };
+      else result = fallback;
+    } catch (error) { result = { ok:false, error:error?.message || String(error) }; }
+  }
   if (result.bridge) renderBridgeControlState(result.bridge, result.ok ? '' : result.error);
   else {
     const message = result.error || 'No se pudo cambiar el estado del bot.';
@@ -3553,6 +4004,12 @@ if ($('bridgeRefreshBtn')) $('bridgeRefreshBtn').onclick = () => refreshBridgeSt
 if ($('bridgeHistoryBtn')) $('bridgeHistoryBtn').onclick = requestBridgeHistorySync;
 if ($('bridgeRebuildBtn')) $('bridgeRebuildBtn').onclick = rebuildBridgeLinkAndHistory;
 if ($('bridgeBotBtn')) $('bridgeBotBtn').onclick = togglePhotoBot;
+if ($('photoBotGlobalBtn')) $('photoBotGlobalBtn').onclick = togglePhotoBot;
+if ($('officialBotGlobalBtn')) $('officialBotGlobalBtn').onclick = toggleOfficialBot;
+if ($('marketingOfficialToggle')) $('marketingOfficialToggle').onclick = toggleOfficialBot;
+if ($('marketingPhotosToggle')) $('marketingPhotosToggle').onclick = togglePhotoBot;
+if ($('marketingBlockPreview')) $('marketingBlockPreview').onclick = () => runMarketingBulk(true);
+if ($('marketingBlockApply')) $('marketingBlockApply').onclick = () => runMarketingBulk(false);
 if ($('bridgeLogoutBtn')) $('bridgeLogoutBtn').onclick = logoutBridgeWhatsApp;
 if ($('bridgeCopyCode')) $('bridgeCopyCode').onclick = copyBridgePairingCode;
 if ($('bridgeUpdateNow')) $('bridgeUpdateNow').onclick = updateBridgePanelNow;
@@ -3637,6 +4094,7 @@ function setView(view) {
     dashboard:    {eyebrow:'Inicio',     h1:'Dashboard',          el:'viewDashboard'},
     planning:     {eyebrow:'Centro operativo', h1:'Planificación', el:'viewPlanning'},
     ads:          {eyebrow:'Ventas',     h1:'Estudio de Anuncios', el:'viewAds'},
+    marketing:    {eyebrow:'Comercial',  h1:'Marketing y permisos',el:'viewMarketing'},
     conversations:{eyebrow:'Inbox',      h1:'Conversaciones',     el:'viewConversations'},
     prospecting:  {eyebrow:'Comercial',  h1:'Prospección',        el:'viewProspecting'},
     poscustomers: {eyebrow:'Base compartida', h1:'Clientes de caja', el:'viewPosCustomers'},
@@ -3652,7 +4110,7 @@ function setView(view) {
   currentView = view;
   if (view === 'ads') history.replaceState(null, '', '#anuncios');
   else if (location.hash === '#anuncios') history.replaceState(null, '', location.pathname + location.search);
-  ['viewDashboard','viewPlanning','viewAds','viewConversations','viewFunnel','viewProspecting','viewPosCustomers','viewSatisfaccion','viewPlantillas','viewEstados','viewReminders','viewBridge','viewConfig','viewManual'].forEach(id => {
+  ['viewDashboard','viewPlanning','viewAds','viewMarketing','viewConversations','viewFunnel','viewProspecting','viewPosCustomers','viewSatisfaccion','viewPlantillas','viewEstados','viewReminders','viewBridge','viewConfig','viewManual'].forEach(id => {
     const e = document.getElementById(id);
     if (e) e.style.display = (id === v.el) ? '' : 'none';
   });
@@ -3665,6 +4123,7 @@ function setView(view) {
   if (view === 'dashboard') setTimeout(renderDashInline, 30);
   if (view === 'planning') setTimeout(() => loadPlanningData(false), 30);
   if (view === 'ads') setTimeout(() => window.DcarelaAdsStudio?.wire(), 30);
+  if (view === 'marketing') setTimeout(() => void renderMarketingControls(true), 30);
   if (view === 'prospecting') setTimeout(() => loadProspects(false), 30);
   if (view === 'poscustomers') setTimeout(() => loadPosCustomers(false), 30);
   if (view === 'plantillas') setTimeout(renderPlantillasInline, 30);
@@ -3878,10 +4337,10 @@ function renderProspectInsights(rows) {
 }
 
 async function callProspectFunction(payload) {
-  const { data: { session } } = await sb.auth.getSession();
-  if (!session) return { ok:false,error:'Sesión vencida. Vuelve a entrar.' };
+  const token = await panelAuthToken();
+  if (!token) return { ok:false,error:'Sesión vencida. Vuelve a entrar.' };
   try {
-    const response = await fetch(SUPABASE_URL + '/functions/v1/prospect-search', { method:'POST', headers:{'Content-Type':'application/json','Authorization':'Bearer '+session.access_token}, body:JSON.stringify(payload) });
+    const response = await fetch(SUPABASE_URL + '/functions/v1/prospect-search', { method:'POST', headers:{'Content-Type':'application/json','Authorization':'Bearer '+token}, body:JSON.stringify(payload) });
     const data = await response.json().catch(()=>({error:'respuesta inválida'}));
     return response.ok && data.ok ? data : { ok:false,error:data.error||'No se pudo completar.' };
   } catch (error) { return { ok:false,error:'No se pudo conectar con Prospección.' }; }
@@ -4162,7 +4621,8 @@ window.openSeguimientoWizard = async function() {
       // Si última actividad <24h del cliente: texto. Si no: plantilla saludo_dcarela
       const lastIn = c.last_message_at ? new Date(c.last_message_at).getTime() : 0;
       const insideWindow = (Date.now() - lastIn) < 24*3600*1000;
-      const session = (await sb.auth.getSession()).data.session;
+      const token = await panelAuthToken();
+      if (!token) throw new Error('sesión vencida');
       let body;
       if (insideWindow) {
         body = { action:'sendText', conversation_id: c.id, body: text, wizard_followup: true };
@@ -4174,7 +4634,7 @@ window.openSeguimientoWizard = async function() {
                  variables:[firstName, interest], wizard_followup: true };
       }
       const r = await fetch(SUPABASE_URL + '/functions/v1/panel-send', {
-        method:'POST', headers:{'Content-Type':'application/json','Authorization':'Bearer '+session.access_token}, body: JSON.stringify(body),
+        method:'POST', headers:{'Content-Type':'application/json','Authorization':'Bearer '+token}, body: JSON.stringify(body),
       });
       const j = await r.json();
       if (r.ok && (j.ok !== false)) {
@@ -4587,6 +5047,7 @@ function organizeSidebarNavigation() {
       '.sb-item[data-view="plantillas"]',
       '.sb-item[data-action="ai"]',
       '.sb-item[data-view="ads"]',
+      '.sb-item[data-view="marketing"]',
       '.sb-item[data-action="bc"]',
       '.sb-item[data-action="autoTpl"]',
       '.sb-item[data-action="tagSync"]',
@@ -4933,6 +5394,7 @@ function conversationDisplayName(c) {
 // conoce el CRM oficial para ese telefono. Solo cambia la presentacion; cada
 // conversacion y sus mensajes conservan su canal e identificador originales.
 async function refreshConversationNameHints(rows) {
+  if ((rows || []).some(row => row?._backend === 'firebase')) return;
   if (!qrChannelActive()) return;
   const phones = [...new Set((rows || [])
     .map(row => normalizePhoneClient(row && row.wa_phone))
@@ -4961,7 +5423,23 @@ async function refreshConversationNameHints(rows) {
   }
 }
 
+async function fetchFirebaseConversationRows(channel = null) {
+  const rows = [];
+  for (const businessId of firebaseBusinessIds()) {
+    const snap = await getDocs(query(collection(firebaseDb, 'crm_conversations'), where('business_id', '==', businessId)));
+    snap.forEach(item => rows.push(firestoreRow(item)));
+  }
+  FIREBASE_CRM_AVAILABLE = true;
+  updatePanelSyncStatus();
+  const filtered = channel ? rows.filter(row => conversationMatchesChannel(row, channel)) : rows;
+  return filtered.sort((a, b) => String(b.last_message_at || b.updated_at || '').localeCompare(String(a.last_message_at || a.updated_at || '')) || String(a.id).localeCompare(String(b.id)));
+}
+
 async function fetchConversationRows() {
+  if (firebaseAuth.currentUser && AUTH_PROVIDER === 'firebase' && !CRM_DATA_SESSION_AVAILABLE) {
+    try { return { data:await fetchFirebaseConversationRows(firebaseChannelName()), error:null }; }
+    catch (error) { return { data:null, error }; }
+  }
   const all = [];
   const pageSize = 500;
   for (let page = 0; page < 10; page++) {
@@ -4979,7 +5457,13 @@ async function fetchConversationRows() {
       query = query.or('source.is.null,source.neq.whatsapp_qr');
     }
     const { data, error } = await query;
-    if (error) return { data:null, error };
+    if (error) {
+      if (firebaseAuth.currentUser) {
+        try { return { data:await fetchFirebaseConversationRows(firebaseChannelName()), error:null }; }
+        catch (firebaseError) { return { data:null, error:firebaseError }; }
+      }
+      return { data:null, error };
+    }
     all.push(...(data || []));
     if (!data || data.length < pageSize) break;
   }
@@ -5071,11 +5555,8 @@ function renderConvs() {
         <div class="cv-top"><div class="cv-name">${esc(name)}${pending ? ' <span class="cv-flag">●</span>' : ''}</div><div class="cv-time">${fmtTime(c.last_message_at)}</div></div>
         <div class="cv-prev">${esc(c.last_message_preview || '')}</div>
         <div class="cv-tags">
-          <span class="pill ${c.mode === 'human' ? 'human' : 'bot'}">${c.mode === 'human' ? 'Humano' : 'Bot'}</span>
           <span class="cv-stage" data-s="${stage}">${esc(stageLabel)}</span>
-          ${c.human_handoff_required ? '<span class="pill human">Requiere humano</span>' : ''}
-          ${c.lead_status && c.lead_status !== stage ? `<span class="cv-stage">${esc(leadStatusText(c.lead_status))}</span>` : ''}
-          ${labelChips(displayLabels(c, 'card'), 3)}
+          ${c.proactive_blocked_at ? '<span class="pill human">Sin automatización</span>' : ((c.mode === 'human' || c.human_handoff_required) ? '<span class="pill human">Humano</span>' : '')}
           ${c.unread > 0 ? `<span class="badge">${c.unread}</span>` : ''}
         </div>
       </div>`;
@@ -5097,7 +5578,10 @@ async function openConv(c) {
   $('chName').textContent = chatName;
   $('chPhone').textContent = '+' + c.wa_phone;
   $('chAv').innerHTML = avatarHtml(c, chatName);
-  $('chLabels').innerHTML = labelChips(displayLabels(c, 'header'), 6);
+  $('chLabels').innerHTML = [
+    c.interested_category ? `<span class="cv-stage">${esc(c.interested_category)}</span>` : '',
+    c.proactive_blocked_at ? '<span class="pill human">Bot y promociones desactivados</span>' : ((c.mode === 'human' || c.human_handoff_required) ? '<span class="pill human">Atención humana</span>' : ''),
+  ].filter(Boolean).join('');
   renderConvs();
   updateModeBtn();
   renderDetail(c);
@@ -5197,6 +5681,7 @@ function buildMsgEl(m) {
 // reproduciendo no se corta. Solo anexa mensajes nuevos y re-renderiza los que
 // cambian (si no tienen media sonando).
 async function fetchConversationMessages(conversationId, fresh) {
+  if (sel?._backend === 'firebase') return fetchFirebaseConversationMessages(sel, fresh);
   if (!fresh) {
     const { data, error } = await sb.from('messages').select('*')
       .eq('conversation_id', conversationId)
@@ -5299,6 +5784,14 @@ function renderWindowWarn() {
 
 function updateModeBtn() {
   const b = $('modeBtn');
+  if (sel?.proactive_blocked_at) {
+    b.className = 'modebtn human';
+    b.textContent = 'Automatización desactivada';
+    b.title = 'Exclusión permanente: el bot no responde ni se envían promociones o seguimientos. El contexto entrante continúa activo.';
+    b.disabled = true;
+    if ($('hint')) $('hint').textContent = 'Exclusión permanente activa. Se guardan mensajes y contexto, sin respuestas automáticas ni promociones.';
+    return;
+  }
   if (isBridgeConv(sel)) {
     const stateKnown = !!bridgeControlState && typeof bridgeControlState.bot_enabled === 'boolean';
     const engineEnabled = stateKnown && bridgeControlState.bot_enabled === true;
@@ -5333,6 +5826,7 @@ function updateModeBtn() {
   }
 }
 $('modeBtn').onclick = async () => {
+  if (!sel || sel.proactive_blocked_at) return;
   if (isBridgeConv(sel)) {
     if (!sel || !hasPermission('operate')) return;
     const chatEnabled = sel.mode === 'bot' && sel.bot_paused !== true && sel.human_handoff_required !== true;
@@ -5497,17 +5991,58 @@ async function send() {
 }
 
 async function callFn(body) {
-  if (!hasPermission('operate')) return { error: 'permiso insuficiente' };
-  const { data: { session } } = await sb.auth.getSession();
-  if (!session) return { error: 'sesión vencida' };
+  if (!hasPermission('operate')) return { ok:false, error: 'permiso insuficiente' };
+  const token = await panelAuthToken();
+  if (!token) return { ok:false, error: 'sesión vencida' };
   try {
     const r = await fetch(SUPABASE_URL + '/functions/v1/panel-send', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + session.access_token },
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
       body: JSON.stringify(body),
     });
-    return await r.json();
-  } catch (e) { return { error: 'conexión' }; }
+    const result = await r.json().catch(() => ({}));
+    if (!r.ok) {
+      PANEL_FUNCTIONS_AVAILABLE = false;
+      updatePanelSyncStatus();
+    }
+    return {
+      ...result,
+      ok:r.ok && result.ok !== false,
+      statusCode:r.status,
+      error:result.error || (r.ok ? null : `servidor no disponible (HTTP ${r.status})`),
+    };
+  } catch (e) {
+    console.error('panel-send:', e);
+    PANEL_FUNCTIONS_AVAILABLE = false;
+    updatePanelSyncStatus();
+    return { ok:false, error: 'conexión con el servidor' };
+  }
+}
+
+async function fetchFirebaseConversationMessages(conversation, fresh) {
+  const rows = [];
+  const businessId = conversation.business_id || firebasePrimaryBusinessId();
+  try {
+    const snap = await getDocs(query(
+      collection(firebaseDb, 'crm_messages'),
+      where('business_id', '==', businessId),
+      where('conversation_id', '==', conversation.id)
+    ));
+    snap.forEach(item => rows.push(firestoreRow(item)));
+  } catch (indexedError) {
+    const snap = await getDocs(query(collection(firebaseDb, 'crm_messages'), where('business_id', '==', businessId)));
+    snap.forEach(item => {
+      const row = firestoreRow(item);
+      if (String(row.conversation_id) === String(conversation.id)) rows.push(row);
+    });
+  }
+  const normalized = rows.map(row => ({
+    ...row,
+    body:row.body ?? row.text ?? row.message ?? '',
+    direction:['in','out'].includes(row.direction) ? row.direction : (row.direction === 'inbound' ? 'in' : 'out'),
+    created_at:firestoreIso(row.created_at || row.sent_at || row.updated_at) || new Date(0).toISOString(),
+  })).sort((a, b) => String(a.created_at).localeCompare(String(b.created_at)) || String(a.id).localeCompare(String(b.id)));
+  return { data:fresh ? normalized : normalized.slice(-500), error:null };
 }
 
 // ===== 2do número (WhatsApp Web / puente local): encolar en wa_outbox =====
@@ -6347,9 +6882,10 @@ function renderDetail(c) {
     </div>
 
    <div class="dsection">Comunicacion proactiva</div>
-   <label class="checkrow"><input data-f="reminders_opt_in" type="checkbox" ${c.reminders_opt_in === false ? '' : 'checked'}><span>Permitir recordatorios de sesion</span></label>
-   <label class="checkrow"><input data-f="followups_opt_in" type="checkbox" ${c.followups_opt_in === false ? '' : 'checked'}><span>Permitir seguimiento automatico</span></label>
-   <label class="checkrow"><input data-f="marketing_opt_in" type="checkbox" ${c.marketing_opt_in === true ? 'checked' : ''}><span>Permitir marketing/promociones</span></label>
+   <div class="lead-k" style="border-left:3px solid ${c.proactive_blocked_at ? 'var(--danger)' : 'var(--ink)'}"><div class="lk">Política permanente</div><div class="lv">${c.proactive_blocked_at ? `Bot, promociones y seguimientos desactivados · ${esc(c.proactive_blocked_reason || 'exclusión administrativa')}` : 'Sin exclusión permanente · se respetan los permisos individuales'}</div></div>
+   <label class="checkrow"><input data-f="reminders_opt_in" type="checkbox" ${c.reminders_opt_in === false ? '' : 'checked'} ${c.proactive_blocked_at ? 'disabled' : ''}><span>Permitir recordatorios de sesion</span></label>
+   <label class="checkrow"><input data-f="followups_opt_in" type="checkbox" ${c.followups_opt_in === false ? '' : 'checked'} ${c.proactive_blocked_at ? 'disabled' : ''}><span>Permitir seguimiento automatico</span></label>
+   <label class="checkrow"><input data-f="marketing_opt_in" type="checkbox" ${c.marketing_opt_in === true ? 'checked' : ''} ${c.proactive_blocked_at ? 'disabled' : ''}><span>Permitir marketing/promociones</span></label>
    <div class="lead-kv">
     <div class="lead-k"><div class="lk">Baja total</div><div class="lv">${c.all_messages_opt_out_at ? new Date(c.all_messages_opt_out_at).toLocaleString('es-DO') : 'no'}</div></div>
     <div class="lead-k"><div class="lk">Ultima razon</div><div class="lv">${esc(c.opt_out_reason || 'sin baja')}</div></div>
@@ -6357,6 +6893,9 @@ function renderDetail(c) {
 
    <div class="dsection">Acciones rapidas</div>
    <div class="qa-grid" id="quickActions">
+    ${hasPermission('manage_settings') ? (c.proactive_blocked_at
+      ? '<button data-act="restoreCommunication">Reactivar automatización</button>'
+      : '<button data-act="blockPermanent" class="danger">Desactivar bot y promociones</button>') : ''}
     <button data-act="take" data-official-only>Tomar conversacion</button>
     <button data-act="reactivate" data-official-only>Reactivar bot</button>
     <button data-act="aiReport">Informe IA</button>
@@ -6424,7 +6963,11 @@ async function saveLeadField(convId, field, value) {
   if (['lifecycle_stage','lead_status','priority','customer_name','selected_combo_name','reservation_status','human_handoff_required'].includes(field)) {
     updateFilterCounts(); renderConvs();
   }
-  const r = await callFn({ action: 'updateLead', conversation_id: convId, fields: { [field]: value } });
+  let r = await callFn({ action: 'updateLead', conversation_id: convId, fields: { [field]: value } });
+  if (!r?.ok && sel?._backend === 'firebase') {
+    try { r = await firebaseUpdateConversation(sel, { [field]:value }); }
+    catch (error) { r = { ok:false, error:error?.message || String(error) }; }
+  }
   if (r && r.ok) dsavShow();
   else alert('No se pudo guardar: ' + (r && r.error || 'error'));
 }
@@ -6432,7 +6975,11 @@ async function saveLeadField(convId, field, value) {
 async function saveLeadFields(convId, fields) {
   if (!sel || sel.id !== convId) return;
   Object.assign(sel, fields);
-  const r = await callFn({ action: 'updateLead', conversation_id: convId, fields });
+  let r = await callFn({ action: 'updateLead', conversation_id: convId, fields });
+  if (!r?.ok && sel?._backend === 'firebase') {
+    try { r = await firebaseUpdateConversation(sel, fields); }
+    catch (error) { r = { ok:false, error:error?.message || String(error) }; }
+  }
   if (r && r.ok) { dsavShow(); updateFilterCounts(); renderConvs(); renderDetail(sel); }
   else alert('No se pudo guardar: ' + (r && r.error || 'error'));
 }
@@ -6450,11 +6997,53 @@ function wireQuickActions(c) {
     b.onclick = async () => {
       const act = b.dataset.act;
       if (isBridgeConv(c) && (act === 'take' || act === 'reactivate')) return;
-      if (act === 'take') {
-        await callFn({ action:'mode', conversation_id:c.id, mode:'human' });
+      if (act === 'blockPermanent') {
+        if (!requirePermission('manage_settings')) return;
+        const confirmation = window.prompt('Se desactivarán permanentemente el bot, las promociones y los seguimientos para este contacto. Los mensajes entrantes seguirán guardando contexto. Escribe DESACTIVAR CONTACTO para confirmar:') || '';
+        if (confirmation !== 'DESACTIVAR CONTACTO') return;
+        b.disabled = true;
+        let result = await callFn({ action:'communicationPolicy', operation:'block', conversation_id:c.id, confirmation, reason:'Exclusión permanente solicitada desde el CRM' });
+        if (!result?.ok && c._backend === 'firebase') {
+          try { result = await firebaseUpdateConversation(c, permanentFirebaseBlockPatch('Exclusión permanente solicitada desde el CRM')); }
+          catch (error) { result = { ok:false, error:error?.message || String(error) }; }
+        }
+        if (!result?.ok) { b.disabled = false; toast('No se pudo excluir el contacto', result?.error || 'Intenta nuevamente.'); return; }
+        await loadConvs();
+        sel = convs.find(row => row.id === c.id) || { ...c, proactive_blocked_at:new Date().toISOString(), proactive_blocked_reason:'Exclusión permanente solicitada desde el CRM' };
+        renderDetail(sel); updateModeBtn(); renderConvs();
+        toast('Contacto excluido', 'Bot, promociones y seguimientos desactivados. El contexto entrante continúa activo.');
+      } else if (act === 'restoreCommunication') {
+        if (!requirePermission('manage_settings')) return;
+        const confirmation = window.prompt('La reactivación no concede permiso de marketing. Escribe REACTIVAR para confirmar:') || '';
+        if (confirmation !== 'REACTIVAR') return;
+        b.disabled = true;
+        let result = await callFn({ action:'communicationPolicy', operation:'restore', conversation_id:c.id, confirmation });
+        if (!result?.ok && c._backend === 'firebase') {
+          try {
+            result = await firebaseUpdateConversation(c, {
+              proactive_blocked_at:null,
+              proactive_blocked_reason:null,
+              proactive_blocked_by:null,
+              marketing_opt_in:false,
+              followups_opt_in:false,
+              auto_template_paused:true,
+              bot_paused:true,
+              mode:'human',
+            });
+          } catch (error) { result = { ok:false, error:error?.message || String(error) }; }
+        }
+        if (!result?.ok) { b.disabled = false; toast('No se pudo reactivar', result?.error || 'Intenta nuevamente.'); return; }
+        await loadConvs();
+        sel = convs.find(row => row.id === c.id) || { ...c, proactive_blocked_at:null, proactive_blocked_reason:null };
+        renderDetail(sel); updateModeBtn(); renderConvs();
+        toast('Automatización reactivada', 'Marketing continúa desactivado hasta registrar permiso por separado.');
+      } else if (act === 'take') {
+        let result = await callFn({ action:'mode', conversation_id:c.id, mode:'human' });
+        if (!result?.ok && c._backend === 'firebase') result = await firebaseUpdateConversation(c, { mode:'human', bot_paused:true });
         sel.mode = 'human'; sel.bot_paused = true; updateModeBtn(); renderConvs(); dsavShow();
       } else if (act === 'reactivate') {
-        await callFn({ action:'mode', conversation_id:c.id, mode:'bot' });
+        let result = await callFn({ action:'mode', conversation_id:c.id, mode:'bot' });
+        if (!result?.ok && c._backend === 'firebase') result = await firebaseUpdateConversation(c, { mode:'bot', bot_paused:false });
         sel.mode = 'bot'; sel.bot_paused = false; updateModeBtn(); renderConvs(); dsavShow();
       } else if (act === 'aiReport') {
         await generateContactReport(c);
@@ -7221,12 +7810,12 @@ if (_aiDocIn) _aiDocIn.addEventListener('change', e => {
 });
 
 async function requestAssistantPlan(instruction, options = {}) {
-  const { data: { session } } = await sb.auth.getSession();
-  if (!session) return { ok:false, error:'sesion vencida' };
+  const token = await panelAuthToken();
+  if (!token) return { ok:false, error:'sesion vencida' };
   try {
     const response = await fetch(SUPABASE_URL + '/functions/v1/followup-cron?mode=assistant', {
       method:'POST',
-      headers:{ 'Content-Type':'application/json', 'Authorization':'Bearer ' + session.access_token },
+      headers:{ 'Content-Type':'application/json', 'Authorization':'Bearer ' + token },
       body:JSON.stringify({ instruction, ...options }),
     });
     const result = await response.json().catch(() => ({ error:'respuesta invalida' }));
@@ -7936,11 +8525,12 @@ window.saveAgendaManual = async function() {
         const t = new Date(scheduledAt).toLocaleString('es-DO', { weekday:'long', day:'numeric', month:'long', hour:'2-digit', minute:'2-digit', hour12: true });
         const combo = patch.selected_combo_name ? ` para ${patch.selected_combo_name}` : '';
         const txt = `Hola ${firstName}, te recordamos tu sesión${combo} el ${t}. Te esperamos en D'Carela Compufoto. Si necesitas reprogramar, escríbenos.`;
-        const session = (await sb.auth.getSession()).data.session;
+        const token = await panelAuthToken();
+        if (!token) throw new Error('sesión vencida');
         try {
           const r = await fetch(SUPABASE_URL + '/functions/v1/panel-send', {
             method: 'POST',
-            headers: { 'Content-Type':'application/json', 'Authorization': 'Bearer ' + session.access_token },
+            headers: { 'Content-Type':'application/json', 'Authorization': 'Bearer ' + token },
             body: JSON.stringify({ action:'sendText', conversation_id: convId, body: txt, auto_reminder: true }),
           });
           if (r.ok) {
@@ -8311,7 +8901,8 @@ function wireAgRows(container) {
         // Decide: dentro de 24h → texto; fuera → plantilla
         const lastIn = c.last_message_at ? new Date(c.last_message_at).getTime() : 0;
         const insideWindow = (Date.now() - lastIn) < 24*3600*1000;
-        const session = (await sb.auth.getSession()).data.session;
+        const token = await panelAuthToken();
+        if (!token) throw new Error('sesión vencida');
         let body;
         if (insideWindow) {
           const txt = `Hola ${firstName}, te recordamos tu sesión${c.selected_combo_name?' para '+c.selected_combo_name:''} el ${fecha} a las ${hora}. ¡Te esperamos!`;
@@ -8323,7 +8914,7 @@ function wireAgRows(container) {
                    variables:[firstName, fecha, hora], manual_reminder: true };
         }
         const r = await fetch(SUPABASE_URL + '/functions/v1/panel-send', {
-          method:'POST', headers:{'Content-Type':'application/json','Authorization':'Bearer '+session.access_token},
+          method:'POST', headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},
           body: JSON.stringify(body),
         });
         const j = await r.json();
@@ -8516,11 +9107,12 @@ window.runRemindersNow = async function runRemindersNow() {
   if (legacyButton) legacyButton.disabled = true;
   if (viewButton) { viewButton.disabled = true; viewButton.textContent = 'Procesando…'; }
   try {
-    const { data: { session } } = await sb.auth.getSession();
+    const token = await panelAuthToken();
+    if (!token) throw new Error('sesión vencida');
     const url = SUPABASE_URL + '/functions/v1/followup-cron' + (PANEL_BUSINESS_NUMBER ? ('?business_number=' + encodeURIComponent(PANEL_BUSINESS_NUMBER)) : '');
     const r = await fetch(url, {
       method: 'POST',
-      headers: { 'Authorization': 'Bearer ' + session.access_token },
+      headers: { 'Authorization': 'Bearer ' + token },
     });
     const jr = await r.json();
     if (jr && jr.ok) {
@@ -8591,18 +9183,20 @@ function autoTemplateQuery(dry) {
 }
 
 async function callAutoTemplates(dry) {
-  const { data: { session } } = await sb.auth.getSession();
+  const token = await panelAuthToken();
+  if (!token) return { ok:false, error:'sesión vencida' };
   const url = SUPABASE_URL + '/functions/v1/followup-cron?' + autoTemplateQuery(dry);
-  const r = await fetch(url, { method: 'POST', headers: { 'Authorization': 'Bearer ' + session.access_token } });
+  const r = await fetch(url, { method: 'POST', headers: { 'Authorization': 'Bearer ' + token } });
   return await r.json();
 }
 
 // Procesa SOLO los IDs dados (un lote), para barra de progreso real.
 async function callAutoTemplatesChunk(ids) {
-  const { data: { session } } = await sb.auth.getSession();
+  const token = await panelAuthToken();
+  if (!token) return { ok:false, error:'sesión vencida' };
   const q = autoTemplateQuery(false) + '&only_ids=' + encodeURIComponent(ids.join(','));
   const url = SUPABASE_URL + '/functions/v1/followup-cron?' + q;
-  const r = await fetch(url, { method: 'POST', headers: { 'Authorization': 'Bearer ' + session.access_token } });
+  const r = await fetch(url, { method: 'POST', headers: { 'Authorization': 'Bearer ' + token } });
   return await r.json();
 }
 
@@ -8780,7 +9374,8 @@ function tagSyncQuery(dry) {
 }
 
 async function callTagSync(dry) {
-  const { data: { session } } = await sb.auth.getSession();
+  const token = await panelAuthToken();
+  if (!token) return { ok:false, error:'sesión vencida' };
   const url = SUPABASE_URL + '/functions/v1/followup-cron?' + tagSyncQuery(dry);
   // Timeout duro de 120s. IA + N conversaciones llama Gemini secuencial; si pasa
   // mucho, abortamos en vez de dejar el botón colgado.
@@ -8789,7 +9384,7 @@ async function callTagSync(dry) {
   try {
     const r = await fetch(url, {
       method: 'POST',
-      headers: { 'Authorization': 'Bearer ' + session.access_token },
+      headers: { 'Authorization': 'Bearer ' + token },
       signal: ctl.signal,
     });
     const text = await r.text();
@@ -8945,12 +9540,12 @@ function updateBcMode() {
 /** Llama a wa-bulk (envio masivo por el 2do numero con las capas anti-baneo). */
 async function callWaBulk(action, extra) {
   if (!hasPermission('broadcast')) return { ok:false, error:'permiso insuficiente' };
-  const { data: { session } } = await sb.auth.getSession();
-  if (!session) return { ok:false, error:'sesion vencida' };
+  const token = await panelAuthToken();
+  if (!token) return { ok:false, error:'sesion vencida' };
   try {
     const r = await fetch(SUPABASE_URL + '/functions/v1/wa-bulk', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + session.access_token },
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
       body: JSON.stringify({ action, ...extra }),
     });
     return await r.json();
@@ -8970,6 +9565,7 @@ async function callWaBulk(action, extra) {
 async function bcDestinatariosBridge(filter) {
   const dry = await callBroadcastFn({ text:'preview', filter, dry:true, send_mode:'freeform', purpose: $('bcPurpose').value || 'marketing' });
   if (!dry || !dry.ok) return { error: (dry && dry.error) || 'no se pudo calcular la audiencia' };
+  if (Array.isArray(dry.targets)) return { targets: dry.targets };
   const ids = Array.isArray(dry.ids) ? dry.ids : [];
   if (!ids.length) return { targets: [] };
   const targets = [];
@@ -9033,11 +9629,11 @@ function renderBcImgPrev() {
 
 async function callBroadcastFn(payload) {
   if (!hasPermission('broadcast')) return { ok:false, error:'permiso insuficiente' };
-  const { data: { session } } = await sb.auth.getSession();
-  if (!session) return { ok:false, error:'sesión vencida' };
+  const token = await panelAuthToken();
+  if (!token) return { ok:false, error:'sesión vencida' };
   const r = await fetch(SUPABASE_URL + '/functions/v1/broadcast', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + session.access_token },
+    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
     body: JSON.stringify(payload),
   });
   return await r.json();
@@ -9091,7 +9687,7 @@ $('bcCalc').onclick = async () => {
       $('bcPreview').innerHTML = '<span style="color:#ff6b6b">❌ ' + esc(dest.error) + '</span>';
       $('bcCalc').disabled = false; $('bcSend').disabled = true; return;
     }
-    const r = await callWaBulk('preview', { name: 'Campana 2do numero', template: texto, targets: dest.targets });
+    const r = await callWaBulk('preview', { name: 'Campana 2do numero', template: texto, purpose:$('bcPurpose').value || 'marketing', targets: dest.targets });
     $('bcCalc').disabled = false;
     if (!r || !r.ok) {
       $('bcPreview').innerHTML = '<span style="color:#ff6b6b">❌ ' + esc((r && r.error) || 'no se pudo calcular') + '</span>';
@@ -9172,7 +9768,7 @@ $('bcSend').onclick = async () => {
       $('bcSend').disabled = false; $('bcCalc').disabled = false; return;
     }
     const nombre = 'Campana ' + new Date().toLocaleDateString('es-DO');
-    const r = await callWaBulk('send', { name: nombre, template: texto, targets: dest.targets });
+    const r = await callWaBulk('send', { name: nombre, template: texto, purpose:$('bcPurpose').value || 'marketing', targets: dest.targets });
     $('bcCalc').disabled = false;
     if (!r || !r.ok) {
       $('bcPreview').innerHTML = '<span style="color:#ff6b6b">❌ ' + esc((r && r.error) || 'no se pudo encolar') + '</span>';

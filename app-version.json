@@ -1,6 +1,6 @@
 {
-  "version": "2026-08-23-ads-live-v30",
+  "version": "2026-08-24-crm-safe-marketing-v31",
   "channel": "crm",
-  "released_at": "2026-08-23T04:18:25Z",
-  "summary": "Centro de Anuncios independiente publicado dentro del dominio CRM, con Firebase, sucursales, productos, clientes y borradores cloud."
+  "released_at": "2026-08-24T09:30:00Z",
+  "summary": "CRM minimalista con controles independientes de bot y contexto, exclusión permanente por contacto o etiquetas y descarte tras tres seguimientos más 72 horas."
 }
