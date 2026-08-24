@@ -16,7 +16,7 @@ import {
   where,
 } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 
-const BUILD = "2026-08-23-saleads-operations-v4";
+const BUILD = "2026-08-24-saleads-creative-studio-v6";
 const saleAds = window.SaleAdsCore;
 if (!saleAds) throw new Error("No se cargó el motor seguro de SaleAds.");
 const SALEADS_UI = new URLSearchParams(location.search).get("saleads_ui") === "classic" ? "classic" : "phase1";
@@ -54,24 +54,167 @@ let member = null,
   capacityEntries = [],
   experimentRecords = [],
   attributionEvents = [],
+  auditEntries = [],
   current = null,
   wizardStep = 0,
   wizardTemplateId = "T01";
 const WIZARD_KEY = "dcarela_saleads_wizard_v3";
 const OPERATIONS_KEY = "dcarela_saleads_operations_v1";
+let studioSource = { file: null, image: null, objectUrl: "", plan: null };
 
 function operationStore() {
   try { return JSON.parse(localStorage.getItem(OPERATIONS_KEY) || "{}"); }
   catch { return {}; }
 }
-function operationRows(name) {
+function cachedRows(name) {
   return operationStore()?.[selectedBusiness()]?.[name] || [];
 }
-function saveOperationRows(name, rows) {
+function cacheRows(name, rows) {
   const all = operationStore();
   const bid = selectedBusiness();
   all[bid] = { ...(all[bid] || {}), [name]: rows.slice(0, 500) };
   localStorage.setItem(OPERATIONS_KEY, JSON.stringify(all));
+}
+
+// Los modulos operativos v4 viven en colecciones compartidas de Firestore con
+// copia local de respaldo. La copia local nunca se borra: si la nube falla el
+// panel sigue operando y los registros quedan marcados como pendientes.
+const OPERATION_KINDS = Object.keys(saleAds.operationCollections);
+const randomSuffix = () => Math.random().toString(36).slice(2, 8);
+let operationSync = { state: "idle", message: "", pending: 0, rows: 0 };
+
+function operationLists() {
+  return {
+    creative_assets: creativeAssets,
+    capacity_entries: capacityEntries,
+    experiments: experimentRecords,
+    attribution_events: attributionEvents,
+    audit_entries: auditEntries,
+  };
+}
+function assignOperationRows(kind, rows) {
+  if (kind === "creative_assets") creativeAssets = rows;
+  else if (kind === "capacity_entries") capacityEntries = rows;
+  else if (kind === "experiments") experimentRecords = rows;
+  else if (kind === "attribution_events") attributionEvents = rows;
+  else if (kind === "audit_entries") auditEntries = rows;
+}
+function canWriteCloud() {
+  return ["owner", "admin"].includes(roleForBusiness());
+}
+function pendingCount() {
+  return Object.values(operationLists()).reduce(
+    (total, rows) => total + rows.filter((x) => x.sync_state !== "synced").length,
+    0,
+  );
+}
+function operationRowCount() {
+  return Object.values(operationLists()).reduce((total, rows) => total + rows.length, 0);
+}
+function setSyncState(state, message) {
+  operationSync = { state, message: message || "", pending: pendingCount(), rows: operationRowCount() };
+  renderSyncBanner();
+}
+function renderSyncBanner() {
+  const summary = saleAds.summarizeSync(operationSync.state, { pending: operationSync.pending, rows: operationSync.rows });
+  const tone = { success: "success-text", warning: "warning-text", danger: "danger-text" }[summary.tone] || "muted-text";
+  const html = `<span class="status-chip ${tone}">${escapeHtml(summary.text)}</span><small>${escapeHtml(operationSync.message)}</small><button type="button" class="ghost" data-sync-retry>Reintentar</button>`;
+  document.querySelectorAll("[data-sync-banner]").forEach((node) => { node.innerHTML = html; });
+}
+async function fetchOperationCloud(businessId) {
+  const cloud = {};
+  for (const kind of OPERATION_KINDS) {
+    const spec = saleAds.operationCollections[kind];
+    const snap = await getDocs(query(collection(db, spec.collection), where("business_id", "==", businessId)));
+    const rows = [];
+    snap.forEach((entry) => {
+      const data = entry.data() || {};
+      rows.push({ ...data, id: data.id || entry.id });
+    });
+    cloud[kind] = rows;
+  }
+  return cloud;
+}
+async function pushOperationRow(kind, row, businessId = selectedBusiness()) {
+  if (!auth.currentUser)
+    return { synced: false, state: "expired", message: "La sesion vencio; el registro quedo pendiente en este dispositivo." };
+  if (!canWriteCloud())
+    return { synced: false, state: "permission", message: "Tu rol guarda solo en este dispositivo; owner/admin comparte con la sucursal." };
+  const spec = saleAds.operationCollections[kind];
+  const payload = {
+    ...row,
+    business_id: businessId,
+    collection_mode: spec.mode,
+    created_by_uid: auth.currentUser.uid,
+    created_by_email: auth.currentUser.email || "",
+    synced_at: new Date().toISOString(),
+  };
+  delete payload.sync_state;
+  try {
+    await setDoc(doc(db, spec.collection, saleAds.operationDocId(kind, businessId, row)), payload);
+    return { synced: true, state: "cloud", message: "" };
+  } catch (error) {
+    console.warn("operations-push", kind, error);
+    return { synced: false, ...saleAds.describeSyncError(error, { online: navigator.onLine }) };
+  }
+}
+async function persistOperation(kind, rows, row) {
+  row.sync_state = "pending";
+  cacheRows(kind, rows);
+  const outcome = await pushOperationRow(kind, row);
+  row.sync_state = outcome.synced ? "synced" : "pending";
+  cacheRows(kind, rows);
+  if (outcome.synced) setSyncState(pendingCount() ? "local_only" : "cloud", "");
+  else setSyncState(outcome.state, outcome.message);
+  return outcome;
+}
+async function recordAudit(input) {
+  const entry = {
+    ...saleAds.auditEntry({
+      ...input,
+      actor_uid: auth.currentUser?.uid || "",
+      actor_email: auth.currentUser?.email || "",
+    }),
+    business_id: selectedBusiness(),
+  };
+  auditEntries.unshift(entry);
+  await persistOperation("audit_entries", auditEntries, entry);
+  renderAuditTrail();
+  return entry;
+}
+async function syncPendingOperations(businessId, cloud) {
+  if (!canWriteCloud()) {
+    if (pendingCount())
+      setSyncState("permission", "Hay registros locales sin compartir: tu rol no puede escribir en la nube.");
+    else setSyncState("cloud", "Datos operativos leidos desde la sucursal.");
+    return;
+  }
+  let failure = null;
+  let uploaded = 0;
+  for (const kind of OPERATION_KINDS) {
+    const rows = operationLists()[kind];
+    const plan = saleAds.planOperationMigration(kind, rows, cloud[kind] || [], businessId);
+    for (const row of rows) if (!plan.upload.includes(row)) row.sync_state = "synced";
+    for (const row of plan.upload) {
+      const outcome = await pushOperationRow(kind, row, businessId);
+      if (outcome.synced) {
+        row.sync_state = "synced";
+        uploaded += 1;
+      } else {
+        row.sync_state = "pending";
+        failure = failure || outcome;
+      }
+    }
+    cacheRows(kind, rows);
+  }
+  if (failure) setSyncState(failure.state, failure.message);
+  else
+    setSyncState(
+      "cloud",
+      uploaded
+        ? `Se compartieron ${uploaded} registro(s) de este dispositivo con la sucursal.`
+        : "Datos operativos sincronizados con la sucursal.",
+    );
 }
 function roleForBusiness() {
   return clean(member?.roles?.[selectedBusiness()] || member?.role || "viewer").toLowerCase();
@@ -225,6 +368,175 @@ function renderCreativeSpecs() {
   $("creativeSpecGrid").innerHTML = saleAds.creativeSpecs.map((x) =>
     `<article class="spec-card"><span class="template-id">${escapeHtml(x.ratio)}</span><b>${escapeHtml(x.label)}</b><span>${x.width}×${x.height}</span><span>${escapeHtml(x.placements.join(" · "))}</span><small>Fuente registrada: Meta Ads Guide</small><small>Estado: requiere revalidación autenticada antes de publicar</small></article>`,
   ).join("");
+}
+
+function releaseStudioSource() {
+  if (studioSource.objectUrl) URL.revokeObjectURL(studioSource.objectUrl);
+  studioSource = { file: null, image: null, objectUrl: "", plan: null };
+}
+
+function loadStudioImage(file) {
+  return new Promise((resolve, reject) => {
+    const objectUrl = URL.createObjectURL(file);
+    const image = new Image();
+    image.onload = () => resolve({ file, image, objectUrl, plan: null });
+    image.onerror = () => {
+      URL.revokeObjectURL(objectUrl);
+      reject(new Error("La fotografía no pudo decodificarse."));
+    };
+    image.src = objectUrl;
+  });
+}
+
+function studioInput() {
+  const file = studioSource.file;
+  return {
+    name: clean($("assetName")?.value) || clean($("wizardService")?.value) || "creativo-dcarela",
+    source_width: studioSource.image?.naturalWidth || 0,
+    source_height: studioSource.image?.naturalHeight || 0,
+    size_bytes: file?.size || 0,
+    mime: file?.type || "",
+    focus_x: Number($("studioFocusX").value) / 100,
+    focus_y: Number($("studioFocusY").value) / 100,
+  };
+}
+
+function studioCopy() {
+  return {
+    headline: clean($("studioHeadline").value) || "Fotografía profesional D' Carela",
+    cta: clean($("studioCta").value) || "Reservar por WhatsApp",
+  };
+}
+
+function wrapCanvasText(context, text, maxWidth, maxLines = 3) {
+  const words = String(text || "").split(/\s+/).filter(Boolean);
+  const lines = [];
+  let current = "";
+  for (const word of words) {
+    const next = current ? `${current} ${word}` : word;
+    if (current && context.measureText(next).width > maxWidth) {
+      lines.push(current);
+      current = word;
+      if (lines.length === maxLines - 1) break;
+    } else current = next;
+  }
+  if (current && lines.length < maxLines) lines.push(current);
+  return lines;
+}
+
+function drawStudioCanvas(canvas, variant, showGuide) {
+  if (!studioSource.image) return;
+  const previewScale = showGuide ? Math.min(1, 360 / variant.height, 320 / variant.width) : 1;
+  canvas.width = Math.max(1, Math.round(variant.width * previewScale));
+  canvas.height = Math.max(1, Math.round(variant.height * previewScale));
+  const context = canvas.getContext("2d", { alpha: false });
+  const crop = variant.crop;
+  context.drawImage(studioSource.image, crop.x, crop.y, crop.width, crop.height, 0, 0, canvas.width, canvas.height);
+
+  const safe = variant.safe_zone;
+  const left = canvas.width * safe.left_pct / 100;
+  const right = canvas.width * (1 - safe.right_pct / 100);
+  const top = canvas.height * safe.top_pct / 100;
+  const bottom = canvas.height * (1 - safe.bottom_pct / 100);
+  const gradient = context.createLinearGradient(0, canvas.height * 0.35, 0, canvas.height);
+  gradient.addColorStop(0, "rgba(0,0,0,0)");
+  gradient.addColorStop(1, "rgba(0,0,0,.88)");
+  context.fillStyle = gradient;
+  context.fillRect(0, 0, canvas.width, canvas.height);
+
+  const copy = studioCopy();
+  const unit = Math.max(1, canvas.width / 1080);
+  context.fillStyle = "#ffffff";
+  context.font = `800 ${Math.round(38 * unit)}px Arial, sans-serif`;
+  context.fillText("D' CARELA COMPUFOTO", left, Math.max(top + 38 * unit, 44 * unit));
+  context.font = `800 ${Math.round(70 * unit)}px Arial, sans-serif`;
+  const lines = wrapCanvasText(context, copy.headline, Math.max(120, right - left), 3);
+  const lineHeight = 78 * unit;
+  const ctaHeight = 82 * unit;
+  let y = Math.max(top + 120 * unit, bottom - ctaHeight - lines.length * lineHeight - 28 * unit);
+  for (const line of lines) {
+    context.fillText(line, left, y);
+    y += lineHeight;
+  }
+  context.fillStyle = "#ff7a00";
+  context.beginPath();
+  context.roundRect(left, y + 10 * unit, Math.min(right - left, 520 * unit), ctaHeight, 18 * unit);
+  context.fill();
+  context.fillStyle = "#111111";
+  context.font = `800 ${Math.round(34 * unit)}px Arial, sans-serif`;
+  context.fillText(copy.cta, left + 28 * unit, y + 64 * unit);
+
+  if (showGuide) {
+    context.save();
+    context.setLineDash([10, 8]);
+    context.strokeStyle = "rgba(255,255,255,.85)";
+    context.lineWidth = Math.max(1, 3 * unit);
+    context.strokeRect(left, top, right - left, bottom - top);
+    context.restore();
+  }
+}
+
+function renderCreativeStudio() {
+  const preview = $("studioPreview");
+  const plan = studioSource.plan;
+  if (!plan || plan.blocked || !studioSource.image) {
+    preview.innerHTML = "";
+    $("studioManifest").disabled = true;
+    return;
+  }
+  preview.innerHTML = plan.variants.map((variant) =>
+    `<article class="studio-card"><div><b>${escapeHtml(variant.label)} · ${escapeHtml(variant.ratio)}</b><small>${variant.width}×${variant.height} · ${escapeHtml(variant.placements.join(" · "))}</small></div><canvas data-studio-canvas="${escapeHtml(variant.id)}" aria-label="Vista previa ${escapeHtml(variant.label)}"></canvas><button class="secondary" type="button" data-studio-download="${escapeHtml(variant.id)}">Descargar JPG</button></article>`,
+  ).join("");
+  for (const variant of plan.variants) {
+    const canvas = preview.querySelector(`[data-studio-canvas="${variant.id}"]`);
+    drawStudioCanvas(canvas, variant, true);
+  }
+  $("studioManifest").disabled = false;
+}
+
+function generateStudioPackage() {
+  if (!studioSource.image || !studioSource.file) {
+    $("studioStatus").textContent = "Selecciona primero una fotografía JPG, PNG o WebP.";
+    return;
+  }
+  const plan = saleAds.planCreativeVariants(studioInput());
+  studioSource.plan = plan;
+  const issues = plan.issues.map((issue) => `<div class="qa-item ${issue.severity === "block" ? "danger-text" : "warning-text"}">${escapeHtml(issue.message)}</div>`).join("");
+  $("studioStatus").innerHTML = plan.blocked
+    ? issues
+    : `<span class="success-text">Tres composiciones generadas en memoria. La línea punteada marca la zona segura y no aparece en la descarga.</span>${issues}`;
+  renderCreativeStudio();
+}
+
+async function downloadStudioVariant(id) {
+  const variant = studioSource.plan?.variants.find((row) => row.id === id);
+  if (!variant || !studioSource.image) return;
+  const canvas = document.createElement("canvas");
+  drawStudioCanvas(canvas, variant, false);
+  const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/jpeg", 0.92));
+  if (!blob) throw new Error("El navegador no pudo generar el JPG.");
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = variant.file_name;
+  link.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+function downloadStudioManifest() {
+  if (!studioSource.plan || studioSource.plan.blocked) return;
+  const manifest = {
+    schema_version: 1,
+    generator: BUILD,
+    generated_at: new Date().toISOString(),
+    business_id: selectedBusiness(),
+    source_file_uploaded: false,
+    source_dimensions: { width: studioSource.image.naturalWidth, height: studioSource.image.naturalHeight },
+    copy: studioCopy(),
+    variants: studioSource.plan.variants,
+    qa: { human_review_required: true, meta_publish_enabled: false, spend_enabled: false },
+  };
+  download(JSON.stringify(manifest, null, 2), `saleads-paquete-${Date.now()}.json`, "application/json");
 }
 
 function renderBudgetResult(result) {
@@ -463,7 +775,7 @@ function renderBusinessData() {
       )
       .join("");
   renderAudience();
-  loadOperationData();
+  loadOperationData().catch((error) => console.warn("operations", error));
 }
 async function loadCampaigns() {
   const bid = selectedBusiness();
@@ -657,16 +969,47 @@ async function saveCurrent() {
   toast("Borrador guardado en Firebase.");
 }
 
-function loadOperationData() {
-  creativeAssets = operationRows("creative_assets");
-  capacityEntries = operationRows("capacity_entries");
-  experimentRecords = operationRows("experiments");
-  attributionEvents = operationRows("attribution_events");
+function renderOperations() {
   renderCreativeAssets();
   renderCapacity();
   renderExperiments();
   renderAnalytics();
   renderApprovals();
+  renderAuditTrail();
+  renderSyncBanner();
+}
+async function loadOperationData() {
+  const businessId = selectedBusiness();
+  for (const kind of OPERATION_KINDS) assignOperationRows(kind, cachedRows(kind));
+  renderOperations();
+  setSyncState("loading", "Leyendo activos, capacidad, experimentos y atribucion de la sucursal.");
+  if (!auth.currentUser) {
+    setSyncState("expired", "Inicia sesion para sincronizar; se muestra la copia de este dispositivo.");
+    return;
+  }
+  let cloud;
+  try {
+    cloud = await fetchOperationCloud(businessId);
+  } catch (error) {
+    console.warn("operations-sync", error);
+    const info = saleAds.describeSyncError(error, { online: navigator.onLine });
+    setSyncState(info.state, info.message);
+    return;
+  }
+  for (const kind of OPERATION_KINDS) {
+    const merged = saleAds.mergeOperationRows(kind, cachedRows(kind), cloud[kind] || [], businessId);
+    assignOperationRows(kind, merged);
+    cacheRows(kind, merged);
+  }
+  renderOperations();
+  await syncPendingOperations(businessId, cloud);
+  renderOperations();
+}
+function renderAuditTrail() {
+  if (!$("auditTrail")) return;
+  $("auditTrail").innerHTML = auditEntries.length
+    ? auditEntries.slice(0, 40).map((x) => `<article class="record-row"><div><b>${escapeHtml(x.action)}</b><span>${escapeHtml(x.detail || x.entity || "")}</span><small>${escapeHtml(x.actor_email || "sin actor")} · ${new Date(x.created_at).toLocaleString("es-DO")}</small></div><span class="status-chip ${x.sync_state === "synced" ? "success-text" : "warning-text"}">${x.sync_state === "synced" ? "en la sucursal" : "pendiente"}</span></article>`).join("")
+    : '<div class="empty-state-inline">Sin acciones registradas en esta sucursal.</div>';
 }
 
 function assetFormValue() {
@@ -773,6 +1116,12 @@ async function registerApproval() {
   await setDoc(doc(db, "crm_campaigns", updated.id), updated);
   saveLocal(updated);
   await loadCampaigns();
+  await recordAudit({
+    action: target === "approved" ? "campaign_approved" : "campaign_qa_ready",
+    entity: "crm_campaigns",
+    entity_id: updated.id,
+    detail: note,
+  });
   $("approvalForm").reset();
   toast(target === "approved" ? "Borrador aprobado; no se publicó ni activó gasto." : "QA registrado.");
 }
@@ -956,25 +1305,51 @@ $("creative").onchange = () => {
   $("creativeName").textContent =
     $("creative").files[0]?.name || "Ningún archivo seleccionado";
 };
+$("studioFile").onchange = async () => {
+  const file = $("studioFile").files?.[0];
+  releaseStudioSource();
+  renderCreativeStudio();
+  if (!file) {
+    $("studioStatus").textContent = "Selecciona una fotografía autorizada. El archivo se procesa solamente en memoria.";
+    return;
+  }
+  try {
+    studioSource = await loadStudioImage(file);
+    if (!clean($("studioHeadline").value))
+      $("studioHeadline").value = clean($("wizardOffer").value) || clean($("product").value) || "Fotografía profesional D' Carela";
+    generateStudioPackage();
+  } catch (error) {
+    $("studioStatus").textContent = error.message || String(error);
+  }
+};
+$("studioGenerate").onclick = generateStudioPackage;
+$("studioManifest").onclick = downloadStudioManifest;
+for (const id of ["studioHeadline", "studioCta", "studioFocusX", "studioFocusY"])
+  $(id).addEventListener("input", () => { if (studioSource.image) generateStudioPackage(); });
 $("clientSearch").oninput = renderAudience;
 $("refreshHistory").onclick = () =>
   loadCampaigns().then(() => toast("Campañas actualizadas."));
 $("campaignStatusFilter").onchange = renderHistory;
 $("creativeAssetForm").addEventListener("input", updateAssetQa);
 $("creativeAssetForm").addEventListener("change", updateAssetQa);
-$("creativeAssetForm").addEventListener("submit", (event) => {
+$("creativeAssetForm").addEventListener("submit", async (event) => {
   event.preventDefault();
   const asset = assetFormValue();
   const qa = updateAssetQa();
   if (qa.blocked) return toast("Corrige los bloqueos de derechos antes de guardar.");
-  creativeAssets.unshift({ id: `asset_${Date.now()}`, business_id: selectedBusiness(), created_at: new Date().toISOString(), ...asset });
-  saveOperationRows("creative_assets", creativeAssets);
+  const row = { id: `asset_${Date.now()}_${randomSuffix()}`, business_id: selectedBusiness(), created_at: new Date().toISOString(), ...asset };
+  creativeAssets.unshift(row);
   $("creativeAssetForm").reset();
   updateAssetQa();
   renderCreativeAssets();
-  toast("Metadatos del creativo guardados; el archivo no salió del equipo.");
+  const outcome = await persistOperation("creative_assets", creativeAssets, row);
+  await recordAudit({ action: "creative_asset_registered", entity: "saleads_assets", entity_id: row.id, detail: row.name });
+  renderCreativeAssets();
+  toast(outcome.synced
+    ? "Metadatos compartidos con la sucursal; el archivo no salió del equipo."
+    : `Guardado solo en este dispositivo: ${outcome.message}`);
 });
-$("capacityForm").addEventListener("submit", (event) => {
+$("capacityForm").addEventListener("submit", async (event) => {
   event.preventDefault();
   const slots = Math.max(0, Math.floor(Number($("capacitySlotsInput").value)));
   const reserved = Math.max(0, Math.floor(Number($("capacityReservedInput").value)));
@@ -983,39 +1358,64 @@ $("capacityForm").addEventListener("submit", (event) => {
   const service = clean($("capacityService").value);
   if (!date || !service) return toast("Completa fecha y servicio.");
   capacityEntries = capacityEntries.filter((x) => !(x.date === date && x.service.toLowerCase() === service.toLowerCase()));
-  capacityEntries.unshift({ id: `capacity_${Date.now()}`, date, service, slots, reserved, updated_at: new Date().toISOString() });
-  saveOperationRows("capacity_entries", capacityEntries);
+  const row = { id: `capacity_${Date.now()}_${randomSuffix()}`, business_id: selectedBusiness(), date, service, slots, reserved, updated_at: new Date().toISOString() };
+  capacityEntries.unshift(row);
   renderCapacity();
-  toast("Capacidad registrada.");
+  const outcome = await persistOperation("capacity_entries", capacityEntries, row);
+  await recordAudit({ action: "capacity_updated", entity: "saleads_capacity", entity_id: `${date}__${service}`, detail: `${reserved} reservado(s) de ${slots} cupo(s)` });
+  renderCapacity();
+  toast(outcome.synced ? "Capacidad compartida con la sucursal." : `Capacidad guardada en este dispositivo: ${outcome.message}`);
 });
 $("experimentForm").addEventListener("input", updateExperimentDecision);
 $("experimentForm").addEventListener("change", updateExperimentDecision);
-$("experimentForm").addEventListener("submit", (event) => {
+$("experimentForm").addEventListener("submit", async (event) => {
   event.preventDefault();
   const input = experimentFormValue();
   if (!input.hypothesis) return toast("La hipótesis es obligatoria.");
   const result = saleAds.evaluateExperiment(input);
-  experimentRecords.unshift({ id: `experiment_${Date.now()}`, created_at: new Date().toISOString(), ...input, result });
-  saveOperationRows("experiments", experimentRecords);
+  const row = { id: `experiment_${Date.now()}_${randomSuffix()}`, business_id: selectedBusiness(), created_at: new Date().toISOString(), ...input, result };
+  experimentRecords.unshift(row);
   renderExperiments();
-  toast(result.decision === "insufficient_data" ? "Evaluación guardada como señal insuficiente." : "Evaluación direccional guardada.");
+  const outcome = await persistOperation("experiments", experimentRecords, row);
+  await recordAudit({ action: "experiment_recorded", entity: "saleads_experiments", entity_id: row.id, detail: `${row.variable} · ${result.decision}` });
+  renderExperiments();
+  const base = result.decision === "insufficient_data" ? "Evaluación guardada como señal insuficiente." : "Evaluación direccional guardada.";
+  toast(outcome.synced ? `${base} Compartida con la sucursal.` : `${base} ${outcome.message}`);
 });
-$("attributionForm").addEventListener("submit", (event) => {
+$("attributionForm").addEventListener("submit", async (event) => {
   event.preventDefault();
   const stage = $("attributionStage").value;
   const reference = clean($("attributionReference").value);
   const value = Math.max(0, Number($("attributionValue").value) || 0);
   if (stage === "paid" && value <= 0) return toast("Una venta pagada requiere valor confirmado.");
-  attributionEvents.unshift({ id: `event_${Date.now()}`, campaign_id: $("attributionCampaign").value, stage, reference, value, created_at: new Date().toISOString(), source: "manual_verified" });
-  saveOperationRows("attribution_events", attributionEvents);
+  const row = { id: `event_${Date.now()}_${randomSuffix()}`, business_id: selectedBusiness(), campaign_id: $("attributionCampaign").value, stage, reference, value, created_at: new Date().toISOString(), source: "manual_verified" };
+  attributionEvents.unshift(row);
   $("attributionForm").reset();
   renderAnalytics();
-  toast("Evento comercial registrado sin datos personales.");
+  const outcome = await persistOperation("attribution_events", attributionEvents, row);
+  await recordAudit({ action: "attribution_event_registered", entity: "saleads_attribution", entity_id: row.id, detail: `${stage}${reference ? ` · ${reference}` : ""}` });
+  renderAnalytics();
+  toast(outcome.synced
+    ? "Evento comercial compartido con la sucursal, sin datos personales."
+    : `Evento guardado en este dispositivo: ${outcome.message}`);
 });
 $("approvalForm").addEventListener("submit", (event) => {
   event.preventDefault();
   registerApproval().catch((error) => toast(error.message || String(error)));
 });
+document.addEventListener("click", (event) => {
+  const target = event.target;
+  if (target instanceof HTMLElement && target.hasAttribute("data-sync-retry"))
+    loadOperationData().catch((error) => console.warn("operations-retry", error));
+  if (target instanceof HTMLElement && target.hasAttribute("data-studio-download"))
+    downloadStudioVariant(target.dataset.studioDownload)
+      .catch((error) => toast(error.message || String(error)));
+});
+window.addEventListener("online", () => loadOperationData().catch(() => {}));
+window.addEventListener("offline", () =>
+  setSyncState("offline", "Sin conexión: los cambios nuevos quedan pendientes en este dispositivo."),
+);
+window.addEventListener("beforeunload", releaseStudioSource);
 document
   .querySelectorAll(".nav-item")
   .forEach((x) => (x.onclick = () => showView(x.dataset.view)));

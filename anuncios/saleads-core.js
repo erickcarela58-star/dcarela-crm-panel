@@ -124,6 +124,54 @@
     return { rows, missing, valid: rows.length > 0 && missing.length === 0 };
   }
 
+  function coverCrop(sourceWidth, sourceHeight, targetWidth, targetHeight, focusX = 0.5, focusY = 0.5) {
+    const sw = Math.max(1, n(sourceWidth));
+    const sh = Math.max(1, n(sourceHeight));
+    const tw = Math.max(1, n(targetWidth));
+    const th = Math.max(1, n(targetHeight));
+    const scale = Math.max(tw / sw, th / sh);
+    const width = Math.min(sw, tw / scale);
+    const height = Math.min(sh, th / scale);
+    const x = Math.max(0, Math.min(sw - width, clamp01(focusX) * sw - width / 2));
+    const y = Math.max(0, Math.min(sh - height, clamp01(focusY) * sh - height / 2));
+    return { x: round2(x), y: round2(y), width: round2(width), height: round2(height), scale: round2(scale) };
+  }
+
+  function planCreativeVariants(input = {}) {
+    const sourceWidth = Math.max(0, n(input.source_width));
+    const sourceHeight = Math.max(0, n(input.source_height));
+    const sizeBytes = Math.max(0, n(input.size_bytes));
+    const mime = String(input.mime || "").toLowerCase();
+    const issues = [];
+    if (!sourceWidth || !sourceHeight)
+      issues.push({ code: "image_dimensions", severity: "block", message: "No se pudieron leer las dimensiones de la fotografía." });
+    if (!["image/jpeg", "image/png", "image/webp"].includes(mime))
+      issues.push({ code: "image_mime", severity: "block", message: "Usa una fotografía JPG, PNG o WebP." });
+    if (sizeBytes > 30 * 1024 * 1024)
+      issues.push({ code: "image_size", severity: "block", message: "La fotografía supera el límite local de 30 MB." });
+
+    const baseName = slugKey(String(input.name || "creativo-dcarela")).slice(0, 48);
+    const variants = sourceWidth && sourceHeight
+      ? creativeSpecs.map((spec) => {
+          const safe = spec.safe_zone || { top_pct: 6, bottom_pct: 16, left_pct: 6, right_pct: 6 };
+          if (sourceWidth < spec.width || sourceHeight < spec.height)
+            issues.push({ code: `upscale_${spec.id}`, severity: "warning", message: `${spec.label}: la fuente es menor que ${spec.width}×${spec.height}; revisa nitidez al 100%.` });
+          return {
+            id: spec.id,
+            label: spec.label,
+            ratio: spec.ratio,
+            width: spec.width,
+            height: spec.height,
+            placements: [...spec.placements],
+            crop: coverCrop(sourceWidth, sourceHeight, spec.width, spec.height, input.focus_x, input.focus_y),
+            safe_zone: { ...safe },
+            file_name: `${baseName}-${spec.id}-${spec.width}x${spec.height}.jpg`,
+          };
+        })
+      : [];
+    return { variants, issues, blocked: issues.some((issue) => issue.severity === "block") };
+  }
+
   function consentState(client = {}) {
     const optedOut = client.marketing_opt_out === true || client.opt_out === true
       || client.consent_status === "revoked";
@@ -232,9 +280,140 @@
     return { ok: true, reason: "Transición permitida." };
   }
 
+  // --- Sincronización operativa v4 (Firestore + copia local) -----------
+  // Cada colección es append-only salvo la capacidad, que usa identificador
+  // determinista por fecha+servicio para que reescribir una jornada no cree
+  // duplicados. Ninguna función borra datos.
+  const operationCollections = Object.freeze({
+    creative_assets: Object.freeze({ collection: "saleads_assets", mode: "append_only", limit: 500 }),
+    capacity_entries: Object.freeze({ collection: "saleads_capacity", mode: "upsert", limit: 500 }),
+    experiments: Object.freeze({ collection: "saleads_experiments", mode: "append_only", limit: 500 }),
+    attribution_events: Object.freeze({ collection: "saleads_attribution", mode: "append_only", limit: 500 }),
+    audit_entries: Object.freeze({ collection: "saleads_audit", mode: "append_only", limit: 500 }),
+  });
+
+  function operationSpec(kind) {
+    const spec = operationCollections[kind];
+    if (!spec) throw new Error(`Colección operativa desconocida: ${kind}`);
+    return spec;
+  }
+
+  function slugKey(value) {
+    const text = String(value ?? "")
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toLowerCase();
+    return text.replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 60) || "sin-dato";
+  }
+
+  function operationDocId(kind, businessId, row = {}) {
+    operationSpec(kind);
+    const business = slugKey(businessId);
+    if (kind === "capacity_entries") return `${business}__${slugKey(row.date)}__${slugKey(row.service)}`;
+    return `${business}__${slugKey(row.id)}`;
+  }
+
+  function rowStamp(row = {}) {
+    return String(row.updated_at || row.created_at || "");
+  }
+
+  function mergeOperationRows(kind, localRows = [], cloudRows = [], businessId = "") {
+    const spec = operationSpec(kind);
+    const merged = new Map();
+    for (const row of localRows) {
+      const key = operationDocId(kind, businessId, row);
+      if (!merged.has(key)) merged.set(key, { ...row, sync_state: row.sync_state === "synced" ? "synced" : "pending" });
+    }
+    for (const row of cloudRows) {
+      const key = operationDocId(kind, businessId, row);
+      const local = merged.get(key);
+      const localIsNewer =
+        local && spec.mode === "upsert" && local.sync_state !== "synced" && rowStamp(local) > rowStamp(row);
+      if (!localIsNewer) merged.set(key, { ...row, sync_state: "synced" });
+    }
+    return [...merged.values()]
+      .sort((a, b) => rowStamp(b).localeCompare(rowStamp(a)))
+      .slice(0, spec.limit);
+  }
+
+  function planOperationMigration(kind, localRows = [], cloudRows = [], businessId = "") {
+    const spec = operationSpec(kind);
+    const remote = new Map(cloudRows.map((row) => [operationDocId(kind, businessId, row), row]));
+    const upload = [];
+    let alreadySynced = 0;
+    for (const row of localRows) {
+      const key = operationDocId(kind, businessId, row);
+      const cloudRow = remote.get(key);
+      if (!cloudRow) { upload.push(row); continue; }
+      if (spec.mode === "upsert" && rowStamp(row) > rowStamp(cloudRow)) upload.push(row);
+      else alreadySynced += 1;
+    }
+    return { kind, collection: spec.collection, mode: spec.mode, upload, already_synced: alreadySynced };
+  }
+
+  const syncStates = Object.freeze({
+    idle: Object.freeze({ label: "Sin sincronizar", tone: "muted" }),
+    loading: Object.freeze({ label: "Sincronizando", tone: "muted" }),
+    cloud: Object.freeze({ label: "Sincronizado", tone: "success" }),
+    local_only: Object.freeze({ label: "Solo en este dispositivo", tone: "warning" }),
+    permission: Object.freeze({ label: "Permiso insuficiente", tone: "warning" }),
+    quota: Object.freeze({ label: "Cuota agotada", tone: "danger" }),
+    offline: Object.freeze({ label: "Sin conexión", tone: "warning" }),
+    expired: Object.freeze({ label: "Sesión vencida", tone: "danger" }),
+    unknown: Object.freeze({ label: "Error de sincronización", tone: "danger" }),
+  });
+
+  function syncStateLabel(state) {
+    return syncStates[state] || syncStates.unknown;
+  }
+
+  function describeSyncError(error, options = {}) {
+    const code = String(error?.code || error?.name || "").toLowerCase();
+    const text = String(error?.message || error || "").toLowerCase();
+    const online = options.online === undefined ? true : Boolean(options.online);
+    if (code.includes("unauthenticated") || text.includes("unauthenticated") || (text.includes("token") && text.includes("expir")))
+      return { state: "expired", message: "La sesión venció. Vuelve a iniciar sesión para sincronizar; nada se borró." };
+    if (code.includes("permission-denied") || text.includes("insufficient permissions"))
+      return { state: "permission", message: "Tu rol no puede leer o escribir estos datos en la nube. La copia de este dispositivo sigue intacta." };
+    if (code.includes("resource-exhausted") || text.includes("quota"))
+      return { state: "quota", message: "Firestore agotó la cuota del proyecto. No se sincroniza hasta restablecerla; los datos locales se conservan." };
+    if (!online || code.includes("unavailable") || text.includes("offline") || text.includes("network") || text.includes("failed to fetch"))
+      return { state: "offline", message: "Sin conexión con Firestore. Se muestra la copia local de esta sucursal y los cambios quedan pendientes." };
+    return { state: "unknown", message: "No se pudo sincronizar. Se conserva la copia local sin borrar nada." };
+  }
+
+  function summarizeSync(state, options = {}) {
+    const info = syncStateLabel(state);
+    const pending = Math.max(0, Math.floor(n(options.pending)));
+    const rows = Math.max(0, Math.floor(n(options.rows)));
+    const parts = [info.label];
+    if (rows) parts.push(`${rows} registro(s)`);
+    if (pending) parts.push(`${pending} pendiente(s) de subir`);
+    return { state, tone: info.tone, label: info.label, pending, rows, text: parts.join(" · ") };
+  }
+
+  function auditEntry(input = {}) {
+    const created = input.created_at || new Date().toISOString();
+    const action = String(input.action || "unknown");
+    return {
+      id: input.id || `audit_${Date.parse(created) || Date.now()}_${slugKey(action).slice(0, 20)}`,
+      action,
+      entity: String(input.entity || ""),
+      entity_id: String(input.entity_id || ""),
+      detail: String(input.detail || "").slice(0, 300),
+      actor_uid: String(input.actor_uid || ""),
+      actor_email: String(input.actor_email || ""),
+      created_at: created,
+      source: "saleads_panel",
+    };
+  }
+
   return {
     templates, creativeSpecs, recommendTemplates, calculateBudget, lintPolicy, validatePlacements,
+    coverCrop, planCreativeVariants,
     consentState, summarizeAudience, validateCreativeAsset, capacitySummary, evaluateExperiment,
     funnelMetrics, campaignTransitions, canTransitionCampaign,
+    operationCollections, operationDocId, mergeOperationRows, planOperationMigration,
+    syncStates, syncStateLabel, describeSyncError, summarizeSync, auditEntry, slugKey,
   };
 });
