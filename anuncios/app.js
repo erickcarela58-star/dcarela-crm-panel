@@ -16,7 +16,7 @@ import {
   where,
 } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 
-const BUILD = "2026-08-24-saleads-creative-studio-v6";
+const BUILD = "2026-08-24-saleads-ai-lab-v7";
 const saleAds = window.SaleAdsCore;
 if (!saleAds) throw new Error("No se cargó el motor seguro de SaleAds.");
 const SALEADS_UI = new URLSearchParams(location.search).get("saleads_ui") === "classic" ? "classic" : "phase1";
@@ -60,7 +60,9 @@ let member = null,
   wizardTemplateId = "T01";
 const WIZARD_KEY = "dcarela_saleads_wizard_v3";
 const OPERATIONS_KEY = "dcarela_saleads_operations_v1";
+const AI_MEMORY_KEY = "dcarela_saleads_ai_memory_v1";
 let studioSource = { file: null, image: null, objectUrl: "", plan: null };
+let aiCurrentRecommendation = null;
 
 function operationStore() {
   try { return JSON.parse(localStorage.getItem(OPERATIONS_KEY) || "{}"); }
@@ -804,6 +806,7 @@ async function loadCampaigns() {
   renderHistory();
   renderApprovals();
   renderAnalytics();
+  renderAiCampaigns();
 }
 
 function formValues() {
@@ -976,6 +979,8 @@ function renderOperations() {
   renderAnalytics();
   renderApprovals();
   renderAuditTrail();
+  renderAiCampaigns();
+  renderAiHistory();
   renderSyncBanner();
 }
 async function loadOperationData() {
@@ -1090,6 +1095,173 @@ function renderAnalytics() {
     : '<div class="empty-state-inline">Sin eventos atribuidos. No se calcula ROAS hasta conectar gasto Meta verificable.</div>';
 }
 
+function aiMemoryStore() {
+  try {
+    const parsed = JSON.parse(localStorage.getItem(AI_MEMORY_KEY) || "{}");
+    return parsed && typeof parsed === "object" && !Array.isArray(parsed) ? parsed : {};
+  } catch {
+    return {};
+  }
+}
+function aiHistoryRows() {
+  const rows = aiMemoryStore()[selectedBusiness()];
+  return Array.isArray(rows) ? rows : [];
+}
+function saveAiHistory(result) {
+  const store = aiMemoryStore();
+  const bid = selectedBusiness();
+  const rows = Array.isArray(store[bid]) ? store[bid] : [];
+  store[bid] = [
+    {
+      recommendation: result.recommendation,
+      context: result.context,
+      generated_at: new Date().toISOString(),
+      engine: BUILD,
+    },
+    ...rows.filter((row) => row?.recommendation?.recommendation_id !== result.recommendation.recommendation_id),
+  ].slice(0, 25);
+  localStorage.setItem(AI_MEMORY_KEY, JSON.stringify(store));
+}
+function aiFormValue() {
+  return {
+    service: clean($("aiService").value) || "general",
+    window_days: $("aiWindowDays").value,
+    price: $("aiPrice").value,
+    variable_cost: $("aiVariableCost").value,
+    desired_profit_after_ads: $("aiDesiredProfit").value,
+    target_revenue_roas: $("aiTargetRoas").value,
+    available_slots: $("aiAvailableSlots").value,
+    budget_total: $("aiBudgetTotal").value,
+    spend: $("aiSpend").value,
+    qualified_leads: $("aiQualified").value,
+    bookings: $("aiBookings").value,
+    completed_sessions: $("aiCompleted").value,
+    frequency: $("aiFrequency").value,
+    creative_age_days: $("aiCreativeAge").value,
+    evidence_verified: $("aiEvidenceVerified").checked,
+    campaign_status: campaigns.find((row) => row.id === $("aiCampaign").value)?.status || "draft",
+  };
+}
+function renderAiCampaigns() {
+  const select = $("aiCampaign");
+  if (!select) return;
+  const selected = select.value;
+  select.innerHTML = '<option value="">Contexto manual</option>' + campaigns.map((row) =>
+    `<option value="${escapeHtml(row.id)}">${escapeHtml(row.product || row.campaign_name || row.id)} · ${escapeHtml(row.status || "draft")}</option>`,
+  ).join("");
+  if ([...select.options].some((option) => option.value === selected)) select.value = selected;
+}
+function fillAiFromCampaign() {
+  const campaign = campaigns.find((row) => row.id === $("aiCampaign").value);
+  if (!campaign) return;
+  const service = clean(campaign.product || campaign.campaign_name || campaign.category || "general");
+  const economics = campaign.economics_snapshot || {};
+  const events = attributionEvents.filter((row) => row.campaign_id === campaign.id);
+  const capacity = capacityEntries.filter((row) => {
+    const label = clean(row.service).toLowerCase();
+    const key = service.toLowerCase();
+    return !key || label.includes(key) || key.includes(label);
+  });
+  const available = saleAds.capacitySummary(capacity.length ? capacity : capacityEntries).available;
+  $("aiService").value = service;
+  $("aiPrice").value = Number(economics.price ?? campaign.price ?? 0) || "";
+  $("aiVariableCost").value = Number(economics.variable_cost ?? campaign.variable_cost ?? 0) || "";
+  $("aiDesiredProfit").value = Number(economics.desired_profit_after_ads ?? campaign.desired_profit_after_ads ?? 0) || "";
+  $("aiTargetRoas").value = Number(economics.target_revenue_roas ?? campaign.target_revenue_roas ?? 3) || 3;
+  $("aiAvailableSlots").value = available;
+  $("aiBudgetTotal").value = Number(economics.recommended_total_cap ?? campaign.budget ?? 0) || 0;
+  $("aiQualified").value = events.filter((row) => row.stage === "qualified").length;
+  $("aiBookings").value = events.filter((row) => row.stage === "booking").length;
+  $("aiCompleted").value = events.filter((row) => row.stage === "completed").length;
+  $("aiSpend").value = 0;
+  $("aiFrequency").value = 0;
+  $("aiEvidenceVerified").checked = false;
+  toast("Contexto agregado cargado. Gasto y frecuencia siguen en cero hasta verificarlos.");
+}
+const AI_ACTION_LABELS = {
+  keep: "Mantener y medir",
+  pause_proposal: "Propuesta de pausa",
+  new_creative: "Nuevo creativo",
+  budget_change_proposal: "Propuesta de presupuesto",
+  insufficient_data: "Datos insuficientes",
+};
+function renderAiRecommendation(result) {
+  const target = $("aiRecommendationResult");
+  if (!result?.validation?.valid) {
+    target.className = "ai-recommendation-result";
+    const errors = result?.validation?.errors || ["La salida no cumple el contrato de seguridad."];
+    target.innerHTML = `<div class="ai-contract-error"><b>Salida rechazada</b><p>${errors.map(escapeHtml).join(" · ")}</p></div>`;
+    $("aiSampleChip").textContent = "Contrato inválido";
+    return;
+  }
+  const recommendation = result.recommendation;
+  target.className = "ai-recommendation-result";
+  const quality = result.context.sample_quality.status;
+  const effect = recommendation.expected_effect;
+  const effectText = effect.low === null
+    ? "No estimado: la evidencia no permite prometer impacto."
+    : `${effect.low}–${effect.high} ${effect.unit} (punto medio ${effect.mid})`;
+  $("aiSampleChip").textContent = `Muestra ${quality} · ${Math.round(recommendation.confidence * 100)}%`;
+  target.innerHTML = `
+    <div class="ai-recommendation-head"><span class="status-chip ai-action-${escapeHtml(recommendation.action)}">${escapeHtml(AI_ACTION_LABELS[recommendation.action] || recommendation.action)}</span><b>${Math.round(recommendation.confidence * 100)}% confianza</b></div>
+    <h3>${escapeHtml(recommendation.summary)}</h3>
+    <div class="ai-contract-note">Es una recomendación. Requiere aprobación humana y no ejecutó publicaciones, activaciones ni cambios de presupuesto.</div>
+    <div class="ai-evidence-grid">${recommendation.evidence.map((item) => `<article><span>${escapeHtml(item.metric)}</span><b>${escapeHtml(item.value)}</b><small>${escapeHtml(item.window)} · ${escapeHtml(item.source)}</small></article>`).join("")}</div>
+    <div class="ai-detail-grid"><article><b>Justificación</b>${recommendation.rationale.map((item) => `<p>${escapeHtml(item)}</p>`).join("")}</article><article><b>Riesgos</b>${recommendation.risks.length ? recommendation.risks.map((item) => `<p>${escapeHtml(item)}</p>`).join("") : "<p>Sin riesgo adicional declarado.</p>"}</article></div>
+    <div class="ai-effect"><b>Efecto esperado</b><span>${escapeHtml(effectText)}</span></div>
+    <small>Vence ${new Date(recommendation.expires_at).toLocaleString("es-DO")} · esquema ${recommendation.schema_version}</small>`;
+  $("aiCopyRecommendation").disabled = false;
+  $("aiExportRecommendation").disabled = false;
+}
+function analyzeAiRecommendation() {
+  const result = saleAds.planStrategicRecommendation(aiFormValue());
+  aiCurrentRecommendation = result;
+  if (result.validation.valid) saveAiHistory(result);
+  renderAiRecommendation(result);
+  renderAiHistory();
+  return result;
+}
+function renderAiExperiment() {
+  const result = saleAds.planExperiment({
+    variable: $("aiExperimentVariable").value,
+    minimum_events: $("aiExperimentMinimum").value,
+    expected_cost_per_event: $("aiExperimentCost").value,
+    daily_budget: $("aiExperimentDaily").value,
+    days: $("aiExperimentDays").value,
+  });
+  const labels = {
+    insufficient_data: "Datos insuficientes",
+    ready_to_draft: "Muestra viable",
+    budget_or_scope_insufficient: "Presupuesto o alcance insuficiente",
+  };
+  $("aiExperimentResult").innerHTML = `<b>${escapeHtml(labels[result.status] || result.status)}</b><div class="qa-item">2 brazos · ${result.minimum_events_per_arm} eventos por brazo · una sola variable: ${escapeHtml(result.variable)}</div><div class="qa-item">Requerido ${escapeHtml(money(result.required_budget))} · disponible ${escapeHtml(money(result.available_budget))}</div><small>${escapeHtml(result.guidance)}</small>`;
+  return result;
+}
+function renderAiHistory() {
+  const target = $("aiRecommendationHistory");
+  if (!target) return;
+  const rows = aiHistoryRows();
+  target.innerHTML = rows.length
+    ? rows.map((row) => {
+        const recommendation = row.recommendation || {};
+        return `<article class="record-row"><div><b>${escapeHtml(AI_ACTION_LABELS[recommendation.action] || recommendation.action || "Recomendación")}</b><span>${escapeHtml(recommendation.summary || "")}</span><small>${new Date(row.generated_at).toLocaleString("es-DO")} · ${Math.round(Number(recommendation.confidence || 0) * 100)}% confianza</small></div><span class="status-chip">local</span></article>`;
+      }).join("")
+    : '<div class="empty-state-inline">Todavía no hay recomendaciones para esta sucursal en este dispositivo.</div>';
+}
+function resetAiDisplay() {
+  aiCurrentRecommendation = null;
+  $("aiRecommendationResult").textContent = "Completa agregados verificables. Si falta señal, el resultado correcto será “datos insuficientes”.";
+  $("aiRecommendationResult").className = "ai-recommendation-empty";
+  $("aiSampleChip").textContent = "Sin analizar";
+  $("aiCopyRecommendation").disabled = true;
+  $("aiExportRecommendation").disabled = true;
+  $("aiRecommendationForm").reset();
+  $("aiService").value = "general";
+  $("aiWindowDays").value = 7;
+  $("aiTargetRoas").value = 3;
+  renderAiHistory();
+}
+
 function renderApprovals() {
   if (!$("approvalList")) return;
   const rows = campaigns.filter((x) => ["draft_review_required", "saved", "qa_ready", "approved"].includes(x.status));
@@ -1202,6 +1374,7 @@ function showView(view) {
       audience: "Banco de clientes",
       calendar: "Calendario y capacidad",
       experiments: "Experimentos",
+      aiLab: "IA y laboratorio",
       analytics: "Medición y ventas",
       history: "Campañas guardadas",
       approvals: "Aprobaciones",
@@ -1238,6 +1411,7 @@ $("loginForm").addEventListener("submit", async (event) => {
 });
 $("logoutButton").onclick = () => signOut(auth);
 $("businessSelect").onchange = async () => {
+  resetAiDisplay();
   renderBusinessData();
   await loadCampaigns();
   restoreWizard();
@@ -1382,6 +1556,32 @@ $("experimentForm").addEventListener("submit", async (event) => {
   const base = result.decision === "insufficient_data" ? "Evaluación guardada como señal insuficiente." : "Evaluación direccional guardada.";
   toast(outcome.synced ? `${base} Compartida con la sucursal.` : `${base} ${outcome.message}`);
 });
+$("aiCampaign").addEventListener("change", fillAiFromCampaign);
+$("aiRecommendationForm").addEventListener("submit", (event) => {
+  event.preventDefault();
+  const result = analyzeAiRecommendation();
+  toast(result.validation.valid ? "Recomendación local validada; no se ejecutó ninguna acción." : "La salida fue bloqueada por el contrato.");
+});
+$("aiExportContext").onclick = () => {
+  const context = saleAds.buildAiContext(aiFormValue());
+  download(JSON.stringify(context, null, 2), `saleads-contexto-seguro-${Date.now()}.json`, "application/json");
+  toast("Contexto agregado exportado sin banco de clientes.");
+};
+$("aiCopyRecommendation").onclick = () => aiCurrentRecommendation && navigator.clipboard
+  .writeText(JSON.stringify(aiCurrentRecommendation.recommendation, null, 2))
+  .then(() => toast("Recomendación estructurada copiada."))
+  .catch(() => toast("No se pudo copiar."));
+$("aiExportRecommendation").onclick = () => aiCurrentRecommendation && download(
+  JSON.stringify(aiCurrentRecommendation, null, 2),
+  `saleads-recomendacion-${aiCurrentRecommendation.recommendation.recommendation_id}.json`,
+  "application/json",
+);
+$("aiExperimentForm").addEventListener("submit", (event) => {
+  event.preventDefault();
+  renderAiExperiment();
+});
+$("aiExperimentForm").addEventListener("input", renderAiExperiment);
+$("aiExperimentForm").addEventListener("change", renderAiExperiment);
 $("attributionForm").addEventListener("submit", async (event) => {
   event.preventDefault();
   const stage = $("attributionStage").value;
@@ -1448,6 +1648,8 @@ if (!$("wizardDeadline").value) {
 if (!$("capacityDate").value) $("capacityDate").value = new Date().toISOString().slice(0, 10);
 updateAssetQa();
 updateExperimentDecision();
+renderAiExperiment();
+renderAiHistory();
 updateWizard();
 
 onAuthStateChanged(auth, async (user) => {

@@ -2,6 +2,8 @@
   "name": "D'Carela Centro de Anuncios",
   "short_name": "D'Carela Ads",
   "start_url": "./",
+  "id": "dcarela-saleads-v7",
+  "description": "Centro de anuncios con campañas, creativos, medición e IA estratégica local.",
   "display": "standalone",
   "background_color": "#0b0d10",
   "theme_color": "#0b0d10"

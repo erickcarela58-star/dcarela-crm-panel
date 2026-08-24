@@ -259,6 +259,193 @@
     return { ...counts, revenue: round2(revenue) };
   }
 
+  // --- Cerebro estratégico local v1 -----------------------------------
+  // Trabaja exclusivamente con agregados declarados/verificados. No recibe
+  // clientes, teléfonos, correos, conversaciones ni fotografías. Su salida
+  // comparte el mismo contrato estricto que deberá usar un backend generativo.
+  const aiActions = Object.freeze([
+    "keep", "pause_proposal", "new_creative", "budget_change_proposal", "insufficient_data",
+  ]);
+
+  function aiSampleQuality(input = {}) {
+    const completed = Math.max(0, Math.floor(n(input.completed_sessions)));
+    const qualified = Math.max(0, Math.floor(n(input.qualified_leads)));
+    const windowDays = Math.max(1, Math.floor(n(input.window_days) || 1));
+    if (completed >= 10 && qualified >= 20 && windowDays >= 7) return "usable";
+    if (completed >= 3 && qualified >= 8) return "directional";
+    return "insufficient";
+  }
+
+  function buildAiContext(input = {}) {
+    const service = slugKey(input.service || "general");
+    const price = Math.max(0, n(input.price));
+    const variableCost = Math.max(0, n(input.variable_cost));
+    const targetRoas = Math.max(0, n(input.target_revenue_roas));
+    const margin = Math.max(0, price - variableCost);
+    const spend = Math.max(0, n(input.spend));
+    const qualified = Math.max(0, Math.floor(n(input.qualified_leads)));
+    const bookings = Math.max(0, Math.floor(n(input.bookings)));
+    const completed = Math.max(0, Math.floor(n(input.completed_sessions)));
+    const windowDays = Math.max(1, Math.floor(n(input.window_days) || 7));
+    return {
+      schema_version: 1,
+      privacy: "aggregates_only_no_pii",
+      business_context: { service, branch: "redacted-id" },
+      economics: { price: round2(price), variable_cost: round2(variableCost), contribution_margin: round2(margin), target_revenue_roas: round2(targetRoas) },
+      capacity: { available_slots: Math.max(0, Math.floor(n(input.available_slots))), period: "campaign_window" },
+      campaign: { status: slugKey(input.campaign_status || "draft"), window_days: windowDays, budget_total: round2(Math.max(0, n(input.budget_total))) },
+      metrics: {
+        spend: round2(spend),
+        qualified_leads: qualified,
+        bookings,
+        completed_sessions: completed,
+        frequency: round2(Math.max(0, n(input.frequency))),
+        creative_age_days: Math.max(0, Math.floor(n(input.creative_age_days))),
+      },
+      sample_quality: { status: aiSampleQuality(input), notes: [] },
+      constraints: ["no_activate", "no_publish", "no_budget_write", "human_approval_required"],
+      allowed_actions: ["recommend", "draft"],
+      forbidden_actions: ["activate", "publish", "increase_budget", "send_customer_data"],
+    };
+  }
+
+  function validateAiRecommendation(output = {}) {
+    const errors = [];
+    if (!output || typeof output !== "object" || Array.isArray(output))
+      return { valid: false, errors: ["La recomendación debe ser un objeto."] };
+    if (!aiActions.includes(output.action)) errors.push("Acción no permitida.");
+    if (!String(output.recommendation_id || "").trim()) errors.push("Falta recommendation_id.");
+    if (!String(output.summary || "").trim() || String(output.summary).length > 320) errors.push("Resumen ausente o demasiado largo.");
+    if (!Array.isArray(output.rationale) || !output.rationale.length || output.rationale.some((x) => !String(x).trim())) errors.push("La justificación debe contener evidencia explicada.");
+    if (!Array.isArray(output.evidence) || !output.evidence.length) errors.push("La recomendación no contiene evidencia.");
+    else if (output.evidence.some((x) => !String(x?.metric || "").trim() || !Number.isFinite(Number(x?.value)) || !String(x?.window || "").trim() || !String(x?.source || "").trim())) errors.push("La evidencia no cumple el contrato.");
+    if (!Number.isFinite(Number(output.confidence)) || Number(output.confidence) < 0 || Number(output.confidence) > 1) errors.push("La confianza debe estar entre 0 y 1.");
+    if (output.requires_human_approval !== true) errors.push("Toda recomendación exige aprobación humana.");
+    if (Number(output.schema_version) !== 1) errors.push("schema_version no compatible.");
+    if (!Number.isFinite(Date.parse(String(output.expires_at || "")))) errors.push("Caducidad inválida.");
+    if (!Array.isArray(output.risks)) errors.push("Falta la lista de riesgos.");
+    const effect = output.expected_effect;
+    if (!effect || typeof effect !== "object") errors.push("Falta expected_effect.");
+    else {
+      const values = [effect.low, effect.mid, effect.high].filter((x) => x !== null && x !== undefined);
+      if (values.some((x) => !Number.isFinite(Number(x)))) errors.push("El efecto esperado contiene valores inválidos.");
+      if (values.length === 3 && !(Number(effect.low) <= Number(effect.mid) && Number(effect.mid) <= Number(effect.high))) errors.push("El intervalo esperado está desordenado.");
+    }
+    return { valid: errors.length === 0, errors };
+  }
+
+  function planStrategicRecommendation(input = {}) {
+    const context = buildAiContext(input);
+    const now = Number.isFinite(Date.parse(String(input.now || ""))) ? new Date(input.now) : new Date();
+    const expires = new Date(now.getTime() + 7 * 86400000).toISOString();
+    const completed = context.metrics.completed_sessions;
+    const spend = context.metrics.spend;
+    const available = context.capacity.available_slots;
+    const quality = context.sample_quality.status;
+    const budget = calculateBudget({
+      price: context.economics.price,
+      variable_cost: context.economics.variable_cost,
+      desired_profit_after_ads: input.desired_profit_after_ads,
+      target_revenue_roas: context.economics.target_revenue_roas,
+      available_slots: available,
+      campaign_days: context.campaign.window_days,
+      cash_budget_cap: context.campaign.budget_total,
+      historical_cost_per_event: completed > 0 ? spend / completed : 0,
+    });
+    const costPerCompleted = completed > 0 ? round2(spend / completed) : null;
+    const evidence = [
+      { metric: "completed_sessions", value: completed, window: `${context.campaign.window_days} días`, source: "saleads_attribution" },
+      { metric: "available_slots", value: available, window: "ventana de campaña", source: "saleads_capacity" },
+    ];
+    if (spend > 0) evidence.push({ metric: "spend_dop", value: spend, window: `${context.campaign.window_days} días`, source: "operator_verified_input" });
+    if (budget.allowable_cac > 0) evidence.push({ metric: "allowable_cac_dop", value: budget.allowable_cac, window: "economía vigente", source: "campaign_economics" });
+    if (costPerCompleted !== null) evidence.push({ metric: "cost_per_completed_session_dop", value: costPerCompleted, window: `${context.campaign.window_days} días`, source: "derived_from_verified_aggregates" });
+
+    let action = "keep";
+    let summary = "Mantener el plan y seguir midiendo sesiones completadas.";
+    const rationale = [];
+    const risks = [];
+    if (input.evidence_verified !== true || spend <= 0 || completed <= 0) {
+      action = "insufficient_data";
+      summary = "No hay evidencia suficiente para recomendar un cambio operativo.";
+      rationale.push("Se necesita gasto verificado y al menos una sesión completada atribuida.");
+      risks.push("Tomar una decisión ahora confundiría ausencia de datos con bajo rendimiento.");
+    } else if (available <= 0) {
+      action = "pause_proposal";
+      summary = "Proponer pausa: no quedan espacios vendibles en la ventana analizada.";
+      rationale.push("La capacidad disponible es cero y seguir comprando demanda puede degradar la atención.");
+      risks.push("La pausa requiere revisión humana y verificación del calendario.");
+    } else if (budget.allowable_cac > 0 && costPerCompleted > budget.allowable_cac * 1.15) {
+      action = "pause_proposal";
+      summary = "Proponer pausa y revisión de oferta: el costo observado supera el CAC tolerable.";
+      rationale.push(`Costo por sesión ${round2(costPerCompleted)} frente a CAC tolerable ${budget.allowable_cac}.`);
+      risks.push("La muestra puede ser inestable; revisar atribución antes de pausar.");
+    } else if (context.metrics.frequency >= 3.5 || context.metrics.creative_age_days >= 21) {
+      action = "new_creative";
+      summary = "Preparar una variante creativa nueva sin cambiar presupuesto ni audiencia.";
+      rationale.push(context.metrics.frequency >= 3.5 ? "La frecuencia declarada indica posible fatiga." : "El creativo supera 21 días en circulación.");
+      risks.push("Cambiar una sola variable para conservar un experimento interpretable.");
+    } else if (quality === "usable" && budget.allowable_cac > 0 && costPerCompleted <= budget.allowable_cac * 0.75 && available >= 2) {
+      action = "budget_change_proposal";
+      summary = "Existe señal para evaluar un aumento limitado, nunca automático.";
+      rationale.push("El costo por sesión está por debajo del 75% del CAC tolerable y existe capacidad.");
+      risks.push("Una variación de presupuesto puede reiniciar aprendizaje y no garantiza el mismo costo.");
+    } else {
+      rationale.push("El costo observado no cruza los umbrales conservadores de pausa o aumento.");
+      if (quality !== "usable") risks.push("La muestra todavía es direccional; no declarar ganador.");
+    }
+    if (quality === "insufficient" && !risks.includes("La muestra todavía es direccional; no declarar ganador.")) risks.push("La muestra es insuficiente para estimar impacto con precisión.");
+
+    let expectedEffect = { low: null, mid: null, high: null, unit: "completed_sessions" };
+    if (action === "budget_change_proposal" && costPerCompleted > 0) {
+      const currentBudget = Math.max(spend, context.campaign.budget_total);
+      const proposedBudget = Math.min(currentBudget * 1.15, available * budget.allowable_cac);
+      const incremental = Math.max(0, proposedBudget - currentBudget) / costPerCompleted;
+      expectedEffect = { low: round2(incremental * 0.5), mid: round2(incremental), high: round2(incremental * 1.25), unit: "completed_sessions_directional" };
+    }
+    const recommendation = {
+      recommendation_id: `rec_${now.toISOString().replace(/[^0-9]/g, "").slice(0, 14)}_${slugKey(input.service || "general")}`,
+      action,
+      summary,
+      rationale,
+      evidence,
+      confidence: quality === "usable" ? 0.78 : quality === "directional" ? 0.48 : 0.18,
+      expected_effect: expectedEffect,
+      risks,
+      requires_human_approval: true,
+      expires_at: expires,
+      schema_version: 1,
+    };
+    return { recommendation, context, validation: validateAiRecommendation(recommendation) };
+  }
+
+  function planExperiment(input = {}) {
+    const minimumEvents = Math.max(5, Math.floor(n(input.minimum_events) || 20));
+    const eventCost = Math.max(0, n(input.expected_cost_per_event));
+    const dailyBudget = Math.max(0, n(input.daily_budget));
+    const days = Math.max(1, Math.floor(n(input.days) || 7));
+    const requiredBudget = round2(minimumEvents * eventCost * 2);
+    const availableBudget = round2(dailyBudget * days);
+    const variable = ["creative", "copy", "destination", "audience"].includes(input.variable) ? input.variable : "creative";
+    const feasible = eventCost > 0 && availableBudget >= requiredBudget;
+    return {
+      schema_version: 1,
+      variable,
+      arms: 2,
+      minimum_events_per_arm: minimumEvents,
+      expected_cost_per_event: round2(eventCost),
+      required_budget: requiredBudget,
+      available_budget: availableBudget,
+      feasible,
+      status: eventCost <= 0 ? "insufficient_data" : feasible ? "ready_to_draft" : "budget_or_scope_insufficient",
+      guidance: eventCost <= 0
+        ? "Registra un costo histórico verificable antes de estimar la prueba."
+        : feasible
+          ? "Mantén oferta, público y destino constantes; cambia solo la variable indicada."
+          : "Reduce el alcance o reúne más presupuesto; no dividas una muestra que quedará sin señal.",
+    };
+  }
+
   const campaignTransitions = Object.freeze({
     draft_review_required: ["qa_ready"],
     saved: ["qa_ready"],
@@ -413,6 +600,8 @@
     coverCrop, planCreativeVariants,
     consentState, summarizeAudience, validateCreativeAsset, capacitySummary, evaluateExperiment,
     funnelMetrics, campaignTransitions, canTransitionCampaign,
+    aiActions, aiSampleQuality, buildAiContext, validateAiRecommendation,
+    planStrategicRecommendation, planExperiment,
     operationCollections, operationDocId, mergeOperationRows, planOperationMigration,
     syncStates, syncStateLabel, describeSyncError, summarizeSync, auditEntry, slugKey,
   };
