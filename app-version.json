@@ -1,6 +1,6 @@
 {
-  "version": "2026-08-24-combo-library-v32",
+  "version": "2026-08-25-crm-history-v33",
   "channel": "crm",
-  "released_at": "2026-08-24T09:30:00Z",
-  "summary": "CRM con controles seguros y biblioteca de 39 combos oficiales por carpetas, imagen, precio e inclusiones dentro de cada chat."
+  "released_at": "2026-08-26T04:00:00Z",
+  "summary": "Historial CRM recuperado, carga al restaurar Firebase, actualización manual sin sondeos repetidos del archivo y aviso explícito del bloqueo de transporte."
 }

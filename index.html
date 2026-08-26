@@ -2037,6 +2037,7 @@ input[type="checkbox"],input[type="radio"]{accent-color:var(--ink)}
     <button class="fchip"     data-f="human">Humano <span class="fcount" id="cntHuman">0</span></button>
     <button class="fchip"     data-f="unread">No leídos <span class="fcount" id="cntUnread">0</span></button>
    </div>
+   <button class="cfg-btn" id="reloadConversations" type="button">Actualizar historial</button>
    <div class="convs" id="convs"></div>
   </div>
   <div class="chat">
@@ -2954,7 +2955,7 @@ input[type="checkbox"],input[type="radio"]{accent-color:var(--ink)}
 
 <!-- opus-recorder: graba OGG/Opus REAL via WASM. MediaRecorder no puede en Chrome (sale webm o mp4-opus, ambos rechazados por WhatsApp). -->
 <script>window.__CRMBUST__ = Date.now();</script>
-<script src="./crm-config.js?v=20260801v2"></script>
+<script src="./crm-config.js?v=20260826v33"></script>
 <script src="./firebase-config.js?v=20260822v1"></script>
 <script src="https://cdn.jsdelivr.net/npm/opus-recorder@8.0.5/dist/recorder.min.js"></script>
 
@@ -2989,7 +2990,7 @@ const $ = (id) => document.getElementById(id);
 // Sello de versión: si el panel "no hace nada", casi siempre es caché vieja del
 // navegador. Este sello permite confirmar de un vistazo qué versión está corriendo
 // (compárala con la fecha del último deploy). Actualízalo en cada publicación.
-const BUILD = '2026-08-24-combo-library-v32';
+const BUILD = '2026-08-25-crm-history-v33';
 // PDFs de venta por categoría (generados de las tarjetas aprobadas; hosteados en el catálogo).
 // Se regeneran con dcarela-catalogo/scripts/build_combo_pdfs.py + push del catálogo.
 const COMBO_PDF_BASE = 'https://dcarelacompufoto.com/pdf/';
@@ -3057,9 +3058,11 @@ function updatePanelSyncStatus() {
   if (!status) return;
   const label = status.querySelector('span:last-child');
   if (AUTH_PROVIDER === 'firebase' && !CRM_DATA_SESSION_AVAILABLE) {
-    status.classList.toggle('warn', !FIREBASE_CRM_AVAILABLE);
+    status.classList.toggle('warn', !FIREBASE_CRM_AVAILABLE || CRM_CONFIG.historyRecoveryOnly === true);
     label.textContent = FIREBASE_CRM_AVAILABLE
-      ? 'CRM Firebase activo · controles, campañas revisables y contexto disponibles'
+      ? (CRM_CONFIG.historyRecoveryOnly === true
+        ? 'Historial recuperado en Firebase · envío bloqueado por cuota del proveedor'
+        : 'Historial Firebase disponible · comprueba el canal antes de enviar')
       : 'Acceso Firebase activo · comprobando historial CRM';
     return;
   }
@@ -3936,7 +3939,7 @@ async function togglePhotoBot() {
   if (!requirePermission('manage_settings')) return;
   const enabled = typeof bridgeControlState?.bot_enabled === 'boolean'
     ? bridgeControlState.bot_enabled === true : communicationControlsState?.bot_enabled === true;
-  if (!window.confirm(`¿Quieres ${enabled ? 'desactivar' : 'activar'} las respuestas automáticas del WhatsApp Fotos? El historial y el contexto entrante continuarán guardándose.`)) return;
+  if (!window.confirm(`¿Quieres ${enabled ? 'desactivar' : 'activar'} las respuestas automáticas del WhatsApp Fotos? Los chats nuevos seguirán en atención humana; activar el motor no reactiva chats en bloque. Las campañas son independientes del bot.`)) return;
   const buttons = [...document.querySelectorAll('button[data-photo-bot-toggle]')];
   buttons.forEach(button => {
     button.disabled = true;
@@ -3946,7 +3949,7 @@ async function togglePhotoBot() {
   if ($('photoBotGlobalState')) $('photoBotGlobalState').textContent = enabled ? 'APAGANDO...' : 'ENCENDIENDO...';
   let result = PANEL_FUNCTIONS_AVAILABLE === false
     ? { ok:false, error:'control del puente no disponible' }
-    : await callBridgeControl(enabled ? 'disable_photo_bot' : 'enable_photo_bot');
+    : await callBridgeControl(enabled ? 'disable_photo_bot' : 'enable_photo_bot', { confirmation:enabled ? '' : 'ACTIVAR BOT FOTOS' });
   if (!result?.ok && firebaseAuth.currentUser) {
     try {
       const fallback = await saveFirebaseChannelBot(!enabled, 'photos');
@@ -5195,6 +5198,8 @@ async function boot() {
   const firebaseUser = await waitForFirebaseUser();
   if (firebaseUser) {
     AUTH_PROVIDER = 'firebase';
+    const { data } = await sb.auth.getSession();
+    CRM_DATA_SESSION_AVAILABLE = !!data.session;
     await showApp({ user:{ id:firebaseUser.uid, email:firebaseUser.email } });
     return;
   }
@@ -5261,10 +5266,15 @@ async function showApp(session) {
   if (CRM_DATA_SESSION_AVAILABLE || AUTH_PROVIDER === 'supabase') {
     loadQuickReplies();
     if (!LOCK_NUMFILTER) loadApprovedTemplates();
-    loadConvs();
     if (!LOCK_NUMFILTER) checkWaHealth();
-    listTimer = setInterval(loadConvs, 4000);
   }
+  // Firebase is a data session too. Restoring login must always populate the inbox.
+  await loadConvs();
+  clearInterval(listTimer);
+  listTimer = setInterval(() => {
+    if (document.hidden || (CRM_CONFIG.historyRecoveryOnly === true && !CRM_DATA_SESSION_AVAILABLE)) return;
+    void loadConvs();
+  }, 30000);
 }
 
 // ---- usuarios y roles del panel ----
@@ -5369,6 +5379,12 @@ function waHealthHint(code) {
 async function checkWaHealth() {
   const el = document.getElementById('waHealthBanner');
   if (!el) return;
+  if (CRM_CONFIG.historyRecoveryOnly === true && !CRM_DATA_SESSION_AVAILABLE) {
+    el.textContent = 'Historial recuperado hasta el 17 de agosto. El proveedor de WhatsApp sigue bloqueado por cuota: no se confirma recepción reciente ni envío de campañas. Puedes consultar chats y preparar borradores.';
+    el.style.display = '';
+    return;
+  }
+  if (!CRM_DATA_SESSION_AVAILABLE && AUTH_PROVIDER !== 'supabase') return;
   if (inboxNumFilter === 'qr') { el.style.display = 'none'; return; }
   try {
     const { data } = await sb.from('settings').select('key,value').in('key', ['wa_delivery_health']);
@@ -5390,6 +5406,7 @@ let _numFilterLast = 0;
 async function maybeShowNumFilter() {
   const el = $('numFilter'); if (!el) return;
   if (LOCK_NUMFILTER) { el.style.display = 'none'; return; } // panel fijo a un número (réplica fotos)
+  if (!CRM_DATA_SESSION_AVAILABLE && AUTH_PROVIDER !== 'supabase') return;
   if (el.value !== inboxNumFilter) el.value = inboxNumFilter;
   if (el.style.display !== 'none') return;        // ya visible
   if (inboxNumFilter) { el.style.display = ''; return; } // el usuario ya eligió un filtro
@@ -5411,6 +5428,7 @@ if ($('numFilter')) $('numFilter').onchange = function () {
 
 // ---- conversaciones ----
 let conversationsLoadError = '';
+let conversationsLoading = false;
 const conversationNameHints = new Map();
 let conversationNameHintsLoadedAt = 0;
 let conversationNameHintsSignature = '';
@@ -5500,7 +5518,13 @@ async function fetchConversationRows() {
     const { data, error } = await query;
     if (error) {
       if (firebaseAuth.currentUser) {
-        try { return { data:await fetchFirebaseConversationRows(firebaseChannelName()), error:null }; }
+        try {
+          const recovered = await fetchFirebaseConversationRows(firebaseChannelName());
+          if (!recovered.length) return { data:null, error };
+          CRM_DATA_SESSION_AVAILABLE = false;
+          updatePanelSyncStatus();
+          return { data:recovered, error:null };
+        }
         catch (firebaseError) { return { data:null, error:firebaseError }; }
       }
       return { data:null, error };
@@ -5512,6 +5536,19 @@ async function fetchConversationRows() {
 }
 
 async function loadConvs() {
+  if (conversationsLoading) return;
+  conversationsLoading = true;
+  try {
+    await refreshConvs();
+  } catch (error) {
+    conversationsLoadError = String(error?.message || error);
+    renderConvs();
+  } finally {
+    conversationsLoading = false;
+    void checkWaHealth();
+  }
+}
+async function refreshConvs() {
   if (Date.now() - _waHealthLast > 30000) { _waHealthLast = Date.now(); checkWaHealth(); }
   const { data, error } = await fetchConversationRows();
   conversationsLoadError = error ? String(error.message || error) : '';
@@ -5577,9 +5614,16 @@ function renderConvs() {
   );
   if (!list.length) {
     box.innerHTML = conversationsLoadError
-      ? `<div class="empty"><b>No se pudo leer el historial.</b><br>${esc(conversationsLoadError)}<br><button class="cfg-btn" style="margin-top:12px" onclick="loadConvs()">Reintentar</button></div>`
+      ? `<div class="empty"><b>No se pudo leer el historial.</b><br>${esc(conversationsLoadError)}<br><button class="cfg-btn" id="retryConversations" style="margin-top:12px">Reintentar</button></div>`
       : '<div class="empty">Sin conversaciones para este filtro.</div>';
+    if ($('retryConversations')) $('retryConversations').onclick = () => void loadConvs();
     return;
+  }
+  if (conversationsLoadError) {
+    const notice = document.createElement('div');
+    notice.className = 'empty';
+    notice.textContent = 'No se pudo actualizar. Se conserva el último historial cargado: ' + conversationsLoadError;
+    box.appendChild(notice);
   }
   for (const c of list) {
     const name = conversationDisplayName(c);
@@ -5605,6 +5649,12 @@ function renderConvs() {
   }
 }
 $('q').addEventListener('input', renderConvs);
+$('reloadConversations').onclick = async () => {
+  const button = $('reloadConversations');
+  button.disabled = true;
+  try { await loadConvs(); if (sel) await loadMsgs(true); }
+  finally { button.disabled = false; }
+};
 
 // ---- chat ----
 async function openConv(c) {
@@ -5628,9 +5678,21 @@ async function openConv(c) {
   renderDetail(c);
   showDetail(window.innerWidth > 980);
   await loadMsgs(true);
-  if (c.unread > 0) { await sb.from('conversations').update({ unread: 0 }).eq('id', c.id); c.unread = 0; }
+  if (c.unread > 0 && hasPermission('operate')) {
+    try {
+      if (c._backend === 'firebase') await firebaseUpdateConversation(c, { unread:0 });
+      else {
+        const { error } = await sb.from('conversations').update({ unread:0 }).eq('id', c.id);
+        if (error) throw error;
+        c.unread = 0;
+      }
+    } catch (error) { toast('Historial disponible', 'No se pudo guardar la marca de leído.'); }
+  }
   clearInterval(msgTimer);
-  msgTimer = setInterval(loadMsgs, 3500);
+  // A recovered archive is not a live transport; avoid exhausting Firestore with full re-reads.
+  if (!(c._backend === 'firebase' && CRM_CONFIG.historyRecoveryOnly === true)) {
+    msgTimer = setInterval(() => { if (!document.hidden) void loadMsgs(); }, 10000);
+  }
 }
 $('back').onclick = () => {
   document.body.classList.remove('chatopen'); sel = null;
@@ -5758,9 +5820,13 @@ async function fetchConversationMessages(conversationId, fresh) {
 
 async function loadMsgs(fresh) {
   if (!sel) return;
+  const conversationId = sel.id;
   const box = $('msgs');
   if (fresh) { box.innerHTML = ''; renderedSig.clear(); msgById.clear(); lastDay = ''; }
-  const { data, error } = await fetchConversationMessages(sel.id, !!fresh);
+  let data, error;
+  try { ({ data, error } = await fetchConversationMessages(conversationId, !!fresh)); }
+  catch (failure) { error = failure; }
+  if (sel?.id !== conversationId) return; // A slow request must not paint the next chat.
   if (error || !data) {
     if (fresh) box.innerHTML = `<div class="empty"><b>No se pudo cargar el historial.</b><br>${esc(error?.message || 'Error desconocido')}</div>`;
     return;
@@ -5838,7 +5904,7 @@ function updateModeBtn() {
     const engineEnabled = stateKnown && bridgeControlState.bot_enabled === true;
     const chatEnabled = sel?.mode === 'bot' && sel?.bot_paused !== true && sel?.human_handoff_required !== true;
     b.className = `modebtn ${chatEnabled ? 'bot' : 'human'}`;
-    b.textContent = chatEnabled ? 'Bot en este chat · ACTIVO' : 'Humano en este chat';
+    b.textContent = engineEnabled && chatEnabled ? 'Bot en este chat · ACTIVO' : 'Humano en este chat';
     b.title = !stateKnown
       ? 'Comprobando el motor general del Bot Fotos.'
       : (!engineEnabled
@@ -6063,20 +6129,13 @@ async function callFn(body) {
 async function fetchFirebaseConversationMessages(conversation, fresh) {
   const rows = [];
   const businessId = conversation.business_id || firebasePrimaryBusinessId();
-  try {
-    const snap = await getDocs(query(
-      collection(firebaseDb, 'crm_messages'),
-      where('business_id', '==', businessId),
-      where('conversation_id', '==', conversation.id)
-    ));
-    snap.forEach(item => rows.push(firestoreRow(item)));
-  } catch (indexedError) {
-    const snap = await getDocs(query(collection(firebaseDb, 'crm_messages'), where('business_id', '==', businessId)));
-    snap.forEach(item => {
-      const row = firestoreRow(item);
-      if (String(row.conversation_id) === String(conversation.id)) rows.push(row);
-    });
-  }
+  // Never retry quota/permission errors by reading ALL messages in the business.
+  const snap = await getDocs(query(
+    collection(firebaseDb, 'crm_messages'),
+    where('business_id', '==', businessId),
+    where('conversation_id', '==', conversation.id)
+  ));
+  snap.forEach(item => rows.push(firestoreRow(item)));
   const normalized = rows.map(row => ({
     ...row,
     body:row.body ?? row.text ?? row.message ?? '',
