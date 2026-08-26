@@ -1,5 +1,5 @@
 {
-  "version": "2026-08-25-crm-history-v33",
+  "version": "2026-08-25-crm-history-v33.1",
   "channel": "crm",
   "released_at": "2026-08-26T04:00:00Z",
   "summary": "Historial CRM recuperado, carga al restaurar Firebase, actualización manual sin sondeos repetidos del archivo y aviso explícito del bloqueo de transporte."

@@ -2990,7 +2990,7 @@ const $ = (id) => document.getElementById(id);
 // Sello de versión: si el panel "no hace nada", casi siempre es caché vieja del
 // navegador. Este sello permite confirmar de un vistazo qué versión está corriendo
 // (compárala con la fecha del último deploy). Actualízalo en cada publicación.
-const BUILD = '2026-08-25-crm-history-v33';
+const BUILD = '2026-08-25-crm-history-v33.1';
 // PDFs de venta por categoría (generados de las tarjetas aprobadas; hosteados en el catálogo).
 // Se regeneran con dcarela-catalogo/scripts/build_combo_pdfs.py + push del catálogo.
 const COMBO_PDF_BASE = 'https://dcarelacompufoto.com/pdf/';
@@ -5891,6 +5891,14 @@ function renderWindowWarn() {
 
 function updateModeBtn() {
   const b = $('modeBtn');
+  if (sel?._backend === 'firebase' && CRM_CONFIG.historyRecoveryOnly === true && !CRM_DATA_SESSION_AVAILABLE) {
+    b.className = 'modebtn human';
+    b.textContent = 'Automatización sin conexión';
+    b.title = 'Historial recuperado: no hay confirmación de un motor de WhatsApp operativo.';
+    b.disabled = true;
+    if ($('hint')) $('hint').textContent = 'Puedes consultar el historial y preparar borradores. El canal de envío sigue bloqueado por cuota; no hay respuestas automáticas confirmadas.';
+    return;
+  }
   if (sel?.proactive_blocked_at) {
     b.className = 'modebtn human';
     b.textContent = 'Automatización desactivada';
