@@ -12,6 +12,8 @@ window.CRM_CONFIG = window.DCARELA_CRM_CONFIG = {
   supabaseAnonKey: "sb_publishable_XgucPR_5tPklv6sdUFAhDQ_6NbSf8fQ",
 
   notificationTag: "dcarela-crm",
+  firebaseFunctionsBase: "https://us-central1-erikccarela.cloudfunctions.net",
+  firebaseTransportEnabled: true,
   // Remove only after a verified live inbound/outbound transport is restored.
   historyRecoveryOnly: true,
   appVersionUrl: "./app-version.json",

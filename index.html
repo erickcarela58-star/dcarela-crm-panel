@@ -2955,7 +2955,7 @@ input[type="checkbox"],input[type="radio"]{accent-color:var(--ink)}
 
 <!-- opus-recorder: graba OGG/Opus REAL via WASM. MediaRecorder no puede en Chrome (sale webm o mp4-opus, ambos rechazados por WhatsApp). -->
 <script>window.__CRMBUST__ = Date.now();</script>
-<script src="./crm-config.js?v=20260826v33"></script>
+<script src="./crm-config.js?v=20260826v34"></script>
 <script src="./firebase-config.js?v=20260822v1"></script>
 <script src="https://cdn.jsdelivr.net/npm/opus-recorder@8.0.5/dist/recorder.min.js"></script>
 
@@ -2968,6 +2968,7 @@ import { getFirestore, doc, getDoc, setDoc, updateDoc, collection, getDocs, quer
 const CRM_CONFIG = window.CRM_CONFIG || window.DCARELA_CRM_CONFIG || {};
 const SUPABASE_URL = CRM_CONFIG.supabaseUrl || '';
 const SUPABASE_KEY = CRM_CONFIG.supabaseAnonKey || '';
+const CRM_FUNCTIONS_BASE = String(CRM_CONFIG.firebaseFunctionsBase || '').replace(/\/$/, '');
 const CONFIG_ERRORS = [];
 const FIREBASE_CONFIG = window.__DCARELA_FIREBASE_CONFIG || {};
 if (!FIREBASE_CONFIG.apiKey || !FIREBASE_CONFIG.projectId) CONFIG_ERRORS.push('Falta la configuración pública de Firebase.');
@@ -2978,6 +2979,7 @@ const firebaseDb = getFirestore(firebaseApp);
 let AUTH_PROVIDER = 'none';
 let CRM_DATA_SESSION_AVAILABLE = false;
 let FIREBASE_CRM_AVAILABLE = false;
+let CRM_TRANSPORT_STATE = { ready:false, state:'checking', provider:'firebase-meta', last_webhook_at:null, last_send_at:null };
 
 async function panelAuthToken() {
   const { data:{ session } } = await sb.auth.getSession();
@@ -2990,7 +2992,7 @@ const $ = (id) => document.getElementById(id);
 // Sello de versión: si el panel "no hace nada", casi siempre es caché vieja del
 // navegador. Este sello permite confirmar de un vistazo qué versión está corriendo
 // (compárala con la fecha del último deploy). Actualízalo en cada publicación.
-const BUILD = '2026-08-25-crm-history-v33.1';
+const BUILD = '2026-08-26-crm-firebase-transport-v34';
 // PDFs de venta por categoría (generados de las tarjetas aprobadas; hosteados en el catálogo).
 // Se regeneran con dcarela-catalogo/scripts/build_combo_pdfs.py + push del catálogo.
 const COMBO_PDF_BASE = 'https://dcarelacompufoto.com/pdf/';
@@ -3058,12 +3060,17 @@ function updatePanelSyncStatus() {
   if (!status) return;
   const label = status.querySelector('span:last-child');
   if (AUTH_PROVIDER === 'firebase' && !CRM_DATA_SESSION_AVAILABLE) {
-    status.classList.toggle('warn', !FIREBASE_CRM_AVAILABLE || CRM_CONFIG.historyRecoveryOnly === true);
-    label.textContent = FIREBASE_CRM_AVAILABLE
-      ? (CRM_CONFIG.historyRecoveryOnly === true
-        ? 'Historial recuperado en Firebase · envío bloqueado por cuota del proveedor'
-        : 'Historial Firebase disponible · comprueba el canal antes de enviar')
-      : 'Acceso Firebase activo · comprobando historial CRM';
+    const transportReady = CRM_TRANSPORT_STATE.ready === true;
+    status.classList.toggle('warn', !FIREBASE_CRM_AVAILABLE || !transportReady);
+    label.textContent = !FIREBASE_CRM_AVAILABLE
+      ? 'Acceso Firebase activo · comprobando historial CRM'
+      : transportReady
+        ? 'Firebase y WhatsApp conectados · historial y envío activos'
+        : CRM_TRANSPORT_STATE.state === 'setup_required'
+          ? 'Historial en Firebase · transporte desplegado, falta reconectar Meta'
+          : CRM_TRANSPORT_STATE.state === 'checking'
+            ? 'Historial en Firebase · comprobando transporte de WhatsApp'
+            : 'Historial en Firebase · transporte de WhatsApp no disponible';
     return;
   }
   if (BRIDGE_SETUP_ENABLED) {
@@ -3174,6 +3181,35 @@ function applyPanelAccess() {
   if ($('reply')) { $('reply').readOnly = readonly; $('reply').placeholder = readonly ? 'Cuenta en modo solo lectura' : 'Escribe tu respuesta...'; }
   updatePanelSyncStatus();
   void refreshCommunicationControls(false);
+}
+
+function transportRecoveryActive() {
+  return CRM_CONFIG.historyRecoveryOnly === true && CRM_TRANSPORT_STATE.ready !== true;
+}
+
+async function loadFirebaseTransportStatus() {
+  if (!CRM_CONFIG.firebaseTransportEnabled || !CRM_FUNCTIONS_BASE || !firebaseAuth.currentUser) {
+    CRM_TRANSPORT_STATE = { ready:false, state:'disabled', provider:'firebase-meta' };
+    return CRM_TRANSPORT_STATE;
+  }
+  try {
+    const token = await firebaseAuth.currentUser.getIdToken();
+    const response = await fetch(CRM_FUNCTIONS_BASE + '/crmApi', {
+      method:'POST',
+      headers:{ 'Content-Type':'application/json', 'Authorization':'Bearer ' + token },
+      body:JSON.stringify({ action:'transportStatus' }),
+    });
+    const result = await response.json().catch(() => ({}));
+    CRM_TRANSPORT_STATE = response.ok && result.ok !== false
+      ? { ...result, ready:result.ready === true }
+      : { ready:false, state:'unavailable', provider:'firebase-meta', statusCode:response.status };
+    PANEL_FUNCTIONS_AVAILABLE = response.ok;
+  } catch (error) {
+    CRM_TRANSPORT_STATE = { ready:false, state:'unavailable', provider:'firebase-meta' };
+    PANEL_FUNCTIONS_AVAILABLE = false;
+  }
+  updatePanelSyncStatus();
+  return CRM_TRANSPORT_STATE;
 }
 // filtro de número del inbox: '' = 1er número (oficial) · 'qr' = 2do número (WhatsApp Web) · 'all' = todos
 // La réplica "sesiones fotográficas" arranca en 'qr' via config (defaultNumFilter). La clave de
@@ -5256,6 +5292,7 @@ async function showApp(session) {
   $('who').textContent = `${displayName} · ${ROLE_LABELS[PANEL_ACCESS.role] || PANEL_ACCESS.role}`;
   setSidebarUser(session.user.email);
   applyPanelAccess();
+  await loadFirebaseTransportStatus();
   updatePanelSyncStatus();
   if (BRIDGE_SETUP_ENABLED) {
     ensureBridgePolling();
@@ -5272,7 +5309,7 @@ async function showApp(session) {
   await loadConvs();
   clearInterval(listTimer);
   listTimer = setInterval(() => {
-    if (document.hidden || (CRM_CONFIG.historyRecoveryOnly === true && !CRM_DATA_SESSION_AVAILABLE)) return;
+    if (document.hidden || (transportRecoveryActive() && !CRM_DATA_SESSION_AVAILABLE)) return;
     void loadConvs();
   }, 30000);
 }
@@ -5379,8 +5416,10 @@ function waHealthHint(code) {
 async function checkWaHealth() {
   const el = document.getElementById('waHealthBanner');
   if (!el) return;
-  if (CRM_CONFIG.historyRecoveryOnly === true && !CRM_DATA_SESSION_AVAILABLE) {
-    el.textContent = 'Historial recuperado hasta el 17 de agosto. El proveedor de WhatsApp sigue bloqueado por cuota: no se confirma recepción reciente ni envío de campañas. Puedes consultar chats y preparar borradores.';
+  if (transportRecoveryActive() && !CRM_DATA_SESSION_AVAILABLE) {
+    el.textContent = CRM_TRANSPORT_STATE.state === 'setup_required'
+      ? 'El historial ya está en Firebase y el transporte nuevo está desplegado. Falta reconectar la cuenta de Meta antes de confirmar recepción o envíos. Puedes consultar chats y preparar borradores.'
+      : 'El historial está protegido en Firebase. El transporte de WhatsApp se está verificando; todavía no se confirman recepción reciente ni envíos.';
     el.style.display = '';
     return;
   }
@@ -5690,7 +5729,7 @@ async function openConv(c) {
   }
   clearInterval(msgTimer);
   // A recovered archive is not a live transport; avoid exhausting Firestore with full re-reads.
-  if (!(c._backend === 'firebase' && CRM_CONFIG.historyRecoveryOnly === true)) {
+  if (!(c._backend === 'firebase' && transportRecoveryActive())) {
     msgTimer = setInterval(() => { if (!document.hidden) void loadMsgs(); }, 10000);
   }
 }
@@ -5891,12 +5930,12 @@ function renderWindowWarn() {
 
 function updateModeBtn() {
   const b = $('modeBtn');
-  if (sel?._backend === 'firebase' && CRM_CONFIG.historyRecoveryOnly === true && !CRM_DATA_SESSION_AVAILABLE) {
+  if (sel?._backend === 'firebase' && transportRecoveryActive() && !CRM_DATA_SESSION_AVAILABLE) {
     b.className = 'modebtn human';
-    b.textContent = 'Automatización sin conexión';
-    b.title = 'Historial recuperado: no hay confirmación de un motor de WhatsApp operativo.';
+    b.textContent = CRM_TRANSPORT_STATE.state === 'setup_required' ? 'Meta pendiente de conexión' : 'Automatización sin conexión';
+    b.title = 'El historial está en Firebase, pero todavía no hay un transporte de WhatsApp confirmado.';
     b.disabled = true;
-    if ($('hint')) $('hint').textContent = 'Puedes consultar el historial y preparar borradores. El canal de envío sigue bloqueado por cuota; no hay respuestas automáticas confirmadas.';
+    if ($('hint')) $('hint').textContent = 'Puedes consultar el historial y preparar borradores. Falta completar la conexión segura con Meta; no hay respuestas automáticas confirmadas.';
     return;
   }
   if (sel?.proactive_blocked_at) {
@@ -6109,15 +6148,17 @@ async function callFn(body) {
   if (!hasPermission('operate')) return { ok:false, error: 'permiso insuficiente' };
   const token = await panelAuthToken();
   if (!token) return { ok:false, error: 'sesión vencida' };
+  if (!CRM_CONFIG.firebaseTransportEnabled || !CRM_FUNCTIONS_BASE) return { ok:false, error:'transporte Firebase no configurado' };
   try {
-    const r = await fetch(SUPABASE_URL + '/functions/v1/panel-send', {
+    const endpoint = CRM_FUNCTIONS_BASE + '/crmApi';
+    const r = await fetch(endpoint, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
       body: JSON.stringify(body),
     });
     const result = await r.json().catch(() => ({}));
     if (!r.ok) {
-      PANEL_FUNCTIONS_AVAILABLE = false;
+      PANEL_FUNCTIONS_AVAILABLE = r.status !== 404 && r.status !== 503;
       updatePanelSyncStatus();
     }
     return {
@@ -6127,7 +6168,7 @@ async function callFn(body) {
       error:result.error || (r.ok ? null : `servidor no disponible (HTTP ${r.status})`),
     };
   } catch (e) {
-    console.error('panel-send:', e);
+    console.error('crm transport:', e);
     PANEL_FUNCTIONS_AVAILABLE = false;
     updatePanelSyncStatus();
     return { ok:false, error: 'conexión con el servidor' };

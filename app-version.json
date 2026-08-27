@@ -1,6 +1,6 @@
 {
-  "version": "2026-08-25-crm-history-v33.1",
+  "version": "2026-08-26-crm-firebase-transport-v34",
   "channel": "crm",
-  "released_at": "2026-08-26T04:00:00Z",
-  "summary": "Historial CRM recuperado, carga al restaurar Firebase, actualización manual sin sondeos repetidos del archivo y aviso explícito del bloqueo de transporte."
+  "released_at": "2026-08-26T17:00:00Z",
+  "summary": "Transporte Firebase con estado real, envío oficial protegido, webhook firmado y salida del gateway Supabase."
 }
