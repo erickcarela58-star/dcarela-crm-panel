@@ -812,6 +812,25 @@ body.role-viewer #agnSave,body.role-viewer .ag-row button{pointer-events:none!im
 .cv-stage[data-s=cliente]{background:rgba(58,210,159,.35);color:#0a0c12}
 .cv-stage[data-s=perdido]{background:rgba(255,107,107,.18);color:#ff8e8e}
 .cv-stage[data-s=desinteresado]{background:rgba(163,163,163,.18);color:#bdbdbd}
+/* --- Grupos plegables del panel de detalles (2026-08-28) --- */
+.dgroup{border:1px solid var(--line);border-radius:10px;margin:8px 0;background:rgba(255,255,255,.02)}
+.dgroup>summary{cursor:pointer;list-style:none;padding:9px 11px;font-size:11px;font-weight:800;
+  letter-spacing:.06em;text-transform:uppercase;color:var(--mut);display:flex;align-items:center;gap:8px}
+.dgroup>summary::-webkit-details-marker{display:none}
+.dgroup>summary::before{content:"\25B8";font-size:10px;transition:transform .15s}
+.dgroup[open]>summary::before{transform:rotate(90deg)}
+.dgroup>summary:hover{color:var(--txt)}
+.dgroup>*:not(summary){padding-left:11px;padding-right:11px}
+.dgroup>*:last-child{padding-bottom:11px}
+.dcount{margin-left:auto;font-weight:600;letter-spacing:0;text-transform:none;font-size:10.5px;opacity:.7}
+.dchip{margin-left:auto;font-weight:700;letter-spacing:0;text-transform:none;font-size:10px;
+  background:rgba(127,127,127,.16);color:var(--mut);padding:2px 7px;border-radius:20px}
+.dchip.alerta{background:rgba(245,158,11,.16);color:#f0b45e}
+.dhint{font-size:10.5px;color:var(--mut);margin-top:7px;line-height:1.45}
+.dhr{height:1px;background:var(--line);margin:11px 0}
+.qa-ai{background:rgba(108,140,255,.16)!important;color:#a9c0ff!important;font-weight:800}
+.dgroup .df input,.dgroup .df select,.dgroup .df textarea{max-width:100%;box-sizing:border-box}
+.dgroup .qa-grid{margin-top:2px}
 .conv.urgente{box-shadow:inset 2px 0 0 #ff4444}
 .cv-flag{font-size:9px;color:var(--warn);font-weight:700;margin-left:5px}
 
@@ -2964,8 +2983,8 @@ input[type="checkbox"],input[type="radio"]{accent-color:var(--ink)}
 
 <!-- opus-recorder: graba OGG/Opus REAL via WASM. MediaRecorder no puede en Chrome (sale webm o mp4-opus, ambos rechazados por WhatsApp). -->
 <script>window.__CRMBUST__ = Date.now();</script>
-<script src="./crm-config.js?v=20260828v43"></script>
-<script src="./firebase-config.js?v=20260828v43"></script>
+<script src="./crm-config.js?v=20260828v44"></script>
+<script src="./firebase-config.js?v=20260828v44"></script>
 <script src="https://cdn.jsdelivr.net/npm/opus-recorder@8.0.5/dist/recorder.min.js"></script>
 
 <script type="module">
@@ -3032,7 +3051,7 @@ const $ = (id) => document.getElementById(id);
 // Sello de versión: si el panel "no hace nada", casi siempre es caché vieja del
 // navegador. Este sello permite confirmar de un vistazo qué versión está corriendo
 // (compárala con la fecha del último deploy). Actualízalo en cada publicación.
-const BUILD = '2026-08-28-crm-desinteres-v43';
+const BUILD = '2026-08-28-crm-panel-lead-v44';
 // PDFs de venta por categoría (generados de las tarjetas aprobadas; hosteados en el catálogo).
 // Se regeneran con dcarela-catalogo/scripts/build_combo_pdfs.py + push del catálogo.
 const COMBO_PDF_BASE = 'https://dcarelacompufoto.com/pdf/';
@@ -6129,7 +6148,12 @@ $('closeBtn').onclick = async () => {
     sel.mode = 'bot';
   }
   await saveLeadFields(sel.id, {
-    lifecycle_stage: 'cerrado',
+    // 'cerrado' NO existe en STAGES: el desplegable no podia mostrarlo y el lead
+    // salia del embudo a un estado que la interfaz no sabe representar. Segun el
+    // dueño, cerrar una conversacion significa que el cliente YA compro el servicio,
+    // asi que la etapa correcta es 'cliente'. El estado del lead si es 'cerrado'.
+    lifecycle_stage: 'cliente',
+    lead_status: 'cerrado',
     human_handoff_required: false,
     bot_paused: false,
   });
@@ -7098,7 +7122,47 @@ function renderDetail(c) {
     <div class="df"><label>Categoría</label>
      <select data-f="interested_category">${optsCats}</select></div>
    </div>
-   <div class="df"><label>Prioridad</label>
+
+   <div class="dsection">Contacto</div>
+   <div class="lead-kv">
+    <div class="lead-k"><div class="lk">Telefono</div><div class="lv">+${esc(c.wa_phone || '')}</div></div>
+    <div class="lead-k"><div class="lk">Canal</div><div class="lv">${esc(c.channel || 'whatsapp')}</div></div>
+    <div class="lead-k"><div class="lk">Ultimo intent</div><div class="lv">${esc(c.last_intent || 'pendiente')}</div></div>
+    <div class="lead-k"><div class="lk">Archivos</div><div class="lv">${Array.isArray(c.attachments) ? c.attachments.length : '-'}</div></div>
+   </div>
+   <div class="df-grid2">
+    <div class="df"><label>Estado lead</label><select data-f="lead_status">${optsLead}</select></div>
+    <div class="df"><label>Reserva</label><select data-f="reservation_status">${optsRes}</select></div>
+   </div>
+
+   <div class="dsection">Acciones</div>
+   <div id="quickActions">
+    <div class="qa-grid">
+     <button data-act="aiReport" class="qa-ai">✦ Informe IA</button>
+     <button data-act="reserve">Crear reserva</button>
+     <button data-act="paid">Marcar pagado</button>
+    </div>
+    <div class="dhint">Bot ⇄ humano y Cerrar conversación están en la barra del chat, arriba.</div>
+    <details class="dgroup"><summary>Respuestas rápidas <span class="dcount">4</span></summary>
+     <div class="qa-grid">
+      <button data-act="receipt">Solicitar comprobante</button>
+      <button data-act="location">Enviar ubicacion</button>
+      <button data-act="portfolio">Enviar portafolio</button>
+      <button data-act="privateCombos" class="warn">Enviar combos privados</button>
+     </div>
+     <div class="dhint">Pegan el texto en el compositor para que lo revises. No envían solas.</div>
+    </details>
+   </div>
+
+   <details class="dgroup" open><summary>Resumen y próximo paso</summary>
+      <div class="df"><label>Resumen</label>
+    <textarea data-f="conversation_summary" rows="3" placeholder="Resumen comercial">${esc(c.conversation_summary || '')}</textarea></div>
+   <div class="df"><label>Proximo paso sugerido</label>
+    <textarea data-f="next_step_suggested" rows="2" placeholder="Ej. confirmar fecha tentativa">${esc(c.next_step_suggested || '')}</textarea></div>
+   </details>
+
+   <details class="dgroup"><summary>Datos del trato</summary>
+      <div class="df"><label>Prioridad</label>
     <div class="pchips">${pChips}</div></div>
    <div class="df"><label>Combo seleccionado</label>
     <input data-f="selected_combo_name" type="text" value="${esc(c.selected_combo_name || '')}" placeholder="ej. XV Premium"></div>
@@ -7118,24 +7182,9 @@ function renderDetail(c) {
     <input data-f="follow_up_at" type="datetime-local" value="${toLocalDT(c.follow_up_at)}"></div>
    <div class="df"><label>Asignado a (email)</label>
     <input data-f="assigned_to" type="email" value="${esc(c.assigned_to || '')}" placeholder="correo del agente"></div>
+   </details>
 
-   <div class="dsection">Estado comercial</div>
-   <div class="lead-kv">
-    <div class="lead-k"><div class="lk">Telefono</div><div class="lv">+${esc(c.wa_phone || '')}</div></div>
-    <div class="lead-k"><div class="lk">Canal</div><div class="lv">${esc(c.channel || 'whatsapp')}</div></div>
-    <div class="lead-k"><div class="lk">Ultimo intent</div><div class="lv">${esc(c.last_intent || 'pendiente')}</div></div>
-    <div class="lead-k"><div class="lk">Archivos</div><div class="lv">${Array.isArray(c.attachments) ? c.attachments.length : '-'}</div></div>
-   </div>
-   <div class="df-grid2">
-    <div class="df"><label>Estado lead</label><select data-f="lead_status">${optsLead}</select></div>
-    <div class="df"><label>Reserva</label><select data-f="reservation_status">${optsRes}</select></div>
-   </div>
-   <div class="df"><label>Resumen</label>
-    <textarea data-f="conversation_summary" rows="3" placeholder="Resumen comercial">${esc(c.conversation_summary || '')}</textarea></div>
-   <div class="df"><label>Proximo paso sugerido</label>
-    <textarea data-f="next_step_suggested" rows="2" placeholder="Ej. confirmar fecha tentativa">${esc(c.next_step_suggested || '')}</textarea></div>
-
-   <div class="dsection">Seleccion visual</div>
+   <details class="dgroup"><summary>Selección visual</summary>
    <div class="df-grid2">
     <div class="df"><label>Vestido</label><input data-f="selected_dress" type="text" value="${esc(c.selected_dress || '')}" placeholder="Vestido Rojo"></div>
     <div class="df"><label>Color vestido</label><input data-f="dress_color" type="text" value="${esc(c.dress_color || '')}" placeholder="rojo"></div>
@@ -7152,9 +7201,10 @@ function renderDetail(c) {
     <div class="df"><label>Maquillaje</label><select data-f="makeup_selection">${optsMakeup}</select></div>
     <div class="df"><label>Precio maquillaje</label><input data-f="makeup_price" type="number" min="0" step="100" value="${c.makeup_price ?? ''}" placeholder="2500"></div>
    </div>
+   </details>
 
-    <div class="dsection">Bot y handoff</div>
-    <label class="checkrow"><input data-f="human_handoff_required" type="checkbox" ${c.human_handoff_required?'checked':''}><span>Requiere humano</span></label>
+   <details class="dgroup"><summary>Automatización y permisos <span class="dchip${esDesinteresado || seguimientosSinRespuesta >= 2 ? ' alerta' : ''}">${seguimientosSinRespuesta} de 2 seguimientos</span></summary>
+   <label class="checkrow"><input data-f="human_handoff_required" type="checkbox" ${c.human_handoff_required?'checked':''}><span>Requiere humano</span></label>
     <label class="checkrow"><input data-f="auto_template_paused" type="checkbox" ${c.auto_template_paused?'checked':''}><span>Pausar auto bot / plantillas</span></label>
     <div class="df"><label>Motivo handoff</label>
      <input data-f="human_handoff_reason" type="text" value="${esc(c.human_handoff_reason || '')}" placeholder="comprobante, disponibilidad, negociacion..."></div>
@@ -7165,7 +7215,7 @@ function renderDetail(c) {
      <div class="lead-k"><div class="lk">Origen sync</div><div class="lv">${esc(c.last_tag_sync_source || 'sin analizar')}</div></div>
     </div>
 
-   <div class="dsection">Comunicacion proactiva</div>
+   <div class="dhr"></div>
    <div class="lead-k" style="border-left:3px solid ${c.proactive_blocked_at ? 'var(--danger)' : 'var(--ink)'}"><div class="lk">Política permanente</div><div class="lv">${c.proactive_blocked_at ? `Bot, promociones y seguimientos desactivados · ${esc(c.proactive_blocked_reason || 'exclusión administrativa')}` : 'Sin exclusión permanente · se respetan los permisos individuales'}</div></div>
    <label class="checkrow"><input data-f="reminders_opt_in" type="checkbox" ${c.reminders_opt_in === false ? '' : 'checked'} ${c.proactive_blocked_at ? 'disabled' : ''}><span>Permitir recordatorios de sesion</span></label>
    <label class="checkrow"><input data-f="followups_opt_in" type="checkbox" ${c.followups_opt_in === false ? '' : 'checked'} ${c.proactive_blocked_at ? 'disabled' : ''}><span>Permitir seguimiento automatico</span></label>
@@ -7175,35 +7225,22 @@ function renderDetail(c) {
     <div class="lead-k"><div class="lk">Ultima razon</div><div class="lv">${esc(c.opt_out_reason || 'sin baja')}</div></div>
    </div>
 
-   <div class="dsection">Desinteres</div>
+   <div class="dhr"></div>
    <div class="lead-k" style="border-left:3px solid ${esDesinteresado ? 'var(--mut)' : (seguimientosSinRespuesta >= 2 ? 'var(--warn)' : 'var(--ink)')}">
     <div class="lk">Seguimientos sin respuesta</div>
     <div class="lv">${seguimientosSinRespuesta} de 2${esDesinteresado ? ' · ya marcado como desinteresado' : (seguimientosSinRespuesta >= 2 ? ' · candidato a desinteresado' : '')}</div>
    </div>
    <div class="lead-k"><div class="lk">Norma</div><div class="lv">Dos seguimientos ignorados: pasa a <b>desinteresado</b> y se apagan marketing, seguimientos y auto-plantillas. El cliente puede escribir y se le puede contestar a mano.</div></div>
    <button class="dbtn" id="dDesinteres" ${esDesinteresado ? 'disabled' : ''}>${esDesinteresado ? 'Ya esta desinteresado' : 'Marcar desinteresado'}</button>
-
-   <div class="dsection">Acciones rapidas</div>
-   <div class="qa-grid" id="quickActions">
+   <div class="qa-grid">
     ${hasPermission('manage_settings') ? (c.proactive_blocked_at
       ? '<button data-act="restoreCommunication">Reactivar automatización</button>'
       : '<button data-act="blockPermanent" class="danger">Desactivar bot y promociones</button>') : ''}
-    <button data-act="take" data-official-only>Tomar conversacion</button>
-    <button data-act="reactivate" data-official-only>Reactivar bot</button>
-    <button data-act="aiReport">Informe IA</button>
-    <button data-act="summary">Ver resumen</button>
-    <button data-act="files">Ver archivos</button>
-    <button data-act="reserve">Crear reserva</button>
-    <button data-act="paid">Marcar pagado</button>
-    <button data-act="pending">Marcar pendiente</button>
-    <button data-act="receipt">Solicitar comprobante</button>
-    <button data-act="location">Enviar ubicacion</button>
-    <button data-act="portfolio">Enviar portafolio</button>
-    <button data-act="privateCombos" class="warn">Enviar combos privados</button>
-    <button data-act="close" class="danger">Cerrar conversacion</button>
    </div>
+   </details>
 
-   <div class="dsection">Archivos enviados / recibidos</div>
+   <details class="dgroup"><summary>Historial <span class="dcount">archivos · timeline · notas</span></summary>
+      <div class="dsection">Archivos enviados / recibidos</div>
    <div class="att-list" id="attList"><div style="font-size:11px;color:var(--mut)">Cargando archivos...</div></div>
 
    <div class="dsection">Timeline</div>
@@ -7215,6 +7252,8 @@ function renderDetail(c) {
     <textarea id="noteTxt" rows="2" placeholder="Añadir nota interna (Ctrl+Enter)"></textarea>
     <button id="noteAdd">Añadir</button>
    </div>
+   </details>
+
   `;
 
   b.querySelectorAll('[data-f]').forEach(el => {
@@ -7351,7 +7390,9 @@ function wireQuickActions(c) {
       renderDetail(c); renderConvs();
     };
   }
-  const box = $('quickActions'); if (!box) return;
+  // Se cablea sobre todo el panel, no solo sobre #quickActions: ahora hay botones
+  // dentro de los grupos plegables y quedarian muertos si se limitara al contenedor.
+  const box = $('dbody'); if (!box) return;
   box.querySelectorAll('button[data-act]').forEach(b => {
     b.onclick = async () => {
       const act = b.dataset.act;
@@ -10356,10 +10397,13 @@ window.autoCloseHumans14d = async function(dryRun = false) {
   if (!candidates.length) { alert('0 candidatos (todos los humanos tienen actividad reciente).'); return { closed: 0 }; }
   if (!confirm(`¿Cerrar ${candidates.length} conversaciones en mode=human sin actividad >= 14 dias?`)) return { aborted: true };
   const { data, error } = await crmData.from('conversations')
-    .update({ mode: 'bot', lifecycle_stage: 'cerrado' })
+    // Aqui NO se pone 'cliente': esto cierra chats por 14 dias de silencio, que es
+    // justo lo contrario de una venta. Y tampoco 'cerrado', que no es una etapa
+    // valida. Un abandono por silencio es 'perdido'.
+    .update({ mode: 'bot', lifecycle_stage: 'perdido' })
     .eq('mode', 'human')
     .or('source.is.null,source.neq.whatsapp_qr')
-    .neq('lifecycle_stage', 'cerrado')
+    .neq('lifecycle_stage', 'perdido')
     .lt('last_message_at', cutoff)
     .select('id');
   if (error) { alert('Error: ' + error.message); return { error: error.message }; }
