@@ -831,6 +831,13 @@ body.role-viewer #agnSave,body.role-viewer .ag-row button{pointer-events:none!im
 .qa-ai{background:rgba(108,140,255,.16)!important;color:#a9c0ff!important;font-weight:800}
 .dgroup .df input,.dgroup .df select,.dgroup .df textarea{max-width:100%;box-sizing:border-box}
 .dgroup .qa-grid{margin-top:2px}
+/* --- Arrastre del Kanban (2026-08-28) --- */
+.kcard{cursor:grab}
+.kcard:active{cursor:grabbing}
+.kcard.kdrag{opacity:.45;transform:scale(.98)}
+.kcol.kover{outline:2px dashed var(--ink);outline-offset:-3px;background:rgba(255,255,255,.04)}
+.kcol.kno{outline:2px dashed #ef4444;outline-offset:-3px}
+.kcol.kno .kh::after{content:" · no admite";font-size:9px;opacity:.7;font-weight:600}
 .conv.urgente{box-shadow:inset 2px 0 0 #ff4444}
 .cv-flag{font-size:9px;color:var(--warn);font-weight:700;margin-left:5px}
 
@@ -2991,8 +2998,8 @@ input[type="checkbox"],input[type="radio"]{accent-color:var(--ink)}
 
 <!-- opus-recorder: graba OGG/Opus REAL via WASM. MediaRecorder no puede en Chrome (sale webm o mp4-opus, ambos rechazados por WhatsApp). -->
 <script>window.__CRMBUST__ = Date.now();</script>
-<script src="./crm-config.js?v=20260828v45"></script>
-<script src="./firebase-config.js?v=20260828v45"></script>
+<script src="./crm-config.js?v=20260828v46"></script>
+<script src="./firebase-config.js?v=20260828v46"></script>
 <script src="https://cdn.jsdelivr.net/npm/opus-recorder@8.0.5/dist/recorder.min.js"></script>
 
 <script type="module">
@@ -3059,7 +3066,7 @@ const $ = (id) => document.getElementById(id);
 // Sello de versión: si el panel "no hace nada", casi siempre es caché vieja del
 // navegador. Este sello permite confirmar de un vistazo qué versión está corriendo
 // (compárala con la fecha del último deploy). Actualízalo en cada publicación.
-const BUILD = '2026-08-28-crm-etapas-v45';
+const BUILD = '2026-08-28-crm-kanban-v46';
 // PDFs de venta por categoría (generados de las tarjetas aprobadas; hosteados en el catálogo).
 // Se regeneran con dcarela-catalogo/scripts/build_combo_pdfs.py + push del catálogo.
 const COMBO_PDF_BASE = 'https://dcarelacompufoto.com/pdf/';
@@ -4773,9 +4780,101 @@ const FUNNEL_STAGES = [
   {key:'pendiente_reserva', label:'Pdte reserva',   color:'var(--mut)'},
   {key:'reservado',         label:'Reservado',      color:'var(--text-muted)'},
   {key:'cliente',           label:'Cliente',        color:'var(--ink)'},
+  {key:'desinteresado',     label:'Desinteresado',  color:'var(--mut)'},
   {key:'no_agendo',         label:'No agendó',      color:'var(--text-faint)'},
   {key:'perdido',           label:'Perdido',        color:'#ef4444'},
 ];
+// ===== Arrastrar tarjetas en el Kanban =====
+// El encabezado decia "arrastra o click un chat" desde siempre, pero no habia una sola
+// linea de arrastre: la promesa era falsa. Esto la cumple.
+//
+// Regla dura: solo se puede soltar en columnas cuya etapa EXISTA en STAGES. La columna
+// 'no_agendo' es historica, no esta en el desplegable, y dejar caer ahi crearia
+// exactamente el mismo lio de etapas fantasma que acabamos de reparar.
+const ETAPAS_SOLTABLES = new Set(STAGES.map(([v]) => v));
+let kanbanArrastrando = null;
+
+function moverTarjetaKanban(id, etapaDestino) {
+  const c = (convs || []).find(x => x.id === id);
+  if (!c) return null;
+  if (!ETAPAS_SOLTABLES.has(etapaDestino)) return null;
+  if ((c.lifecycle_stage || 'nuevo') === etapaDestino) return null;
+  return c;
+}
+
+async function soltarEnEtapa(id, etapaDestino) {
+  const c = moverTarjetaKanban(id, etapaDestino);
+  if (!c) return;
+  const anterior = c.lifecycle_stage || 'nuevo';
+
+  // Desinteresado no es solo una etapa: apaga marketing y seguimientos. Se pasa por la
+  // misma accion que el boton del chat para que el efecto sea identico, y se confirma.
+  if (etapaDestino === 'desinteresado') {
+    if (!confirm(`Mover a ${conversationDisplayName(c)} a DESINTERESADO.\n\nApaga marketing, seguimientos automaticos y auto-plantillas. El historial se conserva y podras seguir escribiendole a mano.\n\n¿Confirmas?`)) return;
+    const r = await callCrmApi({ action: 'disinterest', operation: 'mark', conversation_id: c.id, reason: 'movido a desinteresado en el pipeline' });
+    if (!r.ok) { alert('No se pudo mover: ' + (r.error || 'error')); return; }
+    c.lifecycle_stage = 'desinteresado'; c.lead_status = 'desinteresado'; c.marketing_opt_in = false;
+    renderFunnelInline(); renderConvs(); updateFilterCounts();
+    toast('Movido a desinteresado', 'Marketing y seguimientos apagados.');
+    return;
+  }
+
+  // Pintado optimista: la tarjeta salta de columna al instante y se revierte si falla.
+  c.lifecycle_stage = etapaDestino;
+  renderFunnelInline(); renderConvs(); updateFilterCounts();
+  let r = await callFn({ action: 'updateLead', conversation_id: c.id, fields: { lifecycle_stage: etapaDestino } });
+  if (!r?.ok && c._backend === 'firebase') {
+    try { r = await firebaseUpdateConversation(c, { lifecycle_stage: etapaDestino }); }
+    catch (error) { r = { ok: false, error: error?.message || String(error) }; }
+  }
+  if (!r?.ok) {
+    c.lifecycle_stage = anterior;
+    renderFunnelInline(); renderConvs(); updateFilterCounts();
+    alert('No se pudo mover: ' + (r?.error || 'error'));
+    return;
+  }
+  if (sel && sel.id === c.id) { sel.lifecycle_stage = etapaDestino; renderDetail(sel); }
+  dsavShow();
+}
+
+function wireKanbanDnd(root) {
+  if (!root) return;
+  const puedeMover = hasPermission('operate');
+  root.querySelectorAll('.kcard').forEach(card => {
+    if (!puedeMover) return;
+    card.draggable = true;
+    card.addEventListener('dragstart', ev => {
+      kanbanArrastrando = card.dataset.cid || null;
+      card.classList.add('kdrag');
+      try { ev.dataTransfer.setData('text/plain', kanbanArrastrando || ''); ev.dataTransfer.effectAllowed = 'move'; } catch (e) {}
+    });
+    card.addEventListener('dragend', () => {
+      card.classList.remove('kdrag');
+      kanbanArrastrando = null;
+      root.querySelectorAll('.kcol').forEach(col => col.classList.remove('kover', 'kno'));
+    });
+  });
+  root.querySelectorAll('.kcol').forEach(col => {
+    const etapa = col.dataset.stage;
+    const admite = ETAPAS_SOLTABLES.has(etapa);
+    col.addEventListener('dragover', ev => {
+      if (!kanbanArrastrando || !puedeMover) return;
+      // Sin preventDefault el navegador no permite soltar; solo se hace en las validas.
+      if (admite) { ev.preventDefault(); ev.dataTransfer.dropEffect = 'move'; col.classList.add('kover'); }
+      else col.classList.add('kno');
+    });
+    col.addEventListener('dragleave', () => col.classList.remove('kover', 'kno'));
+    col.addEventListener('drop', async ev => {
+      col.classList.remove('kover', 'kno');
+      if (!admite || !puedeMover) return;
+      ev.preventDefault();
+      const id = kanbanArrastrando || (ev.dataTransfer && ev.dataTransfer.getData('text/plain'));
+      kanbanArrastrando = null;
+      if (id) await soltarEnEtapa(id, etapa);
+    });
+  });
+}
+
 function renderFunnelInline() {
   const target = document.getElementById('funnelInline');
   if (!target) return;
@@ -4861,7 +4960,7 @@ function renderFunnelInline() {
         </div>`).join('') : '<div class="dash-empty">Aún no hay combos asistidos.</div>'}
     </div>
 
-    <h3 class="funnel-h">Pipeline · arrastra o click un chat para abrirlo</h3>
+    <h3 class="funnel-h">Pipeline · arrastra una tarjeta para cambiar su etapa, o haz clic para abrir el chat</h3>
     <div class="kanban">
       ${FUNNEL_STAGES.map(s => {
         const items = (by[s.key] || []).slice(0, 50);
@@ -4874,7 +4973,7 @@ function renderFunnelInline() {
               const cat = c.interested_category ? ' · ' + esc(c.interested_category) : '';
               const sched = c.scheduled_at ? '<span class="kdate">Fecha · ' + new Date(c.scheduled_at).toLocaleDateString('es-DO',{day:'2-digit',month:'short'}) + '</span>' : '';
               const price = c.selected_combo_price ? '<span class="kprice">' + fmtMoney(c.selected_combo_price) + '</span>' : '';
-              return `<div class="kcard" onclick="openConvById('${c.id}')">
+              return `<div class="kcard" data-cid="${esc(c.id)}" onclick="openConvById('${c.id}')">
                 ${avatarHtml(c, name).replace('class="av"','class="av-sm"')}
                 <div class="ki"><b>${esc(name)}</b><span>${esc(c.lead_status || c.lifecycle_stage || '')}${combo}${cat}</span><div class="kmeta">${sched}${price}</div></div>
               </div>`;
@@ -4885,6 +4984,7 @@ function renderFunnelInline() {
     </div>
   `;
   target.innerHTML = html;
+  wireKanbanDnd(target);
 }
 
 window.openConvById = function(id) {
