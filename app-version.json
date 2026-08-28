@@ -1,6 +1,6 @@
 {
-  "version": "2026-08-28-crm-firebase-completo-v41",
+  "version": "2026-08-28-crm-chat-en-vivo-v42",
   "channel": "crm",
-  "released_at": "2026-08-28T17:36:40Z",
-  "summary": "CRM totalmente migrado a Firebase: datos, seguimientos, etiquetas con IA, prospección, agenda, encuestas y difusión sin dependencias activas de Supabase."
+  "released_at": "2026-08-28T18:40:00Z",
+  "summary": "Chat en vivo: los mensajes y la lista de conversaciones llegan por escucha de Firestore en vez de sondeos, con repliegue automatico a sondeo si la escucha falla. El bot del canal oficial se declara SIN MOTOR mientras no este desplegado."
 }
