@@ -2998,8 +2998,8 @@ input[type="checkbox"],input[type="radio"]{accent-color:var(--ink)}
 
 <!-- opus-recorder: graba OGG/Opus REAL via WASM. MediaRecorder no puede en Chrome (sale webm o mp4-opus, ambos rechazados por WhatsApp). -->
 <script>window.__CRMBUST__ = Date.now();</script>
-<script src="./crm-config.js?v=20260828v46"></script>
-<script src="./firebase-config.js?v=20260828v46"></script>
+<script src="./crm-config.js?v=20260828v47"></script>
+<script src="./firebase-config.js?v=20260828v47"></script>
 <script src="https://cdn.jsdelivr.net/npm/opus-recorder@8.0.5/dist/recorder.min.js"></script>
 
 <script type="module">
@@ -3066,7 +3066,7 @@ const $ = (id) => document.getElementById(id);
 // Sello de versión: si el panel "no hace nada", casi siempre es caché vieja del
 // navegador. Este sello permite confirmar de un vistazo qué versión está corriendo
 // (compárala con la fecha del último deploy). Actualízalo en cada publicación.
-const BUILD = '2026-08-28-crm-kanban-v46';
+const BUILD = '2026-08-28-crm-login-fix-v47';
 // PDFs de venta por categoría (generados de las tarjetas aprobadas; hosteados en el catálogo).
 // Se regeneran con dcarela-catalogo/scripts/build_combo_pdfs.py + push del catálogo.
 const COMBO_PDF_BASE = 'https://dcarelacompufoto.com/pdf/';
@@ -4791,13 +4791,19 @@ const FUNNEL_STAGES = [
 // Regla dura: solo se puede soltar en columnas cuya etapa EXISTA en STAGES. La columna
 // 'no_agendo' es historica, no esta en el desplegable, y dejar caer ahi crearia
 // exactamente el mismo lio de etapas fantasma que acabamos de reparar.
-const ETAPAS_SOLTABLES = new Set(STAGES.map(([v]) => v));
+// OJO: se calcula al vuelo, NO en una const de nivel superior. STAGES se declara mas
+// abajo en el modulo, asi que leerla aqui al cargar lanzaba
+// "Cannot access 'STAGES' before initialization", el modulo entero moria y el panel
+// se quedaba sin login. Roto en v46 y corregido en v47.
+function etapasSoltables() {
+  return new Set(STAGES.map(([v]) => v));
+}
 let kanbanArrastrando = null;
 
 function moverTarjetaKanban(id, etapaDestino) {
   const c = (convs || []).find(x => x.id === id);
   if (!c) return null;
-  if (!ETAPAS_SOLTABLES.has(etapaDestino)) return null;
+  if (!etapasSoltables().has(etapaDestino)) return null;
   if ((c.lifecycle_stage || 'nuevo') === etapaDestino) return null;
   return c;
 }
@@ -4856,7 +4862,7 @@ function wireKanbanDnd(root) {
   });
   root.querySelectorAll('.kcol').forEach(col => {
     const etapa = col.dataset.stage;
-    const admite = ETAPAS_SOLTABLES.has(etapa);
+    const admite = etapasSoltables().has(etapa);
     col.addEventListener('dragover', ev => {
       if (!kanbanArrastrando || !puedeMover) return;
       // Sin preventDefault el navegador no permite soltar; solo se hace en las validas.
