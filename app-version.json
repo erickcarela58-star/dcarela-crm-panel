@@ -1,6 +1,6 @@
 {
-  "version": "2026-08-28-crm-live-reconnect-v35",
+  "version": "2026-08-28-crm-firebase-users-ia-v36",
   "channel": "crm",
-  "released_at": "2026-08-28T06:15:00Z",
-  "summary": "WhatsApp Fotos reconectado por Firebase con control, heartbeat e historial; salida y bot bloqueados hasta validación controlada."
+  "released_at": "2026-08-28T08:10:00Z",
+  "summary": "Cuentas del panel y planificador de IA migrados a Firebase: Supabase quedo restringido y ya no se usa para administrar usuarios ni generar planes."
 }
