@@ -2032,6 +2032,14 @@ input[type="checkbox"],input[type="radio"]{accent-color:var(--ink)}
       </div>
      </article>
      <article class="marketing-card">
+      <h3>Etapas fuera del embudo</h3><p>Durante meses se escribió <b>cerrado</b> como etapa sin que existiera en la lista, así que esos leads quedaron en un estado que el desplegable no puede mostrar. Cerrar una conversación significa que el cliente ya compró, así que <b>cerrado → cliente</b>. Revisar no cambia nada.</p>
+      <div class="marketing-actions">
+       <button id="etapasScan" type="button">Revisar etapas</button>
+       <button id="etapasApply" type="button" data-permission="manage_settings" disabled>Mover a cliente</button>
+      </div>
+      <div id="etapasResult" class="marketing-note" style="display:none"></div>
+     </article>
+     <article class="marketing-card">
       <h3>Candidatos a desinteresado</h3><p>Norma: dos seguimientos seguidos sin respuesta y el contacto pasa a <b>desinteresado</b>, con marketing, seguimientos automáticos y auto-plantillas apagados. El historial se conserva y se le puede seguir escribiendo a mano. Revisar no cambia nada.</p>
       <div class="marketing-actions">
        <button id="desinteresScan" type="button">Revisar candidatos</button>
@@ -2983,8 +2991,8 @@ input[type="checkbox"],input[type="radio"]{accent-color:var(--ink)}
 
 <!-- opus-recorder: graba OGG/Opus REAL via WASM. MediaRecorder no puede en Chrome (sale webm o mp4-opus, ambos rechazados por WhatsApp). -->
 <script>window.__CRMBUST__ = Date.now();</script>
-<script src="./crm-config.js?v=20260828v44"></script>
-<script src="./firebase-config.js?v=20260828v44"></script>
+<script src="./crm-config.js?v=20260828v45"></script>
+<script src="./firebase-config.js?v=20260828v45"></script>
 <script src="https://cdn.jsdelivr.net/npm/opus-recorder@8.0.5/dist/recorder.min.js"></script>
 
 <script type="module">
@@ -3051,7 +3059,7 @@ const $ = (id) => document.getElementById(id);
 // Sello de versión: si el panel "no hace nada", casi siempre es caché vieja del
 // navegador. Este sello permite confirmar de un vistazo qué versión está corriendo
 // (compárala con la fecha del último deploy). Actualízalo en cada publicación.
-const BUILD = '2026-08-28-crm-panel-lead-v44';
+const BUILD = '2026-08-28-crm-etapas-v45';
 // PDFs de venta por categoría (generados de las tarjetas aprobadas; hosteados en el catálogo).
 // Se regeneran con dcarela-catalogo/scripts/build_combo_pdfs.py + push del catálogo.
 const COMBO_PDF_BASE = 'https://dcarelacompufoto.com/pdf/';
@@ -7321,6 +7329,64 @@ function insertTemplate(text) {
   ta.style.height = Math.min(ta.scrollHeight, 120) + 'px';
   ta.focus();
 }
+
+// ===== Reparar etapas fuera del embudo =====
+// Revisar es siempre en seco. Mover solo se habilita despues de revisar y muestra
+// primero a quien afecta: son clientes reales, no filas de una tabla.
+let etapasPendientes = 0;
+async function revisarEtapas() {
+  const btn = $('etapasScan');
+  const aplicar = $('etapasApply');
+  const caja = $('etapasResult');
+  if (!btn || !caja) return;
+  btn.disabled = true; btn.textContent = 'Revisando…';
+  const r = await callCrmApi({ action: 'stageRepair', operation: 'scan' });
+  btn.disabled = false; btn.textContent = 'Revisar etapas';
+  caja.style.display = 'block';
+  if (!r.ok) {
+    caja.innerHTML = `<span style="color:var(--warn)">No se pudo revisar: ${esc(r.error || 'error')}</span>`;
+    if (aplicar) aplicar.disabled = true;
+    return;
+  }
+  etapasPendientes = Number(r.total) || 0;
+  if (!etapasPendientes) {
+    caja.innerHTML = 'Todas las conversaciones tienen una etapa válida del embudo. Nada que mover.';
+    if (aplicar) aplicar.disabled = true;
+    return;
+  }
+  const resumen = Object.entries(r.por_etapa || {})
+    .map(([etapa, n]) => `<b>${esc(etapa)}</b>: ${n}${(r.traducciones || {})[etapa] ? ` → ${esc(r.traducciones[etapa])}` : ' <span style="color:var(--warn)">(sin traducción, se deja igual)</span>'}`)
+    .join(' · ');
+  const lista = (r.filas || []).slice(0, 30).map(row => {
+    const cuando = row.last_message_at ? new Date(row.last_message_at).toLocaleDateString('es-DO') : 'sin fecha';
+    return `<div style="display:flex;justify-content:space-between;gap:10px;padding:3px 0;border-bottom:1px solid var(--line)">
+      <span>${esc(row.name)}</span><span style="color:var(--mut)">${esc(row.lifecycle_stage)} → ${esc(row.destino || 'sin cambio')} · ${esc(cuando)}</span></div>`;
+  }).join('');
+  caja.innerHTML = `<b>${etapasPendientes} conversación(es)</b> con etapa fuera del embudo. ${resumen}`
+    + `<div style="margin-top:8px;max-height:240px;overflow:auto">${lista}</div>`
+    + (etapasPendientes > 30 ? `<div style="margin-top:6px;color:var(--mut)">Se muestran las 30 más recientes.</div>` : '')
+    + `<div style="margin-top:8px;color:var(--mut)">Se guarda la etapa original en cada ficha por si hay que revisar la decisión.</div>`;
+  if (aplicar) aplicar.disabled = !hasPermission('manage_settings');
+}
+async function aplicarEtapas() {
+  if (!requirePermission('manage_settings')) return;
+  if (!etapasPendientes) return;
+  if (!confirm(`Se moverán las conversaciones con etapa "cerrado" a la etapa "cliente".\n\nSon ${etapasPendientes} ficha(s) revisadas arriba. Se guarda la etapa original en cada una.\n\n¿Confirmas?`)) return;
+  const btn = $('etapasApply');
+  btn.disabled = true; btn.textContent = 'Moviendo…';
+  const r = await callCrmApi({ action: 'stageRepair', operation: 'apply' });
+  btn.textContent = 'Mover a cliente';
+  if (!r.ok) { alert('No se pudo mover: ' + (r.error || 'error')); btn.disabled = false; return; }
+  const sobrantes = (r.sin_traduccion || []).length
+    ? ` Quedaron sin tocar ${r.sin_traduccion.length} etapa(s) desconocida(s): ${r.sin_traduccion.join(', ')}.`
+    : '';
+  toast('Etapas reparadas', `${r.movidas || 0} ficha(s) pasaron a cliente.${sobrantes}`);
+  etapasPendientes = 0;
+  await revisarEtapas();
+  void loadConvs();
+}
+if ($('etapasScan')) $('etapasScan').onclick = revisarEtapas;
+if ($('etapasApply')) $('etapasApply').onclick = aplicarEtapas;
 
 // ===== Candidatos a desinteresado =====
 // Revisar es SIEMPRE en seco: el servidor no escribe nada en la operacion 'scan'.
