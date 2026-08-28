@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="robots" content="noindex,nofollow">
 <title>Tu opinión · D'Carela Compufoto</title>
-<script src="./crm-config.js?v=20260615"></script>
+<script src="./crm-config.js?v=20260828v40"></script>
 <style>
 :root{--ac:#3b82f6;--ac2:#06b6d4;--bg:#0b0f17;--card:#121826;--line:rgba(255,255,255,.10);--txt:#eef2f7;--mut:#9aa6b8;--star:#f5b301}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -93,8 +93,8 @@ textarea::placeholder{color:#67718a}
 <script>
 (function(){
   var C = window.CRM_CONFIG || window.DCARELA_CRM_CONFIG || {};
-  var SB = (C.supabaseUrl || "").replace(/\/+$/,"");
-  var FN = SB + "/functions/v1/reviews";
+  var BASE = (C.firebaseFunctionsBase || "").replace(/\/+$/,"");
+  var FN = String(C.firebaseReviewsUrl || (BASE + "/crmReviews")).replace(/\/+$/, "");
   var token = new URLSearchParams(location.search).get("token") || "";
   var ratings = { service:0, collaborator:0, satisfaction:0 };
 
@@ -132,7 +132,7 @@ textarea::placeholder{color:#67718a}
 
   function load(){
     if(!token){ return fail('Falta el código de la encuesta en el enlace.'); }
-    if(!SB){ return fail('Configuración no disponible.'); }
+    if(!BASE){ return fail('Configuración no disponible.'); }
     fetch(FN + '?token=' + encodeURIComponent(token))
       .then(function(r){ return r.json().catch(function(){ return {ok:false}; }); })
       .then(function(d){
