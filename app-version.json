@@ -1,6 +1,6 @@
 {
-  "version": "2026-08-28-crm-firebase-completo-v40",
+  "version": "2026-08-28-crm-firebase-completo-v41",
   "channel": "crm",
-  "released_at": "2026-08-28T17:34:24Z",
+  "released_at": "2026-08-28T17:36:40Z",
   "summary": "CRM totalmente migrado a Firebase: datos, seguimientos, etiquetas con IA, prospección, agenda, encuestas y difusión sin dependencias activas de Supabase."
 }
