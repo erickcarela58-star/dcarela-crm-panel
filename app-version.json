@@ -1,6 +1,6 @@
 {
-  "version": "2026-08-28-crm-panel-lead-v44",
+  "version": "2026-08-28-crm-etapas-v45",
   "channel": "crm",
-  "released_at": "2026-08-28T20:10:00Z",
-  "summary": "Panel de detalles del lead reagrupado en secciones plegables: 14 botones pasan a 3 visibles mas 4 plegados, se retiran seis duplicados y cerrar una conversacion deja al lead como cliente en vez de en una etapa inexistente."
+  "released_at": "2026-08-28T20:45:00Z",
+  "summary": "Reparacion de etapas fuera del embudo: revisa en seco las conversaciones con etapa 'cerrado' y las mueve a 'cliente' conservando la etapa original. Las etapas desconocidas se reportan y se dejan intactas."
 }
