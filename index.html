@@ -2691,7 +2691,7 @@ input[type="checkbox"],input[type="radio"]{accent-color:var(--ink)}
       <h3>Asistente IA — credencial protegida</h3>
       <p>La Gemini API key vive como secreto del servidor. El navegador y la tabla <code>settings</code> no pueden leerla.</p>
       <div class="cfg-actions">
-       <span class="cfg-hint">✓ Configurada en Supabase Edge Functions.</span>
+       <span class="cfg-hint">✓ Configurada de forma segura en Firebase Cloud Functions.</span>
       </div>
      </div>
 
@@ -2955,24 +2955,20 @@ input[type="checkbox"],input[type="radio"]{accent-color:var(--ink)}
 
 <!-- opus-recorder: graba OGG/Opus REAL via WASM. MediaRecorder no puede en Chrome (sale webm o mp4-opus, ambos rechazados por WhatsApp). -->
 <script>window.__CRMBUST__ = Date.now();</script>
-<script src="./crm-config.js?v=20260828v38"></script>
-<script src="./firebase-config.js?v=20260828v38"></script>
+<script src="./crm-config.js?v=20260828v40"></script>
+<script src="./firebase-config.js?v=20260828v40"></script>
 <script src="https://cdn.jsdelivr.net/npm/opus-recorder@8.0.5/dist/recorder.min.js"></script>
 
 <script type="module">
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { initializeApp, getApps } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js';
 import { getAuth, onAuthStateChanged, signInWithEmailAndPassword as firebaseSignIn, signOut as firebaseSignOut } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js';
 import { getFirestore, doc, getDoc, setDoc, updateDoc, collection, getDocs, query, where, writeBatch, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
 
 const CRM_CONFIG = window.CRM_CONFIG || window.DCARELA_CRM_CONFIG || {};
-const SUPABASE_URL = CRM_CONFIG.supabaseUrl || '';
-const SUPABASE_KEY = CRM_CONFIG.supabaseAnonKey || '';
 const CRM_FUNCTIONS_BASE = String(CRM_CONFIG.firebaseFunctionsBase || '').replace(/\/$/, '');
 const CONFIG_ERRORS = [];
 const FIREBASE_CONFIG = window.__DCARELA_FIREBASE_CONFIG || {};
 if (!FIREBASE_CONFIG.apiKey || !FIREBASE_CONFIG.projectId) CONFIG_ERRORS.push('Falta la configuración pública de Firebase.');
-const sb = createClient(SUPABASE_URL || 'https://example.invalid', SUPABASE_KEY || 'missing');
 const firebaseApp = getApps().length ? getApps()[0] : initializeApp(FIREBASE_CONFIG);
 const firebaseAuth = getAuth(firebaseApp);
 const firebaseDb = getFirestore(firebaseApp);
@@ -2982,17 +2978,52 @@ let FIREBASE_CRM_AVAILABLE = false;
 let CRM_TRANSPORT_STATE = { ready:false, state:'checking', provider:'firebase-meta', last_webhook_at:null, last_send_at:null };
 
 async function panelAuthToken() {
-  const { data:{ session } } = await sb.auth.getSession();
-  if (session?.access_token) return session.access_token;
   if (firebaseAuth.currentUser) return await firebaseAuth.currentUser.getIdToken();
   return '';
 }
+
+function panelSession() {
+  const user = firebaseAuth.currentUser;
+  return user ? { user:{ id:user.uid, email:user.email } } : null;
+}
+
+function crmFilterValue(raw) {
+  if (raw === 'null') return null;
+  if (raw === 'true') return true;
+  if (raw === 'false') return false;
+  return raw;
+}
+
+class CrmDataQuery {
+  constructor(table) { this.request={action:'data',table,operation:'select',columns:'*',filters:[],order:[],limit:1000,offset:0}; }
+  select(columns='*',options={}){this.request.columns=columns||'*';this.request.count=options.count||null;this.request.head=options.head===true;if(this.request.operation!=='select')this.request.returning=true;return this;}
+  insert(payload){this.request.operation='insert';this.request.payload=payload;return this;}
+  update(payload){this.request.operation='update';this.request.payload=payload;return this;}
+  upsert(payload,options={}){this.request.operation='upsert';this.request.payload=payload;this.request.on_conflict=options.onConflict||options.on_conflict||'';return this;}
+  delete(){this.request.operation='delete';return this;}
+  eq(field,value){this.request.filters.push({kind:'eq',field,value});return this;}
+  neq(field,value){this.request.filters.push({kind:'neq',field,value});return this;}
+  in(field,value){this.request.filters.push({kind:'in',field,value});return this;}
+  is(field,value){this.request.filters.push({kind:'is',field,value});return this;}
+  not(field,operator,value){this.request.filters.push({kind:'not',field,operator,value});return this;}
+  gte(field,value){this.request.filters.push({kind:'gte',field,value});return this;}
+  lte(field,value){this.request.filters.push({kind:'lte',field,value});return this;}
+  or(expression){const clauses=String(expression||'').split(',').map(part=>{const bits=part.split('.');const field=bits.shift();const op=bits.shift();return{kind:op==='neq'?'neq':op==='is'?'is':'eq',field,value:crmFilterValue(bits.join('.'))};}).filter(item=>item.field);this.request.filters.push({kind:'or',clauses});return this;}
+  order(field,options={}){this.request.order.push({field,ascending:options.ascending!==false,nullsFirst:options.nullsFirst===true});return this;}
+  limit(value){this.request.limit=Number(value)||1;return this;}
+  range(from,to){this.request.offset=Math.max(0,Number(from)||0);this.request.limit=Math.max(1,(Number(to)||0)-this.request.offset+1);return this;}
+  single(){this.request.single='single';if(this.request.operation!=='select')this.request.returning=true;return this;}
+  maybeSingle(){this.request.single='maybe';return this;}
+  async execute(){const result=await callCrmApi(this.request);if(!result.ok&&!result.error?.message)return{data:result.data??null,count:result.count??null,error:{message:result.error||'servidor no disponible',code:result.code||String(result.statusCode||'CRM_DATA')}};return{data:result.data??null,count:result.count??null,error:result.error||null};}
+  then(resolve,reject){return this.execute().then(resolve,reject);}
+}
+const crmData={from(table){return new CrmDataQuery(table);}};
 
 const $ = (id) => document.getElementById(id);
 // Sello de versión: si el panel "no hace nada", casi siempre es caché vieja del
 // navegador. Este sello permite confirmar de un vistazo qué versión está corriendo
 // (compárala con la fecha del último deploy). Actualízalo en cada publicación.
-const BUILD = '2026-08-28-crm-envios-seguimientos-v38';
+const BUILD = '2026-08-28-crm-firebase-completo-v40';
 // PDFs de venta por categoría (generados de las tarjetas aprobadas; hosteados en el catálogo).
 // Se regeneran con dcarela-catalogo/scripts/build_combo_pdfs.py + push del catálogo.
 const COMBO_PDF_BASE = 'https://dcarelacompufoto.com/pdf/';
@@ -3096,38 +3127,6 @@ function updatePanelSyncStatus() {
     : 'Datos sincronizados · funciones del servidor limitadas';
 }
 
-async function callPanelUsersDirect(action, session) {
-  if (action === 'me') {
-    const { data: member, error } = await sb.from('crm_panel_users')
-      .select('user_id,email,display_name,role,active')
-      .eq('user_id', session.user.id)
-      .maybeSingle();
-    if (error) return { ok:false, error:error.message };
-    if (!member || !member.active) return { ok:false, error:'cuenta sin acceso activo al panel' };
-    return {
-      ok:true,
-      degraded:true,
-      user:{
-        id:session.user.id,
-        email:member.email || session.user.email,
-        display_name:member.display_name,
-        role:member.role,
-        active:member.active,
-      },
-      permissions:permissionsForLocalRole(member.role),
-    };
-  }
-  if (action === 'list' && PANEL_ACCESS.role === 'admin') {
-    const [{ data:users, error:usersError }, { data:audit, error:auditError }] = await Promise.all([
-      sb.from('crm_panel_users').select('user_id,email,display_name,role,active,created_at,updated_at').order('created_at'),
-      sb.from('crm_audit_logs').select('id,actor_email,actor_role,action,entity_type,entity_id,detail,created_at').order('created_at',{ ascending:false }).limit(40),
-    ]);
-    if (usersError || auditError) return { ok:false, error:(usersError || auditError).message };
-    return { ok:true, degraded:true, users:users || [], audit:audit || [] };
-  }
-  return { ok:false, error:'Esta accion requiere las automatizaciones del servidor.' };
-}
-
 function hasPermission(name) { return !!(PANEL_ACCESS.permissions && PANEL_ACCESS.permissions[name]); }
 function requirePermission(name) {
   if (hasPermission(name)) return true;
@@ -3136,59 +3135,13 @@ function requirePermission(name) {
 }
 async function callPanelUsers(body) {
   const action = String(body?.action || 'me');
-  // Camino vigente: Firebase. Supabase quedo restringido (HTTP 402) y sus Edge
-  // Functions ya no responden, asi que la administracion de cuentas vive en crmApi.
-  if (action !== 'me' && CRM_FUNCTIONS_BASE && firebaseAuth.currentUser) {
-    try {
-      const token = await firebaseAuth.currentUser.getIdToken();
-      const response = await fetch(CRM_FUNCTIONS_BASE + '/crmApi', {
-        method:'POST',
-        cache:'no-store',
-        headers:{ 'Content-Type':'application/json', 'Authorization':'Bearer ' + token },
-        body:JSON.stringify({ ...body, action:'panelUsers', operation:action }),
-      });
-      const result = await response.json().catch(() => ({}));
-      if (response.status !== 501) {
-        PANEL_FUNCTIONS_AVAILABLE = ![404, 502, 503].includes(response.status);
-        updatePanelSyncStatus();
-        return { ...result, ok: response.ok && result.ok !== false, status: response.status };
-      }
-    } catch (error) {
-      PANEL_FUNCTIONS_AVAILABLE = false;
-      updatePanelSyncStatus();
-      return { ok:false, error:'no se pudo conectar con el servidor de cuentas' };
-    }
-  }
-  const { data:{ session } } = await sb.auth.getSession();
-  const token = await panelAuthToken();
-  if (!token) return { ok:false, error:'sesión vencida' };
-  try {
-    const response = await fetch(SUPABASE_URL + '/functions/v1/panel-users', {
-      method:'POST',
-      headers:{ 'Content-Type':'application/json', 'Authorization':'Bearer ' + token },
-      body:JSON.stringify(body || {}),
-    });
-    const result = await response.json().catch(() => ({ error:'respuesta inválida' }));
-    if (response.status === 404 || response.status === 502 || response.status === 503) {
-      PANEL_FUNCTIONS_AVAILABLE = false;
-      updatePanelSyncStatus();
-      return session ? callPanelUsersDirect(String(body?.action || 'me'), session) : { ok:false, error:result.error || 'servidor no disponible' };
-    }
-    PANEL_FUNCTIONS_AVAILABLE = response.ok;
-    updatePanelSyncStatus();
-    return { ...result, ok: response.ok && result.ok !== false, status: response.status };
-  } catch (error) {
-    PANEL_FUNCTIONS_AVAILABLE = false;
-    updatePanelSyncStatus();
-    return session ? callPanelUsersDirect(String(body?.action || 'me'), session) : { ok:false, error:'servidor no disponible' };
-  }
+  const result = await callCrmApi({ ...body, action:'panelUsers', operation:action });
+  PANEL_FUNCTIONS_AVAILABLE = result.ok || ![404, 502, 503].includes(result.statusCode);
+  updatePanelSyncStatus();
+  return result;
 }
 async function loadPanelAccess() {
-  if (AUTH_PROVIDER === 'firebase') return loadFirebasePanelAccess();
-  const result = await callPanelUsers({ action:'me' });
-  if (!result.ok || !result.user) throw new Error(result.error || 'cuenta sin acceso al panel');
-  PANEL_ACCESS = { user:result.user, role:result.user.role, permissions:result.permissions || {} };
-  applyPanelAccess();
+  return loadFirebasePanelAccess();
 }
 function applyPanelAccess() {
   const role = PANEL_ACCESS.role || 'viewer';
@@ -4310,8 +4263,8 @@ async function loadPosCustomers(force=false) {
   if(posCustomersLoaded&&!force){renderPosCustomers();return;} const grid=$('poscGrid');
   if(grid)grid.innerHTML='<div class="posc-empty">Sincronizando clientes, servicios y saldos de la caja...</div>';
   const crmRows=[];let crmError=null;
-  if(CRM_DATA_SESSION_AVAILABLE||AUTH_PROVIDER==='supabase'){
-    for(let from=0;from<10000;from+=1000){const {data,error}=await sb.from('crm_pos_customers').select('*').order('last_sale_at',{ascending:false,nullsFirst:false}).range(from,from+999);if(error){crmError=error;break;}crmRows.push(...(data||[]));if(!data||data.length<1000)break;}
+  if(CRM_DATA_SESSION_AVAILABLE){
+    for(let from=0;from<10000;from+=1000){const {data,error}=await crmData.from('crm_pos_customers').select('*').order('last_sale_at',{ascending:false,nullsFirst:false}).range(from,from+999);if(error){crmError=error;break;}crmRows.push(...(data||[]));if(!data||data.length<1000)break;}
   }
   let firebaseRows=[];let firebaseError=null;
   if(firebaseAuth.currentUser){try{firebaseRows=await loadFirebasePosCustomers();}catch(error){firebaseError=error;}}
@@ -4347,14 +4300,14 @@ function renderPosCustomers(){
   if($('poscResultCount'))$('poscResultCount').textContent=`${list.length} cliente${list.length===1?'':'s'}`;const grid=$('poscGrid');if(!grid)return;if(!list.length){grid.innerHTML='<div class="posc-empty">No hay clientes para estos filtros.</div>';return;}
   grid.innerHTML=list.slice(0,500).map(c=>{const services=(Array.isArray(c.services)?c.services:[]).slice(0,3),available=posChannelAvailable(c);const channels=posChannelRows(c);return `<article class="posc-card" data-debt="${Number(c.balance_centavos)>0}"><div class="posc-card-top"><div class="posc-avatar">${esc(initials(c.name))}</div><div><h3>${esc(c.name||'Cliente POS')}</h3><span>${c.phone_normalized?'+'+esc(c.phone_normalized):'Sin WhatsApp registrado'}</span></div><span class="posc-branch">${esc(c.pos_business_id==='dcarela'?'Central':c.pos_business_id)}</span></div><div class="posc-channels"><span class="${channels.some(x=>normalizePhoneClient(x.business_number)===POS_CHANNELS.official.number)?'available':''}">Oficial</span><span class="${channels.some(x=>normalizePhoneClient(x.business_number)===POS_CHANNELS.photos.number)?'available':''}">Fotos</span>${available?'':`<span>Sin chat previo en ${esc(POS_CHANNELS[posOutreachChannel].label)}</span>`}</div><div class="posc-service"><span>Último servicio</span><b>${esc(c.last_service||'Sin venta ligada')}</b></div><div class="posc-tags">${services.map(s=>`<span>${esc(posServiceCategory(s))} · ${esc(s)}</span>`).join('')||'<span>Sin historial de servicios</span>'}</div><div class="posc-numbers"><div><span>Compras</span><b>${Number(c.sale_count||0)}</b></div><div><span>Total registrado</span><b>${posMoney(c.total_spent_centavos)}</b></div><div class="${Number(c.balance_centavos)>0?'due':''}"><span>Saldo</span><b>${posMoney(c.balance_centavos)}</b></div></div><label class="posc-consent"><input type="checkbox" ${c.marketing_opt_in?'checked':''} onchange="togglePosMarketing('${escAttr(c.pos_business_id)}','${escAttr(c.customer_id)}',this.checked)"> Marketing autorizado</label><div class="posc-actions"><button onclick="openPosCustomerChat('${escAttr(c.pos_business_id)}','${escAttr(c.customer_id)}','chat')" ${available?'':'disabled'}>Abrir en ${esc(POS_CHANNELS[posOutreachChannel].label)}</button>${Number(c.balance_centavos)>0?`<button onclick="openPosCustomerChat('${escAttr(c.pos_business_id)}','${escAttr(c.customer_id)}','payment')" ${available?'':'disabled'}>Verificar cobro</button>`:''}<button onclick="openPosCustomerChat('${escAttr(c.pos_business_id)}','${escAttr(c.customer_id)}','followup')" ${available?'':'disabled'}>Seguimiento</button></div></article>`;}).join('');
 }
-window.togglePosMarketing=async function(businessId,customerId,enabled){if(!requirePermission('broadcast')){renderPosCustomers();return;}const {error}=await sb.from('crm_pos_customers').update({marketing_opt_in:enabled,marketing_opt_in_at:enabled?new Date().toISOString():null}).eq('pos_business_id',businessId).eq('customer_id',customerId);if(error){alert('No se pudo guardar el consentimiento: '+error.message);renderPosCustomers();return;}const row=posCustomerRows.find(x=>x.pos_business_id===businessId&&x.customer_id===customerId);if(row){row.marketing_opt_in=enabled;}renderPosCustomers();};
+window.togglePosMarketing=async function(businessId,customerId,enabled){if(!requirePermission('broadcast')){renderPosCustomers();return;}const {error}=await crmData.from('crm_pos_customers').upsert({pos_business_id:businessId,customer_id:customerId,marketing_opt_in:enabled,marketing_opt_in_at:enabled?new Date().toISOString():null},{onConflict:'pos_business_id,customer_id'});if(error){alert('No se pudo guardar el consentimiento: '+error.message);renderPosCustomers();return;}const row=posCustomerRows.find(x=>x.pos_business_id===businessId&&x.customer_id===customerId);if(row){row.marketing_opt_in=enabled;}renderPosCustomers();};
 async function ensurePosConversation(c){
   const phone=normalizePhoneClient(c.phone_normalized||c.phone);if(!phone)throw new Error('Este cliente no tiene WhatsApp registrado.');const businessNumber=POS_CHANNELS[posOutreachChannel]?.number;if(!businessNumber)throw new Error('No hay un número de WhatsApp activo para este panel.');
-  let query=sb.from('conversations').select('*').eq('wa_phone',phone).eq('business_number',businessNumber).order('last_message_at',{ascending:false}).limit(1);const {data:matches,error:readError}=await query;if(readError)throw readError;const existing=matches?.[0];
+  let query=crmData.from('conversations').select('*').eq('wa_phone',phone).eq('business_number',businessNumber).order('last_message_at',{ascending:false}).limit(1);const {data:matches,error:readError}=await query;if(readError)throw readError;const existing=matches?.[0];
   const patch={customer_name:c.name,contact_name:c.name,pos_business_id:c.pos_business_id,pos_customer_id:c.customer_id,pos_balance_centavos:c.balance_centavos,pos_last_service:c.last_service,pos_services:c.services||[],interested_category:c.last_service||null};
-  if(!existing)throw new Error(`Este cliente no tiene una conversación previa en ${POS_CHANNELS[posOutreachChannel].label}. Se bloqueó el contacto para no escribirle desde un número que no conoce.`);const {data,error}=await sb.from('conversations').update(patch).eq('id',existing.id).select('*').single();if(error)throw error;return data;
+  if(!existing)throw new Error(`Este cliente no tiene una conversación previa en ${POS_CHANNELS[posOutreachChannel].label}. Se bloqueó el contacto para no escribirle desde un número que no conoce.`);const {data,error}=await crmData.from('conversations').update(patch).eq('id',existing.id).select('*').single();if(error)throw error;return data;
 }
-window.openPosCustomerChat=async function(businessId,customerId,intent){if(!requirePermission('operate'))return;let c=posCustomerRows.find(x=>x.pos_business_id===businessId&&x.customer_id===customerId);if(!c)return;try{if(intent==='payment'){const {data,error}=await sb.rpc('crm_pos_payment_snapshot',{p_business_id:businessId,p_customer_id:customerId});if(error)throw error;c={...c,balance_centavos:Number(data?.balance_centavos||0),contact_channels:data?.contact_channels||c.contact_channels};const cached=posCustomerRows.find(x=>x.pos_business_id===businessId&&x.customer_id===customerId);if(cached)Object.assign(cached,c);if(data?.paid||c.balance_centavos<=0){renderPosCustomers();alert('Cobro bloqueado: la caja indica que este cliente ya no tiene saldo pendiente.');return;}}const conv=await ensurePosConversation(c);convs=[conv,...convs.filter(x=>x.id!==conv.id)];await openConv(conv);const first=String(c.name||'cliente').split(/\s+/)[0];let draft='';if(intent==='payment')draft=`Hola ${first}, esperamos que estés bien. Verificamos en caja un saldo pendiente de ${posMoney(c.balance_centavos)} relacionado con ${c.last_service||'tu servicio'}. ¿Deseas que te compartamos el detalle y las opciones para completarlo?`;if(intent==='followup')draft=`Hola ${first}, ¿cómo estás? Queríamos dar seguimiento a ${c.last_service||'tu servicio reciente'} y saber si necesitas orientación adicional.`;if(draft&&$('reply')){$('reply').value=draft;$('reply').dispatchEvent(new Event('input'));$('reply').focus();}}catch(error){alert(error.message||String(error));}};
+window.openPosCustomerChat=async function(businessId,customerId,intent){if(!requirePermission('operate'))return;let c=posCustomerRows.find(x=>x.pos_business_id===businessId&&x.customer_id===customerId);if(!c)return;try{if(intent==='payment'){const live=(await loadFirebasePosCustomers()).find(x=>x.pos_business_id===businessId&&x.customer_id===customerId);if(live)c={...c,...live,contact_channels:c.contact_channels||[]};const cached=posCustomerRows.find(x=>x.pos_business_id===businessId&&x.customer_id===customerId);if(cached)Object.assign(cached,c);if(c.balance_centavos<=0){renderPosCustomers();alert('Cobro bloqueado: la caja indica que este cliente ya no tiene saldo pendiente.');return;}}const conv=await ensurePosConversation(c);convs=[conv,...convs.filter(x=>x.id!==conv.id)];await openConv(conv);const first=String(c.name||'cliente').split(/\s+/)[0];let draft='';if(intent==='payment')draft=`Hola ${first}, esperamos que estés bien. Verificamos en caja un saldo pendiente de ${posMoney(c.balance_centavos)} relacionado con ${c.last_service||'tu servicio'}. ¿Deseas que te compartamos el detalle y las opciones para completarlo?`;if(intent==='followup')draft=`Hola ${first}, ¿cómo estás? Queríamos dar seguimiento a ${c.last_service||'tu servicio reciente'} y saber si necesitas orientación adicional.`;if(draft&&$('reply')){$('reply').value=draft;$('reply').dispatchEvent(new Event('input'));$('reply').focus();}}catch(error){alert(error.message||String(error));}};
 window.preparePosCampaign=function(){const eligible=posCustomerFiltered().filter(c=>c.marketing_opt_in&&c.phone_normalized&&posChannelAvailable(c));if(!eligible.length){alert(`Este filtro no tiene clientes con permiso y conversación previa en ${POS_CHANNELS[posOutreachChannel].label}. No se creará un contacto desde un número nuevo.`);return;}alert(`${eligible.length} cliente(s) elegibles en ${POS_CHANNELS[posOutreachChannel].label}. Abre Broadcast para revisar contenido, ritmo y plantilla antes de enviar.`);if(!LOCK_NUMFILTER)$('bcBtn')?.click();};
 $('poscSearch')?.addEventListener('input',renderPosCustomers);$('poscState')?.addEventListener('change',renderPosCustomers);$('poscRefresh')?.addEventListener('click',()=>loadPosCustomers(true));$('poscCampaign')?.addEventListener('click',preparePosCampaign);$('poscServiceToggle')?.addEventListener('click',()=>{const menu=$('poscServiceMenu');menu?.classList.toggle('on');});$('poscChannelOfficial')?.addEventListener('click',()=>setPosChannel('official'));$('poscChannelPhotos')?.addEventListener('click',()=>setPosChannel('photos'));document.addEventListener('click',event=>{if(!event.target.closest('.posc-service-filter'))$('poscServiceMenu')?.classList.remove('on');});
 
@@ -4377,9 +4330,9 @@ async function loadProspects(force = false) {
   const wrap = $('prosTableWrap');
   if (wrap) wrap.innerHTML = '<div class="pros-empty"><div class="ico">⌖</div><h3>Cargando prospectos...</h3><p>Consultando la base comercial con los permisos de tu cuenta.</p></div>';
   const [prospectsResult, campaignsResult, blockedResult] = await Promise.all([
-    sb.from('crm_prospects').select('id,business_name,category,description,address,sector,city,province,phone_primary,phone_secondary,whatsapp_possible,email_public,website,instagram,facebook,tiktok,maps_url,rating,review_count,status,source,assigned_to,tags,first_found_at,updated_at,qualification_score,qualification_tier,priority,estimated_value_centavos,preferred_service,notes,next_action_type,next_action_at,last_contacted_at,contact_attempts,last_prepared_message,last_playbook,converted_conversation_id').order('updated_at',{ascending:false}).limit(1000),
-    sb.from('crm_prospect_campaigns').select('id',{count:'exact',head:true}),
-    sb.from('crm_do_not_contact').select('id',{count:'exact',head:true}).eq('active',true),
+    crmData.from('crm_prospects').select('id,business_name,category,description,address,sector,city,province,phone_primary,phone_secondary,whatsapp_possible,email_public,website,instagram,facebook,tiktok,maps_url,rating,review_count,status,source,assigned_to,tags,first_found_at,updated_at,qualification_score,qualification_tier,priority,estimated_value_centavos,preferred_service,notes,next_action_type,next_action_at,last_contacted_at,contact_attempts,last_prepared_message,last_playbook,converted_conversation_id').order('updated_at',{ascending:false}).limit(1000),
+    crmData.from('crm_prospect_campaigns').select('id',{count:'exact',head:true}),
+    crmData.from('crm_do_not_contact').select('id',{count:'exact',head:true}).eq('active',true),
   ]);
   if (prospectsResult.error) {
     if (wrap) wrap.innerHTML = `<div class="pros-empty"><div class="ico">!</div><h3>No se pudo abrir Prospección</h3><p>${esc(prospectsResult.error.message || 'Error de base de datos')}</p></div>`;
@@ -4458,13 +4411,9 @@ function renderProspectInsights(rows) {
 }
 
 async function callProspectFunction(payload) {
-  const token = await panelAuthToken();
-  if (!token) return { ok:false,error:'Sesión vencida. Vuelve a entrar.' };
-  try {
-    const response = await fetch(SUPABASE_URL + '/functions/v1/prospect-search', { method:'POST', headers:{'Content-Type':'application/json','Authorization':'Bearer '+token}, body:JSON.stringify(payload) });
-    const data = await response.json().catch(()=>({error:'respuesta inválida'}));
-    return response.ok && data.ok ? data : { ok:false,error:data.error||'No se pudo completar.' };
-  } catch (error) { return { ok:false,error:'No se pudo conectar con Prospección.' }; }
+  const operation = String(payload?.action || 'search');
+  const { action:_legacyAction, ...fields } = payload || {};
+  return callCrmApi({ action:'prospect', operation, ...fields });
 }
 
 async function qualifyProspects(ids, button) {
@@ -4482,7 +4431,7 @@ async function openProspectDrawer(id) {
   const row = prospectRows.find(item=>String(item.id)===String(id)); if (!row) return;
   prospectActiveId=row.id; $('prosDrawerTitle').textContent=row.business_name; $('prosDrawerOverlay').classList.add('on'); $('prosDrawerOverlay').setAttribute('aria-hidden','false');
   renderProspectDrawer(row, []);
-  const {data:events}=await sb.from('crm_prospect_events').select('id,event_type,title,body,from_status,to_status,detail,created_at').eq('prospect_id',row.id).order('created_at',{ascending:false}).limit(40);
+  const {data:events}=await crmData.from('crm_prospect_events').select('id,event_type,title,body,from_status,to_status,detail,created_at').eq('prospect_id',row.id).order('created_at',{ascending:false}).limit(40);
   if (prospectActiveId===row.id) renderProspectDrawer(row,events||[]);
 }
 function playbookCards(playbook) { const fields=[['Ángulo de valor','value_angle'],['Primer mensaje','first_message'],['Seguimiento 1','follow_up_1'],['Seguimiento 2','follow_up_2'],['Apertura de llamada','call_opener'],['Mejor momento','best_time'],['Siguiente paso','next_step']]; return fields.filter(([,key])=>playbook&&playbook[key]).map(([label,key])=>`<div class="pros-playbook-card"><header><b>${label}</b><button data-copy-playbook="${key}">Copiar</button></header><div>${esc(String(playbook[key]))}</div></div>`).join(''); }
@@ -4514,9 +4463,9 @@ async function prepareProspectPlaybook(id) {
 }
 async function copyProspectText(value) { const text=String(value||'').trim();if(!text)return;try{await navigator.clipboard.writeText(text);toast('Copiado','Texto listo en el portapapeles.');}catch(e){alert('Copia manualmente:\n\n'+text);} }
 async function markProspectContacted(row) { if(!confirm(`¿Registrar que ya contactaste a ${row.business_name}?\n\nEsto no envía ningún mensaje; solo actualiza el seguimiento.`))return;const result=await callProspectFunction({action:'update_prospect',prospect_id:row.id,changes:{status:'contacted',last_contacted_at:new Date().toISOString(),contact_attempts:Number(row.contact_attempts||0)+1,next_action_type:'follow_up',next_action_at:new Date(Date.now()+2*86400000).toISOString()}});if(!result.ok){alert(result.error);return;}Object.assign(row,result.prospect);toast('Contacto registrado','Próximo seguimiento sugerido en 48 horas.');renderProspecting();openProspectDrawer(row.id); }
-async function addProspectPlanningTask(row) { if(!requirePermission('prospecting_operate'))return;const due=row.next_action_at||new Date(Date.now()+86400000).toISOString();const {data:{session}}=await sb.auth.getSession();const {error}=await sb.from('crm_planning_tasks').insert({title:`Dar seguimiento a ${row.business_name}`,detail:[row.category,row.preferred_service,row.phone_primary].filter(Boolean).join(' · '),source_kind:'prospect',source_id:row.id,priority:row.priority||'normal',status:'todo',due_at:due,assigned_to:row.assigned_to||session?.user?.id||null,created_by:session?.user?.id||null});if(error&&error.code!=='23505'){alert('No se pudo agregar al plan: '+error.message);return;}toast('Planificación',error?'Ya estaba en la cola de trabajo.':'Prospecto agregado a la cola de trabajo.');planningLoaded=false; }
+async function addProspectPlanningTask(row) { if(!requirePermission('prospecting_operate'))return;const due=row.next_action_at||new Date(Date.now()+86400000).toISOString();const session=panelSession();const {error}=await crmData.from('crm_planning_tasks').insert({title:`Dar seguimiento a ${row.business_name}`,detail:[row.category,row.preferred_service,row.phone_primary].filter(Boolean).join(' · '),source_kind:'prospect',source_id:row.id,priority:row.priority||'normal',status:'todo',due_at:due,assigned_to:row.assigned_to||session?.user?.id||null,created_by:session?.user?.id||null});if(error&&error.code!=='23505'){alert('No se pudo agregar al plan: '+error.message);return;}toast('Planificación',error?'Ya estaba en la cola de trabajo.':'Prospecto agregado a la cola de trabajo.');planningLoaded=false; }
 
-async function createProspectCampaign() { if(!requirePermission('prospecting_manage'))return;const ids=[...prospectSelected];if(!ids.length)return;const name=prompt('Nombre de la campaña revisable:',`Prospección ${new Date().toLocaleDateString('es-DO')}`);if(name===null||name.trim().length<3)return;const {data:{session}}=await sb.auth.getSession();const {data:campaign,error}=await sb.from('crm_prospect_campaigns').insert({name:name.trim(),objective:'Preparar contacto comercial manual',audience_filters:{prospect_ids:ids},status:'draft',risk_level:'low',contact_channel:'manual_whatsapp',created_by:session?.user?.id||null}).select('id').single();if(error){alert('No se pudo crear: '+error.message);return;}const {error:linkError}=await sb.from('crm_campaign_prospects').insert(ids.map(prospect_id=>({campaign_id:campaign.id,prospect_id,review_status:'pending'})));if(linkError){alert('La campaña se creó, pero no se pudieron agregar todos: '+linkError.message);return;}prospectSelected.clear();prospectMeta.campaigns++;renderProspecting();toast('Campaña creada',`${ids.length} prospectos en borrador. No se envió nada.`); }
+async function createProspectCampaign() { if(!requirePermission('prospecting_manage'))return;const ids=[...prospectSelected];if(!ids.length)return;const name=prompt('Nombre de la campaña revisable:',`Prospección ${new Date().toLocaleDateString('es-DO')}`);if(name===null||name.trim().length<3)return;const session=panelSession();const {data:campaign,error}=await crmData.from('crm_prospect_campaigns').insert({name:name.trim(),objective:'Preparar contacto comercial manual',audience_filters:{prospect_ids:ids},status:'draft',risk_level:'low',contact_channel:'manual_whatsapp',created_by:session?.user?.id||null}).select('id').single();if(error){alert('No se pudo crear: '+error.message);return;}const {error:linkError}=await crmData.from('crm_campaign_prospects').insert(ids.map(prospect_id=>({campaign_id:campaign.id,prospect_id,review_status:'pending'})));if(linkError){alert('La campaña se creó, pero no se pudieron agregar todos: '+linkError.message);return;}prospectSelected.clear();prospectMeta.campaigns++;renderProspecting();toast('Campaña creada',`${ids.length} prospectos en borrador. No se envió nada.`); }
 function exportProspectsCsv() { if(!requirePermission('prospecting_export'))return;const rows=currentProspectFiltered;if(!rows.length){alert('No hay resultados visibles para exportar.');return;}const cols=['business_name','category','phone_primary','city','sector','rating','review_count','qualification_score','qualification_tier','priority','status','next_action_type','next_action_at','estimated_value_centavos','website','maps_url'];const csv=[cols.join(','),...rows.map(row=>cols.map(key=>'"'+String(row[key]??'').replaceAll('"','""')+'"').join(','))].join('\r\n');const blob=new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=`dcarela-prospectos-${new Date().toISOString().slice(0,10)}.csv`;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000); }
 
 if ($('prosFilterStatus')) $('prosFilterStatus').innerHTML = '<option value="">Todos los estados</option>' + Object.entries(PROSPECT_STATUS_LABELS).map(([value,label]) => `<option value="${value}">${label}</option>`).join('');
@@ -4545,16 +4494,16 @@ if ($('prosExternalSearch')) $('prosExternalSearch').onclick = async () => {
 
 window.verEstadoConsent = async function() {
   try {
-    const { data: cs, count: total } = await sb.from('conversations')
+    const { data: cs, count: total } = await crmData.from('conversations')
       .select('id', { count:'exact', head:true })
       .eq('business_number', PANEL_BUSINESS_NUMBER || '18495245620')
       .or('source.is.null,source.neq.whatsapp_qr');
-    const { count: optin } = await sb.from('conversations')
+    const { count: optin } = await crmData.from('conversations')
       .select('id', { count:'exact', head:true })
       .eq('marketing_opt_in', true)
       .eq('business_number', PANEL_BUSINESS_NUMBER || '18495245620')
       .or('source.is.null,source.neq.whatsapp_qr');
-    const { count: optout } = await sb.from('conversations')
+    const { count: optout } = await crmData.from('conversations')
       .select('id', { count:'exact', head:true })
       .not('marketing_opt_out_at','is',null)
       .eq('business_number', PANEL_BUSINESS_NUMBER || '18495245620')
@@ -4728,7 +4677,7 @@ window.openSeguimientoWizard = async function() {
     const c = elig[idx];
     try {
       // Marca last_auto_template_at en el futuro lejano para excluirlo del wizard 30 días
-      await sb.from('conversations').update({
+      await crmData.from('conversations').update({
         last_auto_template_at: new Date().toISOString(),
         last_auto_template_purpose: 'manual_postpone_30d',
       }).eq('id', c.id);
@@ -4986,9 +4935,9 @@ async function loadPlanningData(force=false) {
   if (planningLoaded && !force) { renderPlanning(); return; }
   const target=$('planningInline');if(target)target.innerHTML='<div class="plan-card"><div class="plan-empty">Construyendo el centro operativo con conversaciones, tareas y prospectos…</div></div>';
   const [tasks,prospects,followups]=await Promise.all([
-    sb.from('crm_planning_tasks').select('*').neq('status','cancelled').order('due_at',{ascending:true,nullsFirst:false}).limit(500),
-    sb.from('crm_prospects').select('id,business_name,category,phone_primary,status,assigned_to,qualification_score,qualification_tier,priority,estimated_value_centavos,next_action_type,next_action_at,preferred_service').not('next_action_at','is',null).order('next_action_at',{ascending:true}).limit(500),
-    sb.from('crm_prospect_followups').select('id,prospect_id,due_at,task_type,note,status,assigned_to').neq('status','cancelled').order('due_at',{ascending:true}).limit(500),
+    crmData.from('crm_planning_tasks').select('*').neq('status','cancelled').order('due_at',{ascending:true,nullsFirst:false}).limit(500),
+    crmData.from('crm_prospects').select('id,business_name,category,phone_primary,status,assigned_to,qualification_score,qualification_tier,priority,estimated_value_centavos,next_action_type,next_action_at,preferred_service').not('next_action_at','is',null).order('next_action_at',{ascending:true}).limit(500),
+    crmData.from('crm_prospect_followups').select('id,prospect_id,due_at,task_type,note,status,assigned_to').neq('status','cancelled').order('due_at',{ascending:true}).limit(500),
   ]);
   const error=tasks.error||prospects.error||followups.error;if(error){if(target)target.innerHTML=`<div class="plan-card"><div class="plan-empty">No se pudo cargar la planificación persistente: ${esc(error.message||'error')}</div></div>`;return;}
   planningTasks=tasks.data||[];planningProspects=prospects.data||[];planningFollowups=followups.data||[];planningLoaded=true;
@@ -5051,9 +5000,9 @@ window.openPlanningItem=async function(kind,id){if(kind==='conversation')return 
 window.openPlanningTaskModal=function(task=null){const modal=$('planningTaskModal');modal.classList.add('on');modal.setAttribute('aria-hidden','false');modal.dataset.taskId=task?.id||'';$('planTaskTitle').value=task?.title||'';$('planTaskDetail').value=task?.detail||'';$('planTaskPriority').value=task?.priority||'normal';const due=task?.due_at?new Date(task.due_at):new Date(Date.now()+86400000);due.setMinutes(0,0,0);$('planTaskDue').value=new Date(due.getTime()-due.getTimezoneOffset()*60000).toISOString().slice(0,16);setTimeout(()=>$('planTaskTitle').focus(),30);};
 function closePlanningTaskModal(){$('planningTaskModal').classList.remove('on');$('planningTaskModal').setAttribute('aria-hidden','true');}
 $('planTaskClose').onclick=closePlanningTaskModal;$('planTaskCancel').onclick=closePlanningTaskModal;$('planningTaskModal').onclick=e=>{if(e.target.id==='planningTaskModal')closePlanningTaskModal();};
-$('planTaskSave').onclick=async()=>{const title=$('planTaskTitle').value.trim();if(title.length<2){$('planTaskTitle').focus();return;}const {data:{session}}=await sb.auth.getSession();const payload={title,detail:$('planTaskDetail').value.trim()||null,priority:$('planTaskPriority').value,due_at:$('planTaskDue').value?new Date($('planTaskDue').value).toISOString():null,assigned_to:session?.user?.id||null};const id=$('planningTaskModal').dataset.taskId;const btn=$('planTaskSave'),prev=btn.textContent;btn.disabled=true;btn.textContent='Guardando…';const result=id?await sb.from('crm_planning_tasks').update(payload).eq('id',id):await sb.from('crm_planning_tasks').insert({...payload,status:'todo',source_kind:'general',created_by:session?.user?.id||null});btn.disabled=false;btn.textContent=prev;if(result.error){alert('No se pudo guardar: '+result.error.message);return;}closePlanningTaskModal();planningLoaded=false;loadPlanningData(true);toast('Planificación','Tarea guardada.');};
-window.completePlanningTask=async function(id){const {data:{session}}=await sb.auth.getSession();const {error}=await sb.from('crm_planning_tasks').update({status:'done',completed_at:new Date().toISOString(),completed_by:session?.user?.id||null}).eq('id',id);if(error){alert(error.message);return;}planningLoaded=false;loadPlanningData(true);};
-window.snoozePlanningTask=async function(id){const task=planningTasks.find(x=>x.id===id);if(!task)return;const base=task.due_at?new Date(task.due_at):new Date();base.setDate(base.getDate()+1);const {error}=await sb.from('crm_planning_tasks').update({due_at:base.toISOString(),status:'waiting'}).eq('id',id);if(error){alert(error.message);return;}planningLoaded=false;loadPlanningData(true);toast('Planificación','Tarea movida un día.');};
+$('planTaskSave').onclick=async()=>{const title=$('planTaskTitle').value.trim();if(title.length<2){$('planTaskTitle').focus();return;}const session=panelSession();const payload={title,detail:$('planTaskDetail').value.trim()||null,priority:$('planTaskPriority').value,due_at:$('planTaskDue').value?new Date($('planTaskDue').value).toISOString():null,assigned_to:session?.user?.id||null};const id=$('planningTaskModal').dataset.taskId;const btn=$('planTaskSave'),prev=btn.textContent;btn.disabled=true;btn.textContent='Guardando…';const result=id?await crmData.from('crm_planning_tasks').update(payload).eq('id',id):await crmData.from('crm_planning_tasks').insert({...payload,status:'todo',source_kind:'general',created_by:session?.user?.id||null});btn.disabled=false;btn.textContent=prev;if(result.error){alert('No se pudo guardar: '+result.error.message);return;}closePlanningTaskModal();planningLoaded=false;loadPlanningData(true);toast('Planificación','Tarea guardada.');};
+window.completePlanningTask=async function(id){const session=panelSession();const {error}=await crmData.from('crm_planning_tasks').update({status:'done',completed_at:new Date().toISOString(),completed_by:session?.user?.id||null}).eq('id',id);if(error){alert(error.message);return;}planningLoaded=false;loadPlanningData(true);};
+window.snoozePlanningTask=async function(id){const task=planningTasks.find(x=>x.id===id);if(!task)return;const base=task.due_at?new Date(task.due_at):new Date();base.setDate(base.getDate()+1);const {error}=await crmData.from('crm_planning_tasks').update({due_at:base.toISOString(),status:'waiting'}).eq('id',id);if(error){alert(error.message);return;}planningLoaded=false;loadPlanningData(true);toast('Planificación','Tarea movida un día.');};
 window.copyPlanningBrief=async function(){const s=planningSnapshot();const lines=[`D'Carela CRM · resumen ${new Date().toLocaleDateString('es-DO')}`,`Prioridades: ${s.focus.length}`,`Sin leer: ${s.unread.length}`,`Atención humana: ${s.handoff.length}`,`Tareas vencidas: ${s.overdueTasks.length}`,`Prospectos con acción hoy: ${s.dueProspects.length}`,`Sesiones hoy: ${s.todaySessions.length}`,'',...s.focus.slice(0,8).map((x,i)=>`${i+1}. ${x.title} — ${x.meta}`)];try{await navigator.clipboard.writeText(lines.join('\n'));toast('Resumen copiado','Listo para compartir con el equipo.');}catch(e){alert(lines.join('\n'));}};
 window.runPlanningAssistant = async function() {
   if (!requirePermission('broadcast')) return;
@@ -5082,7 +5031,7 @@ window.runPlanningAssistant = async function() {
     review.onclick = () => reviewPlanningBroadcast(); out.appendChild(review);
   }
 };
-window.createPlanningTasksFromPlan=async function(){const p=planningLastPlan;if(!p||!Array.isArray(p.steps)||!p.steps.length)return;if(!confirm(`¿Crear ${Math.min(10,p.steps.length)} tareas revisables a partir del plan?`))return;const {data:{session}}=await sb.auth.getSession();const base=Date.now();const rows=p.steps.slice(0,10).map((step,i)=>({title:String(step).slice(0,240),detail:p.objective||p.rationale||null,source_kind:'general',priority:p.priority==='urgent'?'urgent':p.priority==='high'?'high':'normal',status:'todo',due_at:new Date(base+(i+1)*86400000).toISOString(),assigned_to:session?.user?.id||null,created_by:session?.user?.id||null,tags:['plan_ia']}));const {error}=await sb.from('crm_planning_tasks').insert(rows);if(error){alert('No se pudieron crear: '+error.message);return;}planningLoaded=false;loadPlanningData(true);toast('Planificación',`${rows.length} tareas creadas para revisión.`);};
+window.createPlanningTasksFromPlan=async function(){const p=planningLastPlan;if(!p||!Array.isArray(p.steps)||!p.steps.length)return;if(!confirm(`¿Crear ${Math.min(10,p.steps.length)} tareas revisables a partir del plan?`))return;const session=panelSession();const base=Date.now();const rows=p.steps.slice(0,10).map((step,i)=>({title:String(step).slice(0,240),detail:p.objective||p.rationale||null,source_kind:'general',priority:p.priority==='urgent'?'urgent':p.priority==='high'?'high':'normal',status:'todo',due_at:new Date(base+(i+1)*86400000).toISOString(),assigned_to:session?.user?.id||null,created_by:session?.user?.id||null,tags:['plan_ia']}));const {error}=await crmData.from('crm_planning_tasks').insert(rows);if(error){alert('No se pudieron crear: '+error.message);return;}planningLoaded=false;loadPlanningData(true);toast('Planificación',`${rows.length} tareas creadas para revisión.`);};
 window.reviewPlanningBroadcast = function() {
   const p = planningLastPlan; if (!p || p.action !== 'broadcast') return;
   const f = p.filter || {};
@@ -5267,14 +5216,11 @@ async function boot() {
   const firebaseUser = await waitForFirebaseUser();
   if (firebaseUser) {
     AUTH_PROVIDER = 'firebase';
-    const { data } = await sb.auth.getSession();
-    CRM_DATA_SESSION_AVAILABLE = !!data.session;
+    CRM_DATA_SESSION_AVAILABLE = true;
     await showApp({ user:{ id:firebaseUser.uid, email:firebaseUser.email } });
     return;
   }
-  const { data } = await sb.auth.getSession();
-  if (data.session) { AUTH_PROVIDER = 'supabase'; CRM_DATA_SESSION_AVAILABLE = true; await showApp(data.session); }
-  else $('login').style.display = 'flex';
+  $('login').style.display = 'flex';
 }
 $('loginBtn').onclick = async () => {
   $('loginErr').textContent = '';
@@ -5284,34 +5230,22 @@ $('loginBtn').onclick = async () => {
   try {
     const result = await firebaseSignIn(firebaseAuth, email, password);
     AUTH_PROVIDER = 'firebase';
-    let { data:sbData } = await sb.auth.getSession();
-    if(!sbData.session&&SUPABASE_URL&&SUPABASE_KEY){const signed=await sb.auth.signInWithPassword({email,password});if(!signed.error)sbData=signed.data;}
-    CRM_DATA_SESSION_AVAILABLE = !!sbData.session;
+    CRM_DATA_SESSION_AVAILABLE = true;
     $('loginBtn').textContent = 'Entrar';
     await showApp({ user:{ id:result.user.uid, email:result.user.email } });
     return;
-  } catch (firebaseError) {
-    if (SUPABASE_URL && SUPABASE_KEY) {
-      const { data, error } = await sb.auth.signInWithPassword({ email, password });
-      if (!error && data.session) {
-        AUTH_PROVIDER = 'supabase'; CRM_DATA_SESSION_AVAILABLE = true;
-        $('loginBtn').textContent = 'Entrar';
-        await showApp(data.session);
-        return;
-      }
-    }
-  }
+  } catch (firebaseError) {}
   $('loginBtn').textContent = 'Entrar';
   $('loginErr').textContent = 'Correo o contraseña incorrectos, o la cuenta no tiene acceso activo.';
 };
 $('pass').addEventListener('keydown', e => { if (e.key === 'Enter') $('loginBtn').click(); });
-$('logout').onclick = async () => { await Promise.allSettled([firebaseSignOut(firebaseAuth), sb.auth.signOut()]); location.reload(); };
+$('logout').onclick = async () => { await firebaseSignOut(firebaseAuth); location.reload(); };
 
 async function showApp(session) {
   try {
     await loadPanelAccess();
   } catch (error) {
-    await Promise.allSettled([firebaseSignOut(firebaseAuth), sb.auth.signOut()]);
+    await firebaseSignOut(firebaseAuth);
     $('app').style.display = 'none';
     $('login').style.display = 'flex';
     $('loginErr').textContent = error.message || 'Esta cuenta no tiene acceso activo al panel.';
@@ -5333,7 +5267,7 @@ async function showApp(session) {
   }
   setView(location.hash === '#anuncios' ? 'ads' : (CRM_CONFIG.defaultView || 'conversations'));
   try { if ('Notification' in window && Notification.permission === 'default') Notification.requestPermission(); } catch (e) {}
-  if (CRM_DATA_SESSION_AVAILABLE || AUTH_PROVIDER === 'supabase') {
+  if (CRM_DATA_SESSION_AVAILABLE) {
     loadQuickReplies();
     if (!LOCK_NUMFILTER) loadApprovedTemplates();
     if (!LOCK_NUMFILTER) checkWaHealth();
@@ -5456,10 +5390,10 @@ async function checkWaHealth() {
     el.style.display = '';
     return;
   }
-  if (!CRM_DATA_SESSION_AVAILABLE && AUTH_PROVIDER !== 'supabase') return;
+  if (!CRM_DATA_SESSION_AVAILABLE) return;
   if (inboxNumFilter === 'qr') { el.style.display = 'none'; return; }
   try {
-    const { data } = await sb.from('settings').select('key,value').in('key', ['wa_delivery_health']);
+    const { data } = await crmData.from('settings').select('key,value').in('key', ['wa_delivery_health']);
     const map = {}; (data || []).forEach(r => map[r.key] = r.value);
     let health = null; try { health = map.wa_delivery_health ? JSON.parse(map.wa_delivery_health) : null; } catch (e) {}
     if (health && health.ok === false) {
@@ -5478,14 +5412,14 @@ let _numFilterLast = 0;
 async function maybeShowNumFilter() {
   const el = $('numFilter'); if (!el) return;
   if (LOCK_NUMFILTER) { el.style.display = 'none'; return; } // panel fijo a un número (réplica fotos)
-  if (!CRM_DATA_SESSION_AVAILABLE && AUTH_PROVIDER !== 'supabase') return;
+  if (!CRM_DATA_SESSION_AVAILABLE) return;
   if (el.value !== inboxNumFilter) el.value = inboxNumFilter;
   if (el.style.display !== 'none') return;        // ya visible
   if (inboxNumFilter) { el.style.display = ''; return; } // el usuario ya eligió un filtro
   if (Date.now() - _numFilterLast < 25000) return;       // chequea cada ~25s mientras esté oculto
   _numFilterLast = Date.now();
   try {
-    const { count } = await sb.from('conversations').select('id', { count:'exact', head:true }).eq('source','whatsapp_qr');
+    const { count } = await crmData.from('conversations').select('id', { count:'exact', head:true }).eq('source','whatsapp_qr');
     if (count && count > 0) el.style.display = '';
   } catch (e) {}
 }
@@ -5537,7 +5471,7 @@ async function refreshConversationNameHints(rows) {
   conversationNameHintsLoadedAt = Date.now();
   for (let i = 0; i < phones.length; i += 100) {
     const chunk = phones.slice(i, i + 100);
-    const { data, error } = await sb.from('conversations')
+    const { data, error } = await crmData.from('conversations')
       .select('wa_phone,customer_name,contact_name,display_name,last_message_at,source')
       .in('wa_phone', chunk)
       .or('source.is.null,source.neq.whatsapp_qr')
@@ -5575,7 +5509,7 @@ async function fetchConversationRows() {
   const pageSize = 500;
   for (let page = 0; page < 10; page++) {
     const from = page * pageSize;
-    let query = sb.from('conversations').select('*')
+    let query = crmData.from('conversations').select('*')
       .order('last_message_at', { ascending: false })
       .order('id', { ascending: true })
       .range(from, from + pageSize - 1);
@@ -5754,7 +5688,7 @@ async function openConv(c) {
     try {
       if (c._backend === 'firebase') await firebaseUpdateConversation(c, { unread:0 });
       else {
-        const { error } = await sb.from('conversations').update({ unread:0 }).eq('id', c.id);
+        const { error } = await crmData.from('conversations').update({ unread:0 }).eq('id', c.id);
         if (error) throw error;
         c.unread = 0;
       }
@@ -5858,7 +5792,7 @@ function buildMsgEl(m) {
 async function fetchConversationMessages(conversationId, fresh) {
   if (sel?._backend === 'firebase') return fetchFirebaseConversationMessages(sel, fresh);
   if (!fresh) {
-    const { data, error } = await sb.from('messages').select('*')
+    const { data, error } = await crmData.from('messages').select('*')
       .eq('conversation_id', conversationId)
       .order('created_at', { ascending: false })
       .order('id', { ascending: false })
@@ -5871,7 +5805,7 @@ async function fetchConversationMessages(conversationId, fresh) {
   // cuando WhatsApp entrega muchos mensajes con la misma marca de tiempo.
   for (let page = 0; page < 200; page++) {
     const from = page * pageSize;
-    const { data, error } = await sb.from('messages').select('*')
+    const { data, error } = await crmData.from('messages').select('*')
       .eq('conversation_id', conversationId)
       .order('created_at', { ascending: true })
       .order('id', { ascending: true })
@@ -6266,18 +6200,8 @@ function isBridgeConv(c) {
 }
 async function enqueueBridge(conv, { text = '', mediaUrl = null, msgType = 'text' } = {}) {
   if (!hasPermission('operate')) return { ok:false, error:'permiso insuficiente' };
-  try {
-    const { error } = await sb.from('wa_outbox').insert({
-      business_number: conv.business_number || null,
-      wa_phone: conv.wa_phone,
-      conversation_id: conv.id,
-      msg_type: msgType,
-      body: text || '',
-      media_url: mediaUrl,
-    });
-    if (error) return { ok:false, error: error.message };
-    return { ok:true, queued:true };
-  } catch (e) { return { ok:false, error: 'conexión' }; }
+  if (mediaUrl || msgType !== 'text') return { ok:false, error:'Los archivos del segundo WhatsApp todavía no están habilitados.' };
+  return callFn({ action:'bridgeQueue', conversation_id:conv.id, text:text || '' });
 }
 
 // ===== acciones por mensaje: Responder · Reenviar · Eliminar =====
@@ -7289,7 +7213,7 @@ function wireQuickActions(c) {
 }
 
 async function loadNotes(convId) {
-  const { data } = await sb.from('notes').select('*')
+  const { data } = await crmData.from('notes').select('*')
     .eq('conversation_id', convId).order('created_at', { ascending: false }).limit(50);
   const lst = $('notesList'); if (!lst) return;
   if (!data || !data.length) {
@@ -7316,10 +7240,10 @@ function fmtNoteTime(t) {
 
 async function loadAttachments(convId) {
   const el = $('attList'); if (!el) return;
-  const { data, error } = await sb.from('attachments').select('*')
+  const { data, error } = await crmData.from('attachments').select('*')
     .eq('conversation_id', convId).order('created_at', { ascending:false }).limit(80);
   if (error) {
-    el.innerHTML = '<div style="font-size:11px;color:var(--mut)">Ejecuta supabase/codex_crm_extensions.sql para activar archivos enriquecidos.</div>';
+    el.innerHTML = '<div style="font-size:11px;color:var(--mut)">No se pudieron cargar los archivos desde Firebase.</div>';
     return;
   }
   if (!data || !data.length) {
@@ -7339,10 +7263,10 @@ async function loadAttachments(convId) {
 
 async function loadTimeline(convId) {
   const el = $('tlList'); if (!el) return;
-  const { data, error } = await sb.from('timeline_events').select('*')
+  const { data, error } = await crmData.from('timeline_events').select('*')
     .eq('conversation_id', convId).order('created_at', { ascending:false }).limit(80);
   if (error) {
-    el.innerHTML = '<div style="font-size:11px;color:var(--mut)">Ejecuta supabase/codex_crm_extensions.sql para activar timeline.</div>';
+    el.innerHTML = '<div style="font-size:11px;color:var(--mut)">No se pudo cargar la actividad desde Firebase.</div>';
     return;
   }
   if (!data || !data.length) {
@@ -7358,7 +7282,7 @@ async function loadTimeline(convId) {
 
 // ----- templates / quick_replies -----
 async function loadQuickReplies() {
-  const { data } = await sb.from('quick_replies').select('*').order('title');
+  const { data } = await crmData.from('quick_replies').select('*').order('title');
   quickReplies = data || [];
 }
 const PURPOSE_LABELS = {
@@ -7562,7 +7486,7 @@ function applySelectedApprovedTemplate() {
     const missingWaba = /WA_WABA_ID|WhatsApp Business Account ID|WABA/i.test(approvedTemplatesError);
     const msg = approvedTemplatesError
       ? (missingWaba
-        ? 'Falta el ID de la cuenta de WhatsApp Business (WABA ID). Las plantillas ya pueden existir en Meta, pero el CRM no puede listarlas hasta configurar ese secreto en Supabase: WA_WABA_ID=ID_DEL_WABA. Mientras tanto puedes escribir el nombre manualmente si lo sabes.'
+        ? 'Falta el ID de la cuenta de WhatsApp Business (WABA ID). Configúralo en Firebase para que el CRM pueda sincronizar las plantillas de Meta.'
         : `${approvedTemplatesError}. Puedes escribir el nombre manualmente, pero debe existir y estar aprobado en Meta.`)
       : (approvedTemplates.length ? (approvedTemplatesFallbackAll ? 'No hay plantillas para este numero; se muestran todas las plantillas activas registradas.' : 'Selecciona una plantilla aprobada para completar idioma, variables y baja/STOP.') : 'No hay plantillas activas para este numero. Pulsa Sincronizar con Meta en el gestor de plantillas, o escribe el nombre manualmente.');
     info.textContent = msg;
@@ -7848,7 +7772,7 @@ function renderTplPopup() {
       const id = b.dataset.del;
       const t = quickReplies.find(x => x.id === id);
       if (!t || !confirm(`¿Borrar la plantilla "${t.title}"?`)) return;
-      const { error } = await sb.from('quick_replies').delete().eq('id', id);
+      const { error } = await crmData.from('quick_replies').delete().eq('id', id);
       if (error) { alert('No se pudo borrar: ' + error.message); return; }
       await loadQuickReplies(); renderTplPopup();
     };
@@ -7859,7 +7783,7 @@ function renderTplPopup() {
     const body = $('tplNewBody').value.trim();
     if (!title || !body) { alert('Pon título y texto.'); return; }
     $('tplAdd').disabled = true;
-    const { error } = await sb.from('quick_replies').insert({ title, body });
+    const { error } = await crmData.from('quick_replies').insert({ title, body });
     $('tplAdd').disabled = false;
     if (error) { alert('No se pudo guardar: ' + error.message); return; }
     $('tplNewTitle').value = ''; $('tplNewBody').value = '';
@@ -8173,43 +8097,7 @@ if (_aiDocIn) _aiDocIn.addEventListener('change', e => {
 });
 
 async function requestAssistantPlan(instruction, options = {}) {
-  const token = await panelAuthToken();
-  if (!token) return { ok:false, error:'sesion vencida' };
-  // El planificador vive en crmApi (Google protegido por el servidor). La clave
-  // nunca llega al navegador. Supabase quedo restringido y solo sigue como resguardo.
-  if (CRM_FUNCTIONS_BASE && firebaseAuth.currentUser) {
-    try {
-      const firebaseToken = await firebaseAuth.currentUser.getIdToken();
-      const response = await fetch(CRM_FUNCTIONS_BASE + '/crmApi', {
-        method:'POST',
-        cache:'no-store',
-        headers:{ 'Content-Type':'application/json', 'Authorization':'Bearer ' + firebaseToken },
-        body:JSON.stringify({ action:'assistantPlan', instruction, ...options }),
-      });
-      const result = await response.json().catch(() => ({}));
-      if (response.status !== 501) {
-        if (response.ok) { PANEL_FUNCTIONS_AVAILABLE = true; updatePanelSyncStatus(); }
-        return {
-          ...result,
-          ok: response.ok && result.ok !== false,
-          error: result.error || (response.ok ? null : 'el asistente no pudo responder'),
-        };
-      }
-    } catch (error) {
-      return { ok:false, error:'no se pudo conectar con el asistente' };
-    }
-  }
-  try {
-    const response = await fetch(SUPABASE_URL + '/functions/v1/followup-cron?mode=assistant', {
-      method:'POST',
-      headers:{ 'Content-Type':'application/json', 'Authorization':'Bearer ' + token },
-      body:JSON.stringify({ instruction, ...options }),
-    });
-    const result = await response.json().catch(() => ({ error:'respuesta invalida' }));
-    return { ...result, ok:response.ok && result.ok !== false };
-  } catch (e) {
-    return { ok:false, error:'no se pudo conectar con el asistente' };
-  }
+  return callCrmApi({ action:'assistantPlan', instruction, ...options });
 }
 
 function readFileAsDataUrl(file) {
@@ -8335,7 +8223,7 @@ async function generateContactReport(c) {
   $('aiInstWrap').style.opacity = '1';
   $('aiResult').style.display = 'block';
   $('aiResult').textContent = 'Analizando historial y ficha del contacto...';
-  const { data:messages, error } = await sb.from('messages')
+  const { data:messages, error } = await crmData.from('messages')
     .select('direction,msg_type,body,transcription,image_description,detected_intent,created_at')
     .eq('conversation_id', c.id).order('created_at', { ascending:false }).limit(80);
   if (error) { $('aiResult').textContent = 'No se pudo leer el historial: ' + error.message; return; }
@@ -8847,7 +8735,7 @@ window.saveAgendaManual = async function() {
   err.textContent = '';
   try {
     // Busca conversación existente por wa_phone, o crea
-    let existingQuery = sb.from('conversations').select('id,customer_name,contact_name').eq('wa_phone', phone).eq('business_number', channelBusinessNumber);
+    let existingQuery = crmData.from('conversations').select('id,customer_name,contact_name').eq('wa_phone', phone).eq('business_number', channelBusinessNumber);
     existingQuery = qrChannelActive() ? existingQuery.eq('source','whatsapp_qr') : existingQuery.or('source.is.null,source.neq.whatsapp_qr');
     const { data: existing } = await existingQuery.maybeSingle();
     let convId = existing && existing.id;
@@ -8876,11 +8764,11 @@ window.saveAgendaManual = async function() {
     try { patch.sucursal = document.getElementById('agnSuc').value || null; } catch(e) {}
     let savedConv = null;
     if (convId) {
-      const { data: upd, error: updErr } = await sb.from('conversations').update(patch).eq('id', convId).select('*').single();
+      const { data: upd, error: updErr } = await crmData.from('conversations').update(patch).eq('id', convId).select('*').single();
       if (updErr) throw updErr;
       savedConv = upd;
     } else {
-      const { data: ins, error: insErr } = await sb.from('conversations').insert({
+      const { data: ins, error: insErr } = await crmData.from('conversations').insert({
         wa_phone: phone,
         business_number: channelBusinessNumber,
         source: qrChannelActive() ? 'whatsapp_qr' : 'whatsapp_cloud',
@@ -8957,13 +8845,13 @@ window.saveAgendaManual = async function() {
 const GCAL_SCOPE = 'https://www.googleapis.com/auth/calendar';
 async function gcalGetClientId() {
   try {
-    const { data } = await sb.from('settings').select('value').eq('key','google_calendar_client_id').maybeSingle();
+    const { data } = await crmData.from('settings').select('value').eq('key','google_calendar_client_id').maybeSingle();
     if (data && data.value) return data.value;
   } catch {}
   return null;
 }
 async function gcalSaveClientId(id) {
-  await sb.from('settings').upsert({ key:'google_calendar_client_id', value: id, updated_at: new Date().toISOString() }, { onConflict: 'key' });
+  await crmData.from('settings').upsert({ key:'google_calendar_client_id', value: id, updated_at: new Date().toISOString() }, { onConflict: 'key' });
 }
 // ===== Ciclo de vida del token (REFORZADO) =====
 // El access_token de GIS dura ~1h. Antes, al expirar TODO fallaba en silencio
@@ -9063,13 +8951,13 @@ window.googleCalToggle = async function() {
 
 async function gcalGetCalendarId() {
   try {
-    const { data } = await sb.from('settings').select('value').eq('key','google_calendar_id').maybeSingle();
+    const { data } = await crmData.from('settings').select('value').eq('key','google_calendar_id').maybeSingle();
     if (data && data.value) return data.value;
   } catch {}
   return null;
 }
 async function gcalSaveCalendarId(id) {
-  await sb.from('settings').upsert({ key:'google_calendar_id', value: id, updated_at: new Date().toISOString() }, { onConflict: 'key' });
+  await crmData.from('settings').upsert({ key:'google_calendar_id', value: id, updated_at: new Date().toISOString() }, { onConflict: 'key' });
 }
 async function gcalPickCalendar() {
   try {
@@ -9167,14 +9055,20 @@ window.exportAgendaIcs = function(scope) {
   trackPixel('Subscribe', {content_name: 'agenda_ics_download'});
 };
 
-// Suscripción de agenda (Edge Function agenda-ics). La key vive en settings
-// (BD, requiere sesión) — NUNCA se hardcodea aquí: este HTML es un repo público.
+// Suscripción privada servida por Firebase. La key vive en crm_settings y nunca se
+// hardcodea en este HTML público.
 window.copyAgendaFeedUrl = async function() {
   try {
-    const { data } = await sb.from('settings').select('value').eq('key', 'agenda_feed_key').maybeSingle();
-    const key = typeof data?.value === 'string' ? data.value : (data?.value?.key || '');
-    if (!key) { alert('Solo el administrador puede ver el link de suscripción (o falta settings.agenda_feed_key).'); return; }
-    const url = SUPABASE_URL.replace(/\/$/, '') + '/functions/v1/agenda-ics?key=' + encodeURIComponent(key);
+    if (!requirePermission('manage_settings')) return;
+    let { data } = await crmData.from('settings').select('value').eq('key', 'agenda_feed_key').maybeSingle();
+    let key = typeof data?.value === 'string' ? data.value : (data?.value?.key || '');
+    if (!key) {
+      key = crypto.randomUUID() + crypto.randomUUID().replaceAll('-', '');
+      const saved = await crmData.from('settings').upsert({ key:'agenda_feed_key', value:key }, { onConflict:'key' });
+      if (saved.error) throw new Error(saved.error.message);
+    }
+    const agendaBase = String(CRM_CONFIG.firebaseAgendaUrl || (CRM_FUNCTIONS_BASE + '/crmAgenda')).replace(/\/+$/, '');
+    const url = agendaBase + '?key=' + encodeURIComponent(key);
     await navigator.clipboard.writeText(url);
     toast('Agenda', 'Link de suscripción copiado. Pégalo en iPhone: Ajustes → Calendario → Cuentas → Agregar calendario por suscripción.');
   } catch (e) {
@@ -9481,14 +9375,7 @@ window.runRemindersNow = async function runRemindersNow() {
   if (legacyButton) legacyButton.disabled = true;
   if (viewButton) { viewButton.disabled = true; viewButton.textContent = 'Procesando…'; }
   try {
-    const token = await panelAuthToken();
-    if (!token) throw new Error('sesión vencida');
-    const url = SUPABASE_URL + '/functions/v1/followup-cron' + (PANEL_BUSINESS_NUMBER ? ('?business_number=' + encodeURIComponent(PANEL_BUSINESS_NUMBER)) : '');
-    const r = await fetch(url, {
-      method: 'POST',
-      headers: { 'Authorization': 'Bearer ' + token },
-    });
-    const jr = await r.json();
+    const jr = await callCrmApi({ action:'followup', mode:'scheduled', business_number:PANEL_BUSINESS_NUMBER || '' });
     if (jr && jr.ok) {
       const lines = ['Procesado:'];
       lines.push(`· Follow-ups enviados: ${jr.followUps || 0}`);
@@ -9542,36 +9429,20 @@ async function openAutoTemplates() {
   await loadApprovedTemplates(true);
 }
 
-function autoTemplateQuery(dry) {
-  const p = new URLSearchParams();
-  p.set('mode', 'smart_templates');
-  if (dry) p.set('dry', '1');
-  if (PANEL_BUSINESS_NUMBER) p.set('business_number', PANEL_BUSINESS_NUMBER);
-  p.set('purpose', $('autoTplPurpose').value || 'both');
-  p.set('min_hours', $('autoTplMinHours').value || '6');
-  p.set('repeat_days', $('autoTplRepeatDays').value || '3');
-  if ($('autoTplStage').value) p.set('stage', $('autoTplStage').value);
-  if ($('autoTplCat').value) p.set('category', $('autoTplCat').value);
-  if ($('autoTplPri').value) p.set('priority', $('autoTplPri').value);
-  return p.toString();
+function autoTemplatePayload(dry) {
+  return { action:'followup', mode:'smart_templates', dry, business_number:PANEL_BUSINESS_NUMBER || '',
+    purpose:$('autoTplPurpose').value || 'both', min_hours:Number($('autoTplMinHours').value || 6),
+    repeat_days:Number($('autoTplRepeatDays').value || 3), stage:$('autoTplStage').value || '',
+    category:$('autoTplCat').value || '', priority:$('autoTplPri').value || '' };
 }
 
 async function callAutoTemplates(dry) {
-  const token = await panelAuthToken();
-  if (!token) return { ok:false, error:'sesión vencida' };
-  const url = SUPABASE_URL + '/functions/v1/followup-cron?' + autoTemplateQuery(dry);
-  const r = await fetch(url, { method: 'POST', headers: { 'Authorization': 'Bearer ' + token } });
-  return await r.json();
+  return callCrmApi(autoTemplatePayload(dry));
 }
 
 // Procesa SOLO los IDs dados (un lote), para barra de progreso real.
 async function callAutoTemplatesChunk(ids) {
-  const token = await panelAuthToken();
-  if (!token) return { ok:false, error:'sesión vencida' };
-  const q = autoTemplateQuery(false) + '&only_ids=' + encodeURIComponent(ids.join(','));
-  const url = SUPABASE_URL + '/functions/v1/followup-cron?' + q;
-  const r = await fetch(url, { method: 'POST', headers: { 'Authorization': 'Bearer ' + token } });
-  return await r.json();
+  return callCrmApi({ ...autoTemplatePayload(false), only_ids:ids });
 }
 
 // Barra de progreso reutilizable (cualquier proceso por lotes la usa).
@@ -9734,41 +9605,14 @@ function openTagSync() {
   $('tagSync').classList.add('on');
 }
 
-function tagSyncQuery(dry) {
-  const p = new URLSearchParams();
-  p.set('mode', 'sync_tags');
-  if (dry) p.set('dry', '1');
-  if (PANEL_BUSINESS_NUMBER) p.set('business_number', PANEL_BUSINESS_NUMBER);
-  p.set('limit', $('tagSyncLimit').value || '200');
-  p.set('ai', $('tagSyncAi').value || '1');
-  if ($('tagSyncStage').value) p.set('stage', $('tagSyncStage').value);
-  if ($('tagSyncCat').value) p.set('category', $('tagSyncCat').value);
-  if ($('tagSyncPri').value) p.set('priority', $('tagSyncPri').value);
-  return p.toString();
+function tagSyncPayload(dry) {
+  return { action:'followup', mode:'sync_tags', dry, business_number:PANEL_BUSINESS_NUMBER || '',
+    limit:Number($('tagSyncLimit').value || 200), use_ai:$('tagSyncAi').value !== '0',
+    stage:$('tagSyncStage').value || '', category:$('tagSyncCat').value || '', priority:$('tagSyncPri').value || '' };
 }
 
 async function callTagSync(dry) {
-  const token = await panelAuthToken();
-  if (!token) return { ok:false, error:'sesión vencida' };
-  const url = SUPABASE_URL + '/functions/v1/followup-cron?' + tagSyncQuery(dry);
-  // Timeout duro de 120s. IA + N conversaciones llama Gemini secuencial; si pasa
-  // mucho, abortamos en vez de dejar el botón colgado.
-  const ctl = new AbortController();
-  const t = setTimeout(() => ctl.abort(), 120000);
-  try {
-    const r = await fetch(url, {
-      method: 'POST',
-      headers: { 'Authorization': 'Bearer ' + token },
-      signal: ctl.signal,
-    });
-    const text = await r.text();
-    let body; try { body = JSON.parse(text); } catch { body = { ok: false, error: 'respuesta no JSON: ' + text.slice(0, 280) }; }
-    if (!r.ok && !body.error) body.error = `HTTP ${r.status}`;
-    return body;
-  } catch (e) {
-    if (e.name === 'AbortError') return { ok: false, error: 'timeout: el análisis tardó >90s. Prueba con "Solo reglas rápidas" o menos conversaciones.' };
-    return { ok: false, error: e.message || String(e) };
-  } finally { clearTimeout(t); }
+  return callCrmApi(tagSyncPayload(dry));
 }
 
 function renderTagSyncResult(r) {
@@ -9914,18 +9758,7 @@ function updateBcMode() {
 /** Llama a wa-bulk (envio masivo por el 2do numero con las capas anti-baneo). */
 async function callWaBulk(action, extra) {
   if (!hasPermission('broadcast')) return { ok:false, error:'permiso insuficiente' };
-  const token = await panelAuthToken();
-  if (!token) return { ok:false, error:'sesion vencida' };
-  try {
-    const r = await fetch(SUPABASE_URL + '/functions/v1/wa-bulk', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-      body: JSON.stringify({ action, ...extra }),
-    });
-    return await r.json();
-  } catch (e) {
-    return { ok:false, error: e.message || 'no se pudo contactar wa-bulk' };
-  }
+  return callCrmApi({ action:'bridgeBulk', operation:action, ...extra });
 }
 
 /**
@@ -10285,7 +10118,7 @@ window.confirmAutoClose14d = async function() {
 window.autoCloseHumans14d = async function(dryRun = false) {
   if (!requirePermission('automation')) return { error:'permiso insuficiente' };
   const cutoff = new Date(Date.now() - 14*24*3600*1000).toISOString();
-  const { data: candidates, error: e1 } = await sb.from('conversations')
+  const { data: candidates, error: e1 } = await crmData.from('conversations')
     .select('id, contact_name, wa_phone, last_message_at')
     .eq('mode', 'human')
     .or('source.is.null,source.neq.whatsapp_qr')
@@ -10297,7 +10130,7 @@ window.autoCloseHumans14d = async function(dryRun = false) {
   if (dryRun) return { found: candidates.length, candidates };
   if (!candidates.length) { alert('0 candidatos (todos los humanos tienen actividad reciente).'); return { closed: 0 }; }
   if (!confirm(`¿Cerrar ${candidates.length} conversaciones en mode=human sin actividad >= 14 dias?`)) return { aborted: true };
-  const { data, error } = await sb.from('conversations')
+  const { data, error } = await crmData.from('conversations')
     .update({ mode: 'bot', lifecycle_stage: 'cerrado' })
     .eq('mode', 'human')
     .or('source.is.null,source.neq.whatsapp_qr')
@@ -10364,9 +10197,9 @@ function defaultSurveyMsg(name){
 function survStars(n){ n = Math.max(0, Math.min(5, Math.round(n||0))); return '★★★★★'.slice(0,n) + '☆☆☆☆☆'.slice(0,5-n); }
 
 async function loadTeamConfig(){
-  try { const { data } = await sb.from('collaborators').select('*').order('created_at', { ascending:true }); collaborators = data || []; }
+  try { const { data } = await crmData.from('collaborators').select('*').order('created_at', { ascending:true }); collaborators = data || []; }
   catch(e){ collaborators = []; }
-  try { const { data:s } = await sb.from('settings').select('value').eq('key','reviews_auto_on_close').maybeSingle();
+  try { const { data:s } = await crmData.from('settings').select('value').eq('key','reviews_auto_on_close').maybeSingle();
         reviewsAutoOnClose = !!(s && (s.value === true || s.value === 'true')); }
   catch(e){ reviewsAutoOnClose = false; }
   renderCollabBox();
@@ -10388,23 +10221,23 @@ function renderCollabBox(){
 async function addCollab(){
   const nm = ($('collabName').value||'').trim(), rl = ($('collabRole').value||'').trim();
   if (!nm){ $('collabName').focus(); return; }
-  const { error } = await sb.from('collaborators').insert({ name:nm, role:rl||null, business_number: PANEL_BUSINESS_NUMBER||null, active:true });
+  const { error } = await crmData.from('collaborators').insert({ name:nm, role:rl||null, business_number: PANEL_BUSINESS_NUMBER||null, active:true });
   if (error){ alert('No se pudo agregar: ' + error.message); return; }
   $('collabName').value=''; $('collabRole').value=''; await loadTeamConfig();
 }
 async function toggleCollab(id){
   const c = collaborators.find(x=>x.id===id); if(!c) return;
-  await sb.from('collaborators').update({ active: c.active===false }).eq('id', id);
+  await crmData.from('collaborators').update({ active: c.active===false }).eq('id', id);
   await loadTeamConfig();
 }
 async function deleteCollab(id){
-  const { count } = await sb.from('reviews').select('id',{count:'exact',head:true}).eq('collaborator_id', id);
+  const { count } = await crmData.from('reviews').select('id',{count:'exact',head:true}).eq('collaborator_id', id);
   if (count){
     if(!confirm('Este colaborador ya tiene reseñas. Se DESACTIVA (no se elimina) para conservar el historial. ¿Continuar?')) return;
-    await sb.from('collaborators').update({ active:false }).eq('id', id);
+    await crmData.from('collaborators').update({ active:false }).eq('id', id);
   } else {
     if(!confirm('¿Eliminar este colaborador?')) return;
-    await sb.from('collaborators').delete().eq('id', id);
+    await crmData.from('collaborators').delete().eq('id', id);
   }
   await loadTeamConfig();
 }
@@ -10420,7 +10253,7 @@ if ($('collabAdd')) $('collabAdd').onclick = addCollab;
 if ($('collabName')) $('collabName').addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); addCollab(); } });
 if ($('autoSurvey')) $('autoSurvey').onchange = async () => {
   const on = $('autoSurvey').checked;
-  const { error } = await sb.from('settings').upsert({ key:'reviews_auto_on_close', value: on }, { onConflict:'key' });
+  const { error } = await crmData.from('settings').upsert({ key:'reviews_auto_on_close', value: on }, { onConflict:'key' });
   if (error){ alert('No se pudo guardar: ' + error.message); $('autoSurvey').checked = !on; return; }
   reviewsAutoOnClose = on;
 };
@@ -10428,10 +10261,10 @@ if ($('autoSurvey')) $('autoSurvey').onchange = async () => {
 // --- enviar encuesta (compartido por botón manual y auto) ---
 async function sendSurvey(conv, collabId, intro){
   const name = conv.customer_name || conv.contact_name || null;
-  // 2do número (puente WhatsApp Web): no soporta botones interactivos -> manda el LINK por texto.
+  // Las encuestas usan un enlace público con token aleatorio en ambos canales.
   if (isBridgeConv(conv)){
     const token = (self.crypto && crypto.randomUUID ? crypto.randomUUID() : (Date.now().toString(36)+Math.random().toString(36).slice(2)));
-    const { data: ins, error: e1 } = await sb.from('reviews').insert({
+    const { data: ins, error: e1 } = await crmData.from('reviews').insert({
       token, business_number: conv.business_number || PANEL_BUSINESS_NUMBER || null,
       conversation_id: conv.id, wa_phone: conv.wa_phone, customer_name: name,
       collaborator_id: collabId || null, status: 'pending'
@@ -10440,12 +10273,12 @@ async function sendSurvey(conv, collabId, intro){
     const text = (intro || defaultSurveyMsg(name)) + '\n\n' + surveyLink(token);
     const r = await enqueueBridge(conv, { text });
     if (r && r.ok){
-      await sb.from('reviews').update({ status:'sent', sent_at: new Date().toISOString() }).eq('id', ins.id);
+      await crmData.from('reviews').update({ status:'sent', sent_at: new Date().toISOString() }).eq('id', ins.id);
       return { ok:true, queued:true };
     }
     return { ok:false, error: (r && r.error) || 'No se pudo encolar' };
   }
-  // 1er número (Cloud API): encuesta IN-CHAT con botones. El backend crea la reseña y envía.
+  // 1er número (Cloud API): el servidor crea la reseña y envía el enlace por Meta.
   const r = await callFn({ action:'surveyInvite', conversation_id: conv.id, collaborator_id: collabId || null, intro: (intro || defaultSurveyMsg(name)) });
   if (r && r.ok) return { ok:true, queued:false };
   return { ok:false, error: (r && r.error) || 'WhatsApp no aceptó la encuesta (¿el cliente no te escribe hace más de 24h?)' };
@@ -10473,11 +10306,11 @@ if ($('svSend')) $('svSend').onclick = async () => {
   else alert('No se pudo enviar: ' + (res.error||'error'));
 };
 async function maybeAutoSurvey(conv){
-  try { const { data:s } = await sb.from('settings').select('value').eq('key','reviews_auto_on_close').maybeSingle();
+  try { const { data:s } = await crmData.from('settings').select('value').eq('key','reviews_auto_on_close').maybeSingle();
         reviewsAutoOnClose = !!(s && (s.value===true || s.value==='true')); } catch(e){}
   if (!reviewsAutoOnClose || !conv) return;
   const since = new Date(Date.now() - 3*86400*1000).toISOString();
-  const { count } = await sb.from('reviews').select('id',{count:'exact',head:true}).eq('conversation_id', conv.id).gte('created_at', since);
+  const { count } = await crmData.from('reviews').select('id',{count:'exact',head:true}).eq('conversation_id', conv.id).gte('created_at', since);
   if (count) return; // ya se le envió hace poco
   const res = await sendSurvey(conv, null, '');
   if (res.ok) console.log('[CRM] Encuesta automática enviada a', conv.customer_name||conv.wa_phone);
@@ -10487,7 +10320,7 @@ async function maybeAutoSurvey(conv){
 async function renderSatisfaccion(){
   await loadTeamConfig();
   let reviews = [];
-  try { const { data } = await sb.from('reviews').select('*').order('created_at',{ascending:false}).limit(500); reviews = data || []; }
+  try { const { data } = await crmData.from('reviews').select('*').order('created_at',{ascending:false}).limit(500); reviews = data || []; }
   catch(e){ reviews = []; }
   const submitted = reviews.filter(r => r.status==='submitted');
   const sent = reviews.filter(r => r.status==='sent' || r.status==='submitted');
