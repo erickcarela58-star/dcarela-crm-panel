@@ -2955,8 +2955,8 @@ input[type="checkbox"],input[type="radio"]{accent-color:var(--ink)}
 
 <!-- opus-recorder: graba OGG/Opus REAL via WASM. MediaRecorder no puede en Chrome (sale webm o mp4-opus, ambos rechazados por WhatsApp). -->
 <script>window.__CRMBUST__ = Date.now();</script>
-<script src="./crm-config.js?v=20260828v36"></script>
-<script src="./firebase-config.js?v=20260828v36"></script>
+<script src="./crm-config.js?v=20260828v37"></script>
+<script src="./firebase-config.js?v=20260828v37"></script>
 <script src="https://cdn.jsdelivr.net/npm/opus-recorder@8.0.5/dist/recorder.min.js"></script>
 
 <script type="module">
@@ -2992,7 +2992,7 @@ const $ = (id) => document.getElementById(id);
 // Sello de versión: si el panel "no hace nada", casi siempre es caché vieja del
 // navegador. Este sello permite confirmar de un vistazo qué versión está corriendo
 // (compárala con la fecha del último deploy). Actualízalo en cada publicación.
-const BUILD = '2026-08-28-crm-firebase-users-ia-v36';
+const BUILD = '2026-08-28-crm-plantillas-broadcast-v37';
 // PDFs de venta por categoría (generados de las tarjetas aprobadas; hosteados en el catálogo).
 // Se regeneran con dcarela-catalogo/scripts/build_combo_pdfs.py + push del catálogo.
 const COMBO_PDF_BASE = 'https://dcarelacompufoto.com/pdf/';
@@ -4569,11 +4569,7 @@ window.verEstadoConsent = async function() {
 };
 window.iniciarCampanaConsent = async function() {
   // Verifica que consent_dcarela esté aprobada
-  const { data: tpl } = await sb.from('whatsapp_templates')
-    .select('template_name, meta_status, contains_opt_out')
-    .eq('template_name','consent_dcarela')
-    .eq('business_number', PANEL_BUSINESS_NUMBER || '18495245620')
-    .maybeSingle();
+  const tpl = await findCrmTemplate('consent_dcarela');
   if (!tpl) { alert('❌ La plantilla "consent_dcarela" aún no está en BD. Espera unos segundos a que sincronice y recarga.'); return; }
   if (tpl.meta_status !== 'APPROVED') {
     alert(`⏳ La plantilla "consent_dcarela" aún está en estado "${tpl.meta_status}" en Meta.\n\n` +
@@ -4611,21 +4607,27 @@ window.iniciarCampanaConsent = async function() {
   }, 300);
 };
 // Al cargar Configuración, mostrar estado actual de consent_dcarela
+// Busca una plantilla concreta en el catalogo ya cacheado, sin otra ida al servidor.
+async function findCrmTemplate(nombre) {
+  const r = await fetchCrmTemplates();
+  if (!r.ok) return null;
+  const numero = PANEL_BUSINESS_NUMBER || '18495245620';
+  const todas = r.templates || [];
+  return todas.find(t => t.template_name === nombre && t.business_number === numero)
+    || todas.find(t => t.template_name === nombre)
+    || null;
+}
 async function refreshConsentInfo() {
   const div = document.getElementById('consentInfo');
   if (!div) return;
   try {
-    const { data } = await sb.from('whatsapp_templates')
-      .select('meta_status')
-      .eq('template_name','consent_dcarela')
-      .eq('business_number', PANEL_BUSINESS_NUMBER || '18495245620')
-      .maybeSingle();
+    const data = await findCrmTemplate('consent_dcarela');
     if (!data) {
-      div.innerHTML = '<span style="color:var(--warning);font-size:11.5px">⚠ Plantilla consent_dcarela no encontrada en BD</span>';
+      div.innerHTML = '<span style="color:var(--warning);font-size:11.5px">⚠ Plantilla consent_dcarela no encontrada. Pulsa “Sincronizar con Meta” en el gestor de plantillas.</span>';
     } else if (data.meta_status === 'APPROVED') {
       div.innerHTML = '<span style="color:var(--success);font-size:11.5px">✓ Plantilla "consent_dcarela" APROBADA — lista para usar</span>';
     } else {
-      div.innerHTML = `<span style="color:var(--warning);font-size:11.5px">⏳ Plantilla "consent_dcarela" en estado <b>${data.meta_status}</b> — espera aprobación de Meta</span>`;
+      div.innerHTML = `<span style="color:var(--warning);font-size:11.5px">⏳ Plantilla "consent_dcarela" en estado <b>${esc(data.meta_status)}</b> — espera aprobación de Meta</span>`;
     }
   } catch (e) { console.warn(e); }
 }
@@ -6185,6 +6187,34 @@ async function send() {
   if (err) serrShow('Se enviaron ' + sent + ' de ' + items.length + ' adjunto(s). ' + sendErrText(err) + ' · toca enviar para reintentar el resto.');
 }
 
+// Llamada base a crmApi. A diferencia de callFn no exige permiso 'operate' ni el
+// flag de transporte: sirve para leer catalogos y consultar estado. Quien decide
+// que puede hacer cada rol es el servidor, no el navegador.
+async function callCrmApi(body) {
+  if (!CRM_FUNCTIONS_BASE || !firebaseAuth.currentUser) {
+    return { ok: false, error: 'sesion Firebase no disponible' };
+  }
+  try {
+    const token = await firebaseAuth.currentUser.getIdToken();
+    const r = await fetch(CRM_FUNCTIONS_BASE + '/crmApi', {
+      method: 'POST',
+      cache: 'no-store',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+      body: JSON.stringify(body),
+    });
+    const result = await r.json().catch(() => ({}));
+    if (r.ok) { PANEL_FUNCTIONS_AVAILABLE = true; updatePanelSyncStatus(); }
+    return {
+      ...result,
+      ok: r.ok && result.ok !== false,
+      statusCode: r.status,
+      error: result.error || (r.ok ? null : `servidor no disponible (HTTP ${r.status})`),
+    };
+  } catch (e) {
+    console.error('crmApi:', e);
+    return { ok: false, error: 'conexion con el servidor' };
+  }
+}
 async function callFn(body) {
   if (!hasPermission('operate')) return { ok:false, error: 'permiso insuficiente' };
   const token = await panelAuthToken();
@@ -7433,11 +7463,31 @@ function templateDisplayName(t) {
   const name = words.join(' ');
   return name ? name.charAt(0).toUpperCase() + name.slice(1) : 'Plantilla';
 }
+// Catalogo de plantillas servido por crmApi (Firestore), no por Supabase. El
+// servidor es quien habla con Meta: aqui nunca hay token. Se cachea porque varias
+// vistas piden lo mismo al abrirse.
+let crmTemplatesCache = null;
+let crmTemplatesCacheAt = 0;
+async function fetchCrmTemplates(force = false, onlyActive = false) {
+  const ahora = Date.now();
+  if (!force && crmTemplatesCache && (ahora - crmTemplatesCacheAt) < 60000) return crmTemplatesCache;
+  const r = await callCrmApi({ action: 'templates', operation: 'list', business_number: PANEL_BUSINESS_NUMBER || '' });
+  if (!r.ok) return { ok: false, error: r.error || 'no se pudo leer el catalogo', templates: [], fallback_all: false };
+  const payload = { ok: true, templates: r.templates || [], fallback_all: r.fallback_all === true };
+  crmTemplatesCache = payload;
+  crmTemplatesCacheAt = ahora;
+  if (onlyActive) return { ...payload, templates: payload.templates.filter(t => t.active) };
+  return payload;
+}
 async function syncApprovedTemplatesFromMeta() {
-  // DESHABILITADO: el Edge Function `broadcast/sync_templates` usa purposeFromMetaTemplate
-  // que mapea UTILITY -> followup con opt_out=false, creando duplicados que bloquean al
-  // auto bot. La sync verdadera la hace `scripts/meta_templates_sync.py` localmente.
-  return { ok: true, synced: 0, note: 'sync deshabilitado en el browser; usa scripts/meta_templates_sync.py' };
+  // Antes esto estaba deshabilitado porque el Edge Function mapeaba UTILITY ->
+  // followup y creaba duplicados que bloqueaban al bot. Ahora la sincronizacion vive
+  // en crmApi con el mismo mapeo que scripts/meta_templates_sync.py, y respeta las
+  // plantillas que el operador haya apagado a mano.
+  const r = await callCrmApi({ action: 'templates', operation: 'syncMeta', business_number: PANEL_BUSINESS_NUMBER || '' });
+  if (!r.ok) return { ok: false, error: r.error || 'no se pudo sincronizar' };
+  crmTemplatesCache = null;
+  return { ok: true, synced: (r.creadas || 0) + (r.actualizadas || 0), creadas: r.creadas || 0, actualizadas: r.actualizadas || 0, retiradas: r.retiradas || 0 };
 }
 async function loadApprovedTemplates(syncMeta = false) {
   approvedTemplatesError = '';
@@ -7449,29 +7499,15 @@ async function loadApprovedTemplates(syncMeta = false) {
       console.warn('No se pudieron sincronizar plantillas Meta:', sync.error);
     }
   }
-  try {
-    let q = sb.from('whatsapp_templates')
-      .select('id,business_number,purpose,category,template_name,display_name,meta_status,language_code,parameter_keys,contains_opt_out,active,notes,preview_text')
-      .eq('active', true);
-    if (PANEL_BUSINESS_NUMBER) q = q.eq('business_number', PANEL_BUSINESS_NUMBER);
-    const { data, error } = await q.order('purpose').order('template_name');
-    if (error) throw error;
-    approvedTemplates = data || [];
-    if (PANEL_BUSINESS_NUMBER && !approvedTemplates.length) {
-      const all = await sb.from('whatsapp_templates')
-        .select('id,business_number,purpose,category,template_name,display_name,meta_status,language_code,parameter_keys,contains_opt_out,active,notes,preview_text')
-        .eq('active', true)
-        .order('purpose')
-        .order('template_name');
-      if (all.error) throw all.error;
-      approvedTemplates = all.data || [];
-      approvedTemplatesFallbackAll = approvedTemplates.length > 0;
-    }
-  } catch (e) {
+  const r = await fetchCrmTemplates(syncMeta === true);
+  if (!r.ok) {
     approvedTemplates = [];
-    approvedTemplatesError = approvedTemplatesError || (e && e.message ? e.message : String(e));
+    approvedTemplatesError = approvedTemplatesError || r.error;
     approvedTemplatesFallbackAll = false;
+    return;
   }
+  approvedTemplates = (r.templates || []).filter(t => t.active);
+  approvedTemplatesFallbackAll = r.fallback_all === true && approvedTemplates.length > 0;
 }
 function selectedApprovedTemplate() {
   const sel = $('bcTplName');
@@ -8461,12 +8497,10 @@ async function loadTplMgr(forceFlash) {
   const orig = btn.textContent;
   btn.textContent = '↻ ...'; btn.disabled = true;
   try {
-    let q = sb.from('whatsapp_templates')
-      .select('id, template_name, display_name, language_code, category, purpose, meta_status, contains_opt_out, active, preview_text, last_meta_sync_at, parameter_keys');
-    if (PANEL_BUSINESS_NUMBER) q = q.eq('business_number', PANEL_BUSINESS_NUMBER);
-    const { data, error } = await q.order('display_name', { nullsLast: true, ascending: true });
-    if (error) { $('tplMgrBody').innerHTML = `<div class="dash-empty">Error: ${esc(error.message)}</div>`; return; }
-    tplMgrData = data || [];
+    const r = await fetchCrmTemplates(true);
+    if (!r.ok) { $('tplMgrBody').innerHTML = `<div class="dash-empty">Error: ${esc(r.error)}</div>`; return; }
+    tplMgrData = [...(r.templates || [])].sort((a, b) =>
+      String(a.display_name || a.template_name || '').localeCompare(String(b.display_name || b.template_name || ''), 'es'));
     renderTplMgr();
     if (forceFlash) { btn.textContent = '✓ refrescado'; setTimeout(() => { btn.textContent = orig; }, 1100); }
     else btn.textContent = orig;
@@ -8481,8 +8515,9 @@ function bindTemplateToggles(root) {
       const id = b.dataset.id, cur = b.dataset.active === '1', next = !cur;
       b.style.opacity = '.5'; b.style.pointerEvents = 'none';
       try {
-        const { error } = await sb.from('whatsapp_templates').update({ active: next }).eq('id', id);
-        if (error) { alert('Error: ' + error.message); return; }
+        const r = await callCrmApi({ action: 'templates', operation: 'update', id, active: next });
+        if (!r.ok) { alert('Error: ' + (r.error || 'no se pudo actualizar')); return; }
+        crmTemplatesCache = null;
         const row = tplMgrData.find(x => x.id === id); if (row) row.active = next;
         document.querySelectorAll('.tpl-toggle').forEach(toggle => {
           if (toggle.dataset.id !== id) return;
@@ -9924,21 +9959,13 @@ async function callWaBulk(action, extra) {
  * paginada y dejaria gente fuera sin avisar.
  */
 async function bcDestinatariosBridge(filter) {
+  // crmApi ya devuelve los destinatarios resueltos (id, nombre y telefono) en el
+  // dry-run, asi que no hace falta una segunda consulta para hidratarlos.
   const dry = await callBroadcastFn({ text:'preview', filter, dry:true, send_mode:'freeform', purpose: $('bcPurpose').value || 'marketing' });
   if (!dry || !dry.ok) return { error: (dry && dry.error) || 'no se pudo calcular la audiencia' };
-  if (Array.isArray(dry.targets)) return { targets: dry.targets };
-  const ids = Array.isArray(dry.ids) ? dry.ids : [];
-  if (!ids.length) return { targets: [] };
-  const targets = [];
-  for (let i = 0; i < ids.length; i += 300) {
-    const { data, error } = await sb.from('conversations')
-      .select('id,wa_phone,customer_name,contact_name')
-      .in('id', ids.slice(i, i + 300));
-    if (error) return { error: error.message };
-    for (const c of data || []) {
-      if (c.wa_phone) targets.push({ phone: c.wa_phone, name: c.customer_name || c.contact_name || '' });
-    }
-  }
+  const targets = (Array.isArray(dry.targets) ? dry.targets : [])
+    .filter(t => t && t.phone)
+    .map(t => ({ phone: t.phone, name: t.name || '' }));
   return { targets };
 }
 
@@ -9990,14 +10017,9 @@ function renderBcImgPrev() {
 
 async function callBroadcastFn(payload) {
   if (!hasPermission('broadcast')) return { ok:false, error:'permiso insuficiente' };
-  const token = await panelAuthToken();
-  if (!token) return { ok:false, error:'sesión vencida' };
-  const r = await fetch(SUPABASE_URL + '/functions/v1/broadcast', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-    body: JSON.stringify(payload),
-  });
-  return await r.json();
+  // La difusion vive en crmApi: la audiencia, las reglas de baja y el envio a Meta
+  // se resuelven en el servidor. Supabase ya no participa.
+  return await callCrmApi({ action:'broadcast', ...payload });
 }
 $('bcMode').addEventListener('change', updateBcMode);
 $('bcTplName').addEventListener('change', applySelectedApprovedTemplate);
@@ -10008,8 +10030,9 @@ $('bcTplOptOut').addEventListener('change', async () => {
   const tpl = selectedApprovedTemplate();
   if (!tpl || !tpl.id) return;
   try {
-    const { error } = await sb.from('whatsapp_templates').update({ contains_opt_out: $('bcTplOptOut').checked }).eq('id', tpl.id);
-    if (!error) {
+    const guardado = await callCrmApi({ action:'templates', operation:'update', id: tpl.id, contains_opt_out: $('bcTplOptOut').checked });
+    if (guardado.ok) {
+      crmTemplatesCache = null;
       tpl.contains_opt_out = $('bcTplOptOut').checked;
       const info = $('bcTplInfo');
       if (info) {
@@ -10182,7 +10205,7 @@ $('bcSend').onclick = async () => {
       up.media_b64 = await blobToB64(bcPendingImg.blob);
       up.media_mime = bcPendingImg.mime;
       const r0 = await callBroadcastFn(up);
-      mediaUrl = (r0 && r0.media_url) || null;
+      mediaUrl = (r0 && r0.media_id) || null;
       done = first.length; sent = (r0 && r0.sent) || 0;
       ((r0 && r0.errors) || []).forEach(e => allErrors.push(e));
       startIdx = SIZE;
@@ -10194,7 +10217,7 @@ $('bcSend').onclick = async () => {
     for (let i = startIdx; i < ids.length; i += SIZE) {
       const batch = ids.slice(i, i + SIZE);
       const p = { ...base, only_ids: batch };
-      if (mediaUrl) { p.media_url = mediaUrl; p.media_kind = 'image'; }
+      if (mediaUrl) { p.media_id = mediaUrl; p.media_kind = 'image'; }
       let r;
       try { r = await callBroadcastFn(p); }
       catch (e) { r = { sent: 0, errors: batch.map(id => ({ id, error: 'red: ' + (e.message || e) })) }; }
@@ -10237,11 +10260,15 @@ function buildBroadcastPayload(filter, dry) {
     if (!name) return { error: 'nombre de plantilla requerido' };
     if (!$('bcTplOptOut').checked) return { error: 'la plantilla aprobada debe incluir baja/STOP' };
     const keys = $('bcTplParams').value.split(',').map(x => x.trim()).filter(Boolean);
+    const tplSel = selectedApprovedTemplate();
     payload.template = {
       name,
       language: $('bcTplLang').value.trim() || 'es_DO',
       parameter_keys: keys,
       contains_opt_out: $('bcTplOptOut').checked,
+      // Sin el cuerpo, el inbox guardaria "[plantilla Meta: ...]" en vez del texto
+      // que de verdad recibio el cliente.
+      preview_text: (tplSel && tplSel.preview_text) || '',
     };
   }
   return payload;
