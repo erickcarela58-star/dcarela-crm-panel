@@ -2955,8 +2955,8 @@ input[type="checkbox"],input[type="radio"]{accent-color:var(--ink)}
 
 <!-- opus-recorder: graba OGG/Opus REAL via WASM. MediaRecorder no puede en Chrome (sale webm o mp4-opus, ambos rechazados por WhatsApp). -->
 <script>window.__CRMBUST__ = Date.now();</script>
-<script src="./crm-config.js?v=20260826v34"></script>
-<script src="./firebase-config.js?v=20260822v1"></script>
+<script src="./crm-config.js?v=20260828v36"></script>
+<script src="./firebase-config.js?v=20260828v36"></script>
 <script src="https://cdn.jsdelivr.net/npm/opus-recorder@8.0.5/dist/recorder.min.js"></script>
 
 <script type="module">
@@ -2992,7 +2992,7 @@ const $ = (id) => document.getElementById(id);
 // Sello de versión: si el panel "no hace nada", casi siempre es caché vieja del
 // navegador. Este sello permite confirmar de un vistazo qué versión está corriendo
 // (compárala con la fecha del último deploy). Actualízalo en cada publicación.
-const BUILD = '2026-08-28-crm-live-reconnect-v35';
+const BUILD = '2026-08-28-crm-firebase-users-ia-v36';
 // PDFs de venta por categoría (generados de las tarjetas aprobadas; hosteados en el catálogo).
 // Se regeneran con dcarela-catalogo/scripts/build_combo_pdfs.py + push del catálogo.
 const COMBO_PDF_BASE = 'https://dcarelacompufoto.com/pdf/';
@@ -3135,6 +3135,30 @@ function requirePermission(name) {
   return false;
 }
 async function callPanelUsers(body) {
+  const action = String(body?.action || 'me');
+  // Camino vigente: Firebase. Supabase quedo restringido (HTTP 402) y sus Edge
+  // Functions ya no responden, asi que la administracion de cuentas vive en crmApi.
+  if (action !== 'me' && CRM_FUNCTIONS_BASE && firebaseAuth.currentUser) {
+    try {
+      const token = await firebaseAuth.currentUser.getIdToken();
+      const response = await fetch(CRM_FUNCTIONS_BASE + '/crmApi', {
+        method:'POST',
+        cache:'no-store',
+        headers:{ 'Content-Type':'application/json', 'Authorization':'Bearer ' + token },
+        body:JSON.stringify({ ...body, action:'panelUsers', operation:action }),
+      });
+      const result = await response.json().catch(() => ({}));
+      if (response.status !== 501) {
+        PANEL_FUNCTIONS_AVAILABLE = ![404, 502, 503].includes(response.status);
+        updatePanelSyncStatus();
+        return { ...result, ok: response.ok && result.ok !== false, status: response.status };
+      }
+    } catch (error) {
+      PANEL_FUNCTIONS_AVAILABLE = false;
+      updatePanelSyncStatus();
+      return { ok:false, error:'no se pudo conectar con el servidor de cuentas' };
+    }
+  }
   const { data:{ session } } = await sb.auth.getSession();
   const token = await panelAuthToken();
   if (!token) return { ok:false, error:'sesión vencida' };
@@ -8125,6 +8149,30 @@ if (_aiDocIn) _aiDocIn.addEventListener('change', e => {
 async function requestAssistantPlan(instruction, options = {}) {
   const token = await panelAuthToken();
   if (!token) return { ok:false, error:'sesion vencida' };
+  // El planificador vive en crmApi (Google protegido por el servidor). La clave
+  // nunca llega al navegador. Supabase quedo restringido y solo sigue como resguardo.
+  if (CRM_FUNCTIONS_BASE && firebaseAuth.currentUser) {
+    try {
+      const firebaseToken = await firebaseAuth.currentUser.getIdToken();
+      const response = await fetch(CRM_FUNCTIONS_BASE + '/crmApi', {
+        method:'POST',
+        cache:'no-store',
+        headers:{ 'Content-Type':'application/json', 'Authorization':'Bearer ' + firebaseToken },
+        body:JSON.stringify({ action:'assistantPlan', instruction, ...options }),
+      });
+      const result = await response.json().catch(() => ({}));
+      if (response.status !== 501) {
+        if (response.ok) { PANEL_FUNCTIONS_AVAILABLE = true; updatePanelSyncStatus(); }
+        return {
+          ...result,
+          ok: response.ok && result.ok !== false,
+          error: result.error || (response.ok ? null : 'el asistente no pudo responder'),
+        };
+      }
+    } catch (error) {
+      return { ok:false, error:'no se pudo conectar con el asistente' };
+    }
+  }
   try {
     const response = await fetch(SUPABASE_URL + '/functions/v1/followup-cron?mode=assistant', {
       method:'POST',
