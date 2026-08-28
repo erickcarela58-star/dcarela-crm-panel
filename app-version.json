@@ -1,6 +1,6 @@
 {
-  "version": "2026-08-28-crm-desinteres-v43",
+  "version": "2026-08-28-crm-panel-lead-v44",
   "channel": "crm",
-  "released_at": "2026-08-28T19:20:00Z",
-  "summary": "Norma de desinteres: dos seguimientos seguidos sin respuesta y el contacto pasa a la nueva etapa desinteresado con marketing, seguimientos y auto-plantillas apagados. Boton por chat y revision en lote de candidatos. El historial se conserva y se puede seguir escribiendo a mano."
+  "released_at": "2026-08-28T20:10:00Z",
+  "summary": "Panel de detalles del lead reagrupado en secciones plegables: 14 botones pasan a 3 visibles mas 4 plegados, se retiran seis duplicados y cerrar una conversacion deja al lead como cliente en vez de en una etapa inexistente."
 }
