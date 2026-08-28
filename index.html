@@ -2955,14 +2955,14 @@ input[type="checkbox"],input[type="radio"]{accent-color:var(--ink)}
 
 <!-- opus-recorder: graba OGG/Opus REAL via WASM. MediaRecorder no puede en Chrome (sale webm o mp4-opus, ambos rechazados por WhatsApp). -->
 <script>window.__CRMBUST__ = Date.now();</script>
-<script src="./crm-config.js?v=20260828v41"></script>
-<script src="./firebase-config.js?v=20260828v41"></script>
+<script src="./crm-config.js?v=20260828v42"></script>
+<script src="./firebase-config.js?v=20260828v42"></script>
 <script src="https://cdn.jsdelivr.net/npm/opus-recorder@8.0.5/dist/recorder.min.js"></script>
 
 <script type="module">
 import { initializeApp, getApps } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js';
 import { getAuth, onAuthStateChanged, signInWithEmailAndPassword as firebaseSignIn, signOut as firebaseSignOut } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js';
-import { getFirestore, doc, getDoc, setDoc, updateDoc, collection, getDocs, query, where, writeBatch, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
+import { getFirestore, doc, getDoc, setDoc, updateDoc, collection, getDocs, onSnapshot, query, where, writeBatch, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
 
 const CRM_CONFIG = window.CRM_CONFIG || window.DCARELA_CRM_CONFIG || {};
 const CRM_FUNCTIONS_BASE = String(CRM_CONFIG.firebaseFunctionsBase || '').replace(/\/$/, '');
@@ -3023,7 +3023,7 @@ const $ = (id) => document.getElementById(id);
 // Sello de versión: si el panel "no hace nada", casi siempre es caché vieja del
 // navegador. Este sello permite confirmar de un vistazo qué versión está corriendo
 // (compárala con la fecha del último deploy). Actualízalo en cada publicación.
-const BUILD = '2026-08-28-crm-firebase-completo-v41';
+const BUILD = '2026-08-28-crm-chat-en-vivo-v42';
 // PDFs de venta por categoría (generados de las tarjetas aprobadas; hosteados en el catálogo).
 // Se regeneran con dcarela-catalogo/scripts/build_combo_pdfs.py + push del catálogo.
 const COMBO_PDF_BASE = 'https://dcarelacompufoto.com/pdf/';
@@ -3412,7 +3412,20 @@ async function firebaseCommunicationControls(channel = firebaseChannelName()) {
 
 function paintOfficialBotState() {
   const known = communicationControlsState && typeof communicationControlsState.bot_enabled === 'boolean';
-  const enabled = known && communicationControlsState.bot_enabled === true;
+  // El servidor avisa si todavia no hay motor de respuestas desplegado. Sin esto el
+  // panel diria "ACTIVO" mientras nadie contesta, que es peor que decir la verdad.
+  const sinMotor = communicationControlsState && communicationControlsState.bot_engine === 'none';
+  const enabled = known && communicationControlsState.bot_enabled === true && !sinMotor;
+  if (sinMotor) {
+    const boton = $('officialBotGlobalBtn');
+    const rotulo = $('officialBotGlobalState');
+    const aviso = 'El motor de respuestas automaticas del canal oficial todavia no esta desplegado en Firebase. Los mensajes entrantes y el contexto si se guardan.';
+    if (boton) { boton.dataset.enabled = 'false'; boton.dataset.loading = 'false'; boton.disabled = true; boton.title = aviso; }
+    if (rotulo) rotulo.textContent = 'SIN MOTOR';
+    if ($('marketingOfficialState')) $('marketingOfficialState').textContent = aviso;
+    if ($('marketingOfficialToggle')) { $('marketingOfficialToggle').textContent = 'Sin motor'; $('marketingOfficialToggle').disabled = true; $('marketingOfficialToggle').title = aviso; }
+    return;
+  }
   const button = $('officialBotGlobalBtn');
   const label = $('officialBotGlobalState');
   if (button) {
@@ -5275,10 +5288,7 @@ async function showApp(session) {
   // Firebase is a data session too. Restoring login must always populate the inbox.
   await loadConvs();
   clearInterval(listTimer);
-  listTimer = setInterval(() => {
-    if (document.hidden || (transportRecoveryActive() && !CRM_DATA_SESSION_AVAILABLE)) return;
-    void loadConvs();
-  }, 30000);
+  if (!subscribeConversations()) startConversationsPolling();
 }
 
 // ---- usuarios y roles del panel ----
@@ -5488,7 +5498,130 @@ async function refreshConversationNameHints(rows) {
   }
 }
 
+// ===== Escucha en vivo de Firestore =====
+// El chat dependia de sondeos de 10 s (mensajes) y 30 s (lista). Eso hacia que un
+// mensaje recien recibido pareciera "no llegar" hasta que alguien refrescaba, y ademas
+// releia TODO el historial en cada vuelta. onSnapshot entrega solo los cambios: llega
+// al instante y consume muchisimas menos lecturas que el sondeo.
+// Si la escucha falla (permisos, red, cuota) se vuelve al sondeo automaticamente: es
+// preferible un chat lento a un chat mudo.
+let msgUnsub = null;
+let liveMsgConvId = null;
+let liveMsgRows = [];
+let convsUnsub = [];
+let liveConvRows = null;
+
+function normalizeFirebaseMessages(rows) {
+  return rows.map(row => ({
+    ...row,
+    body: row.body ?? row.text ?? row.message ?? '',
+    direction: ['in', 'out'].includes(row.direction) ? row.direction : (row.direction === 'inbound' ? 'in' : 'out'),
+    created_at: firestoreIso(row.created_at || row.sent_at || row.updated_at) || new Date(0).toISOString(),
+  })).sort((a, b) => String(a.created_at).localeCompare(String(b.created_at)) || String(a.id).localeCompare(String(b.id)));
+}
+
+function stopMessageStream() {
+  if (msgUnsub) { try { msgUnsub(); } catch (e) {} }
+  msgUnsub = null;
+  liveMsgConvId = null;
+  liveMsgRows = [];
+}
+
+function startMessagePolling() {
+  clearInterval(msgTimer);
+  msgTimer = setInterval(() => { if (!document.hidden) void loadMsgs(); }, 10000);
+}
+
+function subscribeConversationMessages(conversation) {
+  stopMessageStream();
+  if (!conversation || conversation._backend !== 'firebase' || !firebaseAuth.currentUser) return false;
+  const businessId = conversation.business_id || firebasePrimaryBusinessId();
+  const conversationId = conversation.id;
+  liveMsgConvId = conversationId;
+  liveMsgRows = [];
+  try {
+    msgUnsub = onSnapshot(
+      query(
+        collection(firebaseDb, 'crm_messages'),
+        where('business_id', '==', businessId),
+        where('conversation_id', '==', conversationId)
+      ),
+      snap => {
+        if (!sel || sel.id !== conversationId) return;
+        const rows = [];
+        snap.forEach(item => rows.push(firestoreRow(item)));
+        liveMsgRows = normalizeFirebaseMessages(rows);
+        void loadMsgs();
+      },
+      error => {
+        console.warn('escucha de mensajes caida, vuelvo al sondeo:', error);
+        stopMessageStream();
+        if (sel && sel.id === conversationId) startMessagePolling();
+      }
+    );
+    return true;
+  } catch (error) {
+    console.warn('no se pudo abrir la escucha de mensajes:', error);
+    stopMessageStream();
+    return false;
+  }
+}
+
+function stopConversationsStream() {
+  for (const off of convsUnsub) { try { off(); } catch (e) {} }
+  convsUnsub = [];
+  liveConvRows = null;
+}
+
+function subscribeConversations() {
+  stopConversationsStream();
+  if (!firebaseAuth.currentUser || AUTH_PROVIDER !== 'firebase') return false;
+  const ids = firebaseBusinessIds();
+  if (!ids.length) return false;
+  const porNegocio = new Map();
+  let abierta = false;
+  for (const businessId of ids) {
+    try {
+      const off = onSnapshot(
+        query(collection(firebaseDb, 'crm_conversations'), where('business_id', '==', businessId)),
+        snap => {
+          const rows = [];
+          snap.forEach(item => rows.push(firestoreRow(item)));
+          porNegocio.set(businessId, rows);
+          liveConvRows = [...porNegocio.values()].flat();
+          FIREBASE_CRM_AVAILABLE = true;
+          void loadConvs();
+        },
+        error => {
+          console.warn('escucha de conversaciones caida, vuelvo al sondeo:', error);
+          stopConversationsStream();
+          startConversationsPolling();
+        }
+      );
+      convsUnsub.push(off);
+      abierta = true;
+    } catch (error) {
+      console.warn('no se pudo abrir la escucha de conversaciones:', error);
+    }
+  }
+  if (!abierta) stopConversationsStream();
+  return abierta;
+}
+
+function startConversationsPolling() {
+  clearInterval(listTimer);
+  listTimer = setInterval(() => {
+    if (document.hidden || (transportRecoveryActive() && !CRM_DATA_SESSION_AVAILABLE)) return;
+    void loadConvs();
+  }, 30000);
+}
+
 async function fetchFirebaseConversationRows(channel = null) {
+  // Con la escucha abierta, la cache ya esta al dia: releer seria gastar cuota.
+  if (liveConvRows) {
+    const vivos = channel ? liveConvRows.filter(row => conversationMatchesChannel(row, channel)) : liveConvRows;
+    return [...vivos].sort((a, b) => String(b.last_message_at || b.updated_at || '').localeCompare(String(a.last_message_at || a.updated_at || '')) || String(a.id).localeCompare(String(b.id)));
+  }
   const rows = [];
   for (const businessId of firebaseBusinessIds()) {
     const snap = await getDocs(query(collection(firebaseDb, 'crm_conversations'), where('business_id', '==', businessId)));
@@ -5695,14 +5828,15 @@ async function openConv(c) {
     } catch (error) { toast('Historial disponible', 'No se pudo guardar la marca de leído.'); }
   }
   clearInterval(msgTimer);
-  // A recovered archive is not a live transport; avoid exhausting Firestore with full re-reads.
-  if (!(c._backend === 'firebase' && transportRecoveryActive())) {
-    msgTimer = setInterval(() => { if (!document.hidden) void loadMsgs(); }, 10000);
+  // Escucha en vivo primero: el mensaje aparece al instante y solo se leen los cambios.
+  // El sondeo queda como red de seguridad si la escucha no se puede abrir.
+  if (!subscribeConversationMessages(c)) {
+    if (!(c._backend === 'firebase' && transportRecoveryActive())) startMessagePolling();
   }
 }
 $('back').onclick = () => {
   document.body.classList.remove('chatopen'); sel = null;
-  clearInterval(msgTimer); renderConvs();
+  clearInterval(msgTimer); stopMessageStream(); renderConvs();
   showDetail(false);
   $('winWarn').classList.remove('on');
 };
@@ -6171,6 +6305,9 @@ async function callFn(body) {
 }
 
 async function fetchFirebaseConversationMessages(conversation, fresh) {
+  if (msgUnsub && liveMsgConvId === conversation.id) {
+    return { data: fresh ? liveMsgRows : liveMsgRows.slice(-500), error: null };
+  }
   const rows = [];
   const businessId = conversation.business_id || firebasePrimaryBusinessId();
   // Never retry quota/permission errors by reading ALL messages in the business.
