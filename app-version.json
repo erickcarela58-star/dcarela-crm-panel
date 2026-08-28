@@ -1,6 +1,6 @@
 {
-  "version": "2026-08-26-crm-firebase-transport-v34",
+  "version": "2026-08-28-crm-live-reconnect-v35",
   "channel": "crm",
-  "released_at": "2026-08-26T17:00:00Z",
-  "summary": "Transporte Firebase con estado real, envío oficial protegido, webhook firmado y salida del gateway Supabase."
+  "released_at": "2026-08-28T06:15:00Z",
+  "summary": "WhatsApp Fotos reconectado por Firebase con control, heartbeat e historial; salida y bot bloqueados hasta validación controlada."
 }
