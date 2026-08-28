@@ -1,6 +1,6 @@
 {
-  "version": "2026-08-28-crm-firebase-users-ia-v36",
+  "version": "2026-08-28-crm-plantillas-broadcast-v37",
   "channel": "crm",
-  "released_at": "2026-08-28T08:10:00Z",
-  "summary": "Cuentas del panel y planificador de IA migrados a Firebase: Supabase quedo restringido y ya no se usa para administrar usuarios ni generar planes."
+  "released_at": "2026-08-28T11:20:00Z",
+  "summary": "Plantillas de WhatsApp y difusion migradas a Firebase: el catalogo se sincroniza desde Meta en el servidor y el envio masivo ya no depende de Supabase."
 }
