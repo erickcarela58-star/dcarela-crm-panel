@@ -1,6 +1,6 @@
 {
-  "version": "2026-08-28-crm-kanban-v46",
+  "version": "2026-08-28-crm-login-fix-v47",
   "channel": "crm",
-  "released_at": "2026-08-28T21:20:00Z",
-  "summary": "El pipeline ya se puede arrastrar: mover una tarjeta cambia la etapa del lead. Solo se admite soltar en columnas con etapa valida, y soltar en Desinteresado apaga marketing y seguimientos."
+  "released_at": "2026-08-28T22:10:00Z",
+  "summary": "ARREGLO URGENTE: el panel no cargaba tras la v46 porque una constante del kanban leia STAGES antes de que existiera y el modulo entero moria, dejando el login inservible. Se calcula al vuelo."
 }
