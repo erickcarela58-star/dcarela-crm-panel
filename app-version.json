@@ -1,6 +1,6 @@
 {
-  "version": "2026-08-28-crm-etapas-v45",
+  "version": "2026-08-28-crm-kanban-v46",
   "channel": "crm",
-  "released_at": "2026-08-28T20:45:00Z",
-  "summary": "Reparacion de etapas fuera del embudo: revisa en seco las conversaciones con etapa 'cerrado' y las mueve a 'cliente' conservando la etapa original. Las etapas desconocidas se reportan y se dejan intactas."
+  "released_at": "2026-08-28T21:20:00Z",
+  "summary": "El pipeline ya se puede arrastrar: mover una tarjeta cambia la etapa del lead. Solo se admite soltar en columnas con etapa valida, y soltar en Desinteresado apaga marketing y seguimientos."
 }
