@@ -2735,7 +2735,7 @@ input[type="checkbox"],input[type="radio"]{accent-color:var(--ink)}
       <label>Plantilla aprobada en Meta</label>
      <select id="bcTplName"><option value="">Cargando plantillas...</option></select>
       <input class="bc-template-manual" id="bcTplManualName" placeholder="nombre_meta_aprobado">
-      <div class="bc-field-help">Se cargan desde la tabla whatsapp_templates.</div>
+      <div class="bc-field-help">Se cargan del catalogo sincronizado desde Meta (boton Sincronizar en el gestor de plantillas).</div>
       <div class="bc-template-info" id="bcTplInfo"></div>
      </div>
      <div class="df"><label>Variables</label><input id="bcTplParams" placeholder="nombre,combo"></div>
@@ -7574,7 +7574,7 @@ function applySelectedApprovedTemplate() {
       ? (missingWaba
         ? 'Falta el ID de la cuenta de WhatsApp Business (WABA ID). Las plantillas ya pueden existir en Meta, pero el CRM no puede listarlas hasta configurar ese secreto en Supabase: WA_WABA_ID=ID_DEL_WABA. Mientras tanto puedes escribir el nombre manualmente si lo sabes.'
         : `${approvedTemplatesError}. Puedes escribir el nombre manualmente, pero debe existir y estar aprobado en Meta.`)
-      : (approvedTemplates.length ? (approvedTemplatesFallbackAll ? 'No hay plantillas para este numero; se muestran todas las plantillas activas registradas.' : 'Selecciona una plantilla aprobada para completar idioma, variables y baja/STOP.') : 'No hay plantillas activas cargadas para este numero. Carga registros en whatsapp_templates o escribe el nombre manualmente.');
+      : (approvedTemplates.length ? (approvedTemplatesFallbackAll ? 'No hay plantillas para este numero; se muestran todas las plantillas activas registradas.' : 'Selecciona una plantilla aprobada para completar idioma, variables y baja/STOP.') : 'No hay plantillas activas para este numero. Pulsa Sincronizar con Meta en el gestor de plantillas, o escribe el nombre manualmente.');
     info.textContent = msg;
     info.classList.add('on');
   }
