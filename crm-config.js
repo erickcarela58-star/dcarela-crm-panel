@@ -8,14 +8,12 @@ window.CRM_CONFIG = window.DCARELA_CRM_CONFIG = {
   accent: "#3b82f6",
   accent2: "#06b6d4",
 
-  supabaseUrl: "https://rdmhyhsrewvrpqygtufa.supabase.co",
-  supabaseAnonKey: "sb_publishable_XgucPR_5tPklv6sdUFAhDQ_6NbSf8fQ",
-
   notificationTag: "dcarela-crm",
   firebaseFunctionsBase: "https://us-central1-erikccarela.cloudfunctions.net",
+  firebaseAgendaUrl: "https://crmagenda-o2uqjp6fra-uc.a.run.app",
+  firebaseReviewsUrl: "https://crmreviews-o2uqjp6fra-uc.a.run.app",
   firebaseTransportEnabled: true,
-  // Remove only after a verified live inbound/outbound transport is restored.
-  historyRecoveryOnly: true,
+  historyRecoveryOnly: false,
   appVersionUrl: "./app-version.json",
   publicPortfolioUrl: "https://dcarelacompufoto.com/combos.html",
   // URL de la home/catálogo/wizard para combos, precios y reservas.
