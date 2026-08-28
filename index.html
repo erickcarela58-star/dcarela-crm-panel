@@ -2955,8 +2955,8 @@ input[type="checkbox"],input[type="radio"]{accent-color:var(--ink)}
 
 <!-- opus-recorder: graba OGG/Opus REAL via WASM. MediaRecorder no puede en Chrome (sale webm o mp4-opus, ambos rechazados por WhatsApp). -->
 <script>window.__CRMBUST__ = Date.now();</script>
-<script src="./crm-config.js?v=20260828v37"></script>
-<script src="./firebase-config.js?v=20260828v37"></script>
+<script src="./crm-config.js?v=20260828v38"></script>
+<script src="./firebase-config.js?v=20260828v38"></script>
 <script src="https://cdn.jsdelivr.net/npm/opus-recorder@8.0.5/dist/recorder.min.js"></script>
 
 <script type="module">
@@ -2992,7 +2992,7 @@ const $ = (id) => document.getElementById(id);
 // Sello de versión: si el panel "no hace nada", casi siempre es caché vieja del
 // navegador. Este sello permite confirmar de un vistazo qué versión está corriendo
 // (compárala con la fecha del último deploy). Actualízalo en cada publicación.
-const BUILD = '2026-08-28-crm-plantillas-broadcast-v37';
+const BUILD = '2026-08-28-crm-envios-seguimientos-v38';
 // PDFs de venta por categoría (generados de las tarjetas aprobadas; hosteados en el catálogo).
 // Se regeneran con dcarela-catalogo/scripts/build_combo_pdfs.py + push del catálogo.
 const COMBO_PDF_BASE = 'https://dcarelacompufoto.com/pdf/';
@@ -4744,8 +4744,6 @@ window.openSeguimientoWizard = async function() {
       // Si última actividad <24h del cliente: texto. Si no: plantilla saludo_dcarela
       const lastIn = c.last_message_at ? new Date(c.last_message_at).getTime() : 0;
       const insideWindow = (Date.now() - lastIn) < 24*3600*1000;
-      const token = await panelAuthToken();
-      if (!token) throw new Error('sesión vencida');
       let body;
       if (insideWindow) {
         body = { action:'sendText', conversation_id: c.id, body: text, wizard_followup: true };
@@ -4756,16 +4754,8 @@ window.openSeguimientoWizard = async function() {
         body = { action:'sendTemplate', conversation_id: c.id, template_name:'saludo_dcarela', language_code:'es',
                  variables:[firstName, interest], wizard_followup: true };
       }
-      const r = await fetch(SUPABASE_URL + '/functions/v1/panel-send', {
-        method:'POST', headers:{'Content-Type':'application/json','Authorization':'Bearer '+token}, body: JSON.stringify(body),
-      });
-      const j = await r.json();
-      if (r.ok && (j.ok !== false)) {
-        await sb.from('conversations').update({
-          last_auto_template_at: new Date().toISOString(),
-          last_auto_template_purpose: 'followup',
-          follow_up_sent_at: new Date().toISOString(),
-        }).eq('id', c.id);
+      const j = await callCrmApi(body);
+      if (j.ok) {
         stats.approved++;
       } else {
         console.warn('wizard send failed:', j);
@@ -8913,7 +8903,7 @@ window.saveAgendaManual = async function() {
       } catch(e) { console.warn('gcal:', e); gcalFailed = true; }
     }
     // Si la sesión es pronto (menos de 22h), el cron de recordatorios no la captura
-    // (busca 22-26h adelante). Mandamos un recordatorio inmediato vía panel-send.
+    // (busca 22-26h adelante). Mandamos un recordatorio inmediato vía crmApi.
     try {
       const hoursUntil = (new Date(scheduledAt).getTime() - Date.now()) / 3600000;
       if (!qrChannelActive() && hoursUntil > 0 && hoursUntil < 22 && !savedConv.session_reminded_at) {
@@ -8921,18 +8911,13 @@ window.saveAgendaManual = async function() {
         const t = new Date(scheduledAt).toLocaleString('es-DO', { weekday:'long', day:'numeric', month:'long', hour:'2-digit', minute:'2-digit', hour12: true });
         const combo = patch.selected_combo_name ? ` para ${patch.selected_combo_name}` : '';
         const txt = `Hola ${firstName}, te recordamos tu sesión${combo} el ${t}. Te esperamos en D'Carela Compufoto. Si necesitas reprogramar, escríbenos.`;
-        const token = await panelAuthToken();
-        if (!token) throw new Error('sesión vencida');
         try {
-          const r = await fetch(SUPABASE_URL + '/functions/v1/panel-send', {
-            method: 'POST',
-            headers: { 'Content-Type':'application/json', 'Authorization': 'Bearer ' + token },
-            body: JSON.stringify({ action:'sendText', conversation_id: convId, body: txt, auto_reminder: true }),
-          });
-          if (r.ok) {
-            await sb.from('conversations').update({ session_reminded_at: new Date().toISOString() }).eq('id', convId);
-            savedConv.session_reminded_at = new Date().toISOString();
+          const j = await callCrmApi({ action:'sendText', conversation_id: convId, body: txt, auto_reminder: true });
+          if (j.ok) {
+            savedConv.session_reminded_at = j.sent_at || new Date().toISOString();
             console.log('[agenda] recordatorio inmediato enviado a', name);
+          } else {
+            console.warn('recordatorio inmediato falló:', j.error || 'error');
           }
         } catch(e) { console.warn('recordatorio inmediato falló:', e); }
       }
@@ -9297,8 +9282,6 @@ function wireAgRows(container) {
         // Decide: dentro de 24h → texto; fuera → plantilla
         const lastIn = c.last_message_at ? new Date(c.last_message_at).getTime() : 0;
         const insideWindow = (Date.now() - lastIn) < 24*3600*1000;
-        const token = await panelAuthToken();
-        if (!token) throw new Error('sesión vencida');
         let body;
         if (insideWindow) {
           const txt = `Hola ${firstName}, te recordamos tu sesión${c.selected_combo_name?' para '+c.selected_combo_name:''} el ${fecha} a las ${hora}. ¡Te esperamos!`;
@@ -9309,14 +9292,9 @@ function wireAgRows(container) {
                    template_name:'recordatorio_cita', language_code:'es',
                    variables:[firstName, fecha, hora], manual_reminder: true };
         }
-        const r = await fetch(SUPABASE_URL + '/functions/v1/panel-send', {
-          method:'POST', headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},
-          body: JSON.stringify(body),
-        });
-        const j = await r.json();
-        if (r.ok && (j.ok !== false)) {
-          await sb.from('conversations').update({ session_reminded_at: new Date().toISOString() }).eq('id', id);
-          c.session_reminded_at = new Date().toISOString();
+        const j = await callCrmApi(body);
+        if (j.ok) {
+          c.session_reminded_at = j.sent_at || new Date().toISOString();
           renderAgenda();
           alert(`✓ Recordatorio enviado a ${c.customer_name||c.wa_phone} ${insideWindow?'(texto)':'(plantilla)'}.`);
         } else {
