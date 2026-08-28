@@ -1,6 +1,6 @@
 {
-  "version": "2026-08-28-crm-plantillas-broadcast-v37",
+  "version": "2026-08-28-crm-envios-seguimientos-v38",
   "channel": "crm",
-  "released_at": "2026-08-28T11:20:00Z",
-  "summary": "Plantillas de WhatsApp y difusion migradas a Firebase: el catalogo se sincroniza desde Meta en el servidor y el envio masivo ya no depende de Supabase."
+  "released_at": "2026-08-28T10:23:01Z",
+  "summary": "Seguimientos del wizard y recordatorios de agenda migrados a Firebase; el mensaje y sus marcas se guardan juntos en el servidor."
 }
