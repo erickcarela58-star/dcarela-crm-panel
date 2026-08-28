@@ -811,6 +811,7 @@ body.role-viewer #agnSave,body.role-viewer .ag-row button{pointer-events:none!im
 .cv-stage[data-s=reservado]{background:rgba(58,210,159,.22);color:var(--ok)}
 .cv-stage[data-s=cliente]{background:rgba(58,210,159,.35);color:#0a0c12}
 .cv-stage[data-s=perdido]{background:rgba(255,107,107,.18);color:#ff8e8e}
+.cv-stage[data-s=desinteresado]{background:rgba(163,163,163,.18);color:#bdbdbd}
 .conv.urgente{box-shadow:inset 2px 0 0 #ff4444}
 .cv-flag{font-size:9px;color:var(--warn);font-weight:700;margin-left:5px}
 
@@ -2008,8 +2009,16 @@ input[type="checkbox"],input[type="radio"]{accent-color:var(--ink)}
       <div class="marketing-kpis">
        <div class="marketing-kpi"><span>Exclusiones permanentes</span><b id="marketingBlockedCount">—</b></div>
        <div class="marketing-kpi"><span>Esperando descarte</span><b id="marketingThirdCount">—</b></div>
-       <div class="marketing-kpi"><span>Regla de seguimiento</span><b>3 + 72 h</b></div>
+       <div class="marketing-kpi"><span>Regla de seguimiento</span><b>2 + 72 h</b></div>
       </div>
+     </article>
+     <article class="marketing-card">
+      <h3>Candidatos a desinteresado</h3><p>Norma: dos seguimientos seguidos sin respuesta y el contacto pasa a <b>desinteresado</b>, con marketing, seguimientos automáticos y auto-plantillas apagados. El historial se conserva y se le puede seguir escribiendo a mano. Revisar no cambia nada.</p>
+      <div class="marketing-actions">
+       <button id="desinteresScan" type="button">Revisar candidatos</button>
+       <button id="desinteresApply" type="button" class="danger" data-permission="manage_settings" disabled>Aplicar a todos</button>
+      </div>
+      <div id="desinteresResult" class="marketing-note" style="display:none"></div>
      </article>
      <article class="marketing-card">
       <h3>Desactivar una lista etiquetada</h3><p>Busca coincidencias en etiquetas internas sin mostrar todas esas etiquetas dentro del chat. La vista previa no cambia datos.</p>
@@ -2955,8 +2964,8 @@ input[type="checkbox"],input[type="radio"]{accent-color:var(--ink)}
 
 <!-- opus-recorder: graba OGG/Opus REAL via WASM. MediaRecorder no puede en Chrome (sale webm o mp4-opus, ambos rechazados por WhatsApp). -->
 <script>window.__CRMBUST__ = Date.now();</script>
-<script src="./crm-config.js?v=20260828v42"></script>
-<script src="./firebase-config.js?v=20260828v42"></script>
+<script src="./crm-config.js?v=20260828v43"></script>
+<script src="./firebase-config.js?v=20260828v43"></script>
 <script src="https://cdn.jsdelivr.net/npm/opus-recorder@8.0.5/dist/recorder.min.js"></script>
 
 <script type="module">
@@ -3023,7 +3032,7 @@ const $ = (id) => document.getElementById(id);
 // Sello de versión: si el panel "no hace nada", casi siempre es caché vieja del
 // navegador. Este sello permite confirmar de un vistazo qué versión está corriendo
 // (compárala con la fecha del último deploy). Actualízalo en cada publicación.
-const BUILD = '2026-08-28-crm-chat-en-vivo-v42';
+const BUILD = '2026-08-28-crm-desinteres-v43';
 // PDFs de venta por categoría (generados de las tarjetas aprobadas; hosteados en el catálogo).
 // Se regeneran con dcarela-catalogo/scripts/build_combo_pdfs.py + push del catálogo.
 const COMBO_PDF_BASE = 'https://dcarelacompufoto.com/pdf/';
@@ -6982,11 +6991,11 @@ let dsavT = null;
 const STAGES = [
   ['nuevo','Nuevo'],['interesado','Interesado'],['cotizando','Cotizando'],
   ['pendiente_reserva','Pendiente reserva'],['reservado','Reservado'],
-  ['cliente','Cliente'],['perdido','Perdido'],
+  ['cliente','Cliente'],['desinteresado','Desinteresado'],['perdido','Perdido'],
 ];
 const LEAD_STATUSES = [
   ['abierto','Abierto'],['en_revision','En revision'],['esperando_cliente','Esperando cliente'],
-  ['requiere_humano','Requiere humano'],['cerrado','Cerrado'],
+  ['requiere_humano','Requiere humano'],['desinteresado','Desinteresado'],['cerrado','Cerrado'],
 ];
 const RESERVATION_STATUSES = [
   ['sin_fecha','Sin fecha'],['fecha_tentativa','Fecha tentativa'],['reservado','Reservado'],
@@ -7068,6 +7077,10 @@ function parseValueFor(field, v) {
 }
 
 function renderDetail(c) {
+  // Norma de desinteres: el contador lo reinicia el webhook en cuanto el cliente
+  // escribe, asi que esto son seguimientos SEGUIDOS sin respuesta, no acumulados.
+  const seguimientosSinRespuesta = Math.min(2, Number(c.followup_attempts) || 0);
+  const esDesinteresado = c.lead_status === 'desinteresado' || !!c.followup_discarded_at;
   const b = $('dbody');
   const optsStages = STAGES.map(([v,l]) => `<option value="${v}"${(c.lifecycle_stage||'nuevo')===v?' selected':''}>${l}</option>`).join('');
   const optsCats = ['<option value="">—</option>'].concat(CATEGORIES.map(v => `<option value="${v}"${c.interested_category===v?' selected':''}>${v}</option>`)).join('');
@@ -7161,6 +7174,14 @@ function renderDetail(c) {
     <div class="lead-k"><div class="lk">Baja total</div><div class="lv">${c.all_messages_opt_out_at ? new Date(c.all_messages_opt_out_at).toLocaleString('es-DO') : 'no'}</div></div>
     <div class="lead-k"><div class="lk">Ultima razon</div><div class="lv">${esc(c.opt_out_reason || 'sin baja')}</div></div>
    </div>
+
+   <div class="dsection">Desinteres</div>
+   <div class="lead-k" style="border-left:3px solid ${esDesinteresado ? 'var(--mut)' : (seguimientosSinRespuesta >= 2 ? 'var(--warn)' : 'var(--ink)')}">
+    <div class="lk">Seguimientos sin respuesta</div>
+    <div class="lv">${seguimientosSinRespuesta} de 2${esDesinteresado ? ' · ya marcado como desinteresado' : (seguimientosSinRespuesta >= 2 ? ' · candidato a desinteresado' : '')}</div>
+   </div>
+   <div class="lead-k"><div class="lk">Norma</div><div class="lv">Dos seguimientos ignorados: pasa a <b>desinteresado</b> y se apagan marketing, seguimientos y auto-plantillas. El cliente puede escribir y se le puede contestar a mano.</div></div>
+   <button class="dbtn" id="dDesinteres" ${esDesinteresado ? 'disabled' : ''}>${esDesinteresado ? 'Ya esta desinteresado' : 'Marcar desinteresado'}</button>
 
    <div class="dsection">Acciones rapidas</div>
    <div class="qa-grid" id="quickActions">
@@ -7262,7 +7283,74 @@ function insertTemplate(text) {
   ta.focus();
 }
 
+// ===== Candidatos a desinteresado =====
+// Revisar es SIEMPRE en seco: el servidor no escribe nada en la operacion 'scan'.
+// Aplicar solo se habilita despues de revisar, y con la cuenta a la vista, para que
+// nadie apague el marketing de medio banco de clientes sin ver a quien afecta.
+let desinteresCandidatos = 0;
+async function revisarDesinteresados() {
+  const btn = $('desinteresScan');
+  const aplicar = $('desinteresApply');
+  const caja = $('desinteresResult');
+  if (!btn || !caja) return;
+  btn.disabled = true; btn.textContent = 'Revisando…';
+  const r = await callCrmApi({ action: 'disinterest', operation: 'scan' });
+  btn.disabled = false; btn.textContent = 'Revisar candidatos';
+  caja.style.display = 'block';
+  if (!r.ok) {
+    caja.innerHTML = `<span style="color:var(--warn)">No se pudo revisar: ${esc(r.error || 'error')}</span>`;
+    if (aplicar) aplicar.disabled = true;
+    return;
+  }
+  desinteresCandidatos = Number(r.total) || 0;
+  if (!desinteresCandidatos) {
+    caja.innerHTML = 'Ningun contacto cumple la norma ahora mismo. Nada que aplicar.';
+    if (aplicar) aplicar.disabled = true;
+    return;
+  }
+  const lista = (r.candidatas || []).slice(0, 25).map(c => {
+    const cuando = c.last_followup_attempt_at ? new Date(c.last_followup_attempt_at).toLocaleDateString('es-DO') : 'sin fecha';
+    return `<div style="display:flex;justify-content:space-between;gap:10px;padding:3px 0;border-bottom:1px solid var(--line)">
+      <span>${esc(c.name)}</span><span style="color:var(--mut)">${c.followup_attempts} seguimientos · ultimo ${esc(cuando)}</span></div>`;
+  }).join('');
+  caja.innerHTML = `<b>${desinteresCandidatos} contacto(s)</b> llevan 2 seguimientos sin responder y superaron las 72 h de gracia.`
+    + `<div style="margin-top:8px;max-height:220px;overflow:auto">${lista}</div>`
+    + (desinteresCandidatos > 25 ? `<div style="margin-top:6px;color:var(--mut)">Se muestran los primeros 25.</div>` : '')
+    + `<div style="margin-top:8px;color:var(--mut)">Aplicar apaga marketing, seguimientos y auto-plantillas de todos ellos. No borra historial ni bloquea la conversacion.</div>`;
+  if (aplicar) aplicar.disabled = !hasPermission('manage_settings');
+}
+async function aplicarDesinteresados() {
+  if (!requirePermission('manage_settings')) return;
+  if (!desinteresCandidatos) return;
+  if (!confirm(`Se marcaran ${desinteresCandidatos} contacto(s) como desinteresados y se apagara su marketing.\n\nEs reversible uno por uno desde el chat.\n\n¿Confirmas?`)) return;
+  const btn = $('desinteresApply');
+  btn.disabled = true; btn.textContent = 'Aplicando…';
+  const r = await callCrmApi({ action: 'disinterest', operation: 'apply' });
+  btn.textContent = 'Aplicar a todos';
+  if (!r.ok) { alert('No se pudo aplicar: ' + (r.error || 'error')); btn.disabled = false; return; }
+  toast('Norma aplicada', `${r.marcadas || 0} contacto(s) quedaron como desinteresados.`);
+  desinteresCandidatos = 0;
+  await revisarDesinteresados();
+  void loadConvs();
+}
+if ($('desinteresScan')) $('desinteresScan').onclick = revisarDesinteresados;
+if ($('desinteresApply')) $('desinteresApply').onclick = aplicarDesinteresados;
+
 function wireQuickActions(c) {
+  const btnDes = $('dDesinteres');
+  if (btnDes && !btnDes.disabled) {
+    btnDes.onclick = async () => {
+      if (!requirePermission('operate')) return;
+      if (!confirm('Marcar a este contacto como DESINTERESADO.\n\nSe apagan marketing, seguimientos automaticos y auto-plantillas. El historial se conserva y podras seguir escribiendole a mano.\n\n¿Confirmas?')) return;
+      btnDes.disabled = true; btnDes.textContent = 'Marcando...';
+      const r = await callCrmApi({ action:'disinterest', operation:'mark', conversation_id:c.id });
+      if (!r.ok) { alert('No se pudo marcar: ' + (r.error || 'error')); btnDes.disabled = false; btnDes.textContent = 'Marcar desinteresado'; return; }
+      c.lead_status = 'desinteresado'; c.lifecycle_stage = 'desinteresado'; c.marketing_opt_in = false;
+      btnDes.textContent = 'Ya esta desinteresado';
+      toast('Contacto desinteresado', 'Marketing y seguimientos apagados. El historial se conserva.');
+      renderDetail(c); renderConvs();
+    };
+  }
   const box = $('quickActions'); if (!box) return;
   box.querySelectorAll('button[data-act]').forEach(b => {
     b.onclick = async () => {
