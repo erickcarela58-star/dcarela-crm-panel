@@ -3111,7 +3111,7 @@ const $ = (id) => document.getElementById(id);
 // Sello de versión: si el panel "no hace nada", casi siempre es caché vieja del
 // navegador. Este sello permite confirmar de un vistazo qué versión está corriendo
 // (compárala con la fecha del último deploy). Actualízalo en cada publicación.
-const BUILD = '2026-08-29-crm-planificador-herramientas-v50';
+const BUILD = '2026-08-29-crm-planificador-default-v51';
 // PDFs de venta por categoría (generados de las tarjetas aprobadas; hosteados en el catálogo).
 // Se regeneran con dcarela-catalogo/scripts/build_combo_pdfs.py + push del catálogo.
 const COMBO_PDF_BASE = 'https://dcarelacompufoto.com/pdf/';
@@ -4292,6 +4292,13 @@ function trackPixel(event, params) {
 
 // ===== Sidebar + view switcher (rediseño Fixora) =====
 let currentView = 'conversations';
+function initialPanelView() {
+  if (location.hash === '#anuncios') return 'ads';
+  const requested = new URLSearchParams(location.search).get('view');
+  const allowed = new Set(['dashboard','planning','conversations','funnel','prospecting','poscustomers','satisfaccion','plantillas','marketing','estados','reminders','bridge','manual','config']);
+  if (allowed.has(requested)) return requested;
+  return CRM_CONFIG.defaultView || 'planning';
+}
 function setView(view) {
   if (view === 'ads') {
     window.location.assign('https://crm.dcarelacompufoto.com/anuncios/');
@@ -5691,7 +5698,7 @@ async function showApp(session) {
     ensureBridgePolling();
     void refreshBridgeStatus(false);
   }
-  setView(location.hash === '#anuncios' ? 'ads' : (CRM_CONFIG.defaultView || 'conversations'));
+  setView(initialPanelView());
   try { if ('Notification' in window && Notification.permission === 'default') Notification.requestPermission(); } catch (e) {}
   if (CRM_DATA_SESSION_AVAILABLE) {
     loadQuickReplies();
