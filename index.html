@@ -3114,6 +3114,9 @@ async function loadFirebasePanelAccess() {
     permissions:permissionsForLocalRole(role)
   };
   applyPanelAccess();
+  // El rol de arriba es lo que cree el navegador. Esto comprueba lo que acepta el
+  // servidor, que es lo que de verdad decide si un cambio se guarda o se rechaza.
+  void avisarSiNoPasaMembresia();
 }
 
 function permissionsForLocalRole(role) {
@@ -3133,6 +3136,28 @@ function permissionsForLocalRole(role) {
   };
 }
 
+// Comprueba, una sola vez tras entrar, si el SERVIDOR aceptaria a esta cuenta.
+// El panel puede mostrar un rol que crmApi no honra: firebaseBusinessIds() asume
+// ['dcarela'] cuando la ficha no trae business_ids, y entonces medio panel falla
+// con mensajes que no explican nada.
+let membresiaComprobada = false;
+async function avisarSiNoPasaMembresia() {
+  if (membresiaComprobada || !firebaseAuth.currentUser) return;
+  membresiaComprobada = true;
+  const r = await callCrmApi({ action: 'whoami' });
+  if (!r.ok || r.pasaria_requireMember) return;
+  const motivo = !r.ficha_existe ? 'tu cuenta no tiene ficha de acceso'
+    : !r.activo ? 'tu ficha esta marcada como inactiva'
+    : !r.pertenece_al_negocio ? `tu ficha no incluye el negocio "${r.negocio_requerido}" en business_ids`
+    : `tu rol guardado es "${r.rol_guardado}"`;
+  const status = $('crmSyncStatus');
+  if (status) {
+    status.classList.add('warn');
+    const label = status.querySelector('span:last-child');
+    if (label) label.textContent = `Acceso limitado: ${motivo}. Se puede leer, pero el servidor rechaza los cambios.`;
+  }
+  toast('Acceso limitado', `El servidor no acepta cambios de esta cuenta: ${motivo}.`);
+}
 function updatePanelSyncStatus() {
   const status = $('crmSyncStatus');
   if (!status) return;
