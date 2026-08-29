@@ -3002,8 +3002,8 @@ input[type="checkbox"],input[type="radio"]{accent-color:var(--ink)}
 
 <!-- opus-recorder: graba OGG/Opus REAL via WASM. MediaRecorder no puede en Chrome (sale webm o mp4-opus, ambos rechazados por WhatsApp). -->
 <script>window.__CRMBUST__ = Date.now();</script>
-<script src="./crm-config.js?v=20260828v48"></script>
-<script src="./firebase-config.js?v=20260828v48"></script>
+<script src="./crm-config.js?v=20260829v49"></script>
+<script src="./firebase-config.js?v=20260829v49"></script>
 <script src="https://cdn.jsdelivr.net/npm/opus-recorder@8.0.5/dist/recorder.min.js"></script>
 
 <script type="module">
@@ -3070,7 +3070,7 @@ const $ = (id) => document.getElementById(id);
 // Sello de versión: si el panel "no hace nada", casi siempre es caché vieja del
 // navegador. Este sello permite confirmar de un vistazo qué versión está corriendo
 // (compárala con la fecha del último deploy). Actualízalo en cada publicación.
-const BUILD = '2026-08-28-crm-avisos-v48';
+const BUILD = '2026-08-29-crm-diagnostico-acceso-v49';
 // PDFs de venta por categoría (generados de las tarjetas aprobadas; hosteados en el catálogo).
 // Se regeneran con dcarela-catalogo/scripts/build_combo_pdfs.py + push del catálogo.
 const COMBO_PDF_BASE = 'https://dcarelacompufoto.com/pdf/';
@@ -3527,9 +3527,20 @@ async function toggleOfficialBot() {
   if (button) button.disabled = true;
   if ($('officialBotGlobalState')) $('officialBotGlobalState').textContent = enabled ? 'APAGANDO…' : 'ENCENDIENDO…';
   let result = await callFn({ action:'setOfficialBot', business_number:normalizePhoneClient(PANEL_BUSINESS_NUMBER), enabled:!enabled });
-  if (!result?.ok && firebaseAuth.currentUser) {
+  // Solo se recurre a escribir directo en Firestore si el servidor NO llego a
+  // contestar. Si contesto con un 403, ese es el motivo de verdad; caer al respaldo
+  // lo tapaba con un "Missing or insufficient permissions" de las reglas que no dice
+  // nada y manda a buscar el problema donde no esta.
+  const servidorContesto = typeof result?.statusCode === 'number';
+  if (!result?.ok && !servidorContesto && firebaseAuth.currentUser) {
     try { result = await saveFirebaseChannelBot(!enabled, 'official'); }
     catch (error) { result = { ok:false, error:error?.message || String(error) }; }
+  }
+  if (!result?.ok && result?.statusCode === 403) {
+    const quien = await callCrmApi({ action:'whoami' });
+    if (quien.ok && !quien.pertenece_al_negocio) {
+      result = { ok:false, error:`Tu cuenta (${quien.email || quien.uid}) no figura en el negocio "${quien.negocio_requerido}". El panel te muestra como ${quien.rol_efectivo} porque asume ese negocio cuando la ficha no lo dice, pero el servidor y las reglas exigen que este escrito en business_ids.` };
+    }
   }
   if (!result?.ok) {
     toast('No se pudo cambiar el bot oficial', result?.error || 'Intenta nuevamente.');
