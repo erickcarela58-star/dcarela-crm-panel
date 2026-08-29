@@ -1,6 +1,6 @@
 {
   "version": "2026-08-29-crm-diagnostico-acceso-v49",
   "channel": "crm",
-  "released_at": "2026-08-29T01:10:00Z",
-  "summary": "Cuando el servidor rechaza por membresia, el panel dice el motivo real en vez del generico de las reglas de Firestore. Nueva consulta whoami para ver que ve el servidor de tu cuenta."
+  "released_at": "2026-08-29T01:20:00Z",
+  "summary": "El panel deja de tapar el motivo real cuando el servidor rechaza un cambio: consulta whoami y dice si la cuenta no tiene ficha, esta inactiva, no pertenece al negocio o su rol no alcanza."
 }
