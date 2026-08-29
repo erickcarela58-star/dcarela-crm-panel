@@ -3176,7 +3176,7 @@ const $ = (id) => document.getElementById(id);
 // Sello de versión: si el panel "no hace nada", casi siempre es caché vieja del
 // navegador. Este sello permite confirmar de un vistazo qué versión está corriendo
 // (compárala con la fecha del último deploy). Actualízalo en cada publicación.
-const BUILD = '2026-08-29-crm-whatsapp-v53';
+const BUILD = '2026-08-29-crm-menu-alcanzable-v54';
 // PDFs de venta por categoría (generados de las tarjetas aprobadas; hosteados en el catálogo).
 // Se regeneran con dcarela-catalogo/scripts/build_combo_pdfs.py + push del catálogo.
 const COMBO_PDF_BASE = 'https://dcarelacompufoto.com/pdf/';
@@ -5652,17 +5652,9 @@ document.querySelectorAll('.sb-item').forEach(btn => {
 });
 
 // Toggle sidebar móvil
-// La hamburguesa hacia dos cosas distintas segun el ancho: en movil abre el cajon
-// lateral, y en escritorio no hacia nada visible porque la barra ya estaba abierta.
-// Ahora ademas despliega el menu completo, que de serie ensena solo las tres entradas
-// del dia a dia. Se recuerda: quien vive en Anuncios no quiere volver a abrirlo cada
-// vez que entra.
-document.getElementById('sbToggle').onclick = () => {
-  document.getElementById('sb').classList.toggle('open');
-  const completo = document.body.classList.toggle('sb-full');
-  try { localStorage.setItem('crm_sb_completo', completo ? '1' : '0'); } catch (e) {}
-};
-try { if (localStorage.getItem('crm_sb_completo') === '1') document.body.classList.add('sb-full'); } catch (e) {}
+// La hamburguesa abre el cajon lateral en movil. Lo de desplegar el menu completo se
+// engancha aparte, fuera del modulo: ver menuCompleto() al final del documento.
+document.getElementById('sbToggle').onclick = () => document.getElementById('sb').classList.toggle('open');
 
 // Search global en topbar -> filtra la lista de conversaciones y switchea a vista
 const _tbSearch = document.getElementById('tbSearch');
@@ -11227,6 +11219,24 @@ boot();
   lista.addEventListener('click', cerrar);
   document.addEventListener('click', cerrar);
   document.addEventListener('keydown', function (ev) { if (ev.key === 'Escape') cerrar(); });
+}());
+
+// El menu de serie ensena solo tres entradas; las otras diecisiete estan detras de la
+// hamburguesa. Eso convierte al boton en la UNICA puerta a la mitad del panel, asi que
+// va aqui, en un script normal, y no dentro del modulo: si el modulo falla al arrancar
+// -- sin sesion, sin Firebase, un error en cualquier linea de arriba -- el boton
+// seguiria dibujado pero muerto, y esas diecisiete entradas se volverian inalcanzables.
+// Ocultar no puede depender de que todo lo demas vaya bien.
+(function menuCompleto(){
+  var boton = document.getElementById('sbToggle');
+  if (!boton) return;
+  var CLAVE = 'crm_sb_completo';
+  try { if (localStorage.getItem(CLAVE) === '1') document.body.classList.add('sb-full'); } catch (e) {}
+  boton.addEventListener('click', function () {
+    var completo = document.body.classList.toggle('sb-full');
+    boton.setAttribute('aria-expanded', completo ? 'true' : 'false');
+    try { localStorage.setItem(CLAVE, completo ? '1' : '0'); } catch (e) {}
+  });
 }());
 
 (function menuPlegable(){
