@@ -1,6 +1,6 @@
 {
-  "version": "2026-08-29-crm-menu-alcanzable-v54",
+  "version": "2026-08-29-crm-menu-a-salvo-v55",
   "channel": "crm",
   "released_at": "2026-08-29T04:20:00Z",
-  "summary": "Arreglada la hamburguesa: enganchaba el menu completo dentro del modulo y sin sesion quedaba muerta, dejando 17 entradas inalcanzables. Guard nuevo para que no vuelva a pasar en silencio."
+  "summary": "Arreglado el menu vacio en produccion: la regla que esconde entradas daba por hecho que el script ya habia movido las tres fijas. Ahora solo esconde despues de que el script lo confirme."
 }
