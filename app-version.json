@@ -1,6 +1,6 @@
 {
-  "version": "2026-08-28-crm-login-fix-v47",
+  "version": "2026-08-28-crm-avisos-v48",
   "channel": "crm",
-  "released_at": "2026-08-28T22:10:00Z",
-  "summary": "ARREGLO URGENTE: el panel no cargaba tras la v46 porque una constante del kanban leia STAGES antes de que existiera y el modulo entero moria, dejando el login inservible. Se calcula al vuelo."
+  "released_at": "2026-08-29T00:40:00Z",
+  "summary": "Los avisos ya no se montan sobre la barra superior ni truncan el mensaje de error. Activar el bot vuelve a funcionar y el informe de IA explica por que falla cuando falla."
 }
