@@ -1,6 +1,6 @@
 {
-  "version": "2026-08-29-crm-whatsapp-v53",
+  "version": "2026-08-29-crm-menu-alcanzable-v54",
   "channel": "crm",
   "released_at": "2026-08-29T04:20:00Z",
-  "summary": "Menu reducido a Planificacion, Conversaciones y Agenda; el resto detras de la hamburguesa. Ficha del lead con Acciones arriba y datos plegados. Barra superior sin los interruptores de bot."
+  "summary": "Arreglada la hamburguesa: enganchaba el menu completo dentro del modulo y sin sesion quedaba muerta, dejando 17 entradas inalcanzables. Guard nuevo para que no vuelva a pasar en silencio."
 }
