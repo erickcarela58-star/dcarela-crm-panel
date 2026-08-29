@@ -1895,10 +1895,18 @@ input[type="checkbox"],input[type="radio"]{accent-color:var(--ink)}
    grupos: seis cabeceras plegadas siguen siendo seis lineas de ruido. Todo lo demas
    vive detras de la hamburguesa, que para eso esta dibujada en la barra. Nada se
    borra; se deja de ensenar hasta que se pide. */
-body:not(.sb-full) .sb-nav .sb-sep{display:none}
-body:not(.sb-full) .sb-nav > .sb-item,
-body:not(.sb-full) .sb-nav > .sb-item[data-official-only],
-body:not(.sb-full) .sb-nav > .sb-item[data-bridge-only]{display:none!important}
+/* OJO: todo esto cuelga de .sb-listo, que pone el propio script DESPUES de mover las
+   tres entradas fijas a su bloque. Sin esa clase no se esconde nada.
+   La primera version no la tenia y dejo el menu entero en blanco en produccion: la
+   regla escondia los .sb-item hijos directos de .sb-nav dando por hecho que el script
+   ya habia sacado de ahi a las tres fijas. El script no corrio, las tres seguian
+   siendo hijas directas, y se fueron con las demas. Cero entradas.
+   Esconder no puede depender de que otra cosa haya ido bien: si el script falla, se ve
+   el menu completo de siempre. Feo, pero entero. */
+body.sb-listo:not(.sb-full) .sb-nav .sb-sep{display:none}
+body.sb-listo:not(.sb-full) .sb-nav > .sb-item,
+body.sb-listo:not(.sb-full) .sb-nav > .sb-item[data-official-only],
+body.sb-listo:not(.sb-full) .sb-nav > .sb-item[data-bridge-only]{display:none!important}
 body.sb-full .tb-burger{background:var(--card2);color:var(--fg)}
 /* Los interruptores de bot son ajustes generales, no algo que se toque mientras se
    atiende un chat: viajan con el menu completo. El de tema se queda siempre a la vista,
@@ -3176,7 +3184,7 @@ const $ = (id) => document.getElementById(id);
 // Sello de versión: si el panel "no hace nada", casi siempre es caché vieja del
 // navegador. Este sello permite confirmar de un vistazo qué versión está corriendo
 // (compárala con la fecha del último deploy). Actualízalo en cada publicación.
-const BUILD = '2026-08-29-crm-menu-alcanzable-v54';
+const BUILD = '2026-08-29-crm-menu-a-salvo-v55';
 // PDFs de venta por categoría (generados de las tarjetas aprobadas; hosteados en el catálogo).
 // Se regeneran con dcarela-catalogo/scripts/build_combo_pdfs.py + push del catálogo.
 const COMBO_PDF_BASE = 'https://dcarelacompufoto.com/pdf/';
@@ -11257,6 +11265,9 @@ boot();
     cabecera.className = 'sb-fijas';
     nav.insertBefore(cabecera, nav.firstChild);
     fijas.forEach(function (b) { cabecera.appendChild(b); });
+    // Recien AHORA se permite esconder: las tres fijas ya estan fuera de .sb-nav y a
+    // salvo de la regla. Si algo revienta antes de esta linea, el menu se queda entero.
+    document.body.classList.add('sb-listo');
   }
   var CLAVE = 'crm_sb_grupos_cerrados';
   var grupos = [];
