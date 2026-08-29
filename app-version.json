@@ -1,6 +1,6 @@
 {
-  "version": "2026-08-29-crm-diagnostico-acceso-v49",
+  "version": "2026-08-29-crm-planificador-herramientas-v50",
   "channel": "crm",
-  "released_at": "2026-08-29T01:20:00Z",
-  "summary": "El panel deja de tapar el motivo real cuando el servidor rechaza un cambio: consulta whoami y dice si la cuenta no tiene ficha, esta inactiva, no pertenece al negocio o su rol no alcanza."
+  "released_at": "2026-08-29T02:10:00Z",
+  "summary": "Planificador reorganizado como centro de herramientas por prompt, pruebas 5620, manual v22 y modo claro/oscuro conservado; toda accion sensible exige aprobacion humana."
 }
