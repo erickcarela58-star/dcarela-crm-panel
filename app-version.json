@@ -1,6 +1,6 @@
 {
-  "version": "2026-08-29-crm-planificador-default-v51",
+  "version": "2026-08-29-crm-whatsapp-v53",
   "channel": "crm",
-  "released_at": "2026-08-29T02:45:00Z",
-  "summary": "Produccion abre por defecto en Planificacion, acepta ?view=planning, conserva herramientas por prompt, pruebas 5620, manual v22 y modo claro/oscuro."
+  "released_at": "2026-08-29T04:20:00Z",
+  "summary": "Menu reducido a Planificacion, Conversaciones y Agenda; el resto detras de la hamburguesa. Ficha del lead con Acciones arriba y datos plegados. Barra superior sin los interruptores de bot."
 }
