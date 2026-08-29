@@ -1,6 +1,6 @@
 {
-  "version": "2026-08-28-crm-avisos-v48",
+  "version": "2026-08-29-crm-diagnostico-acceso-v49",
   "channel": "crm",
-  "released_at": "2026-08-29T00:40:00Z",
-  "summary": "Los avisos ya no se montan sobre la barra superior ni truncan el mensaje de error. Activar el bot vuelve a funcionar y el informe de IA explica por que falla cuando falla."
+  "released_at": "2026-08-29T01:10:00Z",
+  "summary": "Cuando el servidor rechaza por membresia, el panel dice el motivo real en vez del generico de las reglas de Firestore. Nueva consulta whoami para ver que ve el servidor de tu cuenta."
 }
