@@ -704,12 +704,16 @@ body.role-viewer #agnSave,body.role-viewer .ag-row button{pointer-events:none!im
 
 .convs::-webkit-scrollbar,.msgs::-webkit-scrollbar{width:7px}
 .convs::-webkit-scrollbar-thumb,.msgs::-webkit-scrollbar-thumb{background:var(--line);border-radius:4px}
-.toast{position:fixed;top:14px;right:14px;z-index:30;background:var(--card);
+/* El aviso caia sobre la barra superior (top:14px) y tapaba "Modo claro", "Cerrar" y
+   el interruptor del bot: el texto se montaba encima y no se leia ninguno de los dos.
+   La barra mide 64-68px, asi que el aviso arranca justo debajo. */
+.toast{position:fixed;top:80px;right:16px;z-index:30;background:var(--card);
  border:1px solid var(--accent);border-left:3px solid var(--accent);border-radius:11px;
  padding:11px 14px;max-width:300px;box-shadow:0 14px 40px rgba(0,0,0,.55);
  cursor:pointer;transition:opacity .3s;animation:tin .32s cubic-bezier(.2,.9,.3,1)}
 .toast .tt{font-weight:700;font-size:12.5px}
-.toast .tb{font-size:11.5px;color:var(--mut);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:272px}
+.toast .tb{font-size:11.5px;color:var(--mut);margin-top:3px;line-height:1.4;max-width:272px;
+ white-space:normal;overflow-wrap:anywhere}
 @keyframes tin{from{transform:translateX(115%);opacity:0}to{transform:translateX(0);opacity:1}}
 
 @media(max-width:720px){
@@ -2998,8 +3002,8 @@ input[type="checkbox"],input[type="radio"]{accent-color:var(--ink)}
 
 <!-- opus-recorder: graba OGG/Opus REAL via WASM. MediaRecorder no puede en Chrome (sale webm o mp4-opus, ambos rechazados por WhatsApp). -->
 <script>window.__CRMBUST__ = Date.now();</script>
-<script src="./crm-config.js?v=20260828v47"></script>
-<script src="./firebase-config.js?v=20260828v47"></script>
+<script src="./crm-config.js?v=20260828v48"></script>
+<script src="./firebase-config.js?v=20260828v48"></script>
 <script src="https://cdn.jsdelivr.net/npm/opus-recorder@8.0.5/dist/recorder.min.js"></script>
 
 <script type="module">
@@ -3066,7 +3070,7 @@ const $ = (id) => document.getElementById(id);
 // Sello de versión: si el panel "no hace nada", casi siempre es caché vieja del
 // navegador. Este sello permite confirmar de un vistazo qué versión está corriendo
 // (compárala con la fecha del último deploy). Actualízalo en cada publicación.
-const BUILD = '2026-08-28-crm-login-fix-v47';
+const BUILD = '2026-08-28-crm-avisos-v48';
 // PDFs de venta por categoría (generados de las tarjetas aprobadas; hosteados en el catálogo).
 // Se regeneran con dcarela-catalogo/scripts/build_combo_pdfs.py + push del catálogo.
 const COMBO_PDF_BASE = 'https://dcarelacompufoto.com/pdf/';
