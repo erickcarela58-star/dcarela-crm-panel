@@ -1982,9 +1982,10 @@ const TABLERO = {
     titulo: 'Clientes de caja',
     bajada: 'Los que ya compraron en el punto de venta. Se sincronizan desde la caja.',
     tabla: 'crm_pos_customers',
+    accion: 'posCustomers',
     orden: [{ field:'last_sale_at', ascending:false }],
     cols: [
-      { t:'Cliente', p:(r)=> r.customer_name || '—' },
+      { t:'Cliente', p:(r)=> r.name || '—' },
       { t:'Teléfono', p:(r)=> r.phone || '—' },
       { t:'Compras', p:(r)=> r.sale_count ?? 0 },
       { t:'Gastado', p:(r)=> pesos(r.total_spent_centavos) },
@@ -2024,6 +2025,7 @@ const TABLERO = {
     ],
   },
 };
+const TABLEROS_CARGADOS = new Set();
 
 function pesos(centavos){
   const n = Number(centavos || 0);
@@ -2045,20 +2047,23 @@ async function montaTablero(id){
       + '<div id="tb-' + id + '"></div></div>');
     document.querySelector('#vista-' + id + ' [data-recarga]').onclick = () => pintaTablero(id);
   }
-  pintaTablero(id);
+  if (!TABLEROS_CARGADOS.has(id)) pintaTablero(id);
 }
 
 async function pintaTablero(id){
   const d = TABLERO[id], cont = $('tb-' + id);
   if (!cont) return;
   cont.innerHTML = '<p class="bajada"><span class="cargando"></span> Cargando…</p>';
-  const r = await llama({ action:'data', table:d.tabla, operation:'select',
-    filters: d.filtros || [], order: d.orden || [], limit: 300 });
+  const r = d.accion
+    ? await llama({ action:d.accion })
+    : await llama({ action:'data', table:d.tabla, operation:'select',
+        filters: d.filtros || [], order: d.orden || [], limit: 300 });
   if (!r.ok) {
     cont.innerHTML = '<p class="bajada">No se pudo cargar: ' + esc(r.error || 'error') + '</p>';
     return;
   }
   let filas = r.data || r.rows || [];
+  TABLEROS_CARGADOS.add(id);
   if (d.soloConRespuesta) filas = filas.filter(f => f.rating_service || f.rating_satisfaction || f.comment);
   if (!filas.length) {
     cont.innerHTML = '<p class="bajada">Todavía no hay nada aquí.</p>';
@@ -2247,6 +2252,13 @@ async function pintaConexion(){
   if (!r.ok) { c.innerHTML = '<p class="bajada">No se pudo comprobar: ' + esc(r.error || '') + '</p>'; return; }
   const t = r.transport || r.status || r;
   const listo = t.ready === true || t.state === 'ready';
+  const fecha = v => {
+    if (!v) return '—';
+    if (typeof v === 'string') return v.slice(0,19).replace('T',' ');
+    const segundos = Number(v._seconds ?? v.seconds);
+    if (Number.isFinite(segundos)) return new Date(segundos * 1000).toISOString().slice(0,19).replace('T',' ');
+    return '—';
+  };
   const fila = (k, v) => '<div class="cambio"><div class="k">' + esc(k) + '</div>' + esc(String(v ?? '—')) + '</div>';
   c.innerHTML = '<div class="propuesta" style="max-width:620px">'
     + '<div class="tapa"><b>' + (listo ? '✅ Entregando mensajes' : '⚠️ No está entregando') + '</b></div>'
@@ -2254,8 +2266,8 @@ async function pintaConexion(){
     +   fila('Estado', t.state || (listo ? 'ready' : 'desconocido'))
     +   fila('Número del negocio', CFG.businessDisplayNumber || CFG.businessNumber || '—')
     +   (t.last_error_code ? fila('Último error de Meta', t.last_error_code) : '')
-    +   (t.last_error_at ? fila('Cuándo', String(t.last_error_at).slice(0,19).replace('T',' ')) : '')
-    +   (t.last_webhook_attempt_at ? fila('Último aviso recibido', String(t.last_webhook_attempt_at).slice(0,19).replace('T',' ')) : '')
+    +   (t.last_error_at ? fila('Cuándo', fecha(t.last_error_at)) : '')
+    +   (t.last_webhook_attempt_at ? fila('Último aviso recibido', fecha(t.last_webhook_attempt_at)) : '')
     + '</div>'
     + (listo ? '' : '<div class="patas"><span class="bajada" style="margin:0">'
         + 'Hay que reconectar Meta con el transporte. Eso se hace con el script '
@@ -2290,10 +2302,12 @@ async function pintaConfig(){
   $('cfgYo').innerHTML = '<div style="max-width:520px">' + dato('Correo', u?.email || '—') + '</div>';
   const quien = await llama({ action:'whoami' });
   if (quien.ok) {
+    const rol = quien.rol_efectivo || quien.rol_guardado || quien.role || quien.member?.role || '—';
+    const autorizado = quien.pasaria_requireMember === true || Boolean(quien.member || quien.role);
     $('cfgYo').innerHTML = '<div style="max-width:520px">'
       + dato('Correo', u?.email || '—')
-      + dato('Rol', quien.role || quien.member?.role || '—')
-      + dato('Acceso', quien.member || quien.role ? 'autorizado' : 'sin membresía') + '</div>';
+      + dato('Rol', rol)
+      + dato('Acceso', autorizado ? 'autorizado' : 'sin membresía') + '</div>';
   }
 
   const eq = $('cfgEquipo');
