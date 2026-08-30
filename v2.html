@@ -788,6 +788,7 @@ const VISTAS = [
   { id:'prospecting',   nombre:'Prospección',   icono:ico('<circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4M11 7v8M7 11h8"/>') },
   { id:'poscustomers',  nombre:'Clientes de caja', icono:ico('<path d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M19 8v6M22 11h-6"/>') },
   { id:'satisfaccion',  nombre:'Satisfacción',  icono:ico('<path d="M12 17.3l-5.5 3 1-6.1L3 9.8l6.1-.9L12 3.3l2.9 5.6 6.1.9-4.5 4.4 1 6.1z"/>') },
+  { id:'limpieza',      nombre:'Limpieza',       icono:ico('<path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/>') },
   { id:'campanas',      nombre:'Campañas',      icono:ico('<path d="M3 11l18-8-7 18-2-8-9-2z"/>') },
   { id:'plantillas',    nombre:'Plantillas',    icono:ico('<rect x="5" y="5" width="14" height="16" rx="2"/><path d="M9 11h6M9 15h4"/>') },
   { id:'reminders',     nombre:'Recordatorios', icono:ico('<path d="M18 8a6 6 0 00-12 0c0 7-3 9-3 9h18s-3-2-3-9M13 21a2 2 0 01-4 0"/>') },
@@ -941,6 +942,7 @@ function monta(id){
   if (id === 'planning') return montaPlanificacion();
   if (id === 'plantillas') return montaPlantillasVista();
   if (id === 'campanas') return montaBroadcast();
+  if (id === 'limpieza') return montaLimpieza();
   if (id === 'funnel') return montaFunnel();
   if (id === 'dashboard') return montaDashboard();
   if (TABLERO[id]) return montaTablero(id);
@@ -3014,13 +3016,20 @@ function pintaDashboard(){
     + '" data-ir="' + esc(t) + '"><b>' + n + '</b><span>' + esc(t) + '</span>'
     + (nota ? '<i>' + esc(nota) + '</i>' : '') + '</button>';
 
-  c.innerHTML = cifra(CONVS.length, 'Conversaciones', 'en total')
+  // Los dormidos se cuentan aparte. Meterlos en "Conversaciones" infla el numero con
+  // gente que lleva meses sin escribir y hace parecer que hay mas trabajo del que hay.
+  const dormidos = CONVS.filter(enElOlvido).length;
+  const vivas = CONVS.length - dormidos;
+
+  c.innerHTML = cifra(vivas, 'Conversaciones', dormidos ? dormidos + ' dormidas aparte' : 'en total')
     + cifra(sinLeer, 'Sin leer', sinLeer ? 'esperando respuesta' : 'al día', sinLeer ? 'ojo' : '')
     + cifra(vencidos, 'Seguimientos vencidos', vencidos ? 'ya tocaba' : 'ninguno', vencidos ? 'mal' : '')
     + cifra(humano, 'Esperando a una persona')
     + cifra(deHoy, 'Activas hoy')
     + cifra(clientes, 'Clientes', 'ya compraron', clientes ? 'bien' : '')
-    + cifra(desint + excluidos, 'Fuera de marketing', desint + ' desinteresados · ' + excluidos + ' excluidos');
+    + cifra(desint + excluidos, 'Fuera de marketing', desint + ' desinteresados · ' + excluidos + ' excluidos')
+    + cifra(dormidos, 'Dormidos', dormidos ? 'más de ' + DIAS_INACTIVO + ' días · pendientes de limpiar' : 'ninguno',
+        dormidos ? 'ojo' : '');
 
   // Pulsar una cifra lleva a verla, no solo la enseña. Un numero sin a donde ir obliga
   // a rehacer el filtro a mano en la otra pantalla.
@@ -3031,6 +3040,7 @@ function pintaDashboard(){
     if (a === 'Clientes') { filtro = 'todos'; ve('funnel'); return; }
     if (a === 'Sin leer') { filtro = 'sinleer'; ve('conversations'); pintaChats(); return; }
     if (a === 'Esperando a una persona') { filtro = 'humano'; ve('conversations'); pintaChats(); return; }
+    if (a === 'Dormidos') return ve('limpieza');
     ve('conversations');
   };
 
@@ -3072,6 +3082,146 @@ function pintaDashboard(){
           + '<span class="eb"><i style="width:' + (embudo[0].v ? Math.round(f.v / embudo[0].v * 100) : 0) + '%"></i></span>'
           + '<span class="ev">' + f.v + (i ? ' <em>' + f.pct + '%</em>' : '') + '</span></div>').join('')
         + '</div>');
+}
+
+/* ---- Limpieza del histórico ---------------------------------------------- */
+// El dueño lo dijo claro: los que escribieron al WhatsApp API llevan MESES sin
+// interes, no deben contar para nada hasta que demuestren lo contrario, y se les hace
+// UN acercamiento -- uno, no una secuencia -- programado para mañana. Si no responden,
+// desinteresados.
+//
+// Dos decisiones deliberadas:
+//   · Se excluye el canal de WhatsApp Web, como pidio. Ese numero tiene otra historia.
+//   · Nada sale hoy. Se programa. Doscientos mensajes de golpe a gente dormida hace
+//     meses es exactamente el patron que hace que Meta degrade el numero.
+const DIAS_INACTIVO = 60;
+
+function llevaDormido(c){
+  const t = Date.parse(String(c.last_message_at || '')) || 0;
+  return t ? Math.floor((Date.now() - t) / 86400000) : 9999;
+}
+// Un contacto "en el olvido" no cuenta para las metricas del dia a dia. No es lo mismo
+// que desinteresado: a este todavia no se le ha preguntado.
+function enElOlvido(c){
+  if (['cliente','reservado','desinteresado','perdido'].includes(c.lifecycle_stage)) return false;
+  if (c.proactive_blocked_at) return false;
+  if (canalDe(c) === 'whatsapp_qr') return false;      // el segundo numero queda fuera
+  return llevaDormido(c) >= DIAS_INACTIVO;
+}
+
+function montaLimpieza(){
+  if (!montadas.has('limpieza')) {
+    montadas.add('limpieza');
+    hueco('limpieza', '<div class="hoja"><h1>Limpieza del histórico</h1>'
+      + '<p class="bajada">Contactos que llevan más de ' + DIAS_INACTIVO + ' días sin escribir. '
+      +   'Se les hace <b>un solo acercamiento</b>, personalizado y <b>programado para mañana</b>. '
+      +   'Quien ya recibió dos seguimientos sin contestar pasa directo a desinteresado. '
+      +   'El segundo número queda fuera.</p>'
+      + '<div id="limpiezaCuerpo"></div></div>');
+  }
+  pintaLimpieza();
+}
+
+function pintaLimpieza(){
+  const cont = $('limpiezaCuerpo'); if (!cont) return;
+  const olvidados = CONVS.filter(enElOlvido);
+  // Los que ya se cansaron de no recibir respuesta no merecen otro intento: la norma de
+  // los dos seguimientos ya dijo que no.
+  const aDescartar = olvidados.filter(c => Number(c.followup_attempts || 0) >= 2);
+  const aTocar = olvidados.filter(c => Number(c.followup_attempts || 0) < 2);
+
+  if (!olvidados.length) {
+    cont.innerHTML = '<p class="bajada">No hay ningún contacto dormido más de '
+      + DIAS_INACTIVO + ' días. Nada que limpiar.</p>';
+    return;
+  }
+
+  cont.innerHTML = '<div class="cifras" style="max-width:760px">'
+    + '<div class="cifra"><b>' + olvidados.length + '</b><span>dormidos</span>'
+    +   '<i>más de ' + DIAS_INACTIVO + ' días</i></div>'
+    + '<div class="cifra"><b>' + aTocar.length + '</b><span>merecen un intento</span>'
+    +   '<i>se programa para mañana</i></div>'
+    + '<div class="cifra mal"><b>' + aDescartar.length + '</b><span>ya se les insistió dos veces</span>'
+    +   '<i>pasan a desinteresados</i></div></div>'
+
+    + '<div class="acciones" style="margin:18px 0">'
+    +   (aTocar.length ? '<button class="btn-solido" id="limProgramar">Programar ' + aTocar.length
+        + ' acercamiento(s) para mañana</button>' : '')
+    +   (aDescartar.length ? '<button class="btn-linea" id="limDescartar">Marcar ' + aDescartar.length
+        + ' como desinteresados</button>' : '')
+    + '</div>'
+
+    + '<div class="campo" style="max-width:760px"><label>Mensaje base (se personaliza por contacto)</label>'
+    +   '<textarea id="limTexto" rows="3">¿Sigues interesada en tu sesión de fotos? '
+    +   'Si quieres retomarlo dime y te ayudo; si no, no te escribo más.</textarea>'
+    +   '<p class="aviso" style="margin:6px 0 0">Se le antepone su nombre y se le añade la salida. '
+    +     'Si han pasado más de 24 h desde su último mensaje, solo llegará con plantilla aprobada: '
+    +     'el envío lo dirá al intentarlo mañana.</p></div>'
+
+    + '<div class="seccion" style="margin:22px 0 8px">A quién le tocaría</div>'
+    + '<div class="tabla" style="max-width:900px">'
+    + '<div class="fila cabecera"><span>Contacto</span><span>Dormido</span><span>Etapa</span><span>Qué se hace</span></div>'
+    + olvidados.slice(0, 200).map(c => {
+        const desc = Number(c.followup_attempts || 0) >= 2;
+        return '<div class="fila"><span><b>' + esc(nombreDe(c)) + '</b><small>+'
+          + esc(c.wa_phone || '') + '</small></span>'
+          + '<span>' + llevaDormido(c) + ' días</span>'
+          + '<span>' + esc((c.lifecycle_stage || 'nuevo').replace(/_/g,' ')) + '</span>'
+          + '<span><i class="chip ' + (desc ? 'mal' : 'medio') + '">'
+          + (desc ? 'desinteresado' : 'un acercamiento') + '</i></span></div>';
+      }).join('')
+    + '</div>'
+    + (olvidados.length > 200 ? '<p class="bajada" style="margin-top:10px">Se listan los primeros 200 de '
+        + olvidados.length + '; la acción se aplica a todos.</p>' : '');
+
+  if (aTocar.length) $('limProgramar').onclick = () => programaAcercamiento(aTocar);
+  if (aDescartar.length) $('limDescartar').onclick = () => descartaOlvidados(aDescartar);
+}
+
+async function programaAcercamiento(lista){
+  const base = $('limTexto').value.trim();
+  if (!base) return avisa('Escribe el mensaje base');
+  const mañana = new Date(); mañana.setDate(mañana.getDate() + 1); mañana.setHours(10, 0, 0, 0);
+  if (!confirm('Se programa UN acercamiento para ' + lista.length + ' contactos, mañana a las 10:00.\n\n'
+    + 'No sale nada hoy. Cada mensaje va personalizado y aparecerá en Recordatorios para '
+    + 'revisarlo antes de enviarlo.\n\n¿Continuar?')) return;
+  const b = $('limProgramar');
+  b.disabled = true;
+  let hechos = 0; const fallos = [];
+  for (const c of lista) {
+    b.textContent = 'Programando ' + (hechos + 1) + ' de ' + lista.length + '…';
+    const r = await llama({ action:'updateLead', conversation_id: c.id || c._id, fields:{
+      follow_up_at: mañana.toISOString(),
+      pending_questions: personaliza(base, c),
+      next_step_suggested: 'Último acercamiento antes de darlo por desinteresado.',
+    }});
+    if (r.ok) { hechos++; Object.assign(c, { follow_up_at: mañana.toISOString() }); }
+    else fallos.push(nombreDe(c) + ': ' + r.error);
+  }
+  b.disabled = false;
+  avisa('Programados ' + hechos + ' de ' + lista.length,
+    fallos.length ? fallos.slice(0,2).join(' · ') : 'Mañana a las 10:00, en Recordatorios.');
+  pintaLimpieza();
+}
+
+async function descartaOlvidados(lista){
+  if (!confirm('Se marcan ' + lista.length + ' contactos como desinteresados.\n\n'
+    + 'Ya recibieron dos seguimientos sin contestar. Dejan de recibir marketing y '
+    + 'seguimientos, y dejan de contar en las métricas. Pueden seguir escribiendo.\n\n'
+    + '¿Continuar?')) return;
+  const b = $('limDescartar');
+  b.disabled = true;
+  let hechos = 0;
+  for (const c of lista) {
+    b.textContent = 'Marcando ' + (hechos + 1) + ' de ' + lista.length + '…';
+    const r = await llama({ action:'disinterest', operation:'mark', conversation_id: c.id || c._id,
+      reason: 'sin respuesta tras dos seguimientos, más de ' + DIAS_INACTIVO + ' días dormido' });
+    if (r.ok) { hechos++; c.lifecycle_stage = 'desinteresado'; }
+  }
+  b.disabled = false;
+  avisa('Marcados ' + hechos + ' de ' + lista.length, 'Ya no cuentan en las métricas.');
+  pintaLimpieza();
+  pintaChats();
 }
 
 /* ---- Broadcast ----------------------------------------------------------- */
