@@ -2513,7 +2513,8 @@ function montaPlantillasVista(){
       + '<p class="bajada">Lo único que WhatsApp entrega cuando han pasado más de 24 horas desde el '
       +   'último mensaje del cliente. Se aprueban en Meta; aquí se sincronizan y se activan.</p>'
       + '<div class="acciones" style="display:flex;gap:9px;margin-bottom:18px">'
-      +   '<button class="btn-solido" id="btnSyncTpl">Sincronizar con Meta</button>'
+      +   '<button class="btn-solido" id="btnNuevaTpl">＋ Crear plantilla</button>'
+      +   '<button class="btn-linea" id="btnSyncTpl">Sincronizar con Meta</button>'
       +   '<button class="btn-linea" id="btnRecargaTpl">Recargar</button></div>'
       + '<div id="tablaTpl"></div></div>');
     $('btnSyncTpl').onclick = async () => {
@@ -2530,8 +2531,66 @@ function montaPlantillasVista(){
       pintaTablaTpl(true);
     };
     $('btnRecargaTpl').onclick = () => pintaTablaTpl(true);
+    $('btnNuevaTpl').onclick = abreNuevaPlantilla;
   }
   pintaTablaTpl(!PLANTILLAS);
+}
+
+// Crear una plantilla propia. Lo que hay que dejar clarisimo es que NO queda usable al
+// pulsar guardar: se manda a Meta y hay que esperar su revision. Un panel que no lo diga
+// hace que alguien prepare una campaña con una plantilla que todavia no existe.
+function abreNuevaPlantilla(){
+  abreModal('<div class="mtapa"><b>Nueva plantilla</b><button class="cerrarm" data-cerrar>×</button></div>'
+    + '<div class="mcuerpo">'
+    + '<p class="aviso"><b>La revisa Meta antes de poder usarse</b>, y tarda de minutos a horas. '
+    +   'No cuentes con ella para una campaña de hoy.</p>'
+    + '<div class="par">'
+    +   '<div class="campo"><label>Nombre interno</label>'
+    +     '<input id="tpNombre" placeholder="recordatorio_sesion"></div>'
+    +   '<div class="campo"><label>Tipo</label><select id="tpCat">'
+    +     '<option value="UTILITY">Utilidad — avisos de algo que el cliente ya tiene</option>'
+    +     '<option value="MARKETING">Marketing — promociones</option></select></div>'
+    + '</div>'
+    + '<div class="campo"><label>Texto</label>'
+    +   '<textarea id="tpTexto" rows="5" placeholder="Hola {{1}}, te recordamos tu sesión del {{2}}. Cualquier cambio, escríbenos."></textarea>'
+    +   '<p class="aviso" style="margin:6px 0 0">Usa <code>{{1}}</code>, <code>{{2}}</code>… para lo que cambia '
+    +     'en cada envío. Meta exige un ejemplo de cada uno.</p></div>'
+    + '<div class="campo" id="tpEjemplosCampo" hidden><label>Ejemplos (uno por variable, separados por coma)</label>'
+    +   '<input id="tpEjemplos" placeholder="Luisa, 17 de septiembre"></div>'
+    + '<div class="campo"><label>Pie (opcional)</label><input id="tpPie" placeholder="D’Carela Compufoto"></div>'
+    + '<p class="aviso" id="tpAvisoStop" hidden><b>Marketing exige salida de baja.</b> Incluye algo como '
+    +   '«Responde STOP para no recibir más promociones», o Meta la rechaza y además degrada el número.</p>'
+    + '</div>'
+    + '<div class="mpatas"><button class="btn-linea" data-cerrar>Cancelar</button>'
+    +   '<button class="btn-solido" id="tpEnviar">Enviar a Meta</button></div>');
+  $('modal').querySelectorAll('[data-cerrar]').forEach(b => { b.onclick = cierraModal; });
+
+  const revisa = () => {
+    const n = ($('tpTexto').value.match(/\{\{\d+\}\}/g) || []).length;
+    $('tpEjemplosCampo').hidden = n === 0;
+    $('tpAvisoStop').hidden = $('tpCat').value !== 'MARKETING';
+  };
+  $('tpTexto').oninput = revisa;
+  $('tpCat').onchange = revisa;
+  revisa();
+
+  $('tpEnviar').onclick = async () => {
+    const texto = $('tpTexto').value.trim();
+    const huecos = (texto.match(/\{\{\d+\}\}/g) || []).length;
+    const ejemplos = $('tpEjemplos').value.split(',').map(s => s.trim()).filter(Boolean);
+    if (huecos && ejemplos.length !== huecos)
+      return avisa('Faltan ejemplos', 'La plantilla tiene ' + huecos + ' variable(s) y hacen falta ' + huecos + '.');
+    $('tpEnviar').disabled = true;
+    const r = await llama({ action:'templates', operation:'create',
+      template_name: $('tpNombre').value.trim(), body_text: texto,
+      category: $('tpCat').value, footer_text: $('tpPie').value.trim(),
+      language_code: 'es', examples: ejemplos });
+    $('tpEnviar').disabled = false;
+    if (!r.ok) return avisa('Meta la rechazó', r.error);
+    cierraModal();
+    avisa('Enviada a Meta', r.aviso || 'Espera su aprobación antes de usarla.');
+    pintaTablaTpl(true);
+  };
 }
 
 async function pintaTablaTpl(forzar){
