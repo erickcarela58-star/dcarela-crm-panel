@@ -1,0 +1,2806 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>D'Carela CRM</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><text y='26' font-size='26'>💬</text></svg>">
+<script src="./crm-config.js"></script>
+<script src="./firebase-config.js"></script>
+<!-- opus-recorder graba OGG/Opus de verdad por WASM. MediaRecorder no sirve aqui: en
+     Chrome produce webm o mp4-con-opus, y WhatsApp Cloud descarta los dos EN SILENCIO
+     aunque devuelva un wamid. Es decir, el envio parece correcto y el cliente no
+     recibe nada. Esta libreria produce el unico formato que acepta. -->
+<script src="https://cdn.jsdelivr.net/npm/opus-recorder@8.0.5/dist/recorder.min.js"></script>
+<style>
+/* =============================================================================
+   D' CARELA CRM — hoja de estilo escrita desde cero.
+   No se importa ni una linea del panel anterior. Aquel archivo acumulaba cuatro
+   capas de CSS de epocas distintas peleandose por especificidad, y cada arreglo
+   ganaba en un sitio y rompia en otro. Aqui hay UNA capa: fichas de color arriba,
+   y debajo reglas de una sola clase. Si algo hay que cambiar, se cambia la ficha.
+   ============================================================================= */
+
+/* --- Fichas de color. Claro por defecto; oscuro solo redefine las fichas. ---- */
+:root{
+  --bg:#ffffff;        /* fondo de la aplicacion            */
+  --panel:#ffffff;     /* superficies: barra, listas, ficha  */
+  --wall:#efeae2;      /* pared de la conversacion           */
+  --line:#e9edef;      /* divisor fino                       */
+  --line2:#d1d7db;     /* borde de control                   */
+  --fg:#111b21;        /* texto principal                    */
+  --mut:#667781;       /* texto secundario                   */
+  --ink:#111b21;       /* tinta: seleccion, botones solidos  */
+  --on-ink:#ffffff;    /* texto sobre tinta                  */
+  --in:#ffffff;        /* globo entrante                     */
+  --out:#d9fdd3;       /* globo saliente                     */
+  --meta:rgba(17,27,33,.45);
+  --hover:rgba(11,20,26,.04);
+  --ok:#0a8f4d;
+  --warn:#b26a00;
+  --bad:#b21a1a;
+  --sombra:0 12px 34px rgba(11,20,26,.14);
+  --r:8px;             /* radio base   */
+  --r2:12px;           /* radio grande */
+}
+:root[data-tema="oscuro"]{
+  --bg:#111b21; --panel:#111b21; --wall:#0b141a;
+  --line:#222d34; --line2:#2a3942;
+  --fg:#e9edef; --mut:#8696a0;
+  --ink:#e9edef; --on-ink:#111b21;
+  --in:#202c33; --out:#005c4b;
+  --meta:rgba(233,237,239,.5);
+  --hover:rgba(255,255,255,.045);
+  --ok:#25d366; --warn:#ffb454; --bad:#ff8e8e;
+  --sombra:0 12px 34px rgba(0,0,0,.5);
+}
+
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0; background:var(--bg); color:var(--fg);
+  font:14px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  -webkit-font-smoothing:antialiased;
+}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer;background:none;border:0;padding:0}
+::-webkit-scrollbar{width:7px;height:7px}
+::-webkit-scrollbar-thumb{background:var(--line2);border-radius:4px}
+::-webkit-scrollbar-track{background:transparent}
+
+/* --- Estructura ------------------------------------------------------------ */
+/* Tres columnas fijas y una elastica. La conversacion es lo que se viene a leer,
+   asi que es la que crece; los laterales tienen ancho tope. */
+#app{display:none;height:100dvh;grid-template-columns:auto minmax(0,1fr);grid-template-rows:auto minmax(0,1fr)}
+#app.on{display:grid}
+.lateral{grid-row:1/3;width:250px;display:flex;flex-direction:column;
+  background:var(--panel);border-right:1px solid var(--line)}
+.barra{grid-column:2;display:flex;align-items:center;gap:14px;height:60px;padding:0 16px;
+  background:var(--panel);border-bottom:1px solid var(--line)}
+.lienzo{grid-column:2;min-width:0;min-height:0;overflow:hidden;background:var(--bg)}
+
+/* --- Lateral --------------------------------------------------------------- */
+.marca{display:flex;align-items:center;gap:11px;padding:15px 14px;border-bottom:1px solid var(--line)}
+.marca img,.marca .sigla{width:38px;height:38px;border-radius:50%;flex:0 0 auto;object-fit:cover}
+.marca .sigla{display:flex;align-items:center;justify-content:center;
+  background:var(--ink);color:var(--on-ink);font-weight:700;font-size:13px}
+.marca b{display:block;font-size:14px;font-weight:650;line-height:1.2}
+.marca span{display:block;font-size:11.5px;color:var(--mut);line-height:1.3;margin-top:1px;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.marca div{min-width:0}
+
+.nav{flex:1;overflow-y:auto;padding:10px 8px}
+.nav a{display:flex;align-items:center;gap:12px;padding:10px 12px;margin-bottom:2px;
+  border-radius:var(--r2);color:var(--fg);text-decoration:none;font-size:13.5px;font-weight:500}
+.nav a:hover{background:var(--hover)}
+.nav a.on{background:var(--ink);color:var(--on-ink);font-weight:600}
+.nav a svg{width:19px;height:19px;flex:0 0 auto;stroke-width:1.9}
+.nav a .cuenta{margin-left:auto;font-size:10.5px;font-weight:700;padding:1px 6px;border-radius:9px;
+  background:var(--ok);color:#fff}
+.nav a.on .cuenta{background:var(--on-ink);color:var(--ink)}
+/* Las secundarias solo aparecen con el menu desplegado. La regla vive aqui, en CSS
+   puro, sin depender de que ningun script haya corrido antes: si no hay clase, se
+   ven todas. Un menu de mas nunca es tan grave como un menu vacio. */
+.nav .secundarias{display:none;margin-top:12px;padding-top:12px;border-top:1px solid var(--line)}
+body.menu-abierto .nav .secundarias{display:block}
+.nav .rotulo{padding:10px 12px 5px;font-size:9.5px;font-weight:800;letter-spacing:.9px;
+  text-transform:uppercase;color:var(--mut)}
+
+.pie{padding:11px 12px;border-top:1px solid var(--line);font-size:11.5px;color:var(--mut)}
+.pie .estado{display:flex;align-items:center;gap:7px;margin-bottom:9px;line-height:1.3}
+.punto{width:7px;height:7px;border-radius:50%;background:var(--ok);flex:0 0 auto}
+.punto.mal{background:var(--bad)}
+.pie button{display:flex;align-items:center;justify-content:center;gap:7px;width:100%;padding:8px;
+  border:1px solid var(--line2);border-radius:var(--r);color:var(--fg);font-size:12.5px}
+.pie button:hover{background:var(--hover)}
+
+/* --- Barra superior -------------------------------------------------------- */
+.hamburguesa{width:38px;height:38px;border-radius:var(--r);display:flex;align-items:center;
+  justify-content:center;color:var(--mut);flex:0 0 auto}
+.hamburguesa:hover{background:var(--hover);color:var(--fg)}
+body.menu-abierto .hamburguesa{background:var(--hover);color:var(--fg)}
+.buscador{flex:1;max-width:720px;margin:0 auto;position:relative}
+.buscador svg{position:absolute;left:13px;top:50%;transform:translateY(-50%);
+  width:16px;height:16px;color:var(--mut)}
+.buscador input{width:100%;height:38px;padding:0 14px 0 38px;border:1px solid var(--line);
+  border-radius:var(--r2);background:var(--bg);color:var(--fg);outline:0}
+.buscador input:focus{border-color:var(--line2)}
+.barra .der{display:flex;align-items:center;gap:9px;flex:0 0 auto}
+.btn-linea{padding:8px 13px;border:1px solid var(--line2);border-radius:var(--r);
+  font-size:12.5px;font-weight:600;color:var(--fg);text-decoration:none;white-space:nowrap}
+.btn-linea:hover{background:var(--hover)}
+.quien{font-size:11.5px;color:var(--mut);max-width:190px;overflow:hidden;
+  text-overflow:ellipsis;white-space:nowrap}
+
+/* --- Vistas ---------------------------------------------------------------- */
+.vista{display:none;height:100%;min-height:0}
+.vista.on{display:flex}
+.hoja{flex:1;min-width:0;overflow-y:auto;padding:26px 30px}
+.hoja h1{margin:0 0 4px;font-size:21px;font-weight:700;letter-spacing:-.3px}
+.hoja .bajada{margin:0 0 22px;color:var(--mut);font-size:13px;max-width:640px}
+
+/* --- Conversaciones: lista ------------------------------------------------- */
+.lista{width:min(330px,30vw);flex:0 0 auto;display:flex;flex-direction:column;
+  border-right:1px solid var(--line);background:var(--panel)}
+.lista .cabeza{padding:11px 12px 9px;display:flex;flex-direction:column;gap:9px}
+.lista .cabeza input,.lista .cabeza select{width:100%;height:36px;padding:0 12px;
+  border:1px solid var(--line);border-radius:var(--r2);background:var(--bg);color:var(--fg);outline:0}
+/* Envuelven en vez de desplazarse. Con scroll lateral y la barra oculta, el ultimo
+   filtro quedaba cortado contra el borde sin ninguna pista de que hubiera mas. */
+.filtros{display:flex;flex-wrap:wrap;gap:6px;padding:0 12px 10px}
+.filtro{padding:5px 11px;border-radius:14px;background:var(--hover);color:var(--mut);
+  font-size:12px;font-weight:600;white-space:nowrap;flex:0 0 auto}
+.filtro.on{background:var(--ink);color:var(--on-ink)}
+.filtro b{margin-left:5px;opacity:.65;font-weight:700}
+.chats{flex:1;overflow-y:auto}
+
+/* Fila de chat: plana, con el divisor arrancando despues del avatar, como WhatsApp.
+   Dos lineas de contenido; la etiqueta de etapa comparte linea con el mensaje. */
+.chat{display:flex;gap:11px;align-items:center;padding:9px 13px;position:relative;cursor:pointer}
+.chat::after{content:"";position:absolute;left:63px;right:0;bottom:0;height:1px;background:var(--line)}
+.chat:last-child::after{display:none}
+.chat:hover{background:var(--hover)}
+.chat.on{background:var(--hover);box-shadow:inset 3px 0 0 var(--ink)}
+.av{width:41px;height:41px;border-radius:50%;flex:0 0 auto;display:flex;align-items:center;
+  justify-content:center;background:var(--line);color:var(--mut);font-size:13px;font-weight:650}
+.chat .cuerpo{flex:1;min-width:0;display:grid;grid-template-columns:minmax(0,1fr) auto;
+  align-items:center;column-gap:8px}
+.chat .fila1{grid-column:1/3;display:flex;align-items:baseline;gap:8px}
+.chat .nom{flex:1;min-width:0;font-size:13.5px;font-weight:600;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.chat .hora{font-size:10.5px;color:var(--mut);flex:0 0 auto}
+.chat.sinleer .hora{color:var(--ok);font-weight:700}
+.chat .prev{font-size:12px;color:var(--mut);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.chat .marcas{display:flex;gap:4px;align-items:center;flex:0 0 auto}
+.etiqueta{font-size:8.5px;font-weight:800;letter-spacing:.4px;text-transform:uppercase;
+  padding:2px 5px;border-radius:4px;background:var(--hover);color:var(--mut);white-space:nowrap}
+.globito{min-width:17px;height:17px;padding:0 5px;border-radius:9px;background:var(--ok);
+  color:#fff;font-size:10.5px;font-weight:700;display:flex;align-items:center;justify-content:center}
+
+/* --- Conversaciones: chat -------------------------------------------------- */
+.conversacion{flex:1;min-width:0;display:flex;flex-direction:column;background:var(--wall)}
+.cabecera{display:flex;align-items:center;gap:11px;padding:9px 16px;min-height:60px;
+  background:var(--panel);border-bottom:1px solid var(--line)}
+.cabecera .quien-chat{flex:1;min-width:0}
+.cabecera .quien-chat b{display:block;font-size:15px;font-weight:600}
+.cabecera .quien-chat span{display:block;font-size:12px;color:var(--mut)}
+.cabecera .modo{padding:8px 14px;border:1px solid var(--line2);border-radius:var(--r2);
+  font-size:12.5px;font-weight:600}
+.cabecera .modo:hover{background:var(--hover)}
+.mas{position:relative}
+.mas>button{width:34px;height:34px;border-radius:50%;color:var(--mut);font-size:19px}
+.mas>button:hover{background:var(--hover);color:var(--fg)}
+.mas .menu{display:none;position:absolute;right:0;top:38px;z-index:40;min-width:190px;padding:5px;
+  flex-direction:column;background:var(--panel);border:1px solid var(--line2);
+  border-radius:var(--r2);box-shadow:var(--sombra)}
+.mas.on .menu{display:flex}
+.mas .menu button{padding:9px 11px;border-radius:var(--r);text-align:left;font-size:13px}
+.mas .menu button:hover{background:var(--hover)}
+
+.mensajes{flex:1;overflow-y:auto;padding:18px 6.5%;display:flex;flex-direction:column;
+  background-color:var(--wall);
+  background-image:radial-gradient(circle at 1px 1px,rgba(17,27,33,.055) 1px,transparent 0);
+  background-size:22px 22px}
+:root[data-tema="oscuro"] .mensajes{background-image:radial-gradient(circle at 1px 1px,rgba(255,255,255,.05) 1px,transparent 0)}
+.dia{align-self:center;margin:10px 0;padding:4px 11px;border-radius:var(--r);
+  background:var(--panel);color:var(--mut);font-size:11px;font-weight:600;box-shadow:var(--sombra)}
+.globo{position:relative;max-width:min(66%,600px);margin-top:2px;padding:6px 9px 5px;
+  border-radius:var(--r);font-size:13.5px;line-height:1.42;
+  box-shadow:0 1px .5px rgba(11,20,26,.13);white-space:pre-wrap;word-break:break-word}
+.globo.primero{margin-top:9px}
+.globo.entra{align-self:flex-start;background:var(--in);border-radius:0 var(--r) var(--r) var(--r)}
+.globo.sale{align-self:flex-end;background:var(--out);border-radius:var(--r) 0 var(--r) var(--r)}
+.globo.seguido{border-radius:var(--r)}
+.globo.primero.entra::before{content:"";position:absolute;left:-8px;top:0;
+  border-top:8px solid var(--in);border-left:8px solid transparent}
+.globo.primero.sale::before{content:"";position:absolute;right:-8px;top:0;
+  border-top:8px solid var(--out);border-right:8px solid transparent}
+.globo .pie-globo{float:right;margin:6px 0 -2px 10px;font-size:10.5px;line-height:1;
+  color:var(--meta);white-space:nowrap;user-select:none}
+.globo .autor{font-size:11px;font-weight:700;color:var(--ok);margin-bottom:1px}
+.mmedia{display:block;max-width:250px;max-height:320px;width:auto;border-radius:6px;
+  margin:1px 0 3px;cursor:zoom-in}
+video.mmedia{cursor:default}
+.msticker{display:block;max-width:130px;max-height:130px;margin:2px 0}
+.maudio{display:block;width:230px;max-width:100%;height:38px;margin:2px 0}
+.marchivo{display:flex;flex-direction:column;gap:2px;padding:9px 11px;margin:2px 0 4px;
+  border-radius:6px;background:rgba(11,20,26,.06)}
+:root[data-tema="oscuro"] .marchivo{background:rgba(255,255,255,.07)}
+.marchivo b{font-size:13px;word-break:break-word}
+.marchivo span{font-size:11px;color:var(--meta)}
+.marchivo a{margin-top:4px;font-size:12px;font-weight:650;color:inherit}
+.mpie{margin-top:3px;white-space:pre-wrap;word-break:break-word}
+/* El boton de opciones solo aparece al pasar por encima: en reposo el hilo se lee
+   limpio, como WhatsApp. En tactil no hay hover, asi que ahi se deja siempre. */
+.gaccion{position:absolute;top:2px;right:3px;width:20px;height:18px;border-radius:4px;
+  color:var(--meta);font-size:13px;line-height:1;opacity:0;transition:opacity .12s;
+  background:linear-gradient(90deg,transparent,rgba(0,0,0,.06) 30%)}
+.globo:hover .gaccion{opacity:1}
+@media(hover:none){.gaccion{opacity:.65}}
+.gmenu{position:absolute;top:20px;right:2px;z-index:20;min-width:154px;padding:4px;
+  display:flex;flex-direction:column;background:var(--panel);border:1px solid var(--line2);
+  border-radius:var(--r);box-shadow:var(--sombra)}
+.gmenu button{padding:8px 10px;border-radius:5px;text-align:left;font-size:12.5px;color:var(--fg)}
+.gmenu button:hover{background:var(--hover)}
+.gmenu button.peligro{color:var(--bad)}
+.cita{border-left:3px solid var(--ok);border-radius:4px;padding:4px 8px;margin-bottom:4px;
+  background:rgba(11,20,26,.06);font-size:12px;color:var(--meta);line-height:1.35}
+:root[data-tema="oscuro"] .cita{background:rgba(255,255,255,.07)}
+.cita b{display:block;color:var(--ok);font-size:11px}
+.barra-cita{display:flex;align-items:center;gap:9px;padding:8px 14px;
+  background:var(--panel);border-top:1px solid var(--line)}
+.barra-cita[hidden]{display:none}
+.barra-cita .cvertical{width:3px;align-self:stretch;border-radius:2px;background:var(--ok)}
+.barra-cita .ctexto{flex:1;min-width:0;font-size:12.5px;color:var(--mut);
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.barra-cita button{width:26px;height:26px;border-radius:50%;color:var(--mut);font-size:16px}
+.barra-cita button:hover{background:var(--hover)}
+/* Lupa: ver una foto de cerca sin salir del chat ni abrir otra pestaña. */
+#lupa{display:none;position:fixed;inset:0;z-index:95;background:rgba(11,20,26,.88);
+  align-items:center;justify-content:center;padding:26px;cursor:zoom-out}
+#lupa.on{display:flex}
+#lupa img{max-width:100%;max-height:100%;border-radius:6px}
+
+.escribir{display:flex;align-items:flex-end;gap:9px;padding:10px 14px;
+  background:var(--panel);border-top:1px solid var(--line)}
+.escribir textarea{flex:1;min-height:40px;max-height:150px;padding:10px 14px;resize:none;
+  border:1px solid var(--line);border-radius:var(--r2);background:var(--bg);color:var(--fg);outline:0}
+.escribir textarea:focus{border-color:var(--line2)}
+.enviar{width:41px;height:41px;border-radius:50%;flex:0 0 auto;background:var(--ink);
+  color:var(--on-ink);display:flex;align-items:center;justify-content:center}
+.enviar:disabled{opacity:.4;cursor:not-allowed}
+.adjuntos{display:flex;gap:2px;align-items:center;flex:0 0 auto;padding-bottom:2px}
+.adj{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+  color:var(--mut);font-size:11px;font-weight:800;letter-spacing:.3px}
+.adj svg{width:20px;height:20px}
+.adj:hover{background:var(--hover);color:var(--fg)}
+.adj.hd{border:1.5px solid var(--line2)}
+.adj.hd.on{background:var(--ink);color:var(--on-ink);border-color:var(--ink)}
+.cola{display:flex;flex-wrap:wrap;gap:6px;padding:0 14px 11px;background:var(--panel)}
+.pieza{display:inline-flex;align-items:center;gap:6px;max-width:230px;padding:5px 8px;
+  border:1px solid var(--line2);border-radius:var(--r);font-size:12px;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pieza button{color:var(--mut);font-size:15px;line-height:1;flex:0 0 auto}
+.pieza button:hover{color:var(--bad)}
+/* `display:flex` le gana al atributo hidden (que solo trae display:none de la hoja
+   del navegador), asi que la barra de grabacion se veia SIEMPRE: parecia que el panel
+   estaba grabando sin parar. La regla de [hidden] va explicita y despues. */
+.grabando{display:flex;align-items:center;gap:11px;flex:1;padding:0 4px;font-size:13px;font-weight:600}
+.grabando[hidden]{display:none}
+.pulso{width:9px;height:9px;border-radius:50%;background:var(--bad);flex:0 0 auto;
+  animation:latido 1s infinite}
+@keyframes latido{50%{opacity:.25}}
+.grabando #reloj{font-variant-numeric:tabular-nums;min-width:38px;flex:0 0 auto}
+/* Las ondas son el nivel real del microfono, no una animacion. Si el dibujo se queda
+   plano es que no esta entrando sonido, y eso hay que poder verlo antes de enviar. */
+#ondas{flex:1;min-width:60px;height:30px;display:block}
+.escribir:has(.grabando:not([hidden])) textarea{display:none}
+.escribir:has(.grabando:not([hidden])) .adjuntos{display:none}
+
+.vacio{flex:1;display:flex;align-items:center;justify-content:center;padding:30px;
+  color:var(--mut);font-size:13.5px;text-align:center;background:var(--wall)}
+
+/* --- Ficha del lead -------------------------------------------------------- */
+/* Sin una sola herramienta suelta. Todo lo operativo se pide por prompt en
+   Planificacion; aqui solo se lee el estado y se editan datos. */
+.ficha{width:min(320px,26vw);flex:0 0 auto;display:flex;flex-direction:column;
+  background:var(--panel);border-left:1px solid var(--line)}
+.ficha .cabeza{display:flex;align-items:center;justify-content:space-between;
+  padding:16px 16px 12px;border-bottom:1px solid var(--line)}
+.ficha .cabeza b{font-size:14px;font-weight:650}
+.ficha .cuerpo{flex:1;overflow-y:auto;padding:14px 16px 26px}
+.seccion{font-size:9.5px;font-weight:800;letter-spacing:.9px;text-transform:uppercase;
+  color:var(--mut);margin:0 0 8px}
+.aviso{margin:0 0 16px;font-size:12.5px;line-height:1.5;color:var(--mut)}
+.grupo{border:1px solid var(--line);border-radius:var(--r2);margin-bottom:9px;overflow:hidden}
+.grupo>summary{list-style:none;cursor:pointer;padding:11px 13px;display:flex;
+  align-items:center;justify-content:space-between;gap:8px;
+  font-size:11px;font-weight:800;letter-spacing:.7px;text-transform:uppercase}
+.grupo>summary::-webkit-details-marker{display:none}
+.grupo>summary::after{content:"";width:6px;height:6px;border-right:2px solid var(--mut);
+  border-bottom:2px solid var(--mut);transform:rotate(-45deg) translateX(-2px);transition:transform .18s}
+.grupo[open]>summary::after{transform:rotate(45deg) translateY(-2px)}
+.grupo>summary:hover{background:var(--hover)}
+.grupo .dentro{padding:2px 13px 13px}
+.grupo .nota{font-size:10.5px;font-weight:600;color:var(--mut);letter-spacing:0;text-transform:none}
+.campo{margin-bottom:11px}
+.campo label{display:block;font-size:9.5px;font-weight:800;letter-spacing:.7px;
+  text-transform:uppercase;color:var(--mut);margin-bottom:4px}
+.campo input,.campo select,.campo textarea{width:100%;padding:8px 10px;border:1px solid var(--line);
+  border-radius:var(--r);background:var(--bg);color:var(--fg);outline:0;resize:vertical}
+.campo input:focus,.campo select:focus,.campo textarea:focus{border-color:var(--line2)}
+.par{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.dato{padding:8px 10px;border:1px solid var(--line);border-radius:var(--r);margin-bottom:7px}
+.dato .k{font-size:9.5px;font-weight:800;letter-spacing:.7px;text-transform:uppercase;color:var(--mut)}
+.dato .v{font-size:13px;margin-top:2px;word-break:break-word}
+
+/* --- Planificacion: el prompt unico ---------------------------------------- */
+.prompt{max-width:760px}
+.prompt textarea{width:100%;min-height:104px;padding:14px 16px;border:1px solid var(--line2);
+  border-radius:var(--r2);background:var(--panel);color:var(--fg);outline:0;resize:vertical;
+  font-size:14px;line-height:1.5}
+.prompt textarea:focus{border-color:var(--ink)}
+.prompt .acciones{display:flex;align-items:center;gap:11px;margin-top:11px;flex-wrap:wrap}
+.btn-solido{padding:11px 20px;border-radius:var(--r2);background:var(--ink);color:var(--on-ink);
+  font-size:13.5px;font-weight:650}
+.btn-solido:disabled{opacity:.45;cursor:not-allowed}
+.ejemplos{display:flex;gap:7px;flex-wrap:wrap;margin-top:16px}
+.ejemplo{padding:7px 12px;border:1px solid var(--line2);border-radius:16px;
+  font-size:12.5px;color:var(--mut);text-align:left}
+.ejemplo:hover{background:var(--hover);color:var(--fg)}
+.propuesta{margin-top:22px;max-width:760px;border:1px solid var(--line2);
+  border-radius:var(--r2);overflow:hidden}
+.propuesta .tapa{padding:13px 16px;border-bottom:1px solid var(--line);background:var(--hover)}
+.propuesta .tapa b{font-size:13.5px}
+.propuesta .cuerpo{padding:15px 16px}
+.propuesta .cambio{padding:9px 12px;border:1px solid var(--line);border-radius:var(--r);
+  margin-bottom:8px;font-size:13px}
+.propuesta .cambio .k{font-size:9.5px;font-weight:800;letter-spacing:.7px;
+  text-transform:uppercase;color:var(--mut);margin-bottom:2px}
+.propuesta .patas{display:flex;gap:9px;padding:13px 16px;border-top:1px solid var(--line)}
+/* Los campos exactos que se van a escribir. Quien aprueba tiene derecho a ver el
+   cambio literal, no solo el resumen bonito. */
+.campos{display:flex;flex-wrap:wrap;gap:5px;margin-top:7px}
+.campos span{padding:3px 8px;border-radius:5px;background:var(--hover);
+  font-size:11px;font-family:ui-monospace,Menlo,Consolas,monospace;color:var(--mut)}
+.cargando{display:inline-block;width:15px;height:15px;border:2px solid var(--line2);
+  border-top-color:var(--ink);border-radius:50%;animation:giro .7s linear infinite;vertical-align:-3px}
+@keyframes giro{to{transform:rotate(360deg)}}
+
+/* --- Modal ----------------------------------------------------------------- */
+.modal{display:none;position:fixed;inset:0;z-index:80;background:rgba(11,20,26,.55);
+  align-items:center;justify-content:center;padding:20px}
+.modal.on{display:flex}
+.modal .caja{width:100%;max-width:470px;max-height:84vh;display:flex;flex-direction:column;
+  background:var(--panel);border-radius:var(--r2);box-shadow:var(--sombra);overflow:hidden}
+.mtapa{display:flex;align-items:center;justify-content:space-between;gap:10px;
+  padding:15px 18px;border-bottom:1px solid var(--line);font-size:14px}
+.cerrarm{color:var(--mut);font-size:21px;line-height:1}
+.cerrarm:hover{color:var(--fg)}
+.mcuerpo{flex:1;overflow-y:auto;padding:15px 18px}
+.mpatas{display:flex;justify-content:flex-end;gap:9px;padding:13px 18px;border-top:1px solid var(--line)}
+.tpl{display:block;width:100%;text-align:left;padding:11px 13px;margin-bottom:8px;
+  border:1px solid var(--line);border-radius:var(--r2)}
+.tpl:hover{background:var(--hover);border-color:var(--line2)}
+.tpl b{display:block;font-size:13.5px}
+.tplmeta{display:block;margin-top:2px;font-size:11px;color:var(--mut)}
+.tplprev{display:block;margin-top:6px;font-size:12px;color:var(--mut);line-height:1.4;
+  padding-top:6px;border-top:1px dashed var(--line)}
+.pdfs{display:flex;flex-wrap:wrap;gap:6px}
+.tplchip{padding:7px 12px;border:1px solid var(--line2);border-radius:16px;font-size:12.5px;font-weight:600}
+.tplchip:hover{background:var(--hover)}
+.tplchip:disabled{opacity:.5}
+.rapida{display:flex;align-items:stretch;gap:6px;margin-bottom:7px}
+.rapida>button:first-child{flex:1;min-width:0;text-align:left;padding:10px 12px;
+  border:1px solid var(--line);border-radius:var(--r2)}
+.rapida>button:first-child:hover{background:var(--hover);border-color:var(--line2)}
+.rapida b{display:block;font-size:13px}
+.rapida span{display:block;margin-top:2px;font-size:11.5px;color:var(--mut);
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rx{width:32px;border:1px solid var(--line);border-radius:var(--r);color:var(--mut);font-size:16px;flex:0 0 auto}
+.rx:hover{color:var(--bad);border-color:var(--bad)}
+.estados{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px;max-width:940px}
+.estado{display:flex;flex-direction:column;gap:7px}
+.estado img{width:100%;aspect-ratio:9/16;object-fit:cover;border-radius:var(--r);border:1px solid var(--line)}
+.estado a{text-align:center;text-decoration:none;font-size:12px}
+
+/* --- Tabla ----------------------------------------------------------------- */
+.tabla{border:1px solid var(--line);border-radius:var(--r2);overflow:hidden;max-width:900px}
+.fila{display:grid;grid-template-columns:minmax(0,2fr) 1fr 1fr auto;gap:12px;
+  align-items:center;padding:11px 14px;border-bottom:1px solid var(--line);font-size:13px}
+.fila:last-child{border-bottom:0}
+.fila.cabecera{background:var(--hover);font-size:9.5px;font-weight:800;
+  letter-spacing:.8px;text-transform:uppercase;color:var(--mut)}
+.fila small{display:block;color:var(--mut);font-size:11px;margin-top:1px}
+.chip{font-style:normal;font-size:10px;font-weight:800;letter-spacing:.4px;
+  padding:3px 7px;border-radius:5px;background:var(--hover);color:var(--mut)}
+.chip.ok{background:rgba(10,143,77,.13);color:var(--ok)}
+.chip.mal{background:rgba(178,26,26,.11);color:var(--bad)}
+.chip.medio{background:rgba(178,106,0,.12);color:var(--warn)}
+.interruptor{padding:4px 12px;border:1px solid var(--line2);border-radius:11px;
+  font-size:11.5px;font-weight:700;color:var(--mut)}
+.interruptor.on{background:var(--ok);border-color:var(--ok);color:#fff}
+/* La lista de destinatarios se enseña entera y con scroll propio: si no cabe, es
+   preferible desplazarse que enviar a ciegas a gente que no se ha visto. */
+.destinos{display:flex;flex-direction:column;gap:3px;max-height:230px;overflow-y:auto;
+  margin-top:5px;font-size:12px;color:var(--mut)}
+.destinos span{padding:3px 0;border-bottom:1px solid var(--line)}
+.destinos span:last-child{border-bottom:0}
+
+/* --- Kanban ---------------------------------------------------------------- */
+.kanban{display:flex;gap:11px;overflow-x:auto;padding-bottom:12px;align-items:flex-start}
+.columna{flex:0 0 246px;display:flex;flex-direction:column;max-height:calc(100dvh - 230px);
+  border:1px solid var(--line);border-radius:var(--r2);background:var(--panel)}
+.columna.encima{border-color:var(--ink);background:var(--hover)}
+.ctitulo{display:flex;justify-content:space-between;align-items:center;padding:11px 13px;
+  border-bottom:1px solid var(--line);font-size:10px;font-weight:800;letter-spacing:.7px;
+  text-transform:uppercase;color:var(--mut)}
+.ctitulo b{font-size:11px;color:var(--fg)}
+.ccuerpo{flex:1;overflow-y:auto;padding:8px;display:flex;flex-direction:column;gap:7px;min-height:70px}
+.ktarjeta{padding:9px 11px;border:1px solid var(--line);border-radius:var(--r);
+  background:var(--bg);cursor:grab}
+.ktarjeta:active{cursor:grabbing}
+.ktarjeta.moviendo{opacity:.4}
+.ktarjeta b{display:block;font-size:13px;font-weight:600}
+.ktarjeta span{display:block;font-size:11.5px;color:var(--mut);margin-top:2px;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ktarjeta i{display:block;font-style:normal;font-size:10.5px;color:var(--meta);margin-top:3px}
+.kmas{padding:7px;text-align:center;font-size:11.5px;color:var(--mut)}
+
+/* --- Dashboard ------------------------------------------------------------- */
+.cifras{display:grid;grid-template-columns:repeat(auto-fill,minmax(178px,1fr));gap:11px;max-width:940px}
+.cifra{padding:15px 16px;border:1px solid var(--line);border-radius:var(--r2);background:var(--panel)}
+.cifra b{display:block;font-size:27px;font-weight:700;line-height:1.1;letter-spacing:-.5px}
+.cifra span{display:block;font-size:12px;color:var(--mut);margin-top:3px}
+.cifra i{display:block;font-style:normal;font-size:10.5px;color:var(--meta);margin-top:2px}
+.barras{display:flex;flex-direction:column;gap:7px;max-width:560px}
+.barra{display:grid;grid-template-columns:132px minmax(0,1fr) 34px;gap:10px;align-items:center;font-size:12.5px}
+.barra .be{color:var(--mut);text-transform:capitalize}
+.barra .bp{height:8px;border-radius:4px;background:var(--hover);overflow:hidden}
+.barra .bp i{display:block;height:100%;background:var(--ink);border-radius:4px}
+.barra .bn{text-align:right;font-weight:650}
+
+/* --- Login ----------------------------------------------------------------- */
+#acceso{display:flex;align-items:center;justify-content:center;min-height:100dvh;padding:22px}
+#acceso.oculto{display:none}
+.tarjeta-acceso{width:100%;max-width:376px;padding:32px 30px;background:var(--panel);
+  border:1px solid var(--line);border-radius:18px;box-shadow:var(--sombra)}
+.tarjeta-acceso h1{margin:16px 0 4px;font-size:20px;font-weight:700}
+.tarjeta-acceso p{margin:0 0 22px;color:var(--mut);font-size:13px}
+.tarjeta-acceso .campo{margin-bottom:13px}
+.tarjeta-acceso button{width:100%;margin-top:7px;padding:12px;border-radius:var(--r2);
+  background:var(--ink);color:var(--on-ink);font-size:14px;font-weight:650}
+.error{margin-top:13px;padding:10px 12px;border-radius:var(--r);font-size:12.5px;
+  background:rgba(178,26,26,.1);color:var(--bad);display:none}
+.error.on{display:block}
+
+/* --- Aviso flotante -------------------------------------------------------- */
+/* El aviso se apartaba con translate(-50%,140%): 140% de SU alto, que en un aviso de
+   una linea no basta para sacarlo de la pantalla. Quedaba asomando por abajo como un
+   punto negro permanente. Ahora se esconde de verdad, y visibility evita ademas que
+   siga capturando clicks mientras esta fuera. */
+#aviso{position:fixed;left:50%;bottom:26px;transform:translate(-50%,calc(100% + 40px));
+  z-index:90;visibility:hidden;pointer-events:none;
+  max-width:min(430px,92vw);padding:12px 17px;border-radius:var(--r2);
+  background:var(--ink);color:var(--on-ink);font-size:13px;box-shadow:var(--sombra);
+  transition:transform .24s ease,visibility 0s linear .24s}
+#aviso.on{transform:translate(-50%,0);visibility:visible;transition-delay:0s}
+#aviso b{display:block;margin-bottom:2px}
+
+/* --- Estrecho -------------------------------------------------------------- */
+@media(max-width:1080px){
+  .ficha{position:fixed;right:0;top:60px;bottom:0;width:min(330px,92vw);z-index:30;
+    display:none;box-shadow:var(--sombra)}
+  .ficha.on{display:flex}
+}
+@media(max-width:760px){
+  .lateral{position:fixed;left:0;top:0;bottom:0;z-index:50;transform:translateX(-100%);
+    transition:transform .2s;box-shadow:var(--sombra)}
+  body.menu-abierto .lateral{transform:none}
+  #app.on{grid-template-columns:minmax(0,1fr)}
+  .barra,.lienzo{grid-column:1}
+  .lista{width:100%}
+  body.chat-abierto .lista{display:none}
+  .conversacion,.vacio{display:none}
+  body.chat-abierto .conversacion{display:flex}
+  .hoja{padding:18px 16px}
+}
+</style>
+</head>
+<body>
+
+<!-- ===================== ACCESO ===================== -->
+<div id="acceso">
+  <form class="tarjeta-acceso" id="formAcceso">
+    <div class="marca" style="padding:0;border:0">
+      <div class="sigla" id="siglaAcceso">DC</div>
+      <div><b id="marcaAcceso">D'Carela</b><span id="subAcceso">CRM comercial</span></div>
+    </div>
+    <h1>Entrar al CRM</h1>
+    <p>Acceso solo para el equipo autorizado.</p>
+    <div class="campo"><label for="correo">Correo</label>
+      <input id="correo" type="email" autocomplete="username" required></div>
+    <div class="campo"><label for="clave">Contraseña</label>
+      <input id="clave" type="password" autocomplete="current-password" required></div>
+    <button type="submit" id="btnEntrar">Entrar</button>
+    <div class="error" id="errorAcceso"></div>
+  </form>
+</div>
+
+<!-- ===================== APLICACION ===================== -->
+<div id="app">
+
+  <aside class="lateral">
+    <div class="marca">
+      <div class="sigla" id="sigla">DC</div>
+      <div><b id="marca">CRM</b><span id="submarca"></span></div>
+    </div>
+    <nav class="nav" id="nav"></nav>
+    <div class="pie">
+      <div class="estado"><span class="punto" id="punto"></span><span id="estadoTexto">Conectando…</span></div>
+      <button id="btnSalir">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 17l5-5-5-5M21 12H9M13 21H5a2 2 0 01-2-2V5a2 2 0 012-2h8"/></svg>
+        Salir
+      </button>
+    </div>
+  </aside>
+
+  <header class="barra">
+    <button class="hamburguesa" id="btnMenu" aria-label="Menú" aria-expanded="false">
+      <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+    </button>
+    <div class="buscador">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.5-4.5"/></svg>
+      <input id="busca" placeholder="Buscar conversación, cliente, combo…">
+    </div>
+    <div class="der">
+      <a class="btn-linea" href="./manual.html" target="_blank" rel="noopener">Manual</a>
+      <button class="btn-linea" id="btnTema">Modo oscuro</button>
+      <span class="quien" id="quien"></span>
+    </div>
+  </header>
+
+  <main class="lienzo" id="lienzo"></main>
+</div>
+
+<div id="aviso"></div>
+<div id="lupa"><img alt="imagen ampliada"></div>
+
+<script type="module">
+import { initializeApp, getApps } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js';
+import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut }
+  from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js';
+import { getFirestore, collection, query, where, onSnapshot, doc, setDoc, getDocs }
+  from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
+
+const CFG = window.CRM_CONFIG || window.DCARELA_CRM_CONFIG || {};
+const FB  = window.__DCARELA_FIREBASE_CONFIG || {};
+const API = String(CFG.firebaseFunctionsBase || '').replace(/\/$/, '') + '/crmApi';
+const NEGOCIO = 'dcarela';
+
+const app  = getApps().length ? getApps()[0] : initializeApp(FB);
+const auth = getAuth(app);
+const db   = getFirestore(app);
+
+const $ = id => document.getElementById(id);
+const esc = v => String(v ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+/* ---- Tema ---------------------------------------------------------------- */
+// Se guarda por navegador. El boton dice a donde vas, no donde estas.
+function aplicaTema(t){
+  document.documentElement.setAttribute('data-tema', t);
+  $('btnTema').textContent = t === 'oscuro' ? 'Modo claro' : 'Modo oscuro';
+  try { localStorage.setItem('crm2_tema', t); } catch (e) {}
+}
+try { aplicaTema(localStorage.getItem('crm2_tema') || 'claro'); } catch (e) { aplicaTema('claro'); }
+$('btnTema').onclick = () =>
+  aplicaTema(document.documentElement.getAttribute('data-tema') === 'oscuro' ? 'claro' : 'oscuro');
+
+/* ---- Aviso --------------------------------------------------------------- */
+let avisoT;
+function avisa(titulo, detalle){
+  const a = $('aviso');
+  a.innerHTML = '<b>' + esc(titulo) + '</b>' + (detalle ? esc(detalle) : '');
+  a.classList.add('on');
+  clearTimeout(avisoT);
+  avisoT = setTimeout(() => a.classList.remove('on'), 4200);
+}
+
+/* ---- Marca --------------------------------------------------------------- */
+const sigla = CFG.logoText || 'DC';
+['sigla','siglaAcceso'].forEach(id => { $(id).textContent = sigla; });
+$('marca').textContent = CFG.productName || 'CRM';
+$('submarca').textContent = CFG.subtitle || '';
+$('marcaAcceso').textContent = CFG.brandName || "D'Carela";
+$('subAcceso').textContent = CFG.subtitle || '';
+document.title = CFG.appTitle || "D'Carela CRM";
+
+/* ---- Menu ---------------------------------------------------------------- */
+// Tres entradas siempre a la vista y el resto tras la hamburguesa. Ojo: quien
+// esconde es CSS puro (.secundarias sin body.menu-abierto), no un script que
+// reordene nodos. Si el modulo no arranca, se ven TODAS. Un menu de mas no es
+// tan grave como un menu vacio, que es como quedo el panel anterior.
+const ico = d => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">' + d + '</svg>';
+const VISTAS = [
+  { id:'planning',      nombre:'Planificación', fija:true,  icono:ico('<path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/>') },
+  { id:'conversations', nombre:'Conversaciones',fija:true,  icono:ico('<path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>') },
+  { id:'agenda',        nombre:'Agenda',        fija:true,  icono:ico('<rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/>') },
+  { id:'dashboard',     nombre:'Dashboard',     icono:ico('<rect x="3" y="3" width="7" height="9" rx="2"/><rect x="14" y="3" width="7" height="5" rx="2"/><rect x="14" y="12" width="7" height="9" rx="2"/><rect x="3" y="16" width="7" height="5" rx="2"/>') },
+  { id:'funnel',        nombre:'Funnel · Kanban', icono:ico('<path d="M22 3H2l8 9.5V19l4 2v-8.5L22 3z"/>') },
+  { id:'prospecting',   nombre:'Prospección',   icono:ico('<circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4M11 7v8M7 11h8"/>') },
+  { id:'poscustomers',  nombre:'Clientes de caja', icono:ico('<path d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M19 8v6M22 11h-6"/>') },
+  { id:'satisfaccion',  nombre:'Satisfacción',  icono:ico('<path d="M12 17.3l-5.5 3 1-6.1L3 9.8l6.1-.9L12 3.3l2.9 5.6 6.1.9-4.5 4.4 1 6.1z"/>') },
+  { id:'plantillas',    nombre:'Plantillas',    icono:ico('<rect x="5" y="5" width="14" height="16" rx="2"/><path d="M9 11h6M9 15h4"/>') },
+  { id:'ads',           nombre:'Estudio de Anuncios', icono:ico('<path d="M3 11v2a2 2 0 002 2h2l4 4V5L7 9H5a2 2 0 00-2 2z"/><path d="M15 9a4 4 0 010 6"/>') },
+  { id:'marketing',     nombre:'Marketing y permisos', icono:ico('<circle cx="12" cy="12" r="10"/><path d="M8.5 12l2.2 2.2 4.8-5.1"/>') },
+  { id:'estados',       nombre:'Pack de Estados', icono:ico('<rect x="3" y="3" width="13" height="18" rx="2"/><path d="M19 6v13a2 2 0 01-2 2H8"/>') },
+  { id:'reminders',     nombre:'Recordatorios', icono:ico('<path d="M18 8a6 6 0 00-12 0c0 7-3 9-3 9h18s-3-2-3-9M13 21a2 2 0 01-4 0"/>') },
+  { id:'bridge',        nombre:'Conexión WhatsApp', icono:ico('<rect x="8" y="2" width="8" height="20" rx="3"/>') },
+  { id:'config',        nombre:'Configuración',  icono:ico('<circle cx="12" cy="12" r="3"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3"/>') },
+];
+
+function pintaMenu(){
+  const enlace = v => '<a href="#' + v.id + '" data-vista="' + v.id + '">' + v.icono
+    + '<span>' + esc(v.nombre) + '</span><span class="cuenta" data-cuenta="' + v.id + '" hidden></span></a>';
+  $('nav').innerHTML =
+    VISTAS.filter(v => v.fija).map(enlace).join('')
+    + '<div class="secundarias"><div class="rotulo">Todo lo demás</div>'
+    + VISTAS.filter(v => !v.fija).map(enlace).join('') + '</div>';
+}
+pintaMenu();
+
+$('btnMenu').onclick = () => {
+  const abierto = document.body.classList.toggle('menu-abierto');
+  $('btnMenu').setAttribute('aria-expanded', abierto ? 'true' : 'false');
+};
+
+/* ---- Enrutado ------------------------------------------------------------ */
+let vistaActual = null;
+function ve(id){
+  if (!VISTAS.some(v => v.id === id)) id = CFG.defaultView || 'conversations';
+  vistaActual = id;
+  // El montaje va PRIMERO. Al reves, la vista se crea despues de repartir la clase
+  // que la hace visible y nace sin ella: sale el marco y por dentro nada. Asi quedo
+  // la primera version -- "solo esta la fachada" -- y no lo vi porque el orden se lee
+  // natural.
+  monta(id);
+  document.querySelectorAll('#nav a').forEach(a => a.classList.toggle('on', a.dataset.vista === id));
+  document.querySelectorAll('.vista').forEach(v => v.classList.toggle('on', v.id === 'vista-' + id));
+  if (location.hash.slice(1) !== id) history.replaceState(null, '', '#' + id);
+  if (id !== 'conversations') document.body.classList.remove('chat-abierto');
+  const c = VISTAS.find(v => v.id === id);
+  if (c && !c.fija) document.body.classList.add('menu-abierto');
+}
+$('nav').addEventListener('click', ev => {
+  const a = ev.target.closest('a[data-vista]');
+  if (!a) return;
+  ev.preventDefault();
+  ve(a.dataset.vista);
+});
+window.addEventListener('hashchange', () => ve(location.hash.slice(1)));
+
+/* ---- Llamadas al servidor ------------------------------------------------ */
+// Todo pasa por crmApi con el token de Firebase. Ninguna escritura sale de aqui
+// directa a Firestore: el servidor es quien valida permisos y reglas de negocio.
+async function llama(cuerpo){
+  const u = auth.currentUser;
+  if (!u) return { ok:false, error:'sesión no iniciada' };
+  const token = await u.getIdToken();
+  try {
+    const r = await fetch(API, {
+      method:'POST',
+      headers:{ 'Content-Type':'application/json', Authorization:'Bearer ' + token },
+      body: JSON.stringify(cuerpo),
+    });
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok) return { ok:false, error: j?.error || ('error ' + r.status) };
+    return { ok:true, ...j };
+  } catch (e) { return { ok:false, error: e?.message || String(e) }; }
+}
+
+/* ---- Datos en vivo ------------------------------------------------------- */
+let CONVS = [], MSGS = [], sel = null, paraMsgs = null;
+
+function nombreDe(c){
+  return c.customer_name || c.contact_name || ('+' + (c.wa_phone || ''));
+}
+function iniciales(n){
+  return String(n || '?').replace(/[^\p{L}\p{N} ]/gu,'').trim().split(/\s+/)
+    .slice(0,2).map(p => p[0] || '').join('').toUpperCase() || '#';
+}
+function hora(v){
+  if (!v) return '';
+  const d = new Date(v), hoy = new Date();
+  if (d.toDateString() === hoy.toDateString())
+    return d.toLocaleTimeString('es-DO', { hour:'2-digit', minute:'2-digit' });
+  const ayer = new Date(hoy); ayer.setDate(hoy.getDate() - 1);
+  if (d.toDateString() === ayer.toDateString()) return 'ayer';
+  return d.toLocaleDateString('es-DO', { day:'numeric', month:'short' });
+}
+
+function escuchaConversaciones(){
+  const q = query(collection(db,'crm_conversations'), where('business_id','==',NEGOCIO));
+  onSnapshot(q, s => {
+    CONVS = s.docs.map(d => ({ ...d.data(), _id:d.id }))
+      .sort((a,b) => String(b.last_message_at||'').localeCompare(String(a.last_message_at||'')));
+    marcaEstado(true, 'Datos sincronizados · en vivo');
+    if (vistaActual === 'conversations') pintaChats();
+    if (vistaActual === 'funnel') pintaKanban();
+    if (vistaActual === 'dashboard') pintaDashboard();
+    if (vistaActual === 'agenda') pintaAgenda();
+    if (vistaActual === 'reminders') pintaRecordatorios();
+    pintaCuentas();
+  }, err => marcaEstado(false, 'Sin datos en vivo: ' + (err?.code || 'error')));
+}
+function escuchaMensajes(idConv){
+  if (paraMsgs) { paraMsgs(); paraMsgs = null; }
+  MSGS = [];
+  // business_id va SIEMPRE en la consulta, no solo conversation_id: las reglas de
+  // Firestore la rechazan sin el, y el rechazo llega por el callback de error. Sin ese
+  // callback la conversacion se quedaba en blanco sin decir nada -- pared beige y cero
+  // mensajes, indistinguible de un chat vacio de verdad.
+  const q = query(collection(db,'crm_messages'),
+    where('business_id','==',NEGOCIO), where('conversation_id','==',idConv));
+  paraMsgs = onSnapshot(q, s => {
+    MSGS = s.docs.map(d => d.data())
+      .sort((a,b) => String(a.created_at||'').localeCompare(String(b.created_at||'')));
+    if (sel && (sel.id === idConv || sel._id === idConv)) pintaMensajes();
+  }, err => {
+    const cont = $('mensajes');
+    if (cont) cont.innerHTML = '<div style="margin:auto;max-width:340px;text-align:center;color:var(--mut);font-size:13px">'
+      + 'No se pudieron cargar los mensajes.<br><b>' + esc(err?.code || 'error') + '</b></div>';
+  });
+}
+function marcaEstado(ok, texto){
+  $('punto').classList.toggle('mal', !ok);
+  $('estadoTexto').textContent = texto;
+}
+function pintaCuentas(){
+  const pend = CONVS.filter(c => Number(c.unread || 0) > 0).length;
+  const e = document.querySelector('[data-cuenta="conversations"]');
+  if (e) { e.textContent = pend; e.hidden = pend === 0; }
+}
+
+/* ---- Vistas: montaje ----------------------------------------------------- */
+const montadas = new Set();
+function hueco(id, html){
+  if (document.getElementById('vista-' + id)) return document.getElementById('vista-' + id);
+  const d = document.createElement('div');
+  d.className = 'vista'; d.id = 'vista-' + id; d.innerHTML = html;
+  $('lienzo').appendChild(d);
+  return d;
+}
+function monta(id){
+  if (id === 'conversations') return montaConversaciones();
+  if (id === 'planning') return montaPlanificacion();
+  if (id === 'plantillas') return montaPlantillasVista();
+  if (id === 'marketing') return montaBroadcast();
+  if (id === 'funnel') return montaFunnel();
+  if (id === 'dashboard') return montaDashboard();
+  if (TABLERO[id]) return montaTablero(id);
+  if (id === 'ads') return montaAnuncios();
+  if (id === 'agenda') return montaAgenda();
+  if (id === 'reminders') return montaRecordatorios();
+  if (id === 'estados') return montaEstados();
+  if (id === 'bridge') return montaConexion();
+  if (id === 'config') return montaConfig();
+  if (id === 'manual') { window.open('./manual.html', '_blank', 'noopener'); return ve('conversations'); }
+  if (montadas.has(id)) return;
+  montadas.add(id);
+  const v = VISTAS.find(x => x.id === id);
+  hueco(id, '<div class="hoja"><h1>' + esc(v.nombre) + '</h1>'
+    + '<p class="bajada">Esta vista todavía no está reconstruida en el panel nuevo. '
+    + 'Se está rehaciendo por fases; mientras tanto sigue disponible en el panel anterior.</p></div>');
+  ve.ultimo = id;
+}
+
+/* ---- Conversaciones ------------------------------------------------------ */
+let filtro = 'todos';
+function montaConversaciones(){
+  if (montadas.has('conversations')) { pintaChats(); return; }
+  montadas.add('conversations');
+  hueco('conversations',
+    '<div class="lista">'
+    + '<div class="cabeza"><input id="buscaChat" placeholder="Buscar conversación…"></div>'
+    + '<div class="filtros" id="filtros"></div>'
+    + '<div class="chats" id="chats"></div>'
+    + '</div>'
+    + '<div class="conversacion" id="conversacion" style="display:none"></div>'
+    + '<div class="vacio" id="sinChat">Selecciona una conversación para verla.</div>'
+    + '<aside class="ficha" id="ficha" style="display:none"></aside>');
+  $('buscaChat').addEventListener('input', pintaChats);
+  $('filtros').addEventListener('click', ev => {
+    const b = ev.target.closest('[data-filtro]');
+    if (!b) return;
+    filtro = b.dataset.filtro; pintaChats();
+  });
+  $('chats').addEventListener('click', ev => {
+    const f = ev.target.closest('[data-conv]');
+    if (f) abre(CONVS.find(c => c._id === f.dataset.conv));
+  });
+  pintaChats();
+}
+
+function filtradas(){
+  const t = ($('buscaChat')?.value || '').trim().toLowerCase();
+  return CONVS.filter(c => {
+    if (filtro === 'sinleer' && !(Number(c.unread || 0) > 0)) return false;
+    if (filtro === 'humano' && !(c.mode === 'human' || c.human_handoff_required)) return false;
+    if (filtro === 'bot' && c.mode !== 'bot') return false;
+    if (!t) return true;
+    return (nombreDe(c) + ' ' + (c.wa_phone||'') + ' ' + (c.last_message_preview||'')).toLowerCase().includes(t);
+  });
+}
+function pintaChats(){
+  const cont = $('chats'); if (!cont) return;
+  const cuenta = f => CONVS.filter(c =>
+    f === 'todos' ? true
+    : f === 'sinleer' ? Number(c.unread||0) > 0
+    : f === 'humano' ? (c.mode === 'human' || c.human_handoff_required)
+    : c.mode === 'bot').length;
+  $('filtros').innerHTML = [['todos','Todos'],['sinleer','Sin leer'],['humano','Humano'],['bot','Bot']]
+    .map(([f,n]) => '<button class="filtro' + (filtro===f?' on':'') + '" data-filtro="' + f + '">'
+      + n + '<b>' + cuenta(f) + '</b></button>').join('');
+
+  const filas = filtradas();
+  if (!filas.length) {
+    cont.innerHTML = '<div style="padding:26px 16px;color:var(--mut);font-size:13px;text-align:center">'
+      + 'No hay conversaciones con este filtro.</div>';
+    return;
+  }
+  cont.innerHTML = filas.map(c => {
+    const n = nombreDe(c), sinLeer = Number(c.unread || 0) > 0;
+    const marcas = [];
+    if (c.lifecycle_stage) marcas.push('<span class="etiqueta">' + esc(c.lifecycle_stage) + '</span>');
+    if (c.proactive_blocked_at) marcas.push('<span class="etiqueta">sin automatización</span>');
+    else if (c.mode === 'human' || c.human_handoff_required) marcas.push('<span class="etiqueta">humano</span>');
+    if (sinLeer) marcas.push('<span class="globito">' + Number(c.unread) + '</span>');
+    return '<div class="chat' + (sel && sel._id === c._id ? ' on' : '') + (sinLeer ? ' sinleer' : '')
+      + '" data-conv="' + esc(c._id) + '">'
+      + '<div class="av">' + esc(iniciales(n)) + '</div>'
+      + '<div class="cuerpo">'
+      +   '<div class="fila1"><div class="nom">' + esc(n) + '</div>'
+      +     '<div class="hora">' + esc(hora(c.last_message_at)) + '</div></div>'
+      +   '<div class="prev">' + esc(c.last_message_preview || '') + '</div>'
+      +   '<div class="marcas">' + marcas.join('') + '</div>'
+      + '</div></div>';
+  }).join('');
+}
+
+function abre(c){
+  if (!c) return;
+  sel = c;
+  document.body.classList.add('chat-abierto');
+  $('sinChat').style.display = 'none';
+  $('conversacion').style.display = 'flex';
+  // En pantalla estrecha la ficha es un panel superpuesto que taparia el chat entero:
+  // ahi arranca cerrada y se abre con el boton de la cabecera.
+  const anchaBastante = window.innerWidth > 1080;
+  $('ficha').style.display = anchaBastante ? 'flex' : 'none';
+  $('ficha').classList.toggle('on', anchaBastante);
+  const n = nombreDe(c);
+  $('conversacion').innerHTML =
+    '<div class="cabecera">'
+    + '<div class="av">' + esc(iniciales(n)) + '</div>'
+    + '<div class="quien-chat"><b>' + esc(n) + '</b><span>+' + esc(c.wa_phone || '') + '</span></div>'
+    + '<button class="modo" id="btnModo"></button>'
+    + '<button class="adj" id="verFicha" title="Ficha del lead" aria-label="Ficha del lead">'
+    +   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 8v.01M11 12h1v4h1"/></svg></button>'
+    + '<div class="mas" id="mas"><button aria-label="Más opciones">⋯</button>'
+    +   '<div class="menu"><button data-mas="encuesta">Enviar encuesta</button>'
+    +   '<button data-mas="cerrar">Cerrar conversación</button></div></div>'
+    + '</div>'
+    + '<div class="mensajes" id="mensajes"></div>'
+    + '<div class="barra-cita" id="barraCita" hidden>'
+    +   '<div class="cvertical"></div><div class="ctexto"></div>'
+    +   '<button id="citaX" aria-label="Quitar la cita">×</button></div>'
+    + '<div class="escribir">'
+    +   '<div class="adjuntos">'
+    +     '<button class="adj" id="adjImg" title="Enviar imágenes" aria-label="Enviar imágenes">'
+    +       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg></button>'
+    +     '<button class="adj hd" id="adjHd" title="HD: envía la imagen sin comprimir" aria-pressed="false">HD</button>'
+    +     '<button class="adj" id="adjDoc" title="Enviar documento" aria-label="Enviar documento">'
+    +       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/></svg></button>'
+    +     '<button class="adj" id="adjRapida" title="Respuestas rápidas" aria-label="Respuestas rápidas">'
+    +       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M13 2L4.5 13H11l-1 9 8.5-11H12l1-9z"/></svg></button>'
+    +     '<button class="adj" id="adjCombo" title="Combos por categoría" aria-label="Combos">'
+    +       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20 7l-8-4-8 4 8 4 8-4z"/><path d="M4 12l8 4 8-4M4 17l8 4 8-4"/></svg></button>'
+    +     '<button class="adj" id="adjTpl" title="Plantillas de WhatsApp" aria-label="Plantillas">'
+    +       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 9h6M9 13h6M9 17h3"/></svg></button>'
+    +     '<button class="adj" id="adjMic" title="Grabar audio" aria-label="Grabar audio">'
+    +       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 11a7 7 0 0014 0M12 18v4"/></svg></button>'
+    +     '<input type="file" id="fImg" accept="image/*" multiple hidden>'
+    +     '<input type="file" id="fDoc" multiple hidden>'
+    +   '</div>'
+    +   '<div class="grabando" id="grabando" hidden>'
+    +     '<span class="pulso"></span><span id="reloj">0:00</span>'
+    +     '<canvas id="ondas" aria-hidden="true"></canvas>'
+    +     '<button id="recEnviar" class="btn-solido" style="padding:6px 14px">Enviar</button>'
+    +     '<button id="recCancelar" class="btn-linea" style="padding:6px 12px">Cancelar</button>'
+    +   '</div>'
+    +   '<textarea id="texto" rows="1" placeholder="Escribe tu respuesta…"></textarea>'
+    +   '<button class="enviar" id="btnEnviar" aria-label="Enviar">'
+    +   '<svg width="19" height="19" viewBox="0 0 24 24" fill="currentColor"><path d="M3 20l18-8L3 4v6l12 2-12 2z"/></svg>'
+    +   '</button></div>'
+    + '<div class="cola" id="cola" hidden></div>';
+  cableaChat(c);
+  pintaFicha(c);
+  escuchaMensajes(c.id || c._id);
+  pintaChats();
+}
+
+function cableaChat(c){
+  const modo = $('btnModo');
+  const pinta = () => { modo.textContent = (sel.mode === 'human' || sel.human_handoff_required)
+    ? 'Humano atiende' : 'Bot atiende'; };
+  pinta();
+  modo.onclick = async () => {
+    const nuevo = (sel.mode === 'human') ? 'bot' : 'human';
+    modo.disabled = true;
+    const r = await llama({ action:'mode', conversation_id: sel.id || sel._id, mode:nuevo });
+    modo.disabled = false;
+    if (!r.ok) return avisa('No se pudo cambiar', r.error);
+    sel.mode = nuevo; pinta();
+    avisa(nuevo === 'human' ? 'La atiendes tú' : 'Vuelve al bot');
+  };
+  const mas = $('mas');
+  mas.querySelector('button').onclick = ev => { ev.stopPropagation(); mas.classList.toggle('on'); };
+  document.addEventListener('click', () => mas.classList.remove('on'));
+  mas.querySelector('.menu').onclick = async ev => {
+    const b = ev.target.closest('[data-mas]'); if (!b) return;
+    mas.classList.remove('on');
+    if (b.dataset.mas === 'encuesta') {
+      const r = await llama({ action:'surveyInvite', conversation_id: sel.id || sel._id });
+      avisa(r.ok ? 'Encuesta enviada' : 'No se pudo enviar', r.ok ? '' : r.error);
+    } else {
+      if (!confirm('¿Cerrar esta conversación?')) return;
+      const r = await llama({ action:'updateLead', conversation_id: sel.id || sel._id,
+        fields:{ status:'closed', lead_status:'cerrado' } });
+      avisa(r.ok ? 'Conversación cerrada' : 'No se pudo cerrar', r.ok ? '' : r.error);
+    }
+  };
+  cableaAdjuntos();
+  cancelaCita();
+  $('citaX').onclick = cancelaCita;
+  const caja = $('texto'), env = $('btnEnviar');
+  caja.addEventListener('input', () => {
+    caja.style.height = 'auto';
+    caja.style.height = Math.min(caja.scrollHeight, 150) + 'px';
+  });
+  caja.addEventListener('keydown', e => {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); env.click(); }
+  });
+  env.onclick = async () => {
+    const t = caja.value.trim();
+    if (!t && !COLA.length) return;
+    env.disabled = true;
+    let fallo = null;
+    // Los nombres de estas claves NO son opcionales: uploadMetaMedia lee media_b64 y
+    // media_filename (firebase-functions/src/index.js:179-183). Con media_base64 la
+    // subida devuelve null, outboundPayload cae a la rama de texto, y con una foto mas
+    // texto sale SOLO el texto mientras el panel dice "enviado". Un fallo silencioso
+    // hacia un cliente real.
+    const conv = sel.id || sel._id;
+    // El audio no admite pie de foto en la API de WhatsApp: si va texto con una nota de
+    // voz, el texto se pierde. Por eso el texto viaja con el ultimo adjunto que SI
+    // admite pie, y si no hay ninguno se manda aparte.
+    const ultimoConPie = COLA.map(a => a.tipo).lastIndexOf('image') >= 0
+      ? COLA.map(a => a.tipo).lastIndexOf('image')
+      : COLA.map(a => a.tipo).lastIndexOf('document');
+    for (let i = 0; i < COLA.length && !fallo; i++) {
+      const a = COLA[i];
+      const r = await llama({
+        action:'send', conversation_id: conv,
+        media_kind: a.tipo, media_b64: a.datos, media_filename: a.nombre, media_mime: a.mime,
+        body: (t && i === ultimoConPie) ? t : '',
+      });
+      if (!r.ok) fallo = r.error;
+    }
+    const textoYaFue = t && ultimoConPie >= 0 && !fallo;
+    if (!fallo && t && !textoYaFue) {
+      const cuerpo = { action:'sendText', conversation_id: conv, body:t };
+      // La cita se manda con el wamid del original: asi WhatsApp la enlaza de verdad
+      // en el telefono del cliente, en vez de pegar el texto citado a mano.
+      if (citando?.wamid) {
+        cuerpo.reply_to_wamid = citando.wamid;
+        cuerpo.reply_snippet = String(citando.body || '').slice(0, 200);
+        cuerpo.reply_sender = citando.direction === 'in' ? 'customer' : 'agent';
+      }
+      const r = await llama(cuerpo);
+      if (!r.ok) fallo = r.error;
+    }
+    if (!fallo) cancelaCita();
+    env.disabled = false;
+    if (fallo) return avisa('No se pudo enviar', fallo);
+    caja.value = ''; caja.style.height = 'auto';
+    COLA.length = 0; pintaCola();
+  };
+}
+
+/* ---- Adjuntos ------------------------------------------------------------ */
+// Cola visible antes de enviar: lo que se manda a un cliente real se ve primero.
+const COLA = [];
+let modoHd = false;
+// El tope real lo pone el servidor: uploadMetaMedia rechaza por encima de 16 MB ya
+// decodificado (index.html del backend, linea 180). Poner 30 aqui solo conseguiria que
+// el archivo se subiera entero para morir alla, asi que se corta antes.
+const LIMITE_MB = () => (modoHd ? 15 : 12);
+
+function pintaCola(){
+  const c = $('cola'); if (!c) return;
+  c.hidden = !COLA.length;
+  c.innerHTML = COLA.map((a,i) =>
+    '<span class="pieza">' + esc(a.nombre) + '<button data-quita="' + i + '" aria-label="Quitar">×</button></span>').join('');
+}
+function leeBase64(f){
+  return new Promise((res, rej) => {
+    const l = new FileReader();
+    l.onload = () => res(String(l.result).split(',')[1] || '');
+    l.onerror = () => rej(new Error('no se pudo leer ' + f.name));
+    l.readAsDataURL(f);
+  });
+}
+async function encola(files, tipo){
+  let fuera = 0;
+  for (const f of files) {
+    // HEIC no lo acepta WhatsApp por esta via y se rechaza aqui, no a mitad del envio.
+    if (tipo === 'image' && /heic|heif/i.test(f.type + f.name)) { fuera++; continue; }
+    if (f.size > LIMITE_MB() * 1024 * 1024) { fuera++; continue; }
+    try { COLA.push({ tipo, nombre:f.name, mime:f.type || 'application/octet-stream', datos: await leeBase64(f) }); }
+    catch (e) { fuera++; }
+  }
+  if (fuera) avisa(fuera + (fuera === 1 ? ' archivo se omitió' : ' archivos se omitieron'),
+    'HEIC o mayor de ' + LIMITE_MB() + ' MB.');
+  pintaCola();
+}
+function cableaAdjuntos(){
+  COLA.length = 0; pintaCola();
+  $('adjImg').onclick = () => $('fImg').click();
+  $('adjDoc').onclick = () => $('fDoc').click();
+  $('fImg').onchange = e => { const f = [...e.target.files]; e.target.value = ''; encola(f, 'image'); };
+  $('fDoc').onchange = e => { const f = [...e.target.files]; e.target.value = ''; encola(f, 'document'); };
+  $('adjHd').onclick = () => {
+    modoHd = !modoHd;
+    $('adjHd').setAttribute('aria-pressed', modoHd ? 'true' : 'false');
+    $('adjHd').classList.toggle('on', modoHd);
+    avisa(modoHd ? 'HD activado' : 'HD desactivado',
+      modoHd ? 'Las imágenes van sin comprimir, hasta 15 MB.' : 'Las imágenes van hasta 12 MB.');
+  };
+  $('cola').onclick = ev => {
+    const b = ev.target.closest('[data-quita]'); if (!b) return;
+    COLA.splice(Number(b.dataset.quita), 1); pintaCola();
+  };
+  cableaMicrofono();
+  $('adjTpl').onclick = abrePlantillas;
+  $('adjCombo').onclick = abreCombos;
+  $('adjRapida').onclick = abreRapidas;
+}
+
+/* ---- Respuestas rapidas -------------------------------------------------- */
+// Frases del equipo, guardadas en el servidor y no en el navegador: si viven en
+// localStorage, cada persona tiene las suyas y lo que escribe el negocio deja de
+// sonar igual segun quien conteste.
+let RAPIDAS = null;
+
+async function cargaRapidas(forzar){
+  if (RAPIDAS && !forzar) return RAPIDAS;
+  const r = await llama({ action:'data', table:'quick_replies', operation:'select',
+    order:[{ field:'created_at', ascending:false }], limit: 200 });
+  if (!r.ok) { avisa('No se pudieron cargar', r.error); return null; }
+  RAPIDAS = r.data || r.rows || [];
+  return RAPIDAS;
+}
+
+async function abreRapidas(){
+  if (!sel) return avisa('Abre una conversación primero');
+  abreModal('<div class="mtapa"><b>Respuestas rápidas</b><button class="cerrarm" data-cerrar>×</button></div>'
+    + '<div class="mcuerpo"><span class="cargando"></span> Cargando…</div>');
+  $('modal').querySelectorAll('[data-cerrar]').forEach(b => { b.onclick = cierraModal; });
+  const filas = await cargaRapidas(true);
+  if (!filas) return cierraModal();
+  const cuerpo = $('modal').querySelector('.mcuerpo');
+  const pinta = () => {
+    cuerpo.innerHTML = (filas.length
+        ? filas.map((q,i) => '<div class="rapida"><button data-usar="' + i + '">'
+            + '<b>' + esc(q.title || q.name || 'Sin título') + '</b>'
+            + '<span>' + esc(String(q.body || q.text || '').slice(0,110)) + '</span></button>'
+            + '<button class="rx" data-borrar="' + i + '" aria-label="Borrar">×</button></div>').join('')
+        : '<p class="aviso">Todavía no hay ninguna. Escribe la primera abajo.</p>')
+      + '<div class="seccion" style="margin:16px 0 8px">Añadir una nueva</div>'
+      + '<div class="campo"><label>Título</label><input id="rqT" placeholder="Ej. Horario"></div>'
+      + '<div class="campo"><label>Texto</label><textarea id="rqB" rows="3"></textarea></div>'
+      + '<button class="btn-solido" id="rqAdd">Guardar</button>';
+    $('rqAdd').onclick = async () => {
+      const title = $('rqT').value.trim(), body = $('rqB').value.trim();
+      if (!title || !body) return avisa('Faltan el título o el texto');
+      $('rqAdd').disabled = true;
+      const r = await llama({ action:'data', table:'quick_replies', operation:'insert',
+        payload:{ title, body, created_at: new Date().toISOString() }, returning:true });
+      $('rqAdd').disabled = false;
+      if (!r.ok) return avisa('No se pudo guardar', r.error);
+      RAPIDAS = null;
+      const nuevas = await cargaRapidas(true);
+      filas.length = 0; filas.push(...(nuevas || []));
+      pinta();
+      avisa('Guardada');
+    };
+  };
+  pinta();
+  cuerpo.onclick = async ev => {
+    const usar = ev.target.closest('[data-usar]');
+    if (usar) {
+      const q = filas[Number(usar.dataset.usar)];
+      const caja = $('texto');
+      const t = q.body || q.text || '';
+      caja.value = caja.value.trim() ? caja.value.trim() + '\n\n' + t : t;
+      caja.dispatchEvent(new Event('input'));
+      cierraModal(); caja.focus();
+      return;
+    }
+    const borrar = ev.target.closest('[data-borrar]');
+    if (borrar) {
+      const q = filas[Number(borrar.dataset.borrar)];
+      if (!confirm('¿Borrar «' + (q.title || q.name) + '»?')) return;
+      const r = await llama({ action:'data', table:'quick_replies', operation:'delete',
+        filters:[{ field:'id', op:'eq', value:q.id }] });
+      if (!r.ok) return avisa('No se pudo borrar', r.error);
+      filas.splice(Number(borrar.dataset.borrar), 1);
+      RAPIDAS = null; pinta();
+    }
+  };
+}
+
+/* ---- Biblioteca de combos ------------------------------------------------ */
+// El catalogo no vive en el CRM: se lee de la pagina publica, que es la que el
+// negocio actualiza. Asi el precio que se le manda al cliente es exactamente el que
+// ve en la web, sin una segunda lista que se quede vieja sin que nadie lo note.
+const COMBO_PAGINA = CFG.publicCatalogUrl || 'https://dcarelacompufoto.com/combos.html';
+const COMBO_IMG = 'https://dcarelacompufoto.com/combos-img/';
+const COMBO_PDF = 'https://dcarelacompufoto.com/pdf/';
+const COMBO_CATEGORIAS = { xv:'XV', infantil:'Infantil', graduacion:'Graduación',
+  cumpleanos:'Cumpleaños', embarazadas:'Embarazadas' };
+const COMBO_PDFS = [
+  { cat:'xv', label:'XV', n:5 }, { cat:'infantil', label:'Infantil', n:8 },
+  { cat:'graduacion', label:'Graduación', n:3 }, { cat:'cumpleanos', label:'Cumpleaños', n:15 },
+  { cat:'embarazadas', label:'Embarazadas', n:8 },
+];
+let COMBOS = null;
+
+function combosSlug(cat, nombre){
+  return cat + '-' + String(nombre || '').toLowerCase().replace(/[^a-z0-9\s-]/g,'')
+    .trim().replace(/\s+/g,'-').replace(/-+/g,'-');
+}
+async function cargaCombos(forzar){
+  if (COMBOS && !forzar) return COMBOS;
+  const r = await fetch(COMBO_PAGINA, { cache: forzar ? 'reload' : 'default' });
+  if (!r.ok) throw new Error('catálogo HTTP ' + r.status);
+  const doc = new DOMParser().parseFromString(await r.text(), 'text/html');
+  const filas = [];
+  for (const sec of doc.querySelectorAll('section.sec[id]')) {
+    const cat = String(sec.id || '').toLowerCase();
+    if (!COMBO_CATEGORIAS[cat]) continue;
+    for (const card of sec.querySelectorAll('article.combo')) {
+      const nombre = String(card.querySelector('.cname')?.textContent || '').trim();
+      if (!nombre) continue;
+      const precioTxt = String(card.querySelector('.cprice b')?.textContent
+        || card.querySelector('.cprice')?.textContent || '').trim();
+      filas.push({
+        cat, catLabel: COMBO_CATEGORIAS[cat], nombre,
+        precio: precioTxt ? (precioTxt.startsWith('RD$') ? precioTxt : 'RD$' + precioTxt) : '',
+        digital: String(card.querySelector('.cinc-total')?.textContent || '').trim(),
+        items: [...card.querySelectorAll('.cinc li')].map(n => String(n.textContent||'').trim()).filter(Boolean),
+        incluyeLabel: String(card.querySelector('.incbox .il')?.textContent || 'Incluye').trim(),
+        incluye: String(card.querySelector('.incbox .iv')?.textContent || '').trim(),
+        imagenCruda: card.querySelector('.ph')?.dataset.bg
+          ? new URL(card.querySelector('.ph').dataset.bg, COMBO_PAGINA).href : '',
+        tarjeta: COMBO_IMG + combosSlug(cat, nombre) + '.png',
+      });
+    }
+  }
+  COMBOS = filas;
+  return filas;
+}
+function textoDeCombo(c){
+  const l = ['Te comparto el combo ' + c.nombre + (c.precio ? ' (' + c.precio + ')' : '') + '.'];
+  if (c.digital) l.push('', c.digital + '.');
+  if (c.items.length) l.push(...c.items.map(i => '• ' + i));
+  if (c.incluye) l.push('', c.incluyeLabel + ': ' + c.incluye + '.');
+  l.push('', 'Mira todos los combos e imágenes aquí: ' + COMBO_PAGINA);
+  l.push('Si te interesa, dime tu fecha tentativa y te confirmamos disponibilidad.');
+  return l.join('\n');
+}
+
+async function abreCombos(){
+  if (!sel) return avisa('Abre una conversación primero');
+  abreModal('<div class="mtapa"><b>Combos</b><button class="cerrarm" data-cerrar>×</button></div>'
+    + '<div class="mcuerpo"><span class="cargando"></span> Leyendo el catálogo…</div>');
+  $('modal').querySelectorAll('[data-cerrar]').forEach(b => { b.onclick = cierraModal; });
+  let filas;
+  try { filas = await cargaCombos(false); }
+  catch (e) {
+    $('modal').querySelector('.mcuerpo').innerHTML =
+      '<p class="aviso">No se pudo leer el catálogo: ' + esc(e.message) + '</p>';
+    return;
+  }
+  const cuerpo = $('modal').querySelector('.mcuerpo');
+  cuerpo.innerHTML = '<div class="campo"><input id="cbBusca" placeholder="Buscar combo…"></div>'
+    + '<div class="seccion" style="margin:12px 0 6px">Catálogo en PDF</div>'
+    + '<div class="pdfs">' + COMBO_PDFS.map(p =>
+        '<button class="tplchip" data-pdf="' + p.cat + '">' + esc(p.label) + ' · ' + p.n + '</button>').join('')
+    + '</div>'
+    + '<div class="seccion" style="margin:14px 0 6px">Combos con su tarjeta</div><div id="cbLista"></div>';
+
+  const pinta = () => {
+    const q = ($('cbBusca').value || '').trim().toLowerCase();
+    const vis = filas.filter(c => !q ||
+      (c.nombre + ' ' + c.catLabel + ' ' + c.precio + ' ' + c.items.join(' ')).toLowerCase().includes(q));
+    $('cbLista').innerHTML = vis.map((c,i) =>
+      '<button class="tpl" data-combo="' + filas.indexOf(c) + '"><b>' + esc(c.nombre) + '</b>'
+      + '<span class="tplmeta">' + esc(c.catLabel) + (c.precio ? ' · ' + esc(c.precio) : '') + '</span></button>'
+    ).join('') || '<p class="aviso">Sin resultados.</p>';
+  };
+  pinta();
+  $('cbBusca').oninput = pinta;
+
+  cuerpo.onclick = async ev => {
+    const pdf = ev.target.closest('[data-pdf]');
+    if (pdf) return adjuntaPdfCombos(pdf.dataset.pdf, pdf);
+    const b = ev.target.closest('[data-combo]');
+    if (b) return adjuntaCombo(filas[Number(b.dataset.combo)], b);
+  };
+}
+
+async function adjuntaCombo(c, boton){
+  if (!c) return;
+  const antes = boton.innerHTML;
+  boton.disabled = true; boton.textContent = 'Preparando…';
+  try {
+    // Primero la tarjeta oficial; si no existe se cae a la imagen de la web. Mandar
+    // el texto sin foto seria peor que no mandar nada: el combo se vende por la imagen.
+    let r = await fetch(c.tarjeta, { cache:'force-cache' });
+    let url = c.tarjeta;
+    if (!r.ok && c.imagenCruda) { r = await fetch(c.imagenCruda, { cache:'force-cache' }); url = c.imagenCruda; }
+    if (!r.ok) throw new Error('imagen HTTP ' + r.status);
+    const blob = await r.blob();
+    const datos = await new Promise(res => {
+      const l = new FileReader(); l.onload = () => res(String(l.result).split(',')[1] || '');
+      l.readAsDataURL(blob);
+    });
+    COLA.push({ tipo:'image', mime: blob.type || 'image/png',
+      nombre: c.nombre + ' - DCarela.' + (url.endsWith('.webp') ? 'webp' : 'png'), datos });
+    pintaCola();
+    const caja = $('texto');
+    const t = textoDeCombo(c);
+    caja.value = caja.value.trim() ? caja.value.trim() + '\n\n' + t : t;
+    caja.dispatchEvent(new Event('input'));
+    cierraModal();
+    avisa(c.nombre, 'Imagen y texto listos. Revisa y pulsa enviar.');
+  } catch (e) {
+    boton.disabled = false; boton.innerHTML = antes;
+    avisa('No se pudo preparar ' + c.nombre, e?.message || String(e));
+  }
+}
+
+async function adjuntaPdfCombos(cat, boton){
+  const p = COMBO_PDFS.find(x => x.cat === cat); if (!p) return;
+  const antes = boton.textContent;
+  boton.disabled = true; boton.textContent = 'Preparando…';
+  try {
+    const url = COMBO_PDF + 'combos-' + cat + '.pdf';
+    const r = await fetch(url, { cache:'force-cache' });
+    if (!r.ok) throw new Error('PDF HTTP ' + r.status);
+    const blob = await r.blob();
+    const datos = await new Promise(res => {
+      const l = new FileReader(); l.onload = () => res(String(l.result).split(',')[1] || '');
+      l.readAsDataURL(blob);
+    });
+    COLA.push({ tipo:'document', mime:'application/pdf',
+      nombre:'Combos ' + p.label + ' - DCarela.pdf', datos });
+    pintaCola();
+    const caja = $('texto');
+    if (!caja.value.trim()) {
+      caja.value = 'Te comparto nuestros combos de ' + p.label + '. Cualquier duda me dices, '
+        + 'y si te interesa alguno dime tu fecha tentativa para confirmarte disponibilidad.';
+      caja.dispatchEvent(new Event('input'));
+    }
+    cierraModal();
+    avisa('Combos ' + p.label, 'PDF listo. Revisa y pulsa enviar.');
+  } catch (e) {
+    boton.disabled = false; boton.textContent = antes;
+    avisa('No se pudo preparar el PDF', e?.message || String(e));
+  }
+}
+
+/* ---- Plantillas de WhatsApp ---------------------------------------------- */
+// Lo unico que WhatsApp entrega con la ventana de 24 h cerrada. Sin esto no se
+// puede reactivar a nadie, y por eso es lo primero que necesita una campaña.
+//
+// El servidor NO resuelve template_id: outboundPayload (transport-core.js:73-87) lee
+// template_name, language_code y variables. Mandar el id, como hacia el panel
+// anterior, se contesta con "plantilla requerida".
+let PLANTILLAS = null;
+
+async function cargaPlantillas(forzar){
+  if (PLANTILLAS && !forzar) return PLANTILLAS;
+  const r = await llama({ action:'templates', operation:'list',
+    business_number: CFG.businessNumber || '' });
+  if (!r.ok) { avisa('No se pudieron cargar las plantillas', r.error); return null; }
+  PLANTILLAS = (r.templates || r.rows || r.items || []).filter(t => t && t.template_name);
+  return PLANTILLAS;
+}
+
+function abreModal(html){
+  let m = $('modal');
+  if (!m) { m = document.createElement('div'); m.id = 'modal'; document.body.appendChild(m); }
+  m.className = 'modal on';
+  m.innerHTML = '<div class="caja">' + html + '</div>';
+  m.onclick = ev => { if (ev.target === m) cierraModal(); };
+  return m;
+}
+function cierraModal(){ const m = $('modal'); if (m) m.className = 'modal'; }
+document.addEventListener('keydown', ev => { if (ev.key === 'Escape') { cierraModal(); cierraLupa(); } });
+
+/* ---- Lupa de imagenes ---------------------------------------------------- */
+function cierraLupa(){ $('lupa').classList.remove('on'); $('lupa').querySelector('img').src = ''; }
+$('lupa').onclick = cierraLupa;
+// Delegado en el documento: los globos se repintan en cada mensaje nuevo y un
+// manejador puesto sobre cada imagen se perderia en el siguiente repintado.
+document.addEventListener('click', ev => {
+  const img = ev.target;
+  if (img?.tagName === 'IMG' && img.classList.contains('mmedia')) {
+    $('lupa').querySelector('img').src = img.src;
+    $('lupa').classList.add('on');
+  }
+});
+
+async function abrePlantillas(){
+  if (!sel) return avisa('Abre una conversación primero');
+  abreModal('<div class="mtapa"><b>Plantillas aprobadas</b>'
+    + '<button class="cerrarm" onclick="void 0" data-cerrar>×</button></div>'
+    + '<div class="mcuerpo"><span class="cargando"></span> Cargando…</div>');
+  $('modal').querySelector('[data-cerrar]').onclick = cierraModal;
+  const lista = await cargaPlantillas(true);
+  if (!lista) return cierraModal();
+  const activas = lista.filter(t => t.active !== false && String(t.meta_status||'').toUpperCase() !== 'REJECTED');
+  const cuerpo = $('modal').querySelector('.mcuerpo');
+  if (!activas.length) {
+    cuerpo.innerHTML = '<p class="aviso">No hay plantillas aprobadas. Sincroniza con Meta desde la vista Plantillas.</p>';
+    return;
+  }
+  cuerpo.innerHTML = activas.map((t,i) =>
+    '<button class="tpl" data-tpl="' + i + '">'
+    + '<b>' + esc(t.display_name || t.template_name) + '</b>'
+    + '<span class="tplmeta">' + esc(t.template_name) + ' · ' + esc(t.language_code || 'es')
+    +   ' · ' + esc(String(t.meta_status || '').toUpperCase() || 'SIN ESTADO') + '</span>'
+    + (t.preview_text ? '<span class="tplprev">' + esc(t.preview_text) + '</span>' : '')
+    + '</button>').join('');
+  cuerpo.onclick = ev => {
+    const b = ev.target.closest('[data-tpl]'); if (!b) return;
+    pideVariables(activas[Number(b.dataset.tpl)]);
+  };
+}
+
+function pideVariables(t){
+  const claves = Array.isArray(t.parameter_keys) ? t.parameter_keys : [];
+  // Se rellena de la ficha lo que se pueda: el agente corrige, no teclea de cero.
+  const dePrimeras = k => {
+    const mapa = {
+      nombre: sel.customer_name || sel.contact_name || '',
+      cliente: sel.customer_name || sel.contact_name || '',
+      combo: sel.selected_combo_name || '',
+      precio: sel.selected_combo_price ? 'RD$' + sel.selected_combo_price : '',
+      fecha: sel.tentative_date || '',
+      categoria: sel.interested_category || '',
+    };
+    return mapa[String(k).toLowerCase()] || '';
+  };
+  abreModal('<div class="mtapa"><b>' + esc(t.display_name || t.template_name) + '</b>'
+    + '<button class="cerrarm" data-cerrar>×</button></div>'
+    + '<div class="mcuerpo">'
+    + (t.preview_text ? '<p class="aviso">' + esc(t.preview_text) + '</p>' : '')
+    + (claves.length
+        ? claves.map((k,i) => '<div class="campo"><label>' + esc(k) + '</label>'
+            + '<input data-var="' + i + '" value="' + esc(dePrimeras(k)) + '"></div>').join('')
+        : '<p class="aviso">Esta plantilla no lleva variables.</p>')
+    + '</div>'
+    + '<div class="mpatas"><button class="btn-linea" data-cerrar>Cancelar</button>'
+    +   '<button class="btn-solido" id="btnEnviarTpl">Enviar plantilla</button></div>');
+  $('modal').querySelectorAll('[data-cerrar]').forEach(b => { b.onclick = cierraModal; });
+  $('btnEnviarTpl').onclick = async () => {
+    const variables = [...$('modal').querySelectorAll('[data-var]')].map(i => i.value.trim());
+    if (variables.some(v => !v)) return avisa('Faltan variables', 'WhatsApp rechaza la plantilla si alguna va vacía.');
+    $('btnEnviarTpl').disabled = true;
+    const r = await llama({
+      action:'sendTemplate', conversation_id: sel.id || sel._id,
+      template_name: t.template_name, language_code: t.language_code || 'es',
+      variables,
+    });
+    $('btnEnviarTpl').disabled = false;
+    if (!r.ok) return avisa('No se pudo enviar la plantilla', r.error);
+    cierraModal();
+    avisa('Plantilla enviada', t.display_name || t.template_name);
+  };
+}
+
+/* ---- Audio --------------------------------------------------------------- */
+// Portado tal cual del panel anterior, incluida la eleccion de libreria: ver el
+// comentario del <script> de opus-recorder arriba. Cambiar esto por MediaRecorder
+// hace que los audios "se envien" sin que nadie los reciba.
+let grabadora = null, relojT = null, cancelada = false, enviarAlParar = false;
+let ctxAudio = null, analizador = null, dibujoT = null, fuenteMic = null;
+
+// Dibuja el nivel REAL del microfono. Una animacion fija mentiria: con el microfono
+// silenciado o tomado por otra aplicacion se veria igual de viva, y el audio saldria
+// mudo sin que nadie lo notara hasta que el cliente lo dijera.
+function arrancaOndas(stream){
+  const lienzo = $('ondas'); if (!lienzo || !stream) return;
+  try {
+    ctxAudio = new (window.AudioContext || window.webkitAudioContext)();
+    fuenteMic = ctxAudio.createMediaStreamSource(stream);
+    analizador = ctxAudio.createAnalyser();
+    analizador.fftSize = 256;
+    analizador.smoothingTimeConstant = 0.75;
+    fuenteMic.connect(analizador);
+  } catch (e) { return; }
+
+  const datos = new Uint8Array(analizador.frequencyBinCount);
+  const g = lienzo.getContext('2d');
+  const historia = [];
+  const pinta = () => {
+    const escala = window.devicePixelRatio || 1;
+    const an = lienzo.clientWidth, al = lienzo.clientHeight;
+    if (lienzo.width !== an * escala) { lienzo.width = an * escala; lienzo.height = al * escala; }
+    g.setTransform(escala, 0, 0, escala, 0, 0);
+    g.clearRect(0, 0, an, al);
+
+    analizador.getByteTimeDomainData(datos);
+    // Valor eficaz de la onda: sube con la voz y se queda casi plano en silencio.
+    let suma = 0;
+    for (let i = 0; i < datos.length; i++) { const v = (datos[i] - 128) / 128; suma += v * v; }
+    historia.push(Math.min(1, Math.sqrt(suma / datos.length) * 3.2));
+
+    const ancho = 3, hueco = 2, cabe = Math.floor(an / (ancho + hueco));
+    while (historia.length > cabe) historia.shift();
+    g.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--mut').trim() || '#667781';
+    historia.forEach((n, i) => {
+      const h = Math.max(2, n * (al - 4));
+      g.fillRect(i * (ancho + hueco), (al - h) / 2, ancho, h);
+    });
+    dibujoT = requestAnimationFrame(pinta);
+  };
+  pinta();
+}
+function paraOndas(){
+  if (dibujoT) cancelAnimationFrame(dibujoT);
+  dibujoT = null;
+  try { fuenteMic?.disconnect(); } catch (e) {}
+  // Cerrar el contexto suelta el indicador de microfono del navegador. Dejarlo abierto
+  // deja al usuario creyendo que se le sigue escuchando.
+  try { ctxAudio?.close(); } catch (e) {}
+  ctxAudio = analizador = fuenteMic = null;
+}
+
+function cableaMicrofono(){
+  const caja = $('grabando'), boton = $('adjMic');
+  const parar = () => { caja.hidden = true; clearInterval(relojT); grabadora = null; paraOndas(); };
+
+  boton.onclick = async () => {
+    if (!sel || !caja.hidden) return;
+    if (!window.Recorder) return avisa('La grabación aún no está lista', 'Espera dos segundos y vuelve a tocar.');
+    cancelada = false; enviarAlParar = false;
+    try {
+      grabadora = new Recorder({
+        encoderPath:'https://cdn.jsdelivr.net/npm/opus-recorder@8.0.5/dist/encoderWorker.min.js',
+        streamPages:false, numberOfChannels:1,
+        encoderSampleRate:24000, encoderBitRate:24000,
+        recordingGain:1, monitorGain:0,
+      });
+      grabadora.ondataavailable = async typed => {
+        if (cancelada) return;
+        const blob = new Blob([typed], { type:'audio/ogg' });
+        // Por debajo de este tamaño no hay voz, solo el ruido de pulsar el boton.
+        if (blob.size < 800) return avisa('Grabación demasiado corta', 'Vuelve a intentarlo.');
+        const datos = await new Promise(res => {
+          const l = new FileReader();
+          l.onload = () => res(String(l.result).split(',')[1] || '');
+          l.readAsDataURL(blob);
+        });
+        COLA.push({ tipo:'audio', nombre:'nota-de-voz.ogg', mime:'audio/ogg', datos });
+        pintaCola();
+        if (enviarAlParar) { enviarAlParar = false; $('btnEnviar').click(); }
+      };
+      await grabadora.start();
+    } catch (e) { return avisa('No se pudo grabar', e?.message || String(e)); }
+
+    caja.hidden = false;
+    // opus-recorder guarda el stream del microfono; de ahi salen las ondas. Si en
+    // alguna version no lo expone, se pide uno propio antes que quedarse sin dibujo.
+    if (grabadora.stream) arrancaOndas(grabadora.stream);
+    else navigator.mediaDevices?.getUserMedia({ audio:true }).then(arrancaOndas).catch(() => {});
+    const desde = Date.now();
+    $('reloj').textContent = '0:00';
+    relojT = setInterval(() => {
+      const s = Math.floor((Date.now() - desde) / 1000);
+      $('reloj').textContent = Math.floor(s/60) + ':' + String(s%60).padStart(2,'0');
+      if (s >= 300) $('recEnviar').click();   // tope de cinco minutos
+    }, 200);
+  };
+
+  $('recEnviar').onclick = () => {
+    if (!grabadora) return;
+    // El encoder termina en asincrono: se marca el envio y lo dispara ondataavailable
+    // cuando el audio esta realmente listo. Enviar aqui mandaria un blob vacio.
+    enviarAlParar = true;
+    try { grabadora.stop(); } catch (e) {}
+    parar();
+  };
+  $('recCancelar').onclick = () => {
+    if (grabadora) { cancelada = true; try { grabadora.stop(); } catch (e) {} }
+    parar();
+  };
+}
+
+/* ---- Acciones sobre un mensaje ------------------------------------------- */
+let citando = null;
+
+function pintaCita(){
+  const barra = $('barraCita'); if (!barra) return;
+  barra.hidden = !citando;
+  if (citando) barra.querySelector('.ctexto').textContent =
+    String(citando.body || '').slice(0, 120) || '[archivo]';
+}
+function cancelaCita(){ citando = null; pintaCita(); }
+
+// Delegado en el documento: los globos se repintan con cada mensaje nuevo, y un
+// manejador puesto sobre cada boton se perderia en el siguiente repintado.
+document.addEventListener('click', async ev => {
+  const b = ev.target.closest('.gaccion');
+  if (!b) { document.querySelectorAll('.gmenu').forEach(m => m.remove()); return; }
+  ev.stopPropagation();
+  document.querySelectorAll('.gmenu').forEach(m => m.remove());
+  const globo = b.closest('[data-msg]');
+  const m = MSGS.find(x => (x.id || x.wamid) === globo.dataset.msg);
+  if (!m) return;
+  const menu = document.createElement('div');
+  menu.className = 'gmenu';
+  menu.innerHTML = '<button data-op="citar">Responder</button>'
+    + '<button data-op="reenviar">Reenviar</button>'
+    + '<button data-op="copiar">Copiar texto</button>'
+    + '<button data-op="borrar" class="peligro">Borrar</button>';
+  globo.appendChild(menu);
+  menu.onclick = async e2 => {
+    e2.stopPropagation();
+    const op = e2.target.closest('[data-op]')?.dataset.op;
+    menu.remove();
+    if (op === 'citar') { citando = m; pintaCita(); $('texto')?.focus(); }
+    else if (op === 'copiar') {
+      try { await navigator.clipboard.writeText(m.body || ''); avisa('Copiado'); }
+      catch (e) { avisa('No se pudo copiar'); }
+    }
+    else if (op === 'reenviar') abreReenviar(m);
+    else if (op === 'borrar') {
+      // Borrado blando: WhatsApp no permite quitarlo del telefono del cliente, asi
+      // que se dice claro que solo desaparece de aqui.
+      if (!confirm('Se ocultará de este panel. El cliente lo seguirá viendo en su WhatsApp.\n\n¿Borrar?')) return;
+      const r = await llama({ action:'deleteMsg', message_id: m.id });
+      avisa(r.ok ? 'Mensaje ocultado' : 'No se pudo borrar', r.ok ? '' : r.error);
+    }
+  };
+});
+
+function abreReenviar(m){
+  const texto = String(m.body || '').trim();
+  if (!texto || /^\[[a-z]+\]$/i.test(texto))
+    return avisa('Por ahora solo se reenvía texto', 'El servidor todavía no reenvía archivos.');
+  abreModal('<div class="mtapa"><b>Reenviar a…</b><button class="cerrarm" data-cerrar>×</button></div>'
+    + '<div class="mcuerpo"><div class="campo"><input id="fwdBusca" placeholder="Buscar conversación…"></div>'
+    + '<div id="fwdLista"></div></div>');
+  $('modal').querySelectorAll('[data-cerrar]').forEach(b => { b.onclick = cierraModal; });
+  const pinta = () => {
+    const q = ($('fwdBusca').value || '').trim().toLowerCase();
+    const filas = CONVS.filter(c => c._id !== (sel?._id))
+      .filter(c => !q || (nombreDe(c) + ' ' + (c.wa_phone||'')).toLowerCase().includes(q))
+      .slice(0, 40);
+    $('fwdLista').innerHTML = filas.map(c =>
+      '<button class="tpl" data-dest="' + esc(c.id || c._id) + '"><b>' + esc(nombreDe(c)) + '</b>'
+      + '<span class="tplmeta">+' + esc(c.wa_phone || '') + '</span></button>').join('')
+      || '<p class="aviso">Sin resultados.</p>';
+  };
+  pinta();
+  $('fwdBusca').oninput = pinta;
+  $('fwdLista').onclick = async ev => {
+    const b = ev.target.closest('[data-dest]'); if (!b) return;
+    b.disabled = true;
+    const r = await llama({ action:'forward', source_message_id: m.id,
+      target_conversation_id: b.dataset.dest });
+    if (!r.ok) { b.disabled = false; return avisa('No se pudo reenviar', r.error); }
+    cierraModal();
+    avisa('Reenviado');
+  };
+}
+
+/* ---- Multimedia dentro del globo ----------------------------------------- */
+// El enlace del archivo puede venir en media_url o dentro de attachments, y
+// attachments unas veces es objeto, otras un array, y otras una cadena JSON. Se
+// normaliza aqui para que el resto no tenga que saberlo.
+// Meta no da URL publica del archivo: da un id que hay que canjear con el token del
+// negocio, y ese token no puede vivir en el navegador. Se pide a crmMedia con la
+// cabecera Authorization y se pinta desde un blob local. La cache evita volver a
+// bajarlo cada vez que se repintan los globos, que es en cada mensaje nuevo.
+const MEDIOS = new Map();
+const BASE_FN = String(CFG.firebaseFunctionsBase || '').replace(/\/$/, '');
+
+async function urlDeMedio(id){
+  if (!id) return '';
+  if (MEDIOS.has(id)) return MEDIOS.get(id);
+  const u = auth.currentUser; if (!u) return '';
+  try {
+    const token = await u.getIdToken();
+    const r = await fetch(BASE_FN + '/crmMedia?id=' + encodeURIComponent(id),
+      { headers: { Authorization: 'Bearer ' + token } });
+    if (!r.ok) { MEDIOS.set(id, ''); return ''; }
+    const url = URL.createObjectURL(await r.blob());
+    MEDIOS.set(id, url);
+    return url;
+  } catch (e) { MEDIOS.set(id, ''); return ''; }
+}
+
+// Se resuelven despues de pintar: el globo sale ya, y la imagen aparece cuando llega.
+// Bloquear el pintado hasta tenerlas dejaria el chat en blanco varios segundos.
+async function resuelveMedios(){
+  const pendientes = [...document.querySelectorAll('[data-medio]')];
+  for (const el of pendientes) {
+    const id = el.dataset.medio;
+    el.removeAttribute('data-medio');
+    const url = await urlDeMedio(id);
+    if (!url) { el.replaceWith(Object.assign(document.createElement('div'),
+      { className:'marchivo', innerHTML:'<b>Archivo</b><span>no se pudo recuperar de WhatsApp</span>' })); continue; }
+    el.src = url;
+    if (el.tagName === 'A') { el.href = url; el.removeAttribute('hidden'); }
+  }
+}
+
+function adjuntoDe(m){
+  let bruto = m && m.attachments;
+  if (typeof bruto === 'string') { try { bruto = JSON.parse(bruto); } catch (e) { bruto = null; } }
+  const a = Array.isArray(bruto) ? (bruto.find(x => x && typeof x === 'object') || {})
+    : (bruto && typeof bruto === 'object' ? bruto : {});
+  return {
+    nombre: a.fileName || a.file_name || a.filename || '',
+    mime: a.mimeType || a.mime_type || a.mimetype || '',
+    peso: Number(a.size || 0) || 0,
+    url: (m && m.media_url) || a.url || '',
+  };
+}
+function pesoLegible(n){
+  if (!n) return '';
+  const u = ['B','KB','MB','GB']; let i = 0;
+  while (n >= 1024 && i < u.length - 1) { n /= 1024; i++; }
+  return n.toFixed(i ? 1 : 0) + ' ' + u[i];
+}
+function tarjetaArchivo(a, etiqueta){
+  const nombre = a.nombre || etiqueta;
+  const detalle = [a.mime, pesoLegible(a.peso)].filter(Boolean).join(' · ');
+  // Sin url no se inventa un enlace roto: se dice que el archivo no la trae.
+  if (!a.url) return '<div class="marchivo"><b>' + esc(nombre) + '</b>'
+    + '<span>' + esc(detalle || 'sin enlace disponible') + '</span></div>';
+  return '<div class="marchivo"><b>' + esc(nombre) + '</b>'
+    + '<span>' + esc(detalle || 'archivo') + '</span>'
+    + '<a href="' + esc(a.url) + '" target="_blank" rel="noopener">Abrir</a></div>';
+}
+function cuerpoMensaje(m){
+  const t = String(m.msg_type || 'text').toLowerCase();
+  const a = adjuntoDe(m);
+  const pie = m.body && !/^\[[a-z]+\]$/i.test(m.body) ? '<div class="mpie">' + esc(m.body) + '</div>' : '';
+  const id = m.media_id || '';
+  // Si hay url directa se usa; si solo hay id, se marca el hueco y lo rellena
+  // resuelveMedios() con lo que devuelva crmMedia.
+  const medio = (etiqueta, html) => a.url ? html(esc(a.url))
+    : id ? html('', true) : tarjetaArchivo(a, etiqueta);
+
+  if (t === 'image') {
+    return medio('Imagen', (src, porId) =>
+      '<img class="mmedia" alt="imagen" loading="lazy"'
+      + (porId ? ' data-medio="' + esc(id) + '"' : ' src="' + src + '"') + '>')
+      + (m.image_description ? '<div class="mpie">' + esc(m.image_description) + '</div>' : '') + pie;
+  }
+  if (t === 'sticker') {
+    return medio('Sticker', (src, porId) =>
+      '<img class="msticker" alt="sticker" loading="lazy"'
+      + (porId ? ' data-medio="' + esc(id) + '"' : ' src="' + src + '"') + '>');
+  }
+  if (t === 'video') {
+    return medio('Video', (src, porId) =>
+      '<video class="mmedia" controls preload="none"'
+      + (porId ? ' data-medio="' + esc(id) + '"' : ' src="' + src + '"') + '></video>') + pie;
+  }
+  if (t === 'audio' || t === 'voice') {
+    const trans = m.audio_transcript || m.transcription || '';
+    return medio('Nota de voz', (src, porId) =>
+      '<audio class="maudio" controls preload="metadata"'
+      + (porId ? ' data-medio="' + esc(id) + '"' : ' src="' + src + '"') + '></audio>')
+      + (trans ? '<div class="mpie">“' + esc(trans) + '”</div>' : '');
+  }
+  if (t === 'document' || t === 'file') {
+    if (!a.url && id) return '<div class="marchivo"><b>' + esc(a.nombre || m.media_filename || 'Documento') + '</b>'
+      + '<span>' + esc(m.media_mime || a.mime || 'archivo') + '</span>'
+      + '<a data-medio="' + esc(id) + '" download="' + esc(a.nombre || m.media_filename || 'archivo') + '" hidden>Descargar</a></div>' + pie;
+    return tarjetaArchivo(a, 'Archivo') + pie;
+  }
+
+  return esc(m.body || '');
+}
+
+function pintaMensajes(){
+  const cont = $('mensajes'); if (!cont) return;
+  const pegado = cont.scrollHeight - cont.scrollTop - cont.clientHeight < 90;
+  let dia = '', antes = '';
+  // El borrado es blando en el servidor: el mensaje se conserva y se marca. Aqui se
+  // esconde, que es lo que espera quien lo borro.
+  cont.innerHTML = MSGS.filter(m => !m.deleted_at).map(m => {
+    const d = new Date(m.created_at);
+    const etiquetaDia = d.toLocaleDateString('es-DO', { day:'numeric', month:'short' });
+    let cabeza = '';
+    if (etiquetaDia !== dia) { dia = etiquetaDia; cabeza = '<div class="dia">' + esc(etiquetaDia) + '</div>'; antes = ''; }
+    const sale = m.direction === 'out';
+    const emisor = sale ? (m.sender || 'agent') : 'in';
+    const primero = emisor !== antes; antes = emisor;
+    const ticks = sale ? (m.delivery_status === 'read' ? ' ✓✓' : m.delivery_status === 'delivered' ? ' ✓✓' : ' ✓') : '';
+    const autor = (sale && m.sender === 'bot' && primero) ? '<div class="autor">Bot</div>' : '';
+    const cita = m.reply_snippet
+      ? '<div class="cita"><b>' + esc(m.reply_sender === 'customer' ? nombreDe(sel) : 'Tú') + '</b>'
+        + esc(String(m.reply_snippet).slice(0,140)) + '</div>' : '';
+    return cabeza + '<div class="globo ' + (sale ? 'sale' : 'entra') + ' ' + (primero ? 'primero' : 'seguido') + '"'
+      + ' data-msg="' + esc(m.id || m.wamid || '') + '">'
+      + '<button class="gaccion" aria-label="Opciones del mensaje">⌄</button>'
+      + autor + cita + cuerpoMensaje(m)
+      + '<span class="pie-globo">' + esc(d.toLocaleTimeString('es-DO',{hour:'2-digit',minute:'2-digit'})) + ticks + '</span>'
+      + '</div>';
+  }).join('') || '<div style="margin:auto;color:var(--mut);font-size:13px">Sin mensajes todavía.</div>';
+  if (pegado) cont.scrollTop = cont.scrollHeight;
+  resuelveMedios();
+}
+
+/* ---- Ficha del lead ------------------------------------------------------ */
+// Copiados del panel anterior tal cual. Los invente de memoria en la primera version
+// y salio mal: faltaban 'abierto', 'en_revision' y 'desinteresado' de estado, y
+// 'reservado' de reserva, y sobraba un 'esperando_nosotros' que no existe. Un valor
+// que no esta en la lista no se puede volver a elegir desde el panel, asi que las
+// fichas que ya lo tenian quedan atrapadas en un estado que nadie puede cambiar.
+const ETAPAS = ['nuevo','interesado','cotizando','pendiente_reserva','reservado',
+  'cliente','desinteresado','perdido'];
+const ESTADOS = ['abierto','en_revision','esperando_cliente','requiere_humano',
+  'desinteresado','cerrado'];
+const RESERVA = ['sin_fecha','fecha_tentativa','reservado','confirmado','cancelado'];
+const CATEGORIAS = ['XV','Infantil','Graduación','Cumpleaños','Embarazadas','Boda','Sesiones/Retratos','Maquillaje'];
+const PRIORIDADES = ['urgente','alta','media','baja'];
+const MAQUILLAJE = [
+  ['','Pendiente'],['incluido','Incluido'],['extra','Extra desde RD$2,500'],['no_solicitado','No solicitado'],
+];
+const opciones = (lista, actual) => lista.map(v =>
+  '<option value="' + v + '"' + (actual === v ? ' selected' : '') + '>' + v.replace(/_/g,' ') + '</option>').join('');
+const opcionesPares = (lista, actual, vacia = false) =>
+  (vacia ? '<option value="">—</option>' : '') + lista.map(([v,l]) =>
+    '<option value="' + esc(v) + '"' + (actual === v ? ' selected' : '') + '>' + esc(l) + '</option>').join('');
+function fechaLocal(v){
+  if (!v) return '';
+  const d = new Date(v); if (Number.isNaN(d.getTime())) return '';
+  const dos = n => String(n).padStart(2,'0');
+  return d.getFullYear() + '-' + dos(d.getMonth()+1) + '-' + dos(d.getDate())
+    + 'T' + dos(d.getHours()) + ':' + dos(d.getMinutes());
+}
+function valorCampoFicha(el){
+  const campo = el.dataset.c;
+  if (el.type === 'checkbox') return el.checked;
+  if (!el.value) return null;
+  if (campo === 'selected_combo_price' || campo === 'makeup_price') {
+    const n = Number(el.value); return Number.isFinite(n) ? n : null;
+  }
+  if (campo === 'scheduled_at' || campo === 'follow_up_at') {
+    const d = new Date(el.value); return Number.isNaN(d.getTime()) ? null : d.toISOString();
+  }
+  return el.value;
+}
+
+function pintaFicha(c){
+  const categorias = '<option value="">—</option>' + CATEGORIAS.map(v =>
+    '<option value="' + esc(v) + '"' + (c.interested_category === v ? ' selected' : '') + '>' + esc(v) + '</option>').join('');
+  const prioridades = PRIORIDADES.map(v =>
+    '<option value="' + v + '"' + ((c.priority || 'media') === v ? ' selected' : '') + '>' + v + '</option>').join('');
+  $('ficha').innerHTML =
+    '<div class="cabeza"><b>Ficha del lead</b>'
+    + '<button id="cerrarFicha" style="color:var(--mut);font-size:17px">×</button></div>'
+    + '<div class="cuerpo">'
+    + '<div class="seccion">Acciones</div>'
+    + '<p class="aviso">Las herramientas operativas viven en Planificación. Escribe ahí lo que necesitas, '
+    +   'revisa lo que propone y apruébalo antes de que cambie una ficha o prepare un mensaje.</p>'
+    + '<button class="btn-solido" style="width:100%;margin-bottom:16px" id="irAlPlan">Abrir Planificación</button>'
+
+    + '<details class="grupo"><summary>Datos del lead <span class="nota">+' + esc(c.wa_phone||'') + '</span></summary>'
+    + '<div class="dentro">'
+    +   '<div class="campo"><label>Nombre</label><input data-c="customer_name" value="' + esc(c.customer_name || c.contact_name || '') + '"></div>'
+    +   '<div class="par">'
+    +     '<div class="campo"><label>Etapa</label><select data-c="lifecycle_stage">' + opciones(ETAPAS, c.lifecycle_stage || 'nuevo') + '</select></div>'
+    +     '<div class="campo"><label>Categoría</label><select data-c="interested_category">' + categorias + '</select></div>'
+    +   '</div>'
+    +   '<div class="par">'
+    +     '<div class="campo"><label>Estado</label><select data-c="lead_status">' + opciones(ESTADOS, c.lead_status || 'abierto') + '</select></div>'
+    +     '<div class="campo"><label>Reserva</label><select data-c="reservation_status">' + opciones(RESERVA, c.reservation_status || 'sin_fecha') + '</select></div>'
+    +   '</div>'
+    +   '<div class="dato"><div class="k">Canal</div><div class="v">' + esc(c.channel || 'whatsapp') + '</div></div>'
+    +   '<div class="dato"><div class="k">Último intent</div><div class="v">' + esc(c.last_intent || 'pendiente') + '</div></div>'
+    + '</div></details>'
+
+    + '<details class="grupo" open><summary>Resumen y próximo paso</summary><div class="dentro">'
+    +   '<div class="campo"><label>Resumen</label><textarea data-c="conversation_summary" rows="3">' + esc(c.conversation_summary || '') + '</textarea></div>'
+    +   '<div class="campo"><label>Próximo paso</label><textarea data-c="next_step_suggested" rows="2">' + esc(c.next_step_suggested || '') + '</textarea></div>'
+    + '</div></details>'
+
+    + '<details class="grupo"><summary>Datos del trato</summary><div class="dentro">'
+    +   '<div class="campo"><label>Prioridad</label><select data-c="priority">' + prioridades + '</select></div>'
+    +   '<div class="campo"><label>Combo seleccionado</label><input data-c="selected_combo_name" value="' + esc(c.selected_combo_name || '') + '"></div>'
+    +   '<div class="par">'
+    +     '<div class="campo"><label>Precio RD$</label><input data-c="selected_combo_price" type="number" min="0" step="100" value="' + esc(c.selected_combo_price ?? '') + '"></div>'
+    +     '<div class="campo"><label>Presupuesto</label><input data-c="budget_range" value="' + esc(c.budget_range || '') + '"></div>'
+    +   '</div>'
+    +   '<div class="par">'
+    +     '<div class="campo"><label>Fecha tentativa</label><input data-c="tentative_date" type="date" value="' + esc(c.tentative_date || '') + '"></div>'
+    +     '<div class="campo"><label>Agendada</label><input data-c="scheduled_at" type="datetime-local" value="' + esc(fechaLocal(c.scheduled_at)) + '"></div>'
+    +   '</div>'
+    +   '<div class="campo"><label>Próximo seguimiento</label><input data-c="follow_up_at" type="datetime-local" value="' + esc(fechaLocal(c.follow_up_at)) + '"></div>'
+    +   '<div class="campo"><label>Asignado a (correo)</label><input data-c="assigned_to" type="email" value="' + esc(c.assigned_to || '') + '"></div>'
+    + '</div></details>'
+
+    + '<details class="grupo"><summary>Selección visual</summary><div class="dentro">'
+    +   '<div class="par">'
+    +     '<div class="campo"><label>Vestido</label><input data-c="selected_dress" value="' + esc(c.selected_dress || '') + '"></div>'
+    +     '<div class="campo"><label>Color vestido</label><input data-c="dress_color" value="' + esc(c.dress_color || '') + '"></div>'
+    +   '</div>'
+    +   '<div class="par">'
+    +     '<div class="campo"><label>Globos</label><input data-c="balloon_color" value="' + esc(c.balloon_color || '') + '"></div>'
+    +     '<div class="campo"><label>Número</label><input data-c="number_color" value="' + esc(c.number_color || '') + '"></div>'
+    +   '</div>'
+    +   '<div class="campo"><label>Fondo / color</label><input data-c="background_color" value="' + esc(c.background_color || '') + '"></div>'
+    +   '<div class="campo"><label>Fondo / temática infantil</label><input data-c="fondo_tematica" value="' + esc(c.fondo_tematica || '') + '"></div>'
+    +   '<div class="par">'
+    +     '<div class="campo"><label>Maquillaje</label><select data-c="makeup_selection">' + opcionesPares(MAQUILLAJE, c.makeup_selection || '') + '</select></div>'
+    +     '<div class="campo"><label>Precio maquillaje</label><input data-c="makeup_price" type="number" min="0" step="100" value="' + esc(c.makeup_price ?? '') + '"></div>'
+    +   '</div>'
+    + '</div></details>'
+
+    + '<details class="grupo"><summary>Automatización '
+    +   '<span class="nota">' + Number(c.followup_attempts || 0) + ' de 2 seguimientos</span></summary><div class="dentro">'
+    +   '<label class="campo"><input data-c="human_handoff_required" type="checkbox" ' + (c.human_handoff_required ? 'checked' : '') + '> Requiere atención humana</label>'
+    +   '<label class="campo"><input data-c="auto_template_paused" type="checkbox" ' + (c.auto_template_paused ? 'checked' : '') + '> Pausar bot / plantillas automáticas</label>'
+    +   '<div class="campo"><label>Motivo de atención humana</label><input data-c="human_handoff_reason" value="' + esc(c.human_handoff_reason || '') + '"></div>'
+    +   '<div class="seccion" style="margin:12px 0 6px">Permisos individuales</div>'
+    +   '<label class="campo"><input data-c="reminders_opt_in" type="checkbox" ' + (c.reminders_opt_in === false ? '' : 'checked') + (c.proactive_blocked_at ? ' disabled' : '') + '> Permitir recordatorios de sesión</label>'
+    +   '<label class="campo"><input data-c="followups_opt_in" type="checkbox" ' + (c.followups_opt_in === false ? '' : 'checked') + (c.proactive_blocked_at ? ' disabled' : '') + '> Permitir seguimientos</label>'
+    +   '<label class="campo"><input data-c="marketing_opt_in" type="checkbox" ' + (c.marketing_opt_in === true ? 'checked' : '') + (c.proactive_blocked_at ? ' disabled' : '') + '> Permitir marketing y promociones</label>'
+    +   (c.proactive_blocked_at ? '<p class="aviso" style="color:var(--bad)">Exclusión permanente activa: estos permisos no pueden reactivarse desde la ficha.</p>' : '')
+    +   '<p class="aviso" style="margin:0">Dos seguimientos sin respuesta y el contacto pasa a <b>desinteresado</b>: '
+    +     'se apagan marketing, seguimientos y auto-plantillas. Puede seguir escribiendo y se le puede contestar a mano.</p>'
+    + '</div></details>'
+    + '</div>';
+
+  // Cerrar la ficha tiene que poder deshacerse. En la primera version no habia forma
+  // de volver a abrirla sin cambiar de conversacion y regresar.
+  $('cerrarFicha').onclick = () => { $('ficha').classList.remove('on'); $('ficha').style.display = 'none'; };
+  const ver = $('verFicha');
+  if (ver) ver.onclick = () => {
+    const f = $('ficha');
+    const oculta = f.style.display === 'none' || !f.classList.contains('on');
+    f.style.display = oculta ? 'flex' : 'none';
+    f.classList.toggle('on', oculta);
+  };
+  $('irAlPlan').onclick = () => ve('planning');
+  // Guardado al salir del campo: un cambio por peticion, con el motivo visible si falla.
+  $('ficha').querySelectorAll('[data-c]').forEach(el => {
+    el.addEventListener('change', async () => {
+      const cambios = {}; cambios[el.dataset.c] = valorCampoFicha(el);
+      const r = await llama({ action:'updateLead', conversation_id: sel.id || sel._id, fields:cambios });
+      if (!r.ok) return avisa('No se guardó', r.error);
+      Object.assign(sel, cambios);
+      avisa('Guardado');
+      pintaChats();
+    });
+  });
+}
+
+/* ---- Vista Plantillas ---------------------------------------------------- */
+function montaPlantillasVista(){
+  if (!montadas.has('plantillas')) {
+    montadas.add('plantillas');
+    hueco('plantillas',
+      '<div class="hoja"><h1>Plantillas</h1>'
+      + '<p class="bajada">Lo único que WhatsApp entrega cuando han pasado más de 24 horas desde el '
+      +   'último mensaje del cliente. Se aprueban en Meta; aquí se sincronizan y se activan.</p>'
+      + '<div class="acciones" style="display:flex;gap:9px;margin-bottom:18px">'
+      +   '<button class="btn-solido" id="btnSyncTpl">Sincronizar con Meta</button>'
+      +   '<button class="btn-linea" id="btnRecargaTpl">Recargar</button></div>'
+      + '<div id="tablaTpl"></div></div>');
+    $('btnSyncTpl').onclick = async () => {
+      $('btnSyncTpl').disabled = true;
+      const r = await llama({ action:'templates', operation:'syncMeta',
+        business_number: CFG.businessNumber || '' });
+      $('btnSyncTpl').disabled = false;
+      if (!r.ok) return avisa('No se pudo sincronizar', r.error);
+      avisa('Sincronizado con Meta', (r.synced ?? '') + ' plantillas');
+      pintaTablaTpl(true);
+    };
+    $('btnRecargaTpl').onclick = () => pintaTablaTpl(true);
+  }
+  pintaTablaTpl(!PLANTILLAS);
+}
+
+async function pintaTablaTpl(forzar){
+  const cont = $('tablaTpl'); if (!cont) return;
+  cont.innerHTML = '<p class="bajada"><span class="cargando"></span> Cargando…</p>';
+  const lista = await cargaPlantillas(forzar);
+  if (!lista) { cont.innerHTML = '<p class="bajada">No se pudieron cargar.</p>'; return; }
+  if (!lista.length) {
+    cont.innerHTML = '<p class="bajada">Todavía no hay plantillas. Pulsa «Sincronizar con Meta».</p>';
+    return;
+  }
+  cont.innerHTML = '<div class="tabla"><div class="fila cabecera">'
+    + '<span>Plantilla</span><span>Estado en Meta</span><span>Variables</span><span>Activa</span></div>'
+    + lista.map((t,i) => {
+      const estado = String(t.meta_status || '').toUpperCase() || 'DESCONOCIDO';
+      const cls = estado === 'APPROVED' ? 'ok' : estado === 'REJECTED' ? 'mal' : 'medio';
+      return '<div class="fila">'
+        + '<span><b>' + esc(t.display_name || t.template_name) + '</b>'
+        +   '<small>' + esc(t.template_name) + ' · ' + esc(t.language_code || 'es') + '</small></span>'
+        + '<span><i class="chip ' + cls + '">' + esc(estado) + '</i></span>'
+        + '<span>' + ((t.parameter_keys || []).join(', ') || '—') + '</span>'
+        + '<span><button class="interruptor' + (t.active !== false ? ' on' : '') + '" data-tpl="' + i + '">'
+        +   (t.active !== false ? 'sí' : 'no') + '</button></span>'
+        + '</div>';
+    }).join('') + '</div>';
+  cont.onclick = async ev => {
+    const b = ev.target.closest('[data-tpl]'); if (!b) return;
+    const t = lista[Number(b.dataset.tpl)], siguiente = !(t.active !== false);
+    b.disabled = true;
+    const r = await llama({ action:'templates', operation:'update', id:t.id, active:siguiente });
+    b.disabled = false;
+    if (!r.ok) return avisa('No se pudo cambiar', r.error);
+    t.active = siguiente;
+    b.classList.toggle('on', siguiente);
+    b.textContent = siguiente ? 'sí' : 'no';
+  };
+}
+
+/* ---- Vistas de tabla ----------------------------------------------------- */
+// Cinco vistas leen una coleccion y la enseñan. En vez de cinco copias de la misma
+// pantalla, se declara que columnas tiene cada una y se pinta una sola funcion. Añadir
+// otra es una entrada mas aqui, no otra vista que mantener aparte.
+const TABLERO = {
+  // Los nombres de campo salen del panel anterior, no de mi cabeza: la primera version
+  // leia r.phone donde la columna es phone_primary, y r.rating donde son
+  // rating_service y rating_satisfaction. Columnas asi salen vacias sin dar ningun
+  // error, que es la peor forma de equivocarse: la tabla se ve bien y miente.
+  poscustomers: {
+    titulo: 'Clientes de caja',
+    bajada: 'Los que ya compraron en el punto de venta. Se sincronizan desde la caja.',
+    tabla: 'crm_pos_customers',
+    orden: [{ field:'last_sale_at', ascending:false }],
+    cols: [
+      { t:'Cliente', p:(r)=> r.customer_name || '—' },
+      { t:'Teléfono', p:(r)=> r.phone || '—' },
+      { t:'Compras', p:(r)=> r.sale_count ?? 0 },
+      { t:'Gastado', p:(r)=> pesos(r.total_spent_centavos) },
+      { t:'Balance', p:(r)=> pesos(r.balance_centavos) },
+      { t:'Última', p:(r)=> String(r.last_sale_at || '').slice(0,10) || '—' },
+    ],
+  },
+  satisfaccion: {
+    titulo: 'Satisfacción',
+    bajada: 'Lo que contestaron los clientes en la encuesta. Se pide desde el menú «⋯» de cada chat.',
+    tabla: 'reviews',
+    orden: [{ field:'created_at', ascending:false }],
+    // Sin este filtro se cuelan las encuestas enviadas y sin contestar, y el listado
+    // parece lleno de gente que en realidad no dijo nada.
+    soloConRespuesta: true,
+    cols: [
+      { t:'Cliente', p:(r)=> r.customer_name || r.wa_phone || '—' },
+      { t:'Servicio', p:(r)=> estrellas(r.rating_service) },
+      { t:'Satisfacción', p:(r)=> estrellas(r.rating_satisfaction) },
+      { t:'Comentario', p:(r)=> r.comment || '—' },
+      { t:'Fecha', p:(r)=> String(r.created_at || '').slice(0,10) },
+    ],
+  },
+  prospecting: {
+    titulo: 'Prospección',
+    bajada: 'Negocios localizados para contactar. Ojo: no te han escrito, así que WhatsApp '
+      + 'solo permite llegarles con plantilla aprobada.',
+    tabla: 'crm_prospects',
+    orden: [{ field:'created_at', ascending:false }],
+    cols: [
+      { t:'Negocio', p:(r)=> r.business_name || '—' },
+      { t:'Teléfono', p:(r)=> r.phone_primary || '—' },
+      { t:'Categoría', p:(r)=> r.category || '—' },
+      { t:'Ciudad', p:(r)=> r.city || '—' },
+      { t:'Estado', p:(r)=> r.status || 'nuevo' },
+      { t:'Intentos', p:(r)=> r.contact_attempts ?? 0 },
+    ],
+  },
+};
+
+function pesos(centavos){
+  const n = Number(centavos || 0);
+  if (!n) return 'RD$0';
+  return 'RD$' + (n / 100).toLocaleString('es-DO', { maximumFractionDigits: 0 });
+}
+function estrellas(n){
+  const v = Number(n || 0);
+  return v ? '★'.repeat(Math.min(5, v)) + '☆'.repeat(Math.max(0, 5 - v)) : '—';
+}
+
+async function montaTablero(id){
+  const d = TABLERO[id];
+  if (!montadas.has(id)) {
+    montadas.add(id);
+    hueco(id, '<div class="hoja"><h1>' + esc(d.titulo) + '</h1>'
+      + '<p class="bajada">' + esc(d.bajada) + '</p>'
+      + '<div class="acciones" style="margin-bottom:16px"><button class="btn-linea" data-recarga>Recargar</button></div>'
+      + '<div id="tb-' + id + '"></div></div>');
+    document.querySelector('#vista-' + id + ' [data-recarga]').onclick = () => pintaTablero(id);
+  }
+  pintaTablero(id);
+}
+
+async function pintaTablero(id){
+  const d = TABLERO[id], cont = $('tb-' + id);
+  if (!cont) return;
+  cont.innerHTML = '<p class="bajada"><span class="cargando"></span> Cargando…</p>';
+  const r = await llama({ action:'data', table:d.tabla, operation:'select',
+    filters: d.filtros || [], order: d.orden || [], limit: 300 });
+  if (!r.ok) {
+    cont.innerHTML = '<p class="bajada">No se pudo cargar: ' + esc(r.error || 'error') + '</p>';
+    return;
+  }
+  let filas = r.data || r.rows || [];
+  if (d.soloConRespuesta) filas = filas.filter(f => f.rating_service || f.rating_satisfaction || f.comment);
+  if (!filas.length) {
+    cont.innerHTML = '<p class="bajada">Todavía no hay nada aquí.</p>';
+    return;
+  }
+  const anchos = d.cols.map(() => 'minmax(0,1fr)').join(' ');
+  cont.innerHTML = '<div class="tabla" style="max-width:1000px">'
+    + '<div class="fila cabecera" style="grid-template-columns:' + anchos + '">'
+    +   d.cols.map(c => '<span>' + esc(c.t) + '</span>').join('') + '</div>'
+    + filas.map(f => '<div class="fila" style="grid-template-columns:' + anchos + '">'
+        + d.cols.map(c => '<span>' + esc(String(c.p(f))) + '</span>').join('') + '</div>').join('')
+    + '</div><p class="bajada" style="margin-top:12px">' + filas.length + ' registro(s).</p>';
+}
+
+/* ---- Recordatorios ------------------------------------------------------- */
+// No hay tabla de recordatorios: son conversaciones con follow_up_at puesto. Buscarlos
+// en crm_planning_tasks, como hacia la primera version, devolvia siempre vacio.
+function montaRecordatorios(){
+  if (!montadas.has('reminders')) {
+    montadas.add('reminders');
+    hueco('reminders', '<div class="hoja"><h1>Recordatorios</h1>'
+      + '<p class="bajada">Seguimientos con fecha puesta. Los vencidos van primero: son los que '
+      +   'ya deberían haberse hecho.</p><div id="recLista"></div></div>');
+  }
+  pintaRecordatorios();
+}
+function pintaRecordatorios(){
+  const cont = $('recLista'); if (!cont) return;
+  const ahora = Date.now();
+  const filas = CONVS
+    .filter(c => c.follow_up_at && !['cerrado','perdido','desinteresado'].includes(c.lifecycle_stage))
+    .map(c => ({ c, cuando: new Date(c.follow_up_at).getTime(), iso: String(c.follow_up_at) }))
+    .sort((a,b) => a.cuando - b.cuando);
+  if (!filas.length) {
+    cont.innerHTML = '<p class="bajada">No hay ningún seguimiento con fecha. '
+      + 'Se pone desde la ficha del lead o desde el Planificador.</p>';
+    return;
+  }
+  const vencidos = filas.filter(f => f.cuando <= ahora).length;
+  cont.innerHTML = (vencidos
+      ? '<p class="bajada"><b>' + vencidos + ' vencido(s)</b> — ya tocaba.</p>' : '')
+    + '<div class="tabla" style="max-width:900px">'
+    + '<div class="fila cabecera"><span>Cuándo</span><span>Contacto</span><span>Etapa</span><span>Próximo paso</span></div>'
+    + filas.map(({c, cuando, iso}) => {
+        const vencido = cuando <= ahora;
+        return '<div class="fila">'
+        + '<span><b>' + esc(iso.slice(0,16).replace('T',' ')) + '</b>'
+        +   (vencido ? '<small style="color:var(--bad)">vencido</small>' : '<small>pendiente</small>') + '</span>'
+        + '<span>' + esc(nombreDe(c)) + '</span>'
+        + '<span>' + esc((c.lifecycle_stage || 'nuevo').replace(/_/g,' ')) + '</span>'
+        + '<span>' + esc(String(c.next_step_suggested || '—').slice(0,70)) + '</span>'
+        + '</div>';
+      }).join('') + '</div>';
+}
+
+/* ---- Pack de Estados ----------------------------------------------------- */
+// WhatsApp no deja publicar Estados por API, y los servicios que dicen automatizarlo
+// usan metodos no oficiales que BANEAN el numero. Asi que esto no publica: prepara las
+// fotos a 1080x1920 con la marca para subirlas a mano. Todo pasa en el navegador; las
+// fotos no salen de esta maquina.
+function montaEstados(){
+  if (montadas.has('estados')) return;
+  montadas.add('estados');
+  hueco('estados', '<div class="hoja"><h1>Pack de Estados</h1>'
+    + '<p class="bajada"><b>WhatsApp no permite publicar Estados por API.</b> Lo que prometa '
+    +   'automatizarlo usa métodos no oficiales que banean el número. Aquí se preparan las fotos '
+    +   'a formato Estado (1080×1920) con tu marca, y las subes tú a mano.</p>'
+    + '<div class="acciones" style="margin-bottom:16px">'
+    +   '<button class="btn-solido" id="estElegir">Elegir fotos</button>'
+    +   '<input type="file" id="estFile" accept="image/*" multiple hidden></div>'
+    + '<div class="estados" id="estLista"></div></div>');
+  $('estElegir').onclick = () => $('estFile').click();
+  $('estFile').onchange = async e => {
+    const files = [...e.target.files]; e.target.value = '';
+    const cont = $('estLista');
+    for (const f of files) {
+      const url = await aFormatoEstado(f);
+      if (!url) continue;
+      const d = document.createElement('div');
+      d.className = 'estado';
+      d.innerHTML = '<img src="' + url + '" alt="">'
+        + '<a class="btn-linea" download="estado-' + Date.now() + '.jpg" href="' + url + '">Descargar</a>';
+      cont.appendChild(d);
+    }
+    if (files.length) avisa(files.length + ' foto(s) listas', 'Descárgalas y súbelas desde el teléfono.');
+  };
+}
+async function aFormatoEstado(file){
+  try {
+    const bitmap = await createImageBitmap(file);
+    const L = document.createElement('canvas');
+    L.width = 1080; L.height = 1920;
+    const g = L.getContext('2d');
+    // Fondo con la propia foto desenfocada: rellena las bandas sin dejar barras negras
+    // ni deformar a nadie recortando la cara.
+    const cubre = Math.max(1080 / bitmap.width, 1920 / bitmap.height);
+    g.filter = 'blur(28px) brightness(.55)';
+    g.drawImage(bitmap, (1080 - bitmap.width*cubre)/2, (1920 - bitmap.height*cubre)/2,
+      bitmap.width*cubre, bitmap.height*cubre);
+    g.filter = 'none';
+    const cabe = Math.min(1080 / bitmap.width, 1780 / bitmap.height);
+    g.drawImage(bitmap, (1080 - bitmap.width*cabe)/2, (1920 - bitmap.height*cabe)/2,
+      bitmap.width*cabe, bitmap.height*cabe);
+    g.fillStyle = 'rgba(255,255,255,.92)';
+    g.font = '600 34px -apple-system,Segoe UI,Roboto,sans-serif';
+    g.textAlign = 'center';
+    g.fillText(CFG.brandName || "D'Carela Compufoto", 540, 1868);
+    return await new Promise(res => L.toBlob(b => res(URL.createObjectURL(b)), 'image/jpeg', 0.92));
+  } catch (e) { avisa('No se pudo procesar una foto', e?.message || String(e)); return null; }
+}
+
+/* ---- Estudio de Anuncios ------------------------------------------------- */
+// El estudio es otra aplicacion publicada aparte. No se copia aqui: se enlaza, para
+// que no haya dos versiones del mismo panel divergiendo.
+function montaAnuncios(){
+  if (montadas.has('ads')) return;
+  montadas.add('ads');
+  const url = CFG.adsPanelUrl || 'https://erickcarela58-star.github.io/dcarela-anuncios-panel/';
+  hueco('ads', '<div class="hoja"><h1>Estudio de Anuncios</h1>'
+    + '<p class="bajada">Las campañas de Meta se gestionan en su propio panel, que se publica aparte. '
+    +   'Se abre en otra pestaña para no tener dos copias del mismo estudio.</p>'
+    + '<a class="btn-solido" style="display:inline-block;text-decoration:none" '
+    +   'href="' + esc(url) + '" target="_blank" rel="noopener">Abrir el Estudio de Anuncios</a></div>');
+}
+
+/* ---- Agenda -------------------------------------------------------------- */
+function montaAgenda(){
+  if (!montadas.has('agenda')) {
+    montadas.add('agenda');
+    hueco('agenda', '<div class="hoja"><h1>Agenda</h1>'
+      + '<p class="bajada">Sesiones con fecha confirmada o tentativa, ordenadas por cuándo toca.</p>'
+      + '<div id="agLista"></div></div>');
+  }
+  pintaAgenda();
+}
+function pintaAgenda(){
+  const cont = $('agLista'); if (!cont) return;
+  // Sale de las conversaciones que ya estan en memoria: la fecha de la sesion vive en
+  // la ficha del lead, no en una tabla aparte.
+  const filas = CONVS
+    .filter(c => c.scheduled_at || c.tentative_date)
+    .map(c => ({ c, cuando: String(c.scheduled_at || c.tentative_date) }))
+    .sort((a,b) => a.cuando.localeCompare(b.cuando));
+  if (!filas.length) {
+    cont.innerHTML = '<p class="bajada">No hay ninguna sesión con fecha todavía.</p>';
+    return;
+  }
+  const hoy = new Date().toISOString().slice(0,10);
+  cont.innerHTML = '<div class="tabla" style="max-width:860px">'
+    + '<div class="fila cabecera"><span>Cuándo</span><span>Cliente</span><span>Categoría</span><span>Reserva</span></div>'
+    + filas.map(({c, cuando}) => {
+        const pasada = cuando.slice(0,10) < hoy;
+        return '<div class="fila"' + (pasada ? ' style="opacity:.55"' : '') + '>'
+        + '<span><b>' + esc(cuando.slice(0,16).replace('T',' ')) + '</b>'
+        +   (c.scheduled_at ? '<small>confirmada</small>' : '<small>tentativa</small>') + '</span>'
+        + '<span>' + esc(nombreDe(c)) + '</span>'
+        + '<span>' + esc(c.interested_category || '—') + '</span>'
+        + '<span><i class="chip ' + (c.reservation_status === 'confirmado' ? 'ok' : 'medio') + '">'
+        +   esc((c.reservation_status || 'sin fecha').replace(/_/g,' ')) + '</i></span>'
+        + '</div>';
+      }).join('') + '</div>';
+}
+
+/* ---- Conexión con WhatsApp ----------------------------------------------- */
+// Esta pantalla existe para responder una sola pregunta: ¿le estan llegando los
+// mensajes al cliente? Cuando Meta deja de entregar, todo lo demas del CRM parece
+// funcionar -- se escribe, se guarda, aparece en el hilo -- y nadie se entera hasta
+// que un cliente se queja. Por eso el estado va aqui en grande y con el motivo.
+function montaConexion(){
+  if (!montadas.has('bridge')) {
+    montadas.add('bridge');
+    hueco('bridge', '<div class="hoja"><h1>Conexión WhatsApp</h1>'
+      + '<p class="bajada">Si esto no está en verde, lo que escribas no le llega a nadie '
+      +   'aunque el panel diga que se envió.</p>'
+      + '<div class="acciones" style="margin-bottom:16px">'
+      +   '<button class="btn-solido" id="cxRevisar">Revisar ahora</button></div>'
+      + '<div id="cxEstado"></div></div>');
+    $('cxRevisar').onclick = pintaConexion;
+  }
+  pintaConexion();
+}
+async function pintaConexion(){
+  const c = $('cxEstado'); if (!c) return;
+  c.innerHTML = '<p class="bajada"><span class="cargando"></span> Preguntando a Meta…</p>';
+  const r = await llama({ action:'transportStatus' });
+  if (!r.ok) { c.innerHTML = '<p class="bajada">No se pudo comprobar: ' + esc(r.error || '') + '</p>'; return; }
+  const t = r.transport || r.status || r;
+  const listo = t.ready === true || t.state === 'ready';
+  const fila = (k, v) => '<div class="cambio"><div class="k">' + esc(k) + '</div>' + esc(String(v ?? '—')) + '</div>';
+  c.innerHTML = '<div class="propuesta" style="max-width:620px">'
+    + '<div class="tapa"><b>' + (listo ? '✅ Entregando mensajes' : '⚠️ No está entregando') + '</b></div>'
+    + '<div class="cuerpo">'
+    +   fila('Estado', t.state || (listo ? 'ready' : 'desconocido'))
+    +   fila('Número del negocio', CFG.businessDisplayNumber || CFG.businessNumber || '—')
+    +   (t.last_error_code ? fila('Último error de Meta', t.last_error_code) : '')
+    +   (t.last_error_at ? fila('Cuándo', String(t.last_error_at).slice(0,19).replace('T',' ')) : '')
+    +   (t.last_webhook_attempt_at ? fila('Último aviso recibido', String(t.last_webhook_attempt_at).slice(0,19).replace('T',' ')) : '')
+    + '</div>'
+    + (listo ? '' : '<div class="patas"><span class="bajada" style="margin:0">'
+        + 'Hay que reconectar Meta con el transporte. Eso se hace con el script '
+        + 'scripts/conectar_meta_firebase.ps1, y exige el App Secret: no se hace desde aquí.'
+        + '</span></div>')
+    + '</div>';
+}
+
+/* ---- Configuración ------------------------------------------------------- */
+function montaConfig(){
+  if (!montadas.has('config')) {
+    montadas.add('config');
+    hueco('config', '<div class="hoja"><h1>Configuración</h1>'
+      + '<p class="bajada">Quién entra al panel y con qué permisos.</p>'
+      + '<div class="seccion" style="margin-bottom:9px">Tu sesión</div>'
+      + '<div id="cfgYo" style="margin-bottom:26px"></div>'
+      + '<div class="seccion" style="margin-bottom:9px">Equipo</div>'
+      + '<div id="cfgEquipo"></div>'
+      + '<div class="seccion" style="margin:26px 0 9px">Datos del negocio</div>'
+      + '<div id="cfgNegocio"></div></div>');
+  }
+  pintaConfig();
+}
+async function pintaConfig(){
+  const dato = (k,v) => '<div class="dato"><div class="k">' + esc(k) + '</div><div class="v">' + esc(String(v ?? '—')) + '</div></div>';
+  $('cfgNegocio').innerHTML = '<div style="max-width:520px">'
+    + dato('Marca', CFG.brandName) + dato('Número de WhatsApp', CFG.businessDisplayNumber || CFG.businessNumber)
+    + dato('Catálogo público', CFG.publicCatalogUrl) + dato('Vista al entrar', CFG.defaultView || 'conversations')
+    + '</div>';
+
+  const u = auth.currentUser;
+  $('cfgYo').innerHTML = '<div style="max-width:520px">' + dato('Correo', u?.email || '—') + '</div>';
+  const quien = await llama({ action:'whoami' });
+  if (quien.ok) {
+    $('cfgYo').innerHTML = '<div style="max-width:520px">'
+      + dato('Correo', u?.email || '—')
+      + dato('Rol', quien.role || quien.member?.role || '—')
+      + dato('Acceso', quien.member || quien.role ? 'autorizado' : 'sin membresía') + '</div>';
+  }
+
+  const eq = $('cfgEquipo');
+  eq.innerHTML = '<p class="bajada"><span class="cargando"></span> Cargando…</p>';
+  const r = await llama({ action:'panelUsers', operation:'list' });
+  if (!r.ok) {
+    // Un agente no puede listar el equipo: eso no es un fallo, es el permiso haciendo
+    // su trabajo. Se dice asi en vez de enseñar un error rojo.
+    eq.innerHTML = '<p class="bajada">' + (String(r.error||'').includes('permiso')
+      ? 'Tu rol no puede ver ni cambiar el equipo. Eso lo lleva un administrador.'
+      : 'No se pudo cargar: ' + esc(r.error || '')) + '</p>';
+    return;
+  }
+  const filas = r.users || r.data || [];
+  eq.innerHTML = filas.length
+    ? '<div class="tabla" style="max-width:720px">'
+      + '<div class="fila cabecera" style="grid-template-columns:minmax(0,2fr) 1fr 1fr"><span>Persona</span><span>Rol</span><span>Estado</span></div>'
+      + filas.map(x => '<div class="fila" style="grid-template-columns:minmax(0,2fr) 1fr 1fr">'
+        + '<span><b>' + esc(x.display_name || x.email || '—') + '</b><small>' + esc(x.email || '') + '</small></span>'
+        + '<span>' + esc(x.role || '—') + '</span>'
+        + '<span><i class="chip ' + (x.active === false ? 'mal' : 'ok') + '">'
+        +   (x.active === false ? 'inactivo' : 'activo') + '</i></span></div>').join('')
+      + '</div>'
+    : '<p class="bajada">No hay nadie más en el equipo.</p>';
+}
+
+/* ---- Funnel / Kanban ----------------------------------------------------- */
+// Arrastrar una tarjeta cambia la etapa del lead de verdad. Por eso la tarjeta vuelve
+// a su sitio si el servidor rechaza el cambio: dejarla en la columna nueva la haria
+// mentir hasta el siguiente refresco, y quien la movio se iria creyendo que se guardo.
+function montaFunnel(){
+  if (!montadas.has('funnel')) {
+    montadas.add('funnel');
+    hueco('funnel', '<div class="hoja"><h1>Funnel</h1>'
+      + '<p class="bajada">Arrastra un contacto a otra columna para cambiarle la etapa.</p>'
+      + '<div class="kanban" id="kanban"></div></div>');
+  }
+  pintaKanban();
+}
+
+function pintaKanban(){
+  const cont = $('kanban'); if (!cont) return;
+  cont.innerHTML = ETAPAS.map(e => {
+    const filas = CONVS.filter(c => (c.lifecycle_stage || 'nuevo') === e);
+    return '<div class="columna" data-etapa="' + e + '">'
+      + '<div class="ctitulo">' + esc(e.replace(/_/g,' ')) + '<b>' + filas.length + '</b></div>'
+      + '<div class="ccuerpo">'
+      + filas.slice(0, 60).map(c => '<div class="ktarjeta" draggable="true" data-conv="' + esc(c._id) + '">'
+          + '<b>' + esc(nombreDe(c)) + '</b>'
+          + '<span>' + esc(c.last_message_preview || '') + '</span>'
+          + '<i>' + esc(hora(c.last_message_at)) + (c.interested_category ? ' · ' + esc(c.interested_category) : '') + '</i>'
+        + '</div>').join('')
+      + (filas.length > 60 ? '<div class="kmas">… y ' + (filas.length - 60) + ' más</div>' : '')
+      + '</div></div>';
+  }).join('');
+
+  let arrastrando = null;
+  cont.querySelectorAll('.ktarjeta').forEach(t => {
+    t.addEventListener('dragstart', ev => {
+      arrastrando = t;
+      t.classList.add('moviendo');
+      // Firefox no inicia el arrastre sin datos en el portapapeles del evento.
+      ev.dataTransfer.setData('text/plain', t.dataset.conv);
+      ev.dataTransfer.effectAllowed = 'move';
+    });
+    t.addEventListener('dragend', () => { t.classList.remove('moviendo'); arrastrando = null;
+      cont.querySelectorAll('.columna').forEach(c => c.classList.remove('encima')); });
+  });
+  cont.querySelectorAll('.columna').forEach(col => {
+    col.addEventListener('dragover', ev => { ev.preventDefault(); col.classList.add('encima'); });
+    col.addEventListener('dragleave', () => col.classList.remove('encima'));
+    col.addEventListener('drop', async ev => {
+      ev.preventDefault();
+      col.classList.remove('encima');
+      const id = ev.dataTransfer.getData('text/plain') || arrastrando?.dataset.conv;
+      const c = CONVS.find(x => x._id === id);
+      const etapa = col.dataset.etapa;
+      if (!c || (c.lifecycle_stage || 'nuevo') === etapa) return;
+      const anterior = c.lifecycle_stage;
+      c.lifecycle_stage = etapa;      // se mueve ya, para que se sienta inmediato
+      pintaKanban();
+      const r = await llama({ action:'updateLead', conversation_id: c.id || c._id,
+        fields:{ lifecycle_stage: etapa } });
+      if (!r.ok) {
+        c.lifecycle_stage = anterior; // y vuelve si el servidor dijo que no
+        pintaKanban();
+        return avisa('No se pudo mover', r.error);
+      }
+      avisa(nombreDe(c), 'ahora está en ' + etapa.replace(/_/g,' '));
+      pintaChats();
+    });
+  });
+}
+
+/* ---- Dashboard ----------------------------------------------------------- */
+function montaDashboard(){
+  if (!montadas.has('dashboard')) {
+    montadas.add('dashboard');
+    hueco('dashboard', '<div class="hoja"><h1>Dashboard</h1>'
+      + '<p class="bajada">Lo que hay ahora mismo, en vivo.</p>'
+      + '<div class="cifras" id="cifras"></div>'
+      + '<div class="seccion" style="margin:26px 0 10px">Por etapa</div>'
+      + '<div id="porEtapa"></div></div>');
+  }
+  pintaDashboard();
+}
+function pintaDashboard(){
+  const c = $('cifras'); if (!c) return;
+  const hoy = new Date().toDateString();
+  const cifra = (n, t, nota) => '<div class="cifra"><b>' + n + '</b><span>' + esc(t) + '</span>'
+    + (nota ? '<i>' + esc(nota) + '</i>' : '') + '</div>';
+  const sinLeer = CONVS.filter(x => Number(x.unread||0) > 0).length;
+  const humano = CONVS.filter(x => x.mode === 'human' || x.human_handoff_required).length;
+  const deHoy = CONVS.filter(x => new Date(x.last_message_at || 0).toDateString() === hoy).length;
+  const clientes = CONVS.filter(x => x.lifecycle_stage === 'cliente').length;
+  const desinteresados = CONVS.filter(x => x.lifecycle_stage === 'desinteresado').length;
+  const sinAutomatizacion = CONVS.filter(x => x.proactive_blocked_at).length;
+  c.innerHTML = cifra(CONVS.length, 'Conversaciones')
+    + cifra(sinLeer, 'Sin leer', sinLeer ? 'esperando respuesta' : 'al día')
+    + cifra(humano, 'Esperando a una persona')
+    + cifra(deHoy, 'Con actividad hoy')
+    + cifra(clientes, 'Clientes', 'ya compraron')
+    + cifra(desinteresados + sinAutomatizacion, 'Fuera de marketing',
+        desinteresados + ' desinteresados · ' + sinAutomatizacion + ' excluidos');
+  const total = CONVS.length || 1;
+  $('porEtapa').innerHTML = '<div class="barras">' + ETAPAS.map(e => {
+    const n = CONVS.filter(x => (x.lifecycle_stage || 'nuevo') === e).length;
+    return '<div class="barra"><span class="be">' + esc(e.replace(/_/g,' ')) + '</span>'
+      + '<span class="bp"><i style="width:' + Math.round(n / total * 100) + '%"></i></span>'
+      + '<span class="bn">' + n + '</span></div>';
+  }).join('') + '</div>';
+}
+
+/* ---- Broadcast ----------------------------------------------------------- */
+// Enviar a mucha gente a la vez es lo mas facil de arruinar de todo el CRM. Por eso
+// aqui no hay boton de "enviar" directo: primero se simula (dry) y se ve la lista de
+// personas por nombre y telefono, y solo despues se confirma sobre ESOS ids. El
+// servidor tambien exige que una plantilla de difusion incluya salida de baja: sin
+// eso Meta degrada la calidad del numero, y esa penalizacion tarda semanas en irse.
+let AUDIENCIA = null;
+
+function montaBroadcast(){
+  if (montadas.has('marketing')) return;
+  montadas.add('marketing');
+  hueco('marketing',
+    '<div class="hoja"><h1>Broadcast</h1>'
+    + '<p class="bajada">Escribe una vez y sale a muchos. Primero se simula: verás exactamente '
+    +   'a quién le llegaría antes de que salga nada.</p>'
+    + '<div class="prompt">'
+    +   '<div class="par">'
+    +     '<div class="campo"><label>Tipo de envío</label><select id="bcModo">'
+    +       '<option value="freeform">Mensaje libre (solo a quien escribió en las últimas 24 h)</option>'
+    +       '<option value="template">Plantilla aprobada (llega aunque lleve días callado)</option>'
+    +     '</select></div>'
+    +     '<div class="campo"><label>Propósito</label><select id="bcProposito">'
+    +       '<option value="marketing">Marketing</option>'
+    +       '<option value="followup">Seguimiento</option>'
+    +       '<option value="session_reminder">Recordatorio de sesión</option>'
+    +     '</select></div>'
+    +   '</div>'
+    +   '<div id="bcLibre">'
+    +     '<div class="campo"><label>Mensaje</label>'
+    +       '<textarea id="bcTexto" rows="4" placeholder="Lo que le llegará a cada contacto"></textarea></div>'
+    +   '</div>'
+    +   '<div id="bcPlantilla" hidden><div class="campo"><label>Plantilla</label>'
+    +     '<select id="bcTpl"></select></div>'
+    +     '<p class="aviso" id="bcTplAviso"></p></div>'
+    +   '<div class="par">'
+    +     '<div class="campo"><label>Etapa (opcional)</label><select id="bcEtapa">'
+    +       '<option value="">Todas</option>' + ETAPAS.map(e => '<option value="' + e + '">' + e.replace(/_/g,' ') + '</option>').join('')
+    +     '</select></div>'
+    +     '<div class="campo"><label>Categoría (opcional)</label>'
+    +       '<input id="bcCategoria" placeholder="xv, boda, infantil…"></div>'
+    +   '</div>'
+    +   '<div class="acciones"><button class="btn-solido" id="bcSimular">Simular envío</button></div>'
+    + '</div><div id="bcSalida"></div></div>');
+
+  $('bcModo').onchange = async () => {
+    const plantilla = $('bcModo').value === 'template';
+    $('bcLibre').hidden = plantilla;
+    $('bcPlantilla').hidden = !plantilla;
+    AUDIENCIA = null; $('bcSalida').innerHTML = '';
+    if (plantilla) await llenaPlantillasBc();
+  };
+  $('bcSimular').onclick = simulaBroadcast;
+}
+
+async function llenaPlantillasBc(){
+  const sel2 = $('bcTpl');
+  sel2.innerHTML = '<option>Cargando…</option>';
+  const lista = await cargaPlantillas(false) || [];
+  // Solo las que Meta aprobo Y que llevan salida de baja: el servidor rechaza el resto,
+  // y es mejor no ofrecerlas que dejar que el operador elija una que sera rechazada.
+  const validas = lista.filter(t => String(t.meta_status||'').toUpperCase() === 'APPROVED'
+    && t.contains_opt_out === true && t.active !== false);
+  if (!validas.length) {
+    sel2.innerHTML = '<option value="">— ninguna disponible —</option>';
+    $('bcTplAviso').textContent = 'No hay ninguna plantilla aprobada que incluya opción de baja (STOP). '
+      + 'Meta degrada la calidad del número si se difunde sin ella, así que el servidor lo rechaza. '
+      + 'Añade la línea de baja a la plantilla en Meta y vuelve a sincronizar.';
+    return;
+  }
+  sel2.innerHTML = validas.map((t,i) =>
+    '<option value="' + i + '">' + esc(t.display_name || t.template_name) + '</option>').join('');
+  sel2._validas = validas;
+  $('bcTplAviso').textContent = validas.length + ' plantilla(s) aptas para difusión.';
+}
+
+function filtroBc(){
+  const f = {};
+  if ($('bcEtapa').value) f.lifecycle_stage = $('bcEtapa').value;
+  if ($('bcCategoria').value.trim()) f.interested_category = $('bcCategoria').value.trim();
+  return f;
+}
+function cuerpoBc(dry){
+  const modo = $('bcModo').value;
+  const c = { action:'broadcast', send_mode:modo, purpose:$('bcProposito').value,
+    filter:filtroBc(), dry };
+  if (modo === 'freeform') c.text = $('bcTexto').value.trim();
+  else {
+    const v = $('bcTpl')._validas || [];
+    const t = v[Number($('bcTpl').value)];
+    if (!t) return null;
+    c.template = { name:t.template_name, language_code:t.language_code || 'es',
+      contains_opt_out:true, parameter_keys:t.parameter_keys || [] };
+  }
+  return c;
+}
+
+async function simulaBroadcast(){
+  const cuerpo = cuerpoBc(true);
+  if (!cuerpo) return avisa('Elige una plantilla');
+  if (cuerpo.send_mode === 'freeform' && !cuerpo.text) return avisa('Escribe el mensaje');
+  $('bcSimular').disabled = true;
+  $('bcSalida').innerHTML = '<p class="bajada"><span class="cargando"></span> Calculando audiencia…</p>';
+  const r = await llama(cuerpo);
+  $('bcSimular').disabled = false;
+  if (!r.ok) { $('bcSalida').innerHTML = ''; return avisa('No se pudo simular', r.error); }
+  AUDIENCIA = r;
+  const destinos = r.targets || r.sample || [];
+  $('bcSalida').innerHTML = '<div class="propuesta">'
+    + '<div class="tapa"><b>' + Number(r.found || 0) + ' contactos recibirían este mensaje</b></div>'
+    + '<div class="cuerpo">'
+    +   '<div class="cambio"><div class="k">Revisados</div>' + Number(r.scanned || 0) + '</div>'
+    +   '<div class="cambio"><div class="k">Excluidos por baja o permiso</div>' + Number(r.skippedOptOut || 0) + '</div>'
+    +   (destinos.length
+        ? '<div class="cambio"><div class="k">A quién le llega</div><div class="destinos">'
+          + destinos.slice(0,60).map(t => '<span>' + esc(t.name || t.phone) + ' · +' + esc(t.phone) + '</span>').join('')
+          + (destinos.length > 60 ? '<span>… y ' + (destinos.length - 60) + ' más</span>' : '')
+          + '</div></div>'
+        : '<p class="aviso" style="margin:0">Nadie cumple estos filtros. Con «mensaje libre» solo entran '
+          + 'quienes escribieron en las últimas 24 horas.</p>')
+    + '</div>'
+    + (Number(r.found || 0) > 0
+      ? '<div class="patas"><button class="btn-solido" id="bcEnviar">Enviar a ' + Number(r.found) + '</button>'
+        + '<button class="btn-linea" id="bcCancelar">Cancelar</button></div>'
+      : '')
+    + '</div>';
+  if (Number(r.found || 0) > 0) {
+    $('bcCancelar').onclick = () => { AUDIENCIA = null; $('bcSalida').innerHTML = ''; };
+    $('bcEnviar').onclick = enviaBroadcast;
+  }
+}
+
+async function enviaBroadcast(){
+  if (!AUDIENCIA) return;
+  const cuantos = Number(AUDIENCIA.found || 0);
+  if (!confirm('Se enviará a ' + cuantos + ' contactos reales. Esto no se puede deshacer.\n\n¿Confirmas?')) return;
+  const cuerpo = cuerpoBc(false);
+  // Se envia sobre los ids QUE SE ENSEÑARON, no sobre una audiencia recalculada: entre
+  // la simulacion y la confirmacion puede haber entrado gente nueva que nadie reviso.
+  if (Array.isArray(AUDIENCIA.ids) && AUDIENCIA.ids.length) cuerpo.only_ids = AUDIENCIA.ids;
+  $('bcEnviar').disabled = true;
+  $('bcEnviar').textContent = 'Enviando…';
+  const r = await llama(cuerpo);
+  if (!r.ok) { $('bcEnviar').disabled = false; $('bcEnviar').textContent = 'Enviar a ' + cuantos;
+    return avisa('No se pudo enviar', r.error); }
+  AUDIENCIA = null;
+  $('bcSalida').innerHTML = '<div class="propuesta"><div class="tapa"><b>Envío terminado</b></div>'
+    + '<div class="cuerpo">'
+    +   '<div class="cambio"><div class="k">Enviados</div>' + Number(r.sent || 0) + '</div>'
+    +   '<div class="cambio"><div class="k">Fallidos</div>' + Number(r.failed || 0) + '</div>'
+    +   ((r.errors || []).length
+        ? '<div class="cambio"><div class="k">Motivos</div>'
+          + (r.errors || []).slice(0,10).map(e => esc(e.error)).join('<br>') + '</div>' : '')
+    + '</div></div>';
+  avisa('Broadcast enviado', Number(r.sent || 0) + ' de ' + cuantos);
+}
+
+/* ---- Planificación: un solo prompt --------------------------------------- */
+// Aqui vive TODO lo operativo. El modelo propone, el servidor sanea la propuesta y
+// una persona aprueba antes de que nada toque una ficha o salga un mensaje.
+const EJEMPLOS = [
+  'Resume esta conversación y dime el próximo paso',
+  'Prepara la reserva de este contacto',
+  'Marca este contacto como pagado y pide el comprobante',
+  'Escríbele la ubicación del estudio',
+  'Pásale el portafolio de bodas',
+  'Márcalo como desinteresado y apaga el marketing',
+];
+let propuesta = null;
+function montaPlanificacion(){
+  if (montadas.has('planning')) return;
+  montadas.add('planning');
+  hueco('planning',
+    '<div class="hoja"><h1>Planificación</h1>'
+    + '<p class="bajada">Escribe lo que necesitas. Se lee la conversación seleccionada, se propone '
+    +   'qué hacer, y no se toca nada hasta que lo apruebes.</p>'
+    + '<div class="prompt">'
+    +   '<textarea id="pedido" placeholder="Ej. prepara la reserva de este contacto y pídele el abono"></textarea>'
+    +   '<div class="acciones"><button class="btn-solido" id="btnPedir">Proponer</button>'
+    +     '<span class="quien" id="contexto"></span></div>'
+    +   '<div class="ejemplos" id="ejemplos">'
+    +     EJEMPLOS.map(e => '<button class="ejemplo">' + esc(e) + '</button>').join('')
+    +   '</div>'
+    + '</div><div id="salida"></div></div>');
+  $('ejemplos').addEventListener('click', ev => {
+    const b = ev.target.closest('.ejemplo'); if (!b) return;
+    $('pedido').value = b.textContent; $('pedido').focus();
+  });
+  $('btnPedir').onclick = pide;
+}
+function contextoTexto(){
+  return sel ? 'Sobre: ' + nombreDe(sel) + ' (+' + (sel.wa_phone||'') + ')'
+             : 'Sin conversación seleccionada — se propondrá sobre el negocio en general.';
+}
+async function pide(){
+  const t = $('pedido').value.trim();
+  if (!t) return avisa('Escribe qué necesitas');
+  $('btnPedir').disabled = true;
+  $('salida').innerHTML = '<p class="bajada" style="margin-top:22px"><span class="cargando"></span> Pensando…</p>';
+  const cuerpo = { action:'assistantPlan', instruction:t };
+  if (sel) {
+    cuerpo.contact_context = MSGS.slice(-40)
+      .map(m => (m.direction === 'out' ? 'Nosotros: ' : 'Cliente: ') + (m.body || '')).join('\n');
+    cuerpo.conversation_id = sel.id || sel._id;
+  }
+  const r = await llama(cuerpo);
+  $('btnPedir').disabled = false;
+  if (!r.ok) { $('salida').innerHTML = ''; return avisa('No se pudo proponer', r.error); }
+  propuesta = r.plan || null;
+  pintaPropuesta();
+}
+// Cada herramienta se explica en cristiano ANTES de aprobarla. "create_reservation"
+// no le dice nada a nadie; "pasa el lead a pendiente de reserva" sí.
+const NOMBRE_HERRAMIENTA = {
+  contact_report: 'Leer la conversación y resumirla',
+  create_reservation: 'Pasar el lead a pendiente de reserva',
+  mark_paid: 'Marcar como pagado y pedir validación humana del comprobante',
+  draft_message: 'Preparar un mensaje en el compositor (no lo envía)',
+  communication_policy: 'Cambiar la política de comunicación',
+  mark_disinterest: 'Marcar desinteresado y apagar el marketing',
+  update_lead: 'Cambiar datos de la ficha',
+};
+const NOMBRE_BORRADOR = {
+  receipt: 'pedir el comprobante del abono',
+  location: 'enviar la ubicación del estudio',
+  portfolio: 'enviar el portafolio',
+  privateCombos: 'enviar los combos',
+};
+
+function pintaPropuesta(){
+  const p = propuesta;
+  if (!p) { $('salida').innerHTML = ''; return; }
+  const filas = [];
+  if (p.objective) filas.push(['Objetivo', p.objective]);
+  if (p.rationale) filas.push(['Por qué', p.rationale]);
+  if (p.message_text) filas.push(['Mensaje que se prepararía', p.message_text]);
+  (p.steps || []).forEach((s,i) => filas.push(['Paso ' + (i+1), s]));
+  (p.risks || []).forEach(s => filas.push(['Riesgo', s]));
+
+  const tools = Array.isArray(p.tools) ? p.tools : [];
+  const bloqueTools = tools.length
+    ? '<div class="seccion" style="margin:14px 0 8px">Se haría esto</div>'
+      + tools.map((t,i) => '<div class="cambio"><div class="k">'
+        + esc(NOMBRE_HERRAMIENTA[t.name] || t.name) + '</div>'
+        + esc(t.preview || '')
+        // Los campos exactos que se van a escribir, sin traducir: quien aprueba tiene
+        // derecho a ver el cambio literal, no solo el resumen bonito.
+        + (t.params?.fields ? '<div class="campos">' + Object.entries(t.params.fields)
+            .map(([k,v]) => '<span>' + esc(k) + ' → ' + esc(String(v)) + '</span>').join('') + '</div>' : '')
+        + (t.params?.template ? '<div class="campos"><span>' + esc(NOMBRE_BORRADOR[t.params.template] || t.params.template) + '</span></div>' : '')
+        + (t.params?.operation ? '<div class="campos"><span>' + esc(t.params.operation) + '</span></div>' : '')
+        + '</div>').join('')
+    : '';
+
+  const hayQueAplicar = tools.length > 0 || (p.action && p.action !== 'info_only');
+  $('salida').innerHTML = '<div class="propuesta">'
+    + '<div class="tapa"><b>Propuesta</b>' + (tools.length ? ' · ' + tools.length + ' acción(es)' : ' · solo información') + '</div>'
+    + '<div class="cuerpo">'
+    +   filas.map(([k,v]) => '<div class="cambio"><div class="k">' + esc(k) + '</div>' + esc(v) + '</div>').join('')
+    +   bloqueTools
+    +   (filas.length || tools.length ? '' : '<p class="aviso" style="margin:0">Sin detalle devuelto.</p>')
+    + '</div>'
+    + '<div class="patas">'
+    +   (hayQueAplicar ? '<button class="btn-solido" id="btnAprobar">Aprobar y aplicar</button>' : '')
+    +   '<button class="btn-linea" id="btnDescartar">Descartar</button>'
+    + '</div></div>';
+  $('btnDescartar').onclick = () => { propuesta = null; $('salida').innerHTML = ''; };
+  if (hayQueAplicar) $('btnAprobar').onclick = aplica;
+}
+
+async function aplica(){
+  const p = propuesta; if (!p) return;
+  const tools = Array.isArray(p.tools) ? p.tools : [];
+  const b = $('btnAprobar');
+  b.disabled = true; b.textContent = 'Aplicando…';
+  const hechas = [], fallos = [];
+
+  for (const t of tools) {
+    const conv = t.conversation_id || sel?.id || sel?._id;
+    let r = { ok:false, error:'herramienta desconocida' };
+
+    if (t.name === 'mark_disinterest') {
+      // Marcar desinteresado NO es escribir tres campos: la accion 'disinterest' del
+      // servidor ademas apaga los seguimientos programados y deja el motivo en la
+      // auditoria. Hacerlo con updateLead dejaria al contacto marcado por fuera y
+      // recibiendo seguimientos por dentro.
+      r = await llama({ action:'disinterest', operation:'mark', conversation_id: conv,
+        reason: t.preview || 'marcado desde el Planificador' });
+    } else if (['create_reservation','mark_paid','update_lead'].includes(t.name)) {
+      r = await llama({ action:'updateLead', conversation_id: conv, fields: t.params?.fields || {} });
+    } else if (t.name === 'contact_report') {
+      r = { ok:true };  // el informe ya es el texto que se esta leyendo
+    } else if (t.name === 'draft_message') {
+      // Un borrador NO se envia: se deja escrito para que una persona lo lea, lo
+      // corrija si hace falta, y pulse enviar. Esa es toda la diferencia entre una
+      // ayuda y un bot suelto escribiendo a clientes.
+      const texto = t.params?.message_text || textoDeBorrador(t.params?.template);
+      if (sel && $('texto')) {
+        const caja = $('texto');
+        caja.value = caja.value.trim() ? caja.value.trim() + '\n\n' + texto : texto;
+        r = { ok:true };
+      } else r = { ok:false, error:'abre la conversación para dejar el borrador' };
+    } else if (t.name === 'communication_policy') {
+      // El servidor exige escribir la frase exacta. Aqui se pide igual: apagarle las
+      // comunicaciones a un contacto no puede ser un clic de mas.
+      const op = t.params.operation;
+      const frase = op === 'block' ? 'DESACTIVAR CONTACTO' : 'REACTIVAR';
+      const escrito = window.prompt(
+        (op === 'block'
+          ? 'Se apagarán bot, promociones y seguimientos para este contacto.'
+          : 'Se reactivará la automatización. No concede permiso de marketing.')
+        + '\n\nEscribe ' + frase + ' para confirmar:') || '';
+      if (escrito !== frase) { fallos.push([t.name, 'cancelado']); continue; }
+      r = await llama({ action:'communicationPolicy', operation:op, conversation_id:conv,
+        confirmation:escrito, reason:t.params.reason || 'Solicitado desde el Planificador' });
+    }
+
+    if (r.ok) hechas.push(NOMBRE_HERRAMIENTA[t.name] || t.name);
+    else fallos.push([NOMBRE_HERRAMIENTA[t.name] || t.name, r.error || 'error']);
+  }
+
+  b.disabled = false; b.textContent = 'Aprobar y aplicar';
+  if (hechas.length && !fallos.length) {
+    propuesta = null;
+    $('salida').innerHTML = '<div class="propuesta"><div class="tapa"><b>Aplicado</b></div>'
+      + '<div class="cuerpo">' + hechas.map(h => '<div class="cambio">' + esc(h) + '</div>').join('') + '</div></div>';
+    avisa('Aplicado', hechas.length + ' acción(es)');
+  } else {
+    avisa(hechas.length ? 'Aplicado a medias' : 'No se pudo aplicar',
+      fallos.map(([n,e]) => n + ': ' + e).join(' · ').slice(0,180));
+  }
+  if (sel) { const f = CONVS.find(c => c._id === sel._id); if (f) pintaFicha(f); }
+}
+
+function textoDeBorrador(clave){
+  if (clave === 'receipt') return 'Para confirmar tu reserva, envíanos por aquí el comprobante del abono '
+    + 'y el nombre de la persona que hizo el pago.';
+  if (clave === 'location') return [CFG.addressText || 'Te comparto nuestra ubicación.', CFG.mapsUrl || ''].filter(Boolean).join(' ');
+  if (clave === 'portfolio') return 'Puedes ver nuestros combos, imágenes y todo lo que incluye cada opción aquí: '
+    + (CFG.publicPortfolioUrl || CFG.publicCatalogUrl || '');
+  if (clave === 'privateCombos') return CFG.privateCombosMessage
+    || 'Te comparto los combos por aquí. Antes de confirmar disponibilidad necesito categoría, fecha tentativa y nombre.';
+  return '';
+}
+
+/* ---- Sesión -------------------------------------------------------------- */
+$('formAcceso').addEventListener('submit', async ev => {
+  ev.preventDefault();
+  const err = $('errorAcceso'); err.classList.remove('on');
+  $('btnEntrar').disabled = true;
+  try { await signInWithEmailAndPassword(auth, $('correo').value.trim(), $('clave').value); }
+  catch (e) {
+    err.textContent = e?.code === 'auth/invalid-credential'
+      ? 'Correo o contraseña incorrectos.' : (e?.message || 'No se pudo entrar.');
+    err.classList.add('on');
+  }
+  finally { $('btnEntrar').disabled = false; }
+});
+$('btnSalir').onclick = () => signOut(auth);
+
+onAuthStateChanged(auth, async u => {
+  if (!u) {
+    $('acceso').classList.remove('oculto');
+    $('app').classList.remove('on');
+    if (paraMsgs) { paraMsgs(); paraMsgs = null; }
+    return;
+  }
+  $('acceso').classList.add('oculto');
+  $('app').classList.add('on');
+  $('quien').textContent = u.email || '';
+  // El historial se carga solo al entrar. No hay boton de "actualizar": la escucha
+  // en vivo trae los cambios sin que nadie tenga que pedirlos.
+  escuchaConversaciones();
+  ve(location.hash.slice(1) || CFG.defaultView || 'conversations');
+});
+</script>
+</body>
+</html>
