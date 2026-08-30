@@ -1,6 +1,6 @@
 {
-  "version": "2026-08-30-crm-v2-completo-v56",
+  "version": "2026-08-29-crm-menu-a-salvo-v55",
   "channel": "crm",
-  "released_at": "2026-08-30T12:00:00Z",
-  "summary": "CRM v2 integrado: agenda mensual, configuracion completa, canales separados, banco POS vivo, movilizacion con criterio, biblioteca de plantillas y metricas Meta en el panel de anuncios."
+  "released_at": "2026-08-29T04:20:00Z",
+  "summary": "Arreglado el menu vacio en produccion: la regla que esconde entradas daba por hecho que el script ya habia movido las tres fijas. Ahora solo esconde despues de que el script lo confirme."
 }
