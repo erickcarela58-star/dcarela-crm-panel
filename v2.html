@@ -575,8 +575,43 @@ video.mmedia{cursor:default}
 .kmas{padding:7px;text-align:center;font-size:11.5px;color:var(--mut)}
 
 /* --- Dashboard ------------------------------------------------------------- */
-.cifras{display:grid;grid-template-columns:repeat(auto-fill,minmax(178px,1fr));gap:11px;max-width:940px}
-.cifra{padding:15px 16px;border:1px solid var(--line);border-radius:var(--r2);background:var(--panel)}
+.cifras{display:grid;grid-template-columns:repeat(auto-fill,minmax(178px,1fr));gap:11px;max-width:1180px}
+.cifra{padding:15px 16px;border:1px solid var(--line);border-radius:var(--r2);background:var(--panel);
+  text-align:left;width:100%}
+.cifra:hover{border-color:var(--line2);background:var(--hover)}
+/* Solo se marcan las cifras que piden accion. Si todo grita, nada grita. */
+.cifra.ojo b{color:var(--warn)}
+.cifra.mal b{color:var(--bad)}
+.cifra.bien b{color:var(--ok)}
+
+/* --- Graficas --------------------------------------------------------------- */
+.tablero{display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:14px;
+  max-width:1180px;margin-top:22px}
+.pgraf{padding:16px 18px 18px;border:1px solid var(--line);border-radius:var(--r2);background:var(--panel)}
+.pgcab{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-bottom:14px}
+.pgcab b{font-size:13.5px}
+.pgcab span{font-size:11px;color:var(--mut)}
+.graf{width:100%;height:170px;overflow:visible}
+.gguia{stroke:var(--line);stroke-width:1}
+.gnum{fill:var(--mut);font-size:9px}
+.garea{fill:var(--ink);opacity:.08}
+.glinea{fill:none;stroke:var(--ink);stroke-width:2;stroke-linejoin:round;stroke-linecap:round}
+.gpunto{fill:var(--panel);stroke:var(--ink);stroke-width:1.6}
+.ganillo{fill:none;stroke-width:16;transform:rotate(-90deg);transform-origin:70px 70px}
+.gtot{fill:var(--fg);font-size:21px;font-weight:700}
+.anillo{display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+.anillo svg{width:140px;height:140px;flex:0 0 auto}
+.leyenda{display:flex;flex-direction:column;gap:6px;font-size:12px;color:var(--mut)}
+.leyenda span{display:flex;align-items:center;gap:7px}
+.leyenda i{width:9px;height:9px;border-radius:3px;flex:0 0 auto}
+.leyenda b{color:var(--fg)}
+.embudo{display:flex;flex-direction:column;gap:9px}
+.epaso{display:grid;grid-template-columns:118px minmax(0,1fr) 74px;gap:10px;align-items:center;font-size:12.5px}
+.epaso .en{color:var(--mut);text-transform:capitalize}
+.epaso .eb{height:20px;border-radius:5px;background:var(--hover);overflow:hidden}
+.epaso .eb i{display:block;height:100%;background:var(--ink);opacity:.85}
+.epaso .ev{text-align:right;font-weight:650}
+.epaso .ev em{font-style:normal;font-weight:500;color:var(--mut);font-size:11px}
 .cifra b{display:block;font-size:27px;font-weight:700;line-height:1.1;letter-spacing:-.5px}
 .cifra span{display:block;font-size:12px;color:var(--mut);margin-top:3px}
 .cifra i{display:block;font-style:normal;font-size:10.5px;color:var(--meta);margin-top:2px}
@@ -2880,42 +2915,163 @@ function pintaKanban(){
 }
 
 /* ---- Dashboard ----------------------------------------------------------- */
+// Graficas en SVG, dibujadas a mano. Sin libreria: una de graficas pesa mas que todo
+// este panel junto, y aqui hacen falta cuatro formas.
+//
+// Paleta neutra, la misma del proyecto de caja: la tinta del tema para los datos y el
+// gris apagado para lo secundario. Los colores solo se usan donde significan algo --
+// verde lo que va bien, rojo lo que hay que mirar -- y no para decorar.
+//
+// TODO sale de CONVS, que ya esta en memoria y en vivo. Ninguna cifra se guarda aparte:
+// dos sitios donde vive el mismo numero acaban discrepando y nadie sabe cual creer.
+
 function montaDashboard(){
   if (!montadas.has('dashboard')) {
     montadas.add('dashboard');
     hueco('dashboard', '<div class="hoja"><h1>Dashboard</h1>'
-      + '<p class="bajada">Lo que hay ahora mismo, en vivo.</p>'
+      + '<p class="bajada">Lo que hay ahora mismo. Se actualiza solo.</p>'
       + '<div class="cifras" id="cifras"></div>'
-      + '<div class="seccion" style="margin:26px 0 10px">Por etapa</div>'
-      + '<div id="porEtapa"></div></div>');
+      + '<div class="tablero" id="tablero"></div></div>');
   }
   pintaDashboard();
 }
+
+function diasAtras(n){
+  const d = new Date(); d.setHours(0,0,0,0); d.setDate(d.getDate() - n); return d;
+}
+
+// --- Piezas de dibujo -------------------------------------------------------
+function grafArea(puntos, etiquetas){
+  const an = 640, al = 170, pad = { i:34, d:10, s:14, b:24 };
+  const max = Math.max(1, ...puntos);
+  const x = i => pad.i + i * (an - pad.i - pad.d) / Math.max(1, puntos.length - 1);
+  const y = v => pad.s + (1 - v / max) * (al - pad.s - pad.b);
+  const linea = puntos.map((v,i) => (i ? 'L' : 'M') + x(i).toFixed(1) + ' ' + y(v).toFixed(1)).join(' ');
+  const area = linea + ' L' + x(puntos.length-1).toFixed(1) + ' ' + (al-pad.b) + ' L' + x(0) + ' ' + (al-pad.b) + ' Z';
+  // Tres lineas de referencia, no diez: mas rayas no ayudan a leer, estorban.
+  const guias = [0, .5, 1].map(p => {
+    const v = Math.round(max * p);
+    return '<line x1="' + pad.i + '" x2="' + (an-pad.d) + '" y1="' + y(v) + '" y2="' + y(v) + '" class="gguia"/>'
+      + '<text x="' + (pad.i-7) + '" y="' + (y(v)+3.5) + '" class="gnum" text-anchor="end">' + v + '</text>';
+  }).join('');
+  const marcas = puntos.map((v,i) => (i % 3 === 0 || i === puntos.length-1)
+    ? '<text x="' + x(i) + '" y="' + (al-7) + '" class="gnum" text-anchor="middle">' + esc(etiquetas[i]) + '</text>' : '').join('');
+  const picos = puntos.map((v,i) => '<circle cx="' + x(i) + '" cy="' + y(v) + '" r="2.5" class="gpunto">'
+    + '<title>' + esc(etiquetas[i]) + ': ' + v + '</title></circle>').join('');
+  return '<svg viewBox="0 0 ' + an + ' ' + al + '" class="graf" preserveAspectRatio="none">'
+    + guias + '<path d="' + area + '" class="garea"/><path d="' + linea + '" class="glinea"/>'
+    + picos + marcas + '</svg>';
+}
+
+function grafBarras(filas){
+  const max = Math.max(1, ...filas.map(f => f.v));
+  return '<div class="barras">' + filas.map(f =>
+    '<div class="barra"><span class="be">' + esc(f.n) + '</span>'
+    + '<span class="bp"><i style="width:' + Math.round(f.v / max * 100) + '%"></i></span>'
+    + '<span class="bn">' + f.v + '</span></div>').join('') + '</div>';
+}
+
+function grafAnillo(filas){
+  const total = filas.reduce((a,f) => a + f.v, 0) || 1;
+  const R = 54, C = 2 * Math.PI * R;
+  let acumulado = 0;
+  const arcos = filas.filter(f => f.v).map(f => {
+    const trozo = f.v / total * C;
+    const el = '<circle cx="70" cy="70" r="' + R + '" class="ganillo" stroke="' + f.c + '" '
+      + 'stroke-dasharray="' + trozo.toFixed(2) + ' ' + (C - trozo).toFixed(2) + '" '
+      + 'stroke-dashoffset="' + (-acumulado).toFixed(2) + '"><title>' + esc(f.n) + ': ' + f.v + '</title></circle>';
+    acumulado += trozo;
+    return el;
+  }).join('');
+  return '<div class="anillo"><svg viewBox="0 0 140 140">' + arcos
+    + '<text x="70" y="66" class="gtot" text-anchor="middle">' + total + '</text>'
+    + '<text x="70" y="84" class="gnum" text-anchor="middle">total</text></svg>'
+    + '<div class="leyenda">' + filas.filter(f => f.v).map(f =>
+        '<span><i style="background:' + f.c + '"></i>' + esc(f.n) + ' <b>' + f.v + '</b></span>').join('')
+    + '</div></div>';
+}
+
+function panel(titulo, nota, cuerpo){
+  return '<div class="pgraf"><div class="pgcab"><b>' + esc(titulo) + '</b>'
+    + (nota ? '<span>' + esc(nota) + '</span>' : '') + '</div>' + cuerpo + '</div>';
+}
+
+// --- Pintado ----------------------------------------------------------------
 function pintaDashboard(){
   const c = $('cifras'); if (!c) return;
   const hoy = new Date().toDateString();
-  const cifra = (n, t, nota) => '<div class="cifra"><b>' + n + '</b><span>' + esc(t) + '</span>'
-    + (nota ? '<i>' + esc(nota) + '</i>' : '') + '</div>';
   const sinLeer = CONVS.filter(x => Number(x.unread||0) > 0).length;
   const humano = CONVS.filter(x => x.mode === 'human' || x.human_handoff_required).length;
   const deHoy = CONVS.filter(x => new Date(x.last_message_at || 0).toDateString() === hoy).length;
   const clientes = CONVS.filter(x => x.lifecycle_stage === 'cliente').length;
-  const desinteresados = CONVS.filter(x => x.lifecycle_stage === 'desinteresado').length;
-  const sinAutomatizacion = CONVS.filter(x => x.proactive_blocked_at).length;
-  c.innerHTML = cifra(CONVS.length, 'Conversaciones')
-    + cifra(sinLeer, 'Sin leer', sinLeer ? 'esperando respuesta' : 'al día')
+  const desint = CONVS.filter(x => x.lifecycle_stage === 'desinteresado').length;
+  const excluidos = CONVS.filter(x => x.proactive_blocked_at).length;
+  const vencidos = CONVS.filter(x => x.follow_up_at && new Date(x.follow_up_at) <= new Date()
+    && !['cerrado','perdido','desinteresado'].includes(x.lifecycle_stage)).length;
+
+  // Las cifras que piden accion se marcan; el resto es contexto. Si todo grita, nada grita.
+  const cifra = (n, t, nota, tono) => '<button class="cifra' + (tono ? ' ' + tono : '')
+    + '" data-ir="' + esc(t) + '"><b>' + n + '</b><span>' + esc(t) + '</span>'
+    + (nota ? '<i>' + esc(nota) + '</i>' : '') + '</button>';
+
+  c.innerHTML = cifra(CONVS.length, 'Conversaciones', 'en total')
+    + cifra(sinLeer, 'Sin leer', sinLeer ? 'esperando respuesta' : 'al día', sinLeer ? 'ojo' : '')
+    + cifra(vencidos, 'Seguimientos vencidos', vencidos ? 'ya tocaba' : 'ninguno', vencidos ? 'mal' : '')
     + cifra(humano, 'Esperando a una persona')
-    + cifra(deHoy, 'Con actividad hoy')
-    + cifra(clientes, 'Clientes', 'ya compraron')
-    + cifra(desinteresados + sinAutomatizacion, 'Fuera de marketing',
-        desinteresados + ' desinteresados · ' + sinAutomatizacion + ' excluidos');
-  const total = CONVS.length || 1;
-  $('porEtapa').innerHTML = '<div class="barras">' + ETAPAS.map(e => {
-    const n = CONVS.filter(x => (x.lifecycle_stage || 'nuevo') === e).length;
-    return '<div class="barra"><span class="be">' + esc(e.replace(/_/g,' ')) + '</span>'
-      + '<span class="bp"><i style="width:' + Math.round(n / total * 100) + '%"></i></span>'
-      + '<span class="bn">' + n + '</span></div>';
-  }).join('') + '</div>';
+    + cifra(deHoy, 'Activas hoy')
+    + cifra(clientes, 'Clientes', 'ya compraron', clientes ? 'bien' : '')
+    + cifra(desint + excluidos, 'Fuera de marketing', desint + ' desinteresados · ' + excluidos + ' excluidos');
+
+  // Pulsar una cifra lleva a verla, no solo la enseña. Un numero sin a donde ir obliga
+  // a rehacer el filtro a mano en la otra pantalla.
+  c.onclick = ev => {
+    const b = ev.target.closest('[data-ir]'); if (!b) return;
+    const a = b.dataset.ir;
+    if (a === 'Seguimientos vencidos') return ve('reminders');
+    if (a === 'Clientes') { filtro = 'todos'; ve('funnel'); return; }
+    if (a === 'Sin leer') { filtro = 'sinleer'; ve('conversations'); pintaChats(); return; }
+    if (a === 'Esperando a una persona') { filtro = 'humano'; ve('conversations'); pintaChats(); return; }
+    ve('conversations');
+  };
+
+  // --- Actividad de los ultimos 14 dias
+  const dias = [], etiq = [];
+  for (let i = 13; i >= 0; i--) {
+    const d = diasAtras(i), sig = diasAtras(i-1);
+    dias.push(CONVS.filter(x => {
+      const t = new Date(x.last_message_at || 0);
+      return t >= d && t < sig;
+    }).length);
+    etiq.push(d.getDate() + '/' + (d.getMonth()+1));
+  }
+
+  const porEtapa = ETAPAS.map(e => ({ n: e.replace(/_/g,' '),
+    v: CONVS.filter(x => (x.lifecycle_stage || 'nuevo') === e).length }));
+
+  const porCanal = Object.keys(CANALES)
+    .map(k => ({ n: CANALES[k].corto, v: CONVS.filter(x => canalDe(x) === k).length, c: CANALES[k].color }))
+    .filter(f => f.v);
+
+  // Embudo: cada etapa como porcentaje de las que llegaron a la anterior. Es la unica
+  // cifra que dice DONDE se pierde la gente, que es lo que se quiere arreglar.
+  const orden = ['nuevo','interesado','cotizando','pendiente_reserva','reservado','cliente'];
+  const cuentaEtapa = e => CONVS.filter(x => (x.lifecycle_stage || 'nuevo') === e).length;
+  const acumulado = orden.map((e,i) => orden.slice(i).reduce((a,x) => a + cuentaEtapa(x), 0));
+  const embudo = orden.map((e,i) => {
+    const de = acumulado[i], antes = i ? acumulado[i-1] : de;
+    return { n: e.replace(/_/g,' '), v: de, pct: antes ? Math.round(de / antes * 100) : 100 };
+  });
+
+  $('tablero').innerHTML =
+    panel('Actividad', 'últimos 14 días', grafArea(dias, etiq))
+    + panel('Por etapa', CONVS.length + ' contactos', grafBarras(porEtapa))
+    + panel('Por canal', 'de dónde escriben', grafAnillo(porCanal))
+    + panel('Embudo', 'cuánta gente pasa de una etapa a la siguiente',
+        '<div class="embudo">' + embudo.map((f,i) =>
+          '<div class="epaso"><span class="en">' + esc(f.n) + '</span>'
+          + '<span class="eb"><i style="width:' + (embudo[0].v ? Math.round(f.v / embudo[0].v * 100) : 0) + '%"></i></span>'
+          + '<span class="ev">' + f.v + (i ? ' <em>' + f.pct + '%</em>' : '') + '</span></div>').join('')
+        + '</div>');
 }
 
 /* ---- Broadcast ----------------------------------------------------------- */
