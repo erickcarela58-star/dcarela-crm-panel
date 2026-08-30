@@ -2970,6 +2970,645 @@ function abreAgendar(c){
   };
 }
 
+/* ---- Canales ------------------------------------------------------------- */
+// Un sitio para todas las vias por las que escribe un cliente. Antes solo existia
+// "Conexión WhatsApp" y el segundo numero estaba mezclado con el oficial sin distinguirse,
+// que es como se acaba contestando por el canal equivocado.
+//
+// Cada canal se identifica por como llego la conversacion: el API oficial marca
+// source='whatsapp_cloud', el puente de WhatsApp Web marca source='whatsapp_qr', y las
+// redes traen el suyo. Ese campo ya existe en los datos; lo que faltaba era enseñarlo.
+const CANALES = {
+  whatsapp_cloud: { nombre:'WhatsApp oficial (API)', corto:'WhatsApp', logo:'🟢', color:'#25d366' },
+  whatsapp_qr:    { nombre:'WhatsApp Web (2.º número)', corto:'WA Web', logo:'🔵', color:'#128c7e' },
+  instagram:      { nombre:'Instagram Direct', corto:'Instagram', logo:'🟣', color:'#c13584' },
+  facebook:       { nombre:'Facebook Messenger', corto:'Messenger', logo:'🔷', color:'#0084ff' },
+};
+function canalDe(c){
+  const s = String(c?.source || '').toLowerCase();
+  if (CANALES[s]) return s;
+  if (s.includes('qr') || s.includes('bridge')) return 'whatsapp_qr';
+  if (s.includes('instagram') || s.includes('ig')) return 'instagram';
+  if (s.includes('facebook') || s.includes('messenger') || s.includes('fb')) return 'facebook';
+  return 'whatsapp_cloud';
+}
+
+function montaCanales(){
+  if (!montadas.has('canales')) {
+    montadas.add('canales');
+    hueco('canales', '<div class="hoja"><h1>Canales</h1>'
+      + '<p class="bajada">Por dónde te escriben los clientes. Si un canal no está en verde, '
+      +   'lo que escribas por ahí no le llega a nadie aunque el panel diga que se envió.</p>'
+      + '<div id="canalesLista"></div></div>');
+  }
+  pintaCanales();
+}
+
+async function pintaCanales(){
+  const cont = $('canalesLista'); if (!cont) return;
+  cont.innerHTML = '<p class="bajada"><span class="cargando"></span> Comprobando…</p>';
+
+  const [estado, puente] = await Promise.all([
+    llama({ action:'transportStatus' }),
+    llama({ action:'bridgeStatus' }),
+  ]);
+  const t = estado.ok ? (estado.transport || estado) : {};
+  const p = puente.ok ? (puente.bridge || puente) : {};
+
+  const cuenta = clave => CONVS.filter(c => canalDe(c) === clave).length;
+  const tarjeta = (clave, listo, detalle, acciones) => {
+    const d = CANALES[clave];
+    return '<div class="canal">'
+      + '<div class="cabecera-canal">'
+      +   '<span class="clogo" style="background:' + d.color + '22;color:' + d.color + '">' + d.logo + '</span>'
+      +   '<div class="cinfo"><b>' + esc(d.nombre) + '</b>'
+      +     '<span>' + cuenta(clave) + ' conversación(es)</span></div>'
+      +   '<i class="chip ' + (listo === true ? 'ok' : listo === false ? 'mal' : 'medio') + '">'
+      +     (listo === true ? 'conectado' : listo === false ? 'sin conectar' : 'sin usar') + '</i>'
+      + '</div>'
+      + '<p class="cdetalle">' + detalle + '</p>'
+      + (acciones ? '<div class="cacciones">' + acciones + '</div>' : '')
+      + '</div>';
+  };
+
+  const oficialListo = t.ready === true || t.state === 'ready';
+  const puenteListo = p.connected === true || p.state === 'connected' || p.status === 'connected';
+
+  cont.innerHTML =
+    tarjeta('whatsapp_cloud', oficialListo,
+      oficialListo
+        ? 'Número ' + esc(CFG.businessDisplayNumber || CFG.businessNumber || '') + '. Entregando mensajes.'
+        : 'Meta no está conectada al transporte' + (t.last_error_code ? ' (error ' + esc(String(t.last_error_code)) + ')' : '')
+          + '. Reconectar exige el App Secret y se hace con scripts/conectar_meta_firebase.ps1, no desde aquí.',
+      '<button class="btn-linea" data-canal-bot="official">Bot de este canal: '
+        + (estado.bot_enabled ? 'encendido' : 'apagado') + '</button>')
+
+    + tarjeta('whatsapp_qr', puenteListo ? true : (cuenta('whatsapp_qr') ? false : null),
+      puenteListo
+        ? 'Segundo número conectado por WhatsApp Web. <b>Era el de pruebas</b>: si ya no se usa, desconéctalo.'
+        : 'Sin sesión activa. Este canal usa WhatsApp Web, no el API: no admite plantillas '
+          + 'ni difusiones, solo conversación dentro de la ventana normal.',
+      puenteListo
+        ? '<button class="btn-linea danger" data-desconecta-puente>Desconectar</button>'
+          + '<button class="btn-linea" data-canal-bot="photo">Bot de este canal: '
+          + (p.bot_enabled ? 'encendido' : 'apagado') + '</button>'
+        : '<button class="btn-linea" data-conecta-puente>Conectar por código</button>')
+
+    + tarjeta('instagram', cuenta('instagram') ? true : null,
+      'Se conecta iniciando sesión con Facebook y aceptando los permisos de la cuenta: '
+      + '<code>instagram_manage_messages</code> y <code>pages_manage_metadata</code>. '
+      + 'La cuenta de Instagram tiene que ser profesional y estar enlazada a la página.',
+      '<button class="btn-linea" data-conecta="instagram">Iniciar sesión y dar permisos</button>')
+
+    + tarjeta('facebook', cuenta('facebook') ? true : null,
+      'Mismo inicio de sesión que Instagram, con <code>pages_messaging</code>. Al aceptar, la '
+      + 'página queda suscrita y sus mensajes entran aquí como una conversación más.',
+      '<button class="btn-linea" data-conecta="facebook">Iniciar sesión y dar permisos</button>');
+
+  cont.onclick = async ev => {
+    const bot = ev.target.closest('[data-canal-bot]');
+    if (bot) {
+      // El bot se enciende y se apaga POR CANAL. Antes era un interruptor unico: apagarlo
+      // para el segundo numero apagaba tambien el oficial, y al reves.
+      const cual = bot.dataset.canalBot;
+      const encendido = /encendido/.test(bot.textContent);
+      if (!confirm((encendido ? 'Apagar' : 'Encender') + ' el bot SOLO en '
+        + (cual === 'official' ? 'WhatsApp oficial' : 'WhatsApp Web') + '.\n\n¿Seguro?')) return;
+      bot.disabled = true;
+      const r = cual === 'official'
+        ? await llama({ action:'setOfficialBot', enabled: !encendido })
+        : await llama({ action:'setPhotoBot', enabled: !encendido });
+      bot.disabled = false;
+      if (!r.ok) return avisa('No se pudo cambiar', r.error);
+      avisa('Bot ' + (encendido ? 'apagado' : 'encendido'),
+        'Solo en ' + (cual === 'official' ? 'WhatsApp oficial' : 'WhatsApp Web') + '.');
+      pintaCanales();
+      return;
+    }
+    if (ev.target.closest('[data-desconecta-puente]')) {
+      if (!confirm('Se cerrará la sesión de WhatsApp Web del segundo número.\n\n'
+        + 'Los chats que entraron por ahí se conservan, pero dejarás de recibir mensajes nuevos '
+        + 'por ese número hasta volver a conectarlo.\n\n¿Desconectar?')) return;
+      const r = await llama({ action:'logoutBridge' });
+      avisa(r.ok ? 'WhatsApp Web desconectado' : 'No se pudo desconectar', r.ok ? '' : r.error);
+      pintaCanales();
+      return;
+    }
+    const red = ev.target.closest('[data-conecta]');
+    if (red) {
+      // El inicio de sesion de Meta se abre en su propia ventana y devuelve el permiso
+      // a la funcion, que es donde vive el App Secret. La clave nunca pasa por aqui: el
+      // panel solo abre la ventana y espera a que la funcion diga que quedo conectado.
+      const cual = red.dataset.conecta;
+      const base = String(CFG.firebaseFunctionsBase || '').replace(/\/$/, '');
+      const url = base + '/crmOauth?red=' + encodeURIComponent(cual);
+      const w = window.open(url, 'conectar_' + cual, 'width=620,height=740');
+      if (!w) return avisa('El navegador bloqueó la ventana', 'Permite las ventanas emergentes para este sitio.');
+      avisa('Inicia sesión en la ventana', 'Acepta los permisos y vuelve aquí.');
+      // Se refresca al cerrarse la ventana: es cuando el permiso ya esta dado o no.
+      const vigila = setInterval(() => {
+        if (!w.closed) return;
+        clearInterval(vigila);
+        pintaCanales();
+      }, 1200);
+      return;
+    }
+    if (ev.target.closest('[data-conecta-puente]')) {
+      const r = await llama({ action:'requestBridgePairing' });
+      if (!r.ok) return avisa('No se pudo pedir el código', r.error);
+      abreModal('<div class="mtapa"><b>Conectar WhatsApp Web</b><button class="cerrarm" data-cerrar>×</button></div>'
+        + '<div class="mcuerpo"><p class="aviso">En el teléfono del segundo número: '
+        + 'WhatsApp → Dispositivos vinculados → Vincular con número de teléfono.</p>'
+        + '<div class="codigo">' + esc(r.code || r.pairing_code || '—') + '</div></div>');
+      $('modal').querySelectorAll('[data-cerrar]').forEach(b => { b.onclick = cierraModal; });
+    }
+  };
+}
+
+/* ---- Configuración ------------------------------------------------------- */
+// Doce tarjetas, las mismas que tenia el panel anterior. Se releyo su vista de
+// configuracion una a una para no dejarse ninguna fuera; la primera version de v2 solo
+// enseñaba el rol y el equipo.
+//
+// Los ajustes viven en la tabla settings del servidor, no en el navegador: son del
+// negocio. Si viven en localStorage, cada persona tiene los suyos y el CRM se comporta
+// distinto segun quien lo abra.
+const AJUSTES = {};
+
+async function cargaAjustes(){
+  const r = await llama({ action:'data', table:'settings', operation:'select', limit: 200 });
+  if (!r.ok) return false;
+  (r.data || r.rows || []).forEach(f => { if (f?.key) AJUSTES[f.key] = f.value; });
+  return true;
+}
+async function guardaAjuste(clave, valor){
+  const r = await llama({ action:'data', table:'settings', operation:'upsert',
+    payload:{ id: clave, key: clave, value: String(valor), updated_at: new Date().toISOString() },
+    on_conflict:'id' });
+  if (!r.ok) { avisa('No se pudo guardar', r.error); return false; }
+  AJUSTES[clave] = String(valor);
+  return true;
+}
+
+function tarjetaCfg(titulo, nota, cuerpo){
+  return '<div class="cfgc"><h3>' + esc(titulo) + '</h3>'
+    + (nota ? '<p class="cfgnota">' + nota + '</p>' : '') + cuerpo + '</div>';
+}
+// Interruptor con su explicacion al lado. Un interruptor suelto no dice que pasa al
+// encenderlo, y estos cambian lo que se le manda a clientes reales.
+function interruptorCfg(clave, etiqueta, explica, pordefecto){
+  const on = AJUSTES[clave] !== undefined ? AJUSTES[clave] === 'true' : !!pordefecto;
+  return '<label class="cfgsw"><input type="checkbox" data-sw="' + esc(clave) + '"'
+    + (on ? ' checked' : '') + '><span><b>' + esc(etiqueta) + '</b>'
+    + '<i>' + explica + '</i></span></label>';
+}
+function campoCfg(clave, etiqueta, marcador){
+  return '<div class="campo"><label>' + esc(etiqueta) + '</label>'
+    + '<input data-cfg="' + esc(clave) + '" value="' + esc(AJUSTES[clave] || '')
+    + '" placeholder="' + esc(marcador || '') + '"></div>';
+}
+
+function montaConfig(){
+  if (!montadas.has('config')) {
+    montadas.add('config');
+    hueco('config', '<div class="hoja"><h1>Configuración</h1>'
+      + '<p class="bajada">Lo que cambia aquí afecta a lo que se les manda a clientes reales.</p>'
+      + '<div class="cfggrid" id="cfgGrid"></div></div>');
+  }
+  pintaConfig();
+}
+
+async function pintaConfig(){
+  const g = $('cfgGrid'); if (!g) return;
+  g.innerHTML = '<p class="bajada"><span class="cargando"></span> Cargando…</p>';
+  await cargaAjustes();
+  const quien = await llama({ action:'whoami' });
+  const esAdmin = quien.ok && quien.rol_efectivo === 'admin';
+
+  const dato = (k,v) => '<div class="dato"><div class="k">' + esc(k) + '</div><div class="v">'
+    + esc(String(v ?? '—')) + '</div></div>';
+
+  g.innerHTML =
+    tarjetaCfg('Tu sesión', '',
+      dato('Correo', quien.email || auth.currentUser?.email || '—')
+      + dato('Rol', quien.rol_efectivo || '—')
+      + dato('Acceso', quien.pasaria_requireMember ? 'autorizado'
+          : !quien.ficha_existe ? 'sin ficha de miembro'
+          : !quien.activo ? 'ficha desactivada'
+          : !quien.pertenece_al_negocio ? 'no pertenece a este negocio' : 'rol sin permisos'))
+
+    + tarjetaCfg('Usuarios y permisos del panel',
+        'Desactivar una cuenta o cambiarle el rol se aplica también a envíos, difusiones, '
+        + 'automatizaciones y escrituras en la base. No es solo lo que ve en pantalla.',
+        '<div id="cfgUsuarios"></div>'
+        + (esAdmin
+          ? '<div class="par" style="margin-top:10px">'
+            + '<div class="campo"><label>Correo</label><input id="uEmail" type="email" placeholder="alguien@dcarela.com"></div>'
+            + '<div class="campo"><label>Nombre</label><input id="uNombre"></div></div>'
+            + '<div class="par">'
+            + '<div class="campo"><label>Rol</label><select id="uRol">'
+            +   '<option value="agent">Agente — atiende chats</option>'
+            +   '<option value="supervisor">Supervisor — además difunde</option>'
+            +   '<option value="admin">Administrador — todo</option></select></div>'
+            + '<div class="campo"><label>Contraseña temporal</label><input id="uClave" type="text"></div></div>'
+            + '<button class="btn-solido" id="uAdd">Crear cuenta</button>'
+          : '<p class="cfgnota">Tu rol no puede gestionar cuentas. Eso lo lleva un administrador.</p>'))
+
+    + tarjetaCfg('Auto-cierre a los 14 días',
+        'Una conversación sin respuesta se cierra sola. Se cierra como <b>perdido</b>, nunca como '
+        + 'cliente: dar por vendido lo que nadie confirmó ensucia todas las métricas.',
+        interruptorCfg('auto_cierre', 'Cerrar solas las conversaciones dormidas',
+          'A los 14 días sin respuesta del cliente.', true))
+
+    + tarjetaCfg('Seguimientos automáticos',
+        'La norma de los dos intentos está cableada en el servidor y no se puede desactivar desde '
+        + 'aquí: dos seguimientos ignorados y el contacto pasa a desinteresado.',
+        interruptorCfg('seguimientos', 'Enviar seguimientos automáticos',
+          'Como máximo dos por contacto, nunca más.', true))
+
+    + tarjetaCfg('Permiso de marketing',
+        'Si se activa, quien escriba por primera vez queda con marketing permitido. '
+        + '<b>Déjalo apagado si no tienes su consentimiento explícito</b>: es lo que Meta mira '
+        + 'cuando alguien reporta.',
+        interruptorCfg('marketing_auto', 'Dar permiso de marketing automáticamente',
+          'Al primer mensaje del cliente.', false))
+
+    + tarjetaCfg('Encuesta de satisfacción',
+        'Se envía sola al cerrar una conversación como cliente.',
+        interruptorCfg('encuesta_auto', 'Pedir la encuesta automáticamente',
+          'Solo a quien terminó comprando.', false))
+
+    + tarjetaCfg('Agenda en el teléfono',
+        'La agenda se publica como calendario suscribible. Se añade una vez en el iPhone o en '
+        + 'Google Calendar y se actualiza sola; no hay que volver a importarla.',
+        (CFG.firebaseAgendaUrl
+          ? '<div class="dato"><div class="k">Enlace de suscripción</div>'
+            + '<div class="v" style="word-break:break-all;font-size:11.5px">'
+            + esc(CFG.firebaseAgendaUrl) + '</div></div>'
+            + '<button class="btn-linea" id="cfgCopiaAgenda" style="margin-top:8px">Copiar enlace</button>'
+          : '<p class="cfgnota">No hay URL de agenda configurada.</p>'))
+
+    + tarjetaCfg('Catálogo público',
+        'De aquí salen los combos y los precios que se le mandan al cliente. Se lee de la web, '
+        + 'así que el precio que envías es siempre el que ve él.',
+        dato('Catálogo', CFG.publicCatalogUrl) + dato('Bodas', CFG.publicWeddingUrl))
+
+    + tarjetaCfg('Datos del negocio', '',
+        dato('Marca', CFG.brandName)
+        + dato('WhatsApp oficial', CFG.businessDisplayNumber || CFG.businessNumber)
+        + dato('Vista al entrar', CFG.defaultView || 'conversations'))
+
+    + tarjetaCfg('Mensajes por defecto',
+        'Lo que pegan los atajos del compositor.',
+        campoCfg('texto_ubicacion', 'Ubicación', CFG.addressText || '')
+        + campoCfg('texto_combos', 'Combos privados', CFG.privateCombosMessage || '')
+        + '<button class="btn-solido" id="cfgGuardaTextos">Guardar</button>')
+
+    + tarjetaCfg('Asistente IA',
+        'La clave de Google vive <b>solo en el servidor</b>. No se puede leer ni cambiar desde el '
+        + 'panel, y eso es a propósito: una clave que el navegador puede leer es una clave '
+        + 'que se puede robar.',
+        dato('Motor', 'Google Gemini 2.5 Flash')
+        + '<button class="btn-linea" id="cfgReglas2" style="margin-top:8px">Editar reglas del negocio</button>')
+
+    + tarjetaCfg('Bot de WhatsApp',
+        'Encender o apagar el bot por canal se hace en <b>Canales</b>, no aquí: son ajustes de cada '
+        + 'conexión y mezclarlos lleva a apagar el que no era.',
+        '<button class="btn-linea" id="cfgIrCanales">Ir a Canales</button>');
+
+  // --- cableado
+  g.querySelectorAll('[data-sw]').forEach(el => {
+    el.onchange = async () => {
+      const ok = await guardaAjuste(el.dataset.sw, el.checked);
+      if (!ok) el.checked = !el.checked;   // si el servidor dijo que no, el interruptor vuelve
+      else avisa('Guardado', el.checked ? 'Activado' : 'Desactivado');
+    };
+  });
+  const gt = $('cfgGuardaTextos');
+  if (gt) gt.onclick = async () => {
+    gt.disabled = true;
+    for (const el of g.querySelectorAll('[data-cfg]')) await guardaAjuste(el.dataset.cfg, el.value);
+    gt.disabled = false;
+    avisa('Mensajes guardados');
+  };
+  const ca = $('cfgCopiaAgenda');
+  if (ca) ca.onclick = async () => {
+    try { await navigator.clipboard.writeText(CFG.firebaseAgendaUrl); avisa('Enlace copiado'); }
+    catch (e) { avisa('No se pudo copiar'); }
+  };
+  const cr = $('cfgReglas2'); if (cr) cr.onclick = abreReglas;
+  const ic = $('cfgIrCanales'); if (ic) ic.onclick = () => ve('canales');
+  if (esAdmin) cableaUsuarios();
+  pintaUsuarios(esAdmin);
+}
+
+async function pintaUsuarios(esAdmin){
+  const cont = $('cfgUsuarios'); if (!cont) return;
+  cont.innerHTML = '<p class="cfgnota"><span class="cargando"></span> Cargando…</p>';
+  const r = await llama({ action:'panelUsers', operation:'list' });
+  if (!r.ok) {
+    cont.innerHTML = '<p class="cfgnota">' + (String(r.error||'').includes('administrador')
+      ? 'Solo un administrador puede ver el equipo.' : esc(r.error || 'No se pudo cargar.')) + '</p>';
+    return;
+  }
+  const filas = r.users || r.members || r.data || [];
+  if (!filas.length) { cont.innerHTML = '<p class="cfgnota">No hay nadie más.</p>'; return; }
+  cont.innerHTML = '<div class="tabla">'
+    + '<div class="fila cabecera" style="grid-template-columns:minmax(0,2fr) 1fr auto">'
+    +   '<span>Persona</span><span>Rol</span><span>Estado</span></div>'
+    + filas.map((x,i) => '<div class="fila" style="grid-template-columns:minmax(0,2fr) 1fr auto">'
+      + '<span><b>' + esc(x.display_name || x.email || '—') + '</b><small>' + esc(x.email || '') + '</small></span>'
+      + '<span>' + (esAdmin
+          ? '<select data-rol="' + esc(x.uid || x.id || '') + '">'
+            + ['agent','supervisor','admin'].map(rr => '<option value="' + rr + '"'
+              + (x.role === rr ? ' selected' : '') + '>' + rr + '</option>').join('') + '</select>'
+          : esc(x.role || '—')) + '</span>'
+      + '<span><button class="interruptor' + (x.active === false ? '' : ' on') + '"'
+      +   (esAdmin ? ' data-activo="' + esc(x.uid || x.id || '') + '"' : ' disabled')
+      +   '>' + (x.active === false ? 'inactivo' : 'activo') + '</button></span></div>').join('')
+    + '</div>';
+
+  if (!esAdmin) return;
+  cont.onchange = async ev => {
+    const s = ev.target.closest('[data-rol]'); if (!s) return;
+    const r2 = await llama({ action:'panelUsers', operation:'update', user_id:s.dataset.rol, role:s.value });
+    avisa(r2.ok ? 'Rol cambiado' : 'No se pudo cambiar', r2.ok ? s.value : r2.error);
+  };
+  cont.onclick = async ev => {
+    const b = ev.target.closest('[data-activo]'); if (!b) return;
+    const activar = !b.classList.contains('on');
+    // Desactivar a alguien le corta tambien los envios y las automatizaciones, no solo
+    // la pantalla. Por eso se pregunta.
+    if (!activar && !confirm('Se desactiva la cuenta. Dejará de poder entrar, enviar y difundir.\n\n¿Seguro?')) return;
+    b.disabled = true;
+    const r2 = await llama({ action:'panelUsers', operation:'update', user_id:b.dataset.activo, active:activar });
+    b.disabled = false;
+    if (!r2.ok) return avisa('No se pudo cambiar', r2.error);
+    b.classList.toggle('on', activar);
+    b.textContent = activar ? 'activo' : 'inactivo';
+  };
+}
+
+function cableaUsuarios(){
+  const b = $('uAdd'); if (!b) return;
+  b.onclick = async () => {
+    const email = $('uEmail').value.trim();
+    const clave = $('uClave').value;
+    if (!email || !clave) return avisa('Faltan el correo o la contraseña temporal');
+    if (clave.length < 8) return avisa('Contraseña demasiado corta', 'Ocho caracteres como mínimo.');
+    b.disabled = true;
+    const r = await llama({ action:'panelUsers', operation:'create', email,
+      display_name: $('uNombre').value.trim(), role: $('uRol').value, temporary_password: clave });
+    b.disabled = false;
+    if (!r.ok) return avisa('No se pudo crear', r.error);
+    $('uEmail').value = ''; $('uNombre').value = ''; $('uClave').value = '';
+    avisa('Cuenta creada', 'Dile que cambie la contraseña al entrar.');
+    pintaUsuarios(true);
+  };
+}
+
+/* ---- Funnel / Kanban ----------------------------------------------------- */
+// Arrastrar una tarjeta cambia la etapa del lead de verdad. Por eso la tarjeta vuelve
+// a su sitio si el servidor rechaza el cambio: dejarla en la columna nueva la haria
+// mentir hasta el siguiente refresco, y quien la movio se iria creyendo que se guardo.
+function montaFunnel(){
+  if (!montadas.has('funnel')) {
+    montadas.add('funnel');
+    hueco('funnel', '<div class="hoja"><h1>Funnel</h1>'
+      + '<p class="bajada">Arrastra un contacto a otra columna para cambiarle la etapa.</p>'
+      + '<div class="kanban" id="kanban"></div>'
+      + '<div class="seccion" style="margin:30px 0 4px">Leads parados</div>'
+      + '<p class="bajada">Por qué no avanzan y qué hacer con cada uno. Nada se mueve solo: '
+      +   'cambiar de etapa cambia lo que el sistema le mandará después.</p>'
+      + '<div id="movil"></div></div>');
+  }
+  pintaKanban();
+  pintaMovilizacion();
+}
+
+function pintaKanban(){
+  const cont = $('kanban'); if (!cont) return;
+  cont.innerHTML = ETAPAS.map(e => {
+    const filas = CONVS.filter(c => (c.lifecycle_stage || 'nuevo') === e);
+    return '<div class="columna" data-etapa="' + e + '">'
+      + '<div class="ctitulo">' + esc(e.replace(/_/g,' ')) + '<b>' + filas.length + '</b></div>'
+      + '<div class="ccuerpo">'
+      + filas.slice(0, 60).map(c => '<div class="ktarjeta" draggable="true" data-conv="' + esc(c._id) + '">'
+          + '<b>' + esc(nombreDe(c)) + '</b>'
+          + '<span>' + esc(c.last_message_preview || '') + '</span>'
+          + '<i>' + esc(hora(c.last_message_at)) + (c.interested_category ? ' · ' + esc(c.interested_category) : '') + '</i>'
+        + '</div>').join('')
+      + (filas.length > 60 ? '<div class="kmas">… y ' + (filas.length - 60) + ' más</div>' : '')
+      + '</div></div>';
+  }).join('');
+
+  let arrastrando = null;
+  cont.querySelectorAll('.ktarjeta').forEach(t => {
+    t.addEventListener('dragstart', ev => {
+      arrastrando = t;
+      t.classList.add('moviendo');
+      // Firefox no inicia el arrastre sin datos en el portapapeles del evento.
+      ev.dataTransfer.setData('text/plain', t.dataset.conv);
+      ev.dataTransfer.effectAllowed = 'move';
+    });
+    t.addEventListener('dragend', () => { t.classList.remove('moviendo'); arrastrando = null;
+      cont.querySelectorAll('.columna').forEach(c => c.classList.remove('encima')); });
+  });
+  cont.querySelectorAll('.columna').forEach(col => {
+    col.addEventListener('dragover', ev => { ev.preventDefault(); col.classList.add('encima'); });
+    col.addEventListener('dragleave', () => col.classList.remove('encima'));
+    col.addEventListener('drop', async ev => {
+      ev.preventDefault();
+      col.classList.remove('encima');
+      const id = ev.dataTransfer.getData('text/plain') || arrastrando?.dataset.conv;
+      const c = CONVS.find(x => x._id === id);
+      const etapa = col.dataset.etapa;
+      if (!c || (c.lifecycle_stage || 'nuevo') === etapa) return;
+      const anterior = c.lifecycle_stage;
+      c.lifecycle_stage = etapa;      // se mueve ya, para que se sienta inmediato
+      pintaKanban();
+      const r = await llama({ action:'updateLead', conversation_id: c.id || c._id,
+        fields:{ lifecycle_stage: etapa } });
+      if (!r.ok) {
+        c.lifecycle_stage = anterior; // y vuelve si el servidor dijo que no
+        pintaKanban();
+        return avisa('No se pudo mover', r.error);
+      }
+      avisa(nombreDe(c), 'ahora está en ' + etapa.replace(/_/g,' '));
+      pintaChats();
+    });
+  });
+}
+
+/* ---- Dashboard ----------------------------------------------------------- */
+// Graficas en SVG, dibujadas a mano. Sin libreria: una de graficas pesa mas que todo
+// este panel junto, y aqui hacen falta cuatro formas.
+//
+// Paleta neutra, la misma del proyecto de caja: la tinta del tema para los datos y el
+// gris apagado para lo secundario. Los colores solo se usan donde significan algo --
+// verde lo que va bien, rojo lo que hay que mirar -- y no para decorar.
+//
+// TODO sale de CONVS, que ya esta en memoria y en vivo. Ninguna cifra se guarda aparte:
+// dos sitios donde vive el mismo numero acaban discrepando y nadie sabe cual creer.
+
+function montaDashboard(){
+  if (!montadas.has('dashboard')) {
+    montadas.add('dashboard');
+    hueco('dashboard', '<div class="hoja"><h1>Dashboard</h1>'
+      + '<p class="bajada">Lo que hay ahora mismo. Se actualiza solo.</p>'
+      + '<div class="cifras" id="cifras"></div>'
+      + '<div class="tablero" id="tablero"></div></div>');
+  }
+  pintaDashboard();
+}
+
+function diasAtras(n){
+  const d = new Date(); d.setHours(0,0,0,0); d.setDate(d.getDate() - n); return d;
+}
+
+// --- Piezas de dibujo -------------------------------------------------------
+function grafArea(puntos, etiquetas){
+  const an = 640, al = 170, pad = { i:34, d:10, s:14, b:24 };
+  const max = Math.max(1, ...puntos);
+  const x = i => pad.i + i * (an - pad.i - pad.d) / Math.max(1, puntos.length - 1);
+  const y = v => pad.s + (1 - v / max) * (al - pad.s - pad.b);
+  const linea = puntos.map((v,i) => (i ? 'L' : 'M') + x(i).toFixed(1) + ' ' + y(v).toFixed(1)).join(' ');
+  const area = linea + ' L' + x(puntos.length-1).toFixed(1) + ' ' + (al-pad.b) + ' L' + x(0) + ' ' + (al-pad.b) + ' Z';
+  // Tres lineas de referencia, no diez: mas rayas no ayudan a leer, estorban.
+  const guias = [0, .5, 1].map(p => {
+    const v = Math.round(max * p);
+    return '<line x1="' + pad.i + '" x2="' + (an-pad.d) + '" y1="' + y(v) + '" y2="' + y(v) + '" class="gguia"/>'
+      + '<text x="' + (pad.i-7) + '" y="' + (y(v)+3.5) + '" class="gnum" text-anchor="end">' + v + '</text>';
+  }).join('');
+  const marcas = puntos.map((v,i) => (i % 3 === 0 || i === puntos.length-1)
+    ? '<text x="' + x(i) + '" y="' + (al-7) + '" class="gnum" text-anchor="middle">' + esc(etiquetas[i]) + '</text>' : '').join('');
+  const picos = puntos.map((v,i) => '<circle cx="' + x(i) + '" cy="' + y(v) + '" r="2.5" class="gpunto">'
+    + '<title>' + esc(etiquetas[i]) + ': ' + v + '</title></circle>').join('');
+  return '<svg viewBox="0 0 ' + an + ' ' + al + '" class="graf" preserveAspectRatio="none">'
+    + guias + '<path d="' + area + '" class="garea"/><path d="' + linea + '" class="glinea"/>'
+    + picos + marcas + '</svg>';
+}
+
+function grafBarras(filas){
+  const max = Math.max(1, ...filas.map(f => f.v));
+  return '<div class="barras">' + filas.map(f =>
+    '<div class="barra"><span class="be">' + esc(f.n) + '</span>'
+    + '<span class="bp"><i style="width:' + Math.round(f.v / max * 100) + '%"></i></span>'
+    + '<span class="bn">' + f.v + '</span></div>').join('') + '</div>';
+}
+
+function grafAnillo(filas){
+  const total = filas.reduce((a,f) => a + f.v, 0) || 1;
+  const R = 54, C = 2 * Math.PI * R;
+  let acumulado = 0;
+  const arcos = filas.filter(f => f.v).map(f => {
+    const trozo = f.v / total * C;
+    const el = '<circle cx="70" cy="70" r="' + R + '" class="ganillo" stroke="' + f.c + '" '
+      + 'stroke-dasharray="' + trozo.toFixed(2) + ' ' + (C - trozo).toFixed(2) + '" '
+      + 'stroke-dashoffset="' + (-acumulado).toFixed(2) + '"><title>' + esc(f.n) + ': ' + f.v + '</title></circle>';
+    acumulado += trozo;
+    return el;
+  }).join('');
+  return '<div class="anillo"><svg viewBox="0 0 140 140">' + arcos
+    + '<text x="70" y="66" class="gtot" text-anchor="middle">' + total + '</text>'
+    + '<text x="70" y="84" class="gnum" text-anchor="middle">total</text></svg>'
+    + '<div class="leyenda">' + filas.filter(f => f.v).map(f =>
+        '<span><i style="background:' + f.c + '"></i>' + esc(f.n) + ' <b>' + f.v + '</b></span>').join('')
+    + '</div></div>';
+}
+
+function panel(titulo, nota, cuerpo){
+  return '<div class="pgraf"><div class="pgcab"><b>' + esc(titulo) + '</b>'
+    + (nota ? '<span>' + esc(nota) + '</span>' : '') + '</div>' + cuerpo + '</div>';
+}
+
+// --- Pintado ----------------------------------------------------------------
+function pintaDashboard(){
+  const c = $('cifras'); if (!c) return;
+  const hoy = new Date().toDateString();
+  const sinLeer = CONVS.filter(x => Number(x.unread||0) > 0).length;
+  const humano = CONVS.filter(x => x.mode === 'human' || x.human_handoff_required).length;
+  const deHoy = CONVS.filter(x => new Date(x.last_message_at || 0).toDateString() === hoy).length;
+  const clientes = CONVS.filter(x => x.lifecycle_stage === 'cliente').length;
+  const desint = CONVS.filter(x => x.lifecycle_stage === 'desinteresado').length;
+  const excluidos = CONVS.filter(x => x.proactive_blocked_at).length;
+  const vencidos = CONVS.filter(x => x.follow_up_at && new Date(x.follow_up_at) <= new Date()
+    && !['cerrado','perdido','desinteresado'].includes(x.lifecycle_stage)).length;
+
+  // Las cifras que piden accion se marcan; el resto es contexto. Si todo grita, nada grita.
+  const cifra = (n, t, nota, tono) => '<button class="cifra' + (tono ? ' ' + tono : '')
+    + '" data-ir="' + esc(t) + '"><b>' + n + '</b><span>' + esc(t) + '</span>'
+    + (nota ? '<i>' + esc(nota) + '</i>' : '') + '</button>';
+
+  // Los dormidos se cuentan aparte. Meterlos en "Conversaciones" infla el numero con
+  // gente que lleva meses sin escribir y hace parecer que hay mas trabajo del que hay.
+  const dormidos = CONVS.filter(enElOlvido).length;
+  const vivas = CONVS.length - dormidos;
+
+  c.innerHTML = cifra(vivas, 'Conversaciones', dormidos ? dormidos + ' dormidas aparte' : 'en total')
+    + cifra(sinLeer, 'Sin leer', sinLeer ? 'esperando respuesta' : 'al día', sinLeer ? 'ojo' : '')
+    + cifra(vencidos, 'Seguimientos vencidos', vencidos ? 'ya tocaba' : 'ninguno', vencidos ? 'mal' : '')
+    + cifra(humano, 'Esperando a una persona')
+    + cifra(deHoy, 'Activas hoy')
+    + cifra(clientes, 'Clientes', 'ya compraron', clientes ? 'bien' : '')
+    + cifra(desint + excluidos, 'Fuera de marketing', desint + ' desinteresados · ' + excluidos + ' excluidos')
+    + cifra(dormidos, 'Dormidos', dormidos ? 'más de ' + DIAS_INACTIVO + ' días · pendientes de limpiar' : 'ninguno',
+        dormidos ? 'ojo' : '');
+
+  // Pulsar una cifra lleva a verla, no solo la enseña. Un numero sin a donde ir obliga
+  // a rehacer el filtro a mano en la otra pantalla.
+  c.onclick = ev => {
+    const b = ev.target.closest('[data-ir]'); if (!b) return;
+    const a = b.dataset.ir;
+    if (a === 'Seguimientos vencidos') return ve('reminders');
+    if (a === 'Clientes') { filtro = 'todos'; ve('funnel'); return; }
+    if (a === 'Sin leer') { filtro = 'sinleer'; ve('conversations'); pintaChats(); return; }
+    if (a === 'Esperando a una persona') { filtro = 'humano'; ve('conversations'); pintaChats(); return; }
+    if (a === 'Dormidos') return ve('limpieza');
+    ve('conversations');
+  };
+
+  // --- Actividad de los ultimos 14 dias
+  const dias = [], etiq = [];
+  for (let i = 13; i >= 0; i--) {
+    const d = diasAtras(i), sig = diasAtras(i-1);
+    dias.push(CONVS.filter(x => {
+      const t = new Date(x.last_message_at || 0);
+      return t >= d && t < sig;
+    }).length);
+    etiq.push(d.getDate() + '/' + (d.getMonth()+1));
+  }
+
+  const porEtapa = ETAPAS.map(e => ({ n: e.replace(/_/g,' '),
+    v: CONVS.filter(x => (x.lifecycle_stage || 'nuevo') === e).length }));
+
+  const porCanal = Object.keys(CANALES)
+    .map(k => ({ n: CANALES[k].corto, v: CONVS.filter(x => canalDe(x) === k).length, c: CANALES[k].color }))
+    .filter(f => f.v);
+
+  // Embudo: cada etapa como porcentaje de las que llegaron a la anterior. Es la unica
+  // cifra que dice DONDE se pierde la gente, que es lo que se quiere arreglar.
+  const orden = ['nuevo','interesado','cotizando','pendiente_reserva','reservado','cliente'];
+  const cuentaEtapa = e => CONVS.filter(x => (x.lifecycle_stage || 'nuevo') === e).length;
+  const acumulado = orden.map((e,i) => orden.slice(i).reduce((a,x) => a + cuentaEtapa(x), 0));
+  const embudo = orden.map((e,i) => {
+    const de = acumulado[i], antes = i ? acumulado[i-1] : de;
+    return { n: e.replace(/_/g,' '), v: de, pct: antes ? Math.round(de / antes * 100) : 100 };
+  });
+
+  $('tablero').innerHTML =
+    panel('Actividad', 'últimos 14 días', grafArea(dias, etiq))
+    + panel('Por etapa', CONVS.length + ' contactos', grafBarras(porEtapa))
+    + panel('Por canal', 'de dónde escriben', grafAnillo(porCanal))
+    + panel('Embudo', 'cuánta gente pasa de una etapa a la siguiente',
+        '<div class="embudo">' + embudo.map((f,i) =>
+          '<div class="epaso"><span class="en">' + esc(f.n) + '</span>'
+          + '<span class="eb"><i style="width:' + (embudo[0].v ? Math.round(f.v / embudo[0].v * 100) : 0) + '%"></i></span>'
+          + '<span class="ev">' + f.v + (i ? ' <em>' + f.pct + '%</em>' : '') + '</span></div>').join('')
+        + '</div>');
+}
+
+
 /* ---- Movilización de leads ----------------------------------------------- */
 // Un lead se queda parado por razones concretas y casi siempre las mismas. Esto las
 // detecta y dice QUE hacer, con el boton al lado. No mueve nada solo: mover a alguien
