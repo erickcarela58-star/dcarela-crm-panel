@@ -846,6 +846,7 @@ const VISTAS = [
   { id:'poscustomers',  nombre:'Clientes de caja', icono:ico('<path d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M19 8v6M22 11h-6"/>') },
   { id:'satisfaccion',  nombre:'Satisfacción',  icono:ico('<path d="M12 17.3l-5.5 3 1-6.1L3 9.8l6.1-.9L12 3.3l2.9 5.6 6.1.9-4.5 4.4 1 6.1z"/>') },
   { id:'limpieza',      nombre:'Limpieza',       icono:ico('<path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/>') },
+  { id:'anuncios',      nombre:'Anuncios',       icono:ico('<path d="M3 11v2a2 2 0 002 2h2l4 4V5L7 9H5a2 2 0 00-2 2z"/><path d="M15 9a4 4 0 010 6"/>') },
   { id:'campanas',      nombre:'Campañas',      icono:ico('<path d="M3 11l18-8-7 18-2-8-9-2z"/>') },
   { id:'plantillas',    nombre:'Plantillas',    icono:ico('<rect x="5" y="5" width="14" height="16" rx="2"/><path d="M9 11h6M9 15h4"/>') },
   { id:'reminders',     nombre:'Recordatorios', icono:ico('<path d="M18 8a6 6 0 00-12 0c0 7-3 9-3 9h18s-3-2-3-9M13 21a2 2 0 01-4 0"/>') },
@@ -1008,6 +1009,7 @@ function monta(id){
   if (id === 'plantillas') return montaPlantillasVista();
   if (id === 'campanas') return montaBroadcast();
   if (id === 'limpieza') return montaLimpieza();
+  if (id === 'anuncios') return montaAnuncios();
   if (id === 'funnel') return montaFunnel();
   if (id === 'dashboard') return montaDashboard();
   if (TABLERO[id]) return montaTablero(id);
@@ -3816,6 +3818,83 @@ function pintaMovilizacion(){
   };
 }
 
+/* ---- Anuncios de Meta ---------------------------------------------------- */
+// Las metricas se leen en el servidor: hacen falta el token y el id de la cuenta, y
+// ninguno de los dos puede salir al navegador.
+//
+// Se enseña lo que decide si una campaña merece seguir viva: gasto, conversaciones
+// iniciadas y cuanto cuesta cada una. El alcance y las impresiones van despues porque
+// son las cifras que quedan bonitas y no pagan nada.
+let ADS_RANGO = 'last_7d';
+
+function montaAnuncios(){
+  if (!montadas.has('anuncios')) {
+    montadas.add('anuncios');
+    hueco('anuncios', '<div class="hoja"><h1>Anuncios</h1>'
+      + '<p class="bajada">Lo que están haciendo tus campañas de Meta. Lo que importa es el coste '
+      +   'por conversación: el alcance no paga nada.</p>'
+      + '<div class="filtros" id="adsRango" style="padding:0 0 14px"></div>'
+      + '<div id="adsCuerpo"></div></div>');
+    $('adsRango').onclick = ev => {
+      const b = ev.target.closest('[data-rango]'); if (!b) return;
+      ADS_RANGO = b.dataset.rango; pintaAnuncios();
+    };
+  }
+  pintaAnuncios();
+}
+
+async function pintaAnuncios(){
+  const cont = $('adsCuerpo'); if (!cont) return;
+  $('adsRango').innerHTML = [['today','Hoy'],['yesterday','Ayer'],['last_7d','7 días'],
+      ['last_14d','14 días'],['last_30d','30 días']]
+    .map(([k,n]) => '<button class="filtro' + (ADS_RANGO===k?' on':'') + '" data-rango="' + k + '">'
+      + n + '</button>').join('');
+  cont.innerHTML = '<p class="bajada"><span class="cargando"></span> Preguntando a Meta…</p>';
+
+  const r = await llama({ action:'adsMetricas', rango: ADS_RANGO });
+  if (!r.ok) {
+    cont.innerHTML = '<p class="bajada">' + esc(r.error || 'No se pudo consultar.') + '</p>';
+    return;
+  }
+  const filas = r.campanas || [];
+  const t = r.total || {};
+  const rd = n => 'RD$' + Number(n || 0).toLocaleString('es-DO', { maximumFractionDigits: 0 });
+
+  if (!filas.length) {
+    cont.innerHTML = '<p class="bajada">Sin datos en este periodo. Puede que no haya campañas '
+      + 'activas, o que Meta todavía no haya consolidado las cifras de hoy.</p>';
+    return;
+  }
+
+  const costeMedio = t.conversaciones ? t.gasto / t.conversaciones : 0;
+  cont.innerHTML = '<div class="cifras" style="max-width:940px">'
+    + '<div class="cifra"><b>' + rd(t.gasto) + '</b><span>Gastado</span></div>'
+    + '<div class="cifra ' + (t.conversaciones ? 'bien' : '') + '"><b>' + (t.conversaciones || 0)
+    +   '</b><span>Conversaciones</span><i>iniciadas por el anuncio</i></div>'
+    + '<div class="cifra"><b>' + (costeMedio ? rd(costeMedio) : '—') + '</b>'
+    +   '<span>Coste por conversación</span></div>'
+    + '<div class="cifra"><b>' + Number(t.alcance || 0).toLocaleString('es-DO') + '</b>'
+    +   '<span>Personas alcanzadas</span></div></div>'
+
+    + '<div class="seccion" style="margin:24px 0 8px">Por campaña</div>'
+    + '<div class="tabla" style="max-width:1080px">'
+    + '<div class="fila cabecera" style="grid-template-columns:minmax(0,2fr) 1fr 1fr 1fr 1fr">'
+    +   '<span>Campaña</span><span>Gasto</span><span>Conversaciones</span>'
+    +   '<span>Coste c/u</span><span>Clics</span></div>'
+    // Ordenadas por coste por conversacion: la peor arriba, que es la que hay que mirar.
+    + filas.slice().sort((a,b) => (b.coste_conversacion || 9e9) - (a.coste_conversacion || 9e9))
+      .map(c => '<div class="fila" style="grid-template-columns:minmax(0,2fr) 1fr 1fr 1fr 1fr">'
+        + '<span><b>' + esc(c.campana) + '</b><small>' + Number(c.impresiones||0).toLocaleString('es-DO')
+        +   ' impresiones · CTR ' + Number(c.ctr||0).toFixed(2) + '%</small></span>'
+        + '<span>' + rd(c.gasto) + '</span>'
+        + '<span>' + (c.conversaciones || 0) + '</span>'
+        + '<span>' + (c.coste_conversacion ? rd(c.coste_conversacion) : '—') + '</span>'
+        + '<span>' + (c.clics || 0) + '</span></div>').join('')
+    + '</div>'
+    + '<p class="bajada" style="margin-top:12px">Ordenadas de más cara a más barata por '
+    +   'conversación. Las de arriba son las que hay que revisar.</p>';
+}
+
 /* ---- Limpieza del histórico ---------------------------------------------- */
 // El dueño lo dijo claro: los que escribieron al WhatsApp API llevan MESES sin
 // interes, no deben contar para nada hasta que demuestren lo contrario, y se les hace
@@ -3849,7 +3928,15 @@ function montaLimpieza(){
       +   'Se les hace <b>un solo acercamiento</b>, personalizado y <b>programado para mañana</b>. '
       +   'Quien ya recibió dos seguimientos sin contestar pasa directo a desinteresado. '
       +   'El segundo número queda fuera.</p>'
-      + '<div id="limpiezaCuerpo"></div></div>');
+      + '<div id="limpiezaCuerpo"></div>'
+      + '<div class="seccion" style="margin:30px 0 6px">Reconstruir el historial</div>'
+      + '<p class="bajada">Recorre <b>todas</b> las conversaciones y encuentra a quien ya cumplió la '
+      +   'norma de los dos seguimientos sin contestar pero nunca llegó a marcarse. Es el arrastre '
+      +   'de meses: gente que hoy cuenta en las métricas y no debería.</p>'
+      + '<div class="acciones" style="margin-bottom:14px">'
+      +   '<button class="btn-linea" id="recoEscanear">Buscar candidatos</button></div>'
+      + '<div id="recoCuerpo"></div></div>');
+    $('recoEscanear').onclick = escaneaDesinteres;
   }
   pintaLimpieza();
 }
@@ -3908,6 +3995,47 @@ function pintaLimpieza(){
 
   if (aTocar.length) $('limProgramar').onclick = () => programaAcercamiento(aTocar);
   if (aDescartar.length) $('limDescartar').onclick = () => descartaOlvidados(aDescartar);
+}
+
+// El servidor ya tiene la norma implementada y sabe aplicarla en bloque: scan lista sin
+// tocar nada, apply marca todas. Se usa esa, no una copia en el panel: la regla de
+// negocio tiene que vivir en un solo sitio o las dos acaban discrepando.
+async function escaneaDesinteres(){
+  const b = $('recoEscanear');
+  b.disabled = true;
+  $('recoCuerpo').innerHTML = '<p class="bajada"><span class="cargando"></span> Recorriendo el historial…</p>';
+  const r = await llama({ action:'disinterest', operation:'scan' });
+  b.disabled = false;
+  if (!r.ok) { $('recoCuerpo').innerHTML = ''; return avisa('No se pudo escanear', r.error); }
+  const filas = r.candidates || r.candidatos || r.rows || [];
+  if (!filas.length) {
+    $('recoCuerpo').innerHTML = '<p class="bajada">Ninguno. El historial ya está al día: nadie '
+      + 'cumple la norma sin estar marcado.</p>';
+    return;
+  }
+  $('recoCuerpo').innerHTML = '<div class="propuesta" style="max-width:900px">'
+    + '<div class="tapa"><b>' + filas.length + ' contacto(s) deberían estar marcados</b></div>'
+    + '<div class="cuerpo"><p class="aviso" style="margin:0 0 10px">Recibieron dos seguimientos y no '
+    +   'contestaron. Marcarlos apaga marketing y seguimientos; pueden seguir escribiendo y se les '
+    +   'puede contestar a mano.</p>'
+    + '<div class="destinos">' + filas.slice(0,80).map(f =>
+        '<span>' + esc(f.customer_name || f.contact_name || f.wa_phone || f.conversation_id) + '</span>').join('')
+    + (filas.length > 80 ? '<span>… y ' + (filas.length-80) + ' más</span>' : '') + '</div></div>'
+    + '<div class="patas"><button class="btn-solido" id="recoAplicar">Marcar los ' + filas.length + '</button>'
+    +   '<button class="btn-linea" id="recoCancelar">Cancelar</button></div></div>';
+  $('recoCancelar').onclick = () => { $('recoCuerpo').innerHTML = ''; };
+  $('recoAplicar').onclick = async () => {
+    if (!confirm('Se marcarán ' + filas.length + ' contactos como desinteresados.\n\n'
+      + 'Dejan de contar en las métricas y de recibir marketing y seguimientos.\n\n¿Continuar?')) return;
+    const ap = $('recoAplicar');
+    ap.disabled = true; ap.textContent = 'Marcando…';
+    const r2 = await llama({ action:'disinterest', operation:'apply' });
+    ap.disabled = false;
+    if (!r2.ok) { ap.textContent = 'Marcar los ' + filas.length; return avisa('No se pudo aplicar', r2.error); }
+    $('recoCuerpo').innerHTML = '<p class="bajada">Historial reconstruido: '
+      + (r2.marked ?? r2.marcados ?? filas.length) + ' contacto(s) marcados.</p>';
+    avisa('Historial reconstruido', 'Ya no cuentan en las métricas.');
+  };
 }
 
 async function programaAcercamiento(lista){
