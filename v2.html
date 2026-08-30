@@ -278,7 +278,22 @@ img.av{object-fit:cover}
   margin:1px 0 3px;cursor:zoom-in}
 video.mmedia{cursor:default}
 .msticker{display:block;max-width:130px;max-height:130px;margin:2px 0}
-.maudio{display:block;width:230px;max-width:100%;height:38px;margin:2px 0}
+/* Nota de voz con la forma de WhatsApp. El <audio controls> del navegador ocupa el
+   doble, cambia de aspecto en cada navegador y dentro de un globo se ve como un parche. */
+.voz{display:flex;align-items:center;gap:9px;width:250px;max-width:100%;margin:2px 0 4px}
+.vplay{width:33px;height:33px;border-radius:50%;flex:0 0 auto;display:flex;align-items:center;
+  justify-content:center;font-size:12px;background:rgba(11,20,26,.09);color:inherit}
+:root[data-tema="oscuro"] .vplay{background:rgba(255,255,255,.13)}
+.vplay:hover{background:rgba(11,20,26,.16)}
+.vonda{flex:1;min-width:0;height:26px;display:flex;align-items:center;gap:2px;
+  position:relative;cursor:pointer}
+.vonda i{flex:1;min-width:1px;border-radius:1px;background:currentColor;opacity:.32}
+.vprog{position:absolute;left:0;top:0;bottom:0;width:0;background:currentColor;
+  opacity:.14;border-radius:2px;pointer-events:none}
+.vtiempo{font-size:10.5px;color:var(--meta);font-variant-numeric:tabular-nums;flex:0 0 auto}
+.vvel{font-size:10px;font-weight:700;padding:2px 6px;border-radius:9px;flex:0 0 auto;
+  background:rgba(11,20,26,.09);color:inherit}
+:root[data-tema="oscuro"] .vvel{background:rgba(255,255,255,.13)}
 .marchivo{display:flex;flex-direction:column;gap:2px;padding:9px 11px;margin:2px 0 4px;
   border-radius:6px;background:rgba(11,20,26,.06)}
 :root[data-tema="oscuro"] .marchivo{background:rgba(255,255,255,.07)}
@@ -1986,7 +2001,72 @@ async function urlDeMedio(id){
 
 // Se resuelven despues de pintar: el globo sale ya, y la imagen aparece cuando llega.
 // Bloquear el pintado hasta tenerlas dejaria el chat en blanco varios segundos.
+// ===== Reproductor de notas de voz =====
+// Uno solo para todo el hilo: si cada globo tuviera el suyo, empezar una nota dejaria
+// sonando la anterior encima.
+let audioActivo = null, vozActiva = null;
+
+function cableaVoz(){
+  document.querySelectorAll('.voz').forEach(v => {
+    if (v.dataset.listo) return;
+    v.dataset.listo = '1';
+    const play = v.querySelector('.vplay');
+    const vel = v.querySelector('.vvel');
+    const tiempo = v.querySelector('.vtiempo');
+    const prog = v.querySelector('.vprog');
+
+    const pinta = () => {
+      const a = audioActivo;
+      const sonando = vozActiva === v && a && !a.paused;
+      play.textContent = sonando ? '❚❚' : '▶';
+      if (vozActiva === v && a) {
+        const t = a.currentTime || 0;
+        tiempo.textContent = Math.floor(t/60) + ':' + String(Math.floor(t%60)).padStart(2,'0');
+        prog.style.width = a.duration ? (t / a.duration * 100) + '%' : '0%';
+      }
+    };
+
+    play.onclick = async () => {
+      if (vozActiva === v && audioActivo) {
+        if (audioActivo.paused) { audioActivo.play(); } else { audioActivo.pause(); }
+        pinta();
+        return;
+      }
+      if (audioActivo) { audioActivo.pause(); const p = vozActiva?.querySelector('.vplay'); if (p) p.textContent = '▶'; }
+      const src = v.dataset.src || (v.dataset.medioAudio ? await urlDeMedio(v.dataset.medioAudio) : '');
+      if (!src) return avisa('No se pudo recuperar la nota de voz');
+      audioActivo = new Audio(src);
+      audioActivo.playbackRate = Number(vel.dataset.v || 1);
+      vozActiva = v;
+      audioActivo.ontimeupdate = pinta;
+      audioActivo.onended = () => { prog.style.width = '0%'; tiempo.textContent = '0:00'; play.textContent = '▶'; };
+      audioActivo.onerror = () => avisa('No se pudo reproducir la nota de voz');
+      audioActivo.play().then(pinta).catch(() => avisa('No se pudo reproducir'));
+    };
+
+    // Velocidad: 1× → 1.5× → 2×. Escuchar una nota de dos minutos al doble es la
+    // diferencia entre revisarlas todas o dejarlas sin oir.
+    vel.onclick = () => {
+      const ciclo = [1, 1.5, 2];
+      const actual = Number(vel.dataset.v || 1);
+      const siguiente = ciclo[(ciclo.indexOf(actual) + 1) % ciclo.length];
+      vel.dataset.v = siguiente;
+      vel.textContent = siguiente + '×';
+      if (vozActiva === v && audioActivo) audioActivo.playbackRate = siguiente;
+    };
+
+    // Pinchar en la onda salta a ese punto.
+    v.querySelector('.vonda').onclick = ev => {
+      if (vozActiva !== v || !audioActivo?.duration) return;
+      const r = ev.currentTarget.getBoundingClientRect();
+      audioActivo.currentTime = ((ev.clientX - r.left) / r.width) * audioActivo.duration;
+      pinta();
+    };
+  });
+}
+
 async function resuelveMedios(){
+  cableaVoz();
   const pendientes = [...document.querySelectorAll('[data-medio]')];
   for (const el of pendientes) {
     const id = el.dataset.medio;
@@ -2027,6 +2107,21 @@ function tarjetaArchivo(a, etiqueta){
     + '<span>' + esc(detalle || 'archivo') + '</span>'
     + '<a href="' + esc(a.url) + '" target="_blank" rel="noopener">Abrir</a></div>';
 }
+// La onda de una nota de voz. Dibujar la real exigiria descargar y decodificar TODOS
+// los audios del hilo solo para pintar barritas, asi que se genera a partir del wamid:
+// siempre la misma para el mismo mensaje, distinta entre mensajes, y sin coste. Es
+// decoracion honesta -- no pretende representar el sonido, marca el avance.
+function ondaFalsa(semilla){
+  let h = 0;
+  for (let i = 0; i < String(semilla).length; i++) h = (h * 31 + String(semilla).charCodeAt(i)) % 100000;
+  let s = '';
+  for (let i = 0; i < 34; i++) {
+    h = (h * 1103515245 + 12345) % 2147483648;
+    s += '<i style="height:' + (22 + (h % 68)) + '%"></i>';
+  }
+  return s;
+}
+
 function cuerpoMensaje(m){
   const t = String(m.msg_type || 'text').toLowerCase();
   const a = adjuntoDe(m);
@@ -2055,9 +2150,16 @@ function cuerpoMensaje(m){
   }
   if (t === 'audio' || t === 'voice') {
     const trans = m.audio_transcript || m.transcription || '';
+    // Reproductor propio con la forma de WhatsApp: boton redondo, onda, duracion y
+    // velocidad. El <audio controls> del navegador ocupa el doble, cambia de aspecto en
+    // cada navegador y dentro de un globo de chat se ve como un parche.
     return medio('Nota de voz', (src, porId) =>
-      '<audio class="maudio" controls preload="metadata"'
-      + (porId ? ' data-medio="' + esc(id) + '"' : ' src="' + src + '"') + '></audio>')
+      '<div class="voz"' + (porId ? ' data-medio-audio="' + esc(id) + '"' : ' data-src="' + src + '"') + '>'
+      + '<button class="vplay" aria-label="Reproducir">▶</button>'
+      + '<div class="vonda">' + ondaFalsa(m.wamid || m.id || '') + '<span class="vprog"></span></div>'
+      + '<span class="vtiempo">0:00</span>'
+      + '<button class="vvel" aria-label="Velocidad">1×</button>'
+      + '</div>')
       + (trans ? '<div class="mpie">“' + esc(trans) + '”</div>' : '');
   }
   if (t === 'document' || t === 'file') {
@@ -2521,13 +2623,15 @@ async function pintaCanales(){
         : '<button class="btn-linea" data-conecta-puente>Conectar por código</button>')
 
     + tarjeta('instagram', cuenta('instagram') ? true : null,
-      'Los mensajes de Instagram entran por la misma app de Meta que WhatsApp. Falta suscribir '
-      + 'el webhook al campo <code>messages</code> de Instagram en Meta Business y añadir la '
-      + 'página al activo. No se puede activar desde aquí: requiere el App Secret.', '')
+      'Se conecta iniciando sesión con Facebook y aceptando los permisos de la cuenta: '
+      + '<code>instagram_manage_messages</code> y <code>pages_manage_metadata</code>. '
+      + 'La cuenta de Instagram tiene que ser profesional y estar enlazada a la página.',
+      '<button class="btn-linea" data-conecta="instagram">Iniciar sesión y dar permisos</button>')
 
     + tarjeta('facebook', cuenta('facebook') ? true : null,
-      'Igual que Instagram: mismo webhook, distinto campo suscrito. Se activa en Meta Business '
-      + 'suscribiendo la página a <code>messages</code>.', '');
+      'Mismo inicio de sesión que Instagram, con <code>pages_messaging</code>. Al aceptar, la '
+      + 'página queda suscrita y sus mensajes entran aquí como una conversación más.',
+      '<button class="btn-linea" data-conecta="facebook">Iniciar sesión y dar permisos</button>');
 
   cont.onclick = async ev => {
     const bot = ev.target.closest('[data-canal-bot]');
@@ -2556,6 +2660,25 @@ async function pintaCanales(){
       const r = await llama({ action:'logoutBridge' });
       avisa(r.ok ? 'WhatsApp Web desconectado' : 'No se pudo desconectar', r.ok ? '' : r.error);
       pintaCanales();
+      return;
+    }
+    const red = ev.target.closest('[data-conecta]');
+    if (red) {
+      // El inicio de sesion de Meta se abre en su propia ventana y devuelve el permiso
+      // a la funcion, que es donde vive el App Secret. La clave nunca pasa por aqui: el
+      // panel solo abre la ventana y espera a que la funcion diga que quedo conectado.
+      const cual = red.dataset.conecta;
+      const base = String(CFG.firebaseFunctionsBase || '').replace(/\/$/, '');
+      const url = base + '/crmOauth?red=' + encodeURIComponent(cual);
+      const w = window.open(url, 'conectar_' + cual, 'width=620,height=740');
+      if (!w) return avisa('El navegador bloqueó la ventana', 'Permite las ventanas emergentes para este sitio.');
+      avisa('Inicia sesión en la ventana', 'Acepta los permisos y vuelve aquí.');
+      // Se refresca al cerrarse la ventana: es cuando el permiso ya esta dado o no.
+      const vigila = setInterval(() => {
+        if (!w.closed) return;
+        clearInterval(vigila);
+        pintaCanales();
+      }, 1200);
       return;
     }
     if (ev.target.closest('[data-conecta-puente]')) {
