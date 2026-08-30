@@ -225,6 +225,13 @@ img.av{object-fit:cover}
 .codigo{margin-top:10px;padding:18px;border-radius:var(--r2);background:var(--hover);
   text-align:center;font-size:27px;font-weight:700;letter-spacing:5px;
   font-family:ui-monospace,Menlo,Consolas,monospace}
+.bridge-tools{display:flex;flex-wrap:wrap;gap:8px;width:100%}
+.bridge-code-panel{display:none;width:100%;padding:12px;border:1px solid var(--line);
+  border-radius:var(--r);background:var(--hover)}
+.bridge-code-panel.on{display:block}
+.bridge-code-panel .codigo{margin:0 0 9px;background:var(--panel)}
+.bridge-meta{width:100%;margin:0;color:var(--mut);font-size:11.5px;line-height:1.45}
+.bridge-meta.mal{color:var(--bad)}
 .filtro b{margin-left:5px;opacity:.65;font-weight:700}
 .chats{flex:1;overflow-y:auto}
 
@@ -575,6 +582,46 @@ video.mmedia{cursor:default}
 .destinos span{padding:3px 0;border-bottom:1px solid var(--line)}
 .destinos span:last-child{border-bottom:0}
 
+/* --- Agenda ------------------------------------------------------------------ */
+.agbar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:16px}
+.agtog{display:flex;border:1px solid var(--line2);border-radius:var(--r);overflow:hidden}
+.agtog button{padding:7px 13px;font-size:12.5px;font-weight:600;color:var(--mut)}
+.agtog button.on{background:var(--ink);color:var(--on-ink)}
+.agfil{display:flex;gap:6px}
+.agnav{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.agnav b{flex:1;font-size:14px;text-transform:capitalize}
+.agnav .btn-linea{padding:6px 12px}
+.agsem{display:grid;grid-template-columns:repeat(7,1fr);gap:5px;max-width:820px;margin-bottom:5px}
+.agsem span{text-align:center;font-size:9.5px;font-weight:800;letter-spacing:.6px;
+  text-transform:uppercase;color:var(--mut)}
+.agcal{display:grid;grid-template-columns:repeat(7,1fr);gap:5px;max-width:820px}
+.agcel{min-height:62px;padding:6px;border:1px solid var(--line);border-radius:var(--r);
+  background:var(--panel);display:flex;flex-direction:column;align-items:flex-start;gap:4px}
+.agcel:hover{border-color:var(--line2);background:var(--hover)}
+.agcel.fuera{opacity:.35}
+.agcel.hoy{border-color:var(--ink)}
+.agcel.sel{background:var(--ink)}
+.agcel.sel .agnum{color:var(--on-ink)}
+.agnum{font-size:12px;font-weight:600}
+.agpuntos{display:flex;align-items:center;gap:3px;flex-wrap:wrap}
+.agpuntos i{width:6px;height:6px;border-radius:50%}
+.agpuntos i.firme{background:var(--ok)}
+.agpuntos i.tent{background:var(--warn)}
+.agpuntos em{font-style:normal;font-size:9px;color:var(--mut)}
+.agpanel{margin-top:18px;max-width:820px}
+.agdia{margin-bottom:18px;max-width:820px}
+.agdcab{display:flex;justify-content:space-between;align-items:baseline;padding:0 0 7px;
+  border-bottom:1px solid var(--line);margin-bottom:7px;font-size:12.5px;font-weight:650;
+  text-transform:capitalize}
+.agdcab b{font-size:11px;color:var(--mut)}
+.agcita{display:flex;align-items:center;gap:12px;width:100%;padding:9px 11px;margin-bottom:5px;
+  border:1px solid var(--line);border-radius:var(--r);background:var(--panel);cursor:pointer;text-align:left}
+.agcita:hover{border-color:var(--line2);background:var(--hover)}
+.agh{font-size:13px;font-weight:700;font-variant-numeric:tabular-nums;flex:0 0 auto;min-width:42px}
+.agn{flex:1;min-width:0}
+.agn b{display:block;font-size:13px}
+.agn small{display:block;font-size:11px;color:var(--mut);margin-top:1px}
+
 /* --- Configuración ----------------------------------------------------------- */
 .cfggrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(330px,1fr));gap:14px;
   max-width:1180px;align-items:start}
@@ -768,7 +815,7 @@ video.mmedia{cursor:default}
 import { initializeApp, getApps } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js';
 import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut }
   from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js';
-import { getFirestore, collection, query, where, onSnapshot, doc, setDoc, getDocs }
+import { getFirestore, collection, query, where, onSnapshot, doc, setDoc, getDocs, limit }
   from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
 
 const CFG = window.CRM_CONFIG || window.DCARELA_CRM_CONFIG || {};
@@ -903,6 +950,7 @@ async function llama(cuerpo){
     return { ok:true, ...j };
   } catch (e) { return { ok:false, error: e?.message || String(e) }; }
 }
+const callFn = cuerpo => llama(cuerpo);
 
 /* ---- Datos en vivo ------------------------------------------------------- */
 let CONVS = [], MSGS = [], sel = null, paraMsgs = null;
@@ -956,8 +1004,10 @@ function escuchaMensajes(idConv){
   // Firestore la rechazan sin el, y el rechazo llega por el callback de error. Sin ese
   // callback la conversacion se quedaba en blanco sin decir nada -- pared beige y cero
   // mensajes, indistinguible de un chat vacio de verdad.
+  // Con limit: sin el se descarga la conversacion entera, y hay chats con miles de
+  // mensajes. Se traen los ultimos 400, que es mas de lo que nadie sube a leer.
   const q = query(collection(db,'crm_messages'),
-    where('business_id','==',NEGOCIO), where('conversation_id','==',idConv));
+    where('business_id','==',NEGOCIO), where('conversation_id','==',idConv), limit(400));
   paraMsgs = onSnapshot(q, s => {
     MSGS = s.docs.map(d => d.data())
       .sort((a,b) => String(a.created_at||'').localeCompare(String(b.created_at||'')));
@@ -1221,7 +1271,22 @@ function abre(c){
   cableaChat(c);
   pintaFicha(c);
   escuchaMensajes(c.id || c._id);
+  marcaLeido(c);
   pintaChats();
+}
+
+// Abrir un chat lo marca como leido. Sin esto el globito y el contador del menu no bajan
+// nunca: despues de trabajar toda la bandeja sigue diciendo que hay cinco pendientes, y
+// el filtro "sin leer" deja de servir para saber que falta.
+async function marcaLeido(c){
+  if (!Number(c.unread || 0)) return;
+  const antes = c.unread;
+  c.unread = 0;             // baja ya, para que se sienta inmediato
+  pintaCuentas();
+  const r = await llama({ action:'updateLead', conversation_id: c.id || c._id, fields:{ unread: 0 } });
+  // Si el servidor dijo que no, se devuelve el numero: un contador que miente es peor
+  // que uno alto.
+  if (!r.ok) { c.unread = antes; pintaCuentas(); pintaChats(); }
 }
 
 function cableaChat(c){
@@ -1230,13 +1295,16 @@ function cableaChat(c){
     ? 'Humano atiende' : 'Bot atiende'; };
   pinta();
   modo.onclick = async () => {
-    const nuevo = (sel.mode === 'human') ? 'bot' : 'human';
+    const chatEnabled = sel?.mode === 'bot';
+    const newMode = chatEnabled ? 'human' : 'bot';
+    if (!sel.id && sel._id) sel.id = sel._id;
     modo.disabled = true;
-    const r = await llama({ action:'mode', conversation_id: sel.id || sel._id, mode:nuevo });
+    const r = await callFn({ action: 'mode', conversation_id: sel.id, mode: newMode });
     modo.disabled = false;
     if (!r.ok) return avisa('No se pudo cambiar', r.error);
-    sel.mode = nuevo; pinta();
-    avisa(nuevo === 'human' ? 'La atiendes tú' : 'Vuelve al bot');
+    sel.mode = newMode; pinta();
+    avisa(newMode === 'human' ? 'La atiendes tú' : 'Vuelve al bot',
+      'El cambio se aplicará únicamente a esta conversación.');
   };
   const mas = $('mas');
   mas.querySelector('button').onclick = ev => { ev.stopPropagation(); mas.classList.toggle('on'); };
@@ -1251,10 +1319,7 @@ function cableaChat(c){
     const b = ev.target.closest('[data-mas]'); if (!b) return;
     mas.classList.remove('on');
     if (b.dataset.mas === 'recordar') return abreRecordatorio(sel);
-    if (b.dataset.mas === 'encuesta') {
-      const r = await llama({ action:'surveyInvite', conversation_id: sel.id || sel._id });
-      avisa(r.ok ? 'Encuesta enviada' : 'No se pudo enviar', r.ok ? '' : r.error);
-    } else {
+    if (b.dataset.mas === 'encuesta') { abreEncuesta(sel); } else {
       if (!confirm('¿Cerrar esta conversación?')) return;
       const r = await llama({ action:'updateLead', conversation_id: sel.id || sel._id,
         fields:{ status:'closed', lead_status:'cerrado' } });
@@ -2321,7 +2386,7 @@ function pintaMensajes(){
   // El borrado es blando: el servidor conserva el mensaje y escribe la marca DENTRO de
   // metadata (index.js:1283), no en el primer nivel. Filtrando por m.deleted_at el
   // mensaje seguia a la vista mientras el panel decia "ocultado".
-  cont.innerHTML = MSGS.filter(m => !m.metadata?.deleted && !m.metadata?.deleted_at).map(m => {
+  const html = MSGS.filter(m => !m.metadata?.deleted && !m.metadata?.deleted_at).map(m => {
     const d = new Date(m.created_at);
     const etiquetaDia = d.toLocaleDateString('es-DO', { day:'numeric', month:'short' });
     let cabeza = '';
@@ -2347,6 +2412,43 @@ function pintaMensajes(){
       + '<span class="pie-globo">' + esc(d.toLocaleTimeString('es-DO',{hour:'2-digit',minute:'2-digit'})) + ticks + '</span>'
       + '</div>';
   }).join('') || '<div style="margin:auto;color:var(--mut);font-size:13px">Sin mensajes todavía.</div>';
+
+  // Repintado INCREMENTAL. Antes se reconstruia el hilo entero en cada snapshot, y un
+  // snapshot llega con cada mensaje nuevo Y con cada cambio de estado de entrega. Eso
+  // cortaba la nota de voz que estuvieras escuchando, cerraba el menu de mensaje que
+  // tuvieras abierto y hacia volver a pedir todas las imagenes.
+  //
+  // Se compara el html generado con el anterior; si no cambio, no se toca el DOM. Si
+  // cambio, se sustituyen SOLO los globos distintos, y nunca uno con audio sonando.
+  if (cont.dataset.firma === html) { resuelveMedios(); return; }
+  const previo = cont.dataset.firma;
+  cont.dataset.firma = html;
+
+  if (!previo) {
+    cont.innerHTML = html;
+  } else {
+    const nuevo = document.createElement('div');
+    nuevo.innerHTML = html;
+    const viejos = [...cont.children], nuevos = [...nuevo.children];
+    // Si la estructura cambio de largo, se reconstruye; comparar posicion a posicion con
+    // longitudes distintas mezclaria mensajes que no se corresponden.
+    if (viejos.length !== nuevos.length) {
+      const sonando = cont.querySelector('.voz') && audioActivo && !audioActivo.paused;
+      if (sonando) {
+        // Llego un mensaje mientras se escuchaba una nota: se AÑADE lo que falta al
+        // final en vez de rehacer el hilo, para no cortar el audio.
+        nuevos.slice(viejos.length).forEach(n => cont.appendChild(n));
+      } else {
+        cont.innerHTML = html;
+      }
+    } else {
+      viejos.forEach((v, i) => {
+        if (v.outerHTML === nuevos[i].outerHTML) return;
+        if (v.querySelector?.('.voz') && vozActiva && v.contains(vozActiva)) return;  // suena: no se toca
+        v.replaceWith(nuevos[i]);
+      });
+    }
+  }
   if (pegado) cont.scrollTop = cont.scrollHeight;
   resuelveMedios();
 }
@@ -2640,6 +2742,9 @@ const TABLERO = {
     ],
   },
   satisfaccion: {
+    // El scorecard por colaborador va encima de la tabla: la nota media de cada persona
+    // es lo que se mira aqui, no la lista de reseñas una a una.
+    encabezado: pintaScorecard,
     titulo: 'Satisfacción',
     bajada: 'Lo que contestaron los clientes en la encuesta. Se pide desde el menú «⋯» de cada chat.',
     tabla: 'reviews',
@@ -2685,6 +2790,48 @@ function estrellas(n){
   return v ? '★'.repeat(Math.min(5, v)) + '☆'.repeat(Math.max(0, 5 - v)) : '—';
 }
 
+// Nota media por persona, con su conteo. La media sin el numero de reseñas engaña: un
+// 5 de una sola opinion no es mejor que un 4,6 de treinta.
+async function pintaScorecard(filas){
+  const equipo = await cargaColaboradores();
+  const porPersona = new Map();
+  let huerfanas = 0;
+  for (const r of filas) {
+    const id = r.collaborator_id;
+    if (!id) { huerfanas++; continue; }
+    const notas = [r.rating_service, r.rating_satisfaction].map(Number).filter(n => n > 0);
+    if (!notas.length) continue;
+    const media = notas.reduce((a,b) => a+b, 0) / notas.length;
+    const p = porPersona.get(id) || { suma:0, n:0 };
+    p.suma += media; p.n += 1;
+    porPersona.set(id, p);
+  }
+  const nombreDe2 = id => {
+    const x = equipo.find(e => String(e.id) === String(id));
+    return x ? (x.name || x.display_name || x.email || 'sin nombre') : 'colaborador ' + String(id).slice(0,6);
+  };
+  const rank = [...porPersona.entries()]
+    .map(([id,p]) => ({ id, nombre: nombreDe2(id), media: p.suma / p.n, n: p.n }))
+    .sort((a,b) => b.media - a.media);
+
+  if (!rank.length && !huerfanas) return '';
+  return '<div class="pgraf" style="max-width:1000px;margin-bottom:16px">'
+    + '<div class="pgcab"><b>Por colaborador</b><span>nota media · nº de opiniones</span></div>'
+    + (rank.length
+      ? '<div class="barras">' + rank.map(x =>
+          '<div class="barra"><span class="be">' + esc(x.nombre) + '</span>'
+          + '<span class="bp"><i style="width:' + Math.round(x.media / 5 * 100) + '%"></i></span>'
+          + '<span class="bn">' + x.media.toFixed(1) + ' <em style="font-style:normal;color:var(--mut);font-weight:400">('
+          + x.n + ')</em></span></div>').join('') + '</div>'
+      : '')
+    // Se dice cuantas no cuentan y por que. Un ranking incompleto sin avisar hace creer
+    // que alguien atiende poco cuando lo que pasa es que no se anoto quien atendio.
+    + (huerfanas ? '<p class="cfgnota" style="margin:' + (rank.length ? '12px 0 0' : '0') + '">'
+        + huerfanas + ' opinión(es) sin colaborador asignado: no cuentan aquí. '
+        + 'Al enviar la encuesta desde el chat, elige quién atendió.</p>' : '')
+    + '</div>';
+}
+
 async function montaTablero(id){
   const d = TABLERO[id];
   if (!montadas.has(id)) {
@@ -2721,7 +2868,8 @@ async function pintaTablero(id){
     return;
   }
   const anchos = d.cols.map(() => 'minmax(0,1fr)').join(' ');
-  cont.innerHTML = '<div class="tabla" style="max-width:1000px">'
+  cont.innerHTML = (d.encabezado ? await d.encabezado(filas) : '')
+    + '<div class="tabla" style="max-width:1000px">'
     + '<div class="fila cabecera" style="grid-template-columns:' + anchos + '">'
     +   d.cols.map(c => '<span>' + esc(c.t) + '</span>').join('') + '</div>'
     + filas.map(f => '<div class="fila" style="grid-template-columns:' + anchos + '">'
@@ -2771,101 +2919,220 @@ function pintaRecordatorios(){
 }
 
 /* ---- Agenda -------------------------------------------------------------- */
-let AGENDA_MES = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+// La version anterior solo LEIA: no habia forma de meter una cita desde el panel, que
+// para una agenda es no servir. Ahora se agenda, se ve el mes y se filtra.
+//
+// La fecha vive en la ficha del contacto (scheduled_at confirmada, tentative_date
+// tentativa), no en una tabla aparte: una cita sin cliente no existe, y dos sitios donde
+// vive la misma fecha acaban discrepando.
+let agVista = 'cal';         // 'cal' | 'lista'
+let agFiltro = 'proximas';   // proximas | hoy | pasadas | todas
+let agMes = new Date();      // mes que se esta mirando
+let agDia = null;            // dia seleccionado en el calendario
+
+function citasDe(){
+  return CONVS
+    .filter(c => c.scheduled_at || c.tentative_date)
+    .map(c => ({ c, iso: String(c.scheduled_at || c.tentative_date), firme: !!c.scheduled_at }))
+    .sort((a,b) => a.iso.localeCompare(b.iso));
+}
+function mismoDia(iso, d){
+  const x = new Date(iso);
+  return x.getFullYear() === d.getFullYear() && x.getMonth() === d.getMonth() && x.getDate() === d.getDate();
+}
 
 function montaAgenda(){
   if (!montadas.has('agenda')) {
     montadas.add('agenda');
     hueco('agenda', '<div class="hoja"><h1>Agenda</h1>'
-      + '<p class="bajada">Calendario mensual de sesiones confirmadas y fechas tentativas. '
-      +   'Pulsa una sesión para abrir el chat y su ficha.</p>'
-      + '<div id="agLista"></div></div>');
+      + '<p class="bajada">Sesiones con fecha. Las confirmadas llevan hora cerrada; '
+      +   'las tentativas todavía no.</p>'
+      + '<div class="agbar">'
+      +   '<div class="agtog"><button data-agv="cal" class="on">Calendario</button>'
+      +     '<button data-agv="lista">Lista</button></div>'
+      +   '<div class="agfil" id="agFil"></div>'
+      +   '<button class="btn-solido" id="agNueva">＋ Agendar</button>'
+      + '</div>'
+      + '<div id="agCuerpo"></div></div>');
+    $('vista-agenda').addEventListener('click', ev => {
+      const v = ev.target.closest('[data-agv]');
+      if (v) { agVista = v.dataset.agv; pintaAgenda(); return; }
+      const f = ev.target.closest('[data-agf]');
+      if (f) { agFiltro = f.dataset.agf; pintaAgenda(); return; }
+      const m = ev.target.closest('[data-agmes]');
+      if (m) {
+        const d = m.dataset.agmes;
+        if (d === 'hoy') agMes = new Date();
+        else agMes = new Date(agMes.getFullYear(), agMes.getMonth() + Number(d), 1);
+        agDia = null; pintaAgenda(); return;
+      }
+      const c = ev.target.closest('[data-agdia]');
+      if (c) { agDia = new Date(c.dataset.agdia); pintaAgenda(); return; }
+      const ab = ev.target.closest('[data-agconv]');
+      if (ab) { const cv = CONVS.find(x => x._id === ab.dataset.agconv); if (cv) { abre(cv); ve('conversations'); } }
+    });
+    $('agNueva').onclick = () => abreAgendar(null);
   }
   pintaAgenda();
 }
 
-function fechaAgenda(c){
-  const raw = String(c.scheduled_at || c.tentative_date || '');
-  if (!raw) return null;
-  // Una fecha tentativa YYYY-MM-DD no lleva zona. Construirla como fecha local evita
-  // que en America/Santo_Domingo aparezca en el dia anterior por conversion UTC.
-  const simple = raw.match(/^(\d{4})-(\d{2})-(\d{2})$/);
-  const d = simple
-    ? new Date(Number(simple[1]), Number(simple[2]) - 1, Number(simple[3]), 12)
-    : new Date(raw);
-  return Number.isNaN(d.getTime()) ? null : d;
-}
-function claveAgenda(d){
-  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-'
-    + String(d.getDate()).padStart(2,'0');
-}
-function etiquetaHora(c, d){
-  if (!c.scheduled_at) return 'fecha tentativa';
-  return d.toLocaleTimeString('es-DO', { hour:'numeric', minute:'2-digit' });
-}
 function pintaAgenda(){
-  const cont = $('agLista'); if (!cont) return;
-  const filas = CONVS.map(c => ({ c, fecha:fechaAgenda(c) })).filter(x => x.fecha)
-    .sort((a,b) => a.fecha - b.fecha);
-  if (!filas.length) {
-    cont.innerHTML = '<p class="bajada">No hay ninguna sesión con fecha todavía.</p>';
+  const cont = $('agCuerpo'); if (!cont) return;
+  const todas = citasDe();
+  const hoy = new Date(); hoy.setHours(0,0,0,0);
+
+  const fil = $('agFil');
+  if (fil) fil.innerHTML = [['proximas','Próximas'],['hoy','Hoy'],['pasadas','Pasadas'],['todas','Todas']]
+    .map(([k,n]) => '<button class="filtro' + (agFiltro===k?' on':'') + '" data-agf="' + k + '">'
+      + n + '</button>').join('');
+  document.querySelectorAll('[data-agv]').forEach(b => b.classList.toggle('on', b.dataset.agv === agVista));
+
+  if (agVista === 'cal') return pintaAgendaCalendario(todas);
+
+  const filtradas = todas.filter(({iso}) => {
+    const d = new Date(iso); const soloDia = new Date(d); soloDia.setHours(0,0,0,0);
+    if (agFiltro === 'hoy') return soloDia.getTime() === hoy.getTime();
+    if (agFiltro === 'proximas') return soloDia >= hoy;
+    if (agFiltro === 'pasadas') return soloDia < hoy;
+    return true;
+  });
+  if (!filtradas.length) {
+    cont.innerHTML = '<p class="bajada">Nada con este filtro. Pulsa «＋ Agendar» para meter una cita.</p>';
     return;
   }
+  // Agrupadas por dia con su encabezado: una lista corrida de treinta citas no deja ver
+  // como viene la semana.
+  const porDia = {};
+  filtradas.forEach(x => { const k = x.iso.slice(0,10); (porDia[k] = porDia[k] || []).push(x); });
+  cont.innerHTML = Object.keys(porDia).sort().map(k => {
+    const d = new Date(k + 'T12:00:00');
+    return '<div class="agdia"><div class="agdcab">'
+      + esc(d.toLocaleDateString('es-DO', { weekday:'long', day:'numeric', month:'long' }))
+      + '<b>' + porDia[k].length + '</b></div>'
+      + porDia[k].map(x => filaCita(x)).join('') + '</div>';
+  }).join('');
+}
 
-  const primero = new Date(AGENDA_MES.getFullYear(), AGENDA_MES.getMonth(), 1);
-  const lunes = new Date(primero);
-  lunes.setDate(primero.getDate() - ((primero.getDay() + 6) % 7));
-  const porDia = new Map();
-  filas.forEach(f => {
-    const k = claveAgenda(f.fecha);
-    if (!porDia.has(k)) porDia.set(k, []);
-    porDia.get(k).push(f);
-  });
-  const hoy = claveAgenda(new Date());
-  const celdas = [];
-  for (let i=0; i<42; i++) {
-    const d = new Date(lunes); d.setDate(lunes.getDate()+i);
-    const k = claveAgenda(d), eventos = porDia.get(k) || [];
-    const fuera = d.getMonth() !== AGENDA_MES.getMonth();
-    celdas.push('<div class="agdia' + (fuera ? ' fuera' : '') + (k === hoy ? ' hoy' : '') + '">'
+function filaCita({c, iso, firme}){
+  return '<div class="agcita" data-agconv="' + esc(c._id) + '">'
+    + '<span class="agh">' + esc(iso.slice(11,16) || '—') + '</span>'
+    + '<span class="agn"><b>' + esc(nombreDe(c)) + '</b>'
+    +   '<small>' + esc(c.interested_category || 'sin categoría')
+    +   (c.selected_combo_name ? ' · ' + esc(c.selected_combo_name) : '') + '</small></span>'
+    + '<i class="chip ' + (firme ? 'ok' : 'medio') + '">' + (firme ? 'confirmada' : 'tentativa') + '</i>'
+    + '</div>';
+}
+
+function pintaAgendaCalendario(todas){
+  const cont = $('agCuerpo');
+  const primero = new Date(agMes.getFullYear(), agMes.getMonth(), 1);
+  const arranque = new Date(primero);
+  arranque.setDate(1 - ((primero.getDay() + 6) % 7));   // la semana empieza en lunes
+  const hoy = new Date(); hoy.setHours(0,0,0,0);
+
+  let celdas = '';
+  for (let i = 0; i < 42; i++) {
+    const d = new Date(arranque); d.setDate(arranque.getDate() + i);
+    const delMes = d.getMonth() === agMes.getMonth();
+    const citas = todas.filter(x => mismoDia(x.iso, d));
+    const esHoy = d.getTime() === hoy.getTime();
+    const elegido = agDia && d.toDateString() === agDia.toDateString();
+    celdas += '<button class="agcel' + (delMes ? '' : ' fuera') + (esHoy ? ' hoy' : '')
+      + (elegido ? ' sel' : '') + '" data-agdia="' + d.toISOString().slice(0,10) + 'T12:00:00">'
       + '<span class="agnum">' + d.getDate() + '</span>'
-      + eventos.map(({c,fecha}) => '<button class="agevento' + (c.scheduled_at ? '' : ' tentativo')
-          + '" data-ag-conv="' + esc(c._id || c.id) + '"><b>' + esc(nombreDe(c)) + '</b><small>'
-          + esc(etiquetaHora(c, fecha) + (c.interested_category ? ' · ' + c.interested_category : ''))
-          + '</small></button>').join('') + '</div>');
+      + (citas.length
+          ? '<span class="agpuntos">' + citas.slice(0,4).map(x =>
+              '<i class="' + (x.firme ? 'firme' : 'tent') + '"></i>').join('')
+            + (citas.length > 4 ? '<em>+' + (citas.length-4) + '</em>' : '') + '</span>'
+          : '')
+      + '</button>';
   }
 
-  const inicioHoy = new Date(); inicioHoy.setHours(0,0,0,0);
-  const proximas = filas.filter(f => f.fecha >= inicioHoy).slice(0,8);
-  const suscribible = /[?&]key=/.test(String(CFG.firebaseAgendaUrl || ''));
-  cont.innerHTML = '<div class="agbarra">'
-    + '<button class="btn-linea" data-ag-nav="-1" aria-label="Mes anterior">←</button>'
-    + '<button class="btn-linea" data-ag-hoy>Hoy</button>'
-    + '<strong>' + esc(AGENDA_MES.toLocaleDateString('es-DO',{month:'long',year:'numeric'})) + '</strong>'
-    + '<button class="btn-linea" data-ag-nav="1" aria-label="Mes siguiente">→</button>'
-    + (suscribible ? '<a class="btn-linea ag-suscribe" href="' + esc(CFG.firebaseAgendaUrl)
-        + '" target="_blank" rel="noopener">Suscribir calendario</a>' : '')
-    + '</div><div class="agscroll"><div class="agcal">'
-    + ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'].map(x => '<div class="agsem">'+x+'</div>').join('')
-    + celdas.join('') + '</div></div>'
-    + '<div class="agproximas"><div class="seccion">Próximas sesiones</div>'
-    + (proximas.length ? '<div class="tabla"><div class="fila cabecera">'
-      + '<span>Cuándo</span><span>Cliente</span><span>Categoría</span><span>Reserva</span></div>'
-      + proximas.map(({c,fecha}) => '<button class="fila" data-ag-conv="' + esc(c._id || c.id) + '">'
-        + '<span><b>' + esc(fecha.toLocaleDateString('es-DO',{day:'2-digit',month:'short'})) + '</b>'
-        + '<small>' + esc(etiquetaHora(c,fecha)) + '</small></span>'
-        + '<span>' + esc(nombreDe(c)) + '</span><span>' + esc(c.interested_category || '—') + '</span>'
-        + '<span><i class="chip ' + (c.scheduled_at ? 'ok' : 'medio') + '">'
-        + (c.scheduled_at ? 'confirmada' : 'tentativa') + '</i></span></button>').join('') + '</div>'
-      : '<p class="bajada">No hay sesiones próximas.</p>') + '</div>';
+  const delDia = agDia ? todas.filter(x => mismoDia(x.iso, agDia)) : [];
+  cont.innerHTML = '<div class="agnav">'
+    + '<button class="btn-linea" data-agmes="-1">‹</button>'
+    + '<b>' + esc(agMes.toLocaleDateString('es-DO', { month:'long', year:'numeric' })) + '</b>'
+    + '<button class="btn-linea" data-agmes="hoy">Hoy</button>'
+    + '<button class="btn-linea" data-agmes="1">›</button></div>'
+    + '<div class="agsem">' + ['lun','mar','mié','jue','vie','sáb','dom']
+        .map(d => '<span>' + d + '</span>').join('') + '</div>'
+    + '<div class="agcal">' + celdas + '</div>'
+    + (agDia
+        ? '<div class="agpanel"><div class="agdcab">'
+          + esc(agDia.toLocaleDateString('es-DO', { weekday:'long', day:'numeric', month:'long' }))
+          + '<b>' + delDia.length + '</b></div>'
+          + (delDia.length ? delDia.map(filaCita).join('')
+             : '<p class="cfgnota" style="padding:10px 0">Nada este día.</p>')
+          + '</div>'
+        : '<p class="bajada" style="margin-top:14px">Pulsa un día para ver sus sesiones.</p>');
+}
 
-  cont.onclick = ev => {
-    const nav = ev.target.closest('[data-ag-nav]');
-    if (nav) { AGENDA_MES = new Date(AGENDA_MES.getFullYear(), AGENDA_MES.getMonth()+Number(nav.dataset.agNav),1); return pintaAgenda(); }
-    if (ev.target.closest('[data-ag-hoy]')) { AGENDA_MES = new Date(new Date().getFullYear(),new Date().getMonth(),1); return pintaAgenda(); }
-    const evento = ev.target.closest('[data-ag-conv]'); if (!evento) return;
-    const c = CONVS.find(x => String(x._id || x.id) === evento.dataset.agConv);
-    if (c) { abre(c); ve('conversations'); }
+// Agendar. Busca el contacto entre los que ya existen en vez de crear uno nuevo: agendar
+// a alguien que ya escribio y crearle una ficha aparte parte su historial en dos.
+function abreAgendar(c){
+  const iso = d => new Date(d.getTime() - d.getTimezoneOffset()*60000).toISOString().slice(0,16);
+  const cuando = new Date(); cuando.setDate(cuando.getDate() + 1); cuando.setHours(10,0,0,0);
+  abreModal('<div class="mtapa"><b>Agendar sesión</b><button class="cerrarm" data-cerrar>×</button></div>'
+    + '<div class="mcuerpo">'
+    + (c ? '<p class="aviso">Para <b>' + esc(nombreDe(c)) + '</b></p>'
+         : '<div class="campo"><label>Contacto</label><input id="agBusca" placeholder="Buscar por nombre o teléfono…">'
+           + '<div id="agRes"></div></div>')
+    + '<div class="par">'
+    +   '<div class="campo"><label>Cuándo</label><input type="datetime-local" id="agCuando" value="' + iso(cuando) + '"></div>'
+    +   '<div class="campo"><label>Categoría</label><input id="agCat" value="' + esc(c?.interested_category || '') + '" placeholder="xv, boda…"></div>'
+    + '</div>'
+    + '<div class="campo"><label>Combo</label><input id="agCombo" value="' + esc(c?.selected_combo_name || '') + '"></div>'
+    + '<label class="cfgsw"><input type="checkbox" id="agFirme" checked><span><b>Confirmada</b>'
+    +   '<i>Sin marcar queda como fecha tentativa, que no bloquea el hueco.</i></span></label>'
+    + '</div>'
+    + '<div class="mpatas"><button class="btn-linea" data-cerrar>Cancelar</button>'
+    +   '<button class="btn-solido" id="agGuardar">Agendar</button></div>');
+  $('modal').querySelectorAll('[data-cerrar]').forEach(b => { b.onclick = cierraModal; });
+
+  let elegido = c;
+  if (!c) {
+    const pinta = () => {
+      const q = ($('agBusca').value || '').trim().toLowerCase();
+      $('agRes').innerHTML = !q ? '' : CONVS
+        .filter(x => (nombreDe(x) + ' ' + (x.wa_phone||'')).toLowerCase().includes(q))
+        .slice(0, 6)
+        .map(x => '<button class="tpl" data-ag="' + esc(x._id) + '"><b>' + esc(nombreDe(x)) + '</b>'
+          + '<span class="tplmeta">+' + esc(x.wa_phone||'') + '</span></button>').join('')
+        || '<p class="cfgnota">Sin resultados. Solo se agenda a contactos que ya escribieron.</p>';
+    };
+    $('agBusca').oninput = pinta;
+    $('agRes').onclick = ev => {
+      const b = ev.target.closest('[data-ag]'); if (!b) return;
+      elegido = CONVS.find(x => x._id === b.dataset.ag);
+      $('agBusca').value = nombreDe(elegido);
+      $('agRes').innerHTML = '<p class="cfgnota">Elegido: <b>' + esc(nombreDe(elegido)) + '</b></p>';
+      if (elegido.interested_category) $('agCat').value = elegido.interested_category;
+    };
+  }
+
+  $('agGuardar').onclick = async () => {
+    if (!elegido) return avisa('Elige a quién agendar');
+    const v = $('agCuando').value;
+    if (!v) return avisa('Falta la fecha');
+    const campos = { interested_category: $('agCat').value.trim() || elegido.interested_category || '' };
+    if ($('agFirme').checked) {
+      campos.scheduled_at = new Date(v).toISOString();
+      campos.reservation_status = 'confirmado';
+      campos.lifecycle_stage = ['cliente','reservado'].includes(elegido.lifecycle_stage)
+        ? elegido.lifecycle_stage : 'reservado';
+    } else {
+      campos.tentative_date = new Date(v).toISOString();
+      campos.reservation_status = 'fecha_tentativa';
+    }
+    if ($('agCombo').value.trim()) campos.selected_combo_name = $('agCombo').value.trim();
+    $('agGuardar').disabled = true;
+    const r = await llama({ action:'updateLead', conversation_id: elegido.id || elegido._id, fields: campos });
+    $('agGuardar').disabled = false;
+    if (!r.ok) return avisa('No se pudo agendar', r.error);
+    Object.assign(elegido, campos);
+    cierraModal();
+    avisa('Agendada', nombreDe(elegido) + ' · ' + new Date(v).toLocaleString('es-DO', { dateStyle:'medium', timeStyle:'short' }));
+    pintaAgenda(); pintaChats();
   };
 }
 
@@ -2892,6 +3159,185 @@ function canalDe(c){
   return 'whatsapp_cloud';
 }
 
+let bridgeControlState = {};
+
+function bridgeStatusLabel(status){
+  return ({
+    offline:'Puente apagado', idle:'Listo para vincular', requested:'Solicitud recibida',
+    generating:'Generando código', code_ready:'Esperando el teléfono',
+    connecting:'Finalizando vinculación', rebuild_requested:'Preparando reconstrucción',
+    rebuild_clearing:'Renovando dispositivo', connected:'WhatsApp conectado',
+    disconnected:'WhatsApp desconectado', canceled:'Vinculación cancelada',
+    expired:'Código vencido', error:'Requiere atención',
+  })[status] || 'Estado desconocido';
+}
+
+function formatBridgeCode(value){
+  const raw = String(value || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+  return (raw.match(/.{1,4}/g) || []).join('-');
+}
+
+async function callBridgeControl(action, payload = {}){
+  const actionMap = {
+    status:'bridgeStatus', request_pairing:'requestBridgePairing', cancel:'cancelBridgePairing',
+    pause:'pauseBridge', resume:'resumeBridge', logout:'logoutBridge',
+    sync_history:'syncBridgeHistory', rebuild_link:'rebuildBridge',
+    enable_photo_bot:'setPhotoBot', disable_photo_bot:'setPhotoBot',
+  };
+  const mapped = actionMap[action];
+  if (!mapped) return { ok:false, error:'acción de puente no disponible' };
+  const body = { action:mapped, ...payload };
+  if (action === 'enable_photo_bot') body.enabled = true;
+  if (action === 'disable_photo_bot') body.enabled = false;
+  return llama(body);
+}
+
+function bridgeControlsHtml(p){
+  const botEnabled = p.bot_enabled === true;
+  return '<div class="bridge-tools">'
+    + '<button class="btn-linea" id="bridgeRefreshBtn">Actualizar estado</button>'
+    + '<button class="btn-linea" id="bridgePairBtn">Generar código</button>'
+    + '<button class="btn-linea" id="bridgePauseBtn">Pausar envíos</button>'
+    + '<button class="btn-linea" id="bridgeHistoryBtn">Sincronizar historial</button>'
+    + '<button class="btn-linea" id="bridgeRebuildBtn">Reconstruir vínculo e historial</button>'
+    + '<button class="btn-linea danger" id="bridgeLogoutBtn">Cerrar sesión de WhatsApp</button>'
+    + '<button class="btn-linea" id="photoBotGlobalBtn" data-photo-bot-toggle '
+    +   'data-permission="manage_settings">Bot de este canal: '
+    +   (botEnabled ? 'encendido' : 'apagado') + '</button>'
+    + '<div class="bridge-code-panel" id="bridgeCodePanel">'
+    +   '<div class="codigo" id="bridgePairCode">--</div>'
+    +   '<p class="bridge-meta" id="bridgeCodeMeta">Preparando el código seguro…</p>'
+    +   '<button class="btn-linea danger" id="bridgeCancelPair">Cancelar</button>'
+    + '</div>'
+    + '<p class="bridge-meta" id="bridgeHistoryState"></p>'
+    + '<p class="bridge-meta" id="bridgeRebuildState"></p>'
+    + '<p class="bridge-meta mal" id="bridgeError"></p>'
+    + '</div>';
+}
+
+function renderBridgeControlState(state, explicitError = ''){
+  bridgeControlState = state || {};
+  const status = String(bridgeControlState.status || bridgeControlState.state || 'offline').toLowerCase();
+  const active = ['requested','generating','code_ready','connecting','rebuild_requested','rebuild_clearing'].includes(status);
+  const code = formatBridgeCode(bridgeControlState.pairing_code);
+  const codePanel = $('bridgeCodePanel');
+  if (codePanel) codePanel.classList.toggle('on', !!code || active);
+  if ($('bridgePairCode')) $('bridgePairCode').textContent = code || '--';
+  if ($('bridgeCancelPair')) $('bridgeCancelPair').disabled = !active;
+
+  const hostOnline = bridgeControlState.host_online === true;
+  const connected = status === 'connected';
+  const historyStatus = String(bridgeControlState.history_sync_status || 'idle');
+  const historyActive = ['requested','running','waiting'].includes(historyStatus);
+  const pair = $('bridgePairBtn');
+  if (pair) {
+    pair.disabled = !hostOnline || active || connected;
+    pair.textContent = active ? 'Procesando…' : (connected ? 'Ya vinculado' : 'Generar código');
+  }
+  const pause = $('bridgePauseBtn');
+  if (pause) {
+    pause.disabled = !hostOnline && bridgeControlState.paused !== true;
+    pause.textContent = bridgeControlState.paused ? 'Reanudar envíos' : 'Pausar envíos';
+  }
+  const history = $('bridgeHistoryBtn');
+  if (history) {
+    history.disabled = !connected || !hostOnline || historyActive;
+    history.textContent = historyActive ? 'Sincronizando…' : 'Sincronizar historial';
+  }
+  const rebuild = $('bridgeRebuildBtn');
+  if (rebuild) rebuild.disabled = !connected || !hostOnline || historyActive;
+  const logout = $('bridgeLogoutBtn');
+  if (logout) logout.disabled = !connected && !bridgeControlState.connected_phone;
+
+  if ($('bridgeCodeMeta')) $('bridgeCodeMeta').textContent = code
+    ? 'Escribe este código en WhatsApp → Dispositivos vinculados.'
+    : (active ? bridgeStatusLabel(status) + '…' : 'Solicita un código nuevo cuando el puente esté en línea.');
+  if ($('bridgeHistoryState')) {
+    const imported = Number(bridgeControlState.history_sync_imported || 0);
+    const duplicates = Number(bridgeControlState.history_sync_duplicates || 0);
+    $('bridgeHistoryState').textContent = historyStatus === 'completed'
+      ? 'Historial completado: ' + imported + ' nuevos; ' + duplicates + ' duplicados omitidos.'
+      : historyActive ? 'Historial en proceso: ' + Number(bridgeControlState.history_sync_progress || 0) + '%.'
+        : 'Historial: ' + historyStatus + '.';
+  }
+  if ($('bridgeRebuildState')) $('bridgeRebuildState').textContent =
+    'Reconstruir renueva solo el vínculo local; conserva conversaciones y mensajes del CRM.';
+  if ($('bridgeError')) $('bridgeError').textContent = explicitError || bridgeControlState.last_error || '';
+  const bot = $('photoBotGlobalBtn');
+  if (bot) {
+    const enabled = bridgeControlState.bot_enabled === true;
+    bot.textContent = 'Bot de este canal: ' + (enabled ? 'encendido' : 'apagado');
+    bot.dataset.enabled = String(enabled);
+    bot.disabled = !enabled && (!connected || !hostOnline || bridgeControlState.transport_mode !== 'active');
+  }
+}
+
+async function refreshBridgeStatus(){
+  const result = await callBridgeControl('status');
+  if (result.bridge) renderBridgeControlState(result.bridge, result.ok ? '' : result.error);
+  else renderBridgeControlState(bridgeControlState, result.error || 'No se pudo consultar el puente.');
+}
+
+async function requestBridgePairing(){
+  const phone = NUMERO_FOTOS || '18094785620';
+  const result = await callBridgeControl('request_pairing', { phone });
+  if (result.bridge) renderBridgeControlState(result.bridge, result.ok ? '' : result.error);
+  else renderBridgeControlState(bridgeControlState, result.error || 'No se pudo pedir el código.');
+}
+
+async function cancelBridgePairing(){
+  const result = await callBridgeControl('cancel');
+  if (result.bridge) renderBridgeControlState(result.bridge, result.ok ? '' : result.error);
+  else renderBridgeControlState(bridgeControlState, result.error || 'No se pudo cancelar.');
+}
+
+async function toggleBridgePause(){
+  const result = await callBridgeControl(bridgeControlState.paused ? 'resume' : 'pause');
+  if (result.bridge) renderBridgeControlState(result.bridge, result.ok ? '' : result.error);
+  else renderBridgeControlState(bridgeControlState, result.error || 'No se pudo cambiar la pausa.');
+}
+
+async function requestBridgeHistorySync(){
+  const result = await callBridgeControl('sync_history');
+  if (result.bridge) renderBridgeControlState(result.bridge, result.ok ? '' : result.error);
+  else if ($('bridgeHistoryState')) $('bridgeHistoryState').textContent = result.error || 'No se pudo solicitar el historial.';
+}
+
+async function logoutBridgeWhatsApp(){
+  if (!window.confirm('Se cerrará solamente la sesión del segundo número. Las conversaciones guardadas no se borrarán. ¿Continuar?')) return;
+  const result = await callBridgeControl('logout');
+  if (result.bridge) renderBridgeControlState(result.bridge, result.ok ? '' : result.error);
+  else renderBridgeControlState(bridgeControlState, result.error || 'No se pudo cerrar la sesión.');
+}
+
+async function rebuildBridgeLinkAndHistory(){
+  if (!window.confirm('Se renovará solo el dispositivo local para solicitar historial. Los chats y mensajes guardados NO se borrarán. ¿Continuar?')) return;
+  const result = await callBridgeControl('rebuild_link');
+  if (result.bridge) renderBridgeControlState(result.bridge, result.ok ? '' : result.error);
+  else renderBridgeControlState(bridgeControlState, result.error || 'No se pudo reconstruir el vínculo.');
+}
+
+async function togglePhotoBot(){
+  const enabled = bridgeControlState.bot_enabled === true;
+  if (!window.confirm('¿Quieres ' + (enabled ? 'desactivar' : 'activar')
+    + ' las respuestas automáticas del WhatsApp Fotos? Las campañas son independientes del bot.')) return;
+  const result = await callBridgeControl(enabled ? 'disable_photo_bot' : 'enable_photo_bot',
+    { confirmation:enabled ? '' : 'ACTIVAR BOT FOTOS' });
+  if (result.bridge) renderBridgeControlState(result.bridge, result.ok ? '' : result.error);
+  else renderBridgeControlState(bridgeControlState, result.error || 'No se pudo cambiar el bot.');
+}
+
+function bindBridgeControls(){
+  if ($('bridgePairBtn')) $('bridgePairBtn').onclick = requestBridgePairing;
+  if ($('bridgeCancelPair')) $('bridgeCancelPair').onclick = cancelBridgePairing;
+  if ($('bridgePauseBtn')) $('bridgePauseBtn').onclick = toggleBridgePause;
+  if ($('bridgeRefreshBtn')) $('bridgeRefreshBtn').onclick = refreshBridgeStatus;
+  if ($('bridgeHistoryBtn')) $('bridgeHistoryBtn').onclick = requestBridgeHistorySync;
+  if ($('bridgeRebuildBtn')) $('bridgeRebuildBtn').onclick = rebuildBridgeLinkAndHistory;
+  if ($('bridgeLogoutBtn')) $('bridgeLogoutBtn').onclick = logoutBridgeWhatsApp;
+  if ($('photoBotGlobalBtn')) $('photoBotGlobalBtn').onclick = togglePhotoBot;
+}
+
 function montaCanales(){
   if (!montadas.has('canales')) {
     montadas.add('canales');
@@ -2913,6 +3359,7 @@ async function pintaCanales(){
   ]);
   const t = estado.ok ? (estado.transport || estado) : {};
   const p = puente.ok ? (puente.bridge || puente) : {};
+  bridgeControlState = p;
 
   const cuenta = clave => CONVS.filter(c => canalDe(c) === clave).length;
   const tarjeta = (clave, listo, detalle, acciones) => {
@@ -2949,11 +3396,7 @@ async function pintaCanales(){
         ? 'Segundo número conectado por WhatsApp Web. <b>Era el de pruebas</b>: si ya no se usa, desconéctalo.'
         : 'Sin sesión activa. Este canal usa WhatsApp Web, no el API: no admite plantillas '
           + 'ni difusiones, solo conversación dentro de la ventana normal.',
-      puenteListo
-        ? '<button class="btn-linea danger" data-desconecta-puente>Desconectar</button>'
-          + '<button class="btn-linea" data-canal-bot="photo">Bot de este canal: '
-          + (p.bot_enabled ? 'encendido' : 'apagado') + '</button>'
-        : '<button class="btn-linea" data-conecta-puente>Conectar por código</button>')
+      bridgeControlsHtml(p))
 
     + tarjeta('instagram', cuenta('instagram') ? true : null,
       'Se conecta iniciando sesión con Facebook y aceptando los permisos de la cuenta: '
@@ -3024,6 +3467,8 @@ async function pintaCanales(){
       $('modal').querySelectorAll('[data-cerrar]').forEach(b => { b.onclick = cierraModal; });
     }
   };
+  renderBridgeControlState(p);
+  bindBridgeControls();
 }
 
 /* ---- Configuración ------------------------------------------------------- */
@@ -3508,6 +3953,7 @@ function pintaDashboard(){
           + '<span class="ev">' + f.v + (i ? ' <em>' + f.pct + '%</em>' : '') + '</span></div>').join('')
         + '</div>');
 }
+
 
 /* ---- Movilización de leads ----------------------------------------------- */
 // Un lead se queda parado por razones concretas y casi siempre las mismas. Esto las
@@ -4057,6 +4503,68 @@ async function corridaLote(ids, hacer, verbo){
   // Se dice cuantos salieron y cuantos no. Un "listo" a secas esconde los que fallaron.
   avisa(verbo + ' ' + hechos + ' de ' + ids.length,
     fallos.length ? fallos.slice(0,3).join(' · ') : '');
+}
+
+/* ---- Encuesta de satisfacción -------------------------------------------- */
+// Se pregunta QUIEN atendio antes de mandarla. Sin eso la reseña se guarda sin
+// collaborator_id y el scorecard por colaborador sale vacio para siempre: el dato no se
+// puede reconstruir despues, porque nadie se acuerda de quien atendio hace tres semanas.
+let COLABORADORES = null;
+
+async function cargaColaboradores(){
+  if (COLABORADORES) return COLABORADORES;
+  const r = await llama({ action:'data', table:'collaborators', operation:'select', limit:100 });
+  COLABORADORES = r.ok ? (r.data || r.rows || []) : [];
+  return COLABORADORES;
+}
+
+function abreEncuesta(c){
+  if (!c) return;
+  const nombre = (c.customer_name || c.contact_name || '').trim().split(/\s+/)[0] || '';
+  const porDefecto = (nombre ? 'Hola ' + nombre + '. ' : 'Hola. ')
+    + '¿Nos regalas un minuto para contarnos cómo te fue con nosotros? '
+    + 'Nos ayuda muchísimo a mejorar.';
+  abreModal('<div class="mtapa"><b>Encuesta de satisfacción</b>'
+    + '<button class="cerrarm" data-cerrar>×</button></div>'
+    + '<div class="mcuerpo">'
+    + '<div class="dato"><div class="k">Para</div><div class="v">' + esc(nombreDe(c))
+    +   ' · +' + esc(c.wa_phone || '') + ' · ' + esc(CANALES[canalDe(c)].corto) + '</div></div>'
+    + '<div class="campo"><label>¿Quién atendió a este cliente?</label>'
+    +   '<select id="encColab"><option value="">— sin especificar —</option></select>'
+    +   '<p class="aviso" style="margin:6px 0 0">Si no se elige, la reseña no cuenta para nadie en el '
+    +     'ranking del equipo, y eso no se puede arreglar después.</p></div>'
+    + '<div class="campo"><label>Mensaje</label>'
+    +   '<textarea id="encMsg" rows="4">' + esc(porDefecto) + '</textarea></div>'
+    + '</div>'
+    + '<div class="mpatas"><button class="btn-linea" data-cerrar>Cancelar</button>'
+    +   '<button class="btn-solido" id="encEnviar">Enviar encuesta</button></div>');
+  $('modal').querySelectorAll('[data-cerrar]').forEach(b => { b.onclick = cierraModal; });
+
+  cargaColaboradores().then(lista => {
+    const s = $('encColab'); if (!s) return;
+    s.innerHTML = '<option value="">— sin especificar —</option>'
+      + lista.map(x => '<option value="' + esc(x.id || '') + '">'
+        + esc(x.name || x.display_name || x.email || 'sin nombre') + '</option>').join('');
+    if (!lista.length) s.innerHTML += '<option disabled>(no hay equipo dado de alta)</option>';
+  });
+
+  $('encEnviar').onclick = async () => {
+    const b = $('encEnviar');
+    b.disabled = true;
+    // El canal decide la via, igual que al enviar un mensaje normal. El segundo numero
+    // no pasa por la Cloud API: mandarlo por ahi responde "canal incorrecto".
+    const porPuente = canalDe(c) === 'whatsapp_qr';
+    const r = porPuente
+      ? await llama({ action:'bridgeQueue', conversation_id: c.id || c._id, body: $('encMsg').value.trim() })
+      : await llama({ action:'surveyInvite', conversation_id: c.id || c._id,
+          collaborator_id: $('encColab').value || null, intro: $('encMsg').value.trim() });
+    b.disabled = false;
+    if (!r.ok) return avisa('No se pudo enviar', traduceErrorMeta(r.error));
+    cierraModal();
+    avisa('Encuesta enviada', porPuente
+      ? 'Va por WhatsApp Web; el enlace de la reseña se crea al entregarse.'
+      : 'Cuando conteste aparecerá en Satisfacción.');
+  };
 }
 
 /* ---- Recordatorios desde el chat ----------------------------------------- */

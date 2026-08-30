@@ -1,6 +1,6 @@
 {
-  "version": "2026-08-30-crm-v2-completo-v56",
+  "version": "2026-08-30-crm-v2-stable-v57",
   "channel": "crm",
-  "released_at": "2026-08-30T12:00:00Z",
-  "summary": "CRM v2 integrado: agenda mensual, configuracion completa, canales separados, banco POS vivo, movilizacion con criterio, biblioteca de plantillas y metricas Meta en el panel de anuncios."
+  "released_at": "2026-08-30T05:07:24Z",
+  "summary": "CRM v2 promovido al dominio principal tras validar agenda, configuracion, canales separados, banco POS vivo, plantillas, recordatorios y datos reales."
 }
