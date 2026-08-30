@@ -110,10 +110,10 @@
             <article><span>Clientes sincronizados</span><b id="overviewClients">—</b><small>Firebase</small></article>
             <article><span>Servicios activos</span><b id="overviewProducts">—</b><small>catálogo real</small></article>
             <article><span>Borradores</span><b id="overviewDrafts">—</b><small>sin gasto activo</small></article>
-            <article><span>Campañas activas</span><b>0</b><small>Meta aún no conectada</small></article>
+            <article><span>Campañas con actividad</span><b id="overviewMetaCampaigns">—</b><small id="overviewMetaState">Consultando Meta…</small></article>
           </div>
           <div class="overview-grid">
-            <article class="panel"><span class="eyebrow">Embudo canónico</span><h3>Gasto → Calificados → Reservas → Sesiones → Ingreso</h3><p class="muted-copy">No se mostrarán ROAS ni costo por sesión hasta que existan métricas remotas y atribución verificable.</p><div class="empty-state-inline">Insights: sin conexión Meta de solo lectura</div></article>
+            <article class="panel"><span class="eyebrow">Embudo canónico</span><h3>Gasto → Calificados → Reservas → Sesiones → Ingreso</h3><p class="muted-copy">Las métricas de Meta se leen desde el backend; las ventas y reservas siguen saliendo del CRM para no inventar atribución.</p><div class="empty-state-inline" id="overviewMetaInsights">Conectando Insights en modo de solo lectura…</div></article>
             <article class="panel"><span class="eyebrow">Controles activos</span><h3>Gasto protegido</h3><ul class="check-list"><li>Borradores locales y Firebase</li><li>Sin tokens Meta en el navegador</li><li>Sin activación automática</li><li>Plantillas tratadas como hipótesis</li></ul></article>
           </div>
         </section>
@@ -625,8 +625,11 @@
         </section>
 
         <section class="view" id="viewAnalytics">
-          <div class="section-hero compact-section"><div><span class="eyebrow">CRM y atribución propia</span><h1>Medición hasta ingreso</h1><p>Registra señales verificables. Sin conexión Insights no se inventan gasto, ROAS ni conversiones.</p></div></div>
+          <div class="section-hero compact-section"><div><span class="eyebrow">CRM + Meta Insights</span><h1>Medición hasta ingreso</h1><p>Gasto y alcance llegan de Meta en solo lectura; las conversiones confirmadas se registran con referencias internas.</p></div><button class="secondary" id="refreshMetaMetrics">Actualizar Meta</button></div>
           <div class="sync-banner" data-sync-banner id="syncBannerAnalytics"><span class="status-chip muted-text">Sin sincronizar</span></div>
+          <div class="notice" id="metaMetricsError" hidden></div>
+          <div class="kpis"><article><span>Gasto Meta</span><b id="metaSpend">—</b><small>últimos 30 días</small></article><article><span>Alcance</span><b id="metaReach">—</b><small>personas</small></article><article><span>Clics</span><b id="metaClicks">—</b><small id="metaCtr">CTR —</small></article><article><span>Conversaciones + leads</span><b id="metaResults">—</b><small>atribución de Meta</small></article></div>
+          <div class="panel" style="margin-bottom:20px"><div class="panel-heading section"><div><span>Meta Ads</span><h3>Campañas con actividad</h3></div></div><div id="metaCampaignList" class="record-list"><div class="empty-state-inline">Leyendo Meta…</div></div></div>
           <div class="funnel-grid" id="funnelGrid"></div>
           <div class="operations-grid"><form class="panel" id="attributionForm"><div class="panel-heading section"><div><span>Evento comercial</span><h3>Registrar conversión</h3></div></div><div class="form-grid"><label>Campaña<select id="attributionCampaign"></select></label><label>Etapa<select id="attributionStage"><option value="lead">Lead</option><option value="qualified">Calificado</option><option value="booking">Reserva</option><option value="completed">Sesión completada</option><option value="paid">Venta pagada</option></select></label><label>Valor confirmado (RD$)<input id="attributionValue" type="number" min="0" value="0" /></label><label>Referencia no personal<input id="attributionReference" maxlength="80" placeholder="Ticket o folio interno" /></label></div><button class="primary" type="submit">Registrar evento</button></form><div class="panel"><div class="panel-heading section"><div><span>Auditoría por sucursal</span><h3>Eventos atribuidos</h3></div></div><div id="attributionList" class="record-list"></div></div></div>
         </section>
@@ -654,14 +657,14 @@
 
         <section class="view" id="viewConnections">
           <div class="section-hero compact-section"><div><span class="eyebrow">Preflight de proveedores</span><h1>Conexiones</h1><p>Una sesión de SaleAds no concede permisos publicitarios.</p></div></div>
-          <div class="connection-grid"><article class="panel"><b>Firebase Auth + CRM</b><span class="success-text" id="connectionFirebase">Validando…</span><p>Membresía y sucursal verificadas en el panel.</p></article><article class="panel"><b>Meta Marketing API</b><span class="warning-text">No conectada</span><p>OAuth, Insights, CAPI y publicación PAUSED requieren backend seguro.</p></article><article class="panel"><b>IA estratégica</b><span class="success-text">Cerebro local activo</span><p>Recomendaciones agregadas con esquema estricto. El proveedor generativo remoto aún requiere backend seguro.</p></article><article class="panel"><b>Gasto publicitario</b><span class="success-text">Bloqueado por diseño</span><p>Solo exportación y apertura manual de Ads Manager.</p></article></div>
+          <div class="connection-grid"><article class="panel"><b>Firebase Auth + CRM</b><span class="success-text" id="connectionFirebase">Validando…</span><p>Membresía y sucursal verificadas en el panel.</p></article><article class="panel"><b>Meta Marketing API</b><span class="warning-text" id="connectionMeta">Validando acceso de solo lectura…</span><p>Insights se consulta en el backend. Publicar, pausar y cambiar gasto siguen desactivados.</p></article><article class="panel"><b>IA estratégica</b><span class="success-text">Cerebro local activo</span><p>Recomendaciones agregadas con esquema estricto. El proveedor generativo remoto aún requiere backend seguro.</p></article><article class="panel"><b>Gasto publicitario</b><span class="success-text">Bloqueado por diseño</span><p>Solo exportación y apertura manual de Ads Manager.</p></article></div>
         </section>
       </main>
     </div>
 
     <div class="toast" id="toast" role="status"></div>
     <script src="https://panel.dcarelacompufoto.com/firebase-config.js"></script>
-    <script src="./saleads-core.js?v=20260824v8"></script>
-    <script type="module" src="./app.js?v=20260824v8"></script>
+    <script src="./saleads-core.js?v=20260830v9"></script>
+    <script type="module" src="./app.js?v=20260830v9"></script>
   </body>
 </html>

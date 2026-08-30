@@ -16,7 +16,8 @@ import {
   where,
 } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 
-const BUILD = "2026-08-24-saleads-ai-studio-v8";
+const BUILD = "2026-08-30-saleads-meta-insights-v9";
+const CRM_API = "https://crmapi-o2uqjp6fra-uc.a.run.app";
 const saleAds = window.SaleAdsCore;
 if (!saleAds) throw new Error("No se cargó el motor seguro de SaleAds.");
 const SALEADS_UI = new URLSearchParams(location.search).get("saleads_ui") === "classic" ? "classic" : "phase1";
@@ -64,6 +65,71 @@ const AI_MEMORY_KEY = "dcarela_saleads_ai_memory_v1";
 let studioSource = { file: null, image: null, objectUrl: "", plan: null };
 let aiCurrentRecommendation = null;
 let aiCurrentBrief = null;
+let metaMetrics = null;
+let metaMetricsLoading = false;
+
+async function callCrmApi(payload) {
+  if (!auth.currentUser) throw new Error("La sesión expiró.");
+  const token = await auth.currentUser.getIdToken();
+  const response = await fetch(CRM_API, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+    body: JSON.stringify(payload),
+  });
+  const result = await response.json().catch(() => ({}));
+  if (!response.ok || result.ok === false)
+    throw new Error(result.error || `Backend CRM HTTP ${response.status}`);
+  return result;
+}
+
+function compactNumber(value) {
+  return new Intl.NumberFormat("es-DO", { notation: "compact", maximumFractionDigits: 1 })
+    .format(Number(value) || 0);
+}
+
+function renderMetaMetrics() {
+  const total = metaMetrics?.totals || {};
+  const campaignsMeta = Array.isArray(metaMetrics?.campaigns) ? metaMetrics.campaigns : [];
+  if ($("overviewMetaCampaigns")) $("overviewMetaCampaigns").textContent = campaignsMeta.length.toLocaleString("es-DO");
+  if ($("overviewMetaState")) $("overviewMetaState").textContent = metaMetrics?.configured ? "Meta Insights activo" : "Sin cuenta publicitaria";
+  if ($("overviewMetaInsights")) $("overviewMetaInsights").textContent = metaMetrics?.configured
+    ? `${money(total.spend || 0)} invertidos · ${compactNumber(total.reach)} de alcance · ${compactNumber(total.clicks)} clics`
+    : "Meta no devolvió una cuenta publicitaria utilizable.";
+  if ($("connectionMeta")) {
+    $("connectionMeta").textContent = metaMetrics?.configured ? "Insights conectado · solo lectura" : "Cuenta publicitaria no localizada";
+    $("connectionMeta").className = metaMetrics?.configured ? "success-text" : "warning-text";
+  }
+  if ($("metaSpend")) $("metaSpend").textContent = money(total.spend || 0);
+  if ($("metaReach")) $("metaReach").textContent = compactNumber(total.reach);
+  if ($("metaClicks")) $("metaClicks").textContent = compactNumber(total.clicks);
+  if ($("metaCtr")) $("metaCtr").textContent = `CTR ${(Number(total.ctr) || 0).toFixed(2)}%`;
+  if ($("metaResults")) $("metaResults").textContent = compactNumber((Number(total.messages) || 0) + (Number(total.leads) || 0));
+  if ($("metaCampaignList")) $("metaCampaignList").innerHTML = campaignsMeta.length
+    ? campaignsMeta.map((row) => `<article class="record-row"><div><b>${escapeHtml(row.campaign_name || "Campaña")}</b><span>${escapeHtml(money(row.spend))} · ${compactNumber(row.reach)} alcance · ${compactNumber(row.clicks)} clics</span><small>CTR ${(Number(row.ctr) || 0).toFixed(2)}% · ${compactNumber(row.messages)} conversaciones · ${compactNumber(row.leads)} leads</small></div><span class="status-chip">Meta</span></article>`).join("")
+    : '<div class="empty-state-inline">No hubo campañas con actividad en los últimos 30 días.</div>';
+}
+
+async function loadMetaMetrics(force = false) {
+  if (metaMetricsLoading || (metaMetrics && !force)) return;
+  metaMetricsLoading = true;
+  if ($("refreshMetaMetrics")) $("refreshMetaMetrics").disabled = true;
+  if ($("metaMetricsError")) { $("metaMetricsError").hidden = true; $("metaMetricsError").textContent = ""; }
+  try {
+    metaMetrics = await callCrmApi({ action: "adsInsights", date_preset: "last_30d" });
+    renderMetaMetrics();
+  } catch (error) {
+    metaMetrics = null;
+    if ($("overviewMetaCampaigns")) $("overviewMetaCampaigns").textContent = "—";
+    if ($("overviewMetaState")) $("overviewMetaState").textContent = "Insights requiere permiso ads_read";
+    if ($("overviewMetaInsights")) $("overviewMetaInsights").textContent = `Meta no está disponible: ${error.message}`;
+    if ($("connectionMeta")) { $("connectionMeta").textContent = "Insights no disponible"; $("connectionMeta").className = "warning-text"; }
+    if ($("metaMetricsError")) { $("metaMetricsError").hidden = false; $("metaMetricsError").textContent = `No se pudieron leer métricas reales: ${error.message}`; }
+    if ($("metaCampaignList")) $("metaCampaignList").innerHTML = '<div class="empty-state-inline">Borradores y medición CRM siguen disponibles; reconecta Meta con ads_read para cargar Insights.</div>';
+  } finally {
+    metaMetricsLoading = false;
+    if ($("refreshMetaMetrics")) $("refreshMetaMetrics").disabled = false;
+  }
+}
 
 function operationStore() {
   try { return JSON.parse(localStorage.getItem(OPERATIONS_KEY) || "{}"); }
@@ -1496,6 +1562,7 @@ function showView(view) {
       approvals: "Aprobaciones",
       connections: "Conexiones",
     }[view] || "Centro de Anuncios";
+  if (view === "analytics") loadMetaMetrics().catch(() => {});
 }
 function download(content, name, type) {
   const a = document.createElement("a");
@@ -1527,9 +1594,11 @@ $("loginForm").addEventListener("submit", async (event) => {
 });
 $("logoutButton").onclick = () => signOut(auth);
 $("businessSelect").onchange = async () => {
+  metaMetrics = null;
   resetAiDisplay();
   renderBusinessData();
   await loadCampaigns();
+  loadMetaMetrics().catch(() => {});
   restoreWizard();
   updateWizard();
 };
@@ -1619,6 +1688,7 @@ for (const id of ["studioHeadline", "studioCta", "studioFocusX", "studioFocusY"]
 $("clientSearch").oninput = renderAudience;
 $("refreshHistory").onclick = () =>
   loadCampaigns().then(() => toast("Campañas actualizadas."));
+$("refreshMetaMetrics").onclick = () => loadMetaMetrics(true);
 $("campaignStatusFilter").onchange = renderHistory;
 $("creativeAssetForm").addEventListener("input", updateAssetQa);
 $("creativeAssetForm").addEventListener("change", updateAssetQa);
@@ -1821,6 +1891,7 @@ onAuthStateChanged(auth, async (user) => {
     $("login").hidden = true;
     $("app").hidden = false;
     await loadBusinessData();
+    loadMetaMetrics().catch(() => {});
     $("preflightFirebase").textContent = `Activo · ${businesses.length} sucursal(es)`;
     $("preflightFirebase").className = "success-text";
     $("connectionFirebase").textContent = `Activo · ${businesses.length} sucursal(es)`;
