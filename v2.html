@@ -217,6 +217,9 @@ body.menu-abierto .hamburguesa{background:var(--hover);color:var(--fg)}
   border-top:8px solid var(--out);border-right:8px solid transparent}
 .globo .pie-globo{float:right;margin:6px 0 -2px 10px;font-size:10.5px;line-height:1;
   color:var(--meta);white-space:nowrap;user-select:none}
+.globo .pie-globo b{font-weight:400}
+.globo .pie-globo .leido{color:#53bdeb}
+.globo .pie-globo .fallo{color:var(--bad);font-weight:700}
 .globo .autor{font-size:11px;font-weight:700;color:var(--ok);margin-bottom:1px}
 .mmedia{display:block;max-width:250px;max-height:320px;width:auto;border-radius:6px;
   margin:1px 0 3px;cursor:zoom-in}
@@ -608,16 +611,6 @@ function avisa(titulo, detalle){
 
 /* ---- Marca --------------------------------------------------------------- */
 const sigla = CFG.logoText || 'DC';
-const CANAL_FOTOS = CFG.lockNumFilter === true || CFG.defaultNumFilter === 'qr';
-const soloDigitos = value => String(value || '').replace(/\D/g, '');
-const NUMERO_FOTOS = soloDigitos(CFG.bridgeBusinessNumber || CFG.bridgeBusinessDisplayNumber);
-function perteneceAlCanal(c){
-  const fuente = String(c?.source || '').toLowerCase();
-  const numero = soloDigitos(c?.business_number);
-  const esFotos = fuente === 'whatsapp_qr' || fuente === 'photos'
-    || (NUMERO_FOTOS && numero === NUMERO_FOTOS);
-  return CANAL_FOTOS ? esFotos : !esFotos;
-}
 ['sigla','siglaAcceso'].forEach(id => { $(id).textContent = sigla; });
 $('marca').textContent = CFG.productName || 'CRM';
 $('submarca').textContent = CFG.subtitle || '';
@@ -658,6 +651,15 @@ function pintaMenu(){
     + VISTAS.filter(v => !v.fija).map(enlace).join('') + '</div>';
 }
 pintaMenu();
+
+// El buscador de la barra estaba dibujado y no hacia nada: escribir ahi no movia ni
+// un pixel. Lleva a Conversaciones y busca de verdad.
+$('busca').addEventListener('input', () => {
+  const q = $('busca').value;
+  if (vistaActual !== 'conversations') ve('conversations');
+  const caja = $('buscaChat');
+  if (caja) { caja.value = q; caja.dispatchEvent(new Event('input')); }
+});
 
 $('btnMenu').onclick = () => {
   const abierto = document.body.classList.toggle('menu-abierto');
@@ -731,7 +733,7 @@ function hora(v){
 function escuchaConversaciones(){
   const q = query(collection(db,'crm_conversations'), where('business_id','==',NEGOCIO));
   onSnapshot(q, s => {
-    CONVS = s.docs.map(d => ({ ...d.data(), _id:d.id })).filter(perteneceAlCanal)
+    CONVS = s.docs.map(d => ({ ...d.data(), _id:d.id }))
       .sort((a,b) => String(b.last_message_at||'').localeCompare(String(a.last_message_at||'')));
     marcaEstado(true, 'Datos sincronizados · en vivo');
     if (vistaActual === 'conversations') pintaChats();
@@ -879,6 +881,13 @@ function pintaChats(){
 
 function abre(c){
   if (!c) return;
+  // Cortar la grabacion ANTES de cambiar de chat. El encoder termina en asincrono y su
+  // callback empuja el audio a la cola global: si mientras tanto se abrio otra
+  // conversacion, la nota de voz sale hacia el cliente equivocado. Lo mismo con la cola
+  // de adjuntos y la cita: son de la conversacion que se esta dejando atras.
+  abortaGrabacion();
+  COLA.length = 0;
+  citando = null;
   sel = c;
   document.body.classList.add('chat-abierto');
   $('sinChat').style.display = 'none';
@@ -955,7 +964,13 @@ function cableaChat(c){
   };
   const mas = $('mas');
   mas.querySelector('button').onclick = ev => { ev.stopPropagation(); mas.classList.toggle('on'); };
-  document.addEventListener('click', () => mas.classList.remove('on'));
+  // Antes se añadia un listener de documento en CADA apertura de conversacion, y cada
+  // uno quedaba apuntando a un nodo ya destruido. Tras un rato de trabajo eran cientos.
+  // Uno solo, delegado, y busca el menu que exista en ese momento.
+  if (!cableaChat.cerrarMenu) {
+    cableaChat.cerrarMenu = () => document.getElementById('mas')?.classList.remove('on');
+    document.addEventListener('click', cableaChat.cerrarMenu);
+  }
   mas.querySelector('.menu').onclick = async ev => {
     const b = ev.target.closest('[data-mas]'); if (!b) return;
     mas.classList.remove('on');
@@ -997,6 +1012,9 @@ function cableaChat(c){
     const ultimoConPie = COLA.map(a => a.tipo).lastIndexOf('image') >= 0
       ? COLA.map(a => a.tipo).lastIndexOf('image')
       : COLA.map(a => a.tipo).lastIndexOf('document');
+    // Los que ya salieron se quitan de la cola SOBRE LA MARCHA. Si el tercero falla y
+    // se reintenta sin esto, los dos primeros se le mandan al cliente otra vez.
+    let enviados = 0;
     for (let i = 0; i < COLA.length && !fallo; i++) {
       const a = COLA[i];
       const r = await llama({
@@ -1004,8 +1022,10 @@ function cableaChat(c){
         media_kind: a.tipo, media_b64: a.datos, media_filename: a.nombre, media_mime: a.mime,
         body: (t && i === ultimoConPie) ? t : '',
       });
-      if (!r.ok) fallo = r.error;
+      if (r.ok) enviados++; else fallo = r.error;
     }
+    COLA.splice(0, enviados);
+    pintaCola();
     const textoYaFue = t && ultimoConPie >= 0 && !fallo;
     if (!fallo && t && !textoYaFue) {
       const cuerpo = { action:'sendText', conversation_id: conv, body:t };
@@ -1021,10 +1041,28 @@ function cableaChat(c){
     }
     if (!fallo) cancelaCita();
     env.disabled = false;
-    if (fallo) return avisa('No se pudo enviar', fallo);
+    // La cola ya se vacio de lo que SI salio, arriba. Aqui solo se limpia el texto.
+    if (fallo) return avisa('No se pudo enviar', traduceErrorMeta(fallo));
     caja.value = ''; caja.style.height = 'auto';
-    COLA.length = 0; pintaCola();
   };
+}
+
+// "Meta rechazo el envio" no le dice a nadie que hacer. Los motivos que de verdad se
+// repiten se explican, y con la salida: casi siempre es la ventana de 24 h cerrada,
+// que se resuelve con una plantilla.
+function traduceErrorMeta(e){
+  const t = String(e || '');
+  if (/24|window|re-?engagement|131047/i.test(t))
+    return 'Pasaron más de 24 h desde su último mensaje. Solo llega con una plantilla aprobada '
+      + '(el botón de plantillas del compositor).';
+  if (/131026|not.*whatsapp|no existe/i.test(t)) return 'Ese número no tiene WhatsApp.';
+  if (/131049|calidad|quality/i.test(t)) return 'Meta está limitando este número por calidad. '
+    + 'Revisa Conexión WhatsApp.';
+  if (/excluido|blocked/i.test(t)) return 'Este contacto está excluido de comunicaciones.';
+  if (/seguimientos|followup_exhausted/i.test(t)) return 'Lleva dos seguimientos sin responder: '
+    + 'quedó como desinteresado y no se le insiste más.';
+  if (/transport|reconect/i.test(t)) return 'Meta no está conectada al transporte. Mira Conexión WhatsApp.';
+  return t;
 }
 
 /* ---- Adjuntos ------------------------------------------------------------ */
@@ -1152,7 +1190,7 @@ async function abreRapidas(){
       const q = filas[Number(borrar.dataset.borrar)];
       if (!confirm('¿Borrar «' + (q.title || q.name) + '»?')) return;
       const r = await llama({ action:'data', table:'quick_replies', operation:'delete',
-        filters:[{ field:'id', op:'eq', value:q.id }] });
+        filters:[{ kind:'eq', field:'id', value:q.id }] });
       if (!r.ok) return avisa('No se pudo borrar', r.error);
       filas.splice(Number(borrar.dataset.borrar), 1);
       RAPIDAS = null; pinta();
@@ -1272,8 +1310,12 @@ async function adjuntaCombo(c, boton){
     if (!r.ok && c.imagenCruda) { r = await fetch(c.imagenCruda, { cache:'force-cache' }); url = c.imagenCruda; }
     if (!r.ok) throw new Error('imagen HTTP ' + r.status);
     const blob = await r.blob();
-    const datos = await new Promise(res => {
-      const l = new FileReader(); l.onload = () => res(String(l.result).split(',')[1] || '');
+    const datos = await new Promise((res, rej) => {
+      const l = new FileReader();
+      l.onload = () => res(String(l.result).split(',')[1] || '');
+      // Sin onerror la promesa no se resuelve NUNCA si la lectura falla, y el envio
+      // se queda colgado con el boton deshabilitado y sin decir nada.
+      l.onerror = () => rej(new Error('no se pudo leer el archivo'));
       l.readAsDataURL(blob);
     });
     COLA.push({ tipo:'image', mime: blob.type || 'image/png',
@@ -1300,8 +1342,12 @@ async function adjuntaPdfCombos(cat, boton){
     const r = await fetch(url, { cache:'force-cache' });
     if (!r.ok) throw new Error('PDF HTTP ' + r.status);
     const blob = await r.blob();
-    const datos = await new Promise(res => {
-      const l = new FileReader(); l.onload = () => res(String(l.result).split(',')[1] || '');
+    const datos = await new Promise((res, rej) => {
+      const l = new FileReader();
+      l.onload = () => res(String(l.result).split(',')[1] || '');
+      // Sin onerror la promesa no se resuelve NUNCA si la lectura falla, y el envio
+      // se queda colgado con el boton deshabilitado y sin decir nada.
+      l.onerror = () => rej(new Error('no se pudo leer el archivo'));
       l.readAsDataURL(blob);
     });
     COLA.push({ tipo:'document', mime:'application/pdf',
@@ -1437,6 +1483,19 @@ function pideVariables(t){
 // comentario del <script> de opus-recorder arriba. Cambiar esto por MediaRecorder
 // hace que los audios "se envien" sin que nadie los reciba.
 let grabadora = null, relojT = null, cancelada = false, enviarAlParar = false;
+
+// Aborta y DESCARTA lo grabado. Se llama al cambiar de conversacion: marcar cancelada
+// hace que el callback del encoder tire el audio en vez de encolarlo en el chat nuevo.
+function abortaGrabacion(){
+  if (!grabadora) { paraOndas(); return; }
+  cancelada = true; enviarAlParar = false;
+  try { grabadora.stop(); } catch (e) {}
+  grabadora = null;
+  clearInterval(relojT);
+  paraOndas();
+  const caja = document.getElementById('grabando');
+  if (caja) caja.hidden = true;
+}
 let ctxAudio = null, analizador = null, dibujoT = null, fuenteMic = null;
 
 // Dibuja el nivel REAL del microfono. Una animacion fija mentiria: con el microfono
@@ -1510,11 +1569,15 @@ function cableaMicrofono(){
         const blob = new Blob([typed], { type:'audio/ogg' });
         // Por debajo de este tamaño no hay voz, solo el ruido de pulsar el boton.
         if (blob.size < 800) return avisa('Grabación demasiado corta', 'Vuelve a intentarlo.');
-        const datos = await new Promise(res => {
+        const datos = await new Promise((res, rej) => {
           const l = new FileReader();
           l.onload = () => res(String(l.result).split(',')[1] || '');
+          // Sin onerror la promesa nunca se resuelve y la nota de voz se pierde en
+          // silencio: ni se envia ni se avisa.
+          l.onerror = () => rej(new Error('no se pudo leer la grabación'));
           l.readAsDataURL(blob);
-        });
+        }).catch(e => { avisa('No se pudo preparar el audio', e.message); return null; });
+        if (!datos) return;
         COLA.push({ tipo:'audio', nombre:'nota-de-voz.ogg', mime:'audio/ogg', datos });
         pintaCola();
         if (enviarAlParar) { enviarAlParar = false; $('btnEnviar').click(); }
@@ -1745,9 +1808,10 @@ function pintaMensajes(){
   const cont = $('mensajes'); if (!cont) return;
   const pegado = cont.scrollHeight - cont.scrollTop - cont.clientHeight < 90;
   let dia = '', antes = '';
-  // El borrado es blando en el servidor: el mensaje se conserva y se marca. Aqui se
-  // esconde, que es lo que espera quien lo borro.
-  cont.innerHTML = MSGS.filter(m => !m.deleted_at).map(m => {
+  // El borrado es blando: el servidor conserva el mensaje y escribe la marca DENTRO de
+  // metadata (index.js:1283), no en el primer nivel. Filtrando por m.deleted_at el
+  // mensaje seguia a la vista mientras el panel decia "ocultado".
+  cont.innerHTML = MSGS.filter(m => !m.metadata?.deleted && !m.metadata?.deleted_at).map(m => {
     const d = new Date(m.created_at);
     const etiquetaDia = d.toLocaleDateString('es-DO', { day:'numeric', month:'short' });
     let cabeza = '';
@@ -1755,7 +1819,13 @@ function pintaMensajes(){
     const sale = m.direction === 'out';
     const emisor = sale ? (m.sender || 'agent') : 'in';
     const primero = emisor !== antes; antes = emisor;
-    const ticks = sale ? (m.delivery_status === 'read' ? ' ✓✓' : m.delivery_status === 'delivered' ? ' ✓✓' : ' ✓') : '';
+    // El ternario anterior daba ✓ a TODO lo que no fuera leido o entregado, incluido
+    // 'failed'. Un mensaje que Meta rechazo se veia igual que uno que salio bien, que
+    // es exactamente cuando hace falta enterarse.
+    const ticks = sale ? ({
+      read: ' <b class="leido">✓✓</b>', delivered: ' ✓✓', sent: ' ✓',
+      failed: ' <b class="fallo">⚠</b>',
+    }[String(m.delivery_status || 'sent')] ?? ' ·') : '';
     const autor = (sale && m.sender === 'bot' && primero) ? '<div class="autor">Bot</div>' : '';
     const cita = m.reply_snippet
       ? '<div class="cita"><b>' + esc(m.reply_sender === 'customer' ? nombreDe(sel) : 'Tú') + '</b>'
@@ -1782,41 +1852,10 @@ const ETAPAS = ['nuevo','interesado','cotizando','pendiente_reserva','reservado'
 const ESTADOS = ['abierto','en_revision','esperando_cliente','requiere_humano',
   'desinteresado','cerrado'];
 const RESERVA = ['sin_fecha','fecha_tentativa','reservado','confirmado','cancelado'];
-const CATEGORIAS = ['XV','Infantil','Graduación','Cumpleaños','Embarazadas','Boda','Sesiones/Retratos','Maquillaje'];
-const PRIORIDADES = ['urgente','alta','media','baja'];
-const MAQUILLAJE = [
-  ['','Pendiente'],['incluido','Incluido'],['extra','Extra desde RD$2,500'],['no_solicitado','No solicitado'],
-];
 const opciones = (lista, actual) => lista.map(v =>
   '<option value="' + v + '"' + (actual === v ? ' selected' : '') + '>' + v.replace(/_/g,' ') + '</option>').join('');
-const opcionesPares = (lista, actual, vacia = false) =>
-  (vacia ? '<option value="">—</option>' : '') + lista.map(([v,l]) =>
-    '<option value="' + esc(v) + '"' + (actual === v ? ' selected' : '') + '>' + esc(l) + '</option>').join('');
-function fechaLocal(v){
-  if (!v) return '';
-  const d = new Date(v); if (Number.isNaN(d.getTime())) return '';
-  const dos = n => String(n).padStart(2,'0');
-  return d.getFullYear() + '-' + dos(d.getMonth()+1) + '-' + dos(d.getDate())
-    + 'T' + dos(d.getHours()) + ':' + dos(d.getMinutes());
-}
-function valorCampoFicha(el){
-  const campo = el.dataset.c;
-  if (el.type === 'checkbox') return el.checked;
-  if (!el.value) return null;
-  if (campo === 'selected_combo_price' || campo === 'makeup_price') {
-    const n = Number(el.value); return Number.isFinite(n) ? n : null;
-  }
-  if (campo === 'scheduled_at' || campo === 'follow_up_at') {
-    const d = new Date(el.value); return Number.isNaN(d.getTime()) ? null : d.toISOString();
-  }
-  return el.value;
-}
 
 function pintaFicha(c){
-  const categorias = '<option value="">—</option>' + CATEGORIAS.map(v =>
-    '<option value="' + esc(v) + '"' + (c.interested_category === v ? ' selected' : '') + '>' + esc(v) + '</option>').join('');
-  const prioridades = PRIORIDADES.map(v =>
-    '<option value="' + v + '"' + ((c.priority || 'media') === v ? ' selected' : '') + '>' + v + '</option>').join('');
   $('ficha').innerHTML =
     '<div class="cabeza"><b>Ficha del lead</b>'
     + '<button id="cerrarFicha" style="color:var(--mut);font-size:17px">×</button></div>'
@@ -1830,13 +1869,10 @@ function pintaFicha(c){
     + '<div class="dentro">'
     +   '<div class="campo"><label>Nombre</label><input data-c="customer_name" value="' + esc(c.customer_name || c.contact_name || '') + '"></div>'
     +   '<div class="par">'
-    +     '<div class="campo"><label>Etapa</label><select data-c="lifecycle_stage">' + opciones(ETAPAS, c.lifecycle_stage || 'nuevo') + '</select></div>'
-    +     '<div class="campo"><label>Categoría</label><select data-c="interested_category">' + categorias + '</select></div>'
+    +     '<div class="campo"><label>Etapa</label><select data-c="lifecycle_stage">' + opciones(ETAPAS, c.lifecycle_stage) + '</select></div>'
+    +     '<div class="campo"><label>Estado</label><select data-c="lead_status">' + opciones(ESTADOS, c.lead_status) + '</select></div>'
     +   '</div>'
-    +   '<div class="par">'
-    +     '<div class="campo"><label>Estado</label><select data-c="lead_status">' + opciones(ESTADOS, c.lead_status || 'abierto') + '</select></div>'
-    +     '<div class="campo"><label>Reserva</label><select data-c="reservation_status">' + opciones(RESERVA, c.reservation_status || 'sin_fecha') + '</select></div>'
-    +   '</div>'
+    +   '<div class="campo"><label>Reserva</label><select data-c="reservation_status">' + opciones(RESERVA, c.reservation_status) + '</select></div>'
     +   '<div class="dato"><div class="k">Canal</div><div class="v">' + esc(c.channel || 'whatsapp') + '</div></div>'
     +   '<div class="dato"><div class="k">Último intent</div><div class="v">' + esc(c.last_intent || 'pendiente') + '</div></div>'
     + '</div></details>'
@@ -1846,48 +1882,8 @@ function pintaFicha(c){
     +   '<div class="campo"><label>Próximo paso</label><textarea data-c="next_step_suggested" rows="2">' + esc(c.next_step_suggested || '') + '</textarea></div>'
     + '</div></details>'
 
-    + '<details class="grupo"><summary>Datos del trato</summary><div class="dentro">'
-    +   '<div class="campo"><label>Prioridad</label><select data-c="priority">' + prioridades + '</select></div>'
-    +   '<div class="campo"><label>Combo seleccionado</label><input data-c="selected_combo_name" value="' + esc(c.selected_combo_name || '') + '"></div>'
-    +   '<div class="par">'
-    +     '<div class="campo"><label>Precio RD$</label><input data-c="selected_combo_price" type="number" min="0" step="100" value="' + esc(c.selected_combo_price ?? '') + '"></div>'
-    +     '<div class="campo"><label>Presupuesto</label><input data-c="budget_range" value="' + esc(c.budget_range || '') + '"></div>'
-    +   '</div>'
-    +   '<div class="par">'
-    +     '<div class="campo"><label>Fecha tentativa</label><input data-c="tentative_date" type="date" value="' + esc(c.tentative_date || '') + '"></div>'
-    +     '<div class="campo"><label>Agendada</label><input data-c="scheduled_at" type="datetime-local" value="' + esc(fechaLocal(c.scheduled_at)) + '"></div>'
-    +   '</div>'
-    +   '<div class="campo"><label>Próximo seguimiento</label><input data-c="follow_up_at" type="datetime-local" value="' + esc(fechaLocal(c.follow_up_at)) + '"></div>'
-    +   '<div class="campo"><label>Asignado a (correo)</label><input data-c="assigned_to" type="email" value="' + esc(c.assigned_to || '') + '"></div>'
-    + '</div></details>'
-
-    + '<details class="grupo"><summary>Selección visual</summary><div class="dentro">'
-    +   '<div class="par">'
-    +     '<div class="campo"><label>Vestido</label><input data-c="selected_dress" value="' + esc(c.selected_dress || '') + '"></div>'
-    +     '<div class="campo"><label>Color vestido</label><input data-c="dress_color" value="' + esc(c.dress_color || '') + '"></div>'
-    +   '</div>'
-    +   '<div class="par">'
-    +     '<div class="campo"><label>Globos</label><input data-c="balloon_color" value="' + esc(c.balloon_color || '') + '"></div>'
-    +     '<div class="campo"><label>Número</label><input data-c="number_color" value="' + esc(c.number_color || '') + '"></div>'
-    +   '</div>'
-    +   '<div class="campo"><label>Fondo / color</label><input data-c="background_color" value="' + esc(c.background_color || '') + '"></div>'
-    +   '<div class="campo"><label>Fondo / temática infantil</label><input data-c="fondo_tematica" value="' + esc(c.fondo_tematica || '') + '"></div>'
-    +   '<div class="par">'
-    +     '<div class="campo"><label>Maquillaje</label><select data-c="makeup_selection">' + opcionesPares(MAQUILLAJE, c.makeup_selection || '') + '</select></div>'
-    +     '<div class="campo"><label>Precio maquillaje</label><input data-c="makeup_price" type="number" min="0" step="100" value="' + esc(c.makeup_price ?? '') + '"></div>'
-    +   '</div>'
-    + '</div></details>'
-
     + '<details class="grupo"><summary>Automatización '
     +   '<span class="nota">' + Number(c.followup_attempts || 0) + ' de 2 seguimientos</span></summary><div class="dentro">'
-    +   '<label class="campo"><input data-c="human_handoff_required" type="checkbox" ' + (c.human_handoff_required ? 'checked' : '') + '> Requiere atención humana</label>'
-    +   '<label class="campo"><input data-c="auto_template_paused" type="checkbox" ' + (c.auto_template_paused ? 'checked' : '') + '> Pausar bot / plantillas automáticas</label>'
-    +   '<div class="campo"><label>Motivo de atención humana</label><input data-c="human_handoff_reason" value="' + esc(c.human_handoff_reason || '') + '"></div>'
-    +   '<div class="seccion" style="margin:12px 0 6px">Permisos individuales</div>'
-    +   '<label class="campo"><input data-c="reminders_opt_in" type="checkbox" ' + (c.reminders_opt_in === false ? '' : 'checked') + (c.proactive_blocked_at ? ' disabled' : '') + '> Permitir recordatorios de sesión</label>'
-    +   '<label class="campo"><input data-c="followups_opt_in" type="checkbox" ' + (c.followups_opt_in === false ? '' : 'checked') + (c.proactive_blocked_at ? ' disabled' : '') + '> Permitir seguimientos</label>'
-    +   '<label class="campo"><input data-c="marketing_opt_in" type="checkbox" ' + (c.marketing_opt_in === true ? 'checked' : '') + (c.proactive_blocked_at ? ' disabled' : '') + '> Permitir marketing y promociones</label>'
-    +   (c.proactive_blocked_at ? '<p class="aviso" style="color:var(--bad)">Exclusión permanente activa: estos permisos no pueden reactivarse desde la ficha.</p>' : '')
     +   '<p class="aviso" style="margin:0">Dos seguimientos sin respuesta y el contacto pasa a <b>desinteresado</b>: '
     +     'se apagan marketing, seguimientos y auto-plantillas. Puede seguir escribiendo y se le puede contestar a mano.</p>'
     + '</div></details>'
@@ -1907,7 +1903,7 @@ function pintaFicha(c){
   // Guardado al salir del campo: un cambio por peticion, con el motivo visible si falla.
   $('ficha').querySelectorAll('[data-c]').forEach(el => {
     el.addEventListener('change', async () => {
-      const cambios = {}; cambios[el.dataset.c] = valorCampoFicha(el);
+      const cambios = {}; cambios[el.dataset.c] = el.value;
       const r = await llama({ action:'updateLead', conversation_id: sel.id || sel._id, fields:cambios });
       if (!r.ok) return avisa('No se guardó', r.error);
       Object.assign(sel, cambios);
@@ -1935,7 +1931,11 @@ function montaPlantillasVista(){
         business_number: CFG.businessNumber || '' });
       $('btnSyncTpl').disabled = false;
       if (!r.ok) return avisa('No se pudo sincronizar', r.error);
-      avisa('Sincronizado con Meta', (r.synced ?? '') + ' plantillas');
+      // El servidor devuelve creadas/actualizadas/retiradas/total, no "synced".
+      avisa('Sincronizado con Meta',
+        [r.creadas ? r.creadas + ' nuevas' : '', r.actualizadas ? r.actualizadas + ' actualizadas' : '',
+         r.retiradas ? r.retiradas + ' retiradas' : ''].filter(Boolean).join(' · ')
+        || ((r.total ?? 0) + ' plantillas, sin cambios'));
       pintaTablaTpl(true);
     };
     $('btnRecargaTpl').onclick = () => pintaTablaTpl(true);
@@ -1992,10 +1992,9 @@ const TABLERO = {
     titulo: 'Clientes de caja',
     bajada: 'Los que ya compraron en el punto de venta. Se sincronizan desde la caja.',
     tabla: 'crm_pos_customers',
-    accion: 'posCustomers',
     orden: [{ field:'last_sale_at', ascending:false }],
     cols: [
-      { t:'Cliente', p:(r)=> r.name || '—' },
+      { t:'Cliente', p:(r)=> r.customer_name || '—' },
       { t:'Teléfono', p:(r)=> r.phone || '—' },
       { t:'Compras', p:(r)=> r.sale_count ?? 0 },
       { t:'Gastado', p:(r)=> pesos(r.total_spent_centavos) },
@@ -2035,7 +2034,6 @@ const TABLERO = {
     ],
   },
 };
-const TABLEROS_CARGADOS = new Set();
 
 function pesos(centavos){
   const n = Number(centavos || 0);
@@ -2057,23 +2055,20 @@ async function montaTablero(id){
       + '<div id="tb-' + id + '"></div></div>');
     document.querySelector('#vista-' + id + ' [data-recarga]').onclick = () => pintaTablero(id);
   }
-  if (!TABLEROS_CARGADOS.has(id)) pintaTablero(id);
+  pintaTablero(id);
 }
 
 async function pintaTablero(id){
   const d = TABLERO[id], cont = $('tb-' + id);
   if (!cont) return;
   cont.innerHTML = '<p class="bajada"><span class="cargando"></span> Cargando…</p>';
-  const r = d.accion
-    ? await llama({ action:d.accion })
-    : await llama({ action:'data', table:d.tabla, operation:'select',
-        filters: d.filtros || [], order: d.orden || [], limit: 300 });
+  const r = await llama({ action:'data', table:d.tabla, operation:'select',
+    filters: d.filtros || [], order: d.orden || [], limit: 300 });
   if (!r.ok) {
     cont.innerHTML = '<p class="bajada">No se pudo cargar: ' + esc(r.error || 'error') + '</p>';
     return;
   }
   let filas = r.data || r.rows || [];
-  TABLEROS_CARGADOS.add(id);
   if (d.soloConRespuesta) filas = filas.filter(f => f.rating_service || f.rating_satisfaction || f.comment);
   if (!filas.length) {
     cont.innerHTML = '<p class="bajada">Todavía no hay nada aquí.</p>';
@@ -2191,7 +2186,7 @@ async function aFormatoEstado(file){
 function montaAnuncios(){
   if (montadas.has('ads')) return;
   montadas.add('ads');
-  const url = CFG.adsPanelUrl || 'https://crm.dcarelacompufoto.com/anuncios/';
+  const url = CFG.adsPanelUrl || 'https://erickcarela58-star.github.io/dcarela-anuncios-panel/';
   hueco('ads', '<div class="hoja"><h1>Estudio de Anuncios</h1>'
     + '<p class="bajada">Las campañas de Meta se gestionan en su propio panel, que se publica aparte. '
     +   'Se abre en otra pestaña para no tener dos copias del mismo estudio.</p>'
@@ -2258,34 +2253,19 @@ function montaConexion(){
 async function pintaConexion(){
   const c = $('cxEstado'); if (!c) return;
   c.innerHTML = '<p class="bajada"><span class="cargando"></span> Preguntando a Meta…</p>';
-  const r = await llama({ action: CANAL_FOTOS ? 'bridgeStatus' : 'transportStatus' });
+  const r = await llama({ action:'transportStatus' });
   if (!r.ok) { c.innerHTML = '<p class="bajada">No se pudo comprobar: ' + esc(r.error || '') + '</p>'; return; }
-  const t = CANAL_FOTOS ? (r.bridge || {}) : (r.transport || r.status || r);
-  const estado = t.state || t.status || (t.ready === true ? 'ready' : 'desconocido');
-  const listo = CANAL_FOTOS
-    ? estado === 'ready' && t.paused !== true && t.host_online !== false
-    : t.ready === true || estado === 'ready';
-  const fecha = v => {
-    if (!v) return '—';
-    if (typeof v === 'string') return v.slice(0,19).replace('T',' ');
-    const segundos = Number(v._seconds ?? v.seconds);
-    if (Number.isFinite(segundos)) return new Date(segundos * 1000).toISOString().slice(0,19).replace('T',' ');
-    return '—';
-  };
+  const t = r.transport || r.status || r;
+  const listo = t.ready === true || t.state === 'ready';
   const fila = (k, v) => '<div class="cambio"><div class="k">' + esc(k) + '</div>' + esc(String(v ?? '—')) + '</div>';
   c.innerHTML = '<div class="propuesta" style="max-width:620px">'
     + '<div class="tapa"><b>' + (listo ? '✅ Entregando mensajes' : '⚠️ No está entregando') + '</b></div>'
     + '<div class="cuerpo">'
-    +   fila('Estado', estado)
-    +   fila('Número del negocio', CANAL_FOTOS
-          ? (CFG.bridgeBusinessDisplayNumber || CFG.bridgeBusinessNumber || '—')
-          : (CFG.businessDisplayNumber || CFG.businessNumber || '—'))
-    +   (CANAL_FOTOS ? fila('Bot de Fotos', t.bot_enabled === true ? 'activo' : 'apagado') : '')
-    +   (CANAL_FOTOS ? fila('Equipo conectado', t.host_online === false ? 'no' : 'sí') : '')
-    +   (t.last_error_code || t.last_error ? fila('Último error', t.last_error_code || t.last_error) : '')
-    +   (t.last_error_at ? fila('Cuándo', fecha(t.last_error_at)) : '')
-    +   (t.last_webhook_attempt_at ? fila('Último aviso recibido', fecha(t.last_webhook_attempt_at)) : '')
-    +   (t.host_last_seen_at ? fila('Último heartbeat', fecha(t.host_last_seen_at)) : '')
+    +   fila('Estado', t.state || (listo ? 'ready' : 'desconocido'))
+    +   fila('Número del negocio', CFG.businessDisplayNumber || CFG.businessNumber || '—')
+    +   (t.last_error_code ? fila('Último error de Meta', t.last_error_code) : '')
+    +   (t.last_error_at ? fila('Cuándo', String(t.last_error_at).slice(0,19).replace('T',' ')) : '')
+    +   (t.last_webhook_attempt_at ? fila('Último aviso recibido', String(t.last_webhook_attempt_at).slice(0,19).replace('T',' ')) : '')
     + '</div>'
     + (listo ? '' : '<div class="patas"><span class="bajada" style="margin:0">'
         + 'Hay que reconectar Meta con el transporte. Eso se hace con el script '
@@ -2318,14 +2298,19 @@ async function pintaConfig(){
 
   const u = auth.currentUser;
   $('cfgYo').innerHTML = '<div style="max-width:520px">' + dato('Correo', u?.email || '—') + '</div>';
+  // whoami devuelve rol_efectivo / activo / pasaria_requireMember, no role/member: los
+  // nombres que puse antes daban siempre "—" y "autorizado" aunque no lo estuvieras.
   const quien = await llama({ action:'whoami' });
   if (quien.ok) {
-    const rol = quien.rol_efectivo || quien.rol_guardado || quien.role || quien.member?.role || '—';
-    const autorizado = quien.pasaria_requireMember === true || Boolean(quien.member || quien.role);
     $('cfgYo').innerHTML = '<div style="max-width:520px">'
-      + dato('Correo', u?.email || '—')
-      + dato('Rol', rol)
-      + dato('Acceso', autorizado ? 'autorizado' : 'sin membresía') + '</div>';
+      + dato('Correo', quien.email || u?.email || '—')
+      + dato('Rol', quien.rol_efectivo || '—')
+      + dato('Acceso', quien.pasaria_requireMember ? 'autorizado'
+          : !quien.ficha_existe ? 'sin ficha de miembro'
+          : !quien.activo ? 'ficha desactivada'
+          : !quien.pertenece_al_negocio ? 'no pertenece a este negocio'
+          : 'rol sin permisos')
+      + '</div>';
   }
 
   const eq = $('cfgEquipo');
@@ -2628,7 +2613,7 @@ const EJEMPLOS = [
 ];
 let propuesta = null;
 function montaPlanificacion(){
-  if (montadas.has('planning')) return;
+  if (montadas.has('planning')) { const c = $('contexto'); if (c) c.textContent = contextoTexto(); return; }
   montadas.add('planning');
   hueco('planning',
     '<div class="hoja"><h1>Planificación</h1>'
@@ -2647,6 +2632,9 @@ function montaPlanificacion(){
     $('pedido').value = b.textContent; $('pedido').focus();
   });
   $('btnPedir').onclick = pide;
+  // Sin esto el hueco #contexto quedaba vacio y no se sabia sobre QUIEN se estaba
+  // pidiendo el plan. Aplicar una propuesta al contacto equivocado no tiene deshacer.
+  $('contexto').textContent = contextoTexto();
 }
 function contextoTexto(){
   return sel ? 'Sobre: ' + nombreDe(sel) + ' (+' + (sel.wa_phone||'') + ')'
