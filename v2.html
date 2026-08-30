@@ -608,6 +608,16 @@ function avisa(titulo, detalle){
 
 /* ---- Marca --------------------------------------------------------------- */
 const sigla = CFG.logoText || 'DC';
+const CANAL_FOTOS = CFG.lockNumFilter === true || CFG.defaultNumFilter === 'qr';
+const soloDigitos = value => String(value || '').replace(/\D/g, '');
+const NUMERO_FOTOS = soloDigitos(CFG.bridgeBusinessNumber || CFG.bridgeBusinessDisplayNumber);
+function perteneceAlCanal(c){
+  const fuente = String(c?.source || '').toLowerCase();
+  const numero = soloDigitos(c?.business_number);
+  const esFotos = fuente === 'whatsapp_qr' || fuente === 'photos'
+    || (NUMERO_FOTOS && numero === NUMERO_FOTOS);
+  return CANAL_FOTOS ? esFotos : !esFotos;
+}
 ['sigla','siglaAcceso'].forEach(id => { $(id).textContent = sigla; });
 $('marca').textContent = CFG.productName || 'CRM';
 $('submarca').textContent = CFG.subtitle || '';
@@ -721,7 +731,7 @@ function hora(v){
 function escuchaConversaciones(){
   const q = query(collection(db,'crm_conversations'), where('business_id','==',NEGOCIO));
   onSnapshot(q, s => {
-    CONVS = s.docs.map(d => ({ ...d.data(), _id:d.id }))
+    CONVS = s.docs.map(d => ({ ...d.data(), _id:d.id })).filter(perteneceAlCanal)
       .sort((a,b) => String(b.last_message_at||'').localeCompare(String(a.last_message_at||'')));
     marcaEstado(true, 'Datos sincronizados · en vivo');
     if (vistaActual === 'conversations') pintaChats();
@@ -2181,7 +2191,7 @@ async function aFormatoEstado(file){
 function montaAnuncios(){
   if (montadas.has('ads')) return;
   montadas.add('ads');
-  const url = CFG.adsPanelUrl || 'https://erickcarela58-star.github.io/dcarela-anuncios-panel/';
+  const url = CFG.adsPanelUrl || 'https://crm.dcarelacompufoto.com/anuncios/';
   hueco('ads', '<div class="hoja"><h1>Estudio de Anuncios</h1>'
     + '<p class="bajada">Las campañas de Meta se gestionan en su propio panel, que se publica aparte. '
     +   'Se abre en otra pestaña para no tener dos copias del mismo estudio.</p>'
@@ -2248,10 +2258,13 @@ function montaConexion(){
 async function pintaConexion(){
   const c = $('cxEstado'); if (!c) return;
   c.innerHTML = '<p class="bajada"><span class="cargando"></span> Preguntando a Meta…</p>';
-  const r = await llama({ action:'transportStatus' });
+  const r = await llama({ action: CANAL_FOTOS ? 'bridgeStatus' : 'transportStatus' });
   if (!r.ok) { c.innerHTML = '<p class="bajada">No se pudo comprobar: ' + esc(r.error || '') + '</p>'; return; }
-  const t = r.transport || r.status || r;
-  const listo = t.ready === true || t.state === 'ready';
+  const t = CANAL_FOTOS ? (r.bridge || {}) : (r.transport || r.status || r);
+  const estado = t.state || t.status || (t.ready === true ? 'ready' : 'desconocido');
+  const listo = CANAL_FOTOS
+    ? estado === 'ready' && t.paused !== true && t.host_online !== false
+    : t.ready === true || estado === 'ready';
   const fecha = v => {
     if (!v) return '—';
     if (typeof v === 'string') return v.slice(0,19).replace('T',' ');
@@ -2263,11 +2276,16 @@ async function pintaConexion(){
   c.innerHTML = '<div class="propuesta" style="max-width:620px">'
     + '<div class="tapa"><b>' + (listo ? '✅ Entregando mensajes' : '⚠️ No está entregando') + '</b></div>'
     + '<div class="cuerpo">'
-    +   fila('Estado', t.state || (listo ? 'ready' : 'desconocido'))
-    +   fila('Número del negocio', CFG.businessDisplayNumber || CFG.businessNumber || '—')
-    +   (t.last_error_code ? fila('Último error de Meta', t.last_error_code) : '')
+    +   fila('Estado', estado)
+    +   fila('Número del negocio', CANAL_FOTOS
+          ? (CFG.bridgeBusinessDisplayNumber || CFG.bridgeBusinessNumber || '—')
+          : (CFG.businessDisplayNumber || CFG.businessNumber || '—'))
+    +   (CANAL_FOTOS ? fila('Bot de Fotos', t.bot_enabled === true ? 'activo' : 'apagado') : '')
+    +   (CANAL_FOTOS ? fila('Equipo conectado', t.host_online === false ? 'no' : 'sí') : '')
+    +   (t.last_error_code || t.last_error ? fila('Último error', t.last_error_code || t.last_error) : '')
     +   (t.last_error_at ? fila('Cuándo', fecha(t.last_error_at)) : '')
     +   (t.last_webhook_attempt_at ? fila('Último aviso recibido', fecha(t.last_webhook_attempt_at)) : '')
+    +   (t.host_last_seen_at ? fila('Último heartbeat', fecha(t.host_last_seen_at)) : '')
     + '</div>'
     + (listo ? '' : '<div class="patas"><span class="bajada" style="margin:0">'
         + 'Hay que reconectar Meta con el transporte. Eso se hace con el script '
