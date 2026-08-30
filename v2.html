@@ -115,19 +115,14 @@ body.menu-abierto .nav .secundarias{display:block}
 .pie button:hover{background:var(--hover)}
 
 /* --- Barra superior -------------------------------------------------------- */
-.hamburguesa{width:38px;height:38px;border-radius:var(--r);display:flex;align-items:center;
-  justify-content:center;color:var(--mut);flex:0 0 auto}
-.hamburguesa:hover{background:var(--hover);color:var(--fg)}
-body.menu-abierto .hamburguesa{background:var(--hover);color:var(--fg)}
-.buscador{flex:1;max-width:720px;margin:0 auto;position:relative}
-.buscador svg{position:absolute;left:13px;top:50%;transform:translateY(-50%);
-  width:16px;height:16px;color:var(--mut)}
-.buscador input{width:100%;height:38px;padding:0 14px 0 38px;border:1px solid var(--line);
-  border-radius:var(--r2);background:var(--bg);color:var(--fg);outline:0}
-.buscador input:focus{border-color:var(--line2)}
+.titulo{flex:1;min-width:0;font-size:15px;font-weight:650;letter-spacing:-.2px;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+/* flex-shrink:0 en el grupo derecho: sin eso "Manual" se recortaba contra el borde
+   cuando el titulo era largo. */
 .barra .der{display:flex;align-items:center;gap:9px;flex:0 0 auto}
 .btn-linea{padding:8px 13px;border:1px solid var(--line2);border-radius:var(--r);
-  font-size:12.5px;font-weight:600;color:var(--fg);text-decoration:none;white-space:nowrap}
+  font-size:12.5px;font-weight:600;color:var(--fg);text-decoration:none;white-space:nowrap;
+  flex:0 0 auto}
 .btn-linea:hover{background:var(--hover)}
 .quien{font-size:11.5px;color:var(--mut);max-width:190px;overflow:hidden;
   text-overflow:ellipsis;white-space:nowrap}
@@ -301,8 +296,12 @@ video.mmedia{cursor:default}
 /* Las ondas son el nivel real del microfono, no una animacion. Si el dibujo se queda
    plano es que no esta entrando sonido, y eso hay que poder verlo antes de enviar. */
 #ondas{flex:1;min-width:60px;height:30px;display:block}
+/* Mientras se graba se esconde el area de texto y los adjuntos, pero NO el boton de
+   enviar: desaparecia justo cuando hacia falta y no habia forma de mandar la nota. */
 .escribir:has(.grabando:not([hidden])) textarea{display:none}
 .escribir:has(.grabando:not([hidden])) .adjuntos{display:none}
+.escribir:has(.grabando:not([hidden])) .enviar{display:none}
+.grabando #recEnviar,.grabando #recCancelar{flex:0 0 auto}
 
 .vacio{flex:1;display:flex;align-items:center;justify-content:center;padding:30px;
   color:var(--mut);font-size:13.5px;text-align:center;background:var(--wall)}
@@ -552,18 +551,14 @@ video.mmedia{cursor:default}
     </div>
   </aside>
 
+  <!-- Sin hamburguesa y sin buscador aqui. Habia dos buscadores en pantalla, y el menu
+       estaba entero a la vista igualmente: el boton solo servia para esconderlo. -->
   <header class="barra">
-    <button class="hamburguesa" id="btnMenu" aria-label="Menú" aria-expanded="false">
-      <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
-    </button>
-    <div class="buscador">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.5-4.5"/></svg>
-      <input id="busca" placeholder="Buscar conversación, cliente, combo…">
-    </div>
+    <div class="titulo" id="tituloVista"></div>
     <div class="der">
-      <a class="btn-linea" href="./manual.html" target="_blank" rel="noopener">Manual</a>
-      <button class="btn-linea" id="btnTema">Modo oscuro</button>
       <span class="quien" id="quien"></span>
+      <button class="btn-linea" id="btnTema">Modo oscuro</button>
+      <a class="btn-linea" href="./manual.html" target="_blank" rel="noopener">Manual</a>
     </div>
   </header>
 
@@ -656,19 +651,8 @@ function pintaMenu(){
 }
 pintaMenu();
 
-// El buscador de la barra estaba dibujado y no hacia nada: escribir ahi no movia ni
-// un pixel. Lleva a Conversaciones y busca de verdad.
-$('busca').addEventListener('input', () => {
-  const q = $('busca').value;
-  if (vistaActual !== 'conversations') ve('conversations');
-  const caja = $('buscaChat');
-  if (caja) { caja.value = q; caja.dispatchEvent(new Event('input')); }
-});
-
-$('btnMenu').onclick = () => {
-  const abierto = document.body.classList.toggle('menu-abierto');
-  $('btnMenu').setAttribute('aria-expanded', abierto ? 'true' : 'false');
-};
+// El menu se ve entero siempre. Ya no hay nada que desplegar.
+document.body.classList.add('menu-abierto');
 
 /* ---- Enrutado ------------------------------------------------------------ */
 let vistaActual = null;
@@ -685,7 +669,8 @@ function ve(id){
   if (location.hash.slice(1) !== id) history.replaceState(null, '', '#' + id);
   if (id !== 'conversations') document.body.classList.remove('chat-abierto');
   const c = VISTAS.find(v => v.id === id);
-  if (c && !c.fija) document.body.classList.add('menu-abierto');
+  const rotulo = $('tituloVista');
+  if (rotulo) rotulo.textContent = c ? c.nombre : '';
 }
 $('nav').addEventListener('click', ev => {
   const a = ev.target.closest('a[data-vista]');
@@ -1078,18 +1063,44 @@ let modoHd = false;
 // el archivo se subiera entero para morir alla, asi que se corta antes.
 const LIMITE_MB = () => (modoHd ? 15 : 12);
 
+// Comprime cada imagen de la cola con el modo ACTUAL y actualiza su peso. Se llama al
+// adjuntar y cada vez que se pulsa HD, para que el tamaño que se ve sea el que va a
+// salir de verdad y no el del original.
+async function recalculaCola(){
+  for (const a of COLA) {
+    if (a.tipo !== 'image' || !a.archivo) {
+      if (!a.datos && a.archivo) { a.datos = await leeBase64(a.archivo); a.kb = Math.round(a.archivo.size/1024); }
+      continue;
+    }
+    if (a.hd === modoHd && a.datos) continue;      // ya esta en el modo pedido
+    const blob = modoHd ? await comprimeHd(a.archivo) : await comprimeNormal(a.archivo);
+    a.datos = await leeBase64(blob);
+    a.mime = blob.type || a.archivo.type || 'image/jpeg';
+    // Si se reencodeo, el nombre tiene que decir jpg: algunos visores se lian con un
+    // .png que por dentro es jpeg.
+    a.nombre = blob !== a.archivo
+      ? String(a.archivo.name || 'imagen').replace(/\.[^.]+$/, '') + '.jpg'
+      : a.archivo.name;
+    a.kb = Math.round(blob.size / 1024);
+    a.hd = modoHd;
+  }
+  pintaCola();
+}
+
 function pintaCola(){
   const c = $('cola'); if (!c) return;
   c.hidden = !COLA.length;
   // Se ve la foto, no su nombre. Lo que va a salir hacia un cliente real hay que
   // poder mirarlo antes: un nombre de archivo no dice si adjuntaste la que querias.
   c.innerHTML = COLA.map((a,i) => {
-    const previa = a.tipo === 'image'
+    const previa = a.tipo === 'image' && a.datos
       ? '<img src="data:' + esc(a.mime || 'image/jpeg') + ';base64,' + a.datos + '" alt="">'
-      : '<span class="ico">' + (a.tipo === 'audio' ? '🎙' : '📄') + '</span>';
-    const peso = a.datos ? Math.round(a.datos.length * 0.75 / 1024) : 0;
+      : '<span class="ico">' + (a.tipo === 'audio' ? '🎙' : a.tipo === 'image' ? '🖼' : '📄') + '</span>';
+    const peso = a.kb || (a.datos ? Math.round(a.datos.length * 0.75 / 1024) : 0);
+    const marca = a.tipo === 'image' ? (a.hd ? ' · HD' : '') : '';
     return '<span class="pieza">' + previa
-      + '<span class="pnom">' + esc(a.nombre) + (peso ? '<i>' + peso + ' KB</i>' : '') + '</span>'
+      + '<span class="pnom">' + esc(a.nombre)
+      +   (peso ? '<i>' + peso + ' KB' + marca + '</i>' : '') + '</span>'
       + '<button data-quita="' + i + '" aria-label="Quitar">×</button></span>';
   }).join('');
 }
@@ -1152,16 +1163,12 @@ async function encola(files, tipo){
     // HEIC no lo acepta WhatsApp por esta via y se rechaza aqui, no a mitad del envio.
     if (tipo === 'image' && /heic|heif/i.test(f.type + f.name)) { fuera++; continue; }
     if (f.size > LIMITE_MB() * 1024 * 1024) { fuera++; continue; }
-    let dato = f, nombre = f.name;
-    if (tipo === 'image') {
-      dato = modoHd ? await comprimeHd(f) : await comprimeNormal(f);
-      // Si se reencodeo, el nombre tiene que decir jpg o algunos visores se lian.
-      if (dato !== f) nombre = String(f.name || 'imagen').replace(/\.[^.]+$/, '') + '.jpg';
-    }
-    try { COLA.push({ tipo, nombre, mime: dato.type || f.type || 'application/octet-stream',
-      datos: await leeBase64(dato) }); }
-    catch (e) { fuera++; }
+    // Se guarda el ORIGINAL. La compresion se decide al enviar, no al adjuntar: antes,
+    // adjuntar y despues pulsar HD no servia de nada porque la foto ya venia comprimida
+    // en calidad normal, y no habia forma de darse cuenta.
+    COLA.push({ tipo, nombre: f.name, mime: f.type || 'application/octet-stream', archivo: f });
   }
+  await recalculaCola();
   if (fuera) avisa(fuera + (fuera === 1 ? ' archivo se omitió' : ' archivos se omitieron'),
     'HEIC o mayor de ' + LIMITE_MB() + ' MB.');
   pintaCola();
@@ -1172,12 +1179,19 @@ function cableaAdjuntos(){
   $('adjDoc').onclick = () => $('fDoc').click();
   $('fImg').onchange = e => { const f = [...e.target.files]; e.target.value = ''; encola(f, 'image'); };
   $('fDoc').onchange = e => { const f = [...e.target.files]; e.target.value = ''; encola(f, 'document'); };
-  $('adjHd').onclick = () => {
+  $('adjHd').onclick = async () => {
     modoHd = !modoHd;
     $('adjHd').setAttribute('aria-pressed', modoHd ? 'true' : 'false');
     $('adjHd').classList.toggle('on', modoHd);
+    // Se recomprime lo que YA esta adjuntado. Antes el interruptor solo valia para las
+    // fotos que se adjuntaran despues, sin decirlo en ninguna parte.
+    if (COLA.some(a => a.tipo === 'image')) {
+      $('adjHd').disabled = true;
+      await recalculaCola();
+      $('adjHd').disabled = false;
+    }
     avisa(modoHd ? 'HD activado' : 'HD desactivado',
-      modoHd ? 'Las imágenes van sin comprimir, hasta 15 MB.' : 'Las imágenes van hasta 12 MB.');
+      modoHd ? 'Máxima calidad que WhatsApp entrega de verdad.' : 'Calidad normal, más ligeras.');
   };
   $('cola').onclick = ev => {
     const b = ev.target.closest('[data-quita]'); if (!b) return;
@@ -1643,9 +1657,18 @@ function cableaMicrofono(){
           l.readAsDataURL(blob);
         }).catch(e => { avisa('No se pudo preparar el audio', e.message); return null; });
         if (!datos) return;
-        COLA.push({ tipo:'audio', nombre:'nota-de-voz.ogg', mime:'audio/ogg', datos });
+        COLA.push({ tipo:'audio', nombre:'nota-de-voz.ogg', mime:'audio/ogg', datos,
+          kb: Math.round(blob.size / 1024) });
         pintaCola();
-        if (enviarAlParar) { enviarAlParar = false; $('btnEnviar').click(); }
+        // El envio se dispara AQUI, cuando el audio esta listo de verdad. Y va dentro de
+        // try: si algo revienta en esta callback, el error queda fuera de cualquier
+        // manejador (viene del worker del encoder) y deja el panel colgado hasta
+        // recargar, que es justo lo que paso.
+        if (enviarAlParar) {
+          enviarAlParar = false;
+          try { $('btnEnviar')?.click(); }
+          catch (e) { avisa('No se pudo enviar la nota', e?.message || String(e)); }
+        }
       };
       await grabadora.start();
     } catch (e) { return avisa('No se pudo grabar', e?.message || String(e)); }
@@ -2677,6 +2700,43 @@ const EJEMPLOS = [
   'Márcalo como desinteresado y apaga el marketing',
 ];
 let propuesta = null;
+const PLAN_IMGS = [];
+let REGLAS = '';
+
+function pintaPlanCola(){
+  const c = $('planCola'); if (!c) return;
+  c.hidden = !PLAN_IMGS.length;
+  c.innerHTML = PLAN_IMGS.map((a,i) => '<span class="pieza">'
+    + '<img src="data:' + esc(a.mime) + ';base64,' + a.datos + '" alt="">'
+    + '<span class="pnom">' + esc(a.nombre) + '</span>'
+    + '<button data-quita="' + i + '" aria-label="Quitar">×</button></span>').join('');
+}
+
+// Las reglas viven en el servidor, no en el navegador: son del negocio, no de quien
+// esta sentado delante. Si viven en localStorage, cada persona tiene las suyas y el
+// asistente contesta distinto segun quien pregunte.
+async function cargaReglas(){
+  const r = await llama({ action:'data', table:'settings', operation:'select',
+    filters:[{ kind:'eq', field:'key', value:'reglas_asistente' }], limit:1 });
+  if (!r.ok) return;
+  const fila = (r.data || r.rows || [])[0];
+  REGLAS = fila?.value || '';
+  const caja = $('reglas'); if (caja) caja.value = REGLAS;
+  const nota = $('reglasNota');
+  if (nota) nota.textContent = REGLAS ? 'Guardadas. Se usan en cada propuesta.' : 'Todavía no hay reglas.';
+}
+async function guardaReglas(){
+  const valor = $('reglas').value.trim();
+  $('btnReglas').disabled = true;
+  const r = await llama({ action:'data', table:'settings', operation:'upsert',
+    payload:{ id:'reglas_asistente', key:'reglas_asistente', value:valor,
+      updated_at:new Date().toISOString() }, on_conflict:'id' });
+  $('btnReglas').disabled = false;
+  if (!r.ok) return avisa('No se pudieron guardar', r.error);
+  REGLAS = valor;
+  $('reglasNota').textContent = 'Guardadas. Se usan en cada propuesta.';
+  avisa('Reglas guardadas', 'El asistente las tendrá en cuenta desde ahora.');
+}
 function montaPlanificacion(){
   if (montadas.has('planning')) { const c = $('contexto'); if (c) c.textContent = contextoTexto(); return; }
   montadas.add('planning');
@@ -2686,12 +2746,30 @@ function montaPlanificacion(){
     +   'qué hacer, y no se toca nada hasta que lo apruebes.</p>'
     + '<div class="prompt">'
     +   '<textarea id="pedido" placeholder="Ej. prepara la reserva de este contacto y pídele el abono"></textarea>'
+    +   '<div class="adjuntos" id="planAdj" style="padding:8px 0 0">'
+    +     '<button class="adj" id="planImg" title="Adjuntar imagen">'
+    +       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg></button>'
+    +     '<input type="file" id="planFile" accept="image/*" multiple hidden>'
+    +     '<span class="quien" id="planAdjNota"></span>'
+    +   '</div>'
+    +   '<div class="cola" id="planCola" hidden></div>'
     +   '<div class="acciones"><button class="btn-solido" id="btnPedir">Proponer</button>'
     +     '<span class="quien" id="contexto"></span></div>'
     +   '<div class="ejemplos" id="ejemplos">'
     +     EJEMPLOS.map(e => '<button class="ejemplo">' + esc(e) + '</button>').join('')
     +   '</div>'
-    + '</div><div id="salida"></div></div>');
+    + '</div><div id="salida"></div>'
+    + '<div class="seccion" style="margin:30px 0 8px">Reglas y contexto del negocio</div>'
+    + '<p class="bajada">Lo que escribas aquí se le da al asistente en cada propuesta. '
+    +   'Sirve para lo que no está en ninguna ficha: cómo se cobra, qué no se promete, '
+    +   'qué fechas están cerradas, cómo se habla.</p>'
+    + '<div class="prompt"><textarea id="reglas" rows="8" placeholder="Ej.\n'
+    +   '- El abono mínimo es de RD$3,000 y no se devuelve.\n'
+    +   '- No trabajamos domingos.\n'
+    +   '- Nunca prometer una fecha sin confirmarla con el estudio.\n'
+    +   '- Tratar de usted a personas mayores."></textarea>'
+    +   '<div class="acciones"><button class="btn-solido" id="btnReglas">Guardar reglas</button>'
+    +     '<span class="quien" id="reglasNota"></span></div></div></div>');
   $('ejemplos').addEventListener('click', ev => {
     const b = ev.target.closest('.ejemplo'); if (!b) return;
     $('pedido').value = b.textContent; $('pedido').focus();
@@ -2700,6 +2778,29 @@ function montaPlanificacion(){
   // Sin esto el hueco #contexto quedaba vacio y no se sabia sobre QUIEN se estaba
   // pidiendo el plan. Aplicar una propuesta al contacto equivocado no tiene deshacer.
   $('contexto').textContent = contextoTexto();
+
+  // Imagenes para el asistente: un comprobante de pago, la foto de un vestido, una
+  // captura de otra cotizacion. Son cosas que el cliente manda y sobre las que hay que
+  // decidir, y sin poder enseñarselas el asistente decide a ciegas.
+  $('planImg').onclick = () => $('planFile').click();
+  $('planFile').onchange = async e => {
+    const files = [...e.target.files]; e.target.value = '';
+    for (const f of files) {
+      if (!f.type?.startsWith('image/')) continue;
+      // Se manda comprimida: al asistente no le hace falta la resolucion completa y
+      // subir 30 MB en cada pregunta seria lento y caro.
+      const blob = await comprimeNormal(f);
+      PLAN_IMGS.push({ nombre:f.name, mime: blob.type || 'image/jpeg', datos: await leeBase64(blob) });
+    }
+    pintaPlanCola();
+  };
+  $('planCola').onclick = ev => {
+    const b = ev.target.closest('[data-quita]'); if (!b) return;
+    PLAN_IMGS.splice(Number(b.dataset.quita), 1); pintaPlanCola();
+  };
+
+  cargaReglas();
+  $('btnReglas').onclick = guardaReglas;
 }
 function contextoTexto(){
   return sel ? 'Sobre: ' + nombreDe(sel) + ' (+' + (sel.wa_phone||'') + ')'
@@ -2711,10 +2812,48 @@ async function pide(){
   $('btnPedir').disabled = true;
   $('salida').innerHTML = '<p class="bajada" style="margin-top:22px"><span class="cargando"></span> Pensando…</p>';
   const cuerpo = { action:'assistantPlan', instruction:t };
+  const contexto = [];
+
+  // Las reglas del negocio van SIEMPRE, aunque no haya conversacion abierta: son lo
+  // que evita que proponga cosas que el estudio no puede cumplir.
+  if (REGLAS) contexto.push('Reglas del negocio, de obligado cumplimiento:\n' + REGLAS);
+
+  // Las normas que ya estan cableadas en el servidor se le dicen tambien. Si no las
+  // conoce propone difundir a gente dada de baja, y el servidor lo rechaza despues:
+  // mejor que no lo proponga que tener que explicar por que se rechazo.
+  contexto.push([
+    'Reglas del sistema que NO se pueden saltar:',
+    '- Fuera de la ventana de 24 h desde el ultimo mensaje del cliente solo llega una plantilla aprobada.',
+    '- Un contacto en etapa desinteresado, o con exclusion permanente, no recibe marketing ni seguimientos.',
+    '- Dos seguimientos sin respuesta y el contacto pasa a desinteresado automaticamente.',
+    '- Una difusion con plantilla exige que la plantilla incluya salida de baja (STOP).',
+    '- Nada se ejecuta sin que una persona lo apruebe.',
+  ].join('\n'));
+
   if (sel) {
-    cuerpo.contact_context = MSGS.slice(-40)
-      .map(m => (m.direction === 'out' ? 'Nosotros: ' : 'Cliente: ') + (m.body || '')).join('\n');
+    contexto.push('Ficha de este contacto:\n' + [
+      ['Nombre', nombreDe(sel)], ['Telefono', sel.wa_phone], ['Etapa', sel.lifecycle_stage],
+      ['Estado', sel.lead_status], ['Reserva', sel.reservation_status],
+      ['Categoria', sel.interested_category], ['Combo', sel.selected_combo_name],
+      ['Fecha tentativa', sel.tentative_date],
+      ['Seguimientos sin respuesta', sel.followup_attempts],
+      ['Marketing permitido', sel.marketing_opt_in === false ? 'NO' : 'si'],
+      ['Excluido permanentemente', sel.proactive_blocked_at ? 'SI' : 'no'],
+    ].filter(([,v]) => v !== undefined && v !== null && String(v).trim() !== '')
+      .map(([k,v]) => '- ' + k + ': ' + v).join('\n'));
+    contexto.push('Ultimos mensajes:\n' + MSGS.slice(-40)
+      .map(m => (m.direction === 'out' ? 'Nosotros: ' : 'Cliente: ') + (m.body || '')).join('\n'));
     cuerpo.conversation_id = sel.id || sel._id;
+  } else {
+    contexto.push('No hay ninguna conversacion abierta: la peticion es sobre el negocio en general.');
+  }
+
+  cuerpo.contact_context = contexto.join('\n\n');
+  // assistantAttachmentParts lee item.mime (assistant-plan.js:224), no mime_type, y se
+  // queda con las tres primeras. Se avisa si se mandan mas, en vez de tirarlas calladas.
+  if (PLAN_IMGS.length) {
+    cuerpo.attachment_payloads = PLAN_IMGS.slice(0, 3).map(a => ({ mime:a.mime, data:a.datos }));
+    if (PLAN_IMGS.length > 3) avisa('Solo van las 3 primeras imágenes', 'Es el máximo que acepta el asistente.');
   }
   const r = await llama(cuerpo);
   $('btnPedir').disabled = false;
