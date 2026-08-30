@@ -16,10 +16,8 @@ import {
   where,
 } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 
-const BUILD = "2026-08-24-saleads-ai-studio-v8";
-const saleAds = window.SaleAdsCore;
-if (!saleAds) throw new Error("No se cargó el motor seguro de SaleAds.");
-const SALEADS_UI = new URLSearchParams(location.search).get("saleads_ui") === "classic" ? "classic" : "phase1";
+const BUILD = "2026-08-30-ads-standalone-v3";
+const CRM_API = "https://crmapi-o2uqjp6fra-uc.a.run.app";
 const firebaseConfig = window.__DCARELA_FIREBASE_CONFIG || {};
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
@@ -50,178 +48,8 @@ let member = null,
   clients = [],
   products = [],
   campaigns = [],
-  creativeAssets = [],
-  capacityEntries = [],
-  experimentRecords = [],
-  attributionEvents = [],
-  auditEntries = [],
   current = null,
-  wizardStep = 0,
-  wizardTemplateId = "T01";
-const WIZARD_KEY = "dcarela_saleads_wizard_v3";
-const OPERATIONS_KEY = "dcarela_saleads_operations_v1";
-const AI_MEMORY_KEY = "dcarela_saleads_ai_memory_v1";
-let studioSource = { file: null, image: null, objectUrl: "", plan: null };
-let aiCurrentRecommendation = null;
-let aiCurrentBrief = null;
-
-function operationStore() {
-  try { return JSON.parse(localStorage.getItem(OPERATIONS_KEY) || "{}"); }
-  catch { return {}; }
-}
-function cachedRows(name) {
-  return operationStore()?.[selectedBusiness()]?.[name] || [];
-}
-function cacheRows(name, rows) {
-  const all = operationStore();
-  const bid = selectedBusiness();
-  all[bid] = { ...(all[bid] || {}), [name]: rows.slice(0, 500) };
-  localStorage.setItem(OPERATIONS_KEY, JSON.stringify(all));
-}
-
-// Los modulos operativos v4 viven en colecciones compartidas de Firestore con
-// copia local de respaldo. La copia local nunca se borra: si la nube falla el
-// panel sigue operando y los registros quedan marcados como pendientes.
-const OPERATION_KINDS = Object.keys(saleAds.operationCollections);
-const randomSuffix = () => Math.random().toString(36).slice(2, 8);
-let operationSync = { state: "idle", message: "", pending: 0, rows: 0 };
-
-function operationLists() {
-  return {
-    creative_assets: creativeAssets,
-    capacity_entries: capacityEntries,
-    experiments: experimentRecords,
-    attribution_events: attributionEvents,
-    audit_entries: auditEntries,
-  };
-}
-function assignOperationRows(kind, rows) {
-  if (kind === "creative_assets") creativeAssets = rows;
-  else if (kind === "capacity_entries") capacityEntries = rows;
-  else if (kind === "experiments") experimentRecords = rows;
-  else if (kind === "attribution_events") attributionEvents = rows;
-  else if (kind === "audit_entries") auditEntries = rows;
-}
-function canWriteCloud() {
-  return ["owner", "admin"].includes(roleForBusiness());
-}
-function pendingCount() {
-  return Object.values(operationLists()).reduce(
-    (total, rows) => total + rows.filter((x) => x.sync_state !== "synced").length,
-    0,
-  );
-}
-function operationRowCount() {
-  return Object.values(operationLists()).reduce((total, rows) => total + rows.length, 0);
-}
-function setSyncState(state, message) {
-  operationSync = { state, message: message || "", pending: pendingCount(), rows: operationRowCount() };
-  renderSyncBanner();
-}
-function renderSyncBanner() {
-  const summary = saleAds.summarizeSync(operationSync.state, { pending: operationSync.pending, rows: operationSync.rows });
-  const tone = { success: "success-text", warning: "warning-text", danger: "danger-text" }[summary.tone] || "muted-text";
-  const html = `<span class="status-chip ${tone}">${escapeHtml(summary.text)}</span><small>${escapeHtml(operationSync.message)}</small><button type="button" class="ghost" data-sync-retry>Reintentar</button>`;
-  document.querySelectorAll("[data-sync-banner]").forEach((node) => { node.innerHTML = html; });
-}
-async function fetchOperationCloud(businessId) {
-  const cloud = {};
-  for (const kind of OPERATION_KINDS) {
-    const spec = saleAds.operationCollections[kind];
-    const snap = await getDocs(query(collection(db, spec.collection), where("business_id", "==", businessId)));
-    const rows = [];
-    snap.forEach((entry) => {
-      const data = entry.data() || {};
-      rows.push({ ...data, id: data.id || entry.id });
-    });
-    cloud[kind] = rows;
-  }
-  return cloud;
-}
-async function pushOperationRow(kind, row, businessId = selectedBusiness()) {
-  if (!auth.currentUser)
-    return { synced: false, state: "expired", message: "La sesion vencio; el registro quedo pendiente en este dispositivo." };
-  if (!canWriteCloud())
-    return { synced: false, state: "permission", message: "Tu rol guarda solo en este dispositivo; owner/admin comparte con la sucursal." };
-  const spec = saleAds.operationCollections[kind];
-  const payload = {
-    ...row,
-    business_id: businessId,
-    collection_mode: spec.mode,
-    created_by_uid: auth.currentUser.uid,
-    created_by_email: auth.currentUser.email || "",
-    synced_at: new Date().toISOString(),
-  };
-  delete payload.sync_state;
-  try {
-    await setDoc(doc(db, spec.collection, saleAds.operationDocId(kind, businessId, row)), payload);
-    return { synced: true, state: "cloud", message: "" };
-  } catch (error) {
-    console.warn("operations-push", kind, error);
-    return { synced: false, ...saleAds.describeSyncError(error, { online: navigator.onLine }) };
-  }
-}
-async function persistOperation(kind, rows, row) {
-  row.sync_state = "pending";
-  cacheRows(kind, rows);
-  const outcome = await pushOperationRow(kind, row);
-  row.sync_state = outcome.synced ? "synced" : "pending";
-  cacheRows(kind, rows);
-  if (outcome.synced) setSyncState(pendingCount() ? "local_only" : "cloud", "");
-  else setSyncState(outcome.state, outcome.message);
-  return outcome;
-}
-async function recordAudit(input) {
-  const entry = {
-    ...saleAds.auditEntry({
-      ...input,
-      actor_uid: auth.currentUser?.uid || "",
-      actor_email: auth.currentUser?.email || "",
-    }),
-    business_id: selectedBusiness(),
-  };
-  auditEntries.unshift(entry);
-  await persistOperation("audit_entries", auditEntries, entry);
-  renderAuditTrail();
-  return entry;
-}
-async function syncPendingOperations(businessId, cloud) {
-  if (!canWriteCloud()) {
-    if (pendingCount())
-      setSyncState("permission", "Hay registros locales sin compartir: tu rol no puede escribir en la nube.");
-    else setSyncState("cloud", "Datos operativos leidos desde la sucursal.");
-    return;
-  }
-  let failure = null;
-  let uploaded = 0;
-  for (const kind of OPERATION_KINDS) {
-    const rows = operationLists()[kind];
-    const plan = saleAds.planOperationMigration(kind, rows, cloud[kind] || [], businessId);
-    for (const row of rows) if (!plan.upload.includes(row)) row.sync_state = "synced";
-    for (const row of plan.upload) {
-      const outcome = await pushOperationRow(kind, row, businessId);
-      if (outcome.synced) {
-        row.sync_state = "synced";
-        uploaded += 1;
-      } else {
-        row.sync_state = "pending";
-        failure = failure || outcome;
-      }
-    }
-    cacheRows(kind, rows);
-  }
-  if (failure) setSyncState(failure.state, failure.message);
-  else
-    setSyncState(
-      "cloud",
-      uploaded
-        ? `Se compartieron ${uploaded} registro(s) de este dispositivo con la sucursal.`
-        : "Datos operativos sincronizados con la sucursal.",
-    );
-}
-function roleForBusiness() {
-  return clean(member?.roles?.[selectedBusiness()] || member?.role || "viewer").toLowerCase();
-}
+  metricsLoaded = false;
 
 const PRESETS = {
   xv: {
@@ -265,385 +93,6 @@ const PRESETS = {
     audience: "Personas interesadas en fotografía profesional",
   },
 };
-
-const wizardIds = [
-  "wizardService", "wizardSlots", "wizardDeadline", "wizardGoal", "wizardPrice",
-  "wizardDeposit", "wizardVariableCost", "wizardProfit", "wizardRoas", "wizardOffer",
-  "wizardStage", "wizardAudienceSource", "wizardLocation", "wizardRadius", "wizardAgeMin",
-  "wizardAgeMax", "wizardConsent", "wizardCreativeMode", "wizardConcept", "wizardPeopleVisible",
-  "wizardModelRelease", "wizardContainsMinor", "wizardGuardianRelease", "wizardCopy",
-  "wizardAvailabilityVerified", "wizardProofVerified", "wizardCashCap", "wizardDays",
-  "wizardHistoricalCost", "wizardQualifiedRate", "wizardCompletedRate", "wizardNoShowRate",
-  "wizardDestination", "wizardSla", "wizardQuestions",
-];
-
-function wizardValues() {
-  const values = {};
-  for (const id of wizardIds) {
-    const el = $(id);
-    if (el) values[id] = el.type === "checkbox" ? el.checked : el.value;
-  }
-  values.assetFamilies = Array.from(document.querySelectorAll("[data-asset-family]:checked")).map((x) => x.dataset.assetFamily);
-  values.templateId = wizardTemplateId;
-  values.step = wizardStep;
-  return values;
-}
-
-function saveWizard() {
-  try {
-    const all = JSON.parse(localStorage.getItem(WIZARD_KEY) || "{}");
-    all[selectedBusiness()] = wizardValues();
-    localStorage.setItem(WIZARD_KEY, JSON.stringify(all));
-  } catch (error) {
-    console.warn("wizard-autosave", error);
-  }
-}
-
-function restoreWizard() {
-  try {
-    const saved = JSON.parse(localStorage.getItem(WIZARD_KEY) || "{}")[selectedBusiness()];
-    if (!saved) return;
-    for (const id of wizardIds) {
-      const el = $(id);
-      if (!el || saved[id] === undefined) continue;
-      if (el.type === "checkbox") el.checked = Boolean(saved[id]);
-      else el.value = saved[id];
-    }
-    document.querySelectorAll("[data-asset-family]").forEach((el) => {
-      el.checked = (saved.assetFamilies || []).includes(el.dataset.assetFamily);
-    });
-    wizardTemplateId = saved.templateId || wizardTemplateId;
-    wizardStep = Math.max(0, Math.min(7, Number(saved.step) || 0));
-  } catch (error) {
-    console.warn("wizard-restore", error);
-  }
-}
-
-function wizardBudget() {
-  return saleAds.calculateBudget({
-    price: $("wizardPrice").value,
-    variable_cost: $("wizardVariableCost").value,
-    desired_profit_after_ads: $("wizardProfit").value,
-    target_revenue_roas: $("wizardRoas").value,
-    available_slots: $("wizardSlots").value,
-    campaign_days: $("wizardDays").value,
-    cash_budget_cap: $("wizardCashCap").value,
-    historical_cost_per_event: $("wizardHistoricalCost").value,
-    qualified_to_booking_rate: $("wizardQualifiedRate").value,
-    booking_to_completed_rate: $("wizardCompletedRate").value,
-    refund_or_no_show_rate: $("wizardNoShowRate").value,
-  });
-}
-
-function wizardLint() {
-  return saleAds.lintPolicy({
-    copy: $("wizardCopy").value,
-    availability_verified: $("wizardAvailabilityVerified").checked,
-    proof_verified: $("wizardProofVerified").checked,
-    people_visible: $("wizardPeopleVisible").checked,
-    model_release: $("wizardModelRelease").checked,
-    contains_minor: $("wizardContainsMinor").checked,
-    guardian_release: $("wizardGuardianRelease").checked,
-    destination_https: true,
-  });
-}
-
-function renderWizardTemplates() {
-  const recommendations = saleAds.recommendTemplates({ service: $("wizardService").value, stage: $("wizardStage").value });
-  if (!recommendations.some((x) => x.id === wizardTemplateId)) wizardTemplateId = recommendations[0]?.id || "T01";
-  $("wizardTemplatePicker").innerHTML = recommendations.map((x) =>
-    `<article class="template-card selectable ${x.id === wizardTemplateId ? "selected" : ""}" data-template-id="${x.id}" tabindex="0"><span class="template-id">${x.id} · v${x.version}</span><b>${escapeHtml(x.name)}</b><span>${escapeHtml(x.evidence)}</span><small>KPI: ${escapeHtml(x.primary_metric)}</small><small>Riesgo: ${escapeHtml(x.risk)}</small></article>`,
-  ).join("");
-  $("wizardTemplatePicker").querySelectorAll("[data-template-id]").forEach((el) => {
-    const choose = () => { wizardTemplateId = el.dataset.templateId; updateWizard(); };
-    el.onclick = choose;
-    el.onkeydown = (event) => { if (event.key === "Enter" || event.key === " ") choose(); };
-  });
-}
-
-function renderTemplateLibrary() {
-  $("templateLibrary").innerHTML = saleAds.templates.map((x) =>
-    `<article class="template-card"><span class="template-id">${x.id} · versión ${x.version}</span><b>${escapeHtml(x.name)}</b><span>Etapas: ${escapeHtml(x.stages.join(", "))}</span><span>Destino: ${escapeHtml(x.destination)}</span><small>KPI: ${escapeHtml(x.primary_metric)}</small><small>Evidencia: ${escapeHtml(x.evidence)}</small><small>Riesgo: ${escapeHtml(x.risk)}</small></article>`,
-  ).join("");
-}
-
-function renderCreativeSpecs() {
-  $("creativeSpecGrid").innerHTML = saleAds.creativeSpecs.map((x) =>
-    `<article class="spec-card"><span class="template-id">${escapeHtml(x.ratio)}</span><b>${escapeHtml(x.label)}</b><span>${x.width}×${x.height}</span><span>${escapeHtml(x.placements.join(" · "))}</span><small>Fuente registrada: Meta Ads Guide</small><small>Estado: requiere revalidación autenticada antes de publicar</small></article>`,
-  ).join("");
-}
-
-function releaseStudioSource() {
-  if (studioSource.objectUrl) URL.revokeObjectURL(studioSource.objectUrl);
-  studioSource = { file: null, image: null, objectUrl: "", plan: null };
-}
-
-function loadStudioImage(file) {
-  return new Promise((resolve, reject) => {
-    const objectUrl = URL.createObjectURL(file);
-    const image = new Image();
-    image.onload = () => resolve({ file, image, objectUrl, plan: null });
-    image.onerror = () => {
-      URL.revokeObjectURL(objectUrl);
-      reject(new Error("La fotografía no pudo decodificarse."));
-    };
-    image.src = objectUrl;
-  });
-}
-
-function studioInput() {
-  const file = studioSource.file;
-  return {
-    name: clean($("assetName")?.value) || clean($("wizardService")?.value) || "creativo-dcarela",
-    source_width: studioSource.image?.naturalWidth || 0,
-    source_height: studioSource.image?.naturalHeight || 0,
-    size_bytes: file?.size || 0,
-    mime: file?.type || "",
-    focus_x: Number($("studioFocusX").value) / 100,
-    focus_y: Number($("studioFocusY").value) / 100,
-  };
-}
-
-function studioCopy() {
-  return {
-    headline: clean($("studioHeadline").value) || "Fotografía profesional D' Carela",
-    cta: clean($("studioCta").value) || "Reservar por WhatsApp",
-  };
-}
-
-function wrapCanvasText(context, text, maxWidth, maxLines = 3) {
-  const words = String(text || "").split(/\s+/).filter(Boolean);
-  const lines = [];
-  let current = "";
-  for (const word of words) {
-    const next = current ? `${current} ${word}` : word;
-    if (current && context.measureText(next).width > maxWidth) {
-      lines.push(current);
-      current = word;
-      if (lines.length === maxLines - 1) break;
-    } else current = next;
-  }
-  if (current && lines.length < maxLines) lines.push(current);
-  return lines;
-}
-
-function drawStudioCanvas(canvas, variant, showGuide) {
-  if (!studioSource.image) return;
-  const previewScale = showGuide ? Math.min(1, 360 / variant.height, 320 / variant.width) : 1;
-  canvas.width = Math.max(1, Math.round(variant.width * previewScale));
-  canvas.height = Math.max(1, Math.round(variant.height * previewScale));
-  const context = canvas.getContext("2d", { alpha: false });
-  const crop = variant.crop;
-  context.drawImage(studioSource.image, crop.x, crop.y, crop.width, crop.height, 0, 0, canvas.width, canvas.height);
-
-  const safe = variant.safe_zone;
-  const left = canvas.width * safe.left_pct / 100;
-  const right = canvas.width * (1 - safe.right_pct / 100);
-  const top = canvas.height * safe.top_pct / 100;
-  const bottom = canvas.height * (1 - safe.bottom_pct / 100);
-  const gradient = context.createLinearGradient(0, canvas.height * 0.35, 0, canvas.height);
-  gradient.addColorStop(0, "rgba(0,0,0,0)");
-  gradient.addColorStop(1, "rgba(0,0,0,.88)");
-  context.fillStyle = gradient;
-  context.fillRect(0, 0, canvas.width, canvas.height);
-
-  const copy = studioCopy();
-  const unit = Math.max(1, canvas.width / 1080);
-  context.fillStyle = "#ffffff";
-  context.font = `800 ${Math.round(38 * unit)}px Arial, sans-serif`;
-  context.fillText("D' CARELA COMPUFOTO", left, Math.max(top + 38 * unit, 44 * unit));
-  context.font = `800 ${Math.round(70 * unit)}px Arial, sans-serif`;
-  const lines = wrapCanvasText(context, copy.headline, Math.max(120, right - left), 3);
-  const lineHeight = 78 * unit;
-  const ctaHeight = 82 * unit;
-  let y = Math.max(top + 120 * unit, bottom - ctaHeight - lines.length * lineHeight - 28 * unit);
-  for (const line of lines) {
-    context.fillText(line, left, y);
-    y += lineHeight;
-  }
-  context.fillStyle = "#ff7a00";
-  context.beginPath();
-  context.roundRect(left, y + 10 * unit, Math.min(right - left, 520 * unit), ctaHeight, 18 * unit);
-  context.fill();
-  context.fillStyle = "#111111";
-  context.font = `800 ${Math.round(34 * unit)}px Arial, sans-serif`;
-  context.fillText(copy.cta, left + 28 * unit, y + 64 * unit);
-
-  if (showGuide) {
-    context.save();
-    context.setLineDash([10, 8]);
-    context.strokeStyle = "rgba(255,255,255,.85)";
-    context.lineWidth = Math.max(1, 3 * unit);
-    context.strokeRect(left, top, right - left, bottom - top);
-    context.restore();
-  }
-}
-
-function renderCreativeStudio() {
-  const preview = $("studioPreview");
-  const plan = studioSource.plan;
-  if (!plan || plan.blocked || !studioSource.image) {
-    preview.innerHTML = "";
-    $("studioManifest").disabled = true;
-    return;
-  }
-  preview.innerHTML = plan.variants.map((variant) =>
-    `<article class="studio-card"><div><b>${escapeHtml(variant.label)} · ${escapeHtml(variant.ratio)}</b><small>${variant.width}×${variant.height} · ${escapeHtml(variant.placements.join(" · "))}</small></div><canvas data-studio-canvas="${escapeHtml(variant.id)}" aria-label="Vista previa ${escapeHtml(variant.label)}"></canvas><button class="secondary" type="button" data-studio-download="${escapeHtml(variant.id)}">Descargar JPG</button></article>`,
-  ).join("");
-  for (const variant of plan.variants) {
-    const canvas = preview.querySelector(`[data-studio-canvas="${variant.id}"]`);
-    drawStudioCanvas(canvas, variant, true);
-  }
-  $("studioManifest").disabled = false;
-}
-
-function generateStudioPackage() {
-  if (!studioSource.image || !studioSource.file) {
-    $("studioStatus").textContent = "Selecciona primero una fotografía JPG, PNG o WebP.";
-    return;
-  }
-  const plan = saleAds.planCreativeVariants(studioInput());
-  studioSource.plan = plan;
-  const issues = plan.issues.map((issue) => `<div class="qa-item ${issue.severity === "block" ? "danger-text" : "warning-text"}">${escapeHtml(issue.message)}</div>`).join("");
-  $("studioStatus").innerHTML = plan.blocked
-    ? issues
-    : `<span class="success-text">Tres composiciones generadas en memoria. La línea punteada marca la zona segura y no aparece en la descarga.</span>${issues}`;
-  renderCreativeStudio();
-}
-
-async function downloadStudioVariant(id) {
-  const variant = studioSource.plan?.variants.find((row) => row.id === id);
-  if (!variant || !studioSource.image) return;
-  const canvas = document.createElement("canvas");
-  drawStudioCanvas(canvas, variant, false);
-  const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/jpeg", 0.92));
-  if (!blob) throw new Error("El navegador no pudo generar el JPG.");
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = variant.file_name;
-  link.click();
-  setTimeout(() => URL.revokeObjectURL(url), 1000);
-}
-
-function downloadStudioManifest() {
-  if (!studioSource.plan || studioSource.plan.blocked) return;
-  const manifest = {
-    schema_version: 1,
-    generator: BUILD,
-    generated_at: new Date().toISOString(),
-    business_id: selectedBusiness(),
-    source_file_uploaded: false,
-    source_dimensions: { width: studioSource.image.naturalWidth, height: studioSource.image.naturalHeight },
-    copy: studioCopy(),
-    variants: studioSource.plan.variants,
-    qa: { human_review_required: true, meta_publish_enabled: false, spend_enabled: false },
-  };
-  download(JSON.stringify(manifest, null, 2), `saleads-paquete-${Date.now()}.json`, "application/json");
-}
-
-function renderBudgetResult(result) {
-  $("wizardBudgetResult").innerHTML = `<div class="budget-cards"><article><span>CAC tolerable</span><b>${escapeHtml(money(result.allowable_cac))}</b></article><article><span>Tope por capacidad</span><b>${escapeHtml(money(result.capacity_budget_cap))}</b></article><article><span>Tope diario sugerido</span><b>${escapeHtml(money(result.recommended_daily_cap))}</b></article></div>${result.scenarios.map((x) => `<div class="qa-item"><b>${escapeHtml(x.label)}</b> · ${escapeHtml(money(x.total))}${x.feasible === false ? " · no viable con el tope actual" : ""}</div>`).join("")}${result.warnings.map((x) => `<div class="qa-item warning-text">${escapeHtml(x)}</div>`).join("")}`;
-}
-
-function renderLint(result) {
-  $("wizardLint").innerHTML = result.issues.length
-    ? result.issues.map((x) => `<div class="qa-item ${x.severity === "block" ? "danger-text" : "warning-text"}">${escapeHtml(x.message)}</div>`).join("")
-    : '<span class="success-text">Sin bloqueos detectados en los campos disponibles.</span>';
-}
-
-function renderWizardReview(budget, lint) {
-  const template = saleAds.templates.find((x) => x.id === wizardTemplateId);
-  const assets = wizardValues().assetFamilies || [];
-  const placementRows = saleAds.validatePlacements(
-    ["facebook_feed", "instagram_feed", "facebook_stories", "instagram_stories", "facebook_reels", "instagram_reels", "facebook_marketplace"],
-    assets,
-  );
-  const blocks = [...lint.issues.filter((x) => x.severity === "block").map((x) => x.message)];
-  if (!budget.sufficient) blocks.push("Economía incompleta: precio, capacidad y tope de caja son obligatorios.");
-  if (!$("wizardDeadline").value) blocks.push("Falta fecha límite real.");
-  if ($("wizardAudienceSource").value === "crm_consented" && !$("wizardConsent").checked) blocks.push("La audiencia CRM requiere consentimiento confirmado.");
-  if (placementRows.missing.length) blocks.push(`Faltan variantes: ${[...new Set(placementRows.missing.map((x) => x.family))].join(", ")}.`);
-  $("wizardReview").innerHTML = [
-    ["Servicio", $("wizardService").selectedOptions[0]?.textContent || ""],
-    ["Plantilla", `${template?.id || "—"} · ${template?.name || "—"}`],
-    ["Economía", `Margen ${money(budget.contribution_margin)} · CAC ${money(budget.allowable_cac)}`],
-    ["Activos", assets.length ? assets.join(", ") : "Ninguno"],
-    ["Destino", $("wizardDestination").selectedOptions[0]?.textContent || ""],
-    ["Estado", blocks.length ? `${blocks.length} bloqueo(s)` : "Borrador apto para guardar"],
-  ].map(([a, b]) => `<article><b>${escapeHtml(a)}</b><span>${escapeHtml(b)}</span></article>`).join("")
-    + (blocks.length ? `<article class="wide"><b class="danger-text">Antes de guardar</b><span>${blocks.map(escapeHtml).join(" · ")}</span></article>` : "");
-  $("wizardCreateDraft").disabled = blocks.length > 0;
-  return { blocks, placementRows };
-}
-
-function updateWizard() {
-  document.querySelectorAll("[data-wizard-panel]").forEach((el) => el.classList.toggle("active", Number(el.dataset.wizardPanel) === wizardStep));
-  document.querySelectorAll("[data-wizard-step]").forEach((el) => el.classList.toggle("active", Number(el.dataset.wizardStep) === wizardStep));
-  $("wizardPrev").disabled = wizardStep === 0;
-  $("wizardNext").hidden = wizardStep === 7;
-  $("wizardProgress").textContent = `Paso ${wizardStep + 1} de 8`;
-  renderWizardTemplates();
-  const budget = wizardBudget();
-  const lint = wizardLint();
-  renderBudgetResult(budget);
-  renderLint(lint);
-  const review = renderWizardReview(budget, lint);
-  const template = saleAds.templates.find((x) => x.id === wizardTemplateId);
-  $("wizardPreviewTitle").textContent = clean($("wizardOffer").value) || template?.name || "Campaña sin nombre";
-  $("wizardPreviewBody").innerHTML = `<div class="preview-stat"><span>Plantilla</span><b>${escapeHtml(template?.id || "—")} · ${escapeHtml(template?.name || "—")}</b></div><div class="preview-stat"><span>Tope total</span><b>${escapeHtml(money(budget.recommended_total_cap))}</b></div><div class="preview-stat"><span>Calidad de señal</span><b>${escapeHtml(budget.sample_quality)}</b></div><div class="preview-stat"><span>QA</span><b class="${review.blocks.length ? "danger-text" : "success-text"}">${review.blocks.length ? `${review.blocks.length} bloqueo(s)` : "Apto como borrador"}</b></div>`;
-  saveWizard();
-}
-
-function validateWizardStep(step) {
-  if (step === 1 && (!$("wizardOffer").value.trim() || Number($("wizardPrice").value) <= 0 || Number($("wizardSlots").value) <= 0 || !$("wizardDeadline").value)) return "Completa oferta, precio, espacios y fecha límite reales.";
-  if (step === 2 && Number($("wizardAgeMin").value) > Number($("wizardAgeMax").value)) return "La edad mínima no puede superar la máxima.";
-  if (step === 2 && $("wizardAudienceSource").value === "crm_consented" && !$("wizardConsent").checked) return "Confirma el consentimiento aplicable para usar el CRM.";
-  if (step === 4 && wizardLint().blocked) return "Corrige los bloqueos del linter antes de continuar.";
-  if (step === 5 && !wizardBudget().sufficient) return "Completa la economía y la capacidad antes de continuar.";
-  return "";
-}
-
-function createWizardDraft() {
-  const budget = wizardBudget();
-  const lint = wizardLint();
-  const review = renderWizardReview(budget, lint);
-  if (review.blocks.length) throw new Error("La revisión todavía contiene bloqueos.");
-  const template = saleAds.templates.find((x) => x.id === wizardTemplateId);
-  $("product").value = $("wizardService").selectedOptions[0]?.textContent || $("wizardService").value;
-  $("offer").value = $("wizardOffer").value;
-  $("price").value = $("wizardPrice").value;
-  $("objective").value = $("wizardGoal").value === "paid_order" ? "traffic" : "leads";
-  $("funnel").value = ["cold", "warm", "hot", "remarketing", "loyalty"].includes($("wizardStage").value) ? $("wizardStage").value : "cold";
-  $("destination").value = $("wizardDestination").value === "web" ? "web" : "whatsapp";
-  $("budget").value = budget.recommended_total_cap;
-  $("days").value = $("wizardDays").value;
-  $("startDate").value = new Date().toISOString().slice(0, 10);
-  $("location").value = $("wizardLocation").value;
-  $("radius").value = $("wizardRadius").value;
-  $("ageMin").value = $("wizardAgeMin").value;
-  $("ageMax").value = $("wizardAgeMax").value;
-  $("urgency").value = $("wizardAvailabilityVerified").checked ? `Disponibilidad verificada hasta ${$("wizardDeadline").value}` : "";
-  $("notes").value = $("wizardConcept").value;
-  current = {
-    ...generatePackage(),
-    schema_version: 3,
-    builder: "saleads_wizard_v3",
-    template_ref: { id: template.id, version: template.version },
-    business_goal: $("wizardGoal").value,
-    capacity_snapshot: { available_slots: Number($("wizardSlots").value), deadline: $("wizardDeadline").value },
-    economics_snapshot: { price: Number($("wizardPrice").value), deposit: Number($("wizardDeposit").value), variable_cost: Number($("wizardVariableCost").value), desired_profit_after_ads: Number($("wizardProfit").value), ...budget },
-    audience_definition: { stage: $("wizardStage").value, source: $("wizardAudienceSource").value, consent_confirmed: $("wizardConsent").checked },
-    creative_asset_families: wizardValues().assetFamilies,
-    policy_qa: { blocked: lint.blocked, issues: lint.issues },
-    remote_status: "not_connected",
-    approval: { required: true, approved: false },
-  };
-  saveLocal(current);
-  renderOutput();
-  showView("builder");
-  toast("Borrador rector creado. Revísalo y guárdalo si corresponde.");
-}
 
 function toast(message) {
   const el = $("toast");
@@ -759,8 +208,6 @@ function renderBusinessData() {
     .filter((x) => normalizePhone(x.telefono || x.phone).length >= 10)
     .length.toLocaleString("es-DO");
   $("kpiProducts").textContent = p.length.toLocaleString("es-DO");
-  $("overviewClients").textContent = c.length.toLocaleString("es-DO");
-  $("overviewProducts").textContent = p.length.toLocaleString("es-DO");
   $("clientBadge").textContent = c.length.toLocaleString("es-DO");
   $("productSelect").innerHTML =
     '<option value="">Escribir manualmente</option>' +
@@ -778,7 +225,6 @@ function renderBusinessData() {
       )
       .join("");
   renderAudience();
-  loadOperationData().catch((error) => console.warn("operations", error));
 }
 async function loadCampaigns() {
   const bid = selectedBusiness();
@@ -802,12 +248,55 @@ async function loadCampaigns() {
     campaigns = localCampaigns().filter((x) => x.business_id === bid);
   }
   $("kpiDrafts").textContent = campaigns.length.toLocaleString("es-DO");
-  $("overviewDrafts").textContent = campaigns.length.toLocaleString("es-DO");
   $("historyBadge").textContent = campaigns.length.toLocaleString("es-DO");
   renderHistory();
-  renderApprovals();
-  renderAnalytics();
-  renderAiCampaigns();
+}
+
+async function callCrmApi(payload) {
+  if (!auth.currentUser) throw new Error("La sesión expiró.");
+  const token = await auth.currentUser.getIdToken();
+  const response = await fetch(CRM_API, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+    body: JSON.stringify(payload),
+  });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok || data.ok === false) throw new Error(data.error || `Meta respondió HTTP ${response.status}`);
+  return data;
+}
+
+function count(value) {
+  return new Intl.NumberFormat("es-DO", { maximumFractionDigits: 0 }).format(Number(value) || 0);
+}
+
+async function loadMetaMetrics(force = false) {
+  if (metricsLoaded && !force) return;
+  const error = $("metricsError");
+  error.textContent = "";
+  $("metricsGrid").innerHTML = '<div class="empty-list">Leyendo Meta Ads…</div>';
+  $("refreshMetrics").disabled = true;
+  try {
+    const result = await callCrmApi({ action: "adsInsights", date_preset: "last_30d" });
+    metricsLoaded = true;
+    if (!result.configured) {
+      throw new Error("La cuenta publicitaria todavía no está asociada al token de Meta.");
+    }
+    const total = result.totals || {};
+    $("metaSpend").textContent = money(total.spend || 0);
+    $("metaReach").textContent = count(total.reach);
+    $("metaClicks").textContent = count(total.clicks);
+    $("metaCtr").textContent = `CTR ${(Number(total.ctr) || 0).toFixed(2)}%`;
+    $("metaResults").textContent = count((Number(total.messages) || 0) + (Number(total.leads) || 0));
+    const rows = Array.isArray(result.campaigns) ? result.campaigns : [];
+    $("metricsGrid").innerHTML = rows.length
+      ? rows.map((x) => `<article class="history-card"><h3>${escapeHtml(x.campaign_name || "Campaña")}</h3><span>${escapeHtml(money(x.spend))} · ${count(x.reach)} de alcance · ${count(x.clicks)} clics</span><small>CTR ${(Number(x.ctr) || 0).toFixed(2)}% · ${count(x.messages)} conversaciones · ${count(x.leads)} leads</small></article>`).join("")
+      : '<div class="empty-list">Meta no reportó campañas con actividad en los últimos 30 días.</div>';
+  } catch (e) {
+    error.textContent = `No se pudieron leer las métricas: ${e.message}`;
+    $("metricsGrid").innerHTML = '<div class="empty-list">Los borradores siguen disponibles. Reconecta Meta con permiso ads_read para ver rendimiento real.</div>';
+  } finally {
+    $("refreshMetrics").disabled = false;
+  }
 }
 
 function formValues() {
@@ -952,7 +441,7 @@ function renderOutput() {
 }
 async function saveCurrent() {
   if (!current) return;
-  const role = roleForBusiness();
+  const role = clean(member.role).toLowerCase();
   if (!["owner", "admin"].includes(role)) {
     saveLocal(current);
     toast(
@@ -973,456 +462,10 @@ async function saveCurrent() {
   toast("Borrador guardado en Firebase.");
 }
 
-function renderOperations() {
-  renderCreativeAssets();
-  renderCapacity();
-  renderExperiments();
-  renderAnalytics();
-  renderApprovals();
-  renderAuditTrail();
-  renderAiCampaigns();
-  renderAiHistory();
-  renderSyncBanner();
-}
-async function loadOperationData() {
-  const businessId = selectedBusiness();
-  for (const kind of OPERATION_KINDS) assignOperationRows(kind, cachedRows(kind));
-  renderOperations();
-  setSyncState("loading", "Leyendo activos, capacidad, experimentos y atribucion de la sucursal.");
-  if (!auth.currentUser) {
-    setSyncState("expired", "Inicia sesion para sincronizar; se muestra la copia de este dispositivo.");
-    return;
-  }
-  let cloud;
-  try {
-    cloud = await fetchOperationCloud(businessId);
-  } catch (error) {
-    console.warn("operations-sync", error);
-    const info = saleAds.describeSyncError(error, { online: navigator.onLine });
-    setSyncState(info.state, info.message);
-    return;
-  }
-  for (const kind of OPERATION_KINDS) {
-    const merged = saleAds.mergeOperationRows(kind, cachedRows(kind), cloud[kind] || [], businessId);
-    assignOperationRows(kind, merged);
-    cacheRows(kind, merged);
-  }
-  renderOperations();
-  await syncPendingOperations(businessId, cloud);
-  renderOperations();
-}
-function renderAuditTrail() {
-  if (!$("auditTrail")) return;
-  $("auditTrail").innerHTML = auditEntries.length
-    ? auditEntries.slice(0, 40).map((x) => `<article class="record-row"><div><b>${escapeHtml(x.action)}</b><span>${escapeHtml(x.detail || x.entity || "")}</span><small>${escapeHtml(x.actor_email || "sin actor")} · ${new Date(x.created_at).toLocaleString("es-DO")}</small></div><span class="status-chip ${x.sync_state === "synced" ? "success-text" : "warning-text"}">${x.sync_state === "synced" ? "en la sucursal" : "pendiente"}</span></article>`).join("")
-    : '<div class="empty-state-inline">Sin acciones registradas en esta sucursal.</div>';
-}
-
-function assetFormValue() {
-  return {
-    name: clean($("assetName").value),
-    family: $("assetFamily").value,
-    rights_expires_at: $("assetRightsUntil").value,
-    rights_scope: clean($("assetRightsScope").value),
-    people_visible: $("assetPeople").checked,
-    model_release: $("assetModelRelease").checked,
-    contains_minor: $("assetMinor").checked,
-    guardian_release: $("assetGuardian").checked,
-  };
-}
-function updateAssetQa() {
-  const result = saleAds.validateCreativeAsset(assetFormValue());
-  $("assetQa").innerHTML = result.issues.length
-    ? result.issues.map((x) => `<div class="qa-item ${x.severity === "block" ? "danger-text" : "warning-text"}">${escapeHtml(x.message)}</div>`).join("")
-    : '<span class="success-text">Activo apto para biblioteca; todavía requiere preview final por placement.</span>';
-  return result;
-}
-function renderCreativeAssets() {
-  $("assetLibrary").innerHTML = creativeAssets.length
-    ? creativeAssets.map((x) => {
-        const qa = saleAds.validateCreativeAsset(x);
-        return `<article class="record-row"><div><b>${escapeHtml(x.name)}</b><span>${escapeHtml(x.family)} · derechos: ${escapeHtml(x.rights_expires_at || "sin vencimiento registrado")}</span><small>${escapeHtml(x.rights_scope || "Alcance pendiente")}</small></div><span class="status-chip ${qa.blocked ? "danger-text" : "success-text"}">${qa.blocked ? "Bloqueado" : "QA base"}</span></article>`;
-      }).join("")
-    : '<div class="empty-state-inline">No hay activos registrados para esta sucursal.</div>';
-}
-
-function renderCapacity() {
-  const summary = saleAds.capacitySummary(capacityEntries);
-  $("capacityDays").textContent = summary.days;
-  $("capacitySlots").textContent = summary.slots;
-  $("capacityReserved").textContent = summary.reserved;
-  $("capacityAvailable").textContent = summary.available;
-  $("capacityList").innerHTML = capacityEntries.length
-    ? [...capacityEntries].sort((a, b) => a.date.localeCompare(b.date)).map((x) => {
-        const available = Math.max(0, Number(x.slots) - Math.min(Number(x.slots), Number(x.reserved)));
-        return `<article class="record-row"><div><b>${escapeHtml(x.date)} · ${escapeHtml(x.service)}</b><span>${x.reserved} reservado(s) de ${x.slots}</span></div><span class="status-chip">${available} libres</span></article>`;
-      }).join("")
-    : '<div class="empty-state-inline">Carga fechas reales antes de usar urgencia o cupos en un anuncio.</div>';
-}
-
-function experimentFormValue() {
-  return {
-    hypothesis: clean($("experimentHypothesis").value),
-    variable: $("experimentVariable").value,
-    metric: $("experimentMetric").value,
-    minimum_events: $("experimentMinimum").value,
-    control_events: $("experimentControlEvents").value,
-    control_spend: $("experimentControlSpend").value,
-    challenger_events: $("experimentVariantEvents").value,
-    challenger_spend: $("experimentVariantSpend").value,
-  };
-}
-function updateExperimentDecision() {
-  const result = saleAds.evaluateExperiment(experimentFormValue());
-  $("experimentDecision").innerHTML = `<b>${escapeHtml(result.decision)}</b><div class="qa-item">${escapeHtml(result.reason)}</div><small>Control: ${result.control_cost === null ? "sin dato" : money(result.control_cost)} · Variante: ${result.challenger_cost === null ? "sin dato" : money(result.challenger_cost)} · confianza ${escapeHtml(result.confidence)}</small>`;
-  return result;
-}
-function renderExperiments() {
-  $("experimentList").innerHTML = experimentRecords.length
-    ? experimentRecords.map((x) => `<article class="record-row"><div><b>${escapeHtml(x.hypothesis)}</b><span>${escapeHtml(x.variable)} · ${escapeHtml(x.metric)}</span><small>${escapeHtml(x.result.reason)}</small></div><span class="status-chip">${escapeHtml(x.result.decision)}</span></article>`).join("")
-    : '<div class="empty-state-inline">Sin experimentos registrados. Diseña una prueba con una sola variable.</div>';
-}
-
-function renderAnalytics() {
-  const metrics = saleAds.funnelMetrics(attributionEvents);
-  const cards = [
-    ["Leads", metrics.lead], ["Calificados", metrics.qualified], ["Reservas", metrics.booking],
-    ["Sesiones", metrics.completed], ["Pagadas", metrics.paid], ["Ingreso", money(metrics.revenue)],
-  ];
-  $("funnelGrid").innerHTML = cards.map(([label, value], index) => `<article><span>${escapeHtml(label)}</span><b>${escapeHtml(value)}</b><small>${index === 5 ? "confirmado manualmente" : "eventos registrados"}</small></article>`).join("");
-  $("attributionCampaign").innerHTML = '<option value="">Sin campaña asignada</option>' + campaigns.map((x) => `<option value="${escapeHtml(x.id)}">${escapeHtml(x.product || x.campaign_name || x.id)}</option>`).join("");
-  $("attributionList").innerHTML = attributionEvents.length
-    ? attributionEvents.map((x) => `<article class="record-row"><div><b>${escapeHtml(x.stage)} · ${escapeHtml(x.reference || "sin referencia")}</b><span>${escapeHtml(campaigns.find((c) => c.id === x.campaign_id)?.campaign_name || "Sin campaña")}</span><small>${new Date(x.created_at).toLocaleString("es-DO")}</small></div><span class="status-chip">${x.value ? escapeHtml(money(x.value)) : "señal"}</span></article>`).join("")
-    : '<div class="empty-state-inline">Sin eventos atribuidos. No se calcula ROAS hasta conectar gasto Meta verificable.</div>';
-}
-
-function aiMemoryStore() {
-  try {
-    const parsed = JSON.parse(localStorage.getItem(AI_MEMORY_KEY) || "{}");
-    return parsed && typeof parsed === "object" && !Array.isArray(parsed) ? parsed : {};
-  } catch {
-    return {};
-  }
-}
-function aiHistoryRows() {
-  const rows = aiMemoryStore()[selectedBusiness()];
-  return Array.isArray(rows) ? rows : [];
-}
-function saveAiHistory(result) {
-  const store = aiMemoryStore();
-  const bid = selectedBusiness();
-  const rows = Array.isArray(store[bid]) ? store[bid] : [];
-  store[bid] = [
-    {
-      recommendation: result.recommendation,
-      context: result.context,
-      generated_at: new Date().toISOString(),
-      engine: BUILD,
-    },
-    ...rows.filter((row) => row?.recommendation?.recommendation_id !== result.recommendation.recommendation_id),
-  ].slice(0, 25);
-  localStorage.setItem(AI_MEMORY_KEY, JSON.stringify(store));
-}
-function aiFormValue() {
-  return {
-    campaign_id: $("aiCampaign").value,
-    service: clean($("aiService").value) || "general",
-    offer: clean($("aiOffer").value),
-    offer_verified: $("aiOfferVerified").checked,
-    goal: $("aiGoal").value,
-    tone: $("aiTone").value,
-    destination: $("aiDestination").value,
-    window_days: $("aiWindowDays").value,
-    price: $("aiPrice").value,
-    variable_cost: $("aiVariableCost").value,
-    desired_profit_after_ads: $("aiDesiredProfit").value,
-    target_revenue_roas: $("aiTargetRoas").value,
-    available_slots: $("aiAvailableSlots").value,
-    budget_total: $("aiBudgetTotal").value,
-    spend: $("aiSpend").value,
-    qualified_leads: $("aiQualified").value,
-    bookings: $("aiBookings").value,
-    completed_sessions: $("aiCompleted").value,
-    frequency: $("aiFrequency").value,
-    creative_age_days: $("aiCreativeAge").value,
-    evidence_verified: $("aiEvidenceVerified").checked,
-    campaign_status: campaigns.find((row) => row.id === $("aiCampaign").value)?.status || "draft",
-  };
-}
-function renderAiCampaigns() {
-  const select = $("aiCampaign");
-  if (!select) return;
-  const selected = select.value;
-  select.innerHTML = '<option value="">Contexto manual</option>' + campaigns.map((row) =>
-    `<option value="${escapeHtml(row.id)}">${escapeHtml(row.product || row.campaign_name || row.id)} · ${escapeHtml(row.status || "draft")}</option>`,
-  ).join("");
-  if ([...select.options].some((option) => option.value === selected)) select.value = selected;
-}
-function fillAiFromCampaign() {
-  const campaign = campaigns.find((row) => row.id === $("aiCampaign").value);
-  if (!campaign) return;
-  const service = clean(campaign.product || campaign.campaign_name || campaign.category || "general");
-  const economics = campaign.economics_snapshot || {};
-  const events = attributionEvents.filter((row) => row.campaign_id === campaign.id);
-  const capacity = capacityEntries.filter((row) => {
-    const label = clean(row.service).toLowerCase();
-    const key = service.toLowerCase();
-    return !key || label.includes(key) || key.includes(label);
-  });
-  const available = saleAds.capacitySummary(capacity.length ? capacity : capacityEntries).available;
-  $("aiService").value = service;
-  $("aiOffer").value = clean(campaign.offer || campaign.verified_offer || "");
-  $("aiGoal").value = ["qualified_lead", "booking", "completed_session", "paid_order"].includes(campaign.business_goal)
-    ? campaign.business_goal
-    : "booking";
-  $("aiPrice").value = Number(economics.price ?? campaign.price ?? 0) || "";
-  $("aiVariableCost").value = Number(economics.variable_cost ?? campaign.variable_cost ?? 0) || "";
-  $("aiDesiredProfit").value = Number(economics.desired_profit_after_ads ?? campaign.desired_profit_after_ads ?? 0) || "";
-  $("aiTargetRoas").value = Number(economics.target_revenue_roas ?? campaign.target_revenue_roas ?? 3) || 3;
-  $("aiAvailableSlots").value = available;
-  $("aiBudgetTotal").value = Number(economics.recommended_total_cap ?? campaign.budget ?? 0) || 0;
-  $("aiQualified").value = events.filter((row) => row.stage === "qualified").length;
-  $("aiBookings").value = events.filter((row) => row.stage === "booking").length;
-  $("aiCompleted").value = events.filter((row) => row.stage === "completed").length;
-  $("aiSpend").value = 0;
-  $("aiFrequency").value = 0;
-  $("aiOfferVerified").checked = false;
-  $("aiEvidenceVerified").checked = false;
-  renderAiReadiness();
-  toast("Contexto agregado cargado. Gasto y frecuencia siguen en cero hasta verificarlos.");
-}
-const AI_ACTION_LABELS = {
-  keep: "Mantener y medir",
-  pause_proposal: "Propuesta de pausa",
-  new_creative: "Nuevo creativo",
-  budget_change_proposal: "Propuesta de presupuesto",
-  insufficient_data: "Datos insuficientes",
-};
-function renderAiRecommendation(result) {
-  const target = $("aiRecommendationResult");
-  if (!result?.validation?.valid) {
-    target.className = "ai-recommendation-result";
-    const errors = result?.validation?.errors || ["La salida no cumple el contrato de seguridad."];
-    target.innerHTML = `<div class="ai-contract-error"><b>Salida rechazada</b><p>${errors.map(escapeHtml).join(" · ")}</p></div>`;
-    $("aiSampleChip").textContent = "Contrato inválido";
-    $("aiNextStep").disabled = true;
-    $("aiGenerateBrief").disabled = true;
-    return;
-  }
-  const recommendation = result.recommendation;
-  target.className = "ai-recommendation-result";
-  const quality = result.context.sample_quality.status;
-  const effect = recommendation.expected_effect;
-  const effectText = effect.low === null
-    ? "No estimado: la evidencia no permite prometer impacto."
-    : `${effect.low}–${effect.high} ${effect.unit} (punto medio ${effect.mid})`;
-  $("aiSampleChip").textContent = `Muestra ${quality} · ${Math.round(recommendation.confidence * 100)}%`;
-  target.innerHTML = `
-    <div class="ai-recommendation-head"><span class="status-chip ai-action-${escapeHtml(recommendation.action)}">${escapeHtml(AI_ACTION_LABELS[recommendation.action] || recommendation.action)}</span><b>${Math.round(recommendation.confidence * 100)}% confianza</b></div>
-    <h3>${escapeHtml(recommendation.summary)}</h3>
-    <div class="ai-contract-note">Es una recomendación. Requiere aprobación humana y no ejecutó publicaciones, activaciones ni cambios de presupuesto.</div>
-    <div class="ai-evidence-grid">${recommendation.evidence.map((item) => `<article><span>${escapeHtml(item.metric)}</span><b>${escapeHtml(item.value)}</b><small>${escapeHtml(item.window)} · ${escapeHtml(item.source)}</small></article>`).join("")}</div>
-    <div class="ai-detail-grid"><article><b>Justificación</b>${recommendation.rationale.map((item) => `<p>${escapeHtml(item)}</p>`).join("")}</article><article><b>Riesgos</b>${recommendation.risks.length ? recommendation.risks.map((item) => `<p>${escapeHtml(item)}</p>`).join("") : "<p>Sin riesgo adicional declarado.</p>"}</article></div>
-    <div class="ai-effect"><b>Efecto esperado</b><span>${escapeHtml(effectText)}</span></div>
-    <small>Vence ${new Date(recommendation.expires_at).toLocaleString("es-DO")} · esquema ${recommendation.schema_version}</small>`;
-  $("aiCopyRecommendation").disabled = false;
-  $("aiExportRecommendation").disabled = false;
-  const next = saleAds.recommendationNextStep(recommendation, aiFormValue());
-  $("aiNextStep").disabled = false;
-  $("aiNextStep").textContent = next.label;
-  $("aiNextStep").title = next.message;
-  $("aiGenerateBrief").disabled = false;
-}
-function analyzeAiRecommendation() {
-  const result = saleAds.planStrategicRecommendation(aiFormValue());
-  aiCurrentRecommendation = result;
-  aiCurrentBrief = null;
-  $("aiBriefPanel").hidden = true;
-  if (result.validation.valid) saveAiHistory(result);
-  renderAiRecommendation(result);
-  renderAiHistory();
-  return result;
-}
-function renderAiExperiment() {
-  const result = saleAds.planExperiment({
-    variable: $("aiExperimentVariable").value,
-    minimum_events: $("aiExperimentMinimum").value,
-    expected_cost_per_event: $("aiExperimentCost").value,
-    daily_budget: $("aiExperimentDaily").value,
-    days: $("aiExperimentDays").value,
-  });
-  const labels = {
-    insufficient_data: "Datos insuficientes",
-    ready_to_draft: "Muestra viable",
-    budget_or_scope_insufficient: "Presupuesto o alcance insuficiente",
-  };
-  const ratio = result.required_budget > 0 ? Math.min(100, Math.round(result.available_budget / result.required_budget * 100)) : 0;
-  const metric = $("aiExperimentMetric").selectedOptions[0]?.textContent || "Evento";
-  $("aiExperimentResult").innerHTML = `<b>${escapeHtml(labels[result.status] || result.status)}</b><div class="ai-experiment-meter"><i style="width:${ratio}%"></i></div><div>2 brazos · ${result.minimum_events_per_arm} ${escapeHtml(metric.toLowerCase())}(s) por brazo · cambia solo ${escapeHtml(result.variable)}</div><div>Requerido ${escapeHtml(money(result.required_budget))} · disponible ${escapeHtml(money(result.available_budget))} · cobertura ${ratio}%</div><small>${escapeHtml(result.guidance)}</small>`;
-  return result;
-}
-function renderAiHistory() {
-  const target = $("aiRecommendationHistory");
-  if (!target) return;
-  const rows = aiHistoryRows();
-  target.innerHTML = rows.length
-    ? rows.map((row, index) => {
-        const recommendation = row.recommendation || {};
-        return `<button class="record-row ai-history-row" type="button" data-ai-history="${index}"><div><b>${escapeHtml(AI_ACTION_LABELS[recommendation.action] || recommendation.action || "Recomendación")}</b><span>${escapeHtml(recommendation.summary || "")}</span><small>${new Date(row.generated_at).toLocaleString("es-DO")} · ${Math.round(Number(recommendation.confidence || 0) * 100)}% confianza</small></div><span class="status-chip">local</span></button>`;
-      }).join("")
-    : '<div class="empty-state-inline">Todavía no hay recomendaciones para esta sucursal en este dispositivo.</div>';
-  target.querySelectorAll("[data-ai-history]").forEach((button) => {
-    button.onclick = () => {
-      const row = aiHistoryRows()[Number(button.dataset.aiHistory)];
-      if (!row?.recommendation) return;
-      aiCurrentRecommendation = {
-        recommendation: row.recommendation,
-        context: row.context,
-        validation: saleAds.validateAiRecommendation(row.recommendation),
-      };
-      renderAiRecommendation(aiCurrentRecommendation);
-      toast("Recomendación local recuperada. No se ejecutó ninguna acción.");
-    };
-  });
-}
-function renderAiReadiness() {
-  const input = aiFormValue();
-  const checks = [
-    clean(input.service) && clean(input.offer),
-    Number(input.price) > 0 && Number(input.variable_cost) >= 0,
-    Number(input.available_slots) > 0,
-    Number(input.spend) > 0 && Number(input.completed_sessions) > 0,
-    input.offer_verified === true,
-    input.evidence_verified === true,
-  ];
-  const score = Math.round(checks.filter(Boolean).length / checks.length * 100);
-  $("aiReadinessBar").style.width = `${score}%`;
-  $("aiReadinessLabel").textContent = `${score}%`;
-  const missing = [];
-  if (!checks[0]) missing.push("oferta");
-  if (!checks[1]) missing.push("economía");
-  if (!checks[2]) missing.push("capacidad");
-  if (!checks[3]) missing.push("resultados");
-  if (!checks[4] || !checks[5]) missing.push("confirmaciones");
-  $("aiReadinessHint").textContent = missing.length
-    ? `Falta: ${[...new Set(missing)].join(", ")}. Aun así puedes analizar y recibir “datos insuficientes”.`
-    : "Contexto completo para una recomendación con muestra evaluable.";
-  return score;
-}
-function renderAiBrief(brief) {
-  aiCurrentBrief = brief;
-  $("aiBriefPanel").hidden = false;
-  if (brief.status !== "ready_for_human_review") {
-    $("aiBriefResult").innerHTML = `<div class="ai-contract-error"><b>Brief pendiente</b><p>${brief.issues.map(escapeHtml).join(" · ")}</p></div>`;
-    $("aiOpenStudio").disabled = true;
-    $("aiCopyBrief").disabled = true;
-    $("aiExportBrief").disabled = true;
-    return;
-  }
-  $("aiBriefResult").innerHTML = `<div class="ai-brief-headlines">${brief.headline_options.map((headline) => `<span>${escapeHtml(headline)}</span>`).join("")}</div><div class="ai-brief-copy">${escapeHtml(brief.primary_text_draft)}</div><div class="ai-brief-meta"><article><b>Hipótesis</b><span>${escapeHtml(brief.hypothesis)}</span></article><article><b>Dirección visual</b><span>${escapeHtml(brief.visual_direction)}</span></article><article><b>CTA</b><span>${escapeHtml(brief.cta)}</span></article><article><b>Experimento</b><span>${brief.experiment.minimum_events_per_arm} eventos por brazo · ${escapeHtml(brief.experiment.variable)}</span></article></div><div class="ai-contract-note">Borrador local: verificar oferta, derechos, destino y copy antes de usar. Publicación y gasto siguen desactivados.</div>`;
-  $("aiOpenStudio").disabled = false;
-  $("aiCopyBrief").disabled = false;
-  $("aiExportBrief").disabled = false;
-}
-function generateAiBrief() {
-  if (!aiCurrentRecommendation?.recommendation) return;
-  const brief = saleAds.draftCreativeBrief(aiFormValue(), aiCurrentRecommendation.recommendation);
-  renderAiBrief(brief);
-  toast(brief.status === "ready_for_human_review" ? "Brief local creado para revisión." : "Confirma primero una oferta real.");
-}
-function prefillWizardFromAi() {
-  const input = aiFormValue();
-  const serviceMap = {
-    xv: "xv", infantil: "family", graduacion: "graduation", cumpleanos: "birthday",
-    embarazada: "maternity", boda: "wedding", corporativo: "corporate", general: "general",
-  };
-  $("wizardService").value = serviceMap[categoryFor(input.service)] || "general";
-  if (Number(input.available_slots) > 0) $("wizardSlots").value = Math.floor(Number(input.available_slots));
-  if (Number(input.price) > 0) $("wizardPrice").value = input.price;
-  if (Number(input.variable_cost) >= 0) $("wizardVariableCost").value = input.variable_cost;
-  if (Number(input.desired_profit_after_ads) >= 0) $("wizardProfit").value = input.desired_profit_after_ads;
-  if (Number(input.target_revenue_roas) > 0) $("wizardRoas").value = input.target_revenue_roas;
-  if (Number(input.budget_total) > 0) $("wizardCashCap").value = input.budget_total;
-  $("wizardDays").value = input.window_days;
-  $("wizardGoal").value = input.goal;
-  if (input.offer_verified) $("wizardOffer").value = input.offer;
-  wizardStep = 1;
-  updateWizard();
-}
-function prepareAiNextStep() {
-  if (!aiCurrentRecommendation?.recommendation) return;
-  const input = aiFormValue();
-  const next = saleAds.recommendationNextStep(aiCurrentRecommendation.recommendation, input);
-  if (next.view === "wizard") prefillWizardFromAi();
-  if (next.view === "creatives") $("studioHeadline").value = input.offer || input.service;
-  showView(next.view);
-  toast(next.message);
-}
-function resetAiDisplay() {
-  aiCurrentRecommendation = null;
-  aiCurrentBrief = null;
-  $("aiRecommendationResult").innerHTML = '<span class="ai-empty-orbit" aria-hidden="true">✦</span><b>Tu siguiente decisión aparecerá aquí</b><p>SaleAds mostrará datos insuficientes antes que inventar rendimiento.</p>';
-  $("aiRecommendationResult").className = "ai-recommendation-empty";
-  $("aiSampleChip").textContent = "Sin analizar";
-  $("aiNextStep").textContent = "Preparar siguiente paso";
-  $("aiNextStep").disabled = true;
-  $("aiGenerateBrief").disabled = true;
-  $("aiCopyRecommendation").disabled = true;
-  $("aiExportRecommendation").disabled = true;
-  $("aiBriefPanel").hidden = true;
-  $("aiRecommendationForm").reset();
-  $("aiService").value = "general";
-  $("aiWindowDays").value = 7;
-  $("aiTargetRoas").value = 3;
-  renderAiReadiness();
-  renderAiHistory();
-}
-
-function renderApprovals() {
-  if (!$("approvalList")) return;
-  const rows = campaigns.filter((x) => ["draft_review_required", "saved", "qa_ready", "approved"].includes(x.status));
-  $("approvalList").innerHTML = rows.length
-    ? rows.map((x) => `<article class="record-row"><div><b>${escapeHtml(x.product || x.campaign_name || x.id)}</b><span>${escapeHtml(x.status)}</span><small>${escapeHtml(x.approval?.note || "Sin decisión registrada")}</small></div><span class="status-chip">${escapeHtml(x.status)}</span></article>`).join("")
-    : '<div class="empty-state-inline">No hay campañas pendientes de revisión.</div>';
-  $("approvalCampaign").innerHTML = rows.map((x) => `<option value="${escapeHtml(x.id)}">${escapeHtml(x.product || x.campaign_name || x.id)} · ${escapeHtml(x.status)}</option>`).join("");
-}
-
-async function registerApproval() {
-  if (!["owner", "admin"].includes(roleForBusiness()))
-    throw new Error("Solo owner/admin puede registrar una aprobación.");
-  const campaign = campaigns.find((x) => x.id === $("approvalCampaign").value);
-  if (!campaign) throw new Error("Selecciona una campaña pendiente.");
-  const target = $("approvalAction").value;
-  const humanApproval = target !== "approved" || clean($("approvalPhrase").value) === "APROBAR BORRADOR";
-  if (target === "approved" && !humanApproval)
-    throw new Error("Escribe exactamente APROBAR BORRADOR.");
-  const note = clean($("approvalNote").value);
-  if (!note) throw new Error("La nota de auditoría es obligatoria.");
-  const transition = saleAds.canTransitionCampaign(campaign.status, target, { human_approval: humanApproval, meta_backend_connected: false });
-  if (!transition.ok) throw new Error(transition.reason);
-  const updated = { ...campaign, status: target, updated_at: new Date().toISOString(), approval: { required: true, approved: target === "approved", approved_by_uid: auth.currentUser.uid, approved_by_email: auth.currentUser.email, approved_at: new Date().toISOString(), note } };
-  await setDoc(doc(db, "crm_campaigns", updated.id), updated);
-  saveLocal(updated);
-  await loadCampaigns();
-  await recordAudit({
-    action: target === "approved" ? "campaign_approved" : "campaign_qa_ready",
-    entity: "crm_campaigns",
-    entity_id: updated.id,
-    detail: note,
-  });
-  $("approvalForm").reset();
-  toast(target === "approved" ? "Borrador aprobado; no se publicó ni activó gasto." : "QA registrado.");
-}
-
 function renderAudience() {
-  const businessRows = clients.filter((x) => x.business_id === selectedBusiness());
-  const summary = saleAds.summarizeAudience(businessRows);
-  $("audienceTotal").textContent = summary.total.toLocaleString("es-DO");
-  $("audienceConsented").textContent = summary.consented.toLocaleString("es-DO");
-  $("audienceExcluded").textContent = (summary.excluded + summary.expired).toLocaleString("es-DO");
-  $("audienceContactable").textContent = summary.contactable.toLocaleString("es-DO");
   const q = clean($("clientSearch").value).toLowerCase(),
-    rows = businessRows
+    rows = clients
+      .filter((x) => x.business_id === selectedBusiness())
       .filter(
         (x) =>
           !q ||
@@ -1437,23 +480,18 @@ function renderAudience() {
         .map((x) => {
           const name = x.nombre || x.name || "Cliente",
             phone = x.telefono || x.phone || "",
-            consent = saleAds.consentState(x),
-            digits = normalizePhone(phone),
-            maskedPhone = digits ? `•••-•••-${digits.slice(-4)}` : "Sin teléfono";
-          const labels = { consented: "Consentimiento vigente", excluded: "Excluido", expired: "Consentimiento vencido", unknown: "Sin consentimiento explícito" };
-          return `<article class="client-card"><h3>${escapeHtml(name)}</h3><span class="masked">${escapeHtml(maskedPhone)}</span><small>Referencia interna: ${escapeHtml(x.folio || x.id || "—")}</small><span class="consent-state ${consent === "consented" ? "success-text" : consent === "unknown" ? "warning-text" : "danger-text"}">${escapeHtml(labels[consent])}</span></article>`;
+            balance = Number(x.saldoCentavos ?? x.balanceCentavos ?? 0);
+          return `<article class="client-card"><h3>${escapeHtml(name)}</h3><span>${phone ? escapeHtml(phone) : "Sin teléfono"}</span><small>${escapeHtml(x.email || "Sin correo")}</small>${balance > 0 ? `<span class="balance">Saldo: ${escapeHtml(money(balance / 100))}</span>` : ""}</article>`;
         })
         .join("")
     : '<div class="empty-list">No hay clientes para esta búsqueda.</div>';
 }
 function renderHistory() {
-  const filter = $("campaignStatusFilter")?.value || "";
-  const visible = campaigns.filter((x) => !filter || x.status === filter);
-  $("historyGrid").innerHTML = visible.length
-    ? visible
+  $("historyGrid").innerHTML = campaigns.length
+    ? campaigns
         .map(
           (x) =>
-            `<article class="history-card" data-id="${escapeHtml(x.id)}"><span class="status-chip">${escapeHtml(x.status || "draft")}</span><h3>${escapeHtml(x.product || x.campaign_name || "Campaña")}</h3><span>${escapeHtml(x.offer || "")}</span><small>${new Date(x.updated_at || x.created_at).toLocaleString("es-DO")} · ${escapeHtml(money(x.budget))}</small></article>`,
+            `<article class="history-card" data-id="${escapeHtml(x.id)}"><h3>${escapeHtml(x.product || x.campaign_name || "Campaña")}</h3><span>${escapeHtml(x.offer || "")}</span><small>${new Date(x.updated_at || x.created_at).toLocaleString("es-DO")} · ${escapeHtml(money(x.budget))}</small></article>`,
         )
         .join("")
     : '<div class="empty-list">Todavía no hay campañas guardadas en esta sucursal.</div>';
@@ -1482,19 +520,10 @@ function showView(view) {
     .forEach((x) => x.classList.toggle("active", x.dataset.view === view));
   $("viewTitle").textContent =
     {
-      overview: "Resumen",
-      wizard: "Crear campaña",
-      templates: "Plantillas",
-      creatives: "Creativos y QA",
       builder: "Crear campaña",
       audience: "Banco de clientes",
-      calendar: "Calendario y capacidad",
-      experiments: "Experimentos",
-      aiLab: "IA y laboratorio",
-      analytics: "Medición y ventas",
       history: "Campañas guardadas",
-      approvals: "Aprobaciones",
-      connections: "Conexiones",
+      metrics: "Rendimiento Meta",
     }[view] || "Centro de Anuncios";
 }
 function download(content, name, type) {
@@ -1527,11 +556,8 @@ $("loginForm").addEventListener("submit", async (event) => {
 });
 $("logoutButton").onclick = () => signOut(auth);
 $("businessSelect").onchange = async () => {
-  resetAiDisplay();
   renderBusinessData();
   await loadCampaigns();
-  restoreWizard();
-  updateWizard();
 };
 $("productSelect").onchange = () => {
   const p = products.find((x) => x.id === $("productSelect").value);
@@ -1595,220 +621,16 @@ $("creative").onchange = () => {
   $("creativeName").textContent =
     $("creative").files[0]?.name || "Ningún archivo seleccionado";
 };
-$("studioFile").onchange = async () => {
-  const file = $("studioFile").files?.[0];
-  releaseStudioSource();
-  renderCreativeStudio();
-  if (!file) {
-    $("studioStatus").textContent = "Selecciona una fotografía autorizada. El archivo se procesa solamente en memoria.";
-    return;
-  }
-  try {
-    studioSource = await loadStudioImage(file);
-    if (!clean($("studioHeadline").value))
-      $("studioHeadline").value = clean($("wizardOffer").value) || clean($("product").value) || "Fotografía profesional D' Carela";
-    generateStudioPackage();
-  } catch (error) {
-    $("studioStatus").textContent = error.message || String(error);
-  }
-};
-$("studioGenerate").onclick = generateStudioPackage;
-$("studioManifest").onclick = downloadStudioManifest;
-for (const id of ["studioHeadline", "studioCta", "studioFocusX", "studioFocusY"])
-  $(id).addEventListener("input", () => { if (studioSource.image) generateStudioPackage(); });
 $("clientSearch").oninput = renderAudience;
 $("refreshHistory").onclick = () =>
   loadCampaigns().then(() => toast("Campañas actualizadas."));
-$("campaignStatusFilter").onchange = renderHistory;
-$("creativeAssetForm").addEventListener("input", updateAssetQa);
-$("creativeAssetForm").addEventListener("change", updateAssetQa);
-$("creativeAssetForm").addEventListener("submit", async (event) => {
-  event.preventDefault();
-  const asset = assetFormValue();
-  const qa = updateAssetQa();
-  if (qa.blocked) return toast("Corrige los bloqueos de derechos antes de guardar.");
-  const row = { id: `asset_${Date.now()}_${randomSuffix()}`, business_id: selectedBusiness(), created_at: new Date().toISOString(), ...asset };
-  creativeAssets.unshift(row);
-  $("creativeAssetForm").reset();
-  updateAssetQa();
-  renderCreativeAssets();
-  const outcome = await persistOperation("creative_assets", creativeAssets, row);
-  await recordAudit({ action: "creative_asset_registered", entity: "saleads_assets", entity_id: row.id, detail: row.name });
-  renderCreativeAssets();
-  toast(outcome.synced
-    ? "Metadatos compartidos con la sucursal; el archivo no salió del equipo."
-    : `Guardado solo en este dispositivo: ${outcome.message}`);
-});
-$("capacityForm").addEventListener("submit", async (event) => {
-  event.preventDefault();
-  const slots = Math.max(0, Math.floor(Number($("capacitySlotsInput").value)));
-  const reserved = Math.max(0, Math.floor(Number($("capacityReservedInput").value)));
-  if (reserved > slots) return toast("Los reservados no pueden superar los cupos reales.");
-  const date = $("capacityDate").value;
-  const service = clean($("capacityService").value);
-  if (!date || !service) return toast("Completa fecha y servicio.");
-  capacityEntries = capacityEntries.filter((x) => !(x.date === date && x.service.toLowerCase() === service.toLowerCase()));
-  const row = { id: `capacity_${Date.now()}_${randomSuffix()}`, business_id: selectedBusiness(), date, service, slots, reserved, updated_at: new Date().toISOString() };
-  capacityEntries.unshift(row);
-  renderCapacity();
-  const outcome = await persistOperation("capacity_entries", capacityEntries, row);
-  await recordAudit({ action: "capacity_updated", entity: "saleads_capacity", entity_id: `${date}__${service}`, detail: `${reserved} reservado(s) de ${slots} cupo(s)` });
-  renderCapacity();
-  toast(outcome.synced ? "Capacidad compartida con la sucursal." : `Capacidad guardada en este dispositivo: ${outcome.message}`);
-});
-$("experimentForm").addEventListener("input", updateExperimentDecision);
-$("experimentForm").addEventListener("change", updateExperimentDecision);
-$("experimentForm").addEventListener("submit", async (event) => {
-  event.preventDefault();
-  const input = experimentFormValue();
-  if (!input.hypothesis) return toast("La hipótesis es obligatoria.");
-  const result = saleAds.evaluateExperiment(input);
-  const row = { id: `experiment_${Date.now()}_${randomSuffix()}`, business_id: selectedBusiness(), created_at: new Date().toISOString(), ...input, result };
-  experimentRecords.unshift(row);
-  renderExperiments();
-  const outcome = await persistOperation("experiments", experimentRecords, row);
-  await recordAudit({ action: "experiment_recorded", entity: "saleads_experiments", entity_id: row.id, detail: `${row.variable} · ${result.decision}` });
-  renderExperiments();
-  const base = result.decision === "insufficient_data" ? "Evaluación guardada como señal insuficiente." : "Evaluación direccional guardada.";
-  toast(outcome.synced ? `${base} Compartida con la sucursal.` : `${base} ${outcome.message}`);
-});
-$("aiCampaign").addEventListener("change", fillAiFromCampaign);
-$("aiRecommendationForm").addEventListener("input", renderAiReadiness);
-$("aiRecommendationForm").addEventListener("change", renderAiReadiness);
-$("aiRecommendationForm").addEventListener("submit", (event) => {
-  event.preventDefault();
-  const result = analyzeAiRecommendation();
-  toast(result.validation.valid ? "Recomendación local validada; no se ejecutó ninguna acción." : "La salida fue bloqueada por el contrato.");
-});
-$("aiReset").onclick = resetAiDisplay;
-$("aiNextStep").onclick = prepareAiNextStep;
-$("aiGenerateBrief").onclick = generateAiBrief;
-$("aiExportContext").onclick = () => {
-  const context = saleAds.buildAiContext(aiFormValue());
-  download(JSON.stringify(context, null, 2), `saleads-contexto-seguro-${Date.now()}.json`, "application/json");
-  toast("Contexto agregado exportado sin banco de clientes.");
-};
-$("aiCopyRecommendation").onclick = () => aiCurrentRecommendation && navigator.clipboard
-  .writeText(JSON.stringify(aiCurrentRecommendation.recommendation, null, 2))
-  .then(() => toast("Recomendación estructurada copiada."))
-  .catch(() => toast("No se pudo copiar."));
-$("aiExportRecommendation").onclick = () => aiCurrentRecommendation && download(
-  JSON.stringify(aiCurrentRecommendation, null, 2),
-  `saleads-recomendacion-${aiCurrentRecommendation.recommendation.recommendation_id}.json`,
-  "application/json",
-);
-$("aiCopyBrief").onclick = () => aiCurrentBrief && navigator.clipboard
-  .writeText(JSON.stringify(aiCurrentBrief, null, 2))
-  .then(() => toast("Brief copiado para revisión."))
-  .catch(() => toast("No se pudo copiar."));
-$("aiExportBrief").onclick = () => aiCurrentBrief && download(
-  JSON.stringify(aiCurrentBrief, null, 2),
-  `saleads-brief-${aiCurrentBrief.brief_id || Date.now()}.json`,
-  "application/json",
-);
-$("aiOpenStudio").onclick = () => {
-  if (!aiCurrentBrief || aiCurrentBrief.status !== "ready_for_human_review") return;
-  $("studioHeadline").value = aiCurrentBrief.headline_options[0];
-  if ([...$("studioCta").options].some((option) => option.value === aiCurrentBrief.cta)) $("studioCta").value = aiCurrentBrief.cta;
-  showView("creatives");
-  toast("Brief cargado en el taller. Selecciona una fotografía autorizada.");
-};
-$("aiExperimentForm").addEventListener("submit", (event) => {
-  event.preventDefault();
-  renderAiExperiment();
-});
-$("aiExperimentForm").addEventListener("input", renderAiExperiment);
-$("aiExperimentForm").addEventListener("change", renderAiExperiment);
-$("aiExperimentUseObserved").onclick = () => {
-  const input = aiFormValue();
-  if (!input.evidence_verified) return toast("Confirma primero que los resultados observados están verificados.");
-  const counts = {
-    qualified_lead: Number(input.qualified_leads),
-    booking: Number(input.bookings),
-    completed_session: Number(input.completed_sessions),
-  };
-  const count = counts[$("aiExperimentMetric").value] || 0;
-  const spend = Number(input.spend) || 0;
-  if (count <= 0 || spend <= 0) return toast("No hay gasto y eventos suficientes para calcular un costo observado.");
-  $("aiExperimentCost").value = (spend / count).toFixed(2);
-  renderAiExperiment();
-  toast("Costo observado agregado al laboratorio.");
-};
-$("aiExportHistory").onclick = () => download(
-  JSON.stringify({ schema_version: 1, business_id: selectedBusiness(), exported_at: new Date().toISOString(), rows: aiHistoryRows() }, null, 2),
-  `saleads-memoria-${selectedBusiness()}-${Date.now()}.json`,
-  "application/json",
-);
-$("attributionForm").addEventListener("submit", async (event) => {
-  event.preventDefault();
-  const stage = $("attributionStage").value;
-  const reference = clean($("attributionReference").value);
-  const value = Math.max(0, Number($("attributionValue").value) || 0);
-  if (stage === "paid" && value <= 0) return toast("Una venta pagada requiere valor confirmado.");
-  const row = { id: `event_${Date.now()}_${randomSuffix()}`, business_id: selectedBusiness(), campaign_id: $("attributionCampaign").value, stage, reference, value, created_at: new Date().toISOString(), source: "manual_verified" };
-  attributionEvents.unshift(row);
-  $("attributionForm").reset();
-  renderAnalytics();
-  const outcome = await persistOperation("attribution_events", attributionEvents, row);
-  await recordAudit({ action: "attribution_event_registered", entity: "saleads_attribution", entity_id: row.id, detail: `${stage}${reference ? ` · ${reference}` : ""}` });
-  renderAnalytics();
-  toast(outcome.synced
-    ? "Evento comercial compartido con la sucursal, sin datos personales."
-    : `Evento guardado en este dispositivo: ${outcome.message}`);
-});
-$("approvalForm").addEventListener("submit", (event) => {
-  event.preventDefault();
-  registerApproval().catch((error) => toast(error.message || String(error)));
-});
-document.addEventListener("click", (event) => {
-  const target = event.target;
-  if (target instanceof HTMLElement && target.hasAttribute("data-sync-retry"))
-    loadOperationData().catch((error) => console.warn("operations-retry", error));
-  if (target instanceof HTMLElement && target.hasAttribute("data-studio-download"))
-    downloadStudioVariant(target.dataset.studioDownload)
-      .catch((error) => toast(error.message || String(error)));
-});
-window.addEventListener("online", () => loadOperationData().catch(() => {}));
-window.addEventListener("offline", () =>
-  setSyncState("offline", "Sin conexión: los cambios nuevos quedan pendientes en este dispositivo."),
-);
-window.addEventListener("beforeunload", releaseStudioSource);
+$("refreshMetrics").onclick = () => loadMetaMetrics(true);
 document
   .querySelectorAll(".nav-item")
-  .forEach((x) => (x.onclick = () => showView(x.dataset.view)));
-document
-  .querySelectorAll("[data-go-view]")
-  .forEach((x) => (x.onclick = () => showView(x.dataset.goView)));
-document.querySelectorAll("[data-wizard-step]").forEach((x) => {
-  x.onclick = () => { wizardStep = Number(x.dataset.wizardStep); updateWizard(); };
-});
-$("wizardPrev").onclick = () => { wizardStep = Math.max(0, wizardStep - 1); updateWizard(); };
-$("wizardNext").onclick = () => {
-  const error = validateWizardStep(wizardStep);
-  if (error) return toast(error);
-  wizardStep = Math.min(7, wizardStep + 1);
-  updateWizard();
-};
-$("wizardCreateDraft").onclick = () => {
-  try { createWizardDraft(); } catch (error) { toast(error.message || String(error)); }
-};
-$("wizardForm").addEventListener("input", updateWizard);
-$("wizardForm").addEventListener("change", updateWizard);
-
-renderTemplateLibrary();
-renderCreativeSpecs();
-if (!$("wizardDeadline").value) {
-  const date = new Date();
-  date.setDate(date.getDate() + 14);
-  $("wizardDeadline").value = date.toISOString().slice(0, 10);
-}
-if (!$("capacityDate").value) $("capacityDate").value = new Date().toISOString().slice(0, 10);
-updateAssetQa();
-updateExperimentDecision();
-renderAiReadiness();
-renderAiExperiment();
-renderAiHistory();
-updateWizard();
+  .forEach((x) => (x.onclick = () => {
+    showView(x.dataset.view);
+    if (x.dataset.view === "metrics") loadMetaMetrics();
+  }));
 
 onAuthStateChanged(auth, async (user) => {
   if (!user) {
@@ -1821,12 +643,6 @@ onAuthStateChanged(auth, async (user) => {
     $("login").hidden = true;
     $("app").hidden = false;
     await loadBusinessData();
-    $("preflightFirebase").textContent = `Activo · ${businesses.length} sucursal(es)`;
-    $("preflightFirebase").className = "success-text";
-    $("connectionFirebase").textContent = `Activo · ${businesses.length} sucursal(es)`;
-    restoreWizard();
-    updateWizard();
-    showView(SALEADS_UI === "classic" ? "builder" : "overview");
     console.log("DCARELA ADS", BUILD);
   } catch (error) {
     await signOut(auth);
