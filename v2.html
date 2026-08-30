@@ -554,6 +554,23 @@ video.mmedia{cursor:default}
 .destinos span{padding:3px 0;border-bottom:1px solid var(--line)}
 .destinos span:last-child{border-bottom:0}
 
+/* --- Configuración ----------------------------------------------------------- */
+.cfggrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(330px,1fr));gap:14px;
+  max-width:1180px;align-items:start}
+.cfgc{padding:16px 18px 18px;border:1px solid var(--line);border-radius:var(--r2);background:var(--panel)}
+.cfgc h3{margin:0 0 6px;font-size:13.5px;font-weight:650}
+.cfgnota{margin:0 0 12px;font-size:12px;line-height:1.5;color:var(--mut)}
+.cfgc .dato{margin-bottom:6px}
+/* El interruptor lleva su explicacion al lado: uno suelto no dice que pasa al
+   encenderlo, y estos cambian lo que se le manda a clientes reales. */
+.cfgsw{display:flex;align-items:flex-start;gap:10px;cursor:pointer;padding:8px 0}
+.cfgsw input{width:17px;height:17px;flex:0 0 auto;margin-top:2px;accent-color:var(--ink)}
+.cfgsw b{display:block;font-size:13px;font-weight:600}
+.cfgsw i{display:block;font-style:normal;font-size:11.5px;color:var(--mut);margin-top:2px}
+.cfgc .tabla{max-width:none}
+.cfgc select{padding:5px 7px;border:1px solid var(--line);border-radius:6px;
+  background:var(--bg);color:var(--fg);font-size:12px}
+
 /* --- Kanban ---------------------------------------------------------------- */
 .kanban{display:flex;gap:11px;overflow-x:auto;padding-bottom:12px;align-items:flex-start}
 .columna{flex:0 0 246px;display:flex;flex-direction:column;max-height:calc(100dvh - 230px);
@@ -2460,6 +2477,7 @@ const TABLERO = {
     titulo: 'Clientes de caja',
     bajada: 'Los que ya compraron en el punto de venta. Se sincronizan desde la caja.',
     tabla: 'crm_pos_customers',
+    queLoLlena: 'Se llena sola desde el punto de venta: cada cliente que compra en caja aparece aquí. Si está vacía, la caja todavía no ha sincronizado con el CRM.',
     orden: [{ field:'last_sale_at', ascending:false }],
     cols: [
       { t:'Cliente', p:(r)=> r.customer_name || '—' },
@@ -2474,6 +2492,7 @@ const TABLERO = {
     titulo: 'Satisfacción',
     bajada: 'Lo que contestaron los clientes en la encuesta. Se pide desde el menú «⋯» de cada chat.',
     tabla: 'reviews',
+    queLoLlena: 'Se llena cuando un cliente contesta la encuesta. La encuesta se pide desde el menú «⋯» de cada chat, o sola al cerrar como cliente si lo activas en Configuración.',
     orden: [{ field:'created_at', ascending:false }],
     // Sin este filtro se cuelan las encuestas enviadas y sin contestar, y el listado
     // parece lleno de gente que en realidad no dijo nada.
@@ -2491,6 +2510,7 @@ const TABLERO = {
     bajada: 'Negocios localizados para contactar. Ojo: no te han escrito, así que WhatsApp '
       + 'solo permite llegarles con plantilla aprobada.',
     tabla: 'crm_prospects',
+    queLoLlena: 'Se llena con las búsquedas de prospección, que corren fuera del panel. Si está vacía es que todavía no se ha hecho ninguna búsqueda.',
     orden: [{ field:'created_at', ascending:false }],
     cols: [
       { t:'Negocio', p:(r)=> r.business_name || '—' },
@@ -2539,7 +2559,10 @@ async function pintaTablero(id){
   let filas = r.data || r.rows || [];
   if (d.soloConRespuesta) filas = filas.filter(f => f.rating_service || f.rating_satisfaction || f.comment);
   if (!filas.length) {
-    cont.innerHTML = '<p class="bajada">Todavía no hay nada aquí.</p>';
+    // Vacio y roto se ven igual si solo se dice "no hay nada". Aqui se explica QUE
+    // llena esta tabla, que es lo que permite saber si falta un dato o falta un enlace.
+    cont.innerHTML = '<p class="bajada">Todavía no hay nada aquí.<br><br>'
+      + esc(d.queLoLlena || 'Se llena desde el propio CRM.') + '</p>';
     return;
   }
   const anchos = d.cols.map(() => 'minmax(0,1fr)').join(' ');
@@ -2786,66 +2809,245 @@ async function pintaCanales(){
 }
 
 /* ---- Configuración ------------------------------------------------------- */
+// Doce tarjetas, las mismas que tenia el panel anterior. Se releyo su vista de
+// configuracion una a una para no dejarse ninguna fuera; la primera version de v2 solo
+// enseñaba el rol y el equipo.
+//
+// Los ajustes viven en la tabla settings del servidor, no en el navegador: son del
+// negocio. Si viven en localStorage, cada persona tiene los suyos y el CRM se comporta
+// distinto segun quien lo abra.
+const AJUSTES = {};
+
+async function cargaAjustes(){
+  const r = await llama({ action:'data', table:'settings', operation:'select', limit: 200 });
+  if (!r.ok) return false;
+  (r.data || r.rows || []).forEach(f => { if (f?.key) AJUSTES[f.key] = f.value; });
+  return true;
+}
+async function guardaAjuste(clave, valor){
+  const r = await llama({ action:'data', table:'settings', operation:'upsert',
+    payload:{ id: clave, key: clave, value: String(valor), updated_at: new Date().toISOString() },
+    on_conflict:'id' });
+  if (!r.ok) { avisa('No se pudo guardar', r.error); return false; }
+  AJUSTES[clave] = String(valor);
+  return true;
+}
+
+function tarjetaCfg(titulo, nota, cuerpo){
+  return '<div class="cfgc"><h3>' + esc(titulo) + '</h3>'
+    + (nota ? '<p class="cfgnota">' + nota + '</p>' : '') + cuerpo + '</div>';
+}
+// Interruptor con su explicacion al lado. Un interruptor suelto no dice que pasa al
+// encenderlo, y estos cambian lo que se le manda a clientes reales.
+function interruptorCfg(clave, etiqueta, explica, pordefecto){
+  const on = AJUSTES[clave] !== undefined ? AJUSTES[clave] === 'true' : !!pordefecto;
+  return '<label class="cfgsw"><input type="checkbox" data-sw="' + esc(clave) + '"'
+    + (on ? ' checked' : '') + '><span><b>' + esc(etiqueta) + '</b>'
+    + '<i>' + explica + '</i></span></label>';
+}
+function campoCfg(clave, etiqueta, marcador){
+  return '<div class="campo"><label>' + esc(etiqueta) + '</label>'
+    + '<input data-cfg="' + esc(clave) + '" value="' + esc(AJUSTES[clave] || '')
+    + '" placeholder="' + esc(marcador || '') + '"></div>';
+}
+
 function montaConfig(){
   if (!montadas.has('config')) {
     montadas.add('config');
     hueco('config', '<div class="hoja"><h1>Configuración</h1>'
-      + '<p class="bajada">Quién entra al panel y con qué permisos.</p>'
-      + '<div class="seccion" style="margin-bottom:9px">Tu sesión</div>'
-      + '<div id="cfgYo" style="margin-bottom:26px"></div>'
-      + '<div class="seccion" style="margin-bottom:9px">Equipo</div>'
-      + '<div id="cfgEquipo"></div>'
-      + '<div class="seccion" style="margin:26px 0 9px">Datos del negocio</div>'
-      + '<div id="cfgNegocio"></div></div>');
+      + '<p class="bajada">Lo que cambia aquí afecta a lo que se les manda a clientes reales.</p>'
+      + '<div class="cfggrid" id="cfgGrid"></div></div>');
   }
   pintaConfig();
 }
-async function pintaConfig(){
-  const dato = (k,v) => '<div class="dato"><div class="k">' + esc(k) + '</div><div class="v">' + esc(String(v ?? '—')) + '</div></div>';
-  $('cfgNegocio').innerHTML = '<div style="max-width:520px">'
-    + dato('Marca', CFG.brandName) + dato('Número de WhatsApp', CFG.businessDisplayNumber || CFG.businessNumber)
-    + dato('Catálogo público', CFG.publicCatalogUrl) + dato('Vista al entrar', CFG.defaultView || 'conversations')
-    + '</div>';
 
-  const u = auth.currentUser;
-  $('cfgYo').innerHTML = '<div style="max-width:520px">' + dato('Correo', u?.email || '—') + '</div>';
-  // whoami devuelve rol_efectivo / activo / pasaria_requireMember, no role/member: los
-  // nombres que puse antes daban siempre "—" y "autorizado" aunque no lo estuvieras.
+async function pintaConfig(){
+  const g = $('cfgGrid'); if (!g) return;
+  g.innerHTML = '<p class="bajada"><span class="cargando"></span> Cargando…</p>';
+  await cargaAjustes();
   const quien = await llama({ action:'whoami' });
-  if (quien.ok) {
-    $('cfgYo').innerHTML = '<div style="max-width:520px">'
-      + dato('Correo', quien.email || u?.email || '—')
+  const esAdmin = quien.ok && quien.rol_efectivo === 'admin';
+
+  const dato = (k,v) => '<div class="dato"><div class="k">' + esc(k) + '</div><div class="v">'
+    + esc(String(v ?? '—')) + '</div></div>';
+
+  g.innerHTML =
+    tarjetaCfg('Tu sesión', '',
+      dato('Correo', quien.email || auth.currentUser?.email || '—')
       + dato('Rol', quien.rol_efectivo || '—')
       + dato('Acceso', quien.pasaria_requireMember ? 'autorizado'
           : !quien.ficha_existe ? 'sin ficha de miembro'
           : !quien.activo ? 'ficha desactivada'
-          : !quien.pertenece_al_negocio ? 'no pertenece a este negocio'
-          : 'rol sin permisos')
-      + '</div>';
-  }
+          : !quien.pertenece_al_negocio ? 'no pertenece a este negocio' : 'rol sin permisos'))
 
-  const eq = $('cfgEquipo');
-  eq.innerHTML = '<p class="bajada"><span class="cargando"></span> Cargando…</p>';
+    + tarjetaCfg('Usuarios y permisos del panel',
+        'Desactivar una cuenta o cambiarle el rol se aplica también a envíos, difusiones, '
+        + 'automatizaciones y escrituras en la base. No es solo lo que ve en pantalla.',
+        '<div id="cfgUsuarios"></div>'
+        + (esAdmin
+          ? '<div class="par" style="margin-top:10px">'
+            + '<div class="campo"><label>Correo</label><input id="uEmail" type="email" placeholder="alguien@dcarela.com"></div>'
+            + '<div class="campo"><label>Nombre</label><input id="uNombre"></div></div>'
+            + '<div class="par">'
+            + '<div class="campo"><label>Rol</label><select id="uRol">'
+            +   '<option value="agent">Agente — atiende chats</option>'
+            +   '<option value="supervisor">Supervisor — además difunde</option>'
+            +   '<option value="admin">Administrador — todo</option></select></div>'
+            + '<div class="campo"><label>Contraseña temporal</label><input id="uClave" type="text"></div></div>'
+            + '<button class="btn-solido" id="uAdd">Crear cuenta</button>'
+          : '<p class="cfgnota">Tu rol no puede gestionar cuentas. Eso lo lleva un administrador.</p>'))
+
+    + tarjetaCfg('Auto-cierre a los 14 días',
+        'Una conversación sin respuesta se cierra sola. Se cierra como <b>perdido</b>, nunca como '
+        + 'cliente: dar por vendido lo que nadie confirmó ensucia todas las métricas.',
+        interruptorCfg('auto_cierre', 'Cerrar solas las conversaciones dormidas',
+          'A los 14 días sin respuesta del cliente.', true))
+
+    + tarjetaCfg('Seguimientos automáticos',
+        'La norma de los dos intentos está cableada en el servidor y no se puede desactivar desde '
+        + 'aquí: dos seguimientos ignorados y el contacto pasa a desinteresado.',
+        interruptorCfg('seguimientos', 'Enviar seguimientos automáticos',
+          'Como máximo dos por contacto, nunca más.', true))
+
+    + tarjetaCfg('Permiso de marketing',
+        'Si se activa, quien escriba por primera vez queda con marketing permitido. '
+        + '<b>Déjalo apagado si no tienes su consentimiento explícito</b>: es lo que Meta mira '
+        + 'cuando alguien reporta.',
+        interruptorCfg('marketing_auto', 'Dar permiso de marketing automáticamente',
+          'Al primer mensaje del cliente.', false))
+
+    + tarjetaCfg('Encuesta de satisfacción',
+        'Se envía sola al cerrar una conversación como cliente.',
+        interruptorCfg('encuesta_auto', 'Pedir la encuesta automáticamente',
+          'Solo a quien terminó comprando.', false))
+
+    + tarjetaCfg('Agenda en el teléfono',
+        'La agenda se publica como calendario suscribible. Se añade una vez en el iPhone o en '
+        + 'Google Calendar y se actualiza sola; no hay que volver a importarla.',
+        (CFG.firebaseAgendaUrl
+          ? '<div class="dato"><div class="k">Enlace de suscripción</div>'
+            + '<div class="v" style="word-break:break-all;font-size:11.5px">'
+            + esc(CFG.firebaseAgendaUrl) + '</div></div>'
+            + '<button class="btn-linea" id="cfgCopiaAgenda" style="margin-top:8px">Copiar enlace</button>'
+          : '<p class="cfgnota">No hay URL de agenda configurada.</p>'))
+
+    + tarjetaCfg('Catálogo público',
+        'De aquí salen los combos y los precios que se le mandan al cliente. Se lee de la web, '
+        + 'así que el precio que envías es siempre el que ve él.',
+        dato('Catálogo', CFG.publicCatalogUrl) + dato('Bodas', CFG.publicWeddingUrl))
+
+    + tarjetaCfg('Datos del negocio', '',
+        dato('Marca', CFG.brandName)
+        + dato('WhatsApp oficial', CFG.businessDisplayNumber || CFG.businessNumber)
+        + dato('Vista al entrar', CFG.defaultView || 'conversations'))
+
+    + tarjetaCfg('Mensajes por defecto',
+        'Lo que pegan los atajos del compositor.',
+        campoCfg('texto_ubicacion', 'Ubicación', CFG.addressText || '')
+        + campoCfg('texto_combos', 'Combos privados', CFG.privateCombosMessage || '')
+        + '<button class="btn-solido" id="cfgGuardaTextos">Guardar</button>')
+
+    + tarjetaCfg('Asistente IA',
+        'La clave de Google vive <b>solo en el servidor</b>. No se puede leer ni cambiar desde el '
+        + 'panel, y eso es a propósito: una clave que el navegador puede leer es una clave '
+        + 'que se puede robar.',
+        dato('Motor', 'Google Gemini 2.5 Flash')
+        + '<button class="btn-linea" id="cfgReglas2" style="margin-top:8px">Editar reglas del negocio</button>')
+
+    + tarjetaCfg('Bot de WhatsApp',
+        'Encender o apagar el bot por canal se hace en <b>Canales</b>, no aquí: son ajustes de cada '
+        + 'conexión y mezclarlos lleva a apagar el que no era.',
+        '<button class="btn-linea" id="cfgIrCanales">Ir a Canales</button>');
+
+  // --- cableado
+  g.querySelectorAll('[data-sw]').forEach(el => {
+    el.onchange = async () => {
+      const ok = await guardaAjuste(el.dataset.sw, el.checked);
+      if (!ok) el.checked = !el.checked;   // si el servidor dijo que no, el interruptor vuelve
+      else avisa('Guardado', el.checked ? 'Activado' : 'Desactivado');
+    };
+  });
+  const gt = $('cfgGuardaTextos');
+  if (gt) gt.onclick = async () => {
+    gt.disabled = true;
+    for (const el of g.querySelectorAll('[data-cfg]')) await guardaAjuste(el.dataset.cfg, el.value);
+    gt.disabled = false;
+    avisa('Mensajes guardados');
+  };
+  const ca = $('cfgCopiaAgenda');
+  if (ca) ca.onclick = async () => {
+    try { await navigator.clipboard.writeText(CFG.firebaseAgendaUrl); avisa('Enlace copiado'); }
+    catch (e) { avisa('No se pudo copiar'); }
+  };
+  const cr = $('cfgReglas2'); if (cr) cr.onclick = abreReglas;
+  const ic = $('cfgIrCanales'); if (ic) ic.onclick = () => ve('canales');
+  if (esAdmin) cableaUsuarios();
+  pintaUsuarios(esAdmin);
+}
+
+async function pintaUsuarios(esAdmin){
+  const cont = $('cfgUsuarios'); if (!cont) return;
+  cont.innerHTML = '<p class="cfgnota"><span class="cargando"></span> Cargando…</p>';
   const r = await llama({ action:'panelUsers', operation:'list' });
   if (!r.ok) {
-    // Un agente no puede listar el equipo: eso no es un fallo, es el permiso haciendo
-    // su trabajo. Se dice asi en vez de enseñar un error rojo.
-    eq.innerHTML = '<p class="bajada">' + (String(r.error||'').includes('permiso')
-      ? 'Tu rol no puede ver ni cambiar el equipo. Eso lo lleva un administrador.'
-      : 'No se pudo cargar: ' + esc(r.error || '')) + '</p>';
+    cont.innerHTML = '<p class="cfgnota">' + (String(r.error||'').includes('administrador')
+      ? 'Solo un administrador puede ver el equipo.' : esc(r.error || 'No se pudo cargar.')) + '</p>';
     return;
   }
-  const filas = r.users || r.data || [];
-  eq.innerHTML = filas.length
-    ? '<div class="tabla" style="max-width:720px">'
-      + '<div class="fila cabecera" style="grid-template-columns:minmax(0,2fr) 1fr 1fr"><span>Persona</span><span>Rol</span><span>Estado</span></div>'
-      + filas.map(x => '<div class="fila" style="grid-template-columns:minmax(0,2fr) 1fr 1fr">'
-        + '<span><b>' + esc(x.display_name || x.email || '—') + '</b><small>' + esc(x.email || '') + '</small></span>'
-        + '<span>' + esc(x.role || '—') + '</span>'
-        + '<span><i class="chip ' + (x.active === false ? 'mal' : 'ok') + '">'
-        +   (x.active === false ? 'inactivo' : 'activo') + '</i></span></div>').join('')
-      + '</div>'
-    : '<p class="bajada">No hay nadie más en el equipo.</p>';
+  const filas = r.users || r.members || r.data || [];
+  if (!filas.length) { cont.innerHTML = '<p class="cfgnota">No hay nadie más.</p>'; return; }
+  cont.innerHTML = '<div class="tabla">'
+    + '<div class="fila cabecera" style="grid-template-columns:minmax(0,2fr) 1fr auto">'
+    +   '<span>Persona</span><span>Rol</span><span>Estado</span></div>'
+    + filas.map((x,i) => '<div class="fila" style="grid-template-columns:minmax(0,2fr) 1fr auto">'
+      + '<span><b>' + esc(x.display_name || x.email || '—') + '</b><small>' + esc(x.email || '') + '</small></span>'
+      + '<span>' + (esAdmin
+          ? '<select data-rol="' + esc(x.uid || x.id || '') + '">'
+            + ['agent','supervisor','admin'].map(rr => '<option value="' + rr + '"'
+              + (x.role === rr ? ' selected' : '') + '>' + rr + '</option>').join('') + '</select>'
+          : esc(x.role || '—')) + '</span>'
+      + '<span><button class="interruptor' + (x.active === false ? '' : ' on') + '"'
+      +   (esAdmin ? ' data-activo="' + esc(x.uid || x.id || '') + '"' : ' disabled')
+      +   '>' + (x.active === false ? 'inactivo' : 'activo') + '</button></span></div>').join('')
+    + '</div>';
+
+  if (!esAdmin) return;
+  cont.onchange = async ev => {
+    const s = ev.target.closest('[data-rol]'); if (!s) return;
+    const r2 = await llama({ action:'panelUsers', operation:'update', user_id:s.dataset.rol, role:s.value });
+    avisa(r2.ok ? 'Rol cambiado' : 'No se pudo cambiar', r2.ok ? s.value : r2.error);
+  };
+  cont.onclick = async ev => {
+    const b = ev.target.closest('[data-activo]'); if (!b) return;
+    const activar = !b.classList.contains('on');
+    // Desactivar a alguien le corta tambien los envios y las automatizaciones, no solo
+    // la pantalla. Por eso se pregunta.
+    if (!activar && !confirm('Se desactiva la cuenta. Dejará de poder entrar, enviar y difundir.\n\n¿Seguro?')) return;
+    b.disabled = true;
+    const r2 = await llama({ action:'panelUsers', operation:'update', user_id:b.dataset.activo, active:activar });
+    b.disabled = false;
+    if (!r2.ok) return avisa('No se pudo cambiar', r2.error);
+    b.classList.toggle('on', activar);
+    b.textContent = activar ? 'activo' : 'inactivo';
+  };
+}
+
+function cableaUsuarios(){
+  const b = $('uAdd'); if (!b) return;
+  b.onclick = async () => {
+    const email = $('uEmail').value.trim();
+    const clave = $('uClave').value;
+    if (!email || !clave) return avisa('Faltan el correo o la contraseña temporal');
+    if (clave.length < 8) return avisa('Contraseña demasiado corta', 'Ocho caracteres como mínimo.');
+    b.disabled = true;
+    const r = await llama({ action:'panelUsers', operation:'create', email,
+      display_name: $('uNombre').value.trim(), role: $('uRol').value, temporary_password: clave });
+    b.disabled = false;
+    if (!r.ok) return avisa('No se pudo crear', r.error);
+    $('uEmail').value = ''; $('uNombre').value = ''; $('uClave').value = '';
+    avisa('Cuenta creada', 'Dile que cambie la contraseña al entrar.');
+    pintaUsuarios(true);
+  };
 }
 
 /* ---- Funnel / Kanban ----------------------------------------------------- */
