@@ -164,6 +164,46 @@ body.menu-abierto .nav .secundarias{display:block}
 .etq.puesta button:hover{opacity:1}
 .etq.sug{border:1px dashed var(--line2);color:var(--mut)}
 .etq.sug:hover{border-style:solid;color:var(--fg)}
+
+/* --- Canal ------------------------------------------------------------------ */
+/* El distintivo va pegado al avatar, arriba a la derecha: se ve por donde escribe sin
+   tener que abrir el chat, que es cuando importa saberlo. */
+.avwrap{position:relative;flex:0 0 auto;line-height:0}
+img.av{object-fit:cover}
+.canalpin{position:absolute;top:-2px;right:-3px;width:16px;height:16px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;font-size:8px;line-height:1;
+  border:2px solid var(--panel)}
+/* La casilla solo aparece al pasar por encima o si ya hay algo seleccionado: en reposo
+   la lista se lee limpia y no parece un formulario. */
+.marcar{width:17px;height:17px;flex:0 0 auto;border:1.5px solid var(--line2);border-radius:5px;
+  opacity:0;transition:opacity .12s}
+.chat:hover .marcar,.marcar.on{opacity:1}
+.marcar.on{background:var(--ink);border-color:var(--ink);position:relative}
+.marcar.on::after{content:"✓";position:absolute;inset:0;display:flex;align-items:center;
+  justify-content:center;color:var(--on-ink);font-size:11px;font-weight:700}
+@media(hover:none){.marcar{opacity:.5}}
+.barra-lote{display:flex;align-items:center;gap:7px;flex-wrap:wrap;padding:9px 12px;
+  border-top:1px solid var(--line);border-bottom:1px solid var(--line);background:var(--hover);
+  font-size:12.5px}
+.barra-lote[hidden]{display:none}
+.barra-lote .btn-linea{padding:5px 10px;font-size:11.5px}
+
+.canal{max-width:760px;margin-bottom:12px;border:1px solid var(--line);border-radius:var(--r2);
+  background:var(--panel);overflow:hidden}
+.cabecera-canal{display:flex;align-items:center;gap:12px;padding:14px 16px}
+.clogo{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;
+  justify-content:center;font-size:18px;flex:0 0 auto}
+.cinfo{flex:1;min-width:0}
+.cinfo b{display:block;font-size:14px}
+.cinfo span{display:block;font-size:11.5px;color:var(--mut);margin-top:1px}
+.cdetalle{margin:0;padding:0 16px 14px;font-size:12.5px;line-height:1.5;color:var(--mut)}
+.cdetalle code{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:11.5px;
+  padding:1px 5px;border-radius:4px;background:var(--hover)}
+.cacciones{display:flex;flex-wrap:wrap;gap:8px;padding:0 16px 14px}
+.btn-linea.danger{border-color:var(--bad);color:var(--bad)}
+.codigo{margin-top:10px;padding:18px;border-radius:var(--r2);background:var(--hover);
+  text-align:center;font-size:27px;font-weight:700;letter-spacing:5px;
+  font-family:ui-monospace,Menlo,Consolas,monospace}
 .filtro b{margin-left:5px;opacity:.65;font-weight:700}
 .chats{flex:1;overflow-y:auto}
 
@@ -693,7 +733,7 @@ const VISTAS = [
   { id:'campanas',      nombre:'Campañas',      icono:ico('<path d="M3 11l18-8-7 18-2-8-9-2z"/>') },
   { id:'plantillas',    nombre:'Plantillas',    icono:ico('<rect x="5" y="5" width="14" height="16" rx="2"/><path d="M9 11h6M9 15h4"/>') },
   { id:'reminders',     nombre:'Recordatorios', icono:ico('<path d="M18 8a6 6 0 00-12 0c0 7-3 9-3 9h18s-3-2-3-9M13 21a2 2 0 01-4 0"/>') },
-  { id:'bridge',        nombre:'Conexión WhatsApp', icono:ico('<rect x="8" y="2" width="8" height="20" rx="3"/>') },
+  { id:'canales',       nombre:'Canales',        icono:ico('<path d="M4 6h16M4 12h16M4 18h10"/><circle cx="19" cy="18" r="2"/>') },
   { id:'config',        nombre:'Configuración',  icono:ico('<circle cx="12" cy="12" r="3"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3"/>') },
 ];
 
@@ -761,6 +801,17 @@ let CONVS = [], MSGS = [], sel = null, paraMsgs = null;
 function nombreDe(c){
   return c.customer_name || c.contact_name || ('+' + (c.wa_phone || ''));
 }
+// Foto de perfil si el canal la trae; si no, las iniciales. Se pide con referrerpolicy
+// no-referrer porque los CDN de Meta rechazan la peticion si ven el origen, y sin eso
+// saldria un hueco roto en vez de las iniciales.
+function avatarDe(c, n){
+  const url = c?.profile_pic_url || c?.avatar_url || c?.metadata?.profile_pic_url || '';
+  if (url) return '<img class="av" src="' + esc(url) + '" alt="" loading="lazy" '
+    + 'referrerpolicy="no-referrer" onerror="this.replaceWith(Object.assign(document.createElement(\'div\'),'
+    + '{className:\'av\',textContent:this.dataset.ini}))" data-ini="' + esc(iniciales(n)) + '">';
+  return '<div class="av">' + esc(iniciales(n)) + '</div>';
+}
+
 function iniciales(n){
   return String(n || '?').replace(/[^\p{L}\p{N} ]/gu,'').trim().split(/\s+/)
     .slice(0,2).map(p => p[0] || '').join('').toUpperCase() || '#';
@@ -837,7 +888,7 @@ function monta(id){
   if (TABLERO[id]) return montaTablero(id);
   if (id === 'agenda') return montaAgenda();
   if (id === 'reminders') return montaRecordatorios();
-  if (id === 'bridge') return montaConexion();
+  if (id === 'canales') return montaCanales();
   if (id === 'config') return montaConfig();
   if (id === 'manual') { window.open('./manual.html', '_blank', 'noopener'); return ve('conversations'); }
   if (montadas.has(id)) return;
@@ -858,6 +909,7 @@ function montaConversaciones(){
     '<div class="lista">'
     + '<div class="cabeza"><input id="buscaChat" placeholder="Buscar conversación…"></div>'
     + '<div class="filtros" id="filtros"></div>'
+    + '<div class="barra-lote" id="barraLote" hidden></div>'
     + '<div class="chats" id="chats"></div>'
     + '</div>'
     + '<div class="conversacion" id="conversacion" style="display:none"></div>'
@@ -871,9 +923,18 @@ function montaConversaciones(){
   });
   arrastraFiltros($('filtros'));
   $('chats').addEventListener('click', ev => {
+    const marca = ev.target.closest('.marcar');
+    if (marca) {
+      ev.stopPropagation();
+      const id = marca.closest('[data-conv]').dataset.conv;
+      if (LOTE.has(id)) LOTE.delete(id); else LOTE.add(id);
+      pintaLote(); pintaChats();
+      return;
+    }
     const f = ev.target.closest('[data-conv]');
     if (f) abre(CONVS.find(c => c._id === f.dataset.conv));
   });
+  cableaLote();
   pintaChats();
 }
 
@@ -921,6 +982,7 @@ function filtradas(){
     if (filtro === 'humano' && !(c.mode === 'human' || c.human_handoff_required)) return false;
     if (filtro === 'bot' && c.mode !== 'bot') return false;
     if (filtro.startsWith('etq:') && !etiquetasDe(c).includes(filtro.slice(4))) return false;
+    if (filtro.startsWith('can:') && canalDe(c) !== filtro.slice(4)) return false;
     if (!t) return true;
     return (nombreDe(c) + ' ' + (c.wa_phone||'') + ' ' + (c.last_message_preview||'')).toLowerCase().includes(t);
   });
@@ -935,10 +997,16 @@ function pintaChats(){
   // Las etiquetas se añaden como filtros detras de los fijos: son las que el equipo
   // inventa, y sin poder filtrar por ellas no sirven para nada.
   const porEtiqueta = etiquetasEnUso().map(e => ['etq:' + e, e]);
-  $('filtros').innerHTML = [['todos','Todos'],['sinleer','Sin leer'],['humano','Humano'],['bot','Bot'], ...porEtiqueta]
+  // Solo se ofrecen los canales que de verdad tienen conversaciones: un filtro que
+  // siempre devuelve cero es ruido.
+  const porCanal = Object.keys(CANALES)
+    .filter(k => CONVS.some(c => canalDe(c) === k))
+    .map(k => ['can:' + k, CANALES[k].logo + ' ' + CANALES[k].corto]);
+  $('filtros').innerHTML = [['todos','Todos'],['sinleer','Sin leer'],['humano','Humano'],['bot','Bot'],
+      ...porCanal, ...porEtiqueta]
     .map(([f,n]) => {
-      const n2 = f.startsWith('etq:')
-        ? CONVS.filter(c => etiquetasDe(c).includes(f.slice(4))).length
+      const n2 = f.startsWith('etq:') ? CONVS.filter(c => etiquetasDe(c).includes(f.slice(4))).length
+        : f.startsWith('can:') ? CONVS.filter(c => canalDe(c) === f.slice(4)).length
         : cuenta(f);
       return '<button class="filtro' + (filtro===f?' on':'') + (f.startsWith('etq:')?' etqf':'')
         + '" data-filtro="' + esc(f) + '">' + esc(n) + '<b>' + n2 + '</b></button>';
@@ -957,9 +1025,13 @@ function pintaChats(){
     if (c.proactive_blocked_at) marcas.push('<span class="etiqueta">sin automatización</span>');
     else if (c.mode === 'human' || c.human_handoff_required) marcas.push('<span class="etiqueta">humano</span>');
     if (sinLeer) marcas.push('<span class="globito">' + Number(c.unread) + '</span>');
+    const canal = CANALES[canalDe(c)];
     return '<div class="chat' + (sel && sel._id === c._id ? ' on' : '') + (sinLeer ? ' sinleer' : '')
       + '" data-conv="' + esc(c._id) + '">'
-      + '<div class="av">' + esc(iniciales(n)) + '</div>'
+      + '<button class="marcar' + (LOTE.has(c._id) ? ' on' : '') + '" aria-label="Seleccionar"></button>'
+      + '<div class="avwrap">' + avatarDe(c, n)
+      +   '<span class="canalpin" title="' + esc(canal.nombre) + '" '
+      +     'style="background:' + canal.color + '">' + canal.logo + '</span></div>'
       + '<div class="cuerpo">'
       +   '<div class="fila1"><div class="nom">' + esc(n) + '</div>'
       +     '<div class="hora">' + esc(hora(c.last_message_at)) + '</div></div>'
@@ -990,13 +1062,17 @@ function abre(c){
   const n = nombreDe(c);
   $('conversacion').innerHTML =
     '<div class="cabecera">'
-    + '<div class="av">' + esc(iniciales(n)) + '</div>'
-    + '<div class="quien-chat"><b>' + esc(n) + '</b><span>+' + esc(c.wa_phone || '') + '</span></div>'
+    + '<div class="avwrap">' + avatarDe(c, n)
+    +   '<span class="canalpin" title="' + esc(CANALES[canalDe(c)].nombre) + '" '
+    +     'style="background:' + CANALES[canalDe(c)].color + '">' + CANALES[canalDe(c)].logo + '</span></div>'
+    + '<div class="quien-chat"><b>' + esc(n) + '</b><span>+' + esc(c.wa_phone || '')
+    +   ' · ' + esc(CANALES[canalDe(c)].corto) + '</span></div>'
     + '<button class="modo" id="btnModo"></button>'
     + '<button class="adj" id="verFicha" title="Ficha del lead" aria-label="Ficha del lead">'
     +   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 8v.01M11 12h1v4h1"/></svg></button>'
     + '<div class="mas" id="mas"><button aria-label="Más opciones">⋯</button>'
-    +   '<div class="menu"><button data-mas="encuesta">Enviar encuesta</button>'
+    +   '<div class="menu"><button data-mas="recordar">Añadir recordatorio</button>'
+    +   '<button data-mas="encuesta">Enviar encuesta</button>'
     +   '<button data-mas="cerrar">Cerrar conversación</button></div></div>'
     + '</div>'
     + '<div class="mensajes" id="mensajes"></div>'
@@ -1064,6 +1140,7 @@ function cableaChat(c){
   mas.querySelector('.menu').onclick = async ev => {
     const b = ev.target.closest('[data-mas]'); if (!b) return;
     mas.classList.remove('on');
+    if (b.dataset.mas === 'recordar') return abreRecordatorio(sel);
     if (b.dataset.mas === 'encuesta') {
       const r = await llama({ action:'surveyInvite', conversation_id: sel.id || sel._id });
       avisa(r.ok ? 'Encuesta enviada' : 'No se pudo enviar', r.ok ? '' : r.error);
@@ -2359,46 +2436,138 @@ function pintaAgenda(){
       }).join('') + '</div>';
 }
 
-/* ---- Conexión con WhatsApp ----------------------------------------------- */
-// Esta pantalla existe para responder una sola pregunta: ¿le estan llegando los
-// mensajes al cliente? Cuando Meta deja de entregar, todo lo demas del CRM parece
-// funcionar -- se escribe, se guarda, aparece en el hilo -- y nadie se entera hasta
-// que un cliente se queja. Por eso el estado va aqui en grande y con el motivo.
-function montaConexion(){
-  if (!montadas.has('bridge')) {
-    montadas.add('bridge');
-    hueco('bridge', '<div class="hoja"><h1>Conexión WhatsApp</h1>'
-      + '<p class="bajada">Si esto no está en verde, lo que escribas no le llega a nadie '
-      +   'aunque el panel diga que se envió.</p>'
-      + '<div class="acciones" style="margin-bottom:16px">'
-      +   '<button class="btn-solido" id="cxRevisar">Revisar ahora</button></div>'
-      + '<div id="cxEstado"></div></div>');
-    $('cxRevisar').onclick = pintaConexion;
-  }
-  pintaConexion();
+/* ---- Canales ------------------------------------------------------------- */
+// Un sitio para todas las vias por las que escribe un cliente. Antes solo existia
+// "Conexión WhatsApp" y el segundo numero estaba mezclado con el oficial sin distinguirse,
+// que es como se acaba contestando por el canal equivocado.
+//
+// Cada canal se identifica por como llego la conversacion: el API oficial marca
+// source='whatsapp_cloud', el puente de WhatsApp Web marca source='whatsapp_qr', y las
+// redes traen el suyo. Ese campo ya existe en los datos; lo que faltaba era enseñarlo.
+const CANALES = {
+  whatsapp_cloud: { nombre:'WhatsApp oficial (API)', corto:'WhatsApp', logo:'🟢', color:'#25d366' },
+  whatsapp_qr:    { nombre:'WhatsApp Web (2.º número)', corto:'WA Web', logo:'🔵', color:'#128c7e' },
+  instagram:      { nombre:'Instagram Direct', corto:'Instagram', logo:'🟣', color:'#c13584' },
+  facebook:       { nombre:'Facebook Messenger', corto:'Messenger', logo:'🔷', color:'#0084ff' },
+};
+function canalDe(c){
+  const s = String(c?.source || '').toLowerCase();
+  if (CANALES[s]) return s;
+  if (s.includes('qr') || s.includes('bridge')) return 'whatsapp_qr';
+  if (s.includes('instagram') || s.includes('ig')) return 'instagram';
+  if (s.includes('facebook') || s.includes('messenger') || s.includes('fb')) return 'facebook';
+  return 'whatsapp_cloud';
 }
-async function pintaConexion(){
-  const c = $('cxEstado'); if (!c) return;
-  c.innerHTML = '<p class="bajada"><span class="cargando"></span> Preguntando a Meta…</p>';
-  const r = await llama({ action:'transportStatus' });
-  if (!r.ok) { c.innerHTML = '<p class="bajada">No se pudo comprobar: ' + esc(r.error || '') + '</p>'; return; }
-  const t = r.transport || r.status || r;
-  const listo = t.ready === true || t.state === 'ready';
-  const fila = (k, v) => '<div class="cambio"><div class="k">' + esc(k) + '</div>' + esc(String(v ?? '—')) + '</div>';
-  c.innerHTML = '<div class="propuesta" style="max-width:620px">'
-    + '<div class="tapa"><b>' + (listo ? '✅ Entregando mensajes' : '⚠️ No está entregando') + '</b></div>'
-    + '<div class="cuerpo">'
-    +   fila('Estado', t.state || (listo ? 'ready' : 'desconocido'))
-    +   fila('Número del negocio', CFG.businessDisplayNumber || CFG.businessNumber || '—')
-    +   (t.last_error_code ? fila('Último error de Meta', t.last_error_code) : '')
-    +   (t.last_error_at ? fila('Cuándo', String(t.last_error_at).slice(0,19).replace('T',' ')) : '')
-    +   (t.last_webhook_attempt_at ? fila('Último aviso recibido', String(t.last_webhook_attempt_at).slice(0,19).replace('T',' ')) : '')
-    + '</div>'
-    + (listo ? '' : '<div class="patas"><span class="bajada" style="margin:0">'
-        + 'Hay que reconectar Meta con el transporte. Eso se hace con el script '
-        + 'scripts/conectar_meta_firebase.ps1, y exige el App Secret: no se hace desde aquí.'
-        + '</span></div>')
-    + '</div>';
+
+function montaCanales(){
+  if (!montadas.has('canales')) {
+    montadas.add('canales');
+    hueco('canales', '<div class="hoja"><h1>Canales</h1>'
+      + '<p class="bajada">Por dónde te escriben los clientes. Si un canal no está en verde, '
+      +   'lo que escribas por ahí no le llega a nadie aunque el panel diga que se envió.</p>'
+      + '<div id="canalesLista"></div></div>');
+  }
+  pintaCanales();
+}
+
+async function pintaCanales(){
+  const cont = $('canalesLista'); if (!cont) return;
+  cont.innerHTML = '<p class="bajada"><span class="cargando"></span> Comprobando…</p>';
+
+  const [estado, puente] = await Promise.all([
+    llama({ action:'transportStatus' }),
+    llama({ action:'bridgeStatus' }),
+  ]);
+  const t = estado.ok ? (estado.transport || estado) : {};
+  const p = puente.ok ? (puente.bridge || puente) : {};
+
+  const cuenta = clave => CONVS.filter(c => canalDe(c) === clave).length;
+  const tarjeta = (clave, listo, detalle, acciones) => {
+    const d = CANALES[clave];
+    return '<div class="canal">'
+      + '<div class="cabecera-canal">'
+      +   '<span class="clogo" style="background:' + d.color + '22;color:' + d.color + '">' + d.logo + '</span>'
+      +   '<div class="cinfo"><b>' + esc(d.nombre) + '</b>'
+      +     '<span>' + cuenta(clave) + ' conversación(es)</span></div>'
+      +   '<i class="chip ' + (listo === true ? 'ok' : listo === false ? 'mal' : 'medio') + '">'
+      +     (listo === true ? 'conectado' : listo === false ? 'sin conectar' : 'sin usar') + '</i>'
+      + '</div>'
+      + '<p class="cdetalle">' + detalle + '</p>'
+      + (acciones ? '<div class="cacciones">' + acciones + '</div>' : '')
+      + '</div>';
+  };
+
+  const oficialListo = t.ready === true || t.state === 'ready';
+  const puenteListo = p.connected === true || p.state === 'connected' || p.status === 'connected';
+
+  cont.innerHTML =
+    tarjeta('whatsapp_cloud', oficialListo,
+      oficialListo
+        ? 'Número ' + esc(CFG.businessDisplayNumber || CFG.businessNumber || '') + '. Entregando mensajes.'
+        : 'Meta no está conectada al transporte' + (t.last_error_code ? ' (error ' + esc(String(t.last_error_code)) + ')' : '')
+          + '. Reconectar exige el App Secret y se hace con scripts/conectar_meta_firebase.ps1, no desde aquí.',
+      '<button class="btn-linea" data-canal-bot="official">Bot de este canal: '
+        + (estado.bot_enabled ? 'encendido' : 'apagado') + '</button>')
+
+    + tarjeta('whatsapp_qr', puenteListo ? true : (cuenta('whatsapp_qr') ? false : null),
+      puenteListo
+        ? 'Segundo número conectado por WhatsApp Web. <b>Era el de pruebas</b>: si ya no se usa, desconéctalo.'
+        : 'Sin sesión activa. Este canal usa WhatsApp Web, no el API: no admite plantillas '
+          + 'ni difusiones, solo conversación dentro de la ventana normal.',
+      puenteListo
+        ? '<button class="btn-linea danger" data-desconecta-puente>Desconectar</button>'
+          + '<button class="btn-linea" data-canal-bot="photo">Bot de este canal: '
+          + (p.bot_enabled ? 'encendido' : 'apagado') + '</button>'
+        : '<button class="btn-linea" data-conecta-puente>Conectar por código</button>')
+
+    + tarjeta('instagram', cuenta('instagram') ? true : null,
+      'Los mensajes de Instagram entran por la misma app de Meta que WhatsApp. Falta suscribir '
+      + 'el webhook al campo <code>messages</code> de Instagram en Meta Business y añadir la '
+      + 'página al activo. No se puede activar desde aquí: requiere el App Secret.', '')
+
+    + tarjeta('facebook', cuenta('facebook') ? true : null,
+      'Igual que Instagram: mismo webhook, distinto campo suscrito. Se activa en Meta Business '
+      + 'suscribiendo la página a <code>messages</code>.', '');
+
+  cont.onclick = async ev => {
+    const bot = ev.target.closest('[data-canal-bot]');
+    if (bot) {
+      // El bot se enciende y se apaga POR CANAL. Antes era un interruptor unico: apagarlo
+      // para el segundo numero apagaba tambien el oficial, y al reves.
+      const cual = bot.dataset.canalBot;
+      const encendido = /encendido/.test(bot.textContent);
+      if (!confirm((encendido ? 'Apagar' : 'Encender') + ' el bot SOLO en '
+        + (cual === 'official' ? 'WhatsApp oficial' : 'WhatsApp Web') + '.\n\n¿Seguro?')) return;
+      bot.disabled = true;
+      const r = cual === 'official'
+        ? await llama({ action:'setOfficialBot', enabled: !encendido })
+        : await llama({ action:'setPhotoBot', enabled: !encendido });
+      bot.disabled = false;
+      if (!r.ok) return avisa('No se pudo cambiar', r.error);
+      avisa('Bot ' + (encendido ? 'apagado' : 'encendido'),
+        'Solo en ' + (cual === 'official' ? 'WhatsApp oficial' : 'WhatsApp Web') + '.');
+      pintaCanales();
+      return;
+    }
+    if (ev.target.closest('[data-desconecta-puente]')) {
+      if (!confirm('Se cerrará la sesión de WhatsApp Web del segundo número.\n\n'
+        + 'Los chats que entraron por ahí se conservan, pero dejarás de recibir mensajes nuevos '
+        + 'por ese número hasta volver a conectarlo.\n\n¿Desconectar?')) return;
+      const r = await llama({ action:'logoutBridge' });
+      avisa(r.ok ? 'WhatsApp Web desconectado' : 'No se pudo desconectar', r.ok ? '' : r.error);
+      pintaCanales();
+      return;
+    }
+    if (ev.target.closest('[data-conecta-puente]')) {
+      const r = await llama({ action:'requestBridgePairing' });
+      if (!r.ok) return avisa('No se pudo pedir el código', r.error);
+      abreModal('<div class="mtapa"><b>Conectar WhatsApp Web</b><button class="cerrarm" data-cerrar>×</button></div>'
+        + '<div class="mcuerpo"><p class="aviso">En el teléfono del segundo número: '
+        + 'WhatsApp → Dispositivos vinculados → Vincular con número de teléfono.</p>'
+        + '<div class="codigo">' + esc(r.code || r.pairing_code || '—') + '</div></div>');
+      $('modal').querySelectorAll('[data-cerrar]').forEach(b => { b.onclick = cierraModal; });
+    }
+  };
 }
 
 /* ---- Configuración ------------------------------------------------------- */
@@ -2702,11 +2871,64 @@ async function simulaBroadcast(){
   }
 }
 
+// ===== ANTI-BLOQUEO =====
+// Esto no es prudencia excesiva. Cuando Meta degrada la calidad de un numero, la
+// penalizacion tarda SEMANAS en irse y no hay a quien reclamar: el negocio se queda sin
+// su via principal de venta. Las cuatro cosas que mas la disparan son mandar el mismo
+// texto a mucha gente, mandar mucho de golpe, mandar a horas raras, y seguir mandando
+// cuando ya empezaron a fallar los envios.
+const ANTIBLOQUEO = {
+  topeDiario: 250,        // por encima de esto un numero nuevo empieza a marcarse
+  porMinuto: 12,          // ritmo humano, no rafaga
+  horaDesde: 8,           // no se escribe de madrugada: molesta y se reporta
+  horaHasta: 21,
+  fallosSeguidosParaCortar: 5,
+};
+
+function ventanaHorariaOk(){
+  const h = new Date().getHours();
+  return h >= ANTIBLOQUEO.horaDesde && h < ANTIBLOQUEO.horaHasta;
+}
+
+// Personaliza el texto por contacto. Meta no compara textos literalmente, pero mandar
+// el MISMO mensaje a doscientas personas es el patron mas facil de detectar y el que
+// mas reportes de spam genera.
+function personaliza(texto, c){
+  const nombre = (c.customer_name || c.contact_name || '').trim().split(/\s+/)[0] || '';
+  let t = String(texto || '')
+    .replace(/\{nombre\}/gi, nombre)
+    .replace(/\{categoria\}/gi, c.interested_category || '')
+    .replace(/\{combo\}/gi, c.selected_combo_name || '');
+  // Si el texto no trae ningun hueco, se le antepone el saludo con su nombre: sin esto
+  // todos recibirian una copia identica.
+  if (nombre && !/\{nombre\}/i.test(texto) && !t.toLowerCase().startsWith('hola')) {
+    t = 'Hola ' + nombre + ', ' + t.charAt(0).toLowerCase() + t.slice(1);
+  }
+  return t.replace(/\s{2,}/g, ' ').trim();
+}
+
+function avisoAntibloqueo(cuantos){
+  const problemas = [];
+  if (!ventanaHorariaOk()) problemas.push('Son las ' + new Date().getHours() + 'h. '
+    + 'Fuera de ' + ANTIBLOQUEO.horaDesde + '–' + ANTIBLOQUEO.horaHasta + 'h la gente reporta más.');
+  if (cuantos > ANTIBLOQUEO.topeDiario) problemas.push(cuantos + ' supera el tope diario de '
+    + ANTIBLOQUEO.topeDiario + '. Divídelo en varios días.');
+  const minutos = Math.ceil(cuantos / ANTIBLOQUEO.porMinuto);
+  return { problemas, minutos };
+}
+
 async function enviaBroadcast(){
   if (!AUDIENCIA) return;
   const cuantos = Number(AUDIENCIA.found || 0);
-  if (!confirm('Se enviará a ' + cuantos + ' contactos reales. Esto no se puede deshacer.\n\n¿Confirmas?')) return;
+  const { problemas, minutos } = avisoAntibloqueo(cuantos);
+  if (problemas.length && !confirm('Ojo antes de enviar:\n\n• ' + problemas.join('\n• ')
+    + '\n\nUna penalización de Meta tarda semanas en irse.\n\n¿Enviar igualmente?')) return;
+  if (!confirm('Se enviará a ' + cuantos + ' contactos reales, personalizando cada mensaje.\n'
+    + 'Tardará unos ' + minutos + ' minuto(s) para no ir en ráfaga.\n\n'
+    + 'Esto no se puede deshacer. ¿Confirmas?')) return;
   const cuerpo = cuerpoBc(false);
+  cuerpo.personalizar = true;
+  cuerpo.ritmo_por_minuto = ANTIBLOQUEO.porMinuto;
   // Se envia sobre los ids QUE SE ENSEÑARON, no sobre una audiencia recalculada: entre
   // la simulacion y la confirmacion puede haber entrado gente nueva que nadie reviso.
   if (Array.isArray(AUDIENCIA.ids) && AUDIENCIA.ids.length) cuerpo.only_ids = AUDIENCIA.ids;
@@ -2725,6 +2947,143 @@ async function enviaBroadcast(){
           + (r.errors || []).slice(0,10).map(e => esc(e.error)).join('<br>') + '</div>' : '')
     + '</div></div>';
   avisa('Broadcast enviado', Number(r.sent || 0) + ' de ' + cuantos);
+}
+
+/* ---- Acciones en lote ---------------------------------------------------- */
+// Apagarle las comunicaciones a cien personas de una vez tiene que ser dificil de
+// hacer sin querer y facil de entender: se dice cuantos, que les pasa, y hay que
+// escribir la palabra. Y va de uno en uno con su motivo, porque si falla en el 40 hay
+// que saber cuales quedaron hechos.
+const LOTE = new Set();
+
+function pintaLote(){
+  const b = $('barraLote'); if (!b) return;
+  b.hidden = LOTE.size === 0;
+  if (!LOTE.size) return;
+  b.innerHTML = '<span><b>' + LOTE.size + '</b> seleccionado(s)</span>'
+    + '<button class="btn-linea" data-lote="etq">Etiquetar</button>'
+    + '<button class="btn-linea" data-lote="desinteres">Desinteresado</button>'
+    + '<button class="btn-linea danger" data-lote="apagar">Apagar bot y marketing</button>'
+    + '<button class="btn-linea" data-lote="nada">Quitar selección</button>';
+}
+
+function cableaLote(){
+  const b = $('barraLote'); if (!b) return;
+  b.onclick = async ev => {
+    const btn = ev.target.closest('[data-lote]'); if (!btn) return;
+    const op = btn.dataset.lote;
+    const ids = [...LOTE];
+    if (op === 'nada') { LOTE.clear(); pintaLote(); pintaChats(); return; }
+
+    if (op === 'etq') {
+      const e = (window.prompt('Etiqueta para los ' + ids.length + ' seleccionados:') || '').trim().toLowerCase();
+      if (!e) return;
+      return corridaLote(ids, async c => llama({ action:'updateLead', conversation_id:c.id || c._id,
+        fields:{ labels: [...new Set([...etiquetasDe(c), e])] } }), 'Etiquetados');
+    }
+
+    if (op === 'desinteres') {
+      if (!confirm('Se marcarán ' + ids.length + ' contactos como desinteresados.\n\n'
+        + 'Dejan de recibir marketing, seguimientos y auto-plantillas. Pueden seguir escribiendo '
+        + 'y se les puede contestar a mano.\n\n¿Seguro?')) return;
+      return corridaLote(ids, async c => llama({ action:'disinterest', operation:'mark',
+        conversation_id:c.id || c._id, reason:'marcado en lote desde la lista' }), 'Marcados');
+    }
+
+    if (op === 'apagar') {
+      // Exclusion permanente: la mas grave de todas, y en lote. Por eso se escribe.
+      const frase = 'APAGAR ' + ids.length;
+      const escrito = window.prompt('Se apagarán bot, promociones y seguimientos para '
+        + ids.length + ' contactos, de forma permanente.\n\n'
+        + 'Los mensajes que ellos manden se seguirán recibiendo.\n\n'
+        + 'Escribe ' + frase + ' para confirmar:') || '';
+      if (escrito !== frase) return;
+      return corridaLote(ids, async c => llama({ action:'communicationPolicy', operation:'block',
+        conversation_id:c.id || c._id, confirmation:'DESACTIVAR CONTACTO',
+        reason:'exclusión en lote desde la lista' }), 'Apagados');
+    }
+  };
+}
+
+async function corridaLote(ids, hacer, verbo){
+  const b = $('barraLote');
+  let hechos = 0; const fallos = [];
+  for (const id of ids) {
+    const c = CONVS.find(x => x._id === id);
+    if (!c) continue;
+    b.innerHTML = '<span><span class="cargando"></span> ' + verbo.toLowerCase() + ' '
+      + (hechos + 1) + ' de ' + ids.length + '…</span>';
+    const r = await hacer(c);
+    if (r?.ok) hechos++; else fallos.push(nombreDe(c) + ': ' + (r?.error || 'error'));
+  }
+  LOTE.clear(); pintaLote(); pintaChats();
+  // Se dice cuantos salieron y cuantos no. Un "listo" a secas esconde los que fallaron.
+  avisa(verbo + ' ' + hechos + ' de ' + ids.length,
+    fallos.length ? fallos.slice(0,3).join(' · ') : '');
+}
+
+/* ---- Recordatorios desde el chat ----------------------------------------- */
+// Dos cosas distintas con la misma pantalla, porque en la practica son la misma:
+// acordarse de algo, o que el cliente reciba algo. La fecha se guarda en follow_up_at,
+// que es de donde sale la vista de Recordatorios y lo que mira el motor de seguimientos.
+function abreRecordatorio(c){
+  if (!c) return;
+  const en = h => { const d = new Date(Date.now() + h*3600000); d.setMinutes(0,0,0); return d; };
+  const iso = d => new Date(d.getTime() - d.getTimezoneOffset()*60000).toISOString().slice(0,16);
+  abreModal('<div class="mtapa"><b>Recordatorio · ' + esc(nombreDe(c)) + '</b>'
+    + '<button class="cerrarm" data-cerrar>×</button></div>'
+    + '<div class="mcuerpo">'
+    + '<div class="pdfs" style="margin-bottom:12px">'
+    +   '<button class="tplchip" data-en="4">En 4 horas</button>'
+    +   '<button class="tplchip" data-en="24">Mañana</button>'
+    +   '<button class="tplchip" data-en="72">En 3 días</button>'
+    +   '<button class="tplchip" data-en="168">En una semana</button>'
+    + '</div>'
+    + '<div class="campo"><label>Cuándo</label>'
+    +   '<input type="datetime-local" id="recCuando" value="' + iso(en(24)) + '"></div>'
+    + '<div class="campo"><label>Para acordarme de…</label>'
+    +   '<textarea id="recNota" rows="2" placeholder="Ej. confirmar si consiguió la fecha">'
+    +   esc(c.next_step_suggested || '') + '</textarea></div>'
+    + '<div class="checkrow" style="display:flex;gap:8px;align-items:flex-start;margin-bottom:10px">'
+    +   '<input type="checkbox" id="recEnviar2" style="width:auto;margin-top:3px">'
+    +   '<label for="recEnviar2" style="text-transform:none;letter-spacing:0;font-size:12.5px;'
+    +     'font-weight:400;color:var(--mut)">Además, prepararle un mensaje al cliente para ese día '
+    +     '<b>(no sale solo: llegado el momento aparece aquí para revisarlo y enviarlo)</b></label>'
+    + '</div>'
+    + '<div class="campo" id="recMsgCampo" hidden><label>Mensaje</label>'
+    +   '<textarea id="recMensaje" rows="3" placeholder="Hola {nombre}, ¿pudiste ver lo que te mandé?"></textarea>'
+    +   '<p class="aviso" style="margin:6px 0 0">Si han pasado más de 24 h desde su último mensaje, '
+    +     'solo llegará con plantilla aprobada. Se avisará entonces.</p></div>'
+    + '</div>'
+    + '<div class="mpatas"><button class="btn-linea" data-cerrar>Cancelar</button>'
+    +   '<button class="btn-solido" id="recGuardar">Guardar recordatorio</button></div>');
+  $('modal').querySelectorAll('[data-cerrar]').forEach(b => { b.onclick = cierraModal; });
+  $('modal').querySelector('.pdfs').onclick = ev => {
+    const b = ev.target.closest('[data-en]'); if (!b) return;
+    $('recCuando').value = iso(en(Number(b.dataset.en)));
+  };
+  $('recEnviar2').onchange = ev => { $('recMsgCampo').hidden = !ev.target.checked; };
+  $('recGuardar').onclick = async () => {
+    const cuando = $('recCuando').value;
+    if (!cuando) return avisa('Falta la fecha');
+    const campos = {
+      follow_up_at: new Date(cuando).toISOString(),
+      next_step_suggested: $('recNota').value.trim() || c.next_step_suggested || '',
+    };
+    // El mensaje se guarda como borrador en la ficha, no se programa un envio ciego.
+    // Un mensaje que sale solo dentro de tres dias puede llegar cuando ya no aplica.
+    if ($('recEnviar2').checked && $('recMensaje').value.trim()) {
+      campos.pending_questions = $('recMensaje').value.trim();
+    }
+    $('recGuardar').disabled = true;
+    const r = await llama({ action:'updateLead', conversation_id: c.id || c._id, fields: campos });
+    $('recGuardar').disabled = false;
+    if (!r.ok) return avisa('No se pudo guardar', r.error);
+    Object.assign(c, campos);
+    cierraModal();
+    avisa('Recordatorio guardado', new Date(cuando).toLocaleString('es-DO', { dateStyle:'medium', timeStyle:'short' }));
+    if (vistaActual === 'reminders') pintaRecordatorios();
+  };
 }
 
 /* ---- Etiquetas manuales -------------------------------------------------- */
