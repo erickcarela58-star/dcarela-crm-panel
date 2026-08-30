@@ -1275,10 +1275,7 @@ function cableaChat(c){
     const b = ev.target.closest('[data-mas]'); if (!b) return;
     mas.classList.remove('on');
     if (b.dataset.mas === 'recordar') return abreRecordatorio(sel);
-    if (b.dataset.mas === 'encuesta') {
-      const r = await llama({ action:'surveyInvite', conversation_id: sel.id || sel._id });
-      avisa(r.ok ? 'Encuesta enviada' : 'No se pudo enviar', r.ok ? '' : r.error);
-    } else {
+    if (b.dataset.mas === 'encuesta') { abreEncuesta(sel); } else {
       if (!confirm('¿Cerrar esta conversación?')) return;
       const r = await llama({ action:'updateLead', conversation_id: sel.id || sel._id,
         fields:{ status:'closed', lead_status:'cerrado' } });
@@ -2583,6 +2580,9 @@ const TABLERO = {
     ],
   },
   satisfaccion: {
+    // El scorecard por colaborador va encima de la tabla: la nota media de cada persona
+    // es lo que se mira aqui, no la lista de reseñas una a una.
+    encabezado: pintaScorecard,
     titulo: 'Satisfacción',
     bajada: 'Lo que contestaron los clientes en la encuesta. Se pide desde el menú «⋯» de cada chat.',
     tabla: 'reviews',
@@ -2627,6 +2627,48 @@ function estrellas(n){
   return v ? '★'.repeat(Math.min(5, v)) + '☆'.repeat(Math.max(0, 5 - v)) : '—';
 }
 
+// Nota media por persona, con su conteo. La media sin el numero de reseñas engaña: un
+// 5 de una sola opinion no es mejor que un 4,6 de treinta.
+async function pintaScorecard(filas){
+  const equipo = await cargaColaboradores();
+  const porPersona = new Map();
+  let huerfanas = 0;
+  for (const r of filas) {
+    const id = r.collaborator_id;
+    if (!id) { huerfanas++; continue; }
+    const notas = [r.rating_service, r.rating_satisfaction].map(Number).filter(n => n > 0);
+    if (!notas.length) continue;
+    const media = notas.reduce((a,b) => a+b, 0) / notas.length;
+    const p = porPersona.get(id) || { suma:0, n:0 };
+    p.suma += media; p.n += 1;
+    porPersona.set(id, p);
+  }
+  const nombreDe2 = id => {
+    const x = equipo.find(e => String(e.id) === String(id));
+    return x ? (x.name || x.display_name || x.email || 'sin nombre') : 'colaborador ' + String(id).slice(0,6);
+  };
+  const rank = [...porPersona.entries()]
+    .map(([id,p]) => ({ id, nombre: nombreDe2(id), media: p.suma / p.n, n: p.n }))
+    .sort((a,b) => b.media - a.media);
+
+  if (!rank.length && !huerfanas) return '';
+  return '<div class="pgraf" style="max-width:1000px;margin-bottom:16px">'
+    + '<div class="pgcab"><b>Por colaborador</b><span>nota media · nº de opiniones</span></div>'
+    + (rank.length
+      ? '<div class="barras">' + rank.map(x =>
+          '<div class="barra"><span class="be">' + esc(x.nombre) + '</span>'
+          + '<span class="bp"><i style="width:' + Math.round(x.media / 5 * 100) + '%"></i></span>'
+          + '<span class="bn">' + x.media.toFixed(1) + ' <em style="font-style:normal;color:var(--mut);font-weight:400">('
+          + x.n + ')</em></span></div>').join('') + '</div>'
+      : '')
+    // Se dice cuantas no cuentan y por que. Un ranking incompleto sin avisar hace creer
+    // que alguien atiende poco cuando lo que pasa es que no se anoto quien atendio.
+    + (huerfanas ? '<p class="cfgnota" style="margin:' + (rank.length ? '12px 0 0' : '0') + '">'
+        + huerfanas + ' opinión(es) sin colaborador asignado: no cuentan aquí. '
+        + 'Al enviar la encuesta desde el chat, elige quién atendió.</p>' : '')
+    + '</div>';
+}
+
 async function montaTablero(id){
   const d = TABLERO[id];
   if (!montadas.has(id)) {
@@ -2660,7 +2702,8 @@ async function pintaTablero(id){
     return;
   }
   const anchos = d.cols.map(() => 'minmax(0,1fr)').join(' ');
-  cont.innerHTML = '<div class="tabla" style="max-width:1000px">'
+  cont.innerHTML = (d.encabezado ? await d.encabezado(filas) : '')
+    + '<div class="tabla" style="max-width:1000px">'
     + '<div class="fila cabecera" style="grid-template-columns:' + anchos + '">'
     +   d.cols.map(c => '<span>' + esc(c.t) + '</span>').join('') + '</div>'
     + filas.map(f => '<div class="fila" style="grid-template-columns:' + anchos + '">'
@@ -3449,6 +3492,68 @@ async function corridaLote(ids, hacer, verbo){
   // Se dice cuantos salieron y cuantos no. Un "listo" a secas esconde los que fallaron.
   avisa(verbo + ' ' + hechos + ' de ' + ids.length,
     fallos.length ? fallos.slice(0,3).join(' · ') : '');
+}
+
+/* ---- Encuesta de satisfacción -------------------------------------------- */
+// Se pregunta QUIEN atendio antes de mandarla. Sin eso la reseña se guarda sin
+// collaborator_id y el scorecard por colaborador sale vacio para siempre: el dato no se
+// puede reconstruir despues, porque nadie se acuerda de quien atendio hace tres semanas.
+let COLABORADORES = null;
+
+async function cargaColaboradores(){
+  if (COLABORADORES) return COLABORADORES;
+  const r = await llama({ action:'data', table:'collaborators', operation:'select', limit:100 });
+  COLABORADORES = r.ok ? (r.data || r.rows || []) : [];
+  return COLABORADORES;
+}
+
+function abreEncuesta(c){
+  if (!c) return;
+  const nombre = (c.customer_name || c.contact_name || '').trim().split(/\s+/)[0] || '';
+  const porDefecto = (nombre ? 'Hola ' + nombre + '. ' : 'Hola. ')
+    + '¿Nos regalas un minuto para contarnos cómo te fue con nosotros? '
+    + 'Nos ayuda muchísimo a mejorar.';
+  abreModal('<div class="mtapa"><b>Encuesta de satisfacción</b>'
+    + '<button class="cerrarm" data-cerrar>×</button></div>'
+    + '<div class="mcuerpo">'
+    + '<div class="dato"><div class="k">Para</div><div class="v">' + esc(nombreDe(c))
+    +   ' · +' + esc(c.wa_phone || '') + ' · ' + esc(CANALES[canalDe(c)].corto) + '</div></div>'
+    + '<div class="campo"><label>¿Quién atendió a este cliente?</label>'
+    +   '<select id="encColab"><option value="">— sin especificar —</option></select>'
+    +   '<p class="aviso" style="margin:6px 0 0">Si no se elige, la reseña no cuenta para nadie en el '
+    +     'ranking del equipo, y eso no se puede arreglar después.</p></div>'
+    + '<div class="campo"><label>Mensaje</label>'
+    +   '<textarea id="encMsg" rows="4">' + esc(porDefecto) + '</textarea></div>'
+    + '</div>'
+    + '<div class="mpatas"><button class="btn-linea" data-cerrar>Cancelar</button>'
+    +   '<button class="btn-solido" id="encEnviar">Enviar encuesta</button></div>');
+  $('modal').querySelectorAll('[data-cerrar]').forEach(b => { b.onclick = cierraModal; });
+
+  cargaColaboradores().then(lista => {
+    const s = $('encColab'); if (!s) return;
+    s.innerHTML = '<option value="">— sin especificar —</option>'
+      + lista.map(x => '<option value="' + esc(x.id || '') + '">'
+        + esc(x.name || x.display_name || x.email || 'sin nombre') + '</option>').join('');
+    if (!lista.length) s.innerHTML += '<option disabled>(no hay equipo dado de alta)</option>';
+  });
+
+  $('encEnviar').onclick = async () => {
+    const b = $('encEnviar');
+    b.disabled = true;
+    // El canal decide la via, igual que al enviar un mensaje normal. El segundo numero
+    // no pasa por la Cloud API: mandarlo por ahi responde "canal incorrecto".
+    const porPuente = canalDe(c) === 'whatsapp_qr';
+    const r = porPuente
+      ? await llama({ action:'bridgeQueue', conversation_id: c.id || c._id, body: $('encMsg').value.trim() })
+      : await llama({ action:'surveyInvite', conversation_id: c.id || c._id,
+          collaborator_id: $('encColab').value || null, intro: $('encMsg').value.trim() });
+    b.disabled = false;
+    if (!r.ok) return avisa('No se pudo enviar', traduceErrorMeta(r.error));
+    cierraModal();
+    avisa('Encuesta enviada', porPuente
+      ? 'Va por WhatsApp Web; el enlace de la reseña se crea al entregarse.'
+      : 'Cuando conteste aparecerá en Satisfacción.');
+  };
 }
 
 /* ---- Recordatorios desde el chat ----------------------------------------- */
