@@ -909,7 +909,7 @@ function escuchaConversaciones(){
       .sort((a,b) => String(b.last_message_at||'').localeCompare(String(a.last_message_at||'')));
     marcaEstado(true, 'Datos sincronizados · en vivo');
     if (vistaActual === 'conversations') pintaChats();
-    if (vistaActual === 'funnel') pintaKanban();
+    if (vistaActual === 'funnel') { pintaKanban(); pintaMovilizacion(); }
     if (vistaActual === 'dashboard') pintaDashboard();
     if (vistaActual === 'agenda') pintaAgenda();
     if (vistaActual === 'reminders') pintaRecordatorios();
@@ -3059,9 +3059,14 @@ function montaFunnel(){
     montadas.add('funnel');
     hueco('funnel', '<div class="hoja"><h1>Funnel</h1>'
       + '<p class="bajada">Arrastra un contacto a otra columna para cambiarle la etapa.</p>'
-      + '<div class="kanban" id="kanban"></div></div>');
+      + '<div class="kanban" id="kanban"></div>'
+      + '<div class="seccion" style="margin:30px 0 4px">Leads parados</div>'
+      + '<p class="bajada">Por qué no avanzan y qué hacer con cada uno. Nada se mueve solo: '
+      +   'cambiar de etapa cambia lo que el sistema le mandará después.</p>'
+      + '<div id="movil"></div></div>');
   }
   pintaKanban();
+  pintaMovilizacion();
 }
 
 function pintaKanban(){
@@ -3284,6 +3289,108 @@ function pintaDashboard(){
           + '<span class="eb"><i style="width:' + (embudo[0].v ? Math.round(f.v / embudo[0].v * 100) : 0) + '%"></i></span>'
           + '<span class="ev">' + f.v + (i ? ' <em>' + f.pct + '%</em>' : '') + '</span></div>').join('')
         + '</div>');
+}
+
+/* ---- Movilización de leads ----------------------------------------------- */
+// Un lead se queda parado por razones concretas y casi siempre las mismas. Esto las
+// detecta y dice QUE hacer, con el boton al lado. No mueve nada solo: mover a alguien
+// de etapa cambia lo que el sistema le va a mandar despues.
+const REGLAS_LEAD = [
+  {
+    id: 'sin_categoria',
+    aplica: c => ['nuevo','interesado'].includes(c.lifecycle_stage) && !c.interested_category,
+    titulo: 'No sabemos qué quiere',
+    porque: 'Está interesado pero no hay categoría. Sin eso no se le puede mandar el combo correcto '
+      + 'ni entrar en ninguna campaña segmentada.',
+    hacer: 'Preguntar categoría',
+    prompt: 'Este contacto no tiene categoría. Redacta un mensaje corto y natural para averiguar '
+      + 'qué tipo de sesión quiere, sin que parezca un formulario.',
+  },
+  {
+    id: 'cotiza_sin_fecha',
+    aplica: c => ['interesado','cotizando'].includes(c.lifecycle_stage) && !c.tentative_date,
+    titulo: 'Cotiza pero no pone fecha',
+    porque: 'Sin fecha tentativa no se puede confirmar disponibilidad, y es donde más se cae la venta.',
+    hacer: 'Pedir fecha',
+    prompt: 'Este contacto está cotizando pero no ha dado fecha. Redacta un mensaje que le pida una '
+      + 'fecha tentativa dándole una razón para darla (disponibilidad limitada, sin presionar).',
+  },
+  {
+    id: 'fecha_sin_reserva',
+    aplica: c => c.tentative_date && !['reservado','cliente'].includes(c.lifecycle_stage)
+      && c.reservation_status !== 'confirmado',
+    titulo: 'Tiene fecha pero no ha reservado',
+    porque: 'Ya eligió cuándo. Lo único que falta es el abono, y esta es la etapa que más se enfría.',
+    hacer: 'Pedir el abono',
+    prompt: 'Este contacto ya tiene fecha tentativa pero no ha reservado. Prepara la reserva y '
+      + 'redacta el mensaje del abono con las condiciones de las reglas del negocio.',
+  },
+  {
+    id: 'nos_toca',
+    aplica: c => c.lead_status === 'esperando_nosotros' || (c.human_handoff_required && Number(c.unread||0) > 0),
+    titulo: 'La pelota está de nuestro lado',
+    porque: 'Escribió y sigue esperando respuesta. Cada hora que pasa se enfría.',
+    hacer: 'Abrir el chat',
+    prompt: '',
+  },
+  {
+    id: 'reservado_sin_agenda',
+    aplica: c => c.lifecycle_stage === 'reservado' && !c.scheduled_at,
+    titulo: 'Reservado pero sin hora en agenda',
+    porque: 'Pagó y no está agendado. Es el fallo más caro: el cliente aparece y no hay nadie.',
+    hacer: 'Agendar',
+    prompt: 'Este contacto ya reservó pero no tiene sesión agendada. Redacta el mensaje para cerrar '
+      + 'día y hora concretos.',
+  },
+];
+
+function leadsParados(){
+  const vivos = CONVS.filter(c => !enElOlvido(c)
+    && !['cliente','perdido','desinteresado'].includes(c.lifecycle_stage)
+    && !c.proactive_blocked_at);
+  return REGLAS_LEAD.map(r => ({ regla: r, filas: vivos.filter(r.aplica) })).filter(x => x.filas.length);
+}
+
+function pintaMovilizacion(){
+  const cont = $('movil'); if (!cont) return;
+  const grupos = leadsParados();
+  if (!grupos.length) {
+    cont.innerHTML = '<p class="bajada">Ningún lead está parado por las razones habituales. '
+      + 'Todos tienen categoría, fecha y el siguiente paso claro.</p>';
+    return;
+  }
+  cont.innerHTML = grupos.map(g =>
+    '<div class="pgraf" style="margin-bottom:14px"><div class="pgcab">'
+    + '<b>' + esc(g.regla.titulo) + '</b><span>' + g.filas.length + ' contacto(s)</span></div>'
+    + '<p class="cfgnota">' + esc(g.regla.porque) + '</p>'
+    + '<div class="tabla" style="max-width:none">'
+    + g.filas.slice(0, 25).map(c => '<div class="fila" style="grid-template-columns:minmax(0,2fr) 1fr auto">'
+      + '<span><b>' + esc(nombreDe(c)) + '</b><small>' + esc((c.lifecycle_stage||'nuevo').replace(/_/g,' '))
+      +   ' · ' + llevaDormido(c) + ' días</small></span>'
+      + '<span>' + esc(c.interested_category || '—') + '</span>'
+      + '<span><button class="btn-linea" data-mov="' + esc(g.regla.id) + '" data-conv="' + esc(c._id) + '">'
+      +   esc(g.regla.hacer) + '</button></span></div>').join('')
+    + '</div>'
+    + (g.filas.length > 25 ? '<p class="cfgnota" style="margin-top:8px">y ' + (g.filas.length-25) + ' más</p>' : '')
+    + '</div>').join('');
+
+  cont.onclick = ev => {
+    const b = ev.target.closest('[data-mov]'); if (!b) return;
+    const c = CONVS.find(x => x._id === b.dataset.conv);
+    const r = REGLAS_LEAD.find(x => x.id === b.dataset.mov);
+    if (!c) return;
+    // Se abre la conversacion SIEMPRE, aunque haya prompt: hay que ver con quien se
+    // habla antes de mandarle nada.
+    abre(c);
+    ve('conversations');
+    if (!r?.prompt) return;
+    // Y el prompt se deja preparado en el asistente, no se ejecuta solo.
+    setTimeout(() => {
+      ve('planning');
+      const caja = $('pedido');
+      if (caja) { caja.value = r.prompt; caja.dispatchEvent(new Event('input')); caja.focus(); }
+    }, 250);
+  };
 }
 
 /* ---- Limpieza del histórico ---------------------------------------------- */
