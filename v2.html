@@ -1188,6 +1188,24 @@ function cableaChat(c){
     // texto sale SOLO el texto mientras el panel dice "enviado". Un fallo silencioso
     // hacia un cliente real.
     const conv = sel.id || sel._id;
+    // El canal decide POR DONDE sale. Un chat que entro por WhatsApp Web no puede salir
+    // por el API oficial: el servidor lo rechaza con "canal incorrecto", que es lo que
+    // estaba pasando. Y ese canal todavia no admite archivos, asi que se dice antes de
+    // dejar adjuntar, en vez de fallar despues de subirlo.
+    const porPuente = canalDe(sel) === 'whatsapp_qr';
+    if (porPuente && COLA.length) {
+      env.disabled = false;
+      return avisa('WhatsApp Web todavía no envía archivos',
+        'Ese canal solo admite texto por ahora. Quita el adjunto o escríbele desde el número oficial.');
+    }
+    if (porPuente) {
+      const r = await llama({ action:'bridgeQueue', conversation_id: conv, body: t });
+      env.disabled = false;
+      if (!r.ok) return avisa('No se pudo enviar', traduceErrorMeta(r.error));
+      caja.value = ''; caja.style.height = 'auto';
+      cancelaCita();
+      return;
+    }
     // El audio no admite pie de foto en la API de WhatsApp: si va texto con una nota de
     // voz, el texto se pierde. Por eso el texto viaja con el ultimo adjunto que SI
     // admite pie, y si no hay ninguno se manda aparte.
@@ -1243,7 +1261,13 @@ function traduceErrorMeta(e){
   if (/excluido|blocked/i.test(t)) return 'Este contacto está excluido de comunicaciones.';
   if (/seguimientos|followup_exhausted/i.test(t)) return 'Lleva dos seguimientos sin responder: '
     + 'quedó como desinteresado y no se le insiste más.';
-  if (/transport|reconect/i.test(t)) return 'Meta no está conectada al transporte. Mira Conexión WhatsApp.';
+  if (/transport|reconect/i.test(t)) return 'Meta no está conectada al transporte. Mira Canales.';
+  if (/canal incorrecto/i.test(t)) return 'Este chat entró por otro canal. Se está enviando por la vía '
+    + 'equivocada; mira Canales.';
+  if (/modo seguro|desconectado|pausado/i.test(t)) return 'El segundo WhatsApp no está conectado. '
+    + 'Conéctalo en Canales.';
+  if (/almacenamiento dedicado|bridge_media/i.test(t)) return 'WhatsApp Web todavía no envía archivos, '
+    + 'solo texto.';
   return t;
 }
 
