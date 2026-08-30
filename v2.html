@@ -1797,16 +1797,23 @@ let ctxAudio = null, analizador = null, dibujoT = null, fuenteMic = null;
 // Dibuja el nivel REAL del microfono. Una animacion fija mentiria: con el microfono
 // silenciado o tomado por otra aplicacion se veria igual de viva, y el audio saldria
 // mudo sin que nadie lo notara hasta que el cliente lo dijera.
-function arrancaOndas(stream){
-  const lienzo = $('ondas'); if (!lienzo || !stream) return;
+function arrancaOndas(rec){
+  const lienzo = $('ondas'); if (!lienzo) return;
+  // Se engancha al AudioContext del PROPIO grabador. La version anterior pedia un
+  // segundo micrófono con getUserMedia porque opus-recorder no expone .stream, y abrir
+  // una segunda captura mientras el grabador tiene la suya falla en Windows: ese era el
+  // error que obligaba a recargar la pagina. Aqui no se abre nada nuevo, solo se
+  // escucha el nodo que el grabador ya tiene montado.
   try {
-    ctxAudio = new (window.AudioContext || window.webkitAudioContext)();
-    fuenteMic = ctxAudio.createMediaStreamSource(stream);
+    ctxAudio = rec?.audioContext;
+    const nodo = rec?.recordingGainNode || rec?.monitorGainNode;
+    if (!ctxAudio || !nodo) return;
     analizador = ctxAudio.createAnalyser();
     analizador.fftSize = 256;
     analizador.smoothingTimeConstant = 0.75;
-    fuenteMic.connect(analizador);
-  } catch (e) { return; }
+    nodo.connect(analizador);
+    fuenteMic = nodo;
+  } catch (e) { analizador = null; return; }
 
   const datos = new Uint8Array(analizador.frequencyBinCount);
   const g = lienzo.getContext('2d');
@@ -1838,10 +1845,9 @@ function arrancaOndas(stream){
 function paraOndas(){
   if (dibujoT) cancelAnimationFrame(dibujoT);
   dibujoT = null;
-  try { fuenteMic?.disconnect(); } catch (e) {}
-  // Cerrar el contexto suelta el indicador de microfono del navegador. Dejarlo abierto
-  // deja al usuario creyendo que se le sigue escuchando.
-  try { ctxAudio?.close(); } catch (e) {}
+  // Se desconecta SOLO el analizador. El contexto es del grabador, no mio: cerrarlo
+  // aqui le cortaria la grabacion por debajo justo cuando esta terminando de codificar.
+  try { if (fuenteMic && analizador) fuenteMic.disconnect(analizador); } catch (e) {}
   ctxAudio = analizador = fuenteMic = null;
 }
 
@@ -1888,13 +1894,23 @@ function cableaMicrofono(){
         }
       };
       await grabadora.start();
-    } catch (e) { return avisa('No se pudo grabar', e?.message || String(e)); }
+    } catch (e) {
+      // Se suelta la grabadora fallida: si se queda puesta, el siguiente intento cree
+      // que hay una grabacion en curso y no arranca.
+      grabadora = null;
+      paraOndas();
+      caja.hidden = true;
+      const m = String(e?.message || e);
+      return avisa('No se pudo grabar',
+        /permission|denied|notallowed/i.test(m)
+          ? 'El navegador bloqueó el micrófono. Permítelo en el candado de la barra de direcciones.'
+          : m);
+    }
 
     caja.hidden = false;
-    // opus-recorder guarda el stream del microfono; de ahi salen las ondas. Si en
-    // alguna version no lo expone, se pide uno propio antes que quedarse sin dibujo.
-    if (grabadora.stream) arrancaOndas(grabadora.stream);
-    else navigator.mediaDevices?.getUserMedia({ audio:true }).then(arrancaOndas).catch(() => {});
+    // Las ondas salen del contexto del propio grabador. Si en alguna version no
+    // estuviera, se graba igual: la onda es ayuda visual, no puede tumbar la grabacion.
+    arrancaOndas(grabadora);
     const desde = Date.now();
     $('reloj').textContent = '0:00';
     relojT = setInterval(() => {
