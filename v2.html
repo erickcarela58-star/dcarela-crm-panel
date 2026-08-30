@@ -140,12 +140,30 @@ body.menu-abierto .nav .secundarias{display:block}
 .lista .cabeza{padding:11px 12px 9px;display:flex;flex-direction:column;gap:9px}
 .lista .cabeza input,.lista .cabeza select{width:100%;height:36px;padding:0 12px;
   border:1px solid var(--line);border-radius:var(--r2);background:var(--bg);color:var(--fg);outline:0}
-/* Envuelven en vez de desplazarse. Con scroll lateral y la barra oculta, el ultimo
-   filtro quedaba cortado contra el borde sin ninguna pista de que hubiera mas. */
-.filtros{display:flex;flex-wrap:wrap;gap:6px;padding:0 12px 10px}
+/* Una sola fila que se desliza. Envolvia en dos lineas y comia alto de la lista; con
+   scroll a secas el ultimo quedaba cortado sin pista de que hubiera mas, asi que se
+   arrastra con el raton (ver arrastraFiltros) y se difumina el borde para que se vea
+   que sigue. */
+.filtros{display:flex;gap:6px;padding:0 12px 10px;overflow-x:auto;scrollbar-width:none;
+  cursor:grab;scroll-behavior:smooth;
+  -webkit-mask-image:linear-gradient(90deg,#000 88%,transparent);
+  mask-image:linear-gradient(90deg,#000 88%,transparent)}
+.filtros::-webkit-scrollbar{display:none}
+.filtros.arrastrando{cursor:grabbing;scroll-behavior:auto}
+.filtros.arrastrando .filtro{pointer-events:none}
 .filtro{padding:5px 11px;border-radius:14px;background:var(--hover);color:var(--mut);
   font-size:12px;font-weight:600;white-space:nowrap;flex:0 0 auto}
 .filtro.on{background:var(--ink);color:var(--on-ink)}
+.filtro.etqf{border:1px dashed var(--line2);background:transparent}
+.filtro.etqf.on{background:var(--ink);border-style:solid}
+.etiquetas{display:flex;flex-wrap:wrap;gap:5px}
+.etq{display:inline-flex;align-items:center;gap:5px;padding:4px 9px;border-radius:13px;
+  font-size:11.5px;font-weight:600}
+.etq.puesta{background:var(--ink);color:var(--on-ink)}
+.etq.puesta button{color:inherit;opacity:.65;font-size:13px;line-height:1}
+.etq.puesta button:hover{opacity:1}
+.etq.sug{border:1px dashed var(--line2);color:var(--mut)}
+.etq.sug:hover{border-style:solid;color:var(--fg)}
 .filtro b{margin-left:5px;opacity:.65;font-weight:700}
 .chats{flex:1;overflow-y:auto}
 
@@ -372,6 +390,46 @@ video.mmedia{cursor:default}
 .cargando{display:inline-block;width:15px;height:15px;border:2px solid var(--line2);
   border-top-color:var(--ink);border-radius:50%;animation:giro .7s linear infinite;vertical-align:-3px}
 @keyframes giro{to{transform:rotate(360deg)}}
+
+/* --- Asistente de planificación --------------------------------------------- */
+/* Ocupa la vista entera y se comporta como el chat: cabecera fija, hilo que crece
+   hacia abajo y entrada abajo del todo. Un formulario con un boton "Proponer" no
+   invita a seguir hablando; esto si. */
+.asistente{flex:1;min-width:0;display:flex;flex-direction:column;height:100%;background:var(--bg)}
+.acab{display:flex;align-items:center;justify-content:space-between;gap:12px;
+  padding:13px 22px;border-bottom:1px solid var(--line);background:var(--panel)}
+.acab b{display:block;font-size:14px}
+.acab span{display:block;font-size:11.5px;color:var(--mut);margin-top:1px}
+.ahilo{flex:1;overflow-y:auto;padding:22px 22px 8px;display:flex;flex-direction:column;gap:12px}
+.aturno{display:flex}
+.aturno.yo{justify-content:flex-end}
+.aburbuja{max-width:min(76%,720px);padding:12px 15px;border-radius:var(--r2);
+  font-size:13.5px;line-height:1.5;white-space:pre-wrap;word-break:break-word}
+.aturno.yo .aburbuja{background:var(--ink);color:var(--on-ink);white-space:pre-wrap}
+.aturno.ia .aburbuja{background:var(--panel);border:1px solid var(--line);white-space:normal}
+.aimgs{display:block;margin-top:5px;font-size:11px;opacity:.7}
+.afila{margin-bottom:9px}
+.afila:last-child{margin-bottom:0}
+.afila b{display:block;font-size:9.5px;font-weight:800;letter-spacing:.7px;
+  text-transform:uppercase;color:var(--mut);margin-bottom:2px}
+.aacciones{margin-top:12px;padding-top:11px;border-top:1px solid var(--line)}
+.aacciones>b{display:block;font-size:9.5px;font-weight:800;letter-spacing:.7px;
+  text-transform:uppercase;color:var(--mut);margin-bottom:7px}
+.aaccion{padding:9px 11px;border:1px solid var(--line);border-radius:var(--r);margin-bottom:6px}
+.aaccion span{font-weight:600;font-size:13px}
+.aaccion i{display:block;font-style:normal;font-size:12px;color:var(--mut);margin-top:2px}
+.apr{margin-top:10px}
+.ahecho{margin-top:10px;font-size:12.5px;font-weight:650;color:var(--ok)}
+.abienvenida{margin:auto;max-width:560px;text-align:center;color:var(--mut)}
+.abienvenida b{display:block;font-size:17px;color:var(--fg);margin-bottom:6px}
+.abienvenida p{margin:0 0 18px;font-size:13px;line-height:1.5}
+.awiz{display:flex;flex-wrap:wrap;gap:7px;justify-content:center}
+.acola{display:flex;flex-wrap:wrap;gap:6px;padding:0 22px 8px}
+.aentrada{display:flex;align-items:flex-end;gap:9px;padding:12px 22px 18px;
+  border-top:1px solid var(--line);background:var(--panel)}
+.aentrada textarea{flex:1;min-height:42px;max-height:160px;padding:11px 15px;resize:none;
+  border:1px solid var(--line);border-radius:var(--r2);background:var(--bg);color:var(--fg);outline:0}
+.aentrada textarea:focus{border-color:var(--line2)}
 
 /* --- Modal ----------------------------------------------------------------- */
 .modal{display:none;position:fixed;inset:0;z-index:80;background:rgba(11,20,26,.55);
@@ -632,10 +690,8 @@ const VISTAS = [
   { id:'prospecting',   nombre:'Prospección',   icono:ico('<circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4M11 7v8M7 11h8"/>') },
   { id:'poscustomers',  nombre:'Clientes de caja', icono:ico('<path d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M19 8v6M22 11h-6"/>') },
   { id:'satisfaccion',  nombre:'Satisfacción',  icono:ico('<path d="M12 17.3l-5.5 3 1-6.1L3 9.8l6.1-.9L12 3.3l2.9 5.6 6.1.9-4.5 4.4 1 6.1z"/>') },
+  { id:'campanas',      nombre:'Campañas',      icono:ico('<path d="M3 11l18-8-7 18-2-8-9-2z"/>') },
   { id:'plantillas',    nombre:'Plantillas',    icono:ico('<rect x="5" y="5" width="14" height="16" rx="2"/><path d="M9 11h6M9 15h4"/>') },
-  { id:'ads',           nombre:'Estudio de Anuncios', icono:ico('<path d="M3 11v2a2 2 0 002 2h2l4 4V5L7 9H5a2 2 0 00-2 2z"/><path d="M15 9a4 4 0 010 6"/>') },
-  { id:'marketing',     nombre:'Marketing y permisos', icono:ico('<circle cx="12" cy="12" r="10"/><path d="M8.5 12l2.2 2.2 4.8-5.1"/>') },
-  { id:'estados',       nombre:'Pack de Estados', icono:ico('<rect x="3" y="3" width="13" height="18" rx="2"/><path d="M19 6v13a2 2 0 01-2 2H8"/>') },
   { id:'reminders',     nombre:'Recordatorios', icono:ico('<path d="M18 8a6 6 0 00-12 0c0 7-3 9-3 9h18s-3-2-3-9M13 21a2 2 0 01-4 0"/>') },
   { id:'bridge',        nombre:'Conexión WhatsApp', icono:ico('<rect x="8" y="2" width="8" height="20" rx="3"/>') },
   { id:'config',        nombre:'Configuración',  icono:ico('<circle cx="12" cy="12" r="3"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3"/>') },
@@ -775,14 +831,12 @@ function monta(id){
   if (id === 'conversations') return montaConversaciones();
   if (id === 'planning') return montaPlanificacion();
   if (id === 'plantillas') return montaPlantillasVista();
-  if (id === 'marketing') return montaBroadcast();
+  if (id === 'campanas') return montaBroadcast();
   if (id === 'funnel') return montaFunnel();
   if (id === 'dashboard') return montaDashboard();
   if (TABLERO[id]) return montaTablero(id);
-  if (id === 'ads') return montaAnuncios();
   if (id === 'agenda') return montaAgenda();
   if (id === 'reminders') return montaRecordatorios();
-  if (id === 'estados') return montaEstados();
   if (id === 'bridge') return montaConexion();
   if (id === 'config') return montaConfig();
   if (id === 'manual') { window.open('./manual.html', '_blank', 'noopener'); return ve('conversations'); }
@@ -815,11 +869,49 @@ function montaConversaciones(){
     if (!b) return;
     filtro = b.dataset.filtro; pintaChats();
   });
+  arrastraFiltros($('filtros'));
   $('chats').addEventListener('click', ev => {
     const f = ev.target.closest('[data-conv]');
     if (f) abre(CONVS.find(c => c._id === f.dataset.conv));
   });
   pintaChats();
+}
+
+// Arrastrar con el raton para deslizar los filtros. En tactil ya funciona solo; en
+// escritorio no hay gesto y la rueda tampoco desplaza en horizontal, asi que sin esto
+// los ultimos filtros son inalcanzables con el raton.
+function arrastraFiltros(caja){
+  if (!caja) return;
+  let activo = false, inicioX = 0, inicioScroll = 0, movido = 0;
+  caja.addEventListener('pointerdown', ev => {
+    if (ev.pointerType === 'touch') return;   // el tactil ya lo hace el navegador
+    activo = true; movido = 0;
+    inicioX = ev.clientX; inicioScroll = caja.scrollLeft;
+    caja.setPointerCapture(ev.pointerId);
+  });
+  caja.addEventListener('pointermove', ev => {
+    if (!activo) return;
+    const d = ev.clientX - inicioX;
+    movido = Math.max(movido, Math.abs(d));
+    // Solo a partir de 4px se considera arrastre; por debajo es un clic con pulso y
+    // bloquear el boton ahi haria que los filtros no se pudieran pulsar.
+    if (movido > 4) caja.classList.add('arrastrando');
+    caja.scrollLeft = inicioScroll - d;
+  });
+  const soltar = ev => {
+    if (!activo) return;
+    activo = false;
+    try { caja.releasePointerCapture(ev.pointerId); } catch (e) {}
+    setTimeout(() => caja.classList.remove('arrastrando'), 0);
+  };
+  caja.addEventListener('pointerup', soltar);
+  caja.addEventListener('pointercancel', soltar);
+  // La rueda vertical desplaza en horizontal: es lo que espera cualquiera con raton.
+  caja.addEventListener('wheel', ev => {
+    if (Math.abs(ev.deltaY) <= Math.abs(ev.deltaX)) return;
+    ev.preventDefault();
+    caja.scrollLeft += ev.deltaY;
+  }, { passive:false });
 }
 
 function filtradas(){
@@ -828,6 +920,7 @@ function filtradas(){
     if (filtro === 'sinleer' && !(Number(c.unread || 0) > 0)) return false;
     if (filtro === 'humano' && !(c.mode === 'human' || c.human_handoff_required)) return false;
     if (filtro === 'bot' && c.mode !== 'bot') return false;
+    if (filtro.startsWith('etq:') && !etiquetasDe(c).includes(filtro.slice(4))) return false;
     if (!t) return true;
     return (nombreDe(c) + ' ' + (c.wa_phone||'') + ' ' + (c.last_message_preview||'')).toLowerCase().includes(t);
   });
@@ -839,9 +932,17 @@ function pintaChats(){
     : f === 'sinleer' ? Number(c.unread||0) > 0
     : f === 'humano' ? (c.mode === 'human' || c.human_handoff_required)
     : c.mode === 'bot').length;
-  $('filtros').innerHTML = [['todos','Todos'],['sinleer','Sin leer'],['humano','Humano'],['bot','Bot']]
-    .map(([f,n]) => '<button class="filtro' + (filtro===f?' on':'') + '" data-filtro="' + f + '">'
-      + n + '<b>' + cuenta(f) + '</b></button>').join('');
+  // Las etiquetas se añaden como filtros detras de los fijos: son las que el equipo
+  // inventa, y sin poder filtrar por ellas no sirven para nada.
+  const porEtiqueta = etiquetasEnUso().map(e => ['etq:' + e, e]);
+  $('filtros').innerHTML = [['todos','Todos'],['sinleer','Sin leer'],['humano','Humano'],['bot','Bot'], ...porEtiqueta]
+    .map(([f,n]) => {
+      const n2 = f.startsWith('etq:')
+        ? CONVS.filter(c => etiquetasDe(c).includes(f.slice(4))).length
+        : cuenta(f);
+      return '<button class="filtro' + (filtro===f?' on':'') + (f.startsWith('etq:')?' etqf':'')
+        + '" data-filtro="' + esc(f) + '">' + esc(n) + '<b>' + n2 + '</b></button>';
+    }).join('');
 
   const filas = filtradas();
   if (!filas.length) {
@@ -1965,6 +2066,13 @@ function pintaFicha(c){
     +   '<div class="dato"><div class="k">Último intent</div><div class="v">' + esc(c.last_intent || 'pendiente') + '</div></div>'
     + '</div></details>'
 
+    + '<details class="grupo" open><summary>Etiquetas</summary><div class="dentro">'
+    +   '<div class="etiquetas" id="etiquetas"></div>'
+    +   '<div class="campo" style="margin:8px 0 0"><input id="etqNueva" placeholder="Nueva etiqueta y Enter"></div>'
+    +   '<p class="aviso" style="margin:7px 0 0">Sirven para filtrar la lista y para elegir '
+    +     'audiencia en Campañas.</p>'
+    + '</div></details>'
+
     + '<details class="grupo" open><summary>Resumen y próximo paso</summary><div class="dentro">'
     +   '<div class="campo"><label>Resumen</label><textarea data-c="conversation_summary" rows="3">' + esc(c.conversation_summary || '') + '</textarea></div>'
     +   '<div class="campo"><label>Próximo paso</label><textarea data-c="next_step_suggested" rows="2">' + esc(c.next_step_suggested || '') + '</textarea></div>'
@@ -1979,6 +2087,7 @@ function pintaFicha(c){
 
   // Cerrar la ficha tiene que poder deshacerse. En la primera version no habia forma
   // de volver a abrirla sin cambiar de conversacion y regresar.
+  cableaEtiquetas(c);
   $('cerrarFicha').onclick = () => { $('ficha').classList.remove('on'); $('ficha').style.display = 'none'; };
   const ver = $('verFicha');
   if (ver) ver.onclick = () => {
@@ -2210,76 +2319,6 @@ function pintaRecordatorios(){
         + '<span>' + esc(String(c.next_step_suggested || '—').slice(0,70)) + '</span>'
         + '</div>';
       }).join('') + '</div>';
-}
-
-/* ---- Pack de Estados ----------------------------------------------------- */
-// WhatsApp no deja publicar Estados por API, y los servicios que dicen automatizarlo
-// usan metodos no oficiales que BANEAN el numero. Asi que esto no publica: prepara las
-// fotos a 1080x1920 con la marca para subirlas a mano. Todo pasa en el navegador; las
-// fotos no salen de esta maquina.
-function montaEstados(){
-  if (montadas.has('estados')) return;
-  montadas.add('estados');
-  hueco('estados', '<div class="hoja"><h1>Pack de Estados</h1>'
-    + '<p class="bajada"><b>WhatsApp no permite publicar Estados por API.</b> Lo que prometa '
-    +   'automatizarlo usa métodos no oficiales que banean el número. Aquí se preparan las fotos '
-    +   'a formato Estado (1080×1920) con tu marca, y las subes tú a mano.</p>'
-    + '<div class="acciones" style="margin-bottom:16px">'
-    +   '<button class="btn-solido" id="estElegir">Elegir fotos</button>'
-    +   '<input type="file" id="estFile" accept="image/*" multiple hidden></div>'
-    + '<div class="estados" id="estLista"></div></div>');
-  $('estElegir').onclick = () => $('estFile').click();
-  $('estFile').onchange = async e => {
-    const files = [...e.target.files]; e.target.value = '';
-    const cont = $('estLista');
-    for (const f of files) {
-      const url = await aFormatoEstado(f);
-      if (!url) continue;
-      const d = document.createElement('div');
-      d.className = 'estado';
-      d.innerHTML = '<img src="' + url + '" alt="">'
-        + '<a class="btn-linea" download="estado-' + Date.now() + '.jpg" href="' + url + '">Descargar</a>';
-      cont.appendChild(d);
-    }
-    if (files.length) avisa(files.length + ' foto(s) listas', 'Descárgalas y súbelas desde el teléfono.');
-  };
-}
-async function aFormatoEstado(file){
-  try {
-    const bitmap = await createImageBitmap(file);
-    const L = document.createElement('canvas');
-    L.width = 1080; L.height = 1920;
-    const g = L.getContext('2d');
-    // Fondo con la propia foto desenfocada: rellena las bandas sin dejar barras negras
-    // ni deformar a nadie recortando la cara.
-    const cubre = Math.max(1080 / bitmap.width, 1920 / bitmap.height);
-    g.filter = 'blur(28px) brightness(.55)';
-    g.drawImage(bitmap, (1080 - bitmap.width*cubre)/2, (1920 - bitmap.height*cubre)/2,
-      bitmap.width*cubre, bitmap.height*cubre);
-    g.filter = 'none';
-    const cabe = Math.min(1080 / bitmap.width, 1780 / bitmap.height);
-    g.drawImage(bitmap, (1080 - bitmap.width*cabe)/2, (1920 - bitmap.height*cabe)/2,
-      bitmap.width*cabe, bitmap.height*cabe);
-    g.fillStyle = 'rgba(255,255,255,.92)';
-    g.font = '600 34px -apple-system,Segoe UI,Roboto,sans-serif';
-    g.textAlign = 'center';
-    g.fillText(CFG.brandName || "D'Carela Compufoto", 540, 1868);
-    return await new Promise(res => L.toBlob(b => res(URL.createObjectURL(b)), 'image/jpeg', 0.92));
-  } catch (e) { avisa('No se pudo procesar una foto', e?.message || String(e)); return null; }
-}
-
-/* ---- Estudio de Anuncios ------------------------------------------------- */
-// El estudio es otra aplicacion publicada aparte. No se copia aqui: se enlaza, para
-// que no haya dos versiones del mismo panel divergiendo.
-function montaAnuncios(){
-  if (montadas.has('ads')) return;
-  montadas.add('ads');
-  const url = CFG.adsPanelUrl || 'https://erickcarela58-star.github.io/dcarela-anuncios-panel/';
-  hueco('ads', '<div class="hoja"><h1>Estudio de Anuncios</h1>'
-    + '<p class="bajada">Las campañas de Meta se gestionan en su propio panel, que se publica aparte. '
-    +   'Se abre en otra pestaña para no tener dos copias del mismo estudio.</p>'
-    + '<a class="btn-solido" style="display:inline-block;text-decoration:none" '
-    +   'href="' + esc(url) + '" target="_blank" rel="noopener">Abrir el Estudio de Anuncios</a></div>');
 }
 
 /* ---- Agenda -------------------------------------------------------------- */
@@ -2541,10 +2580,10 @@ function pintaDashboard(){
 let AUDIENCIA = null;
 
 function montaBroadcast(){
-  if (montadas.has('marketing')) return;
-  montadas.add('marketing');
-  hueco('marketing',
-    '<div class="hoja"><h1>Broadcast</h1>'
+  if (montadas.has('campanas')) return;
+  montadas.add('campanas');
+  hueco('campanas',
+    '<div class="hoja"><h1>Campañas</h1>'
     + '<p class="bajada">Escribe una vez y sale a muchos. Primero se simula: verás exactamente '
     +   'a quién le llegaría antes de que salga nada.</p>'
     + '<div class="prompt">'
@@ -2688,18 +2727,64 @@ async function enviaBroadcast(){
   avisa('Broadcast enviado', Number(r.sent || 0) + ' de ' + cuantos);
 }
 
+/* ---- Etiquetas manuales -------------------------------------------------- */
+// Van en el campo 'labels' de la conversacion, que updateLead ya permite escribir. No
+// hay catalogo aparte a proposito: una etiqueta existe porque alguien la escribio en
+// algun contacto, y las sugerencias salen de lo que ya se usa. Un catalogo separado se
+// llena de etiquetas muertas que nadie borra.
+function etiquetasDe(c){
+  const v = c?.labels;
+  if (Array.isArray(v)) return v.map(String).filter(Boolean);
+  if (typeof v === 'string' && v.trim()) return v.split(',').map(s => s.trim()).filter(Boolean);
+  return [];
+}
+function etiquetasEnUso(){
+  const set = new Set();
+  CONVS.forEach(c => etiquetasDe(c).forEach(e => set.add(e)));
+  return [...set].sort();
+}
+
+function cableaEtiquetas(c){
+  const caja = $('etiquetas'); if (!caja) return;
+  const pinta = () => {
+    const mias = etiquetasDe(c);
+    const sugeridas = etiquetasEnUso().filter(e => !mias.includes(e)).slice(0, 8);
+    caja.innerHTML = mias.map(e => '<span class="etq puesta">' + esc(e)
+        + '<button data-quita-etq="' + esc(e) + '" aria-label="Quitar">×</button></span>').join('')
+      + sugeridas.map(e => '<button class="etq sug" data-pon-etq="' + esc(e) + '">+ ' + esc(e) + '</button>').join('')
+      + (mias.length || sugeridas.length ? '' : '<span class="quien">Todavía no hay ninguna.</span>');
+  };
+  pinta();
+
+  const guarda = async lista => {
+    const antes = etiquetasDe(c);
+    c.labels = lista;
+    pinta();
+    const r = await llama({ action:'updateLead', conversation_id: c.id || c._id, fields:{ labels: lista } });
+    if (!r.ok) { c.labels = antes; pinta(); return avisa('No se guardó la etiqueta', r.error); }
+    pintaChats();
+  };
+
+  caja.onclick = ev => {
+    const quita = ev.target.closest('[data-quita-etq]');
+    if (quita) return guarda(etiquetasDe(c).filter(e => e !== quita.dataset.quitaEtq));
+    const pon = ev.target.closest('[data-pon-etq]');
+    if (pon) return guarda([...etiquetasDe(c), pon.dataset.ponEtq]);
+  };
+  $('etqNueva').onkeydown = ev => {
+    if (ev.key !== 'Enter') return;
+    ev.preventDefault();
+    const e = ev.target.value.trim().toLowerCase();
+    if (!e) return;
+    if (etiquetasDe(c).includes(e)) { ev.target.value = ''; return; }
+    ev.target.value = '';
+    guarda([...etiquetasDe(c), e]);
+  };
+}
+
 /* ---- Planificación: un solo prompt --------------------------------------- */
 // Aqui vive TODO lo operativo. El modelo propone, el servidor sanea la propuesta y
 // una persona aprueba antes de que nada toque una ficha o salga un mensaje.
-const EJEMPLOS = [
-  'Resume esta conversación y dime el próximo paso',
-  'Prepara la reserva de este contacto',
-  'Marca este contacto como pagado y pide el comprobante',
-  'Escríbele la ubicación del estudio',
-  'Pásale el portafolio de bodas',
-  'Márcalo como desinteresado y apaga el marketing',
-];
-let propuesta = null;
 const PLAN_IMGS = [];
 let REGLAS = '';
 
@@ -2737,59 +2822,85 @@ async function guardaReglas(){
   $('reglasNota').textContent = 'Guardadas. Se usan en cada propuesta.';
   avisa('Reglas guardadas', 'El asistente las tendrá en cuenta desde ahora.');
 }
+// ===== ASISTENTE DE PLANIFICACION =====
+// Es un chat, no un formulario. La diferencia no es estetica: en un formulario cada
+// pregunta empieza de cero, y aqui el hilo entero viaja como contexto, asi que se puede
+// decir "y ahora hazlo con el de arriba" y sabe de quien se habla.
+//
+// El hilo se guarda en el servidor. "Que se actualice" era una exigencia explicita: lo
+// acordado ayer tiene que seguir ahi mañana, y en el navegador de al lado.
+const HILO = [];
+let hiloCargado = false;
+
+// Los wizards son recetas completas, no frases sueltas. Cada una lleva ya escritas las
+// condiciones que el dueño repite: no insistir a quien no contesta, personalizar cada
+// mensaje, programar en vez de disparar.
+const WIZARDS = [
+  { n:'Reactivar un contacto frío',
+    p:'Lee esta conversación entera. Si el contacto lleva semanas sin responder, propón UN solo '
+      + 'acercamiento, personalizado con lo que ya sabemos de él (su categoría, su fecha, lo que '
+      + 'preguntó). Uno, no una secuencia. Si ya se le insistió dos veces sin respuesta, no propongas '
+      + 'nada: propón marcarlo desinteresado.' },
+  { n:'Preparar la reserva',
+    p:'Prepara la reserva de este contacto: pásalo a pendiente de reserva y redacta el mensaje que le '
+      + 'pediría el abono, con el monto y las condiciones de las reglas del negocio.' },
+  { n:'Cobrar y confirmar',
+    p:'Este contacto va a pagar. Prepara el mensaje para pedirle el comprobante y deja la ficha lista '
+      + 'para marcar pagado cuando llegue, recordando que el comprobante lo valida una persona.' },
+  { n:'Limpiar contactos sin interés',
+    p:'Revisa los contactos que llevan meses sin responder. Propón marcar como desinteresados a los '
+      + 'que ya recibieron dos seguimientos sin contestar, y dime a cuáles todavía les queda un '
+      + 'acercamiento pendiente.' },
+  { n:'Campaña de temporada',
+    p:'Propón una campaña de temporada. Ten en cuenta: fuera de la ventana de 24 h solo llega '
+      + 'plantilla aprobada con salida de baja, cada mensaje tiene que ir personalizado por contacto, '
+      + 'y hay que excluir desinteresados y a quien no dio permiso de marketing. Dime a qué segmento '
+      + 'y por qué.' },
+  { n:'Qué hago hoy',
+    p:'Mira el estado del negocio y dime qué tres cosas debería hacer hoy, por orden, y por qué esas '
+      + 'y no otras.' },
+];
+
 function montaPlanificacion(){
-  if (montadas.has('planning')) { const c = $('contexto'); if (c) c.textContent = contextoTexto(); return; }
+  if (montadas.has('planning')) { pintaContexto(); return; }
   montadas.add('planning');
   hueco('planning',
-    '<div class="hoja"><h1>Planificación</h1>'
-    + '<p class="bajada">Escribe lo que necesitas. Se lee la conversación seleccionada, se propone '
-    +   'qué hacer, y no se toca nada hasta que lo apruebes.</p>'
-    + '<div class="prompt">'
-    +   '<textarea id="pedido" placeholder="Ej. prepara la reserva de este contacto y pídele el abono"></textarea>'
-    +   '<div class="adjuntos" id="planAdj" style="padding:8px 0 0">'
-    +     '<button class="adj" id="planImg" title="Adjuntar imagen">'
-    +       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg></button>'
-    +     '<input type="file" id="planFile" accept="image/*" multiple hidden>'
-    +     '<span class="quien" id="planAdjNota"></span>'
-    +   '</div>'
-    +   '<div class="cola" id="planCola" hidden></div>'
-    +   '<div class="acciones"><button class="btn-solido" id="btnPedir">Proponer</button>'
-    +     '<span class="quien" id="contexto"></span></div>'
-    +   '<div class="ejemplos" id="ejemplos">'
-    +     EJEMPLOS.map(e => '<button class="ejemplo">' + esc(e) + '</button>').join('')
-    +   '</div>'
-    + '</div><div id="salida"></div>'
-    + '<div class="seccion" style="margin:30px 0 8px">Reglas y contexto del negocio</div>'
-    + '<p class="bajada">Lo que escribas aquí se le da al asistente en cada propuesta. '
-    +   'Sirve para lo que no está en ninguna ficha: cómo se cobra, qué no se promete, '
-    +   'qué fechas están cerradas, cómo se habla.</p>'
-    + '<div class="prompt"><textarea id="reglas" rows="8" placeholder="Ej.\n'
-    +   '- El abono mínimo es de RD$3,000 y no se devuelve.\n'
-    +   '- No trabajamos domingos.\n'
-    +   '- Nunca prometer una fecha sin confirmarla con el estudio.\n'
-    +   '- Tratar de usted a personas mayores."></textarea>'
-    +   '<div class="acciones"><button class="btn-solido" id="btnReglas">Guardar reglas</button>'
-    +     '<span class="quien" id="reglasNota"></span></div></div></div>');
-  $('ejemplos').addEventListener('click', ev => {
-    const b = ev.target.closest('.ejemplo'); if (!b) return;
-    $('pedido').value = b.textContent; $('pedido').focus();
+    '<div class="asistente">'
+    + '<div class="acab">'
+    +   '<div><b>Asistente</b><span id="contexto"></span></div>'
+    +   '<button class="btn-linea" id="btnReglasAbrir">Reglas del negocio</button>'
+    + '</div>'
+    + '<div class="ahilo" id="ahilo"></div>'
+    + '<div class="acola" id="planCola" hidden></div>'
+    + '<div class="aentrada">'
+    +   '<button class="adj" id="planImg" title="Adjuntar imagen">'
+    +     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg></button>'
+    +   '<input type="file" id="planFile" accept="image/*" multiple hidden>'
+    +   '<textarea id="pedido" rows="1" placeholder="Dime qué necesitas…"></textarea>'
+    +   '<button class="enviar" id="btnPedir" aria-label="Enviar">'
+    +     '<svg width="19" height="19" viewBox="0 0 24 24" fill="currentColor"><path d="M3 20l18-8L3 4v6l12 2-12 2z"/></svg>'
+    +   '</button>'
+    + '</div></div>');
+
+  const caja = $('pedido');
+  caja.addEventListener('input', () => {
+    caja.style.height = 'auto'; caja.style.height = Math.min(caja.scrollHeight, 160) + 'px';
+  });
+  caja.addEventListener('keydown', e => {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); $('btnPedir').click(); }
   });
   $('btnPedir').onclick = pide;
-  // Sin esto el hueco #contexto quedaba vacio y no se sabia sobre QUIEN se estaba
-  // pidiendo el plan. Aplicar una propuesta al contacto equivocado no tiene deshacer.
-  $('contexto').textContent = contextoTexto();
+  pintaContexto();
 
-  // Imagenes para el asistente: un comprobante de pago, la foto de un vestido, una
-  // captura de otra cotizacion. Son cosas que el cliente manda y sobre las que hay que
-  // decidir, y sin poder enseñarselas el asistente decide a ciegas.
+  // Imagenes para el asistente: un comprobante, la foto de un vestido, la captura de
+  // otra cotizacion. Son cosas sobre las que hay que decidir, y sin verlas decide a
+  // ciegas.
   $('planImg').onclick = () => $('planFile').click();
   $('planFile').onchange = async e => {
     const files = [...e.target.files]; e.target.value = '';
     for (const f of files) {
       if (!f.type?.startsWith('image/')) continue;
-      // Se manda comprimida: al asistente no le hace falta la resolucion completa y
-      // subir 30 MB en cada pregunta seria lento y caro.
-      const blob = await comprimeNormal(f);
+      const blob = await comprimeNormal(f);   // no le hace falta la resolucion completa
       PLAN_IMGS.push({ nombre:f.name, mime: blob.type || 'image/jpeg', datos: await leeBase64(blob) });
     }
     pintaPlanCola();
@@ -2798,68 +2909,195 @@ function montaPlanificacion(){
     const b = ev.target.closest('[data-quita]'); if (!b) return;
     PLAN_IMGS.splice(Number(b.dataset.quita), 1); pintaPlanCola();
   };
+  $('btnReglasAbrir').onclick = abreReglas;
 
   cargaReglas();
-  $('btnReglas').onclick = guardaReglas;
+  cargaHilo();
 }
-function contextoTexto(){
-  return sel ? 'Sobre: ' + nombreDe(sel) + ' (+' + (sel.wa_phone||'') + ')'
-             : 'Sin conversación seleccionada — se propondrá sobre el negocio en general.';
+
+function pintaContexto(){
+  const c = $('contexto'); if (!c) return;
+  c.textContent = contextoTexto();
 }
+
+function pintaHilo(){
+  const h = $('ahilo'); if (!h) return;
+  if (!HILO.length) {
+    h.innerHTML = '<div class="abienvenida">'
+      + '<b>¿Qué necesitas?</b>'
+      + '<p>Leo la conversación que tengas abierta, la ficha del contacto y las reglas del negocio. '
+      +   'Propongo, y no se toca nada hasta que lo apruebes.</p>'
+      + '<div class="awiz">' + WIZARDS.map((w,i) =>
+          '<button class="ejemplo" data-wiz="' + i + '">' + esc(w.n) + '</button>').join('') + '</div>'
+      + '</div>';
+    h.querySelector('.awiz').onclick = ev => {
+      const b = ev.target.closest('[data-wiz]'); if (!b) return;
+      $('pedido').value = WIZARDS[Number(b.dataset.wiz)].p;
+      $('pedido').dispatchEvent(new Event('input'));
+      $('pedido').focus();
+    };
+    return;
+  }
+  h.innerHTML = HILO.map((t,i) => t.rol === 'yo'
+    ? '<div class="aturno yo"><div class="aburbuja">' + esc(t.texto)
+      + (t.imgs ? '<span class="aimgs">' + t.imgs + ' imagen(es)</span>' : '') + '</div></div>'
+    : '<div class="aturno ia"><div class="aburbuja">'
+      + (t.pensando ? '<span class="cargando"></span> Pensando…' : cuerpoDePlan(t.plan, i))
+      + '</div></div>').join('');
+  h.scrollTop = h.scrollHeight;
+  HILO.forEach((t,i) => {
+    if (t.rol !== 'ia' || t.pensando) return;
+    const ap = h.querySelector('[data-aprobar="' + i + '"]');
+    if (ap) ap.onclick = () => aplica(i);
+  });
+}
+
+function cuerpoDePlan(p, idx){
+  if (!p) return 'No se pudo interpretar la respuesta.';
+  const filas = [];
+  if (p.objective) filas.push(['Objetivo', p.objective]);
+  if (p.rationale) filas.push(['Por qué', p.rationale]);
+  if (p.message_text) filas.push(['Mensaje que se prepararía', p.message_text]);
+  (p.steps || []).forEach((s,i) => filas.push(['Paso ' + (i+1), s]));
+  (p.risks || []).forEach(s => filas.push(['Riesgo', s]));
+
+  const tools = Array.isArray(p.tools) ? p.tools : [];
+  const bloque = tools.length
+    ? '<div class="aacciones"><b>Se haría esto</b>'
+      + tools.map(t => '<div class="aaccion"><span>' + esc(NOMBRE_HERRAMIENTA[t.name] || t.name) + '</span>'
+        + (t.preview ? '<i>' + esc(t.preview) + '</i>' : '')
+        // Los campos exactos, sin traducir: quien aprueba tiene derecho a ver el cambio
+        // literal y no solo el resumen bonito.
+        + (t.params?.fields ? '<div class="campos">' + Object.entries(t.params.fields)
+            .map(([k,v]) => '<span>' + esc(k) + ' → ' + esc(String(v)) + '</span>').join('') + '</div>' : '')
+        + '</div>').join('')
+      + '</div>'
+    : '';
+
+  return filas.map(([k,v]) => '<div class="afila"><b>' + esc(k) + '</b>' + esc(v) + '</div>').join('')
+    + bloque
+    + (p.aplicado
+        ? '<div class="ahecho">✓ Aplicado</div>'
+        : tools.length ? '<button class="btn-solido apr" data-aprobar="' + idx + '">Aprobar y aplicar</button>' : '');
+}
+
 async function pide(){
   const t = $('pedido').value.trim();
-  if (!t) return avisa('Escribe qué necesitas');
-  $('btnPedir').disabled = true;
-  $('salida').innerHTML = '<p class="bajada" style="margin-top:22px"><span class="cargando"></span> Pensando…</p>';
+  if (!t) return;
+  $('pedido').value = ''; $('pedido').style.height = 'auto';
+  HILO.push({ rol:'yo', texto:t, imgs: PLAN_IMGS.length || 0 });
+  HILO.push({ rol:'ia', pensando:true });
+  pintaHilo();
+
   const cuerpo = { action:'assistantPlan', instruction:t };
   const contexto = [];
 
-  // Las reglas del negocio van SIEMPRE, aunque no haya conversacion abierta: son lo
-  // que evita que proponga cosas que el estudio no puede cumplir.
+  // Las reglas del negocio van SIEMPRE, aunque no haya conversacion abierta: son lo que
+  // evita que proponga cosas que el estudio no puede cumplir.
   if (REGLAS) contexto.push('Reglas del negocio, de obligado cumplimiento:\n' + REGLAS);
 
-  // Las normas que ya estan cableadas en el servidor se le dicen tambien. Si no las
-  // conoce propone difundir a gente dada de baja, y el servidor lo rechaza despues:
-  // mejor que no lo proponga que tener que explicar por que se rechazo.
+  // Las normas ya cableadas en el servidor se le dicen tambien. Sin conocerlas propone
+  // difundir a gente dada de baja, el servidor lo rechaza despues, y hay que explicar
+  // por que se rechazo algo que el mismo propuso.
   contexto.push([
     'Reglas del sistema que NO se pueden saltar:',
     '- Fuera de la ventana de 24 h desde el ultimo mensaje del cliente solo llega una plantilla aprobada.',
-    '- Un contacto en etapa desinteresado, o con exclusion permanente, no recibe marketing ni seguimientos.',
+    '- Un contacto desinteresado, o con exclusion permanente, no recibe marketing ni seguimientos.',
     '- Dos seguimientos sin respuesta y el contacto pasa a desinteresado automaticamente.',
     '- Una difusion con plantilla exige que la plantilla incluya salida de baja (STOP).',
+    '- Cada mensaje de una difusion tiene que ir personalizado por contacto: mandar el mismo',
+    '  texto a muchos es lo primero que Meta marca como spam y degrada el numero.',
     '- Nada se ejecuta sin que una persona lo apruebe.',
   ].join('\n'));
+
+  contexto.push('Herramientas que puedes proponer, y solo estas:\n'
+    + Object.entries(NOMBRE_HERRAMIENTA).map(([k,v]) => '- ' + k + ': ' + v).join('\n'));
 
   if (sel) {
     contexto.push('Ficha de este contacto:\n' + [
       ['Nombre', nombreDe(sel)], ['Telefono', sel.wa_phone], ['Etapa', sel.lifecycle_stage],
       ['Estado', sel.lead_status], ['Reserva', sel.reservation_status],
       ['Categoria', sel.interested_category], ['Combo', sel.selected_combo_name],
-      ['Fecha tentativa', sel.tentative_date],
+      ['Fecha tentativa', sel.tentative_date], ['Etiquetas', etiquetasDe(sel).join(', ')],
       ['Seguimientos sin respuesta', sel.followup_attempts],
       ['Marketing permitido', sel.marketing_opt_in === false ? 'NO' : 'si'],
       ['Excluido permanentemente', sel.proactive_blocked_at ? 'SI' : 'no'],
+      ['Ultimo mensaje', sel.last_message_at],
     ].filter(([,v]) => v !== undefined && v !== null && String(v).trim() !== '')
       .map(([k,v]) => '- ' + k + ': ' + v).join('\n'));
     contexto.push('Ultimos mensajes:\n' + MSGS.slice(-40)
       .map(m => (m.direction === 'out' ? 'Nosotros: ' : 'Cliente: ') + (m.body || '')).join('\n'));
     cuerpo.conversation_id = sel.id || sel._id;
   } else {
-    contexto.push('No hay ninguna conversacion abierta: la peticion es sobre el negocio en general.');
+    contexto.push('No hay ninguna conversacion abierta: la peticion es sobre el negocio en general. '
+      + 'Hay ' + CONVS.length + ' conversaciones, de las cuales '
+      + CONVS.filter(c => c.lifecycle_stage === 'desinteresado').length + ' desinteresadas.');
+  }
+
+  // El hilo anterior viaja entero: es lo que permite decir "y ahora el de arriba".
+  const previos = HILO.filter(x => !x.pensando).slice(-9, -1);
+  if (previos.length) {
+    contexto.push('Conversacion previa con el asistente:\n' + previos.map(x => x.rol === 'yo'
+      ? 'Persona: ' + x.texto
+      : 'Asistente: ' + (x.plan?.objective || '') + ' ' + (x.plan?.rationale || '')).join('\n'));
   }
 
   cuerpo.contact_context = contexto.join('\n\n');
   // assistantAttachmentParts lee item.mime (assistant-plan.js:224), no mime_type, y se
-  // queda con las tres primeras. Se avisa si se mandan mas, en vez de tirarlas calladas.
+  // queda con las tres primeras.
   if (PLAN_IMGS.length) {
     cuerpo.attachment_payloads = PLAN_IMGS.slice(0, 3).map(a => ({ mime:a.mime, data:a.datos }));
     if (PLAN_IMGS.length > 3) avisa('Solo van las 3 primeras imágenes', 'Es el máximo que acepta el asistente.');
   }
+
   const r = await llama(cuerpo);
-  $('btnPedir').disabled = false;
-  if (!r.ok) { $('salida').innerHTML = ''; return avisa('No se pudo proponer', r.error); }
-  propuesta = r.plan || null;
-  pintaPropuesta();
+  HILO.pop();                       // fuera el "pensando"
+  if (!r.ok) {
+    HILO.push({ rol:'ia', plan:{ objective:'No se pudo proponer', rationale: traduceErrorMeta(r.error) } });
+    pintaHilo();
+    return;
+  }
+  HILO.push({ rol:'ia', plan: r.plan || null });
+  PLAN_IMGS.length = 0; pintaPlanCola();
+  pintaHilo();
+  guardaHilo();
+}
+
+// El hilo se guarda en el servidor para que siga ahi mañana y en otro navegador. Se
+// guardan solo los ultimos treinta turnos: mas no aporta y engorda cada peticion.
+async function cargaHilo(){
+  if (hiloCargado) { pintaHilo(); return; }
+  hiloCargado = true;
+  const r = await llama({ action:'data', table:'settings', operation:'select',
+    filters:[{ kind:'eq', field:'key', value:'plan_hilo' }], limit:1 });
+  const fila = r.ok ? (r.data || r.rows || [])[0] : null;
+  if (fila?.value) { try { HILO.push(...JSON.parse(fila.value)); } catch (e) {} }
+  pintaHilo();
+}
+async function guardaHilo(){
+  const recorte = HILO.filter(t => !t.pensando).slice(-30);
+  await llama({ action:'data', table:'settings', operation:'upsert',
+    payload:{ id:'plan_hilo', key:'plan_hilo', value: JSON.stringify(recorte),
+      updated_at:new Date().toISOString() }, on_conflict:'id' });
+}
+
+function abreReglas(){
+  abreModal('<div class="mtapa"><b>Reglas del negocio</b><button class="cerrarm" data-cerrar>×</button></div>'
+    + '<div class="mcuerpo">'
+    + '<p class="aviso">Esto se le da al asistente en cada propuesta. Sirve para lo que no está en '
+    +   'ninguna ficha: cómo se cobra, qué no se promete, qué fechas están cerradas, cómo se habla.</p>'
+    + '<div class="campo"><textarea id="reglas" rows="12" placeholder="- El abono mínimo es de RD$3,000 y no se devuelve.\n'
+    +   '- No trabajamos domingos.\n- Nunca prometer una fecha sin confirmarla con el estudio.\n'
+    +   '- Tratar de usted a personas mayores.">' + esc(REGLAS) + '</textarea></div></div>'
+    + '<div class="mpatas"><span class="quien" id="reglasNota"></span>'
+    +   '<button class="btn-solido" id="btnReglas">Guardar</button></div>');
+  $('modal').querySelectorAll('[data-cerrar]').forEach(b => { b.onclick = cierraModal; });
+  $('btnReglas').onclick = async () => { await guardaReglas(); cierraModal(); };
+}
+
+function contextoTexto(){
+  return sel ? 'Sobre: ' + nombreDe(sel) + ' (+' + (sel.wa_phone||'') + ')'
+             : 'Sin conversación seleccionada — se propondrá sobre el negocio en general.';
 }
 // Cada herramienta se explica en cristiano ANTES de aprobarla. "create_reservation"
 // no le dice nada a nadie; "pasa el lead a pendiente de reserva" sí.
@@ -2879,52 +3117,12 @@ const NOMBRE_BORRADOR = {
   privateCombos: 'enviar los combos',
 };
 
-function pintaPropuesta(){
-  const p = propuesta;
-  if (!p) { $('salida').innerHTML = ''; return; }
-  const filas = [];
-  if (p.objective) filas.push(['Objetivo', p.objective]);
-  if (p.rationale) filas.push(['Por qué', p.rationale]);
-  if (p.message_text) filas.push(['Mensaje que se prepararía', p.message_text]);
-  (p.steps || []).forEach((s,i) => filas.push(['Paso ' + (i+1), s]));
-  (p.risks || []).forEach(s => filas.push(['Riesgo', s]));
-
+async function aplica(idx){
+  const turno = HILO[idx];
+  const p = turno?.plan; if (!p) return;
   const tools = Array.isArray(p.tools) ? p.tools : [];
-  const bloqueTools = tools.length
-    ? '<div class="seccion" style="margin:14px 0 8px">Se haría esto</div>'
-      + tools.map((t,i) => '<div class="cambio"><div class="k">'
-        + esc(NOMBRE_HERRAMIENTA[t.name] || t.name) + '</div>'
-        + esc(t.preview || '')
-        // Los campos exactos que se van a escribir, sin traducir: quien aprueba tiene
-        // derecho a ver el cambio literal, no solo el resumen bonito.
-        + (t.params?.fields ? '<div class="campos">' + Object.entries(t.params.fields)
-            .map(([k,v]) => '<span>' + esc(k) + ' → ' + esc(String(v)) + '</span>').join('') + '</div>' : '')
-        + (t.params?.template ? '<div class="campos"><span>' + esc(NOMBRE_BORRADOR[t.params.template] || t.params.template) + '</span></div>' : '')
-        + (t.params?.operation ? '<div class="campos"><span>' + esc(t.params.operation) + '</span></div>' : '')
-        + '</div>').join('')
-    : '';
-
-  const hayQueAplicar = tools.length > 0 || (p.action && p.action !== 'info_only');
-  $('salida').innerHTML = '<div class="propuesta">'
-    + '<div class="tapa"><b>Propuesta</b>' + (tools.length ? ' · ' + tools.length + ' acción(es)' : ' · solo información') + '</div>'
-    + '<div class="cuerpo">'
-    +   filas.map(([k,v]) => '<div class="cambio"><div class="k">' + esc(k) + '</div>' + esc(v) + '</div>').join('')
-    +   bloqueTools
-    +   (filas.length || tools.length ? '' : '<p class="aviso" style="margin:0">Sin detalle devuelto.</p>')
-    + '</div>'
-    + '<div class="patas">'
-    +   (hayQueAplicar ? '<button class="btn-solido" id="btnAprobar">Aprobar y aplicar</button>' : '')
-    +   '<button class="btn-linea" id="btnDescartar">Descartar</button>'
-    + '</div></div>';
-  $('btnDescartar').onclick = () => { propuesta = null; $('salida').innerHTML = ''; };
-  if (hayQueAplicar) $('btnAprobar').onclick = aplica;
-}
-
-async function aplica(){
-  const p = propuesta; if (!p) return;
-  const tools = Array.isArray(p.tools) ? p.tools : [];
-  const b = $('btnAprobar');
-  b.disabled = true; b.textContent = 'Aplicando…';
+  const b = document.querySelector('[data-aprobar="' + idx + '"]');
+  if (b) { b.disabled = true; b.textContent = 'Aplicando…'; }
   const hechas = [], fallos = [];
 
   for (const t of tools) {
@@ -2971,15 +3169,19 @@ async function aplica(){
     else fallos.push([NOMBRE_HERRAMIENTA[t.name] || t.name, r.error || 'error']);
   }
 
-  b.disabled = false; b.textContent = 'Aprobar y aplicar';
+  if (b) { b.disabled = false; b.textContent = 'Aprobar y aplicar'; }
   if (hechas.length && !fallos.length) {
-    propuesta = null;
-    $('salida').innerHTML = '<div class="propuesta"><div class="tapa"><b>Aplicado</b></div>'
-      + '<div class="cuerpo">' + hechas.map(h => '<div class="cambio">' + esc(h) + '</div>').join('') + '</div></div>';
+    // Se marca el turno como aplicado en vez de borrarlo: el hilo tiene que conservar
+    // que esto ya se hizo, o al releerlo mañana parece pendiente y se aplica dos veces.
+    turno.plan.aplicado = true;
+    pintaHilo();
+    guardaHilo();
     avisa('Aplicado', hechas.length + ' acción(es)');
   } else {
+    // Si algo salio, tambien se marca: reintentar repetiria lo que ya se hizo.
+    if (hechas.length) { turno.plan.aplicado = true; pintaHilo(); guardaHilo(); }
     avisa(hechas.length ? 'Aplicado a medias' : 'No se pudo aplicar',
-      fallos.map(([n,e]) => n + ': ' + e).join(' · ').slice(0,180));
+      fallos.map(([n,e]) => n + ': ' + traduceErrorMeta(e)).join(' · ').slice(0,180));
   }
   if (sel) { const f = CONVS.find(c => c._id === sel._id); if (f) pintaFicha(f); }
 }
