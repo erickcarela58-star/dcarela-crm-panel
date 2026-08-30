@@ -1,6 +1,6 @@
 {
-  "version": "2026-08-30-crm-v2-stable-v57",
+  "version": "2026-08-29-crm-menu-a-salvo-v55",
   "channel": "crm",
-  "released_at": "2026-08-30T05:07:24Z",
-  "summary": "CRM v2 promovido al dominio principal tras validar agenda, configuracion, canales separados, banco POS vivo, plantillas, recordatorios y datos reales."
+  "released_at": "2026-08-29T04:20:00Z",
+  "summary": "Arreglado el menu vacio en produccion: la regla que esconde entradas daba por hecho que el script ya habia movido las tres fijas. Ahora solo esconde despues de que el script lo confirme."
 }
