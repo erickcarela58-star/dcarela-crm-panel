@@ -280,9 +280,13 @@ video.mmedia{cursor:default}
 .adj.hd{border:1.5px solid var(--line2)}
 .adj.hd.on{background:var(--ink);color:var(--on-ink);border-color:var(--ink)}
 .cola{display:flex;flex-wrap:wrap;gap:6px;padding:0 14px 11px;background:var(--panel)}
-.pieza{display:inline-flex;align-items:center;gap:6px;max-width:230px;padding:5px 8px;
-  border:1px solid var(--line2);border-radius:var(--r);font-size:12px;
-  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pieza{display:inline-flex;align-items:center;gap:8px;max-width:250px;padding:5px 8px 5px 5px;
+  border:1px solid var(--line2);border-radius:var(--r);font-size:12px}
+.pieza img{width:36px;height:36px;object-fit:cover;border-radius:5px;flex:0 0 auto}
+.pieza .ico{width:36px;height:36px;display:flex;align-items:center;justify-content:center;
+  border-radius:5px;background:var(--hover);font-size:17px;flex:0 0 auto}
+.pieza .pnom{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pieza .pnom i{display:block;font-style:normal;font-size:10.5px;color:var(--meta)}
 .pieza button{color:var(--mut);font-size:15px;line-height:1;flex:0 0 auto}
 .pieza button:hover{color:var(--bad)}
 /* `display:flex` le gana al atributo hidden (que solo trae display:none de la hoja
@@ -1077,8 +1081,17 @@ const LIMITE_MB = () => (modoHd ? 15 : 12);
 function pintaCola(){
   const c = $('cola'); if (!c) return;
   c.hidden = !COLA.length;
-  c.innerHTML = COLA.map((a,i) =>
-    '<span class="pieza">' + esc(a.nombre) + '<button data-quita="' + i + '" aria-label="Quitar">×</button></span>').join('');
+  // Se ve la foto, no su nombre. Lo que va a salir hacia un cliente real hay que
+  // poder mirarlo antes: un nombre de archivo no dice si adjuntaste la que querias.
+  c.innerHTML = COLA.map((a,i) => {
+    const previa = a.tipo === 'image'
+      ? '<img src="data:' + esc(a.mime || 'image/jpeg') + ';base64,' + a.datos + '" alt="">'
+      : '<span class="ico">' + (a.tipo === 'audio' ? '🎙' : '📄') + '</span>';
+    const peso = a.datos ? Math.round(a.datos.length * 0.75 / 1024) : 0;
+    return '<span class="pieza">' + previa
+      + '<span class="pnom">' + esc(a.nombre) + (peso ? '<i>' + peso + ' KB</i>' : '') + '</span>'
+      + '<button data-quita="' + i + '" aria-label="Quitar">×</button></span>';
+  }).join('');
 }
 function leeBase64(f){
   return new Promise((res, rej) => {
@@ -1088,13 +1101,65 @@ function leeBase64(f){
     l.readAsDataURL(f);
   });
 }
+// WhatsApp sube imagenes hasta ~5 MB por id, que es el metodo fiable; por encima cae
+// al envio por enlace y falla con #131053. Y recomprime a ~2560 px de lado largo de
+// todas formas, asi que mandar mas resolucion no mejora nada y arriesga el envio.
+//
+// HD = la mejor calidad que WhatsApp entrega DE VERDAD: si el JPEG ya cabe se manda
+// intacto, y si no se baja hasta que quepa, siempre como imagen y no como documento.
+const TOPE_FIABLE = 4.8 * 1024 * 1024;
+
+function cargaImagen(file){
+  return new Promise((res, rej) => {
+    const i = new Image();
+    i.onload = () => res(i);
+    i.onerror = () => rej(new Error('no se pudo abrir la imagen'));
+    i.src = URL.createObjectURL(file);
+  });
+}
+async function aJpeg(img, lado, calidad){
+  const r = Math.min(1, lado / Math.max(img.width, img.height));
+  const cv = document.createElement('canvas');
+  cv.width = Math.max(1, Math.round(img.width * r));
+  cv.height = Math.max(1, Math.round(img.height * r));
+  cv.getContext('2d').drawImage(img, 0, 0, cv.width, cv.height);
+  return new Promise(res => cv.toBlob(res, 'image/jpeg', calidad));
+}
+async function comprimeHd(file){
+  if (!file.type?.startsWith('image/')) return file;
+  if (/jpe?g/i.test(file.type) && file.size <= TOPE_FIABLE) return file;  // ya cabe: intacta
+  try {
+    const img = await cargaImagen(file);
+    const mayor = Math.max(img.width, img.height);
+    for (const lado of [Math.min(mayor, 2560), 2400, 2200, 2000, 1800, 1600]) {
+      if (lado > mayor) continue;
+      const b = await aJpeg(img, lado, 0.92);
+      if (b && b.size <= TOPE_FIABLE) return b;
+    }
+    return (await aJpeg(img, 1600, 0.85)) || file;
+  } catch (e) { return file; }
+}
+async function comprimeNormal(file){
+  if (!file.type?.startsWith('image/')) return file;
+  if (file.size <= 1.8 * 1024 * 1024) return file;
+  try { return (await aJpeg(await cargaImagen(file), 1600, 0.85)) || file; }
+  catch (e) { return file; }
+}
+
 async function encola(files, tipo){
   let fuera = 0;
   for (const f of files) {
     // HEIC no lo acepta WhatsApp por esta via y se rechaza aqui, no a mitad del envio.
     if (tipo === 'image' && /heic|heif/i.test(f.type + f.name)) { fuera++; continue; }
     if (f.size > LIMITE_MB() * 1024 * 1024) { fuera++; continue; }
-    try { COLA.push({ tipo, nombre:f.name, mime:f.type || 'application/octet-stream', datos: await leeBase64(f) }); }
+    let dato = f, nombre = f.name;
+    if (tipo === 'image') {
+      dato = modoHd ? await comprimeHd(f) : await comprimeNormal(f);
+      // Si se reencodeo, el nombre tiene que decir jpg o algunos visores se lian.
+      if (dato !== f) nombre = String(f.name || 'imagen').replace(/\.[^.]+$/, '') + '.jpg';
+    }
+    try { COLA.push({ tipo, nombre, mime: dato.type || f.type || 'application/octet-stream',
+      datos: await leeBase64(dato) }); }
     catch (e) { fuera++; }
   }
   if (fuera) avisa(fuera + (fuera === 1 ? ' archivo se omitió' : ' archivos se omitieron'),
