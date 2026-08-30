@@ -13,7 +13,7 @@
     />
     <title>D'Carela · Centro de Anuncios</title>
     <link rel="manifest" href="./manifest.webmanifest" />
-    <link rel="stylesheet" href="./styles.css?v=20260830v3" />
+    <link rel="stylesheet" href="./styles.css?v=20260824v8" />
   </head>
   <body>
     <div class="login" id="login">
@@ -54,18 +54,23 @@
           ></a
         >
         <nav>
-          <button class="nav-item active" data-view="builder">
-            Crear campaña
-          </button>
+          <button class="nav-item active" data-view="overview">Resumen</button>
+          <button class="nav-item" data-view="wizard">Crear campaña</button>
+          <button class="nav-item" data-view="templates">Plantillas</button>
+          <button class="nav-item" data-view="creatives">Creativos y QA</button>
           <button class="nav-item" data-view="audience">
-            Banco de clientes <span id="clientBadge">0</span>
+            Audiencias CRM <span id="clientBadge">0</span>
           </button>
+          <button class="nav-item" data-view="calendar">Calendario y capacidad</button>
+          <button class="nav-item" data-view="experiments">Experimentos</button>
+          <button class="nav-item" data-view="aiLab">IA y laboratorio <span>Beta</span></button>
+          <button class="nav-item" data-view="analytics">Medición y ventas</button>
           <button class="nav-item" data-view="history">
-            Campañas guardadas <span id="historyBadge">0</span>
+            Campañas <span id="historyBadge">0</span>
           </button>
-          <button class="nav-item" data-view="metrics">
-            Rendimiento Meta
-          </button>
+          <button class="nav-item" data-view="approvals">Aprobaciones</button>
+          <button class="nav-item" data-view="connections">Conexiones</button>
+          <button class="nav-item" data-view="builder">Constructor clásico</button>
         </nav>
         <div class="connections">
           <span>Herramientas conectadas</span>
@@ -81,7 +86,7 @@
         <header class="topbar">
           <div>
             <span class="eyebrow">Centro comercial independiente</span>
-            <h2 id="viewTitle">Crear campaña</h2>
+            <h2 id="viewTitle">Resumen</h2>
           </div>
           <div class="top-actions">
             <label>Sucursal<select id="businessSelect"></select></label>
@@ -92,7 +97,167 @@
           </div>
         </header>
 
-        <section class="view active" id="viewBuilder">
+        <section class="view active" id="viewOverview">
+          <div class="hero compact-hero">
+            <div>
+              <span class="eyebrow">SaleAds · decisiones comerciales</span>
+              <h1>Vende sesiones, no métricas vacías.</h1>
+              <p>Planifica desde margen, capacidad y consentimiento. Los borradores requieren revisión humana y nunca activan gasto automáticamente.</p>
+            </div>
+            <button class="primary" type="button" data-go-view="wizard">Crear campaña guiada</button>
+          </div>
+          <div class="kpis" id="overviewKpis">
+            <article><span>Clientes sincronizados</span><b id="overviewClients">—</b><small>Firebase</small></article>
+            <article><span>Servicios activos</span><b id="overviewProducts">—</b><small>catálogo real</small></article>
+            <article><span>Borradores</span><b id="overviewDrafts">—</b><small>sin gasto activo</small></article>
+            <article><span>Campañas activas</span><b>0</b><small>Meta aún no conectada</small></article>
+          </div>
+          <div class="overview-grid">
+            <article class="panel"><span class="eyebrow">Embudo canónico</span><h3>Gasto → Calificados → Reservas → Sesiones → Ingreso</h3><p class="muted-copy">No se mostrarán ROAS ni costo por sesión hasta que existan métricas remotas y atribución verificable.</p><div class="empty-state-inline">Insights: sin conexión Meta de solo lectura</div></article>
+            <article class="panel"><span class="eyebrow">Controles activos</span><h3>Gasto protegido</h3><ul class="check-list"><li>Borradores locales y Firebase</li><li>Sin tokens Meta en el navegador</li><li>Sin activación automática</li><li>Plantillas tratadas como hipótesis</li></ul></article>
+          </div>
+        </section>
+
+        <section class="view" id="viewWizard">
+          <div class="section-hero compact-section">
+            <div><span class="eyebrow">Wizard rector · guardado local automático</span><h1>Construir una campaña vendible</h1><p>Ocho pasos, economía primero y revisión antes de guardar.</p></div>
+            <span class="phase-badge">Operación segura · publicación Meta bloqueada</span>
+          </div>
+          <div class="wizard-shell">
+            <aside class="wizard-steps" aria-label="Pasos de campaña">
+              <button type="button" data-wizard-step="0" class="active"><span>0</span>Preflight</button>
+              <button type="button" data-wizard-step="1"><span>1</span>Meta comercial</button>
+              <button type="button" data-wizard-step="2"><span>2</span>Público</button>
+              <button type="button" data-wizard-step="3"><span>3</span>Plantilla</button>
+              <button type="button" data-wizard-step="4"><span>4</span>Creativos</button>
+              <button type="button" data-wizard-step="5"><span>5</span>Presupuesto</button>
+              <button type="button" data-wizard-step="6"><span>6</span>Destino</button>
+              <button type="button" data-wizard-step="7"><span>7</span>Revisión</button>
+            </aside>
+            <form class="panel wizard-form" id="wizardForm">
+              <div class="wizard-panel active" data-wizard-panel="0">
+                <span class="eyebrow">Paso 0</span><h3>Preflight operativo</h3>
+                <div class="health-grid">
+                  <article><b>Firebase y CRM</b><span id="preflightFirebase">Validando sesión…</span></article>
+                  <article><b>Meta</b><span class="warning-text">No conectada · publicación bloqueada</span></article>
+                  <article><b>Medición</b><span class="warning-text">Sin Insights/CAPI verificados</span></article>
+                  <article><b>Modo seguro</b><span class="success-text">Borradores, gasto cero</span></article>
+                </div>
+                <p class="notice">Puedes terminar el plan y exportarlo. Conectar Meta, crear objetos PAUSED o activar campañas pertenece a fases posteriores y requiere backend seguro.</p>
+              </div>
+              <div class="wizard-panel" data-wizard-panel="1">
+                <span class="eyebrow">Paso 1</span><h3>Meta y economía del servicio</h3>
+                <div class="form-grid">
+                  <label>Servicio<select id="wizardService"><option value="birthday">Cumpleaños</option><option value="maternity">Maternidad</option><option value="xv">XV años</option><option value="graduation">Graduación</option><option value="wedding">Boda</option><option value="family">Familiar</option><option value="corporate">Corporativo</option><option value="documents">2x2 / documentos</option><option value="frames">Enmarcados</option><option value="general">Otro</option></select></label>
+                  <label>Espacios reales<input id="wizardSlots" type="number" min="1" value="5" required /></label>
+                  <label>Fecha límite<input id="wizardDeadline" type="date" required /></label>
+                  <label>Objetivo de negocio<select id="wizardGoal"><option value="qualified_lead">Lead calificado</option><option value="booking">Reserva</option><option value="completed_session">Sesión completada</option><option value="paid_order">Venta pagada</option></select></label>
+                  <label>Precio (RD$)<input id="wizardPrice" type="number" min="0" required /></label>
+                  <label>Depósito (RD$)<input id="wizardDeposit" type="number" min="0" /></label>
+                  <label>Costo variable (RD$)<input id="wizardVariableCost" type="number" min="0" required /></label>
+                  <label>Beneficio deseado tras anuncios<input id="wizardProfit" type="number" min="0" /></label>
+                  <label>ROAS de ingreso objetivo<input id="wizardRoas" type="number" min="1" step="0.1" value="3" /></label>
+                  <label class="wide">Oferta verificable<input id="wizardOffer" maxlength="220" placeholder="Entregables, depósito y vigencia reales" required /></label>
+                </div>
+              </div>
+              <div class="wizard-panel" data-wizard-panel="2">
+                <span class="eyebrow">Paso 2</span><h3>Público permitido y etapa</h3>
+                <div class="form-grid">
+                  <label>Etapa<select id="wizardStage"><option value="cold">Frío</option><option value="warm">Cálido</option><option value="hot">Decisión</option><option value="remarketing">Retargeting</option><option value="loyalty">Cliente anterior</option></select></label>
+                  <label>Fuente<select id="wizardAudienceSource"><option value="broad_local">Público local amplio</option><option value="crm_consented">CRM con consentimiento</option><option value="engagement">Interacción Meta</option><option value="website">Visitantes web</option></select></label>
+                  <label>Ubicación<input id="wizardLocation" value="La Romana, República Dominicana" /></label>
+                  <label>Radio km<input id="wizardRadius" type="number" min="1" max="80" value="25" /></label>
+                  <label>Edad mínima<input id="wizardAgeMin" type="number" min="18" max="65" value="18" /></label>
+                  <label>Edad máxima<input id="wizardAgeMax" type="number" min="18" max="65" value="55" /></label>
+                </div>
+                <label class="consent-row"><input id="wizardConsent" type="checkbox" /> Confirmo consentimiento aplicable si se usa el banco CRM.</label>
+              </div>
+              <div class="wizard-panel" data-wizard-panel="3">
+                <span class="eyebrow">Paso 3</span><h3>Plantillas recomendadas</h3>
+                <p class="muted-copy">Son hipótesis, nunca “ganadoras” sin resultados propios.</p>
+                <div class="template-picker" id="wizardTemplatePicker"></div>
+              </div>
+              <div class="wizard-panel" data-wizard-panel="4">
+                <span class="eyebrow">Paso 4</span><h3>Plan de creativos y derechos</h3>
+                <div class="form-grid">
+                  <label>Modo<select id="wizardCreativeMode"><option value="mixed">Mixto</option><option value="image">Flyer</option><option value="video">Video</option></select></label>
+                  <label>Concepto<input id="wizardConcept" placeholder="Resultado, proceso u oferta" /></label>
+                </div>
+                <div class="asset-checks"><label><input type="checkbox" data-asset-family="feed_portrait" /> 4:5 Feed</label><label><input type="checkbox" data-asset-family="fullscreen_vertical" /> 9:16 Stories/Reels</label><label><input type="checkbox" data-asset-family="marketplace_square" /> 1:1 Marketplace</label></div>
+                <div class="asset-checks"><label><input id="wizardPeopleVisible" type="checkbox" /> Personas visibles</label><label><input id="wizardModelRelease" type="checkbox" /> Release comercial</label><label><input id="wizardContainsMinor" type="checkbox" /> Contiene menor</label><label><input id="wizardGuardianRelease" type="checkbox" /> Permiso del tutor</label></div>
+                <label>Copy a validar<textarea id="wizardCopy" placeholder="Escribe el texto principal para ejecutar el linter"></textarea></label>
+                <div class="asset-checks"><label><input id="wizardAvailabilityVerified" type="checkbox" /> Cupos/fecha verificados</label><label><input id="wizardProofVerified" type="checkbox" /> Prueba social verificada</label></div>
+                <div id="wizardLint" class="qa-box"></div>
+              </div>
+              <div class="wizard-panel" data-wizard-panel="5">
+                <span class="eyebrow">Paso 5</span><h3>Presupuesto y señal</h3>
+                <div class="form-grid">
+                  <label>Tope de caja (RD$)<input id="wizardCashCap" type="number" min="1" value="3000" /></label>
+                  <label>Días<input id="wizardDays" type="number" min="1" max="90" value="7" /></label>
+                  <label>Costo histórico por evento<input id="wizardHistoricalCost" type="number" min="0" placeholder="Si existe" /></label>
+                  <label>Calificado → reserva<input id="wizardQualifiedRate" type="number" min="0" max="1" step="0.01" value="0.5" /></label>
+                  <label>Reserva → sesión<input id="wizardCompletedRate" type="number" min="0" max="1" step="0.01" value="0.8" /></label>
+                  <label>No-show/reembolso<input id="wizardNoShowRate" type="number" min="0" max="1" step="0.01" value="0.1" /></label>
+                </div>
+                <div id="wizardBudgetResult" class="budget-result"></div>
+              </div>
+              <div class="wizard-panel" data-wizard-panel="6">
+                <span class="eyebrow">Paso 6</span><h3>Destino y seguimiento</h3>
+                <div class="form-grid">
+                  <label>Destino<select id="wizardDestination"><option value="whatsapp">WhatsApp</option><option value="instant_form">Formulario instantáneo</option><option value="web">Landing web</option><option value="booking">Reserva</option></select></label>
+                  <label>SLA de respuesta (min)<input id="wizardSla" type="number" min="1" value="15" /></label>
+                  <label class="wide">Preguntas de calificación<textarea id="wizardQuestions">Fecha de la sesión, tipo de servicio y cantidad de personas.</textarea></label>
+                </div>
+                <p class="notice">SaleAds añadirá UTMs y un código estable al borrador. No exportará teléfonos ni conversaciones del CRM.</p>
+              </div>
+              <div class="wizard-panel" data-wizard-panel="7">
+                <span class="eyebrow">Paso 7</span><h3>Revisión y borrador</h3>
+                <div id="wizardReview" class="review-grid"></div>
+                <button class="primary" id="wizardCreateDraft" type="button">Crear borrador compatible</button>
+              </div>
+              <div class="wizard-actions"><button class="secondary" id="wizardPrev" type="button">Anterior</button><span id="wizardProgress">Paso 1 de 8</span><button class="primary" id="wizardNext" type="button">Siguiente</button></div>
+            </form>
+            <aside class="panel wizard-preview"><span class="eyebrow">Resumen vivo</span><h3 id="wizardPreviewTitle">Campaña sin nombre</h3><div id="wizardPreviewBody"></div></aside>
+          </div>
+        </section>
+
+        <section class="view" id="viewTemplates"><div class="section-hero compact-section"><div><span class="eyebrow">Biblioteca versionada</span><h1>Plantillas T01–T12</h1><p>Patrones para fotografía tratados como hipótesis medibles.</p></div></div><div class="template-library" id="templateLibrary"></div></section>
+
+        <section class="view" id="viewCreatives">
+          <div class="section-hero compact-section"><div><span class="eyebrow">Biblioteca y QA por placement</span><h1>Creativos con derechos verificables</h1><p>Registra metadatos, permisos y familia visual. SaleAds bloquea usos sin autorización.</p></div></div>
+          <div class="sync-banner" data-sync-banner id="syncBannerCreatives"><span class="status-chip muted-text">Sin sincronizar</span></div>
+          <div class="spec-grid" id="creativeSpecGrid"></div>
+          <section class="panel creative-studio" aria-labelledby="creativeStudioTitle">
+            <div class="panel-heading section"><div><span>Taller local · la foto no sale del dispositivo</span><h3 id="creativeStudioTitle">Producir anuncio en 4:5, 9:16 y 1:1</h3></div><span class="status-chip success-text">Cero gasto</span></div>
+            <div class="studio-controls">
+              <label>Fotografía real<input id="studioFile" type="file" accept="image/jpeg,image/png,image/webp" /></label>
+              <label>Texto principal<input id="studioHeadline" maxlength="90" placeholder="Ej. Sesiones de maternidad con guía de poses" /></label>
+              <label>Acción<select id="studioCta"><option>Reservar por WhatsApp</option><option>Solicitar información</option><option>Ver paquetes disponibles</option><option>Agendar sesión</option></select></label>
+              <label>Foco horizontal<input id="studioFocusX" type="range" min="0" max="100" value="50" /></label>
+              <label>Foco vertical<input id="studioFocusY" type="range" min="0" max="100" value="50" /></label>
+            </div>
+            <div class="inline-actions studio-actions"><button class="primary" id="studioGenerate" type="button">Generar paquete visual</button><button class="secondary" id="studioManifest" type="button" disabled>Descargar manifiesto QA</button></div>
+            <div class="qa-box" id="studioStatus">Selecciona una fotografía autorizada. El archivo se procesa solamente en memoria y no se sube a Firebase ni a Meta.</div>
+            <div class="studio-preview-grid" id="studioPreview"></div>
+          </section>
+          <div class="operations-grid">
+            <form class="panel" id="creativeAssetForm">
+              <div class="panel-heading section"><div><span>Activo nuevo</span><h3>Registro comercial</h3></div></div>
+              <div class="form-grid">
+                <label class="wide">Nombre interno<input id="assetName" maxlength="100" required placeholder="Ej. Maternidad estudio agosto" /></label>
+                <label>Familia<select id="assetFamily"><option value="feed_portrait">4:5 Feed</option><option value="fullscreen_vertical">9:16 Stories/Reels</option><option value="marketplace_square">1:1 Marketplace</option></select></label>
+                <label>Derechos hasta<input id="assetRightsUntil" type="date" /></label>
+                <label class="wide">Alcance del permiso<input id="assetRightsScope" placeholder="Meta orgánico/pagado, sucursal y territorio" /></label>
+              </div>
+              <div class="asset-checks"><label><input id="assetPeople" type="checkbox" /> Personas visibles</label><label><input id="assetModelRelease" type="checkbox" /> Release comercial</label><label><input id="assetMinor" type="checkbox" /> Menor visible</label><label><input id="assetGuardian" type="checkbox" /> Permiso del tutor</label></div>
+              <div class="qa-box" id="assetQa">Completa el registro para ejecutar QA.</div>
+              <button class="primary" type="submit">Guardar metadatos</button>
+            </form>
+            <div class="panel"><div class="panel-heading section"><div><span>Biblioteca compartida por sucursal</span><h3>Activos registrados</h3></div></div><div class="asset-library" id="assetLibrary"></div></div>
+          </div>
+        </section>
+
+        <section class="view" id="viewBuilder">
           <div class="hero">
             <div>
               <span class="eyebrow"
@@ -377,9 +542,93 @@
                 a Meta desde esta herramienta.
               </p>
             </div>
-            <input id="clientSearch" placeholder="Buscar nombre o teléfono" />
+            <input id="clientSearch" placeholder="Buscar por referencia interna" />
           </div>
+          <div class="kpis" id="audienceSummary"><article><span>Total CRM</span><b id="audienceTotal">—</b><small>solo esta sucursal</small></article><article><span>Consentidos</span><b id="audienceConsented">—</b><small>uso publicitario explícito</small></article><article><span>Excluidos/expirados</span><b id="audienceExcluded">—</b><small>nunca exportables</small></article><article><span>Listos para contacto</span><b id="audienceContactable">—</b><small>consentimiento + contacto</small></article></div>
+          <p class="notice">La ausencia de consentimiento se trata como “no utilizable”. La vista enmascara los datos de contacto y nunca exporta deudores por ese atributo.</p>
           <div class="audience-grid" id="audienceGrid"></div>
+        </section>
+
+        <section class="view" id="viewCalendar">
+          <div class="section-hero compact-section"><div><span class="eyebrow">Capacidad real</span><h1>Calendario comercial</h1><p>Los cupos declarados alimentan la viabilidad y evitan urgencia ficticia.</p></div></div>
+          <div class="sync-banner" data-sync-banner id="syncBannerCalendar"><span class="status-chip muted-text">Sin sincronizar</span></div>
+          <div class="kpis"><article><span>Días cargados</span><b id="capacityDays">0</b><small>plan de la sucursal</small></article><article><span>Cupos totales</span><b id="capacitySlots">0</b><small>capacidad</small></article><article><span>Reservados</span><b id="capacityReserved">0</b><small>confirmados</small></article><article><span>Disponibles</span><b id="capacityAvailable">0</b><small>ofertables</small></article></div>
+          <div class="operations-grid"><form class="panel" id="capacityForm"><div class="panel-heading section"><div><span>Disponibilidad</span><h3>Registrar jornada</h3></div></div><div class="form-grid"><label>Fecha<input id="capacityDate" type="date" required /></label><label>Servicio<input id="capacityService" required placeholder="Ej. maternidad" /></label><label>Cupos<input id="capacitySlotsInput" type="number" min="0" required /></label><label>Reservados<input id="capacityReservedInput" type="number" min="0" value="0" /></label></div><button class="primary" type="submit">Guardar capacidad</button></form><div class="panel"><div class="panel-heading section"><div><span>Próximas fechas</span><h3>Disponibilidad registrada</h3></div></div><div id="capacityList" class="record-list"></div></div></div>
+        </section>
+
+        <section class="view" id="viewExperiments">
+          <div class="section-hero compact-section"><div><span class="eyebrow">Aprendizaje propio</span><h1>Experimentos controlados</h1><p>Una variable por prueba; ninguna variante se llama ganadora sin señal suficiente.</p></div></div>
+          <div class="sync-banner" data-sync-banner id="syncBannerExperiments"><span class="status-chip muted-text">Sin sincronizar</span></div>
+          <div class="operations-grid"><form class="panel" id="experimentForm"><div class="panel-heading section"><div><span>Nueva prueba</span><h3>Control vs. variante</h3></div></div><div class="form-grid"><label class="wide">Hipótesis<input id="experimentHypothesis" required placeholder="Un Reel del proceso reducirá el costo por reserva" /></label><label>Variable<select id="experimentVariable"><option value="creative">Creativo</option><option value="copy">Copy</option><option value="destination">Destino</option><option value="audience">Audiencia</option></select></label><label>Métrica principal<select id="experimentMetric"><option value="qualified_lead">Lead calificado</option><option value="booking">Reserva</option><option value="completed">Sesión completada</option></select></label><label>Eventos mínimos<input id="experimentMinimum" type="number" min="1" value="20" /></label><label>Control eventos<input id="experimentControlEvents" type="number" min="0" value="0" /></label><label>Control gasto<input id="experimentControlSpend" type="number" min="0" value="0" /></label><label>Variante eventos<input id="experimentVariantEvents" type="number" min="0" value="0" /></label><label>Variante gasto<input id="experimentVariantSpend" type="number" min="0" value="0" /></label></div><div id="experimentDecision" class="qa-box"></div><button class="primary" type="submit">Guardar evaluación</button></form><div class="panel"><div class="panel-heading section"><div><span>Memoria de aprendizaje</span><h3>Pruebas registradas</h3></div></div><div id="experimentList" class="record-list"></div></div></div>
+        </section>
+
+        <section class="view ai-lab-view" id="viewAiLab">
+          <div class="section-hero compact-section ai-hero">
+            <div><span class="eyebrow">SaleAds Intelligence · cerebro local v2</span><h1>Decisiones claras. Trabajo listo.</h1><p>Convierte economía, capacidad y resultados agregados en una recomendación explicable, un brief creativo y una prueba medible.</p></div>
+            <div class="ai-hero-status"><span class="phase-badge">Experimental</span><span class="status-chip success-text">Gasto protegido</span><small>Aprobación humana obligatoria</small></div>
+          </div>
+          <div class="ai-guard-grid" aria-label="Controles de seguridad de IA">
+            <article><span class="ai-guard-icon" aria-hidden="true">01</span><div><b>Privacidad</b><span class="success-text">Solo agregados</span><small>Sin nombres, teléfonos, correo, chats o fotos</small></div></article>
+            <article><span class="ai-guard-icon" aria-hidden="true">02</span><div><b>Motor</b><span class="success-text">Local y explicable</span><small>Misma evidencia, misma decisión reproducible</small></div></article>
+            <article><span class="ai-guard-icon" aria-hidden="true">03</span><div><b>Proveedor remoto</b><span class="warning-text">No configurado</span><small>Ninguna clave ni llamada generativa en el navegador</small></div></article>
+            <article><span class="ai-guard-icon" aria-hidden="true">04</span><div><b>Permisos</b><span class="success-text">Borradores solamente</span><small>Publicar, activar y aumentar gasto están prohibidos</small></div></article>
+          </div>
+
+          <div class="ai-dashboard-grid">
+            <form class="panel ai-input-panel" id="aiRecommendationForm">
+              <div class="panel-heading section"><div><span>01 · contexto</span><h3>Señales verificables</h3></div><button class="ghost" id="aiReset" type="button">Limpiar</button></div>
+              <section class="ai-form-section" aria-labelledby="aiCampaignContextTitle">
+                <div class="ai-section-title"><span>Campaña y oferta</span><small id="aiCampaignContextTitle">La base comercial que sí conocemos</small></div>
+                <div class="form-grid">
+                  <label class="wide">Campaña base<select id="aiCampaign"><option value="">Contexto manual</option></select></label>
+                  <label>Servicio<input id="aiService" value="general" maxlength="60" /></label>
+                  <label>Objetivo<select id="aiGoal"><option value="qualified_lead">Lead calificado</option><option value="booking" selected>Reserva</option><option value="completed_session">Sesión completada</option><option value="paid_order">Venta pagada</option></select></label>
+                  <label class="wide">Oferta real<input id="aiOffer" maxlength="220" placeholder="Entregables, precio o depósito exactamente como se ofrecerán" /></label>
+                  <label>Tono<select id="aiTone"><option value="warm">Cercano</option><option value="elegant">Elegante</option><option value="direct">Directo</option><option value="celebratory">Celebración</option></select></label>
+                  <label>Destino<select id="aiDestination"><option value="whatsapp">WhatsApp</option><option value="web">Página web</option><option value="crm">Seguimiento CRM</option></select></label>
+                  <label>Ventana de análisis<input id="aiWindowDays" type="number" min="1" max="90" value="7" /><small>días</small></label>
+                  <label>Cupos disponibles<input id="aiAvailableSlots" type="number" min="0" value="0" /></label>
+                </div>
+              </section>
+              <details class="ai-form-section ai-collapsible" name="aiInputGroup">
+                <summary><span>Economía de la oferta</span><small>Margen y límite de inversión</small></summary>
+                <div class="form-grid"><label>Precio (RD$)<input id="aiPrice" type="number" min="0" /></label><label>Costo variable<input id="aiVariableCost" type="number" min="0" /></label><label>Beneficio deseado<input id="aiDesiredProfit" type="number" min="0" /></label><label>ROAS objetivo<input id="aiTargetRoas" type="number" min="0" step="0.1" value="3" /></label><label class="wide">Presupuesto total disponible<input id="aiBudgetTotal" type="number" min="0" value="0" /></label></div>
+              </details>
+              <details class="ai-form-section ai-collapsible" name="aiInputGroup">
+                <summary><span>Resultados observados</span><small>Señales agregadas, nunca personas</small></summary>
+                <div class="form-grid"><label>Gasto verificado<input id="aiSpend" type="number" min="0" value="0" /></label><label>Leads calificados<input id="aiQualified" type="number" min="0" value="0" /></label><label>Reservas<input id="aiBookings" type="number" min="0" value="0" /></label><label>Sesiones completadas<input id="aiCompleted" type="number" min="0" value="0" /></label><label>Frecuencia<input id="aiFrequency" type="number" min="0" step="0.1" value="0" /></label><label>Edad del creativo<input id="aiCreativeAge" type="number" min="0" value="0" /><small>días</small></label></div>
+              </details>
+              <div class="ai-readiness" id="aiReadiness" aria-live="polite"><div><b>Preparación del análisis</b><span id="aiReadinessLabel">0%</span></div><div class="ai-readiness-track"><i id="aiReadinessBar"></i></div><small id="aiReadinessHint">Completa economía, capacidad y resultados verificables.</small></div>
+              <div class="ai-confirm-grid"><label><input id="aiOfferVerified" type="checkbox" /> La oferta fue revisada y es real.</label><label><input id="aiEvidenceVerified" type="checkbox" /> Gasto, resultados y capacidad están verificados.</label></div>
+              <div class="ai-primary-actions"><button class="primary" type="submit">Analizar ahora</button><button class="secondary" id="aiExportContext" type="button">Exportar contexto seguro</button></div>
+            </form>
+
+            <aside class="panel ai-result-panel" aria-labelledby="aiDecisionTitle">
+              <div class="panel-heading section"><div><span>02 · decisión</span><h3 id="aiDecisionTitle">Recomendación asistida</h3></div><span class="status-chip" id="aiSampleChip">Sin analizar</span></div>
+              <div id="aiRecommendationResult" class="ai-recommendation-empty" aria-live="polite"><span class="ai-empty-orbit" aria-hidden="true">✦</span><b>Tu siguiente decisión aparecerá aquí</b><p>SaleAds mostrará datos insuficientes antes que inventar rendimiento.</p></div>
+              <div class="ai-result-actions"><button class="primary" id="aiNextStep" type="button" disabled>Preparar siguiente paso</button><button class="secondary" id="aiGenerateBrief" type="button" disabled>Generar brief seguro</button></div>
+              <div class="ai-utility-actions"><button class="ghost" id="aiCopyRecommendation" type="button" disabled>Copiar decisión</button><button class="ghost" id="aiExportRecommendation" type="button" disabled>Exportar JSON</button></div>
+              <section class="ai-brief-panel" id="aiBriefPanel" hidden aria-labelledby="aiBriefTitle"><div class="ai-section-title"><span>03 · brief local</span><small id="aiBriefTitle">Listo para revisión creativa</small></div><div id="aiBriefResult"></div><div class="ai-primary-actions"><button class="primary" id="aiOpenStudio" type="button">Abrir taller creativo</button><button class="secondary" id="aiCopyBrief" type="button">Copiar brief</button><button class="ghost" id="aiExportBrief" type="button">Exportar</button></div></section>
+            </aside>
+          </div>
+
+          <div class="ai-lower-grid">
+            <form class="panel ai-experiment-lab" id="aiExperimentForm">
+              <div class="panel-heading section"><div><span>04 · laboratorio</span><h3>Diseñador A/B</h3></div><span class="status-chip">2 brazos</span></div>
+              <p class="ai-panel-copy">Cambia una sola variable y calcula si el presupuesto alcanza para aprender.</p>
+              <div class="form-grid"><label>Variable<select id="aiExperimentVariable"><option value="creative">Creativo</option><option value="copy">Copy</option><option value="destination">Destino</option><option value="audience">Audiencia</option></select></label><label>Métrica<select id="aiExperimentMetric"><option value="qualified_lead">Lead calificado</option><option value="booking">Reserva</option><option value="completed_session">Sesión completada</option></select></label><label>Eventos por brazo<input id="aiExperimentMinimum" type="number" min="5" value="20" /></label><label>Costo histórico por evento<input id="aiExperimentCost" type="number" min="0" value="0" /></label><label>Presupuesto diario<input id="aiExperimentDaily" type="number" min="0" value="500" /></label><label>Días<input id="aiExperimentDays" type="number" min="1" max="90" value="7" /></label></div>
+              <div class="ai-primary-actions"><button class="primary" type="submit">Calcular viabilidad</button><button class="secondary" id="aiExperimentUseObserved" type="button">Usar costo observado</button></div>
+              <div id="aiExperimentResult" class="ai-experiment-result">Registra un costo histórico para calcular dos brazos comparables.</div>
+            </form>
+            <div class="panel ai-memory-panel"><div class="panel-heading section"><div><span>Memoria privada</span><h3>Decisiones recientes</h3></div><button class="ghost" id="aiExportHistory" type="button">Exportar memoria</button></div><div id="aiRecommendationHistory" class="record-list"></div><p class="notice">Hasta 25 resultados por sucursal en este dispositivo. Sin clientes y sin acciones automáticas.</p></div>
+          </div>
+        </section>
+
+        <section class="view" id="viewAnalytics">
+          <div class="section-hero compact-section"><div><span class="eyebrow">CRM y atribución propia</span><h1>Medición hasta ingreso</h1><p>Registra señales verificables. Sin conexión Insights no se inventan gasto, ROAS ni conversiones.</p></div></div>
+          <div class="sync-banner" data-sync-banner id="syncBannerAnalytics"><span class="status-chip muted-text">Sin sincronizar</span></div>
+          <div class="funnel-grid" id="funnelGrid"></div>
+          <div class="operations-grid"><form class="panel" id="attributionForm"><div class="panel-heading section"><div><span>Evento comercial</span><h3>Registrar conversión</h3></div></div><div class="form-grid"><label>Campaña<select id="attributionCampaign"></select></label><label>Etapa<select id="attributionStage"><option value="lead">Lead</option><option value="qualified">Calificado</option><option value="booking">Reserva</option><option value="completed">Sesión completada</option><option value="paid">Venta pagada</option></select></label><label>Valor confirmado (RD$)<input id="attributionValue" type="number" min="0" value="0" /></label><label>Referencia no personal<input id="attributionReference" maxlength="80" placeholder="Ticket o folio interno" /></label></div><button class="primary" type="submit">Registrar evento</button></form><div class="panel"><div class="panel-heading section"><div><span>Auditoría por sucursal</span><h3>Eventos atribuidos</h3></div></div><div id="attributionList" class="record-list"></div></div></div>
         </section>
 
         <section class="view" id="viewHistory">
@@ -391,34 +640,28 @@
                 Borradores por sucursal, con autor, fecha y paquete exportable.
               </p>
             </div>
-            <button class="secondary" id="refreshHistory">Actualizar</button>
+            <div class="inline-actions"><select id="campaignStatusFilter"><option value="">Todos los estados</option><option value="saved">Guardados</option><option value="qa_ready">QA listo</option><option value="approved">Aprobados</option></select><button class="secondary" id="refreshHistory">Actualizar</button></div>
           </div>
           <div class="history-grid" id="historyGrid"></div>
         </section>
 
-        <section class="view" id="viewMetrics">
-          <div class="section-hero">
-            <div>
-              <span class="eyebrow">Meta Ads · solo lectura</span>
-              <h1>Rendimiento real de campañas</h1>
-              <p>Gasto, alcance, impresiones, clics, conversaciones y leads de los últimos 30 días. Esta vista no publica, pausa ni cambia presupuestos.</p>
-            </div>
-            <button class="secondary" id="refreshMetrics">Actualizar métricas</button>
-          </div>
-          <div class="form-error" id="metricsError" role="alert"></div>
-          <div class="kpis" id="metaKpis">
-            <article><span>Gasto</span><b id="metaSpend">—</b><small>últimos 30 días</small></article>
-            <article><span>Alcance</span><b id="metaReach">—</b><small>personas</small></article>
-            <article><span>Clics</span><b id="metaClicks">—</b><small id="metaCtr">CTR —</small></article>
-            <article><span>Conversaciones + leads</span><b id="metaResults">—</b><small>resultados atribuidos</small></article>
-          </div>
-          <div class="history-grid" id="metricsGrid"></div>
+        <section class="view" id="viewApprovals">
+          <div class="section-hero compact-section"><div><span class="eyebrow">Control humano y auditoría</span><h1>Aprobaciones</h1><p>QA y aprobación son estados separados. Crear objetos Meta PAUSED continúa bloqueado hasta disponer de backend seguro.</p></div></div>
+          <div class="sync-banner" data-sync-banner id="syncBannerApprovals"><span class="status-chip muted-text">Sin sincronizar</span></div>
+          <div class="operations-grid"><div class="panel"><div class="panel-heading section"><div><span>Cola de revisión</span><h3>Borradores y QA</h3></div></div><div id="approvalList" class="record-list"></div></div><form class="panel" id="approvalForm"><div class="panel-heading section"><div><span>Aprobación explícita</span><h3>Registrar decisión</h3></div></div><label>Campaña<select id="approvalCampaign"></select></label><label>Acción<select id="approvalAction"><option value="qa_ready">Marcar QA listo</option><option value="approved">Aprobar borrador</option></select></label><label>Confirmación<input id="approvalPhrase" autocomplete="off" placeholder="Escribe APROBAR BORRADOR" /></label><label>Nota de auditoría<textarea id="approvalNote" required placeholder="Qué se revisó y por qué se aprueba"></textarea></label><button class="primary" type="submit">Registrar aprobación</button><p class="notice">Esta acción no publica, no activa gasto y no cambia Meta Ads.</p></form></div>
+          <div class="panel"><div class="panel-heading section"><div><span>Bitácora append-only</span><h3>Auditoría de la sucursal</h3></div></div><div id="auditTrail" class="record-list"></div><p class="notice">Cada registro operativo queda en <code>saleads_audit</code>: se agrega, nunca se edita ni se borra.</p></div>
+        </section>
+
+        <section class="view" id="viewConnections">
+          <div class="section-hero compact-section"><div><span class="eyebrow">Preflight de proveedores</span><h1>Conexiones</h1><p>Una sesión de SaleAds no concede permisos publicitarios.</p></div></div>
+          <div class="connection-grid"><article class="panel"><b>Firebase Auth + CRM</b><span class="success-text" id="connectionFirebase">Validando…</span><p>Membresía y sucursal verificadas en el panel.</p></article><article class="panel"><b>Meta Marketing API</b><span class="warning-text">No conectada</span><p>OAuth, Insights, CAPI y publicación PAUSED requieren backend seguro.</p></article><article class="panel"><b>IA estratégica</b><span class="success-text">Cerebro local activo</span><p>Recomendaciones agregadas con esquema estricto. El proveedor generativo remoto aún requiere backend seguro.</p></article><article class="panel"><b>Gasto publicitario</b><span class="success-text">Bloqueado por diseño</span><p>Solo exportación y apertura manual de Ads Manager.</p></article></div>
         </section>
       </main>
     </div>
 
     <div class="toast" id="toast" role="status"></div>
     <script src="https://panel.dcarelacompufoto.com/firebase-config.js"></script>
-    <script type="module" src="./app.js?v=20260830v3"></script>
+    <script src="./saleads-core.js?v=20260824v8"></script>
+    <script type="module" src="./app.js?v=20260824v8"></script>
   </body>
 </html>
