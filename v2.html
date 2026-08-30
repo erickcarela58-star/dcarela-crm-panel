@@ -352,7 +352,8 @@ video.mmedia{cursor:default}
   border:1px solid var(--line2);border-radius:var(--r);font-size:12px}
 .pieza img{width:36px;height:36px;object-fit:cover;border-radius:5px;flex:0 0 auto}
 .pieza .ico{width:36px;height:36px;display:flex;align-items:center;justify-content:center;
-  border-radius:5px;background:var(--hover);font-size:17px;flex:0 0 auto}
+  border-radius:5px;background:var(--hover);color:var(--mut);flex:0 0 auto}
+.pieza .ico svg{width:19px;height:19px}
 .pieza .pnom{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .pieza .pnom i{display:block;font-style:normal;font-size:10.5px;color:var(--meta)}
 .pieza button{color:var(--mut);font-size:15px;line-height:1;flex:0 0 auto}
@@ -365,10 +366,17 @@ video.mmedia{cursor:default}
 .pulso{width:9px;height:9px;border-radius:50%;background:var(--bad);flex:0 0 auto;
   animation:latido 1s infinite}
 @keyframes latido{50%{opacity:.25}}
+.grabando{flex-wrap:nowrap;overflow:hidden}
 .grabando #reloj{font-variant-numeric:tabular-nums;min-width:38px;flex:0 0 auto}
 /* Las ondas son el nivel real del microfono, no una animacion. Si el dibujo se queda
-   plano es que no esta entrando sonido, y eso hay que poder verlo antes de enviar. */
-#ondas{flex:1;min-width:60px;height:30px;display:block}
+   plano es que no esta entrando sonido, y eso hay que poder verlo antes de enviar.
+   min-width:0 y width:0 NO son adorno: un <canvas> mide 300x150 por defecto y como
+   elemento flex se niega a encogerse por debajo de eso, empujando fuera de la barra los
+   botones de Enviar y Cancelar. Justo lo que pasaba. */
+#ondas{flex:1 1 0;min-width:0;width:0;height:30px;display:block}
+/* Y los botones no se encogen ni se salen pase lo que pase: sin ellos no hay forma de
+   mandar la nota que se acaba de grabar. */
+.grabando #recEnviar,.grabando #recCancelar{flex:0 0 auto;white-space:nowrap}
 /* Mientras se graba se esconde el area de texto y los adjuntos, pero NO el boton de
    enviar: desaparecia justo cuando hacia falta y no habia forma de mandar la nota. */
 .escribir:has(.grabando:not([hidden])) textarea{display:none}
@@ -1310,9 +1318,16 @@ function pintaCola(){
   // Se ve la foto, no su nombre. Lo que va a salir hacia un cliente real hay que
   // poder mirarlo antes: un nombre de archivo no dice si adjuntaste la que querias.
   c.innerHTML = COLA.map((a,i) => {
+    // Iconos dibujados, no emoji: en Windows varias fuentes no traen 🎙 ni 🖼 y sale la
+    // cajita vacia del glifo que falta, que es lo que se veia en la cola.
+    const ICONO = {
+      audio: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 11a7 7 0 0014 0M12 18v4"/></svg>',
+      image: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>',
+      document: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/></svg>',
+    };
     const previa = a.tipo === 'image' && a.datos
       ? '<img src="data:' + esc(a.mime || 'image/jpeg') + ';base64,' + a.datos + '" alt="">'
-      : '<span class="ico">' + (a.tipo === 'audio' ? '🎙' : a.tipo === 'image' ? '🖼' : '📄') + '</span>';
+      : '<span class="ico">' + (ICONO[a.tipo] || ICONO.document) + '</span>';
     const peso = a.kb || (a.datos ? Math.round(a.datos.length * 0.75 / 1024) : 0);
     const marca = a.tipo === 'image' ? (a.hd ? ' · HD' : '') : '';
     return '<span class="pieza">' + previa
