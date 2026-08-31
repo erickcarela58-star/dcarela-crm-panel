@@ -1356,6 +1356,9 @@ function cableaChat(c){
         action:'send', conversation_id: conv,
         media_kind: a.tipo, media_b64: a.datos, media_filename: a.nombre, media_mime: a.mime,
         body: (t && i === ultimoConPie) ? t : '',
+        // Los botones exigen texto: si el pie fue a otro adjunto, este va sin nada que
+        // decir y Meta rechazaria el mensaje entero. En ese caso se manda sin botones.
+        ...(a.botones && t && i === ultimoConPie ? { botones: a.botones } : {}),
       });
       if (r.ok) enviados++; else fallo = r.error;
     }
@@ -1586,16 +1589,45 @@ async function abreRapidas(){
   if (!filas) return cierraModal();
   const cuerpo = $('modal').querySelector('.mcuerpo');
   const pinta = () => {
-    cuerpo.innerHTML = (filas.length
+    cuerpo.innerHTML = (!filas.length
+        ? '<p class="aviso">Todavía no hay ninguna. Puedes escribir la tuya abajo, o '
+          + '<button class="btn-linea" id="rqSemilla" style="padding:4px 10px;margin-left:4px">'
+          + 'empezar con seis frases habituales</button></p>'
+        : '')
+      + (filas.length
         ? filas.map((q,i) => '<div class="rapida"><button data-usar="' + i + '">'
             + '<b>' + esc(q.title || q.name || 'Sin título') + '</b>'
             + '<span>' + esc(String(q.body || q.text || '').slice(0,110)) + '</span></button>'
             + '<button class="rx" data-borrar="' + i + '" aria-label="Borrar">×</button></div>').join('')
-        : '<p class="aviso">Todavía no hay ninguna. Escribe la primera abajo.</p>')
+        : '')
       + '<div class="seccion" style="margin:16px 0 8px">Añadir una nueva</div>'
       + '<div class="campo"><label>Título</label><input id="rqT" placeholder="Ej. Horario"></div>'
       + '<div class="campo"><label>Texto</label><textarea id="rqB" rows="3"></textarea></div>'
       + '<button class="btn-solido" id="rqAdd">Guardar</button>';
+    // Seis frases que se repiten veinte veces al dia en un estudio fotografico. Son un
+    // punto de partida editable, no una imposicion: se guardan como cualquier otra y se
+    // borran igual.
+    const semilla = $('rqSemilla');
+    if (semilla) semilla.onclick = async () => {
+      semilla.disabled = true;
+      const base = [
+        ['Horario', 'Estamos de lunes a sábado, de 9:00 a 6:00. Los domingos no trabajamos.'],
+        ['Ubicación', (CFG.addressText || '') + ' ' + (CFG.mapsUrl || '')],
+        ['Abono', 'Para apartar la fecha se deja un abono. El resto se paga el día de la sesión.'],
+        ['Pedir comprobante', 'Cuando hagas el abono mándame el comprobante por aquí y el nombre de quien pagó, y te confirmo la fecha.'],
+        ['Entrega', 'Las fotos editadas se entregan en unos días y te aviso por aquí en cuanto estén listas.'],
+        ['Confirmar fecha', 'Déjame revisar la disponibilidad real de ese día y te confirmo enseguida.'],
+      ];
+      for (const [title, body] of base) {
+        await llama({ action:'data', table:'quick_replies', operation:'insert',
+          payload:{ title, body: body.trim(), created_at: new Date().toISOString() } });
+      }
+      RAPIDAS = null;
+      const nuevas = await cargaRapidas(true);
+      filas.length = 0; filas.push(...(nuevas || []));
+      pinta();
+      avisa('Seis respuestas creadas', 'Edítalas o bórralas como quieras.');
+    };
     $('rqAdd').onclick = async () => {
       const title = $('rqT').value.trim(), body = $('rqB').value.trim();
       if (!title || !body) return avisa('Faltan el título o el texto');
@@ -1741,11 +1773,13 @@ async function adjuntaCombo(c, boton){
   const antes = boton.innerHTML;
   boton.disabled = true; boton.textContent = 'Preparando…';
   try {
-    // Primero la tarjeta oficial; si no existe se cae a la imagen de la web. Mandar
-    // el texto sin foto seria peor que no mandar nada: el combo se vende por la imagen.
-    let r = await fetch(c.tarjeta, { cache:'force-cache' });
-    let url = c.tarjeta;
-    if (!r.ok && c.imagenCruda) { r = await fetch(c.imagenCruda, { cache:'force-cache' }); url = c.imagenCruda; }
+    // Primero la foto de la WEB, que es la que el negocio mantiene al dia. Las de
+    // combos-img son tarjetas generadas hace meses: se quedaron con precios y contenido
+    // viejos, y mandarle a un cliente una tarjeta desactualizada es peor que no mandarle
+    // ninguna, porque despues hay que desdecirse.
+    let url = c.imagenCruda || c.tarjeta;
+    let r = await fetch(url, { cache:'no-cache' });
+    if (!r.ok && c.tarjeta && url !== c.tarjeta) { url = c.tarjeta; r = await fetch(url, { cache:'no-cache' }); }
     if (!r.ok) throw new Error('imagen HTTP ' + r.status);
     const blob = await r.blob();
     const datos = await new Promise((res, rej) => {
@@ -1756,8 +1790,17 @@ async function adjuntaCombo(c, boton){
       l.onerror = () => rej(new Error('no se pudo leer el archivo'));
       l.readAsDataURL(blob);
     });
+    // Los combos salen con botones: el cliente toca en vez de escribir, y su respuesta
+    // vuelve identificada -- se sabe QUE combo le intereso, no un "si" suelto que hay
+    // que ir a buscar tres mensajes mas arriba.
     COLA.push({ tipo:'image', mime: blob.type || 'image/png',
-      nombre: c.nombre + ' - DCarela.' + (url.endsWith('.webp') ? 'webp' : 'png'), datos });
+      nombre: c.nombre + ' - DCarela.' + (url.split('.').pop().split('?')[0] || 'png'),
+      datos,
+      botones: [
+        { id: 'combo_interesa:' + c.cat, titulo: 'Me interesa' },
+        { id: 'combo_fecha:' + c.cat,    titulo: 'Ver disponibilidad' },
+        { id: 'combo_otros',             titulo: 'Ver otros combos' },
+      ] });
     pintaCola();
     const caja = $('texto');
     const t = textoDeCombo(c);
