@@ -1,6 +1,6 @@
 {
-  "version": "2026-08-31-asistente-foco-y-tarjeta-v56",
+  "version": "2026-08-31-estetica-chat-v57",
   "channel": "crm",
   "released_at": "2026-08-31T09:00:00Z",
-  "summary": "Asistente con menu de herramientas y foco por herramienta, tarjeta real del combo extraida de la web, boton de vestidos, previo en vivo de plantillas y bot sin enlaces. Ademas: v2.html deja de cachearse y avisa cuando hay una version nueva publicada."
+  "summary": "Estetica del chat del planificador: turnos con avatar, titular, pasos numerados, riesgos como aviso y el mensaje propuesto como globo con boton de copiar. La version deja de verse como una tarjeta en el menu."
 }
