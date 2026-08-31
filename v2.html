@@ -170,9 +170,10 @@ body.menu-abierto .nav .secundarias{display:block}
    tener que abrir el chat, que es cuando importa saberlo. */
 .avwrap{position:relative;flex:0 0 auto;line-height:0}
 img.av{object-fit:cover}
-.canalpin{position:absolute;top:-2px;right:-3px;width:16px;height:16px;border-radius:50%;
-  display:flex;align-items:center;justify-content:center;font-size:8px;line-height:1;
+.canalpin{position:absolute;top:-2px;right:-3px;width:17px;height:17px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;line-height:1;color:#fff;
   border:2px solid var(--panel)}
+.canalpin svg{width:10px;height:10px;display:block}
 /* La casilla solo aparece al pasar por encima o si ya hay algo seleccionado: en reposo
    la lista se lee limpia y no parece un formulario. */
 .marcar{width:17px;height:17px;flex:0 0 auto;border:1.5px solid var(--line2);border-radius:5px;
@@ -191,6 +192,7 @@ img.av{object-fit:cover}
 .canal{max-width:760px;margin-bottom:12px;border:1px solid var(--line);border-radius:var(--r2);
   background:var(--panel);overflow:hidden}
 .cabecera-canal{display:flex;align-items:center;gap:12px;padding:14px 16px}
+.clogo svg{width:20px;height:20px}
 .clogo{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;
   justify-content:center;font-size:18px;flex:0 0 auto}
 .cinfo{flex:1;min-width:0}
@@ -1137,7 +1139,7 @@ function pintaChats(){
   // siempre devuelve cero es ruido.
   const porCanal = Object.keys(CANALES)
     .filter(k => CONVS.some(c => canalDe(c) === k))
-    .map(k => ['can:' + k, CANALES[k].logo + ' ' + CANALES[k].corto]);
+    .map(k => ['can:' + k, CANALES[k].corto]);
   $('filtros').innerHTML = [['todos','Todos'],['sinleer','Sin leer'],['humano','Humano'],['bot','Bot'],
       ...porCanal, ...porEtiqueta]
     .map(([f,n]) => {
@@ -3054,11 +3056,18 @@ function abreAgendar(c){
 // Cada canal se identifica por como llego la conversacion: el API oficial marca
 // source='whatsapp_cloud', el puente de WhatsApp Web marca source='whatsapp_qr', y las
 // redes traen el suyo. Ese campo ya existe en los datos; lo que faltaba era enseñarlo.
+// Los logos son el glifo REAL de cada plataforma, no circulos de color. Con circulos hay
+// que aprenderse que significa cada uno; con el logo se reconoce sin pensar, que es todo
+// el sentido de ponerlo junto al avatar.
+const LOGO_WA = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.5 14.4c-.3-.2-1.7-.9-2-1s-.5-.1-.7.1-.7.9-.9 1.1-.3.2-.6.1a8 8 0 01-2.4-1.5 9 9 0 01-1.6-2c-.2-.3 0-.5.1-.6l.5-.5.3-.5v-.5l-1-2.3c-.2-.6-.5-.5-.7-.5h-.6c-.2 0-.5.1-.8.4-.3.3-1 1-1 2.5s1.1 2.9 1.2 3.1a11.4 11.4 0 004.4 3.9c.6.2 1.1.4 1.5.5.6.2 1.2.2 1.6.1.5-.1 1.6-.6 1.8-1.3s.2-1.2.2-1.3-.2-.2-.5-.3z"/><path d="M12 2a10 10 0 00-8.5 15.2L2 22l4.9-1.4A10 10 0 1012 2zm0 18.2a8.2 8.2 0 01-4.2-1.1l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1112 20.2z"/></svg>';
+const LOGO_IG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1.2" fill="currentColor" stroke="none"/></svg>';
+const LOGO_FB = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.4 2 2 6.2 2 11.7c0 3.1 1.4 5.9 3.7 7.7v3.8l3.4-1.9c.9.3 1.9.4 2.9.4 5.6 0 10-4.2 10-9.7S17.6 2 12 2zm1 12.9l-2.5-2.7-4.9 2.7L11 9.1l2.6 2.7 4.8-2.7-5.4 5.8z"/></svg>';
+
 const CANALES = {
-  whatsapp_cloud: { nombre:'WhatsApp oficial (API)', corto:'WhatsApp', logo:'🟢', color:'#25d366' },
-  whatsapp_qr:    { nombre:'WhatsApp Web (2.º número)', corto:'WA Web', logo:'🔵', color:'#128c7e' },
-  instagram:      { nombre:'Instagram Direct', corto:'Instagram', logo:'🟣', color:'#c13584' },
-  facebook:       { nombre:'Facebook Messenger', corto:'Messenger', logo:'🔷', color:'#0084ff' },
+  whatsapp_cloud: { nombre:'WhatsApp oficial (API)',    corto:'WhatsApp',  logo:LOGO_WA, color:'#25d366' },
+  whatsapp_qr:    { nombre:'WhatsApp Web (2.º número)', corto:'WA Web',    logo:LOGO_WA, color:'#0b7f6b' },
+  instagram:      { nombre:'Instagram Direct',          corto:'Instagram', logo:LOGO_IG, color:'#c13584' },
+  facebook:       { nombre:'Facebook Messenger',        corto:'Messenger', logo:LOGO_FB, color:'#0084ff' },
 };
 function canalDe(c){
   const s = String(c?.source || '').toLowerCase();
