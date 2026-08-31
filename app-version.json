@@ -1,6 +1,6 @@
 {
-  "version": "2026-08-31-oauth-ventana-v61",
+  "version": "2026-08-31-oauth-sin-popup-v62",
   "channel": "crm",
   "released_at": "2026-08-31T09:00:00Z",
-  "summary": "Arreglado el inicio de sesion de Instagram y Facebook: la ventana se abria despues de un await y el navegador la bloqueaba, asi que se quedaba cargando y la peticion no llegaba a salir."
+  "summary": "Conectar Instagram o Facebook ya no depende de una ventana emergente: si el navegador la bloquea, se navega la pestaña y se vuelve al panel al terminar."
 }
