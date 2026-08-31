@@ -3760,35 +3760,46 @@ async function pintaCanales(){
       // el pase primero y abrir despues, Chrome bloqueaba la ventana -- o la abria en
       // blanco sin navegar nunca. Desde fuera se ve como "se quedó cargando", que es
       // exactamente lo que paso. La funcion no llego a recibir ni una peticion.
+      // Se intenta la ventana aparte, que es mas comodo: el panel se queda donde estaba.
+      // Pero NO se depende de ella. Si el navegador la bloquea -- y con este flujo la
+      // bloquea a menudo -- se navega la pestaña actual, que no hay bloqueador que lo
+      // impida. Antes ahi terminaba el camino y el dueño se quedaba mirando una ventana
+      // que no iba a cargar nunca.
       const w = window.open('', 'conectar_' + cual, 'width=620,height=740');
-      if (!w) {
-        return avisa('El navegador bloqueó la ventana',
-          'Permite las ventanas emergentes para crm.dcarelacompufoto.com y vuelve a pulsar.');
-      }
       // Algo en la ventana mientras se pide el pase: una ventana en blanco es
       // indistinguible de una que se colgo.
-      try {
-        w.document.write('<!doctype html><meta charset="utf-8">'
-          + '<title>Conectando…</title><body style="margin:0;display:flex;align-items:center;'
-          + 'justify-content:center;height:100vh;font:15px system-ui;color:#111b21">'
-          + 'Abriendo el inicio de sesión de Meta…</body>');
-      } catch (e) { /* si el navegador no deja escribir, la ventana sigue sirviendo */ }
+      if (w) {
+        // Algo en la ventana mientras se pide el pase: una ventana en blanco es
+        // indistinguible de una colgada.
+        try {
+          w.document.write('<!doctype html><meta charset="utf-8">'
+            + '<title>Conectando…</title><body style="margin:0;display:flex;align-items:center;'
+            + 'justify-content:center;height:100vh;font:15px system-ui;color:#111b21">'
+            + 'Abriendo el inicio de sesión de Meta…</body>');
+        } catch (e) { /* si el navegador no deja escribir, la ventana sigue sirviendo */ }
+      }
 
       // El pase es de un solo uso: crmOauth no arranca sin el, asi que la conexion solo
       // la puede iniciar alguien con sesion en el panel.
       const p = await llama({ action:'oauthPase', red: cual });
-      if (!p.ok) { try { w.close(); } catch (e) {} return avisa('No se pudo iniciar la conexión', p.error); }
+      if (!p.ok) { try { if (w) w.close(); } catch (e) {} return avisa('No se pudo iniciar la conexión', p.error); }
       const base = String(CFG.firebaseFunctionsBase || '').replace(/\/$/, '');
       const url = base + '/crmOauth?red=' + encodeURIComponent(cual)
-        + '&pase=' + encodeURIComponent(p.pase);
-      try { w.location.href = url; }
-      catch (e) {
-        // Si ni siquiera se puede navegar la ventana, se da el enlace en vez de dejar al
-        // dueño mirando una ventana muerta.
-        w.close();
-        return avisa('Abre este enlace a mano', url);
+        + '&pase=' + encodeURIComponent(p.pase)
+        // A donde volver cuando Meta termine. Sin esto la persona acaba en una pagina
+        // suelta de Cloud Functions sin forma de regresar al panel.
+        + '&volver=' + encodeURIComponent(location.origin + location.pathname + '#canales');
+      let enVentana = false;
+      if (w) { try { w.location.href = url; enVentana = true; } catch (e) { try { w.close(); } catch (e2) {} } }
+      if (enVentana) {
+        avisa('Inicia sesión en la ventana', 'Acepta los permisos y vuelve aquí.');
+      } else {
+        // Sin ventana: va la pestaña entera. Es menos comodo, pero funciona siempre, y
+        // crmOauth trae de vuelta al panel al terminar.
+        avisa('Abriendo el inicio de sesión de Meta', 'Al aceptar los permisos vuelves aquí solo.');
+        location.href = url;
+        return;
       }
-      avisa('Inicia sesión en la ventana', 'Acepta los permisos y vuelve aquí.');
       // Se refresca al cerrarse la ventana: es cuando el permiso ya esta dado o no.
       const vigila = setInterval(() => {
         if (!w.closed) return;
