@@ -3244,11 +3244,78 @@ let agFiltro = 'proximas';   // proximas | hoy | pasadas | todas
 let agMes = new Date();      // mes que se esta mirando
 let agDia = null;            // dia seleccionado en el calendario
 
+// La agenda y los recordatorios eran dos listas que no se hablaban: la cita vive en
+// scheduled_at/tentative_date y el seguimiento en follow_up_at, los dos en la MISMA ficha.
+// El resultado era que se podia tener un recordatorio para el martes sin que apareciera en
+// la agenda del martes, y planificar la semana mirando solo la mitad.
+//
+// Ahora los dos entran en la agenda. Se distinguen por tipo, no se mezclan: una sesion es
+// un compromiso con el cliente y un recordatorio es una tarea nuestra.
 function citasDe(){
-  return CONVS
-    .filter(c => c.scheduled_at || c.tentative_date)
-    .map(c => ({ c, iso: String(c.scheduled_at || c.tentative_date), firme: !!c.scheduled_at }))
-    .sort((a,b) => a.iso.localeCompare(b.iso));
+  const filas = [];
+  for (const c of CONVS) {
+    if (c.scheduled_at || c.tentative_date) {
+      filas.push({ c, iso: String(c.scheduled_at || c.tentative_date), firme: !!c.scheduled_at, tipo: 'sesion' });
+    }
+    // Un seguimiento de un contacto ya cerrado o desinteresado no es una tarea pendiente:
+    // se excluye igual que en la vista de Recordatorios, para que las dos cuenten lo mismo.
+    if (c.follow_up_at && !['cerrado', 'perdido', 'desinteresado'].includes(c.lifecycle_stage)) {
+      filas.push({ c, iso: String(c.follow_up_at), firme: false, tipo: 'recordatorio' });
+    }
+  }
+  return filas.sort((a, b) => a.iso.localeCompare(b.iso));
+}
+
+// Exportacion a Recordatorios de Apple.
+//
+// El dueño pidio conectar la agenda con su carpeta de iCloud. Escribir DIRECTAMENTE en
+// iCloud exigiria su contraseña de Apple (CalDAV con clave especifica de aplicacion), y
+// eso no lo toco. Un .ics hace el mismo trabajo sin que nadie tenga que darme una clave:
+// se abre y Recordatorios lo importa.
+//
+// Van como VTODO, no como VEVENT: VEVENT aterriza en Calendario, VTODO en Recordatorios,
+// que es la carpeta que pidio.
+function escapaICS(v){
+  return String(v || '').replace(/\\/g, '\\\\').replace(/;/g, '\\;').replace(/,/g, '\\,')
+    .replace(/\r?\n/g, '\\n');
+}
+function selloICS(iso){
+  const d = new Date(iso);
+  if (isNaN(d)) return null;
+  return d.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '');
+}
+function exportaAgendaICS(){
+  const filas = citasDe().filter(f => selloICS(f.iso));
+  if (!filas.length) return avisa('Nada que exportar', 'No hay sesiones ni recordatorios con fecha.');
+  const ahora = selloICS(new Date().toISOString());
+  const lineas = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//DCarela CRM//ES', 'CALSCALE:GREGORIAN'];
+  for (const f of filas) {
+    const quien = nombreDe(f.c);
+    const titulo = f.tipo === 'sesion'
+      ? (f.firme ? 'Sesión · ' : 'Sesión tentativa · ') + quien
+      : 'Seguimiento · ' + quien;
+    const detalle = [
+      f.c.wa_phone ? 'Teléfono: +' + f.c.wa_phone : '',
+      f.c.interested_category ? 'Categoría: ' + f.c.interested_category : '',
+      f.c.selected_combo_name ? 'Combo: ' + f.c.selected_combo_name : '',
+      f.c.next_step_suggested ? 'Próximo paso: ' + f.c.next_step_suggested : '',
+    ].filter(Boolean).join('\n');
+    lineas.push('BEGIN:VTODO',
+      'UID:' + f.tipo + '-' + (f.c._id || f.c.id) + '@dcarela',
+      'DTSTAMP:' + ahora,
+      'DUE:' + selloICS(f.iso),
+      'SUMMARY:' + escapaICS(titulo),
+      detalle ? 'DESCRIPTION:' + escapaICS(detalle) : '',
+      'END:VTODO');
+  }
+  lineas.push('END:VCALENDAR');
+  const blob = new Blob([lineas.filter(Boolean).join('\r\n')], { type:'text/calendar;charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'dcarela-agenda.ics';
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+  avisa('Descargado', filas.length + ' tarea(s). Ábrelo y elige tu carpeta de Recordatorios.');
 }
 function mismoDia(iso, d){
   const x = new Date(iso);
@@ -3265,6 +3332,7 @@ function montaAgenda(){
       +   '<div class="agtog"><button data-agv="cal" class="on">Calendario</button>'
       +     '<button data-agv="lista">Lista</button></div>'
       +   '<div class="agfil" id="agFil"></div>'
+      +   '<button class="btn-linea" id="agICS" title="Descarga un .ics para Recordatorios de Apple">Exportar a Recordatorios</button>'
       +   '<button class="btn-solido" id="agNueva">＋ Agendar</button>'
       + '</div>'
       + '<div id="agCuerpo"></div></div>');
@@ -3286,6 +3354,7 @@ function montaAgenda(){
       if (ab) { const cv = CONVS.find(x => x._id === ab.dataset.agconv); if (cv) { abre(cv); ve('conversations'); } }
     });
     $('agNueva').onclick = () => abreAgendar(null);
+    $('agICS').onclick = exportaAgendaICS;
   }
   pintaAgenda();
 }
