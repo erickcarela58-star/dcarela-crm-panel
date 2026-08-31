@@ -3,6 +3,9 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <title>D'Carela CRM</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><text y='26' font-size='26'>💬</text></svg>">
 <script src="./crm-config.js"></script>
@@ -361,6 +364,9 @@ video.mmedia{cursor:default}
 /* El compositor se envuelve cuando no cabe. Con siete botones de adjuntar en una fila
    rigida y la ventana estrecha, la caja de texto se quedaba con cuarenta pixeles y
    escribia una letra por linea: seguia funcionando, pero era inservible. */
+.version{display:block;width:100%;text-align:left;padding:4px 0 2px;border:0;background:none;
+  font:inherit;font-size:10.5px;color:var(--mut);cursor:default}
+.version.hay{color:var(--warn);font-weight:700;cursor:pointer}
 .escribir{display:flex;align-items:flex-end;gap:9px;padding:10px 14px;flex-wrap:wrap;
   background:var(--panel);border-top:1px solid var(--line)}
 .escribir textarea{flex:1 1 180px;min-width:150px;min-height:40px;max-height:150px;
@@ -837,6 +843,7 @@ video.mmedia{cursor:default}
     <nav class="nav" id="nav"></nav>
     <div class="pie">
       <div class="estado"><span class="punto" id="punto"></span><span id="estadoTexto">Conectando…</span></div>
+      <button class="version" id="version" hidden></button>
       <button id="btnSalir">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 17l5-5-5-5M21 12H9M13 21H5a2 2 0 01-2-2V5a2 2 0 012-2h8"/></svg>
         Salir
@@ -1064,6 +1071,37 @@ function escuchaMensajes(idConv){
       + 'No se pudieron cargar los mensajes.<br><b>' + esc(err?.code || 'error') + '</b></div>';
   });
 }
+// Version cargada y aviso de que hay otra publicada.
+//
+// El panel se sirve desde GitHub Pages con Cache-Control: max-age=600, asi que una
+// pestaña abierta puede quedarse horas con el HTML viejo. Desde fuera eso es
+// indistinguible de un despliegue que fallo: el dueño mira, no ve el cambio, y no hay
+// forma de saber cual de las dos cosas paso. Las metaetiquetas del <head> evitan que
+// vuelva a cachearse; esto ademas avisa cuando ya hay algo mas nuevo publicado.
+let VERSION_CARGADA = '';
+async function vigilaVersion(){
+  const e = $('version'); if (!e) return;
+  let publicada = '';
+  try {
+    const r = await fetch('./app-version.json?t=' + Date.now(), { cache:'no-store' });
+    if (r.ok) publicada = String((await r.json()).version || '');
+  } catch (err) { return; }
+  if (!publicada) return;
+  if (!VERSION_CARGADA) VERSION_CARGADA = publicada;
+  e.hidden = false;
+  if (publicada === VERSION_CARGADA) {
+    e.className = 'version';
+    e.textContent = 'v ' + VERSION_CARGADA;
+    e.onclick = null;
+    return;
+  }
+  // Recarga saltandose la cache: sin el parametro, el navegador puede devolver el mismo
+  // HTML viejo y el aviso se quedaria puesto para siempre.
+  e.className = 'version hay';
+  e.textContent = 'Hay una versión nueva · pulsa para actualizar';
+  e.onclick = () => { location.replace(location.pathname + '?v=' + Date.now() + location.hash); };
+}
+
 function marcaEstado(ok, texto){
   $('punto').classList.toggle('mal', !ok);
   $('estadoTexto').textContent = texto;
@@ -5442,6 +5480,8 @@ onAuthStateChanged(auth, async u => {
   // en vivo trae los cambios sin que nadie tenga que pedirlos.
   escuchaConversaciones();
   cargaEstadoPuente();
+  vigilaVersion();
+  setInterval(vigilaVersion, 300000);
   ve(location.hash.slice(1) || CFG.defaultView || 'conversations');
 });
 </script>
