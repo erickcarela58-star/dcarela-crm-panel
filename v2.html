@@ -305,6 +305,15 @@ video.mmedia{cursor:default}
 .mpie{margin-top:3px;white-space:pre-wrap;word-break:break-word}
 /* Botones de accion tal como los ve el cliente: separados del texto por una linea y
    repartidos en filas. No son pulsables desde aqui -- los pulsa el, no nosotros. */
+/* Previo de plantilla: se pinta como un globo de WhatsApp a proposito. Lo que hay que
+   juzgar antes de enviar no es una ficha tecnica, es el mensaje tal como le va a llegar. */
+.tplprevio{margin:2px 0 14px;padding:10px 12px;border-radius:10px;background:var(--out);
+  color:#111b21;font-size:13.5px;line-height:1.45;white-space:pre-wrap;word-break:break-word;
+  border:1px solid rgba(0,0,0,.06)}
+.tplprevio .hueco{background:rgba(176,0,0,.14);color:#8a1a1a;border-radius:3px;padding:0 3px;
+  font-weight:600}
+.tplprevio-t{font-size:11px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;
+  color:var(--mut);margin:10px 0 5px}
 .mbotones{margin:6px -9px -6px;display:flex;flex-wrap:wrap}
 .mbotones span{flex:1 1 100%;text-align:center;padding:8px 6px;font-size:13.5px;
   color:var(--mut);border-top:1px solid var(--line2)}
@@ -504,6 +513,56 @@ video.mmedia{cursor:default}
 .abienvenida b{display:block;font-size:17px;color:var(--fg);margin-bottom:6px}
 .abienvenida p{margin:0 0 18px;font-size:13px;line-height:1.5}
 .awiz{display:flex;flex-wrap:wrap;gap:7px;justify-content:center}
+/* Estado vacio: tarjetas con lo que hace cada receta, no pildoras de una linea. Una
+   pildora que dice "Cobrar y confirmar" no explica nada; la tarjeta si. */
+.atarjetas{display:grid;grid-template-columns:repeat(auto-fit,minmax(238px,1fr));gap:10px;
+  margin-top:20px;text-align:left}
+.atarjeta{padding:13px 15px;border:1px solid var(--line);border-radius:var(--r2);
+  background:var(--panel);cursor:pointer;transition:border-color .15s,transform .15s}
+.atarjeta:hover{border-color:var(--line2);transform:translateY(-2px)}
+.atarjeta b{display:block;font-size:13px;color:var(--fg);margin-bottom:3px}
+.atarjeta span{display:block;font-size:11.5px;color:var(--mut);line-height:1.42}
+
+/* Cada turno entra desde abajo. Solo el ultimo lleva la clase, asi que al repintar el
+   hilo entero no se anima toda la conversacion de golpe. */
+@keyframes aentra{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+.aturno.nuevo{animation:aentra .22s ease-out}
+@media (prefers-reduced-motion:reduce){.aturno.nuevo{animation:none}}
+
+/* Puntos de "escribiendo", como en un chat de verdad. El spinner generico del panel se
+   usa en otras doce vistas y no dice que haya alguien redactando. */
+.apuntos{display:inline-flex;gap:4px;align-items:center;height:18px}
+.apuntos i{width:6px;height:6px;border-radius:50%;background:var(--mut);
+  animation:asalto 1.05s ease-in-out infinite}
+.apuntos i:nth-child(2){animation-delay:.16s}
+.apuntos i:nth-child(3){animation-delay:.32s}
+@keyframes asalto{0%,60%,100%{opacity:.3;transform:translateY(0)}30%{opacity:1;transform:translateY(-4px)}}
+
+/* Menu de herramientas del asistente: la lista de lo que se puede controlar desde aqui. */
+.amas{position:relative}
+.amenu{position:absolute;bottom:calc(100% + 8px);left:0;width:330px;max-height:min(62vh,470px);
+  overflow-y:auto;background:var(--panel);border:1px solid var(--line2);border-radius:var(--r2);
+  box-shadow:var(--sombra);padding:6px;z-index:60;display:none}
+.amenu.on{display:block;animation:aentra .14s ease-out}
+.amenu .grupo{font-size:9.5px;font-weight:800;letter-spacing:.8px;text-transform:uppercase;
+  color:var(--mut);padding:10px 10px 5px}
+.amenu button{display:block;width:100%;text-align:left;padding:8px 10px;border:0;
+  background:none;border-radius:var(--r);cursor:pointer;font:inherit;color:var(--fg)}
+.amenu button:hover{background:var(--hover)}
+.amenu button b{display:block;font-size:13px;font-weight:600}
+.amenu button span{display:block;font-size:11.5px;color:var(--mut);margin-top:1px;line-height:1.4}
+.amenu button.puesto{background:var(--hover)}
+.amenu button.puesto b::after{content:' ✓';color:var(--ok)}
+
+/* Etiqueta del foco activo. Va pegada a la caja de escribir porque cambia lo que pasa al
+   escribir, no es un ajuste de otra pantalla. */
+.afoco{display:flex;align-items:center;gap:8px;margin:0 22px 8px;padding:7px 10px;
+  border:1px solid var(--line2);border-radius:20px;width:fit-content;font-size:12px;
+  background:var(--hover)}
+.afoco b{font-weight:700}
+.afoco button{border:0;background:none;cursor:pointer;font-size:15px;line-height:1;
+  color:var(--mut);padding:0 2px}
+.afoco button:hover{color:var(--fg)}
 .acola{display:flex;flex-wrap:wrap;gap:6px;padding:0 22px 8px}
 .aentrada{display:flex;align-items:flex-end;gap:9px;padding:12px 22px 18px;
   border-top:1px solid var(--line);background:var(--panel)}
@@ -1762,6 +1821,9 @@ async function cargaCombos(forzar){
         items: [...card.querySelectorAll('.cinc li')].map(n => String(n.textContent||'').trim()).filter(Boolean),
         incluyeLabel: String(card.querySelector('.incbox .il')?.textContent || 'Incluye').trim(),
         incluye: String(card.querySelector('.incbox .iv')?.textContent || '').trim(),
+        acento: String(card.dataset.accent || '').trim(),
+        insignia: String(card.querySelector('.badge')?.textContent || '').trim(),
+        nota: String(card.querySelector('.cinc-note')?.textContent || '').trim(),
         imagenCruda: card.querySelector('.ph')?.dataset.bg
           ? new URL(card.querySelector('.ph').dataset.bg, COMBO_PAGINA).href : '',
         tarjeta: COMBO_IMG + combosSlug(cat, nombre) + '.png',
@@ -1771,13 +1833,77 @@ async function cargaCombos(forzar){
   COMBOS = filas;
   return filas;
 }
-function textoDeCombo(c){
-  const l = ['Te comparto el combo ' + c.nombre + (c.precio ? ' (' + c.precio + ')' : '') + '.'];
-  if (c.digital) l.push('', c.digital + '.');
-  if (c.items.length) l.push(...c.items.map(i => '• ' + i));
-  if (c.incluye) l.push('', c.incluyeLabel + ': ' + c.incluye + '.');
-  l.push('', 'Mira todos los combos e imágenes aquí: ' + COMBO_PAGINA);
-  l.push('Si te interesa, dime tu fecha tentativa y te confirmamos disponibilidad.');
+/* ---- Tarjeta del combo y vestidos ---------------------------------------- */
+// La tarjeta NO se dibuja aqui: se extrae de la web, que ya publica una por combo en
+// /combos-img/<slug>.png. Son las buenas -- 1080x1350, con la marca, el ITBIS y el
+// WhatsApp del estudio -- y se publican en el MISMO despliegue que combos.html (ambas
+// con fecha 24 Aug 2026 12:01:15 GMT), asi que no van por detras de los precios de la
+// pagina: salen del mismo dato.
+//
+// Redibujarlas aqui seria mantener un segundo diseño que se separa del real en cuanto
+// alguien toque la web.
+
+// Los vestidos viven en la misma pagina, en .dress-block. Son la pregunta que mas repite
+// una clienta de XV despues de ver el precio, y hasta ahora habia que buscarlos a mano.
+let VESTIDOS = null;
+async function cargaVestidos(forzar){
+  if (VESTIDOS && !forzar) return VESTIDOS;
+  const r = await fetch(COMBO_PAGINA, { cache: forzar ? 'reload' : 'default' });
+  if (!r.ok) throw new Error('catálogo HTTP ' + r.status);
+  const doc = new DOMParser().parseFromString(await r.text(), 'text/html');
+  VESTIDOS = [...doc.querySelectorAll('.dress-block .dcard img')].map(img => ({
+    nombre: String(img.getAttribute('alt') || 'Vestido').trim(),
+    url: new URL(img.getAttribute('src'), COMBO_PAGINA).href,
+  })).filter(v => v.url);
+  return VESTIDOS;
+}
+
+// Adjunta los vestidos como album. Se mandan comprimidos: son siete imagenes y el limite
+// fiable de subida a Meta esta cerca de 5 MB por archivo -- pasarse devuelve el error
+// #131053 despues de haber tardado en subir.
+async function adjuntaVestidos(boton){
+  const antes = boton ? boton.innerHTML : '';
+  if (boton) { boton.disabled = true; boton.textContent = 'Preparando…'; }
+  try {
+    const lista = await cargaVestidos(false);
+    if (!lista.length) throw new Error('el catálogo no trae vestidos');
+    for (const v of lista) {
+      const r = await fetch(v.url, { cache:'no-cache' });
+      if (!r.ok) continue;
+      const blob = await comprimeNormal(new File([await r.blob()], v.nombre + '.webp', { type:'image/webp' }));
+      COLA.push({ tipo:'image', mime: blob.type || 'image/jpeg',
+        nombre: v.nombre + ' - DCarela.jpg', datos: await leeBase64(blob) });
+    }
+    pintaCola();
+    const caja = $('texto');
+    const t = 'Estos son los vestidos disponibles para la sesión. '
+      + 'Dime cuál te gusta y lo reservamos para tu fecha.';
+    caja.value = caja.value.trim() ? caja.value.trim() + '\n\n' + t : t;
+    caja.dispatchEvent(new Event('input'));
+    cierraModal();
+    avisa('Vestidos listos', lista.length + ' imágenes en la cola. Revisa y pulsa enviar.');
+  } catch (e) {
+    if (boton) { boton.disabled = false; boton.innerHTML = antes; }
+    avisa('No se pudieron preparar los vestidos', e?.message || String(e));
+  }
+}
+
+// El pie de la tarjeta. Cuando va la tarjeta, el detalle YA esta dibujado dentro de la
+// imagen: repetirlo aqui le llena la pantalla al cliente con la misma lista dos veces.
+//
+// Y no lleva URL. El dueño lo pidio explicito: si se manda la imagen, no se manda el
+// enlace. Ademas la unica URL que llego a salir por aqui fue una vieja de netlify que el
+// bot copio del historial, asi que cuanto menos enlace suelto ande por los mensajes, mejor.
+function textoDeCombo(c, conTarjeta){
+  const l = ['Te comparto el combo ' + c.nombre + (c.precio ? ' — ' + c.precio : '') + '.'];
+  if (!conTarjeta) {
+    if (c.digital) l.push('', c.digital + '.');
+    if (c.items.length) l.push(...c.items.map(i => '• ' + i));
+    if (c.incluye) l.push('', c.incluyeLabel + ': ' + c.incluye + '.');
+  } else if (c.digital) {
+    l.push('', c.digital + '. Todo el detalle está en la tarjeta.');
+  }
+  l.push('', 'Si te interesa, dime tu fecha tentativa y te confirmamos disponibilidad.');
   return l.join('\n');
 }
 
@@ -1799,6 +1925,8 @@ async function abreCombos(){
     + '<div class="pdfs">' + COMBO_PDFS.map(p =>
         '<button class="tplchip" data-pdf="' + p.cat + '">' + esc(p.label) + ' · ' + p.n + '</button>').join('')
     + '</div>'
+    + '<div class="seccion" style="margin:14px 0 6px">Vestidos</div>'
+    + '<div class="pdfs"><button class="tplchip" data-vestidos>Enviar los vestidos disponibles</button></div>'
     + '<div class="seccion" style="margin:14px 0 6px">Combos con su tarjeta</div><div id="cbLista"></div>';
 
   const pinta = () => {
@@ -1816,6 +1944,8 @@ async function abreCombos(){
   cuerpo.onclick = async ev => {
     const pdf = ev.target.closest('[data-pdf]');
     if (pdf) return adjuntaPdfCombos(pdf.dataset.pdf, pdf);
+    const ves = ev.target.closest('[data-vestidos]');
+    if (ves) return adjuntaVestidos(ves);
     const b = ev.target.closest('[data-combo]');
     if (b) return adjuntaCombo(filas[Number(b.dataset.combo)], b);
   };
@@ -1826,37 +1956,38 @@ async function adjuntaCombo(c, boton){
   const antes = boton.innerHTML;
   boton.disabled = true; boton.textContent = 'Preparando…';
   try {
-    // Primero la foto de la WEB, que es la que el negocio mantiene al dia. Las de
-    // combos-img son tarjetas generadas hace meses: se quedaron con precios y contenido
-    // viejos, y mandarle a un cliente una tarjeta desactualizada es peor que no mandarle
-    // ninguna, porque despues hay que desdecirse.
-    let url = c.imagenCruda || c.tarjeta;
-    let r = await fetch(url, { cache:'no-cache' });
-    if (!r.ok && c.tarjeta && url !== c.tarjeta) { url = c.tarjeta; r = await fetch(url, { cache:'no-cache' }); }
+    // La tarjeta publicada del combo. Si por lo que sea no esta, se cae a la foto del
+    // catalogo antes que dejar al agente sin nada que mandar -- pero se avisa, porque una
+    // foto suelta no lleva el precio ni lo que incluye.
+    let url = c.tarjeta, r = await fetch(url, { cache:'no-cache' });
+    if (!r.ok && c.imagenCruda) {
+      url = c.imagenCruda; r = await fetch(url, { cache:'no-cache' });
+      if (r.ok) avisa('Sin tarjeta publicada', 'Va la foto del catálogo, sin el detalle del combo.');
+    }
     if (!r.ok) throw new Error('imagen HTTP ' + r.status);
     const blob = await r.blob();
-    const datos = await new Promise((res, rej) => {
-      const l = new FileReader();
-      l.onload = () => res(String(l.result).split(',')[1] || '');
-      // Sin onerror la promesa no se resuelve NUNCA si la lectura falla, y el envio
-      // se queda colgado con el boton deshabilitado y sin decir nada.
-      l.onerror = () => rej(new Error('no se pudo leer el archivo'));
-      l.readAsDataURL(blob);
-    });
+    const ext = url.split('.').pop().split('?')[0] || 'png';
+    const datos = await leeBase64(blob);
     // Los combos salen con botones: el cliente toca en vez de escribir, y su respuesta
     // vuelve identificada -- se sabe QUE combo le intereso, no un "si" suelto que hay
     // que ir a buscar tres mensajes mas arriba.
-    COLA.push({ tipo:'image', mime: blob.type || 'image/png',
-      nombre: c.nombre + ' - DCarela.' + (url.split('.').pop().split('?')[0] || 'png'),
+    //
+    // WhatsApp admite TRES botones como maximo, asi que se eligen segun el combo: los
+    // vestidos son de sesiones XV, y ofrecerlos en un combo de graduacion seria prometer
+    // algo que no existe.
+    const esXV = c.cat === 'xv';
+    COLA.push({ tipo:'image', mime: blob.type || 'image/jpeg',
+      nombre: c.nombre + ' - DCarela.' + ext,
       datos,
       botones: [
         { id: 'combo_interesa:' + c.cat, titulo: 'Me interesa' },
-        { id: 'combo_fecha:' + c.cat,    titulo: 'Ver disponibilidad' },
+        esXV ? { id: 'combo_vestidos', titulo: 'Ver vestidos' }
+             : { id: 'combo_fecha:' + c.cat, titulo: 'Ver disponibilidad' },
         { id: 'combo_otros',             titulo: 'Ver otros combos' },
       ] });
     pintaCola();
     const caja = $('texto');
-    const t = textoDeCombo(c);
+    const t = textoDeCombo(c, true);
     caja.value = caja.value.trim() ? caja.value.trim() + '\n\n' + t : t;
     caja.dispatchEvent(new Event('input'));
     cierraModal();
@@ -1970,10 +2101,33 @@ async function abrePlantillas(){
   };
 }
 
+// Meta entrega la plantilla con los {{1}} {{2}} ya sustituidos, pero el panel los
+// enseñaba en crudo: el agente veia "Hola {{1}}" y tenia que imaginarse el resultado. Y el
+// historial guardaba "[plantilla saludo_corto_dcarela]" en vez del mensaje, asi que
+// despues nadie podia saber que le habia llegado al cliente.
+//
+// La sustitucion es POSICIONAL, igual que la hace Meta: {{1}} es la primera variable.
+function rellenaPlantilla(texto, variables, marcaHuecos){
+  return String(texto || '').replace(/\{\{\s*(\d+)\s*\}\}/g, (m, n) => {
+    const v = variables[Number(n) - 1];
+    if (v) return v;
+    // Un hueco sin rellenar se marca en vez de desaparecer: WhatsApp RECHAZA la plantilla
+    // entera si falta una variable, y un hueco invisible parece un texto correcto.
+    return marcaHuecos ? '\u0001' + n + '\u0002' : m;
+  });
+}
+function previoPlantilla(texto, variables){
+  return esc(rellenaPlantilla(texto, variables, true))
+    .replace(/\u0001(\d+)\u0002/g, (m, n) => '<span class="hueco">falta ' + esc(n) + '</span>');
+}
+
 function pideVariables(t){
   const claves = Array.isArray(t.parameter_keys) ? t.parameter_keys : [];
   // Se rellena de la ficha lo que se pueda: el agente corrige, no teclea de cero.
   const dePrimeras = k => {
+    // Las claves salen de PARAM_KEYS del servidor (templates-core.js) y ahi hay varias que
+    // este mapa no cubria -- 'interes', 'hora', 'impresiones', 'dato', 'pedido' -- asi que
+    // el campo salia vacio y habia que escribirlo a mano cada vez.
     const mapa = {
       nombre: sel.customer_name || sel.contact_name || '',
       cliente: sel.customer_name || sel.contact_name || '',
@@ -1981,13 +2135,18 @@ function pideVariables(t){
       precio: sel.selected_combo_price ? 'RD$' + sel.selected_combo_price : '',
       fecha: sel.tentative_date || '',
       categoria: sel.interested_category || '',
+      interes: sel.interested_category || sel.selected_combo_name || '',
+      hora: sel.tentative_time || '',
+      pedido: sel.selected_combo_name || '',
+      dato: sel.next_step_suggested || '',
     };
     return mapa[String(k).toLowerCase()] || '';
   };
   abreModal('<div class="mtapa"><b>' + esc(t.display_name || t.template_name) + '</b>'
     + '<button class="cerrarm" data-cerrar>×</button></div>'
     + '<div class="mcuerpo">'
-    + (t.preview_text ? '<p class="aviso">' + esc(t.preview_text) + '</p>' : '')
+    + '<div class="tplprevio-t">Así le va a llegar</div>'
+    + '<div class="tplprevio" id="tplPrevio"></div>'
     + (claves.length
         ? claves.map((k,i) => '<div class="campo"><label>' + esc(k) + '</label>'
             + '<input data-var="' + i + '" value="' + esc(dePrimeras(k)) + '"></div>').join('')
@@ -1996,14 +2155,29 @@ function pideVariables(t){
     + '<div class="mpatas"><button class="btn-linea" data-cerrar>Cancelar</button>'
     +   '<button class="btn-solido" id="btnEnviarTpl">Enviar plantilla</button></div>');
   $('modal').querySelectorAll('[data-cerrar]').forEach(b => { b.onclick = cierraModal; });
+
+  const campos = [...$('modal').querySelectorAll('[data-var]')];
+  const repintaPrevio = () => {
+    const caja = $('tplPrevio'); if (!caja) return;
+    if (!t.preview_text) { caja.textContent = 'Meta no devolvió el texto de esta plantilla.'; return; }
+    caja.innerHTML = previoPlantilla(t.preview_text, campos.map(i => i.value.trim()));
+  };
+  campos.forEach(i => i.addEventListener('input', repintaPrevio));
+  repintaPrevio();
+
   $('btnEnviarTpl').onclick = async () => {
-    const variables = [...$('modal').querySelectorAll('[data-var]')].map(i => i.value.trim());
+    const variables = campos.map(i => i.value.trim());
     if (variables.some(v => !v)) return avisa('Faltan variables', 'WhatsApp rechaza la plantilla si alguna va vacía.');
     $('btnEnviarTpl').disabled = true;
     const r = await llama({
       action:'sendTemplate', conversation_id: sel.id || sel._id,
       template_name: t.template_name, language_code: t.language_code || 'es',
       variables,
+      // El texto ya armado viaja para que el historial guarde el MENSAJE, no
+      // "[plantilla nombre]". outboundPayload ignora este campo cuando la accion es
+      // sendTemplate (transport-core.js:73), asi que no altera lo que se le manda a Meta:
+      // solo arregla lo que queda escrito en la conversacion.
+      text: t.preview_text ? rellenaPlantilla(t.preview_text, variables, false) : '',
     });
     $('btnEnviarTpl').disabled = false;
     if (!r.ok) return avisa('No se pudo enviar la plantilla', r.error);
@@ -4782,6 +4956,22 @@ const WIZARDS = [
       + 'y no otras.' },
 ];
 
+// Foco activo del asistente. Vacio = contrato completo, como siempre.
+let FOCO = '';
+// Las mismas claves que FOCOS en el servidor (assistant-plan.js). Si aqui se manda una
+// que alli no existe, focoValido la descarta y se cae al contrato completo: se pierde el
+// enfoque, no la peticion.
+const FOCOS_PANEL = [
+  { id:'broadcast',            n:'Envíos masivos',        d:'Segmento, texto personalizado y salida de baja. No mira un chat concreto.' },
+  { id:'contact_report',       n:'Informe del contacto',  d:'Resume la conversación abierta y dice qué falta.' },
+  { id:'create_reservation',   n:'Preparar la reserva',   d:'Deja el lead pendiente de reserva con fecha tentativa.' },
+  { id:'mark_paid',            n:'Cobrar y confirmar',    d:'Marca el pago y pide que una persona valide el comprobante.' },
+  { id:'draft_message',        n:'Redactar un mensaje',   d:'Prepara el texto en el compositor. No lo envía.' },
+  { id:'communication_policy', n:'Bloquear o restaurar',  d:'Cambia los permisos de comunicación del contacto.' },
+  { id:'mark_disinterest',     n:'Marcar desinterés',     d:'Pasa a desinteresado y apaga el marketing.' },
+  { id:'update_lead',          n:'Actualizar la ficha',   d:'Corrige etapa, estado, categoría, fechas.' },
+];
+
 function montaPlanificacion(){
   if (montadas.has('planning')) { pintaContexto(); return; }
   montadas.add('planning');
@@ -4792,8 +4982,14 @@ function montaPlanificacion(){
     +   '<button class="btn-linea" id="btnReglasAbrir">Reglas del negocio</button>'
     + '</div>'
     + '<div class="ahilo" id="ahilo"></div>'
+    + '<div class="afoco" id="planFoco" hidden></div>'
     + '<div class="acola" id="planCola" hidden></div>'
     + '<div class="aentrada">'
+    +   '<div class="amas">'
+    +     '<button class="adj" id="planMas" title="Herramientas" aria-label="Herramientas" aria-expanded="false">'
+    +       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button>'
+    +     '<div class="amenu" id="planMenu"></div>'
+    +   '</div>'
     +   '<button class="adj" id="planImg" title="Adjuntar imagen">'
     +     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg></button>'
     +   '<input type="file" id="planFile" accept="image/*" multiple hidden>'
@@ -4812,6 +5008,24 @@ function montaPlanificacion(){
   });
   $('btnPedir').onclick = pide;
   pintaContexto();
+  pintaMenuAsistente();
+  pintaFoco();
+
+  // El menu se cierra al pulsar fuera. Sin esto se queda abierto tapando el hilo, que es
+  // justo lo que hay que leer para decidir.
+  $('planMas').onclick = ev => {
+    ev.stopPropagation();
+    const m = $('planMenu');
+    const abierto = m.classList.toggle('on');
+    $('planMas').setAttribute('aria-expanded', abierto ? 'true' : 'false');
+  };
+  document.addEventListener('click', ev => {
+    const m = $('planMenu');
+    if (m && m.classList.contains('on') && !ev.target.closest('.amas')) {
+      m.classList.remove('on');
+      $('planMas')?.setAttribute('aria-expanded', 'false');
+    }
+  });
 
   // Imagenes para el asistente: un comprobante, la foto de un vestido, la captura de
   // otra cotizacion. Son cosas sobre las que hay que decidir, y sin verlas decide a
@@ -4836,6 +5050,60 @@ function montaPlanificacion(){
   cargaHilo();
 }
 
+function pintaMenuAsistente(){
+  const m = $('planMenu'); if (!m) return;
+  m.innerHTML =
+    '<div class="grupo">Enfocar en una herramienta</div>'
+    + FOCOS_PANEL.map(f => '<button data-foco="' + esc(f.id) + '"'
+        + (FOCO === f.id ? ' class="puesto"' : '') + '>'
+        + '<b>' + esc(f.n) + '</b><span>' + esc(f.d) + '</span></button>').join('')
+    + '<div class="grupo">Recetas</div>'
+    + WIZARDS.map((w,i) => '<button data-wiz="' + i + '"><b>' + esc(w.n) + '</b></button>').join('')
+    + '<div class="grupo">Adjuntar</div>'
+    + '<button data-adjunta><b>Imagen</b><span>Un comprobante, un vestido, otra cotización.</span></button>';
+
+  m.onclick = ev => {
+    const f = ev.target.closest('[data-foco]');
+    const w = ev.target.closest('[data-wiz]');
+    const a = ev.target.closest('[data-adjunta]');
+    if (!f && !w && !a) return;
+    m.classList.remove('on');
+    $('planMas')?.setAttribute('aria-expanded', 'false');
+    if (a) return $('planFile').click();
+    if (f) {
+      // Volver a elegir el mismo foco lo quita: es un interruptor, no una via de un solo
+      // sentido. Sin esto habria que buscar la equis para volver al modo normal.
+      FOCO = FOCO === f.dataset.foco ? '' : f.dataset.foco;
+      pintaFoco(); pintaMenuAsistente();
+      $('pedido')?.focus();
+      return;
+    }
+    ponPedido(WIZARDS[Number(w.dataset.wiz)].p);
+  };
+}
+
+function ponPedido(texto){
+  const caja = $('pedido'); if (!caja) return;
+  caja.value = texto;
+  caja.dispatchEvent(new Event('input'));
+  caja.focus();
+}
+
+function pintaFoco(){
+  const c = $('planFoco'); if (!c) return;
+  const f = FOCOS_PANEL.find(x => x.id === FOCO);
+  c.hidden = !f;
+  const caja = $('pedido');
+  if (!f) {
+    if (caja) caja.placeholder = 'Dime qué necesitas…';
+    return;
+  }
+  c.innerHTML = '<span>Enfocado en <b>' + esc(f.n) + '</b></span>'
+    + '<button id="quitaFoco" title="Quitar el enfoque" aria-label="Quitar el enfoque">×</button>';
+  $('quitaFoco').onclick = () => { FOCO = ''; pintaFoco(); pintaMenuAsistente(); };
+  if (caja) caja.placeholder = f.n + ': dime qué necesitas…';
+}
+
 function pintaContexto(){
   const c = $('contexto'); if (!c) return;
   c.textContent = contextoTexto();
@@ -4847,23 +5115,26 @@ function pintaHilo(){
     h.innerHTML = '<div class="abienvenida">'
       + '<b>¿Qué necesitas?</b>'
       + '<p>Leo la conversación que tengas abierta, la ficha del contacto y las reglas del negocio. '
-      +   'Propongo, y no se toca nada hasta que lo apruebes.</p>'
-      + '<div class="awiz">' + WIZARDS.map((w,i) =>
-          '<button class="ejemplo" data-wiz="' + i + '">' + esc(w.n) + '</button>').join('') + '</div>'
-      + '</div>';
-    h.querySelector('.awiz').onclick = ev => {
+      +   'Propongo, y no se toca nada hasta que lo apruebes. Con el <b>+</b> eliges una '
+      +   'herramienta concreta y me centro solo en esa.</p>'
+      + '<div class="atarjetas">' + WIZARDS.map((w,i) =>
+          '<div class="atarjeta" data-wiz="' + i + '"><b>' + esc(w.n) + '</b>'
+          + '<span>' + esc(w.p.slice(0, 96).replace(/\s+\S*$/, '') + '…') + '</span></div>').join('')
+      + '</div></div>';
+    h.querySelector('.atarjetas').onclick = ev => {
       const b = ev.target.closest('[data-wiz]'); if (!b) return;
-      $('pedido').value = WIZARDS[Number(b.dataset.wiz)].p;
-      $('pedido').dispatchEvent(new Event('input'));
-      $('pedido').focus();
+      ponPedido(WIZARDS[Number(b.dataset.wiz)].p);
     };
     return;
   }
+  // Solo el ultimo turno lleva "nuevo": el hilo se repinta entero en cada respuesta, y sin
+  // esa marca se animarian todos los globos a la vez cada vez.
+  const ultimo = HILO.length - 1;
   h.innerHTML = HILO.map((t,i) => t.rol === 'yo'
-    ? '<div class="aturno yo"><div class="aburbuja">' + esc(t.texto)
+    ? '<div class="aturno yo' + (i === ultimo ? ' nuevo' : '') + '"><div class="aburbuja">' + esc(t.texto)
       + (t.imgs ? '<span class="aimgs">' + t.imgs + ' imagen(es)</span>' : '') + '</div></div>'
-    : '<div class="aturno ia"><div class="aburbuja">'
-      + (t.pensando ? '<span class="cargando"></span> Pensando…' : cuerpoDePlan(t.plan, i))
+    : '<div class="aturno ia' + (i === ultimo ? ' nuevo' : '') + '"><div class="aburbuja">'
+      + (t.pensando ? '<span class="apuntos"><i></i><i></i><i></i></span>' : cuerpoDePlan(t.plan, i))
       + '</div></div>').join('');
   h.scrollTop = h.scrollHeight;
   HILO.forEach((t,i) => {
@@ -4911,6 +5182,15 @@ async function pide(){
   pintaHilo();
 
   const cuerpo = { action:'assistantPlan', instruction:t };
+  if (FOCO) cuerpo.focus = FOCO;
+  // Con foco, el servidor ya manda un contrato que nombra la unica herramienta permitida
+  // (assistant-plan.js, planContractFor). Repetir aqui el catalogo entero solo gasta tope
+  // de contexto -- son 12000 caracteres y se truncan sin avisar.
+  const catalogoNecesario = !FOCO;
+  // Un envio masivo es sobre un SEGMENTO, no sobre un chat: la ficha y los ultimos
+  // cuarenta mensajes de la conversacion abierta no pintan nada ahi, y son lo que mas
+  // ocupa. Esto es lo que el dueño pidio: al etiquetar la herramienta, menos contexto.
+  const contextoDelChat = FOCO !== 'broadcast';
   const contexto = [];
 
   // Las reglas del negocio van SIEMPRE, aunque no haya conversacion abierta: son lo que
@@ -4931,10 +5211,12 @@ async function pide(){
     '- Nada se ejecuta sin que una persona lo apruebe.',
   ].join('\n'));
 
-  contexto.push('Herramientas que puedes proponer, y solo estas:\n'
-    + Object.entries(NOMBRE_HERRAMIENTA).map(([k,v]) => '- ' + k + ': ' + v).join('\n'));
+  if (catalogoNecesario) {
+    contexto.push('Herramientas que puedes proponer, y solo estas:\n'
+      + Object.entries(NOMBRE_HERRAMIENTA).map(([k,v]) => '- ' + k + ': ' + v).join('\n'));
+  }
 
-  if (sel) {
+  if (sel && contextoDelChat) {
     contexto.push('Ficha de este contacto:\n' + [
       ['Nombre', nombreDe(sel)], ['Telefono', sel.wa_phone], ['Etapa', sel.lifecycle_stage],
       ['Estado', sel.lead_status], ['Reserva', sel.reservation_status],
@@ -4953,6 +5235,15 @@ async function pide(){
     contexto.push('No hay ninguna conversacion abierta: la peticion es sobre el negocio en general. '
       + 'Hay ' + CONVS.length + ' conversaciones, de las cuales '
       + CONVS.filter(c => c.lifecycle_stage === 'desinteresado').length + ' desinteresadas.');
+    if (!contextoDelChat) {
+      // Para una difusion lo util es el reparto por etapa y categoria: de ahi sale el
+      // segmento. Es una fraccion de lo que ocupaba el historial de un chat.
+      const cuenta = campo => Object.entries(CONVS.reduce((a,c) => {
+        const k = c[campo] || 'sin dato'; a[k] = (a[k]||0)+1; return a; }, {}))
+        .sort((a,b) => b[1]-a[1]).map(([k,v]) => k + ': ' + v).join(', ');
+      contexto.push('Reparto por etapa -> ' + cuenta('lifecycle_stage')
+        + '\nReparto por categoria -> ' + cuenta('interested_category'));
+    }
   }
 
   // El hilo anterior viaja entero: es lo que permite decir "y ahora el de arriba".
