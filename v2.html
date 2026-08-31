@@ -303,6 +303,21 @@ video.mmedia{cursor:default}
 .marchivo span{font-size:11px;color:var(--meta)}
 .marchivo a{margin-top:4px;font-size:12px;font-weight:650;color:inherit}
 .mpie{margin-top:3px;white-space:pre-wrap;word-break:break-word}
+/* Botones de accion tal como los ve el cliente: separados del texto por una linea y
+   repartidos en filas. No son pulsables desde aqui -- los pulsa el, no nosotros. */
+.mbotones{margin:6px -9px -6px;display:flex;flex-wrap:wrap}
+.mbotones span{flex:1 1 100%;text-align:center;padding:8px 6px;font-size:13.5px;
+  color:var(--mut);border-top:1px solid var(--line2)}
+/* Aviso de ventana de 24 h. Va pegado al compositor porque es donde se decide escribir.
+   El ambar se fija en rgba y no en una ficha de color: tiene que leerse igual en claro y
+   en oscuro, y es el unico aviso del panel que avisa de algo que aun se puede evitar. */
+.ventana24{margin:0 12px 6px;padding:9px 12px;border-radius:var(--r);display:flex;gap:10px;
+  align-items:flex-start;background:rgba(255,180,84,.14);border:1px solid rgba(255,180,84,.45);
+  color:var(--fg);font-size:12.5px;line-height:1.45}
+.ventana24 b{display:block;margin-bottom:2px;font-size:13px;color:var(--warn)}
+.ventana24 button{margin-left:auto;flex:none;align-self:center;background:var(--ink);
+  color:var(--on-ink);border:0;border-radius:6px;padding:7px 12px;font:inherit;
+  font-weight:600;cursor:pointer;white-space:nowrap}
 /* El boton de opciones solo aparece al pasar por encima: en reposo el hilo se lee
    limpio, como WhatsApp. En tactil no hay hover, asi que ahi se deja siempre. */
 .gaccion{position:absolute;top:2px;right:3px;width:20px;height:18px;border-radius:4px;
@@ -1113,9 +1128,30 @@ function arrastraFiltros(caja){
   }, { passive:false });
 }
 
+// Estado del puente de WhatsApp Web. null = todavia no se sabe. Se consulta una vez al
+// arrancar, y hasta que conteste no se esconde nada: esconder por defecto seria peor
+// error que enseñar de mas.
+let PUENTE_ON = null;
+async function cargaEstadoPuente(){
+  try {
+    const r = await llama({ action:'bridgeStatus' });
+    const p = r.ok ? (r.bridge || r) : {};
+    PUENTE_ON = p.connected === true || p.state === 'connected' || p.status === 'connected';
+  } catch (e) { PUENTE_ON = null; }
+  if (vistaActual === 'conversations') pintaChats();
+}
+// Una conversacion del segundo numero con el puente desconectado esta muerta: por ahi no
+// entra ni sale nada, y dejarla en la lista invita a escribirle a alguien que no va a
+// recibirlo. Se esconde, pero NO se borra: el filtro del canal la sigue trayendo, y en
+// cuanto el puente se reconecte reaparece sola.
+function puenteApagado(c){
+  return PUENTE_ON === false && canalDe(c) === 'whatsapp_qr';
+}
+
 function filtradas(){
   const t = ($('buscaChat')?.value || '').trim().toLowerCase();
   return CONVS.filter(c => {
+    if (puenteApagado(c) && filtro !== 'can:whatsapp_qr') return false;
     if (filtro === 'sinleer' && !(Number(c.unread || 0) > 0)) return false;
     if (filtro === 'humano' && !(c.mode === 'human' || c.human_handoff_required)) return false;
     if (filtro === 'bot' && c.mode !== 'bot') return false;
@@ -1127,7 +1163,9 @@ function filtradas(){
 }
 function pintaChats(){
   const cont = $('chats'); if (!cont) return;
-  const cuenta = f => CONVS.filter(c =>
+  // Las cuentas cuentan lo MISMO que se ve. Un filtro que dice 12 y abre 8 se lee como
+  // que el panel perdio cuatro conversaciones.
+  const cuenta = f => CONVS.filter(c => !puenteApagado(c)).filter(c =>
     f === 'todos' ? true
     : f === 'sinleer' ? Number(c.unread||0) > 0
     : f === 'humano' ? (c.mode === 'human' || c.human_handoff_required)
@@ -1139,11 +1177,12 @@ function pintaChats(){
   // siempre devuelve cero es ruido.
   const porCanal = Object.keys(CANALES)
     .filter(k => CONVS.some(c => canalDe(c) === k))
-    .map(k => ['can:' + k, CANALES[k].corto]);
+    .map(k => ['can:' + k,
+      k === 'whatsapp_qr' && PUENTE_ON === false ? 'WA Web · inactivo' : CANALES[k].corto]);
   $('filtros').innerHTML = [['todos','Todos'],['sinleer','Sin leer'],['humano','Humano'],['bot','Bot'],
       ...porCanal, ...porEtiqueta]
     .map(([f,n]) => {
-      const n2 = f.startsWith('etq:') ? CONVS.filter(c => etiquetasDe(c).includes(f.slice(4))).length
+      const n2 = f.startsWith('etq:') ? CONVS.filter(c => !puenteApagado(c) && etiquetasDe(c).includes(f.slice(4))).length
         : f.startsWith('can:') ? CONVS.filter(c => canalDe(c) === f.slice(4)).length
         : cuenta(f);
       return '<button class="filtro' + (filtro===f?' on':'') + (f.startsWith('etq:')?' etqf':'')
@@ -1214,6 +1253,7 @@ function abre(c){
     +   '<button data-mas="cerrar">Cerrar conversación</button></div></div>'
     + '</div>'
     + '<div class="mensajes" id="mensajes"></div>'
+    + '<div class="ventana24" id="ventana24" hidden></div>'
     + '<div class="barra-cita" id="barraCita" hidden>'
     +   '<div class="cvertical"></div><div class="ctexto"></div>'
     +   '<button id="citaX" aria-label="Quitar la cita">×</button></div>'
@@ -1315,6 +1355,19 @@ function cableaChat(c){
   env.onclick = async () => {
     const t = caja.value.trim();
     if (!t && !COLA.length) return;
+    // Fuera de la ventana de 24 h el envio no falla aqui: Meta lo acepta y lo rechaza
+    // despues. Preguntar cuesta un clic; no preguntar costo cuatro mensajes que el
+    // dueño creyo enviados. La plantilla es la unica via que si llega.
+    if (canalDe(sel) !== 'whatsapp_qr' && (() => {
+      const u = ultimoDelCliente();
+      return !u || (Date.now() - u) / 3600000 >= 24;
+    })()) {
+      if (!confirm('Han pasado más de 24 horas desde su último mensaje.'+'\n\n'
+        + 'WhatsApp no le va a entregar esto: saldrá con ⚠. Solo llega una plantilla '
+        + 'aprobada (botón de Plantillas).'+'\n\n'+'¿Enviarlo de todas formas?')) {
+        return;
+      }
+    }
     env.disabled = true;
     let fallo = null;
     // Los nombres de estas claves NO son opcionales: uploadMetaMedia lee media_b64 y
@@ -2347,6 +2400,37 @@ function ondaFalsa(semilla){
   return s;
 }
 
+// La ventana de servicio de 24 h. WhatsApp solo entrega texto libre mientras no hayan
+// pasado 24 h desde el ULTIMO mensaje del cliente. Pasado el plazo, Meta ACEPTA la
+// llamada y devuelve un wamid -- y despues marca el mensaje como fallido por webhook. Por
+// eso el panel decia "enviado" y al cliente no le llegaba nada: el fallo llega tarde y
+// por otra via. Aqui se avisa antes de escribir, que es cuando todavia sirve de algo.
+function ultimoDelCliente(){
+  if (!sel) return null;
+  // La ficha lleva la fecha aunque el mensaje sea viejisimo; MSGS solo trae los ultimos
+  // 400. Se usa la mas reciente de las dos, no una sola.
+  const deLosMsgs = MSGS.filter(m => m.direction === 'in').map(m => m.created_at).sort().pop();
+  const v = [sel.last_customer_reply_at, deLosMsgs].filter(Boolean).sort().pop();
+  const t = v ? Date.parse(v) : NaN;
+  return isNaN(t) ? null : t;
+}
+function pintaVentana24(){
+  const caja = $('ventana24'); if (!caja) return;
+  // El puente de WhatsApp Web no pasa por el API oficial y no tiene esta limitacion.
+  if (!sel || canalDe(sel) === 'whatsapp_qr') { caja.hidden = true; return; }
+  const t = ultimoDelCliente();
+  const horas = t ? (Date.now() - t) / 3600000 : Infinity;
+  if (horas < 24) { caja.hidden = true; return; }
+  const cuanto = !isFinite(horas) ? 'Nunca ha escrito por este canal'
+    : horas < 48 ? 'Escribió hace ' + Math.round(horas) + ' horas'
+    : 'Escribió hace ' + Math.round(horas / 24) + ' días';
+  caja.hidden = false;
+  caja.innerHTML = '<div><b>Fuera de la ventana de 24 horas</b>' + esc(cuanto)
+    + '. WhatsApp solo le entrega una plantilla aprobada; un mensaje normal sale con ⚠ '
+    + 'y no lo recibe.</div><button id="v24tpl">Usar plantilla</button>';
+  $('v24tpl').onclick = () => $('adjTpl')?.click();
+}
+
 function cuerpoMensaje(m){
   const t = String(m.msg_type || 'text').toLowerCase();
   const a = adjuntoDe(m);
@@ -2356,6 +2440,21 @@ function cuerpoMensaje(m){
   // resuelveMedios() con lo que devuelva crmMedia.
   const medio = (etiqueta, html) => a.url ? html(esc(a.url))
     : id ? html('', true) : tarjetaArchivo(a, etiqueta);
+
+  // Mensaje con botones de accion. El servidor lo guarda como 'interactive', y sin esta
+  // rama caia al final de la funcion -- que solo pinta texto. Resultado: en el historial
+  // el combo aparecia como un parrafo suelto, sin la foto de cabecera y sin rastro de los
+  // botones, aunque el cliente si los hubiera recibido.
+  if (t === 'interactive' || t === 'button') {
+    const btns = (Array.isArray(m.metadata?.botones) ? m.metadata.botones : []).filter(Boolean);
+    const cabeza = (a.url || id)
+      ? medio('Imagen', (src, porId) => '<img class="mmedia" alt="imagen" loading="lazy"'
+          + (porId ? ' data-medio="' + esc(id) + '"' : ' src="' + src + '"') + '>')
+      : '';
+    return cabeza + '<div class="mpie">' + esc(m.body || '') + '</div>'
+      + (btns.length ? '<div class="mbotones">'
+          + btns.map(b => '<span>' + esc(b) + '</span>').join('') + '</div>' : '');
+  }
 
   if (t === 'image') {
     return medio('Imagen', (src, porId) =>
@@ -2438,6 +2537,7 @@ function pintaMensajes(){
   //
   // Se compara el html generado con el anterior; si no cambio, no se toca el DOM. Si
   // cambio, se sustituyen SOLO los globos distintos, y nunca uno con audio sonando.
+  pintaVentana24();
   if (cont.dataset.firma === html) { resuelveMedios(); return; }
   const previo = cont.dataset.firma;
   cont.dataset.firma = html;
@@ -3161,6 +3261,10 @@ async function pintaCanales(){
 
   const oficialListo = t.ready === true || t.state === 'ready';
   const puenteListo = p.connected === true || p.state === 'connected' || p.status === 'connected';
+  // Esta vista ya sabe si el puente esta vivo: se aprovecha para refrescar el estado que
+  // decide si las conversaciones del segundo numero se ven en la lista. Sin esto, tras
+  // desconectar habia que recargar la pagina para que desaparecieran.
+  if (PUENTE_ON !== puenteListo) { PUENTE_ON = puenteListo; if (vistaActual === 'conversations') pintaChats(); }
 
   cont.innerHTML =
     tarjeta('whatsapp_cloud', oficialListo,
@@ -5042,6 +5146,7 @@ onAuthStateChanged(auth, async u => {
   // El historial se carga solo al entrar. No hay boton de "actualizar": la escucha
   // en vivo trae los cambios sin que nadie tenga que pedirlos.
   escuchaConversaciones();
+  cargaEstadoPuente();
   ve(location.hash.slice(1) || CFG.defaultView || 'conversations');
 });
 </script>
