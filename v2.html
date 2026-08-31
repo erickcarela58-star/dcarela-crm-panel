@@ -367,6 +367,13 @@ video.mmedia{cursor:default}
 /* Una linea, no una tarjeta. .pie button lleva borde y radio, y gana en especificidad
    a una regla de una sola clase: el numero de version salia dentro de un recuadro como
    si fuera un boton mas del menu. */
+/* Buscador de prospectos. Se envuelve: son dos campos y un boton, y en pantalla estrecha
+   quedaban aplastados igual que le paso al compositor. */
+.buscaprospectos{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 12px;max-width:760px}
+.buscaprospectos input{flex:1 1 200px;min-width:150px;padding:10px 13px;border:1px solid var(--line2);
+  border-radius:var(--r);background:var(--bg);color:var(--fg);font:inherit;outline:0}
+.buscaprospectos input:focus{border-color:var(--ink)}
+.buscaprospectos button{flex:0 0 auto}
 .pie .version{display:block;width:100%;text-align:left;padding:6px 0 0;border:0;
   border-radius:0;background:none;font:inherit;font-size:10px;line-height:1.35;
   color:var(--mut);cursor:default;opacity:.72;letter-spacing:.1px}
@@ -3084,7 +3091,12 @@ const TABLERO = {
     bajada: 'Negocios localizados para contactar. Ojo: no te han escrito, así que WhatsApp '
       + 'solo permite llegarles con plantilla aprobada.',
     tabla: 'crm_prospects',
-    queLoLlena: 'Se llena con las búsquedas de prospección, que corren fuera del panel. Si está vacía es que todavía no se ha hecho ninguna búsqueda.',
+    queLoLlena: 'Se llena con el buscador de arriba. Escribe un tipo de negocio y una ciudad — por ejemplo «colegio» en «La Romana» — y los importa desde OpenStreetMap.',
+    // Esta vista era de solo lectura y decia que las busquedas "corren fuera del panel".
+    // Era falso: la accion 'prospect' del servidor busca e importa desde hace tiempo, y lo
+    // que faltaba era el buscador. La tabla salia vacia para siempre y no habia forma de
+    // llenarla desde aqui.
+    buscador: true,
     orden: [{ field:'created_at', ascending:false }],
     cols: [
       { t:'Negocio', p:(r)=> r.business_name || '—' },
@@ -3155,10 +3167,50 @@ async function montaTablero(id){
     montadas.add(id);
     hueco(id, '<div class="hoja"><h1>' + esc(d.titulo) + '</h1>'
       + '<p class="bajada">' + esc(d.bajada) + '</p>'
+      + (d.buscador
+          ? '<div class="buscaprospectos">'
+            + '<input id="pbQue" placeholder="Qué buscar — colegio, salón, hotel…">'
+            + '<input id="pbDonde" placeholder="Ciudad" value="La Romana">'
+            + '<button class="btn-solido" id="pbIr">Buscar negocios</button>'
+            + '</div>'
+            + '<p class="bajada" id="pbEstado" hidden></p>'
+          : '')
       + '<div class="acciones" style="margin-bottom:16px"><button class="btn-linea" data-recarga>Recargar</button></div>'
       + '<div id="tb-' + id + '"></div></div>');
     document.querySelector('#vista-' + id + ' [data-recarga]').onclick = () => pintaTablero(id);
+    if (d.buscador) {
+      const lanzar = () => buscaProspectos(id);
+      $('pbIr').onclick = lanzar;
+      // Enter en cualquiera de los dos campos: escribir la ciudad y tener que ir al raton
+      // para buscar es de las cosas que hacen que una herramienta no se use.
+      ['pbQue', 'pbDonde'].forEach(k => $(k).addEventListener('keydown', e => {
+        if (e.key === 'Enter') { e.preventDefault(); lanzar(); }
+      }));
+    }
   }
+  pintaTablero(id);
+}
+
+// Busca negocios en OpenStreetMap y los importa como prospectos. El servidor ya hacia
+// todo el trabajo -- accion 'prospect' -- y descarta los repetidos por source_external_id,
+// asi que buscar dos veces lo mismo no duplica nada.
+async function buscaProspectos(id){
+  const que = ($('pbQue')?.value || '').trim();
+  const donde = ($('pbDonde')?.value || '').trim();
+  const est = $('pbEstado'), boton = $('pbIr');
+  // El servidor exige cuatro caracteres. Decirlo aqui evita un viaje y un error seco.
+  if (que.length < 4) { est.hidden = false; est.textContent = 'Escribe al menos 4 letras de lo que buscas.'; return; }
+  boton.disabled = true;
+  est.hidden = false;
+  est.innerHTML = '<span class="cargando"></span> Buscando en OpenStreetMap…';
+  const r = await llama({ action:'prospect', query: que, city: donde, category: que, max: 20 });
+  boton.disabled = false;
+  if (!r.ok) { est.textContent = 'No se pudo buscar: ' + (r.error || 'error'); return; }
+  // Se dice cuantos eran repetidos, no solo cuantos entraron: si no, buscar lo mismo dos
+  // veces parece que la segunda no funciono.
+  est.textContent = r.imported + ' negocio(s) importado(s)'
+    + (r.duplicates ? ' · ' + r.duplicates + ' ya estaban' : '')
+    + (r.found === 0 ? ' · OpenStreetMap no encontró nada con esas palabras' : '');
   pintaTablero(id);
 }
 
