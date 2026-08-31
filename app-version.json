@@ -1,6 +1,6 @@
 {
-  "version": "2026-08-31-estetica-chat-v57",
+  "version": "2026-08-31-silencio-y-agenda-v58",
   "channel": "crm",
   "released_at": "2026-08-31T09:00:00Z",
-  "summary": "Estetica del chat del planificador: turnos con avatar, titular, pasos numerados, riesgos como aviso y el mensaje propuesto como globo con boton de copiar. La version deja de verse como una tarjeta en el menu."
+  "summary": "El bot se calla cuando no sabe a que se refiere el mensaje y lo marca para una persona. La agenda incluye los recordatorios y se exporta a Recordatorios de Apple en .ics."
 }
