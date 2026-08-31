@@ -3753,15 +3753,41 @@ async function pintaCanales(){
       // a la funcion, que es donde vive el App Secret. La clave nunca pasa por aqui: el
       // panel solo abre la ventana y espera a que la funcion diga que quedo conectado.
       const cual = red.dataset.conecta;
-      // Se pide un pase de un solo uso ANTES de abrir la ventana. crmOauth no acepta
-      // arrancar sin el, asi que la conexion solo la puede iniciar alguien con sesion.
+      // La ventana se abre AQUI MISMO, antes de cualquier await.
+      //
+      // Esto no es un detalle de estilo: el navegador solo deja abrir una ventana mientras
+      // dura el gesto del usuario, y ese permiso se consume en el primer await. Al pedir
+      // el pase primero y abrir despues, Chrome bloqueaba la ventana -- o la abria en
+      // blanco sin navegar nunca. Desde fuera se ve como "se quedó cargando", que es
+      // exactamente lo que paso. La funcion no llego a recibir ni una peticion.
+      const w = window.open('', 'conectar_' + cual, 'width=620,height=740');
+      if (!w) {
+        return avisa('El navegador bloqueó la ventana',
+          'Permite las ventanas emergentes para crm.dcarelacompufoto.com y vuelve a pulsar.');
+      }
+      // Algo en la ventana mientras se pide el pase: una ventana en blanco es
+      // indistinguible de una que se colgo.
+      try {
+        w.document.write('<!doctype html><meta charset="utf-8">'
+          + '<title>Conectando…</title><body style="margin:0;display:flex;align-items:center;'
+          + 'justify-content:center;height:100vh;font:15px system-ui;color:#111b21">'
+          + 'Abriendo el inicio de sesión de Meta…</body>');
+      } catch (e) { /* si el navegador no deja escribir, la ventana sigue sirviendo */ }
+
+      // El pase es de un solo uso: crmOauth no arranca sin el, asi que la conexion solo
+      // la puede iniciar alguien con sesion en el panel.
       const p = await llama({ action:'oauthPase', red: cual });
-      if (!p.ok) return avisa('No se pudo iniciar la conexión', p.error);
+      if (!p.ok) { try { w.close(); } catch (e) {} return avisa('No se pudo iniciar la conexión', p.error); }
       const base = String(CFG.firebaseFunctionsBase || '').replace(/\/$/, '');
       const url = base + '/crmOauth?red=' + encodeURIComponent(cual)
         + '&pase=' + encodeURIComponent(p.pase);
-      const w = window.open(url, 'conectar_' + cual, 'width=620,height=740');
-      if (!w) return avisa('El navegador bloqueó la ventana', 'Permite las ventanas emergentes para este sitio.');
+      try { w.location.href = url; }
+      catch (e) {
+        // Si ni siquiera se puede navegar la ventana, se da el enlace en vez de dejar al
+        // dueño mirando una ventana muerta.
+        w.close();
+        return avisa('Abre este enlace a mano', url);
+      }
       avisa('Inicia sesión en la ventana', 'Acepta los permisos y vuelve aquí.');
       // Se refresca al cerrarse la ventana: es cuando el permiso ya esta dado o no.
       const vigila = setInterval(() => {
