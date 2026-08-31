@@ -3639,6 +3639,34 @@ async function pintaCanales(){
       + '</div>';
   };
 
+  // El estado de una red no es "hay conversaciones": es si la pagina esta suscrita. Sin
+  // suscripcion Meta no manda un solo webhook, y la tarjeta decia "conectado" igual.
+  // El estado viene de socialStatus, que devuelve solo lo que se puede enseñar. Los
+  // tokens de usuario y de pagina se quedan en el servidor: sacarlos por la via generica
+  // de datos habria puesto dos credenciales en el navegador.
+  const est = await llama({ action:'socialStatus' });
+  const redes = est.ok ? (est.redes || {}) : {};
+  const tarjetaRed = (clave, estadoGuardado, detalle) => {
+    const hay = cuenta(clave);
+    const suscrita = estadoGuardado?.suscrita === true;
+    const conectada = estadoGuardado?.conectado === true;
+    const listo = suscrita ? true : (conectada || hay ? false : null);
+    return tarjeta(clave, listo,
+      detalle
+      + (conectada && !suscrita
+          ? '<br><b>Conectado pero sin suscribir:</b> Meta no va a mandar mensajes hasta que '
+            + 'la página quede suscrita. Vuelve a iniciar sesión.'
+          : suscrita
+            ? '<br>Página <b>' + esc(estadoGuardado.page_name || estadoGuardado.page_id || '') + '</b> suscrita.'
+              + (estadoGuardado.ultimo_sync_at
+                  ? ' Último historial importado: ' + esc(String(estadoGuardado.ultimo_sync_at).slice(0,16).replace('T',' ')) + '.'
+                  : ' Todavía no se ha importado el historial.')
+            : ''),
+      '<button class="btn-linea" data-conecta="' + clave + '">'
+      + (conectada ? 'Volver a iniciar sesión' : 'Iniciar sesión y dar permisos') + '</button>'
+      + (conectada ? '<button class="btn-linea" data-sync="' + clave + '">Importar historial</button>' : ''));
+  };
+
   const oficialListo = t.ready === true || t.state === 'ready';
   const puenteListo = p.connected === true || p.state === 'connected' || p.status === 'connected';
   // Esta vista ya sabe si el puente esta vivo: se aprovecha para refrescar el estado que
@@ -3666,18 +3694,28 @@ async function pintaCanales(){
           + (p.bot_enabled ? 'encendido' : 'apagado') + '</button>'
         : '<button class="btn-linea" data-conecta-puente>Conectar por código</button>')
 
-    + tarjeta('instagram', cuenta('instagram') ? true : null,
+    + tarjetaRed('instagram', redes.instagram,
       'Se conecta iniciando sesión con Facebook y aceptando los permisos de la cuenta: '
       + '<code>instagram_manage_messages</code> y <code>pages_manage_metadata</code>. '
-      + 'La cuenta de Instagram tiene que ser profesional y estar enlazada a la página.',
-      '<button class="btn-linea" data-conecta="instagram">Iniciar sesión y dar permisos</button>')
+      + 'La cuenta de Instagram tiene que ser profesional y estar enlazada a la página.')
 
-    + tarjeta('facebook', cuenta('facebook') ? true : null,
-      'Mismo inicio de sesión que Instagram, con <code>pages_messaging</code>. Al aceptar, la '
-      + 'página queda suscrita y sus mensajes entran aquí como una conversación más.',
-      '<button class="btn-linea" data-conecta="facebook">Iniciar sesión y dar permisos</button>');
+    + tarjetaRed('facebook', redes.facebook,
+      'Mismo inicio de sesión que Instagram, con <code>pages_messaging</code>.');
 
   cont.onclick = async ev => {
+    const sinc = ev.target.closest('[data-sync]');
+    if (sinc) {
+      const antes = sinc.textContent;
+      sinc.disabled = true; sinc.textContent = 'Importando…';
+      const r = await llama({ action:'syncSocial', red: sinc.dataset.sync, max: 25 });
+      sinc.disabled = false; sinc.textContent = antes;
+      if (!r.ok) return avisa('No se pudo importar', r.error);
+      // Se dicen los dos numeros: si hay hilos pero cero mensajes nuevos, es que ya
+      // estaban importados, no que la importacion fallara.
+      avisa('Historial importado',
+        r.hilos + ' conversación(es), ' + r.mensajes + ' mensaje(s) nuevo(s).');
+      return pintaCanales();
+    }
     const bot = ev.target.closest('[data-canal-bot]');
     if (bot) {
       // El bot se enciende y se apaga POR CANAL. Antes era un interruptor unico: apagarlo
