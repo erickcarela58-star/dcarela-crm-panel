@@ -1,6 +1,6 @@
 {
-  "version": "2026-08-31-silencio-y-agenda-v58",
+  "version": "2026-08-31-prospeccion-v59",
   "channel": "crm",
   "released_at": "2026-08-31T09:00:00Z",
-  "summary": "El bot se calla cuando no sabe a que se refiere el mensaje y lo marca para una persona. La agenda incluye los recordatorios y se exporta a Recordatorios de Apple en .ics."
+  "summary": "Prospeccion deja de ser una tabla vacia: tiene buscador que importa negocios desde OpenStreetMap. La difusion no envia por defecto."
 }
