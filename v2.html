@@ -3784,6 +3784,8 @@ async function pintaCanales(){
       const p = await llama({ action:'oauthPase', red: cual });
       if (!p.ok) { try { if (w) w.close(); } catch (e) {} return avisa('No se pudo iniciar la conexión', p.error); }
       const base = String(CFG.firebaseFunctionsBase || '').replace(/\/$/, '');
+      // 'red' sigue viajando aqui porque esta es NUESTRA url de arranque, no el
+      // redirect_uri que Meta compara. El pase tambien la lleva, por si acaso.
       const url = base + '/crmOauth?red=' + encodeURIComponent(cual)
         + '&pase=' + encodeURIComponent(p.pase)
         // A donde volver cuando Meta termine. Sin esto la persona acaba en una pagina
