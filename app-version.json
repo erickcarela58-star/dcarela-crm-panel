@@ -1,6 +1,6 @@
 {
-  "version": "2026-08-31-oauth-sin-popup-v62",
+  "version": "2026-08-31-oauth-uri-limpio-v63",
   "channel": "crm",
   "released_at": "2026-08-31T09:00:00Z",
-  "summary": "Conectar Instagram o Facebook ya no depende de una ventana emergente: si el navegador la bloquea, se navega la pestaña y se vuelve al panel al terminar."
+  "summary": "El redirect_uri de Meta va sin parametros: una sola URL que registrar en la lista blanca de la app."
 }
