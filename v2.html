@@ -1369,9 +1369,13 @@ function pintaChats(){
   // regla que ya rige para los canales, dos lineas mas abajo: una etiqueta que solo marca
   // una conversacion no es un filtro, es ruido. Las raras siguen viendose y poniendose en
   // la ficha del lead; lo que no hacen es competir por el sitio de las que se usan.
-  const porEtiqueta = etiquetasContadas()
-    .filter(([, n]) => n >= 2).slice(0, 8)
-    .map(([e]) => ['etq:' + e, e]);
+  // Si el negocio eligio cuales quiere en la barra, mandan esas y en el orden que las
+  // eligio. El automatico solo entra cuando no ha elegido ninguna: acierta a menudo, pero
+  // la etiqueta que importa esta semana no tiene por que ser la mas usada del historico.
+  const elegidas = etiquetasElegidas();
+  const porEtiqueta = elegidas.length
+    ? elegidas.map(e => ['etq:' + e, e])
+    : etiquetasContadas().filter(([, n]) => n >= 2).slice(0, 8).map(([e]) => ['etq:' + e, e]);
   // Solo se ofrecen los canales que de verdad tienen conversaciones: un filtro que
   // siempre devuelve cero es ruido.
   const porCanal = Object.keys(CANALES)
@@ -4235,6 +4239,19 @@ function interruptorCfg(clave, etiqueta, explica, pordefecto){
     + (on ? ' checked' : '') + '><span><b>' + esc(etiqueta) + '</b>'
     + '<i>' + explica + '</i></span></label>';
 }
+// Se ensena el numero de conversaciones al lado: sin el no hay forma de saber cual de dos
+// etiquetas parecidas es la que se usa de verdad.
+function etiquetasFiltroCfg(){
+  const todas = etiquetasContadas();
+  if (!todas.length) return '<p class="cfgnota">Todavia no hay ninguna etiqueta puesta en ninguna conversacion.</p>';
+  const elegidas = etiquetasElegidas();
+  return '<div class="etiquetas">'
+    + todas.map(([e, n]) => '<label class="etq sug" style="cursor:pointer">'
+        + '<input type="checkbox" data-etqf="' + esc(e) + '"'
+        + (elegidas.includes(e) ? ' checked' : '') + ' style="margin-right:6px;vertical-align:middle">'
+        + esc(e) + ' <b style="opacity:.6">' + n + '</b></label>').join('')
+    + '</div>';
+}
 function campoCfg(clave, etiqueta, marcador){
   return '<div class="campo"><label>' + esc(etiqueta) + '</label>'
     + '<input data-cfg="' + esc(clave) + '" value="' + esc(AJUSTES[clave] || '')
@@ -4344,6 +4361,12 @@ async function pintaConfig(){
         dato('Motor', 'Google Gemini 2.5 Flash')
         + '<button class="btn-linea" id="cfgReglas2" style="margin-top:8px">Editar reglas del negocio</button>')
 
+    + tarjetaCfg('Etiquetas del buscador',
+        'Marca las que quieres ver en la barra de filtros de Conversaciones. Sin marcar ninguna, '
+        + 'el panel ensena solas las mas usadas. Las que no marques siguen existiendo y '
+        + 'poniendose en la ficha del lead: solo dejan de ocupar sitio en la barra.',
+        etiquetasFiltroCfg())
+
     + tarjetaCfg('Bot de WhatsApp',
         'Encender o apagar el bot por canal se hace en <b>Canales</b>, no aquí: son ajustes de cada '
         + 'conexión y mezclarlos lleva a apagar el que no era.',
@@ -4355,6 +4378,20 @@ async function pintaConfig(){
       const ok = await guardaAjuste(el.dataset.sw, el.checked);
       if (!ok) el.checked = !el.checked;   // si el servidor dijo que no, el interruptor vuelve
       else avisa('Guardado', el.checked ? 'Activado' : 'Desactivado');
+    };
+  });
+  // Se guarda la lista entera en cada cambio, no la etiqueta suelta: asi el orden de la
+  // barra es el orden en que aparecen aqui, y no depende de en que orden se fueron pulsando.
+  g.querySelectorAll('[data-etqf]').forEach(el => {
+    el.onchange = async () => {
+      const marcadas = [...g.querySelectorAll('[data-etqf]')].filter(x => x.checked)
+        .map(x => x.dataset.etqf);
+      const ok = await guardaAjuste('etiquetas_filtro', marcadas.join(','));
+      if (!ok) { el.checked = !el.checked; return; }
+      if (vistaActual === 'conversations') pintaChats();
+      avisa('Guardado', marcadas.length
+        ? marcadas.length + ' etiqueta(s) en la barra'
+        : 'Sin ninguna marcada: vuelve a las mas usadas');
     };
   });
   const gt = $('cfgGuardaTextos');
@@ -5508,6 +5545,12 @@ function etiquetasContadas(){
 }
 function etiquetasEnUso(){
   return etiquetasContadas().map(([e]) => e);
+}
+// Las de la barra las elige el negocio en Configuracion, y por eso viven en el servidor y
+// no en localStorage: si cada persona tuviera las suyas, dos personas mirando el mismo CRM
+// verian filtros distintos y ninguna sabria por que. Vacio significa automatico.
+function etiquetasElegidas(){
+  return String(AJUSTES.etiquetas_filtro || '').split(',').map(s => s.trim()).filter(Boolean);
 }
 
 function cableaEtiquetas(c){
