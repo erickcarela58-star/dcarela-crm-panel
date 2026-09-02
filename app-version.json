@@ -1,6 +1,6 @@
 {
-  "version": "2026-09-02-etiquetas-por-uso-v64",
+  "version": "2026-09-02-etiquetas-a-eleccion-v65",
   "channel": "crm",
   "released_at": "2026-09-02T00:00:00Z",
-  "summary": "Instagram pedia permisos incompletos y quedaba conectado a medias: ya pide pages_messaging. Las etiquetas se ordenan por uso y el filtro deja de llenarse."
+  "summary": "Las etiquetas de la barra se eligen en Configuracion. Importar historial recorre todas las paginas y los tres folders de Messenger."
 }
