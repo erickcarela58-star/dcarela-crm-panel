@@ -1,6 +1,6 @@
 {
-  "version": "2026-09-02-etiquetas-a-eleccion-v65",
+  "version": "2026-09-02-chats-con-nombre-v66",
   "channel": "crm",
   "released_at": "2026-09-02T00:00:00Z",
-  "summary": "Las etiquetas de la barra se eligen en Configuracion. Importar historial recorre todas las paginas y los tres folders de Messenger."
+  "summary": "Los chats importados traen nombre, hora y texto de verdad. Sin nombre ya no salen todos como un \"+\" identico."
 }
