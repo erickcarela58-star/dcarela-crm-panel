@@ -137,6 +137,27 @@ body.menu-abierto .nav .secundarias{display:block}
 .hoja h1{margin:0 0 4px;font-size:21px;font-weight:700;letter-spacing:-.3px}
 .hoja .bajada{margin:0 0 22px;color:var(--mut);font-size:13px;max-width:640px}
 
+/* --- Agenda mensual ------------------------------------------------------- */
+.agbarra{display:flex;align-items:center;gap:8px;margin:0 0 14px;flex-wrap:wrap}
+.agbarra strong{min-width:180px;text-align:center;text-transform:capitalize;font-size:15px}
+.agbarra .ag-suscribe{margin-left:auto}
+.agscroll{overflow-x:auto;border:1px solid var(--line);border-radius:var(--r2);background:var(--panel)}
+.agcal{min-width:760px;display:grid;grid-template-columns:repeat(7,minmax(0,1fr))}
+.agsem{padding:9px 8px;border-bottom:1px solid var(--line);color:var(--mut);font-size:10.5px;
+  font-weight:750;text-transform:uppercase;letter-spacing:.5px;text-align:center}
+.agdia{min-height:116px;padding:8px;border-right:1px solid var(--line);border-bottom:1px solid var(--line);
+  min-width:0;background:var(--panel)}
+.agdia:nth-child(7n){border-right:0}
+.agdia.fuera{background:var(--hover);color:var(--mut)}
+.agdia.hoy{box-shadow:inset 0 0 0 2px var(--ink)}
+.agnum{display:block;margin-bottom:6px;font-size:11.5px;font-weight:700}
+.agevento{display:block;width:100%;padding:5px 6px;margin:0 0 4px;border-radius:6px;text-align:left;
+  background:var(--ink);color:var(--on-ink);font-size:10.5px;line-height:1.25;overflow:hidden}
+.agevento.tentativo{background:var(--hover);color:var(--fg);border:1px dashed var(--line2)}
+.agevento b,.agevento small{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.agevento small{opacity:.72;font-size:9.5px;margin-top:1px}
+.agproximas{margin-top:18px;max-width:920px}
+
 /* --- Conversaciones: lista ------------------------------------------------- */
 .lista{width:min(330px,30vw);flex:0 0 auto;display:flex;flex-direction:column;
   border-right:1px solid var(--line);background:var(--panel)}
@@ -209,6 +230,13 @@ img.av{object-fit:cover}
 .codigo{margin-top:10px;padding:18px;border-radius:var(--r2);background:var(--hover);
   text-align:center;font-size:27px;font-weight:700;letter-spacing:5px;
   font-family:ui-monospace,Menlo,Consolas,monospace}
+.bridge-tools{display:flex;flex-wrap:wrap;gap:8px;width:100%}
+.bridge-code-panel{display:none;width:100%;padding:12px;border:1px solid var(--line);
+  border-radius:var(--r);background:var(--hover)}
+.bridge-code-panel.on{display:block}
+.bridge-code-panel .codigo{margin:0 0 9px;background:var(--panel)}
+.bridge-meta{width:100%;margin:0;color:var(--mut);font-size:11.5px;line-height:1.45}
+.bridge-meta.mal{color:var(--bad)}
 .filtro b{margin-left:5px;opacity:.65;font-weight:700}
 .chats{flex:1;overflow-y:auto}
 
@@ -859,6 +887,8 @@ video.mmedia{cursor:default}
   .conversacion,.vacio{display:none}
   body.chat-abierto .conversacion{display:flex}
   .hoja{padding:18px 16px}
+  .agbarra strong{order:-1;width:100%;text-align:left}
+  .agbarra .ag-suscribe{margin-left:0}
 }
 </style>
 </head>
@@ -960,6 +990,16 @@ function avisa(titulo, detalle){
 
 /* ---- Marca --------------------------------------------------------------- */
 const sigla = CFG.logoText || 'DC';
+const CANAL_FOTOS = CFG.lockNumFilter === true || CFG.defaultNumFilter === 'qr';
+const soloDigitos = value => String(value || '').replace(/\D/g, '');
+const NUMERO_FOTOS = soloDigitos(CFG.bridgeBusinessNumber || CFG.bridgeBusinessDisplayNumber);
+function perteneceAlCanal(c){
+  const fuente = String(c?.source || '').toLowerCase();
+  const numero = soloDigitos(c?.business_number);
+  const esFotos = fuente === 'whatsapp_qr' || fuente === 'photos'
+    || (NUMERO_FOTOS && numero === NUMERO_FOTOS);
+  return CANAL_FOTOS ? esFotos : !esFotos;
+}
 ['sigla','siglaAcceso'].forEach(id => { $(id).textContent = sigla; });
 $('marca').textContent = CFG.productName || 'CRM';
 $('submarca').textContent = CFG.subtitle || '';
@@ -1048,6 +1088,7 @@ async function llama(cuerpo){
     return { ok:true, ...j };
   } catch (e) { return { ok:false, error: e?.message || String(e) }; }
 }
+const callFn = cuerpo => llama(cuerpo);
 
 /* ---- Datos en vivo ------------------------------------------------------- */
 let CONVS = [], MSGS = [], sel = null, paraMsgs = null;
@@ -1089,7 +1130,7 @@ function hora(v){
 function escuchaConversaciones(){
   const q = query(collection(db,'crm_conversations'), where('business_id','==',NEGOCIO));
   onSnapshot(q, s => {
-    CONVS = s.docs.map(d => ({ ...d.data(), _id:d.id }))
+    CONVS = s.docs.map(d => ({ ...d.data(), _id:d.id })).filter(perteneceAlCanal)
       .sort((a,b) => String(b.last_message_at||'').localeCompare(String(a.last_message_at||'')));
     marcaEstado(true, 'Datos sincronizados · en vivo');
     if (vistaActual === 'conversations') pintaChats();
@@ -1323,7 +1364,14 @@ function pintaChats(){
     : c.mode === 'bot').length;
   // Las etiquetas se añaden como filtros detras de los fijos: son las que el equipo
   // inventa, y sin poder filtrar por ellas no sirven para nada.
-  const porEtiqueta = etiquetasEnUso().map(e => ['etq:' + e, e]);
+  // Antes entraban TODAS, y con el etiquetado automatico son decenas: la fila de filtros
+  // se volvia un scroll interminable donde no se encontraba nada. Se aplica aqui la misma
+  // regla que ya rige para los canales, dos lineas mas abajo: una etiqueta que solo marca
+  // una conversacion no es un filtro, es ruido. Las raras siguen viendose y poniendose en
+  // la ficha del lead; lo que no hacen es competir por el sitio de las que se usan.
+  const porEtiqueta = etiquetasContadas()
+    .filter(([, n]) => n >= 2).slice(0, 8)
+    .map(([e]) => ['etq:' + e, e]);
   // Solo se ofrecen los canales que de verdad tienen conversaciones: un filtro que
   // siempre devuelve cero es ruido.
   const porCanal = Object.keys(CANALES)
@@ -1464,13 +1512,16 @@ function cableaChat(c){
     ? 'Humano atiende' : 'Bot atiende'; };
   pinta();
   modo.onclick = async () => {
-    const nuevo = (sel.mode === 'human') ? 'bot' : 'human';
+    const chatEnabled = sel?.mode === 'bot';
+    const newMode = chatEnabled ? 'human' : 'bot';
+    if (!sel.id && sel._id) sel.id = sel._id;
     modo.disabled = true;
-    const r = await llama({ action:'mode', conversation_id: sel.id || sel._id, mode:nuevo });
+    const r = await callFn({ action: 'mode', conversation_id: sel.id, mode: newMode });
     modo.disabled = false;
     if (!r.ok) return avisa('No se pudo cambiar', r.error);
-    sel.mode = nuevo; pinta();
-    avisa(nuevo === 'human' ? 'La atiendes tú' : 'Vuelve al bot');
+    sel.mode = newMode; pinta();
+    avisa(newMode === 'human' ? 'La atiendes tú' : 'Vuelve al bot',
+      'El cambio se aplicará únicamente a esta conversación.');
   };
   const mas = $('mas');
   mas.querySelector('button').onclick = ev => { ev.stopPropagation(); mas.classList.toggle('on'); };
@@ -2848,10 +2899,41 @@ const ETAPAS = ['nuevo','interesado','cotizando','pendiente_reserva','reservado'
 const ESTADOS = ['abierto','en_revision','esperando_cliente','requiere_humano',
   'desinteresado','cerrado'];
 const RESERVA = ['sin_fecha','fecha_tentativa','reservado','confirmado','cancelado'];
+const CATEGORIAS = ['XV','Infantil','Graduación','Cumpleaños','Embarazadas','Boda','Sesiones/Retratos','Maquillaje'];
+const PRIORIDADES = ['urgente','alta','media','baja'];
+const MAQUILLAJE = [
+  ['','Pendiente'],['incluido','Incluido'],['extra','Extra desde RD$2,500'],['no_solicitado','No solicitado'],
+];
 const opciones = (lista, actual) => lista.map(v =>
   '<option value="' + v + '"' + (actual === v ? ' selected' : '') + '>' + v.replace(/_/g,' ') + '</option>').join('');
+const opcionesPares = (lista, actual, vacia = false) =>
+  (vacia ? '<option value="">—</option>' : '') + lista.map(([v,l]) =>
+    '<option value="' + esc(v) + '"' + (actual === v ? ' selected' : '') + '>' + esc(l) + '</option>').join('');
+function fechaLocal(v){
+  if (!v) return '';
+  const d = new Date(v); if (Number.isNaN(d.getTime())) return '';
+  const dos = n => String(n).padStart(2,'0');
+  return d.getFullYear() + '-' + dos(d.getMonth()+1) + '-' + dos(d.getDate())
+    + 'T' + dos(d.getHours()) + ':' + dos(d.getMinutes());
+}
+function valorCampoFicha(el){
+  const campo = el.dataset.c;
+  if (el.type === 'checkbox') return el.checked;
+  if (!el.value) return null;
+  if (campo === 'selected_combo_price' || campo === 'makeup_price') {
+    const n = Number(el.value); return Number.isFinite(n) ? n : null;
+  }
+  if (campo === 'scheduled_at' || campo === 'follow_up_at') {
+    const d = new Date(el.value); return Number.isNaN(d.getTime()) ? null : d.toISOString();
+  }
+  return el.value;
+}
 
 function pintaFicha(c){
+  const categorias = '<option value="">—</option>' + CATEGORIAS.map(v =>
+    '<option value="' + esc(v) + '"' + (c.interested_category === v ? ' selected' : '') + '>' + esc(v) + '</option>').join('');
+  const prioridades = PRIORIDADES.map(v =>
+    '<option value="' + v + '"' + ((c.priority || 'media') === v ? ' selected' : '') + '>' + v + '</option>').join('');
   $('ficha').innerHTML =
     '<div class="cabeza"><b>Ficha del lead</b>'
     + '<button id="cerrarFicha" style="color:var(--mut);font-size:17px">×</button></div>'
@@ -2865,10 +2947,13 @@ function pintaFicha(c){
     + '<div class="dentro">'
     +   '<div class="campo"><label>Nombre</label><input data-c="customer_name" value="' + esc(c.customer_name || c.contact_name || '') + '"></div>'
     +   '<div class="par">'
-    +     '<div class="campo"><label>Etapa</label><select data-c="lifecycle_stage">' + opciones(ETAPAS, c.lifecycle_stage) + '</select></div>'
-    +     '<div class="campo"><label>Estado</label><select data-c="lead_status">' + opciones(ESTADOS, c.lead_status) + '</select></div>'
+    +     '<div class="campo"><label>Etapa</label><select data-c="lifecycle_stage">' + opciones(ETAPAS, c.lifecycle_stage || 'nuevo') + '</select></div>'
+    +     '<div class="campo"><label>Categoría</label><select data-c="interested_category">' + categorias + '</select></div>'
     +   '</div>'
-    +   '<div class="campo"><label>Reserva</label><select data-c="reservation_status">' + opciones(RESERVA, c.reservation_status) + '</select></div>'
+    +   '<div class="par">'
+    +     '<div class="campo"><label>Estado</label><select data-c="lead_status">' + opciones(ESTADOS, c.lead_status || 'abierto') + '</select></div>'
+    +     '<div class="campo"><label>Reserva</label><select data-c="reservation_status">' + opciones(RESERVA, c.reservation_status || 'sin_fecha') + '</select></div>'
+    +   '</div>'
     +   '<div class="dato"><div class="k">Canal</div><div class="v">' + esc(c.channel || 'whatsapp') + '</div></div>'
     +   '<div class="dato"><div class="k">Último intent</div><div class="v">' + esc(c.last_intent || 'pendiente') + '</div></div>'
     + '</div></details>'
@@ -2885,8 +2970,48 @@ function pintaFicha(c){
     +   '<div class="campo"><label>Próximo paso</label><textarea data-c="next_step_suggested" rows="2">' + esc(c.next_step_suggested || '') + '</textarea></div>'
     + '</div></details>'
 
+    + '<details class="grupo"><summary>Datos del trato</summary><div class="dentro">'
+    +   '<div class="campo"><label>Prioridad</label><select data-c="priority">' + prioridades + '</select></div>'
+    +   '<div class="campo"><label>Combo seleccionado</label><input data-c="selected_combo_name" value="' + esc(c.selected_combo_name || '') + '"></div>'
+    +   '<div class="par">'
+    +     '<div class="campo"><label>Precio RD$</label><input data-c="selected_combo_price" type="number" min="0" step="100" value="' + esc(c.selected_combo_price ?? '') + '"></div>'
+    +     '<div class="campo"><label>Presupuesto</label><input data-c="budget_range" value="' + esc(c.budget_range || '') + '"></div>'
+    +   '</div>'
+    +   '<div class="par">'
+    +     '<div class="campo"><label>Fecha tentativa</label><input data-c="tentative_date" type="date" value="' + esc(c.tentative_date || '') + '"></div>'
+    +     '<div class="campo"><label>Agendada</label><input data-c="scheduled_at" type="datetime-local" value="' + esc(fechaLocal(c.scheduled_at)) + '"></div>'
+    +   '</div>'
+    +   '<div class="campo"><label>Próximo seguimiento</label><input data-c="follow_up_at" type="datetime-local" value="' + esc(fechaLocal(c.follow_up_at)) + '"></div>'
+    +   '<div class="campo"><label>Asignado a (correo)</label><input data-c="assigned_to" type="email" value="' + esc(c.assigned_to || '') + '"></div>'
+    + '</div></details>'
+
+    + '<details class="grupo"><summary>Selección visual</summary><div class="dentro">'
+    +   '<div class="par">'
+    +     '<div class="campo"><label>Vestido</label><input data-c="selected_dress" value="' + esc(c.selected_dress || '') + '"></div>'
+    +     '<div class="campo"><label>Color vestido</label><input data-c="dress_color" value="' + esc(c.dress_color || '') + '"></div>'
+    +   '</div>'
+    +   '<div class="par">'
+    +     '<div class="campo"><label>Globos</label><input data-c="balloon_color" value="' + esc(c.balloon_color || '') + '"></div>'
+    +     '<div class="campo"><label>Número</label><input data-c="number_color" value="' + esc(c.number_color || '') + '"></div>'
+    +   '</div>'
+    +   '<div class="campo"><label>Fondo / color</label><input data-c="background_color" value="' + esc(c.background_color || '') + '"></div>'
+    +   '<div class="campo"><label>Fondo / temática infantil</label><input data-c="fondo_tematica" value="' + esc(c.fondo_tematica || '') + '"></div>'
+    +   '<div class="par">'
+    +     '<div class="campo"><label>Maquillaje</label><select data-c="makeup_selection">' + opcionesPares(MAQUILLAJE, c.makeup_selection || '') + '</select></div>'
+    +     '<div class="campo"><label>Precio maquillaje</label><input data-c="makeup_price" type="number" min="0" step="100" value="' + esc(c.makeup_price ?? '') + '"></div>'
+    +   '</div>'
+    + '</div></details>'
+
     + '<details class="grupo"><summary>Automatización '
     +   '<span class="nota">' + Number(c.followup_attempts || 0) + ' de 2 seguimientos</span></summary><div class="dentro">'
+    +   '<label class="campo"><input data-c="human_handoff_required" type="checkbox" ' + (c.human_handoff_required ? 'checked' : '') + '> Requiere atención humana</label>'
+    +   '<label class="campo"><input data-c="auto_template_paused" type="checkbox" ' + (c.auto_template_paused ? 'checked' : '') + '> Pausar bot / plantillas automáticas</label>'
+    +   '<div class="campo"><label>Motivo de atención humana</label><input data-c="human_handoff_reason" value="' + esc(c.human_handoff_reason || '') + '"></div>'
+    +   '<div class="seccion" style="margin:12px 0 6px">Permisos individuales</div>'
+    +   '<label class="campo"><input data-c="reminders_opt_in" type="checkbox" ' + (c.reminders_opt_in === false ? '' : 'checked') + (c.proactive_blocked_at ? ' disabled' : '') + '> Permitir recordatorios de sesión</label>'
+    +   '<label class="campo"><input data-c="followups_opt_in" type="checkbox" ' + (c.followups_opt_in === false ? '' : 'checked') + (c.proactive_blocked_at ? ' disabled' : '') + '> Permitir seguimientos</label>'
+    +   '<label class="campo"><input data-c="marketing_opt_in" type="checkbox" ' + (c.marketing_opt_in === true ? 'checked' : '') + (c.proactive_blocked_at ? ' disabled' : '') + '> Permitir marketing y promociones</label>'
+    +   (c.proactive_blocked_at ? '<p class="aviso" style="color:var(--bad)">Exclusión permanente activa: estos permisos no pueden reactivarse desde la ficha.</p>' : '')
     +   '<p class="aviso" style="margin:0">Dos seguimientos sin respuesta y el contacto pasa a <b>desinteresado</b>: '
     +     'se apagan marketing, seguimientos y auto-plantillas. Puede seguir escribiendo y se le puede contestar a mano.</p>'
     + '</div></details>'
@@ -2907,7 +3032,7 @@ function pintaFicha(c){
   // Guardado al salir del campo: un cambio por peticion, con el motivo visible si falla.
   $('ficha').querySelectorAll('[data-c]').forEach(el => {
     el.addEventListener('change', async () => {
-      const cambios = {}; cambios[el.dataset.c] = el.value;
+      const cambios = {}; cambios[el.dataset.c] = valorCampoFicha(el);
       const r = await llama({ action:'updateLead', conversation_id: sel.id || sel._id, fields:cambios });
       if (!r.ok) return avisa('No se guardó', r.error);
       Object.assign(sel, cambios);
@@ -2918,6 +3043,30 @@ function pintaFicha(c){
 }
 
 /* ---- Vista Plantillas ---------------------------------------------------- */
+// Biblioteca propia para las eventualidades del negocio. Estas son recetas editables:
+// no se finge que Meta ya las aprobo. Copiar una abre el flujo normal de Meta, donde
+// se revisa categoria, variables y aprobacion antes de que pueda salir fuera de 24 h.
+const PLANTILLAS_PROPIAS = [
+  ['primer_contacto','Primer contacto','Hola {nombre}, gracias por escribir a D’Carela. ¿Qué tipo de sesión te interesa y para qué fecha la necesitas?'],
+  ['pedir_fecha','Pedir fecha tentativa','Hola {nombre}, para confirmarte disponibilidad del combo {combo}, ¿qué fecha tienes en mente?'],
+  ['cotizacion','Enviar cotización','Hola {nombre}, preparé la información de {combo}. El precio es {precio} e incluye {incluye}. ¿Quieres que revisemos una fecha?'],
+  ['reserva','Solicitar reserva','Hola {nombre}, tu fecha {fecha} sigue disponible. Para apartarla se requiere un abono de {abono}. La reserva queda confirmada cuando validemos el comprobante.'],
+  ['pago_recibido','Pago recibido','Hola {nombre}, recibimos tu comprobante. Una persona del equipo lo validará y te confirmará la reserva por este mismo chat.'],
+  ['confirmar_sesion','Confirmar sesión','Hola {nombre}, tu sesión queda confirmada para {fecha} a las {hora}. Servicio: {combo}. Responde a este mensaje si necesitas ajustar algo.'],
+  ['recordatorio_24h','Recordatorio 24 horas','Hola {nombre}, te recordamos tu sesión mañana {fecha} a las {hora}. Te esperamos en {ubicacion}.'],
+  ['reprogramar','Reprogramación','Hola {nombre}, necesitamos ajustar la fecha de tu sesión. Estas son las opciones disponibles: {opciones}. Dinos cuál te funciona mejor.'],
+  ['clima','Cambio por clima','Hola {nombre}, el clima puede afectar tu sesión de {fecha}. Antes de moverte te confirmaremos si mantenemos el horario o reprogramamos.'],
+  ['entrega','Entrega de trabajo','Hola {nombre}, tu trabajo de {servicio} está listo. Puedes retirarlo en {ubicacion} dentro del horario {horario}.'],
+  ['revision','Solicitar corrección','Hola {nombre}, recibimos tu solicitud de corrección sobre {detalle}. El equipo la revisará y te responderá antes de {plazo}.'],
+  ['encuesta','Encuesta de satisfacción','Hola {nombre}, gracias por confiar en D’Carela. ¿Cómo calificarías tu experiencia del 1 al 5? Tu respuesta nos ayuda a mejorar.'],
+  ['reactivacion','Reactivación única','Hola {nombre}, hace tiempo preguntaste por {categoria}. Si todavía te interesa, puedo ayudarte a retomar la información. Si no, responde STOP y no te enviaremos promociones.'],
+  ['temporada','Campaña de temporada','Hola {nombre}, tenemos una propuesta de {temporada} pensada para {categoria}: {oferta}. Si quieres verla responde SÍ. Para no recibir promociones responde STOP.'],
+  ['cumpleanos','Cumpleaños del cliente','Hola {nombre}, queremos celebrar contigo: tenemos {oferta} para tu próxima sesión. Si te interesa responde SÍ. Para no recibir promociones responde STOP.'],
+  ['inactivo','Cierre por falta de respuesta','Hola {nombre}, cierro este seguimiento para no insistirte. Cuando quieras retomar {categoria}, puedes escribirnos y conservaremos el contexto.'],
+  ['fuera_horario','Fuera de horario','Hola {nombre}, recibimos tu mensaje fuera de horario. El equipo te responderá a partir de {hora_apertura}.'],
+  ['queja_humano','Escalar una incidencia','Hola {nombre}, lamento lo ocurrido. Ya dejé tu caso en manos de una persona del equipo; no voy a darte una respuesta automática sobre algo que requiere revisión.'],
+];
+
 function montaPlantillasVista(){
   if (!montadas.has('plantillas')) {
     montadas.add('plantillas');
@@ -2929,7 +3078,13 @@ function montaPlantillasVista(){
       +   '<button class="btn-solido" id="btnNuevaTpl">＋ Crear plantilla</button>'
       +   '<button class="btn-linea" id="btnSyncTpl">Sincronizar con Meta</button>'
       +   '<button class="btn-linea" id="btnRecargaTpl">Recargar</button></div>'
+      + '<div class="seccion">Biblioteca propia · ' + PLANTILLAS_PROPIAS.length + ' eventualidades</div>'
+      + '<p class="bajada">Textos base para copiar, adaptar y enviar a revisión en Meta. '
+      +   'Aquí no se presentan como aprobados hasta que Meta los devuelva en el catálogo.</p>'
+      + '<div class="cfggrid" id="tplPropias" style="margin-bottom:24px"></div>'
+      + '<div class="seccion">Plantillas sincronizadas y aprobadas por Meta</div>'
       + '<div id="tablaTpl"></div></div>');
+    pintaPlantillasPropias();
     $('btnSyncTpl').onclick = async () => {
       $('btnSyncTpl').disabled = true;
       const r = await llama({ action:'templates', operation:'syncMeta',
@@ -2947,6 +3102,19 @@ function montaPlantillasVista(){
     $('btnNuevaTpl').onclick = abreNuevaPlantilla;
   }
   pintaTablaTpl(!PLANTILLAS);
+}
+
+function pintaPlantillasPropias(){
+  const cont = $('tplPropias'); if (!cont) return;
+  cont.innerHTML = PLANTILLAS_PROPIAS.map((p,i) => '<div class="cfgc">'
+    + '<h3>' + esc(p[1]) + '</h3><p class="cfgnota">' + esc(p[2]) + '</p>'
+    + '<button class="btn-linea" data-tpl-propia="' + i + '">Copiar texto base</button></div>').join('');
+  cont.onclick = async ev => {
+    const b = ev.target.closest('[data-tpl-propia]'); if (!b) return;
+    const p = PLANTILLAS_PROPIAS[Number(b.dataset.tplPropia)];
+    try { await navigator.clipboard.writeText(p[2]); avisa('Plantilla copiada', p[1]); }
+    catch (e) { avisa('No se pudo copiar', 'Selecciona el texto manualmente.'); }
+  };
 }
 
 // Crear una plantilla propia. Lo que hay que dejar clarisimo es que NO queda usable al
@@ -3055,10 +3223,11 @@ const TABLERO = {
     titulo: 'Clientes de caja',
     bajada: 'Los que ya compraron en el punto de venta. Se sincronizan desde la caja.',
     tabla: 'crm_pos_customers',
+    accion: 'posCustomers',
     queLoLlena: 'Se llena sola desde el punto de venta: cada cliente que compra en caja aparece aquí. Si está vacía, la caja todavía no ha sincronizado con el CRM.',
     orden: [{ field:'last_sale_at', ascending:false }],
     cols: [
-      { t:'Cliente', p:(r)=> r.customer_name || '—' },
+      { t:'Cliente', p:(r)=> r.name || '—' },
       { t:'Teléfono', p:(r)=> r.phone || '—' },
       { t:'Compras', p:(r)=> r.sale_count ?? 0 },
       { t:'Gastado', p:(r)=> pesos(r.total_spent_centavos) },
@@ -3108,6 +3277,7 @@ const TABLERO = {
     ],
   },
 };
+const TABLEROS_CARGADOS = new Set();
 
 function pesos(centavos){
   const n = Number(centavos || 0);
@@ -3188,7 +3358,7 @@ async function montaTablero(id){
       }));
     }
   }
-  pintaTablero(id);
+  if (!TABLEROS_CARGADOS.has(id)) pintaTablero(id);
 }
 
 // Busca negocios en OpenStreetMap y los importa como prospectos. El servidor ya hacia
@@ -3218,13 +3388,16 @@ async function pintaTablero(id){
   const d = TABLERO[id], cont = $('tb-' + id);
   if (!cont) return;
   cont.innerHTML = '<p class="bajada"><span class="cargando"></span> Cargando…</p>';
-  const r = await llama({ action:'data', table:d.tabla, operation:'select',
-    filters: d.filtros || [], order: d.orden || [], limit: 300 });
+  const r = d.accion
+    ? await llama({ action:d.accion })
+    : await llama({ action:'data', table:d.tabla, operation:'select',
+        filters: d.filtros || [], order: d.orden || [], limit: 300 });
   if (!r.ok) {
     cont.innerHTML = '<p class="bajada">No se pudo cargar: ' + esc(r.error || 'error') + '</p>';
     return;
   }
   let filas = r.data || r.rows || [];
+  TABLEROS_CARGADOS.add(id);
   if (d.soloConRespuesta) filas = filas.filter(f => f.rating_service || f.rating_satisfaction || f.comment);
   if (!filas.length) {
     // Vacio y roto se ven igual si solo se dice "no hay nada". Aqui se explica QUE
@@ -3601,6 +3774,185 @@ function canalDe(c){
   return 'whatsapp_cloud';
 }
 
+let bridgeControlState = {};
+
+function bridgeStatusLabel(status){
+  return ({
+    offline:'Puente apagado', idle:'Listo para vincular', requested:'Solicitud recibida',
+    generating:'Generando código', code_ready:'Esperando el teléfono',
+    connecting:'Finalizando vinculación', rebuild_requested:'Preparando reconstrucción',
+    rebuild_clearing:'Renovando dispositivo', connected:'WhatsApp conectado',
+    disconnected:'WhatsApp desconectado', canceled:'Vinculación cancelada',
+    expired:'Código vencido', error:'Requiere atención',
+  })[status] || 'Estado desconocido';
+}
+
+function formatBridgeCode(value){
+  const raw = String(value || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+  return (raw.match(/.{1,4}/g) || []).join('-');
+}
+
+async function callBridgeControl(action, payload = {}){
+  const actionMap = {
+    status:'bridgeStatus', request_pairing:'requestBridgePairing', cancel:'cancelBridgePairing',
+    pause:'pauseBridge', resume:'resumeBridge', logout:'logoutBridge',
+    sync_history:'syncBridgeHistory', rebuild_link:'rebuildBridge',
+    enable_photo_bot:'setPhotoBot', disable_photo_bot:'setPhotoBot',
+  };
+  const mapped = actionMap[action];
+  if (!mapped) return { ok:false, error:'acción de puente no disponible' };
+  const body = { action:mapped, ...payload };
+  if (action === 'enable_photo_bot') body.enabled = true;
+  if (action === 'disable_photo_bot') body.enabled = false;
+  return llama(body);
+}
+
+function bridgeControlsHtml(p){
+  const botEnabled = p.bot_enabled === true;
+  return '<div class="bridge-tools">'
+    + '<button class="btn-linea" id="bridgeRefreshBtn">Actualizar estado</button>'
+    + '<button class="btn-linea" id="bridgePairBtn">Generar código</button>'
+    + '<button class="btn-linea" id="bridgePauseBtn">Pausar envíos</button>'
+    + '<button class="btn-linea" id="bridgeHistoryBtn">Sincronizar historial</button>'
+    + '<button class="btn-linea" id="bridgeRebuildBtn">Reconstruir vínculo e historial</button>'
+    + '<button class="btn-linea danger" id="bridgeLogoutBtn">Cerrar sesión de WhatsApp</button>'
+    + '<button class="btn-linea" id="photoBotGlobalBtn" data-photo-bot-toggle '
+    +   'data-permission="manage_settings">Bot de este canal: '
+    +   (botEnabled ? 'encendido' : 'apagado') + '</button>'
+    + '<div class="bridge-code-panel" id="bridgeCodePanel">'
+    +   '<div class="codigo" id="bridgePairCode">--</div>'
+    +   '<p class="bridge-meta" id="bridgeCodeMeta">Preparando el código seguro…</p>'
+    +   '<button class="btn-linea danger" id="bridgeCancelPair">Cancelar</button>'
+    + '</div>'
+    + '<p class="bridge-meta" id="bridgeHistoryState"></p>'
+    + '<p class="bridge-meta" id="bridgeRebuildState"></p>'
+    + '<p class="bridge-meta mal" id="bridgeError"></p>'
+    + '</div>';
+}
+
+function renderBridgeControlState(state, explicitError = ''){
+  bridgeControlState = state || {};
+  const status = String(bridgeControlState.status || bridgeControlState.state || 'offline').toLowerCase();
+  const active = ['requested','generating','code_ready','connecting','rebuild_requested','rebuild_clearing'].includes(status);
+  const code = formatBridgeCode(bridgeControlState.pairing_code);
+  const codePanel = $('bridgeCodePanel');
+  if (codePanel) codePanel.classList.toggle('on', !!code || active);
+  if ($('bridgePairCode')) $('bridgePairCode').textContent = code || '--';
+  if ($('bridgeCancelPair')) $('bridgeCancelPair').disabled = !active;
+
+  const hostOnline = bridgeControlState.host_online === true;
+  const connected = status === 'connected';
+  const historyStatus = String(bridgeControlState.history_sync_status || 'idle');
+  const historyActive = ['requested','running','waiting'].includes(historyStatus);
+  const pair = $('bridgePairBtn');
+  if (pair) {
+    pair.disabled = !hostOnline || active || connected;
+    pair.textContent = active ? 'Procesando…' : (connected ? 'Ya vinculado' : 'Generar código');
+  }
+  const pause = $('bridgePauseBtn');
+  if (pause) {
+    pause.disabled = !hostOnline && bridgeControlState.paused !== true;
+    pause.textContent = bridgeControlState.paused ? 'Reanudar envíos' : 'Pausar envíos';
+  }
+  const history = $('bridgeHistoryBtn');
+  if (history) {
+    history.disabled = !connected || !hostOnline || historyActive;
+    history.textContent = historyActive ? 'Sincronizando…' : 'Sincronizar historial';
+  }
+  const rebuild = $('bridgeRebuildBtn');
+  if (rebuild) rebuild.disabled = !connected || !hostOnline || historyActive;
+  const logout = $('bridgeLogoutBtn');
+  if (logout) logout.disabled = !connected && !bridgeControlState.connected_phone;
+
+  if ($('bridgeCodeMeta')) $('bridgeCodeMeta').textContent = code
+    ? 'Escribe este código en WhatsApp → Dispositivos vinculados.'
+    : (active ? bridgeStatusLabel(status) + '…' : 'Solicita un código nuevo cuando el puente esté en línea.');
+  if ($('bridgeHistoryState')) {
+    const imported = Number(bridgeControlState.history_sync_imported || 0);
+    const duplicates = Number(bridgeControlState.history_sync_duplicates || 0);
+    $('bridgeHistoryState').textContent = historyStatus === 'completed'
+      ? 'Historial completado: ' + imported + ' nuevos; ' + duplicates + ' duplicados omitidos.'
+      : historyActive ? 'Historial en proceso: ' + Number(bridgeControlState.history_sync_progress || 0) + '%.'
+        : 'Historial: ' + historyStatus + '.';
+  }
+  if ($('bridgeRebuildState')) $('bridgeRebuildState').textContent =
+    'Reconstruir renueva solo el vínculo local; conserva conversaciones y mensajes del CRM.';
+  if ($('bridgeError')) $('bridgeError').textContent = explicitError || bridgeControlState.last_error || '';
+  const bot = $('photoBotGlobalBtn');
+  if (bot) {
+    const enabled = bridgeControlState.bot_enabled === true;
+    bot.textContent = 'Bot de este canal: ' + (enabled ? 'encendido' : 'apagado');
+    bot.dataset.enabled = String(enabled);
+    bot.disabled = !enabled && (!connected || !hostOnline || bridgeControlState.transport_mode !== 'active');
+  }
+}
+
+async function refreshBridgeStatus(){
+  const result = await callBridgeControl('status');
+  if (result.bridge) renderBridgeControlState(result.bridge, result.ok ? '' : result.error);
+  else renderBridgeControlState(bridgeControlState, result.error || 'No se pudo consultar el puente.');
+}
+
+async function requestBridgePairing(){
+  const phone = NUMERO_FOTOS || '18094785620';
+  const result = await callBridgeControl('request_pairing', { phone });
+  if (result.bridge) renderBridgeControlState(result.bridge, result.ok ? '' : result.error);
+  else renderBridgeControlState(bridgeControlState, result.error || 'No se pudo pedir el código.');
+}
+
+async function cancelBridgePairing(){
+  const result = await callBridgeControl('cancel');
+  if (result.bridge) renderBridgeControlState(result.bridge, result.ok ? '' : result.error);
+  else renderBridgeControlState(bridgeControlState, result.error || 'No se pudo cancelar.');
+}
+
+async function toggleBridgePause(){
+  const result = await callBridgeControl(bridgeControlState.paused ? 'resume' : 'pause');
+  if (result.bridge) renderBridgeControlState(result.bridge, result.ok ? '' : result.error);
+  else renderBridgeControlState(bridgeControlState, result.error || 'No se pudo cambiar la pausa.');
+}
+
+async function requestBridgeHistorySync(){
+  const result = await callBridgeControl('sync_history');
+  if (result.bridge) renderBridgeControlState(result.bridge, result.ok ? '' : result.error);
+  else if ($('bridgeHistoryState')) $('bridgeHistoryState').textContent = result.error || 'No se pudo solicitar el historial.';
+}
+
+async function logoutBridgeWhatsApp(){
+  if (!window.confirm('Se cerrará solamente la sesión del segundo número. Las conversaciones guardadas no se borrarán. ¿Continuar?')) return;
+  const result = await callBridgeControl('logout');
+  if (result.bridge) renderBridgeControlState(result.bridge, result.ok ? '' : result.error);
+  else renderBridgeControlState(bridgeControlState, result.error || 'No se pudo cerrar la sesión.');
+}
+
+async function rebuildBridgeLinkAndHistory(){
+  if (!window.confirm('Se renovará solo el dispositivo local para solicitar historial. Los chats y mensajes guardados NO se borrarán. ¿Continuar?')) return;
+  const result = await callBridgeControl('rebuild_link');
+  if (result.bridge) renderBridgeControlState(result.bridge, result.ok ? '' : result.error);
+  else renderBridgeControlState(bridgeControlState, result.error || 'No se pudo reconstruir el vínculo.');
+}
+
+async function togglePhotoBot(){
+  const enabled = bridgeControlState.bot_enabled === true;
+  if (!window.confirm('¿Quieres ' + (enabled ? 'desactivar' : 'activar')
+    + ' las respuestas automáticas del WhatsApp Fotos? Las campañas son independientes del bot.')) return;
+  const result = await callBridgeControl(enabled ? 'disable_photo_bot' : 'enable_photo_bot',
+    { confirmation:enabled ? '' : 'ACTIVAR BOT FOTOS' });
+  if (result.bridge) renderBridgeControlState(result.bridge, result.ok ? '' : result.error);
+  else renderBridgeControlState(bridgeControlState, result.error || 'No se pudo cambiar el bot.');
+}
+
+function bindBridgeControls(){
+  if ($('bridgePairBtn')) $('bridgePairBtn').onclick = requestBridgePairing;
+  if ($('bridgeCancelPair')) $('bridgeCancelPair').onclick = cancelBridgePairing;
+  if ($('bridgePauseBtn')) $('bridgePauseBtn').onclick = toggleBridgePause;
+  if ($('bridgeRefreshBtn')) $('bridgeRefreshBtn').onclick = refreshBridgeStatus;
+  if ($('bridgeHistoryBtn')) $('bridgeHistoryBtn').onclick = requestBridgeHistorySync;
+  if ($('bridgeRebuildBtn')) $('bridgeRebuildBtn').onclick = rebuildBridgeLinkAndHistory;
+  if ($('bridgeLogoutBtn')) $('bridgeLogoutBtn').onclick = logoutBridgeWhatsApp;
+  if ($('photoBotGlobalBtn')) $('photoBotGlobalBtn').onclick = togglePhotoBot;
+}
+
 function montaCanales(){
   if (!montadas.has('canales')) {
     montadas.add('canales');
@@ -3622,6 +3974,7 @@ async function pintaCanales(){
   ]);
   const t = estado.ok ? (estado.transport || estado) : {};
   const p = puente.ok ? (puente.bridge || puente) : {};
+  bridgeControlState = p;
 
   const cuenta = clave => CONVS.filter(c => canalDe(c) === clave).length;
   const tarjeta = (clave, listo, detalle, acciones) => {
@@ -3668,7 +4021,9 @@ async function pintaCanales(){
   };
 
   const oficialListo = t.ready === true || t.state === 'ready';
-  const puenteListo = p.connected === true || p.state === 'connected' || p.status === 'connected';
+  const estadoPuente = String(p.state || p.status || '').toLowerCase();
+  const puenteListo = (p.connected === true || estadoPuente === 'connected' || estadoPuente === 'ready')
+    && p.paused !== true && p.host_online !== false;
   // Esta vista ya sabe si el puente esta vivo: se aprovecha para refrescar el estado que
   // decide si las conversaciones del segundo numero se ven en la lista. Sin esto, tras
   // desconectar habia que recargar la pagina para que desaparecieran.
@@ -3688,11 +4043,7 @@ async function pintaCanales(){
         ? 'Segundo número conectado por WhatsApp Web. <b>Era el de pruebas</b>: si ya no se usa, desconéctalo.'
         : 'Sin sesión activa. Este canal usa WhatsApp Web, no el API: no admite plantillas '
           + 'ni difusiones, solo conversación dentro de la ventana normal.',
-      puenteListo
-        ? '<button class="btn-linea danger" data-desconecta-puente>Desconectar</button>'
-          + '<button class="btn-linea" data-canal-bot="photo">Bot de este canal: '
-          + (p.bot_enabled ? 'encendido' : 'apagado') + '</button>'
-        : '<button class="btn-linea" data-conecta-puente>Conectar por código</button>')
+      bridgeControlsHtml(p))
 
     + tarjetaRed('instagram', redes.instagram,
       'Se conecta iniciando sesión con Facebook y aceptando los permisos de la cuenta: '
@@ -3843,6 +4194,8 @@ async function pintaCanales(){
       }, 3000);
     }
   };
+  renderBridgeControlState(p);
+  bindBridgeControls();
 }
 
 /* ---- Configuración ------------------------------------------------------- */
@@ -4350,6 +4703,8 @@ const REGLAS_LEAD = [
     titulo: 'Cotiza pero no pone fecha',
     porque: 'Sin fecha tentativa no se puede confirmar disponibilidad, y es donde más se cae la venta.',
     hacer: 'Pedir fecha',
+    etapa: 'cotizando',
+    siguiente: 'Conseguir una fecha tentativa para verificar disponibilidad.',
     prompt: 'Este contacto está cotizando pero no ha dado fecha. Redacta un mensaje que le pida una '
       + 'fecha tentativa dándole una razón para darla (disponibilidad limitada, sin presionar).',
   },
@@ -4360,6 +4715,8 @@ const REGLAS_LEAD = [
     titulo: 'Tiene fecha pero no ha reservado',
     porque: 'Ya eligió cuándo. Lo único que falta es el abono, y esta es la etapa que más se enfría.',
     hacer: 'Pedir el abono',
+    etapa: 'pendiente_reserva',
+    siguiente: 'Enviar las condiciones del abono y esperar comprobante.',
     prompt: 'Este contacto ya tiene fecha tentativa pero no ha reservado. Prepara la reserva y '
       + 'redacta el mensaje del abono con las condiciones de las reglas del negocio.',
   },
@@ -4406,15 +4763,37 @@ function pintaMovilizacion(){
       + '<span><b>' + esc(nombreDe(c)) + '</b><small>' + esc((c.lifecycle_stage||'nuevo').replace(/_/g,' '))
       +   ' · ' + llevaDormido(c) + ' días</small></span>'
       + '<span>' + esc(c.interested_category || '—') + '</span>'
-      + '<span><button class="btn-linea" data-mov="' + esc(g.regla.id) + '" data-conv="' + esc(c._id) + '">'
-      +   esc(g.regla.hacer) + '</button></span></div>').join('')
+      + '<span><button class="btn-linea" data-mov="' + esc(g.regla.id) + '" data-conv="' + esc(c._id || c.id) + '">'
+      +   esc(g.regla.hacer) + '</button>'
+      + (g.regla.etapa && c.lifecycle_stage !== g.regla.etapa
+        ? '<button class="btn-linea" style="margin-left:6px" data-avanza="' + esc(g.regla.id)
+          + '" data-conv="' + esc(c._id || c.id) + '">Avanzar a ' + esc(g.regla.etapa.replace(/_/g,' ')) + '</button>' : '')
+      + '</span></div>').join('')
     + '</div>'
     + (g.filas.length > 25 ? '<p class="cfgnota" style="margin-top:8px">y ' + (g.filas.length-25) + ' más</p>' : '')
     + '</div>').join('');
 
-  cont.onclick = ev => {
+  cont.onclick = async ev => {
+    const avanzar = ev.target.closest('[data-avanza]');
+    if (avanzar) {
+      const c = CONVS.find(x => String(x._id || x.id) === avanzar.dataset.conv);
+      const r = REGLAS_LEAD.find(x => x.id === avanzar.dataset.avanza);
+      if (!c || !r?.etapa) return;
+      if (!confirm('Mover a ' + nombreDe(c) + ' de «' + (c.lifecycle_stage || 'nuevo').replace(/_/g,' ')
+        + '» a «' + r.etapa.replace(/_/g,' ') + '».\n\nCriterio: ' + r.porque + '\n\n'
+        + 'No se enviará ningún mensaje automáticamente.')) return;
+      avanzar.disabled = true;
+      const campos = { lifecycle_stage:r.etapa, next_step_suggested:r.siguiente || r.porque };
+      const respuesta = await llama({ action:'updateLead', conversation_id:c.id || c._id, fields:campos });
+      avanzar.disabled = false;
+      if (!respuesta.ok) return avisa('No se pudo avanzar', respuesta.error);
+      Object.assign(c, campos);
+      avisa('Lead avanzado', 'El siguiente paso quedó documentado; no se envió ningún mensaje.');
+      pintaMovilizacion(); pintaChats();
+      return;
+    }
     const b = ev.target.closest('[data-mov]'); if (!b) return;
-    const c = CONVS.find(x => x._id === b.dataset.conv);
+    const c = CONVS.find(x => String(x._id || x.id) === b.dataset.conv);
     const r = REGLAS_LEAD.find(x => x.id === b.dataset.mov);
     if (!c) return;
     // Se abre la conversacion SIEMPRE, aunque haya prompt: hay que ver con quien se
@@ -5116,10 +5495,19 @@ function etiquetasDe(c){
   if (typeof v === 'string' && v.trim()) return v.split(',').map(s => s.trim()).filter(Boolean);
   return [];
 }
+// Por USO, no por alfabeto. El orden alfabetico hacia inservibles las sugerencias de la
+// ficha: solo caben ocho, y siempre salian las mismas ocho del principio del abecedario
+// --24_septiembre, 8_anos, abierto, agosto-- mientras las que el equipo escribe de verdad
+// no aparecian jamas. Se cuentan solo las conversaciones VISIBLES, para que el numero que
+// pinta el filtro sea el mismo que se ve al pulsarlo.
+function etiquetasContadas(){
+  const cuenta = new Map();
+  CONVS.filter(c => !puenteApagado(c))
+    .forEach(c => etiquetasDe(c).forEach(e => cuenta.set(e, (cuenta.get(e) || 0) + 1)));
+  return [...cuenta.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
+}
 function etiquetasEnUso(){
-  const set = new Set();
-  CONVS.forEach(c => etiquetasDe(c).forEach(e => set.add(e)));
-  return [...set].sort();
+  return etiquetasContadas().map(([e]) => e);
 }
 
 function cableaEtiquetas(c){
