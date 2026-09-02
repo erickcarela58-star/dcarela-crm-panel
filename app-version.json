@@ -1,6 +1,6 @@
 {
-  "version": "2026-09-02-chats-con-nombre-v66",
+  "version": "2026-09-02-importacion-honesta-v67",
   "channel": "crm",
   "released_at": "2026-09-02T00:00:00Z",
-  "summary": "Los chats importados traen nombre, hora y texto de verdad. Sin nombre ya no salen todos como un \"+\" identico."
+  "summary": "Importar avisa de lo que NO pudo traer. El historial deja de marcarse como sin leer. Importacion automatica cada seis horas."
 }
