@@ -1,6 +1,6 @@
 {
-  "version": "2026-08-31-oauth-uri-limpio-v63",
+  "version": "2026-09-02-etiquetas-por-uso-v64",
   "channel": "crm",
-  "released_at": "2026-08-31T09:00:00Z",
-  "summary": "El redirect_uri de Meta va sin parametros: una sola URL que registrar en la lista blanca de la app."
+  "released_at": "2026-09-02T00:00:00Z",
+  "summary": "Instagram pedia permisos incompletos y quedaba conectado a medias: ya pide pages_messaging. Las etiquetas se ordenan por uso y el filtro deja de llenarse."
 }
