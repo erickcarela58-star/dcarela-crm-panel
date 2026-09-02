@@ -1,6 +1,6 @@
 {
-  "version": "2026-09-02-importacion-honesta-v67",
+  "version": "2026-09-02-hilos-completos-v68",
   "channel": "crm",
   "released_at": "2026-09-02T00:00:00Z",
-  "summary": "Importar avisa de lo que NO pudo traer. El historial deja de marcarse como sin leer. Importacion automatica cada seis horas."
+  "summary": "Los hilos largos se importan enteros. Instagram recupera su identidad solo, sin reconectar."
 }
