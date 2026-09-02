@@ -4068,13 +4068,23 @@ async function pintaCanales(){
     if (sinc) {
       const antes = sinc.textContent;
       sinc.disabled = true; sinc.textContent = 'Importando…';
-      const r = await llama({ action:'syncSocial', red: sinc.dataset.sync, max: 25 });
+      const r = await llama({ action:'syncSocial', red: sinc.dataset.sync, paginas: 25 });
       sinc.disabled = false; sinc.textContent = antes;
       if (!r.ok) return avisa('No se pudo importar', r.error);
       // Se dicen los dos numeros: si hay hilos pero cero mensajes nuevos, es que ya
       // estaban importados, no que la importacion fallara.
-      avisa('Historial importado',
-        r.hilos + ' conversación(es), ' + r.mensajes + ' mensaje(s) nuevo(s).');
+      //
+      // Y se dice lo que NO se pudo traer. El servidor ya lo calculaba --corto, errores,
+      // fallidos-- y el panel lo tiraba: quien importaba 250 de 400 leia "250
+      // conversación(es)" y se quedaba pensando que ya estaban todas. Una importacion
+      // incompleta que se anuncia como completa es peor que una que falla.
+      const pegas = [];
+      if (r.corto) pegas.push('quedaron más sin traer: vuelve a pulsar para seguir');
+      if (r.errores?.length) pegas.push('Meta falló en: ' + r.errores.map(e => e.folder).join(', '));
+      if (r.fallidos) pegas.push(r.fallidos + ' conversación(es) no se pudieron leer');
+      avisa(pegas.length ? 'Historial importado a medias' : 'Historial importado',
+        r.hilos + ' conversación(es), ' + r.mensajes + ' mensaje(s) nuevo(s).'
+        + (pegas.length ? ' ' + pegas.join('. ') + '.' : ''));
       return pintaCanales();
     }
     const bot = ev.target.closest('[data-canal-bot]');
