@@ -1094,7 +1094,13 @@ const callFn = cuerpo => llama(cuerpo);
 let CONVS = [], MSGS = [], sel = null, paraMsgs = null;
 
 function nombreDe(c){
-  return c.customer_name || c.contact_name || ('+' + (c.wa_phone || ''));
+  if (c.customer_name || c.contact_name) return c.customer_name || c.contact_name;
+  // Instagram y Messenger no traen telefono. Sin este respaldo salia un '+' suelto, IGUAL
+  // en todas, y diez conversaciones distintas se veian como diez filas identicas. Se
+  // ensenan los ultimos digitos del id para poder distinguirlas mientras no haya nombre.
+  if (c.wa_phone) return '+' + c.wa_phone;
+  const id = String(c.social_id || '');
+  return id ? 'Sin nombre · ' + id.slice(-6) : 'Sin nombre';
 }
 // Foto de perfil si el canal la trae; si no, las iniciales.
 //
