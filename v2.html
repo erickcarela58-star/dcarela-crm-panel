@@ -3315,6 +3315,7 @@ const TABLERO = {
     // que faltaba era el buscador. La tabla salia vacia para siempre y no habia forma de
     // llenarla desde aqui.
     buscador: true,
+    prospectos: true,
     orden: [{ field:'created_at', ascending:false }],
     cols: [
       { t:'Negocio', p:(r)=> r.business_name || '—' },
@@ -3380,6 +3381,108 @@ async function pintaScorecard(filas){
     + '</div>';
 }
 
+// La ficha comercial de un prospecto. Se abre pulsando su fila: sin esto la lista solo
+// servia para mirarla, y no habia donde apuntar en que estado esta, cuanto puede valer ni
+// cuando toca volver a llamar.
+const ESTADOS_PROSPECTO = ['nuevo','contactado','interesado','propuesta','ganado','perdido','do_not_contact'];
+
+function cableaProspectos(id){
+  const cal = $('pbCalificar');
+  if (cal) cal.onclick = async () => {
+    const filas = (TABLERO[id]._filas || []);
+    if (!filas.length) return avisa('No hay prospectos', 'Busca negocios primero.');
+    // Se califican de 100 en 100: es el tope que acepta el servidor, y mandarle mas
+    // significaria perder los que sobran sin decirlo.
+    const ids = filas.map(f => f.id).filter(Boolean).slice(0, 100);
+    cal.disabled = true; cal.textContent = 'Calificando…';
+    const r = await llama({ action:'prospect', operation:'qualify', prospect_ids: ids });
+    cal.disabled = false; cal.textContent = 'Calificar los importados';
+    if (!r.ok) return avisa('No se pudo calificar', r.error);
+    const bien = (r.results || []).filter(x => !x.error).length;
+    avisa('Calificados', bien + ' de ' + ids.length + '. Ya salen ordenados por prioridad.'
+      + (filas.length > 100 ? ' Quedan ' + (filas.length - 100) + ' sin calificar: vuelve a pulsar.' : ''));
+    pintaTablero(id);
+  };
+
+  const csv = $('pbCsv');
+  if (csv) csv.onclick = () => {
+    const filas = (TABLERO[id]._filas || []);
+    if (!filas.length) return avisa('No hay nada que exportar');
+    const cols = ['business_name','phone_primary','category','city','sector','status',
+      'qualification_score','qualification_tier','priority','contact_attempts','next_action_at'];
+    // Las comillas dobles se escapan doblandolas: un nombre con comillas rompia el archivo
+    // entero y Excel lo abria descuadrado a partir de esa fila.
+    const escapa = v => '"' + String(v ?? '').replace(/"/g, '""') + '"';
+    const csvTexto = [cols.join(',')]
+      .concat(filas.map(f => cols.map(c => escapa(f[c])).join(','))).join('\n');
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob(['\ufeff' + csvTexto], { type:'text/csv;charset=utf-8' }));
+    a.download = 'prospectos.csv'; a.click(); URL.revokeObjectURL(a.href);
+  };
+}
+
+async function abreFichaProspecto(id, fila){
+  const c = $('pbFicha'); if (!c) return;
+  const val = (k, d) => esc(fila[k] ?? d ?? '');
+  c.innerHTML = '<div class="cfgc" style="margin-bottom:16px"><h3>' + esc(fila.business_name || 'Prospecto') + '</h3>'
+    + '<p class="cfgnota">' + esc([fila.category, fila.city, fila.phone_primary].filter(Boolean).join(' · ')) + '</p>'
+    + '<div class="par">'
+    +   '<div class="campo"><label>Estado</label><select id="prEstado">'
+    +     ESTADOS_PROSPECTO.map(s => '<option' + (fila.status === s ? ' selected' : '') + '>' + esc(s) + '</option>').join('')
+    +   '</select></div>'
+    +   '<div class="campo"><label>Prioridad</label><select id="prPri">'
+    +     PRIORIDADES.map(s => '<option' + (fila.priority === s ? ' selected' : '') + '>' + esc(s) + '</option>').join('')
+    +   '</select></div>'
+    + '</div>'
+    + '<div class="par">'
+    +   '<div class="campo"><label>Valor estimado (RD$)</label>'
+    +     '<input id="prValor" type="number" min="0" value="' + Math.round(Number(fila.estimated_value_centavos || 0) / 100) + '"></div>'
+    +   '<div class="campo"><label>Próxima acción</label>'
+    +     '<input id="prCuando" type="date" value="' + val('next_action_at').slice(0,10) + '"></div>'
+    + '</div>'
+    + '<div class="campo"><label>Notas</label><textarea id="prNotas" rows="2">' + val('notes') + '</textarea></div>'
+    + '<div class="acciones" style="margin-top:10px">'
+    +   '<button class="btn-solido" id="prGuardar">Guardar ficha</button>'
+    +   '<button class="btn-linea" id="prGuion">Preparar guion con IA</button>'
+    +   '<button class="btn-linea" id="prCerrar">Cerrar</button></div>'
+    + '<div id="prGuionCuerpo"></div></div>';
+
+  $('prCerrar').onclick = () => { c.innerHTML = ''; };
+  $('prGuardar').onclick = async () => {
+    const b = $('prGuardar'); b.disabled = true;
+    const cambios = {
+      status: $('prEstado').value, priority: $('prPri').value,
+      // El servidor guarda centavos. Mandar pesos aqui multiplicaria por cien el valor de
+      // toda la cartera sin que nadie lo notara hasta mirar un total.
+      estimated_value_centavos: Math.round(Number($('prValor').value || 0) * 100),
+      notes: $('prNotas').value,
+    };
+    const cuando = $('prCuando').value;
+    if (cuando) cambios.next_action_at = new Date(cuando + 'T09:00:00').toISOString();
+    const r = await llama({ action:'prospect', operation:'update_prospect', prospect_id: fila.id, changes: cambios });
+    b.disabled = false;
+    if (!r.ok) return avisa('No se pudo guardar', r.error);
+    avisa('Ficha guardada'); pintaTablero(id);
+  };
+  $('prGuion').onclick = async () => {
+    const b = $('prGuion'); b.disabled = true; b.textContent = 'Preparando…';
+    const r = await llama({ action:'prospect', operation:'prepare_playbook', prospect_id: fila.id });
+    b.disabled = false; b.textContent = 'Preparar guion con IA';
+    const g = $('prGuionCuerpo');
+    if (!r.ok) { g.innerHTML = '<p class="bajada">' + esc(r.error || 'No se pudo.') + '</p>'; return; }
+    const pb = r.playbook || r;
+    // El guion NO se envia solo: se ensena para copiarlo. Un prospecto no te ha escrito
+    // nunca, asi que cualquier mensaje suyo sale por plantilla y con cabeza.
+    const trozo = (k, titulo) => pb[k] ? '<div class="dato"><div class="k">' + esc(titulo) + '</div>'
+      + '<div class="v">' + esc(typeof pb[k] === 'string' ? pb[k] : JSON.stringify(pb[k])) + '</div></div>' : '';
+    g.innerHTML = '<div class="seccion" style="margin:14px 0 6px">Guion propuesto · no se envía solo</div>'
+      + trozo('value_angle', 'Por dónde entrar') + trozo('first_message', 'Primer mensaje')
+      + trozo('follow_up_1', 'Seguimiento 1') + trozo('follow_up_2', 'Seguimiento 2')
+      + trozo('call_opener', 'Si llamas') + trozo('best_time', 'Mejor momento')
+      + trozo('next_step', 'Siguiente paso') + trozo('warnings', 'Ojo con');
+  };
+}
+
 async function montaTablero(id){
   const d = TABLERO[id];
   if (!montadas.has(id)) {
@@ -3394,9 +3497,19 @@ async function montaTablero(id){
             + '</div>'
             + '<p class="bajada" id="pbEstado" hidden></p>'
           : '')
-      + '<div class="acciones" style="margin-bottom:16px"><button class="btn-linea" data-recarga>Recargar</button></div>'
+      + '<div class="acciones" style="margin-bottom:16px"><button class="btn-linea" data-recarga>Recargar</button>'
+      // Prospeccion era una tabla de solo mirar: buscaba, importaba, y ahi se acababa. Sin
+      // calificar no hay por donde empezar --200 negocios sin orden son 200 negocios que
+      // nadie llama-- y sin exportar no se puede trabajar la lista fuera del panel.
+      + (d.prospectos
+          ? '<button class="btn-linea" id="pbCalificar">Calificar los importados</button>'
+            + '<button class="btn-linea" id="pbCsv">Exportar CSV</button>'
+          : '')
+      + '</div>'
+      + (d.prospectos ? '<div id="pbFicha"></div>' : '')
       + '<div id="tb-' + id + '"></div></div>');
     document.querySelector('#vista-' + id + ' [data-recarga]').onclick = () => pintaTablero(id);
+    if (d.prospectos) cableaProspectos(id);
     if (d.buscador) {
       const lanzar = () => buscaProspectos(id);
       $('pbIr').onclick = lanzar;
@@ -3447,6 +3560,9 @@ async function pintaTablero(id){
   }
   let filas = r.data || r.rows || [];
   TABLEROS_CARGADOS.add(id);
+  // Se guardan para que las acciones de la barra --calificar, exportar-- trabajen sobre lo
+  // que el dueno esta viendo, y no sobre otra consulta que podria devolver algo distinto.
+  d._filas = filas;
   if (d.soloConRespuesta) filas = filas.filter(f => f.rating_service || f.rating_satisfaction || f.comment);
   if (!filas.length) {
     // Vacio y roto se ven igual si solo se dice "no hay nada". Aqui se explica QUE
@@ -3460,9 +3576,18 @@ async function pintaTablero(id){
     + '<div class="tabla" style="max-width:1000px">'
     + '<div class="fila cabecera" style="grid-template-columns:' + anchos + '">'
     +   d.cols.map(c => '<span>' + esc(c.t) + '</span>').join('') + '</div>'
-    + filas.map(f => '<div class="fila" style="grid-template-columns:' + anchos + '">'
+    + filas.map((f, i) => '<div class="fila"' + (d.prospectos ? ' data-fila="' + i + '" style="cursor:pointer;'
+          : ' style="') + 'grid-template-columns:' + anchos + '">'
         + d.cols.map(c => '<span>' + esc(String(c.p(f))) + '</span>').join('') + '</div>').join('')
-    + '</div><p class="bajada" style="margin-top:12px">' + filas.length + ' registro(s).</p>';
+    + '</div><p class="bajada" style="margin-top:12px">' + filas.length + ' registro(s).'
+    + (d.prospectos ? ' Pulsa uno para abrir su ficha comercial.' : '') + '</p>';
+
+  if (d.prospectos) {
+    cont.onclick = ev => {
+      const fila = ev.target.closest('[data-fila]'); if (!fila) return;
+      abreFichaProspecto(id, filas[Number(fila.dataset.fila)]);
+    };
+  }
 }
 
 /* ---- Recordatorios ------------------------------------------------------- */
