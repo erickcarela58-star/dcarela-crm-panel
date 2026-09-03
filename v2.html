@@ -5041,6 +5041,94 @@ function enElOlvido(c){
   return llevaDormido(c) >= DIAS_INACTIVO;
 }
 
+// Las tres herramientas en lote comparten una regla: SIEMPRE se puede simular antes. El
+// panel viejo ya lo hacia asi y no es capricho -- estas tres tocan cientos de fichas de una
+// vez, y una de ellas escribe a clientes reales. Ver el numero antes de pulsar es la
+// diferencia entre una herramienta util y una que da miedo usar.
+function cableaLotes(){
+  const num = v => Number(v || 0);
+  const pintaResumen = (id, r, titulo) => {
+    const c = $(id); if (!c) return;
+    if (!r.ok) { c.innerHTML = '<p class="bajada">' + esc(r.error || 'No se pudo.') + '</p>'; return; }
+    const filas = Object.entries(r).filter(([k, v]) => typeof v === 'number' && v !== 0);
+    c.innerHTML = '<div class="dato"><div class="k">' + esc(titulo) + '</div><div class="v">'
+      + (filas.length ? filas.map(([k, v]) => esc(k) + ': ' + v).join(' · ') : 'Nada que hacer')
+      + '</div></div>'
+      + ((r.errors || []).length ? '<p class="bajada">' + r.errors.length + ' con error.</p>' : '');
+  };
+
+  // --- Auto bot ---
+  const cargaAuto = dry => llama({
+    action:'followup', mode:'smart_templates', dry,
+    purpose: $('atPurpose').value || 'both',
+    min_hours: num($('atMinHoras').value) || 6,
+    repeat_days: num($('atRepetir').value) || 3,
+    stage: $('atEtapa').value || '', category: $('atCat').value || '', priority: $('atPri').value || '',
+  });
+  $('atSimular').onclick = async () => {
+    const b = $('atSimular'); b.disabled = true;
+    pintaResumen('atCuerpo', await cargaAuto(true), 'Simulación · no se envió nada');
+    b.disabled = false;
+  };
+  $('atEnviar').onclick = async () => {
+    // Esto escribe a clientes REALES. Se pregunta, y se dice cuantos antes de mandar.
+    const previo = await cargaAuto(true);
+    if (!previo.ok) return avisa('No se pudo simular', previo.error);
+    const cuantos = num(previo.templateSent) + num(previo.textSent) + num(previo.followUps);
+    if (!cuantos) return avisa('No hay a quién', 'Con esos filtros no entra nadie.');
+    if (!confirm('Se va a escribir a ' + cuantos + ' contacto(s) con plantilla aprobada.\n\n'
+      + 'Quien pidió la baja no recibe nada. ¿Seguimos?')) return;
+    const b = $('atEnviar'); b.disabled = true; b.textContent = 'Enviando…';
+    pintaResumen('atCuerpo', await cargaAuto(false), 'Enviado');
+    b.disabled = false; b.textContent = 'Enviar de verdad';
+  };
+
+  // --- Etiquetas en lote ---
+  const cargaEtq = dry => llama({
+    action:'followup', mode:'sync_tags', dry,
+    limit: Math.min(500, num($('etLimite').value) || 200),
+    use_ai: $('etIa').value !== '0',
+    stage: $('etEtapa').value || '', category: $('etCat').value || '',
+  });
+  $('etSimular').onclick = async () => {
+    const b = $('etSimular'); b.disabled = true;
+    pintaResumen('etCuerpo', await cargaEtq(true), 'Simulación · no se cambió nada');
+    b.disabled = false;
+  };
+  $('etAplicar').onclick = async () => {
+    if (!confirm('¿Aplicar los cambios de etiqueta a las conversaciones que entren en el filtro?')) return;
+    const b = $('etAplicar'); b.disabled = true; b.textContent = 'Aplicando…';
+    pintaResumen('etCuerpo', await cargaEtq(false), 'Aplicado');
+    b.disabled = false; b.textContent = 'Aplicar';
+  };
+
+  // --- Reparar etapas ---
+  $('etpRevisar').onclick = async () => {
+    const b = $('etpRevisar'); b.disabled = true;
+    const r = await llama({ action:'stageRepair', operation:'scan' });
+    b.disabled = false;
+    const c = $('etpCuerpo');
+    if (!r.ok) { c.innerHTML = '<p class="bajada">' + esc(r.error || 'error') + '</p>'; return; }
+    const n = num(r.total) || (r.invalidas || []).length;
+    c.innerHTML = '<div class="dato"><div class="k">Fichas con etapa rota</div><div class="v">' + n + '</div></div>';
+    // El boton solo se enciende si de verdad hay algo que mover: un boton activo que no
+    // hace nada al pulsarlo se lee como que el panel fallo.
+    $('etpAplicar').disabled = !n;
+  };
+  $('etpAplicar').onclick = async () => {
+    if (!confirm('¿Mover a cliente las fichas con etapa rota?')) return;
+    const b = $('etpAplicar'); b.disabled = true; b.textContent = 'Moviendo…';
+    const r = await llama({ action:'stageRepair', operation:'apply' });
+    b.textContent = 'Mover a cliente';
+    if (!r.ok) { b.disabled = false; return avisa('No se pudo', r.error); }
+    const sobran = (r.sin_traduccion || []).length
+      ? ' Quedaron ' + r.sin_traduccion.length + ' etapa(s) que nadie sabe traducir: ' + r.sin_traduccion.join(', ') + '.'
+      : '';
+    avisa('Etapas reparadas', (r.movidas || 0) + ' ficha(s) pasaron a cliente.' + sobran);
+    $('etpRevisar').click();
+  };
+}
+
 function montaLimpieza(){
   if (!montadas.has('limpieza')) {
     montadas.add('limpieza');
@@ -5056,8 +5144,74 @@ function montaLimpieza(){
       +   'de meses: gente que hoy cuenta en las métricas y no debería.</p>'
       + '<div class="acciones" style="margin-bottom:14px">'
       +   '<button class="btn-linea" id="recoEscanear">Buscar candidatos</button></div>'
-      + '<div id="recoCuerpo"></div></div>');
+      + '<div id="recoCuerpo"></div>'
+
+      // --- Las tres herramientas en lote que el panel viejo si tenia -----------------
+      // Van aqui y no en Campanas a proposito: las tres recorren TODO el historico, que es
+      // de lo que trata esta pantalla. Campanas es para mandar algo concreto a una lista
+      // que tu eliges; esto es para arreglar o mover lo que ya hay.
+
+      + '<div class="seccion" style="margin:30px 0 6px">Auto bot · plantillas en tanda</div>'
+      + '<p class="bajada">Manda la plantilla aprobada a los leads que llevan rato callados. '
+      +   'Siempre se puede <b>simular primero</b>: dice a cuántos alcanzaría sin mandar nada.</p>'
+      + '<div class="par">'
+      +   '<div class="campo"><label>A quién</label><select id="atPurpose">'
+      +     '<option value="both">Seguimientos y recordatorios</option>'
+      +     '<option value="followup">Solo seguimientos</option>'
+      +     '<option value="reminder">Solo recordatorios de sesión</option></select></div>'
+      +   '<div class="campo"><label>Callados desde (horas)</label>'
+      +     '<input id="atMinHoras" type="number" min="1" value="6"></div>'
+      + '</div>'
+      + '<div class="par">'
+      +   '<div class="campo"><label>No repetir antes de (días)</label>'
+      +     '<input id="atRepetir" type="number" min="1" value="3"></div>'
+      +   '<div class="campo"><label>Etapa</label><select id="atEtapa">'
+      +     '<option value="">Todas</option>' + ETAPAS.map(e => '<option>' + esc(e) + '</option>').join('')
+      +     '</select></div>'
+      + '</div>'
+      + '<div class="par">'
+      +   '<div class="campo"><label>Categoría</label><select id="atCat">'
+      +     '<option value="">Todas</option>' + CATEGORIAS.map(e => '<option>' + esc(e) + '</option>').join('')
+      +     '</select></div>'
+      +   '<div class="campo"><label>Prioridad</label><select id="atPri">'
+      +     '<option value="">Todas</option>' + PRIORIDADES.map(e => '<option>' + esc(e) + '</option>').join('')
+      +     '</select></div>'
+      + '</div>'
+      + '<div class="acciones" style="margin:12px 0"><button class="btn-linea" id="atSimular">Simular</button>'
+      +   '<button class="btn-solido" id="atEnviar">Enviar de verdad</button></div>'
+      + '<div id="atCuerpo"></div>'
+
+      + '<div class="seccion" style="margin:30px 0 6px">Etiquetas en lote</div>'
+      + '<p class="bajada">Reclasifica y etiqueta muchas conversaciones de una vez, con reglas y '
+      +   'con IA. Simula primero para ver cuántas cambiarían antes de tocar nada.</p>'
+      + '<div class="par">'
+      +   '<div class="campo"><label>Cuántas como máximo</label>'
+      +     '<input id="etLimite" type="number" min="1" max="500" value="200"></div>'
+      +   '<div class="campo"><label>Cómo</label><select id="etIa">'
+      +     '<option value="1">Reglas + IA</option><option value="0">Solo reglas</option></select></div>'
+      + '</div>'
+      + '<div class="par">'
+      +   '<div class="campo"><label>Etapa</label><select id="etEtapa">'
+      +     '<option value="">Todas</option>' + ETAPAS.map(e => '<option>' + esc(e) + '</option>').join('')
+      +     '</select></div>'
+      +   '<div class="campo"><label>Categoría</label><select id="etCat">'
+      +     '<option value="">Todas</option>' + CATEGORIAS.map(e => '<option>' + esc(e) + '</option>').join('')
+      +     '</select></div>'
+      + '</div>'
+      + '<div class="acciones" style="margin:12px 0"><button class="btn-linea" id="etSimular">Simular</button>'
+      +   '<button class="btn-solido" id="etAplicar">Aplicar</button></div>'
+      + '<div id="etCuerpo"></div>'
+
+      + '<div class="seccion" style="margin:30px 0 6px">Reparar etapas rotas</div>'
+      + '<p class="bajada">Durante meses se escribió <b>cerrado</b> como etapa, y esa etapa no '
+      +   'existe en el embudo. Esos leads no salen bien en el Kanban ni cuentan en las cifras.</p>'
+      + '<div class="acciones" style="margin-bottom:14px">'
+      +   '<button class="btn-linea" id="etpRevisar">Revisar etapas</button>'
+      +   '<button class="btn-solido" id="etpAplicar" disabled>Mover a cliente</button></div>'
+      + '<div id="etpCuerpo"></div>'
+      + '</div>');
     $('recoEscanear').onclick = escaneaDesinteres;
+    cableaLotes();
   }
   pintaLimpieza();
 }
