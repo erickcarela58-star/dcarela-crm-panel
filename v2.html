@@ -3013,6 +3013,13 @@ function pintaFicha(c){
     +   '<p class="aviso" style="margin:7px 0 0">Solo las ve el equipo. El cliente nunca las recibe.</p>'
     + '</div></details>'
 
+    // El historial y los archivos estaban solo dentro del hilo, mezclados con la
+    // conversacion. Buscar "la foto del vestido que mando en junio" obligaba a subir por
+    // cuatro meses de mensajes.
+    + '<details class="grupo"><summary>Historial y archivos</summary><div class="dentro">'
+    +   '<div id="fichaHistorial"></div>'
+    + '</div></details>'
+
     + '<details class="grupo" open><summary>Resumen y próximo paso</summary><div class="dentro">'
     +   '<div class="campo"><label>Resumen</label><textarea data-c="conversation_summary" rows="3">' + esc(c.conversation_summary || '') + '</textarea></div>'
     +   '<div class="campo"><label>Próximo paso</label><textarea data-c="next_step_suggested" rows="2">' + esc(c.next_step_suggested || '') + '</textarea></div>'
@@ -3069,6 +3076,7 @@ function pintaFicha(c){
   // de volver a abrirla sin cambiar de conversacion y regresar.
   cableaEtiquetas(c);
   cableaNotas(c);
+  cableaHistorial(c);
   $('cerrarFicha').onclick = () => { $('ficha').classList.remove('on'); $('ficha').style.display = 'none'; };
   const ver = $('verFicha');
   if (ver) ver.onclick = () => {
@@ -3718,6 +3726,45 @@ function selloICS(iso){
   if (isNaN(d)) return null;
   return d.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '');
 }
+// Dos exportaciones, no una sustituyendo a la otra. La de Recordatorios la pidio el dueno
+// asi y se queda intacta: son VTODO y aterrizan en la app Recordatorios. Esta otra son
+// VEVENT --Calendario-- que es donde se mira una agenda de sesiones, con aviso el dia antes.
+// Cambiar la primera por esta habria sido decidir por el en vez de darle las dos.
+function exportaAgendaEventos(){
+  const filas = citasDe().filter(f => f.tipo === 'sesion' && selloICS(f.iso));
+  if (!filas.length) return avisa('No hay sesiones', 'Solo se exportan las sesiones con fecha.');
+  const ahora = selloICS(new Date().toISOString());
+  const lineas = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//DCarela CRM//ES', 'CALSCALE:GREGORIAN'];
+  for (const f of filas) {
+    const quien = nombreDe(f.c);
+    const titulo = (f.firme ? 'Sesión · ' : 'Sesión tentativa · ') + quien;
+    const detalle = [
+      f.c.wa_phone ? 'Teléfono: +' + f.c.wa_phone : '',
+      f.c.interested_category ? 'Categoría: ' + f.c.interested_category : '',
+      f.c.selected_combo_name ? 'Combo: ' + f.c.selected_combo_name : '',
+    ].filter(Boolean).join('\n');
+    // Dos horas por defecto: un evento sin duracion se pinta como una raya en el calendario
+    // y no se ve al lado de los demas.
+    const fin = new Date(new Date(f.iso).getTime() + 2 * 3600 * 1000).toISOString();
+    lineas.push('BEGIN:VEVENT',
+      'UID:evento-' + (f.c._id || f.c.id) + '@dcarela',
+      'DTSTAMP:' + ahora,
+      'DTSTART:' + selloICS(f.iso),
+      'DTEND:' + selloICS(fin),
+      'SUMMARY:' + escapaICS(titulo),
+      detalle ? 'DESCRIPTION:' + escapaICS(detalle) : '',
+      'BEGIN:VALARM', 'TRIGGER:-P1D', 'ACTION:DISPLAY',
+      'DESCRIPTION:' + escapaICS('Mañana: ' + titulo), 'END:VALARM',
+      'END:VEVENT');
+  }
+  lineas.push('END:VCALENDAR');
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([lineas.filter(Boolean).join('\r\n')],
+    { type:'text/calendar;charset=utf-8' }));
+  a.download = 'agenda-dcarela.ics'; a.click(); URL.revokeObjectURL(a.href);
+  avisa('Agenda exportada', filas.length + ' sesión(es) con aviso el día antes.');
+}
+
 function exportaAgendaICS(){
   const filas = citasDe().filter(f => selloICS(f.iso));
   if (!filas.length) return avisa('Nada que exportar', 'No hay sesiones ni recordatorios con fecha.');
@@ -3767,6 +3814,7 @@ function montaAgenda(){
       +     '<button data-agv="lista">Lista</button></div>'
       +   '<div class="agfil" id="agFil"></div>'
       +   '<button class="btn-linea" id="agICS" title="Descarga un .ics para Recordatorios de Apple">Exportar a Recordatorios</button>'
+      +   '<button class="btn-linea" id="agICSCal" title="Descarga un .ics de eventos, con aviso 24 h antes">Exportar a Calendario</button>'
       +   '<button class="btn-solido" id="agNueva">＋ Agendar</button>'
       + '</div>'
       + '<div id="agCuerpo"></div></div>');
@@ -3789,6 +3837,7 @@ function montaAgenda(){
     });
     $('agNueva').onclick = () => abreAgendar(null);
     $('agICS').onclick = exportaAgendaICS;
+    $('agICSCal').onclick = exportaAgendaEventos;
   }
   pintaAgenda();
 }
@@ -6088,6 +6137,37 @@ function etiquetasEnUso(){
 // verian filtros distintos y ninguna sabria por que. Vacio significa automatico.
 function etiquetasElegidas(){
   return String(AJUSTES.etiquetas_filtro || '').split(',').map(s => s.trim()).filter(Boolean);
+}
+
+// Historial del lead y sus archivos, juntos y fuera del hilo. Los adjuntos salen de los
+// mensajes que ya estan cargados --no hace falta otra consulta-- y los eventos de la tabla
+// que ya los guarda.
+async function cableaHistorial(c){
+  const caja = $('fichaHistorial'); if (!caja) return;
+  const idConv = c.id || c._id;
+  const archivos = MSGS.filter(m => m.media_url || (m.msg_type && m.msg_type !== 'text'))
+    .sort((a,b) => String(b.created_at||'').localeCompare(String(a.created_at||'')));
+  let eventos = [];
+  try {
+    const q = query(collection(db,'timeline_events'), where('conversation_id','==', idConv), limit(60));
+    const s = await getDocs(q);
+    eventos = s.docs.map(d => d.data())
+      .sort((a,b) => String(b.created_at||'').localeCompare(String(a.created_at||'')));
+  } catch (e) { /* sin historial se sigue: los archivos si valen por si solos */ }
+
+  const bloqueArchivos = archivos.length
+    ? archivos.slice(0, 40).map(m => '<div class="dato"><div class="k">' + esc(hora(m.created_at)) + '</div>'
+        + '<div class="v">' + (m.media_url
+            ? '<a href="' + esc(m.media_url) + '" target="_blank" rel="noopener">'
+              + esc(m.msg_type || 'archivo') + '</a>'
+            : esc(m.msg_type || 'archivo') + ' · sin enlace') + '</div></div>').join('')
+    : '<p class="quien">No ha mandado archivos.</p>';
+  const bloqueEventos = eventos.length
+    ? eventos.slice(0, 40).map(e => '<div class="dato"><div class="k">' + esc(hora(e.created_at)) + '</div>'
+        + '<div class="v">' + esc(e.title || e.event_type || 'movimiento') + '</div></div>').join('')
+    : '<p class="quien">Sin movimientos registrados.</p>';
+  caja.innerHTML = '<div class="seccion" style="margin:0 0 6px">Archivos que mandó</div>' + bloqueArchivos
+    + '<div class="seccion" style="margin:14px 0 6px">Movimientos</div>' + bloqueEventos;
 }
 
 // Las notas se leen directas de Firestore, como el resto de v2, y se escriben por el
