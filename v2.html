@@ -4578,6 +4578,29 @@ async function pintaConfig(){
         dato('Motor', 'Google Gemini 2.5 Flash')
         + '<button class="btn-linea" id="cfgReglas2" style="margin-top:8px">Editar reglas del negocio</button>')
 
+    + tarjetaCfg('Fotógrafos y colaboradores',
+        'Quien no esté aquí no sale en la encuesta, y sus reseñas no cuentan para nadie en el '
+        + 'ranking. Eso no se arregla después: hay que darle de alta antes de que trabaje.',
+        '<div id="cfgEquipo"><p class="cfgnota">Cargando…</p></div>'
+        + '<div class="par" style="margin-top:10px">'
+        +   '<div class="campo"><label>Nombre</label><input id="colNombre" placeholder="Nombre y apellido"></div>'
+        +   '<div class="campo"><label>Puesto (opcional)</label><input id="colPuesto" placeholder="Fotógrafo, maquillaje…"></div>'
+        + '</div><button class="btn-linea" id="colAdd" style="margin-top:8px">Dar de alta</button>')
+
+    + tarjetaCfg('Baja de una lista entera',
+        'Apaga marketing y automatismos a <b>todos</b> los que lleven las etiquetas que escribas. '
+        + 'Se calcula primero a cuántos afecta, sin tocar nada.',
+        '<div class="campo"><label>Etiquetas, separadas por coma</label>'
+        + '<input id="bajaTags" placeholder="no_promocionar, solo_factura"></div>'
+        + '<div class="acciones" style="margin-top:10px">'
+        +   '<button class="btn-linea" id="bajaCalcular">Calcular a cuántos afecta</button>'
+        +   '<button class="btn-solido" id="bajaAplicar" disabled>Dar de baja</button></div>'
+        + '<div id="bajaCuerpo"></div>')
+
+    + tarjetaCfg('Últimos movimientos',
+        'Quién hizo qué y cuándo. Se guarda solo, no hay que activarlo.',
+        '<div id="cfgAuditoria"><p class="cfgnota">Cargando…</p></div>')
+
     + tarjetaCfg('Etiquetas del buscador',
         'Marca las que quieres ver en la barra de filtros de Conversaciones. Sin marcar ninguna, '
         + 'el panel ensena solas las mas usadas. Las que no marques siguen existiendo y '
@@ -4633,6 +4656,12 @@ async function pintaUsuarios(esAdmin){
   const cont = $('cfgUsuarios'); if (!cont) return;
   cont.innerHTML = '<p class="cfgnota"><span class="cargando"></span> Cargando…</p>';
   const r = await llama({ action:'panelUsers', operation:'list' });
+  // La auditoria viaja en la MISMA respuesta que los usuarios. v2 la tiraba: se pedia, el
+  // servidor la mandaba, y nadie la pintaba -- asi que no habia forma de saber quien
+  // desactivo a alguien, quien reparo etapas ni quien lanzo una difusion.
+  pintaAuditoria(r.audit || []);
+  cableaEquipo();
+  cableaBajaLista();
   if (!r.ok) {
     cont.innerHTML = '<p class="cfgnota">' + (String(r.error||'').includes('administrador')
       ? 'Solo un administrador puede ver el equipo.' : esc(r.error || 'No se pudo cargar.')) + '</p>';
@@ -4652,7 +4681,12 @@ async function pintaUsuarios(esAdmin){
           : esc(x.role || '—')) + '</span>'
       + '<span><button class="interruptor' + (x.active === false ? '' : ' on') + '"'
       +   (esAdmin ? ' data-activo="' + esc(x.uid || x.id || '') + '"' : ' disabled')
-      +   '>' + (x.active === false ? 'inactivo' : 'activo') + '</button></span></div>').join('')
+      +   '>' + (x.active === false ? 'inactivo' : 'activo') + '</button>'
+      // Sin esto, quien pierde la clave se queda fuera y no habia boton para nada: habia
+      // que entrar a la consola de Firebase, que es justo lo que este panel evita.
+      +   (esAdmin ? '<button class="btn-linea" data-clave="' + esc(x.uid || x.id || '') + '"'
+            + ' style="margin-left:6px">clave</button>' : '')
+      +   '</span></div>').join('')
     + '</div>';
 
   if (!esAdmin) return;
@@ -4662,6 +4696,18 @@ async function pintaUsuarios(esAdmin){
     avisa(r2.ok ? 'Rol cambiado' : 'No se pudo cambiar', r2.ok ? s.value : r2.error);
   };
   cont.onclick = async ev => {
+    const clave = ev.target.closest('[data-clave]');
+    if (clave) {
+      const nueva = prompt('Clave temporal para esa cuenta (mínimo 10 caracteres).\n\n'
+        + 'Tendrá que cambiarla al entrar.');
+      if (nueva === null) return;
+      if (String(nueva).length < 10) return avisa('Clave muy corta', 'Mínimo 10 caracteres.');
+      clave.disabled = true;
+      const r2 = await llama({ action:'panelUsers', operation:'reset_password',
+        user_id: clave.dataset.clave, temporary_password: nueva });
+      clave.disabled = false;
+      return avisa(r2.ok ? 'Clave cambiada' : 'No se pudo cambiar', r2.ok ? 'Pásasela y que la cambie.' : r2.error);
+    }
     const b = ev.target.closest('[data-activo]'); if (!b) return;
     const activar = !b.classList.contains('on');
     // Desactivar a alguien le corta tambien los envios y las automatizaciones, no solo
@@ -4674,6 +4720,91 @@ async function pintaUsuarios(esAdmin){
     b.classList.toggle('on', activar);
     b.textContent = activar ? 'activo' : 'inactivo';
   };
+}
+
+// Quien hizo que y cuando. En un panel donde se puede apagar un bot, difundir a cientos y
+// mover fichas en lote, no poder mirar atras es un agujero: cuando algo sale raro, la
+// primera pregunta es siempre quien lo toco.
+// Alta y baja de colaboradores. v2 solo LEIA la lista para el desplegable de la encuesta:
+// en cuanto entraba alguien nuevo al equipo, sus resenas no contaban para nadie y no habia
+// forma de arreglarlo desde el panel.
+async function cableaEquipo(){
+  const c = $('cfgEquipo'); if (!c) return;
+  const pinta = async () => {
+    COLABORADORES = null;                       // se relee: acabamos de cambiarla
+    const equipo = await cargaColaboradores();
+    c.innerHTML = equipo.length
+      ? equipo.map(e => '<div class="dato"><div class="k">' + esc(e.role || e.puesto || '—') + '</div>'
+          + '<div class="v">' + esc(e.name || e.display_name || e.email || 'sin nombre') + '</div>'
+          + '<button class="btn-linea" data-col-activo="' + esc(e.id) + '">'
+          + (e.active === false ? 'inactivo' : 'activo') + '</button></div>').join('')
+      : '<p class="cfgnota">Todavía no hay nadie dado de alta.</p>';
+  };
+  await pinta();
+  $('colAdd').onclick = async () => {
+    const nombre = ($('colNombre').value || '').trim();
+    if (!nombre) return $('colNombre').focus();
+    const b = $('colAdd'); b.disabled = true;
+    const r = await llama({ action:'data', table:'collaborators', operation:'insert',
+      payload:{ name: nombre, role: ($('colPuesto').value || '').trim() || null, active: true } });
+    b.disabled = false;
+    if (!r.ok) return avisa('No se pudo dar de alta', r.error);
+    $('colNombre').value = ''; $('colPuesto').value = '';
+    await pinta(); avisa('Alta hecha', nombre + ' ya sale en la encuesta.');
+  };
+  c.onclick = async ev => {
+    const b = ev.target.closest('[data-col-activo]'); if (!b) return;
+    const activar = b.textContent.trim() === 'inactivo';
+    b.disabled = true;
+    const r = await llama({ action:'data', table:'collaborators', operation:'update',
+      payload:{ active: activar }, filters:[{ column:'id', operator:'eq', value: b.dataset.colActivo }] });
+    b.disabled = false;
+    if (!r.ok) return avisa('No se pudo cambiar', r.error);
+    await pinta();
+  };
+}
+
+// Dar de baja por etiqueta. Se calcula SIEMPRE antes: esto apaga marketing y automatismos a
+// una lista entera de golpe, y equivocarse de etiqueta se nota semanas despues, cuando
+// alguien pregunta por que dejo de llegarle nada.
+function cableaBajaLista(){
+  const calc = $('bajaCalcular'); if (!calc) return;
+  const etiquetas = () => ($('bajaTags').value || '').trim();
+  calc.onclick = async () => {
+    if (!etiquetas()) return avisa('Escribe al menos una etiqueta');
+    calc.disabled = true;
+    const r = await llama({ action:'communicationPolicyBulk', tags: etiquetas(), dry: true });
+    calc.disabled = false;
+    const c = $('bajaCuerpo');
+    if (!r.ok) { c.innerHTML = '<p class="cfgnota">' + esc(r.error || 'error') + '</p>'; return; }
+    const n = Number(r.matched || 0);
+    c.innerHTML = '<div class="dato"><div class="k">A cuántos afecta</div><div class="v">' + n + '</div></div>'
+      + ((r.sample || []).length ? '<p class="cfgnota">Por ejemplo: ' + esc(r.sample.slice(0,6).join(', ')) + '</p>' : '');
+    $('bajaAplicar').disabled = !n;
+  };
+  $('bajaAplicar').onclick = async () => {
+    // La frase se escribe a mano a proposito, igual que la exige el servidor: un confirm
+    // de si/no se pulsa sin leer, y esto no se puede deshacer con un boton.
+    const frase = prompt('Esto apaga marketing y automatismos a toda la lista.\n\n'
+      + 'Escribe DESACTIVAR LISTA para confirmar:');
+    if (frase !== 'DESACTIVAR LISTA') return;
+    const b = $('bajaAplicar'); b.disabled = true; b.textContent = 'Aplicando…';
+    const r = await llama({ action:'communicationPolicyBulk', tags: etiquetas(), dry: false,
+      confirmation: 'DESACTIVAR LISTA' });
+    b.textContent = 'Dar de baja';
+    if (!r.ok) { b.disabled = false; return avisa('No se pudo', r.error); }
+    avisa('Lista dada de baja', (r.updated || r.matched || 0) + ' contacto(s) fuera de marketing.');
+    $('bajaCalcular').click();
+  };
+}
+
+function pintaAuditoria(filas){
+  const c = $('cfgAuditoria'); if (!c) return;
+  if (!filas.length) { c.innerHTML = '<p class="cfgnota">Todavía no hay movimientos registrados.</p>'; return; }
+  c.innerHTML = filas.slice(0, 25).map(f => '<div class="dato">'
+    + '<div class="k">' + esc(hora(f.created_at)) + '</div>'
+    + '<div class="v">' + esc(f.action || 'acción') + ' · '
+    + esc(f.actor_email || f.actor_role || 'sistema') + '</div></div>').join('');
 }
 
 function cableaUsuarios(){
