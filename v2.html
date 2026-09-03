@@ -5741,7 +5741,24 @@ function montaBroadcast(){
     +       '<input id="bcCategoria" placeholder="xv, boda, infantil…"></div>'
     +   '</div>'
     +   '<div class="acciones"><button class="btn-solido" id="bcSimular">Simular envío</button></div>'
-    + '</div><div id="bcSalida"></div></div>');
+    + '</div><div id="bcSalida"></div>'
+
+    // Pack de Estados. Todo pasa en el navegador: las fotos NO se suben a ningun sitio, y
+    // eso importa cuando son de una sesion de un cliente que no ha visto todavia.
+    + '<div class="seccion" style="margin:34px 0 6px">Pack de Estados</div>'
+    + '<p class="bajada">Deja las fotos a formato Estado de WhatsApp (1080×1920) con la marca '
+    +   'del estudio, listas para subir. Las fotos <b>no salen de este ordenador</b>.</p>'
+    + '<div class="par">'
+    +   '<div class="campo"><label>Fotos</label><input id="pkFotos" type="file" accept="image/*" multiple></div>'
+    +   '<div class="campo"><label>Encuadre</label><select id="pkModo">'
+    +     '<option value="fit">Foto completa, con fondo difuminado</option>'
+    +     '<option value="fill">Rellenar (puede recortar)</option></select></div>'
+    + '</div>'
+    + '<label class="cfgsw" style="margin:8px 0"><input type="checkbox" id="pkMarca" checked>'
+    +   '<span><b>Poner la marca del estudio</b><i>Nombre y WhatsApp abajo.</i></span></label>'
+    + '<div class="acciones"><button class="btn-solido" id="pkIr">Preparar</button>'
+    +   '<button class="btn-linea" id="pkBajar" disabled>Descargar todas</button></div>'
+    + '<div id="pkSalida"></div></div>');
 
   $('bcModo').onchange = async () => {
     const plantilla = $('bcModo').value === 'template';
@@ -5751,6 +5768,111 @@ function montaBroadcast(){
     if (plantilla) await llenaPlantillasBc();
   };
   $('bcSimular').onclick = simulaBroadcast;
+  cableaPackEstados();
+}
+
+// ===== PACK DE ESTADOS =====
+// 1080x1920 es el formato de Estado de WhatsApp. Subir una foto normal la recorta el propio
+// WhatsApp por donde le parece, y suele cortar cabezas: por eso se prepara antes.
+//
+// Todo ocurre en el navegador, con canvas. Las fotos NO se suben a ningun servidor, que es
+// lo que permite usarlo con una sesion que el cliente todavia no ha visto.
+const PK_ANCHO = 1080, PK_ALTO = 1920;
+let PK_HECHAS = [];
+
+function pkCubre(ctx, im, escala){
+  const s = Math.max(PK_ANCHO / im.width, PK_ALTO / im.height) * (escala || 1);
+  const w = im.width * s, h = im.height * s;
+  ctx.drawImage(im, (PK_ANCHO - w) / 2, (PK_ALTO - h) / 2, w, h);
+}
+function pkCabe(ctx, im){
+  const s = Math.min(PK_ANCHO / im.width, PK_ALTO / im.height);
+  const w = im.width * s, h = im.height * s;
+  ctx.drawImage(im, (PK_ANCHO - w) / 2, (PK_ALTO - h) / 2, w, h);
+}
+function pkAbre(archivo){
+  return new Promise((ok, mal) => {
+    const u = URL.createObjectURL(archivo);
+    const im = new Image();
+    im.onload = () => ok({ im, u });
+    im.onerror = () => { URL.revokeObjectURL(u); mal(new Error('no es una imagen')); };
+    im.src = u;
+  });
+}
+async function pkProcesa(archivo, modo, conMarca){
+  const { im, u } = await pkAbre(archivo);
+  const cv = document.createElement('canvas');
+  cv.width = PK_ANCHO; cv.height = PK_ALTO;
+  const ctx = cv.getContext('2d');
+  if (modo === 'fill') {
+    pkCubre(ctx, im, 1);
+  } else {
+    // Fondo difuminado y foto entera encima: asi no se recorta al sujeto, que es el fallo
+    // que tiene subir la foto tal cual.
+    ctx.save(); ctx.filter = 'blur(34px)'; pkCubre(ctx, im, 1.18); ctx.restore();
+    ctx.fillStyle = 'rgba(8,10,16,.46)'; ctx.fillRect(0, 0, PK_ANCHO, PK_ALTO);
+    pkCabe(ctx, im);
+  }
+  if (conMarca) {
+    const nombre = String(CFG.brandName || '');
+    const numero = String(CFG.businessDisplayNumber || CFG.businessNumber || '');
+    // Degradado detras del texto: sobre una foto clara, letras blancas a secas no se leen.
+    const gr = ctx.createLinearGradient(0, PK_ALTO - 300, 0, PK_ALTO);
+    gr.addColorStop(0, 'rgba(0,0,0,0)'); gr.addColorStop(1, 'rgba(0,0,0,.72)');
+    ctx.fillStyle = gr; ctx.fillRect(0, PK_ALTO - 300, PK_ANCHO, 300);
+    ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+    if (nombre) {
+      ctx.font = '700 46px system-ui,-apple-system,Segoe UI,sans-serif';
+      ctx.fillStyle = '#fff';
+      ctx.fillText(nombre, 58, numero ? PK_ALTO - 96 : PK_ALTO - 66);
+    }
+    if (numero) {
+      ctx.font = '500 34px system-ui,-apple-system,Segoe UI,sans-serif';
+      ctx.fillStyle = 'rgba(255,255,255,.88)';
+      ctx.fillText('WhatsApp ' + numero, 58, PK_ALTO - 48);
+    }
+  }
+  URL.revokeObjectURL(u);
+  const blob = await new Promise(r => cv.toBlob(r, 'image/jpeg', 0.9));
+  return { blob, url: URL.createObjectURL(blob) };
+}
+
+function cableaPackEstados(){
+  const ir = $('pkIr'); if (!ir) return;
+  ir.onclick = async () => {
+    const archivos = [...($('pkFotos').files || [])];
+    if (!archivos.length) return avisa('Elige fotos primero');
+    // Los object URL anteriores se sueltan: con veinte fotos por pasada, no hacerlo deja
+    // la memoria del navegador creciendo hasta que se pone lento.
+    PK_HECHAS.forEach(x => URL.revokeObjectURL(x.url));
+    PK_HECHAS = [];
+    ir.disabled = true; ir.textContent = 'Preparando…';
+    const modo = $('pkModo').value, marca = $('pkMarca').checked;
+    const fallos = [];
+    for (const f of archivos) {
+      try { PK_HECHAS.push(await pkProcesa(f, modo, marca)); }
+      catch (e) { fallos.push(f.name); }
+    }
+    ir.disabled = false; ir.textContent = 'Preparar';
+    $('pkBajar').disabled = !PK_HECHAS.length;
+    $('pkSalida').innerHTML = (PK_HECHAS.length
+        ? '<div class="destinos" style="margin-top:10px">'
+          + PK_HECHAS.map((x, i) => '<a href="' + x.url + '" download="estado-' + (i + 1) + '.jpg">'
+            + '<img src="' + x.url + '" style="width:78px;height:139px;object-fit:cover;'
+            + 'border-radius:8px;border:1px solid var(--line2)"></a>').join('')
+          + '</div>'
+        : '')
+      + (fallos.length ? '<p class="bajada">No se pudieron leer: ' + esc(fallos.join(', ')) + '</p>' : '')
+      + (PK_HECHAS.length ? '<p class="bajada">' + PK_HECHAS.length + ' lista(s). Pulsa una para bajarla suelta.</p>' : '');
+  };
+  $('pkBajar').onclick = () => {
+    // Una descarga por foto, separadas en el tiempo: lanzarlas de golpe hace que el
+    // navegador bloquee todas menos la primera y parezca que no funciona.
+    PK_HECHAS.forEach((x, i) => setTimeout(() => {
+      const a = document.createElement('a');
+      a.href = x.url; a.download = 'estado-' + (i + 1) + '.jpg'; a.click();
+    }, i * 350));
+  };
 }
 
 async function llenaPlantillasBc(){
