@@ -1,6 +1,6 @@
 {
-  "version": "2026-09-03-historial-y-calendario-v76",
+  "version": "2026-09-03-campanas-segundo-numero-v77",
   "channel": "crm",
   "released_at": "2026-09-02T00:00:00Z",
-  "summary": "La ficha rene historial y archivos. La agenda se exporta tambien como eventos de calendario."
+  "summary": "Las campanas ya pueden salir por el segundo numero, con ritmo y variantes anti-baneo."
 }
