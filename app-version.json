@@ -1,6 +1,6 @@
 {
-  "version": "2026-09-02-aviso-por-canal-v69",
+  "version": "2026-09-02-recordatorios-y-notas-v70",
   "channel": "crm",
   "released_at": "2026-09-02T00:00:00Z",
-  "summary": "Instagram y Messenger dejan de recibir consejos de WhatsApp: no hay plantillas, hay atencion humana."
+  "summary": "Recordatorios ya puede procesar los vencidos. La ficha del lead recupera las notas internas."
 }
