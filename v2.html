@@ -3001,6 +3001,18 @@ function pintaFicha(c){
     +     'audiencia en Campañas.</p>'
     + '</div></details>'
 
+    // Las notas internas las escribe el EQUIPO, no el cliente, y por eso no van en el hilo:
+    // "la mama decide", "pidio factura", "no llamar antes de las 10". Sin esto, ese contexto
+    // vivia en la cabeza de quien atendio y se perdia en cuanto atendia otra persona.
+    + '<details class="grupo" open><summary>Notas internas</summary><div class="dentro">'
+    +   '<div id="notasLista"></div>'
+    +   '<div class="campo" style="margin:8px 0 0">'
+    +     '<textarea id="notaNueva" rows="2" placeholder="Escribe una nota y pulsa Guardar"></textarea>'
+    +   '</div>'
+    +   '<button class="btn-linea" id="notaGuarda" style="margin-top:8px">Guardar nota</button>'
+    +   '<p class="aviso" style="margin:7px 0 0">Solo las ve el equipo. El cliente nunca las recibe.</p>'
+    + '</div></details>'
+
     + '<details class="grupo" open><summary>Resumen y próximo paso</summary><div class="dentro">'
     +   '<div class="campo"><label>Resumen</label><textarea data-c="conversation_summary" rows="3">' + esc(c.conversation_summary || '') + '</textarea></div>'
     +   '<div class="campo"><label>Próximo paso</label><textarea data-c="next_step_suggested" rows="2">' + esc(c.next_step_suggested || '') + '</textarea></div>'
@@ -3056,6 +3068,7 @@ function pintaFicha(c){
   // Cerrar la ficha tiene que poder deshacerse. En la primera version no habia forma
   // de volver a abrirla sin cambiar de conversacion y regresar.
   cableaEtiquetas(c);
+  cableaNotas(c);
   $('cerrarFicha').onclick = () => { $('ficha').classList.remove('on'); $('ficha').style.display = 'none'; };
   const ver = $('verFicha');
   if (ver) ver.onclick = () => {
@@ -3460,8 +3473,43 @@ function montaRecordatorios(){
     montadas.add('reminders');
     hueco('reminders', '<div class="hoja"><h1>Recordatorios</h1>'
       + '<p class="bajada">Seguimientos con fecha puesta. Los vencidos van primero: son los que '
-      +   'ya deberían haberse hecho.</p><div id="recLista"></div></div>');
+      +   'ya deberían haberse hecho.</p>'
+      // Esta vista solo ENSEÑABA la lista. Sin este boton, promover v2 al panel de
+      // produccion dejaba al negocio sin seguimientos ni recordatorios de sesion: el
+      // servidor sabe mandarlos --action followup, mode scheduled-- pero nadie se lo pedia.
+      + '<div class="filtros" style="padding:0 0 14px">'
+      +   '<button class="btn-solido" id="recEnviar">Procesar los vencidos ahora</button>'
+      + '</div>'
+      + '<p class="aviso" style="margin:0 0 16px">Abrir esta pantalla no envía nada. Al pulsar, '
+      +   'el servidor revisa uno por uno el consentimiento, el canal y la ventana de 24 horas '
+      +   'antes de cada envío, y respeta la norma de los dos intentos.</p>'
+      + '<div id="recLista"></div></div>');
+    $('recEnviar').onclick = procesaRecordatorios;
   }
+  pintaRecordatorios();
+}
+
+// Se piden los numeros y se ensenan TODOS, incluidos los omitidos. Un "listo" a secas
+// esconde lo que no salio, y lo que no salio es justo lo que hay que mirar.
+async function procesaRecordatorios(){
+  if (!confirm('¿Procesar ahora los seguimientos y recordatorios vencidos?\n\n'
+    + 'Dentro de 24 horas se manda texto libre; fuera, solo una plantilla aprobada. '
+    + 'Quien haya pedido la baja no recibe nada.')) return;
+  const b = $('recEnviar'); const antes = b.textContent;
+  b.disabled = true; b.textContent = 'Procesando…';
+  const r = await llama({ action:'followup', mode:'scheduled' });
+  b.disabled = false; b.textContent = antes;
+  if (!r.ok) return avisa('No se pudo procesar', r.error);
+  const partes = [
+    'Seguimientos: ' + (r.followUps || 0),
+    'Recordatorios de sesión: ' + (r.reminders || 0),
+  ];
+  if (r.optOutSkipped) partes.push(r.optOutSkipped + ' omitidos por baja');
+  if (r.humanSkipped) partes.push(r.humanSkipped + ' omitidos por llevarlos una persona');
+  if (r.templateBlocked) partes.push(r.templateBlocked + ' bloqueados: la plantilla no lleva baja/STOP');
+  if (r.errors?.length) partes.push(r.errors.length + ' con error');
+  avisa('Procesado', partes.join('. ') + '.');
+  // La lista se refresca sola: CONVS lo mantiene al dia el escuchador de Firestore.
   pintaRecordatorios();
 }
 function pintaRecordatorios(){
@@ -5595,6 +5643,47 @@ function etiquetasEnUso(){
 // verian filtros distintos y ninguna sabria por que. Vacio significa automatico.
 function etiquetasElegidas(){
   return String(AJUSTES.etiquetas_filtro || '').split(',').map(s => s.trim()).filter(Boolean);
+}
+
+// Las notas se leen directas de Firestore, como el resto de v2, y se escriben por el
+// servidor: addNote deja rastro en la auditoria y deleteNote comprueba el permiso. Escribir
+// directo desde el navegador saltaria las dos cosas.
+async function cableaNotas(c){
+  const lista = $('notasLista'); if (!lista) return;
+  const pinta = async () => {
+    lista.innerHTML = '<p class="quien">Cargando…</p>';
+    let notas = [];
+    try {
+      const q = query(collection(db,'crm_notes'), where('business_id','==',NEGOCIO),
+        where('conversation_id','==', c.id || c._id), limit(50));
+      const s = await getDocs(q);
+      notas = s.docs.map(d => ({ ...d.data(), _id: d.id }))
+        .sort((a,b) => String(b.created_at||'').localeCompare(String(a.created_at||'')));
+    } catch (e) { lista.innerHTML = '<p class="quien">No se pudieron leer las notas.</p>'; return; }
+    if (!notas.length) { lista.innerHTML = '<p class="quien">Todavía no hay ninguna.</p>'; return; }
+    lista.innerHTML = notas.map(n => '<div class="dato" data-nota="' + esc(n._id) + '">'
+      + '<div class="k">' + esc(hora(n.created_at)) + '</div>'
+      + '<div class="v">' + esc(n.body || '') + '</div>'
+      + '<button class="nx" data-borra-nota="' + esc(n._id) + '" aria-label="Borrar nota">×</button></div>').join('');
+  };
+  await pinta();
+
+  $('notaGuarda').onclick = async () => {
+    const caja = $('notaNueva'); const texto = (caja.value || '').trim();
+    if (!texto) return;
+    const b = $('notaGuarda'); b.disabled = true;
+    const r = await llama({ action:'addNote', conversation_id: c.id || c._id, body: texto });
+    b.disabled = false;
+    if (!r.ok) return avisa('No se pudo guardar', r.error);
+    caja.value = ''; await pinta();
+  };
+  lista.onclick = async ev => {
+    const b = ev.target.closest('[data-borra-nota]'); if (!b) return;
+    if (!confirm('¿Borrar esta nota? No se puede deshacer.')) return;
+    const r = await llama({ action:'deleteNote', note_id: b.dataset.borraNota });
+    if (!r.ok) return avisa('No se pudo borrar', r.error);
+    await pinta();
+  };
 }
 
 function cableaEtiquetas(c){
