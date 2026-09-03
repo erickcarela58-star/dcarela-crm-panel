@@ -1,6 +1,6 @@
 {
-  "version": "2026-09-03-reparar-eligiendo-v73",
+  "version": "2026-09-03-prospeccion-completa-v74",
   "channel": "crm",
   "released_at": "2026-09-02T00:00:00Z",
-  "summary": "Reparar etapas ensena a que va cada una y deja elegir el destino de las que nadie confirmo."
+  "summary": "Prospeccion deja de ser una tabla de mirar: califica, ficha comercial, guion con IA y CSV."
 }
