@@ -1574,9 +1574,19 @@ function cableaChat(c){
       const u = ultimoDelCliente();
       return !u || (Date.now() - u) / 3600000 >= 24;
     })()) {
-      if (!confirm('Han pasado más de 24 horas desde su último mensaje.'+'\n\n'
-        + 'WhatsApp no le va a entregar esto: saldrá con ⚠. Solo llega una plantilla '
-        + 'aprobada (botón de Plantillas).'+'\n\n'+'¿Enviarlo de todas formas?')) {
+      // El aviso tiene que hablar del canal que se esta usando. Decia "WhatsApp" y mandaba
+      // al boton de Plantillas estando en un chat de Instagram, donde las plantillas NO
+      // EXISTEN: son un producto de WhatsApp. Quien lo leia probaba la plantilla, no
+      // funcionaba, y el CRM parecia roto cuando lo que fallaba era el consejo.
+      const nombreRed = redSocial(sel);
+      if (!confirm(nombreRed
+        ? 'Han pasado más de 24 horas desde su último mensaje.'+'\n\n'
+          + 'En ' + nombreRed + ' no hay plantillas. Se intentará por la vía de atención '
+          + 'humana, que Meta permite hasta 7 días; con más tiempo lo va a rechazar.'
+          + '\n\n'+'¿Intentarlo?'
+        : 'Han pasado más de 24 horas desde su último mensaje.'+'\n\n'
+          + 'WhatsApp no le va a entregar esto: saldrá con ⚠. Solo llega una plantilla '
+          + 'aprobada (botón de Plantillas).'+'\n\n'+'¿Enviarlo de todas formas?')) {
         return;
       }
     }
@@ -2741,6 +2751,14 @@ function ultimoDelCliente(){
   const t = v ? Date.parse(v) : NaN;
   return isNaN(t) ? null : t;
 }
+// Instagram y Messenger comparten la ventana de 24 h con WhatsApp, pero NO su remedio: las
+// plantillas son de WhatsApp. Lo que Meta ofrece ahi es la etiqueta de atencion humana, que
+// amplia el plazo a siete dias, y el servidor ya la intenta solo. Devuelve el nombre que ve
+// el dueno, o null si no es una red social.
+function redSocial(c){
+  const k = canalDe(c);
+  return k === 'instagram' ? 'Instagram' : k === 'facebook' ? 'Messenger' : null;
+}
 function pintaVentana24(){
   const caja = $('ventana24'); if (!caja) return;
   // El puente de WhatsApp Web no pasa por el API oficial y no tiene esta limitacion.
@@ -2752,6 +2770,14 @@ function pintaVentana24(){
     : horas < 48 ? 'Escribió hace ' + Math.round(horas) + ' horas'
     : 'Escribió hace ' + Math.round(horas / 24) + ' días';
   caja.hidden = false;
+  const nombreRed = redSocial(sel);
+  if (nombreRed) {
+    // Sin boton de plantilla: ofrecer lo que no existe es peor que no ofrecer nada.
+    caja.innerHTML = '<div><b>Fuera de la ventana de 24 horas</b> ' + esc(cuanto)
+      + '. En ' + nombreRed + ' no hay plantillas. Se intenta por atención humana, que Meta '
+      + 'permite hasta 7 días; con más tiempo solo se reabre si escribe la persona.</div>';
+    return;
+  }
   caja.innerHTML = '<div><b>Fuera de la ventana de 24 horas</b>' + esc(cuanto)
     + '. WhatsApp solo le entrega una plantilla aprobada; un mensaje normal sale con ⚠ '
     + 'y no lo recibe.</div><button id="v24tpl">Usar plantilla</button>';
