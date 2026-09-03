@@ -1,6 +1,6 @@
 {
-  "version": "2026-09-02-herramientas-en-lote-v71",
+  "version": "2026-09-02-ver-antes-de-reparar-v72",
   "channel": "crm",
   "released_at": "2026-09-02T00:00:00Z",
-  "summary": "Limpieza recupera el Auto bot, el etiquetado en lote y la reparacion de etapas rotas."
+  "summary": "Reparar etapas ensena que va a cambiar y a que, con una muestra, antes de tocar nada."
 }
