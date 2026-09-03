@@ -5113,30 +5113,53 @@ function cableaLotes(){
     // Se ensena QUE se va a cambiar y a QUE, no solo cuantas. Mover fichas a "cliente" las
     // mete en el conteo de ventas: quien pulsa tiene derecho a ver antes si eso cuadra con
     // lo que recuerda, y a reconocer algunos nombres de la lista.
+    // Cada etapa rota lleva su propio desplegable. La traduccion por defecto acierta con
+    // 'descalificado', pero 'cerrado' NO es obvia: en esta base hay fichas 'cerrado' cuyo
+    // estado sigue siendo requiere_humano o abierto, y darlas por vendidas mete ventas que
+    // no existen. Eso lo decide quien conoce el negocio, no el que escribio el codigo.
     const porEtapa = Object.entries(r.por_etapa || {})
-      .map(([e, k]) => k + ' con etapa «' + esc(e) + '» → ' + esc((r.traducciones || {})[e] || 'sin traducción'))
-      .join('<br>');
+      .map(([e, k]) => '<div class="campo"><label>' + k + ' con etapa «' + esc(e) + '» pasan a</label>'
+        + '<select data-etp-destino="' + esc(e) + '">'
+        // Sin traduccion confirmada no se preselecciona nada: una opcion ya elegida se
+        // acepta sin mirar, y aqui hay que mirar. Quien repara tiene que decidirlo.
+        + (((r.traducciones || {})[e]) ? '' : '<option value="">— elige a dónde —</option>')
+        + ETAPAS.map(v => '<option value="' + esc(v) + '"'
+            + (((r.traducciones || {})[e] || '') === v ? ' selected' : '') + '>' + esc(v) + '</option>').join('')
+        + '</select></div>')
+      .join('');
     const muestra = (r.filas || []).slice(0, 8)
       .map(f => '<div class="dato"><div class="k">' + esc(hora(f.last_message_at)) + '</div>'
         + '<div class="v">' + esc(f.name || '') + ' · ' + esc(f.lead_status || 'sin estado') + '</div></div>')
       .join('');
     c.innerHTML = '<div class="dato"><div class="k">Fichas con etapa rota</div><div class="v">' + n + '</div></div>'
-      + (porEtapa ? '<p class="bajada" style="margin:8px 0">' + porEtapa + '</p>' : '')
+      + porEtapa
       + (muestra ? '<div class="seccion" style="margin:14px 0 6px">Las más recientes</div>' + muestra : '');
     // El boton solo se enciende si de verdad hay algo que mover: un boton activo que no
     // hace nada al pulsarlo se lee como que el panel fallo.
     $('etpAplicar').disabled = !n;
   };
   $('etpAplicar').onclick = async () => {
-    if (!confirm('¿Mover a cliente las fichas con etapa rota?')) return;
+    const elegido = [...document.querySelectorAll('[data-etp-destino]')]
+      .map(s => s.dataset.etpDestino + ' → ' + s.value).join('\n');
+    if (!confirm('Se van a reparar las fichas así:\n\n' + elegido
+      + '\n\nSe guarda la etapa original por si hay que revisarlo. ¿Seguimos?')) return;
     const b = $('etpAplicar'); b.disabled = true; b.textContent = 'Moviendo…';
-    const r = await llama({ action:'stageRepair', operation:'apply' });
+    // Se manda lo que el dueno dejo elegido en los desplegables, no lo que el servidor
+    // traduciria por su cuenta. Si la vista previa dice una cosa y el envio hace otra, la
+    // vista previa no sirve de nada.
+    const destinos = {};
+    // Una etapa sin destino elegido se queda como esta y se reporta: el servidor la mete en
+    // sin_traduccion y el aviso lo dice. Es preferible a colarla en cualquier sitio.
+    document.querySelectorAll('[data-etp-destino]').forEach(s => {
+      if (s.value) destinos[s.dataset.etpDestino] = s.value;
+    });
+    const r = await llama({ action:'stageRepair', operation:'apply', destinos });
     b.textContent = 'Mover a cliente';
     if (!r.ok) { b.disabled = false; return avisa('No se pudo', r.error); }
     const sobran = (r.sin_traduccion || []).length
       ? ' Quedaron ' + r.sin_traduccion.length + ' etapa(s) que nadie sabe traducir: ' + r.sin_traduccion.join(', ') + '.'
       : '';
-    avisa('Etapas reparadas', (r.movidas || 0) + ' ficha(s) pasaron a cliente.' + sobran);
+    avisa('Etapas reparadas', (r.movidas || 0) + ' ficha(s) reparadas.' + sobran);
     $('etpRevisar').click();
   };
 }
