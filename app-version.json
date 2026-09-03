@@ -1,6 +1,6 @@
 {
-  "version": "2026-09-02-ver-antes-de-reparar-v72",
+  "version": "2026-09-03-reparar-eligiendo-v73",
   "channel": "crm",
   "released_at": "2026-09-02T00:00:00Z",
-  "summary": "Reparar etapas ensena que va a cambiar y a que, con una muestra, antes de tocar nada."
+  "summary": "Reparar etapas ensena a que va cada una y deja elegir el destino de las que nadie confirmo."
 }
