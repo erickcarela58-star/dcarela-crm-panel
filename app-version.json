@@ -1,6 +1,6 @@
 {
-  "version": "2026-09-03-prospeccion-completa-v74",
+  "version": "2026-09-03-configuracion-completa-v75",
   "channel": "crm",
   "released_at": "2026-09-02T00:00:00Z",
-  "summary": "Prospeccion deja de ser una tabla de mirar: califica, ficha comercial, guion con IA y CSV."
+  "summary": "Configuracion recupera equipo, baja por etiqueta, clave temporal y el registro de movimientos."
 }
