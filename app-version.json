@@ -1,6 +1,6 @@
 {
-  "version": "2026-09-02-recordatorios-y-notas-v70",
+  "version": "2026-09-02-herramientas-en-lote-v71",
   "channel": "crm",
   "released_at": "2026-09-02T00:00:00Z",
-  "summary": "Recordatorios ya puede procesar los vencidos. La ficha del lead recupera las notas internas."
+  "summary": "Limpieza recupera el Auto bot, el etiquetado en lote y la reparacion de etapas rotas."
 }
