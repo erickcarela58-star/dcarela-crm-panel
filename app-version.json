@@ -1,6 +1,6 @@
 {
-  "version": "2026-09-03-configuracion-completa-v75",
+  "version": "2026-09-03-historial-y-calendario-v76",
   "channel": "crm",
   "released_at": "2026-09-02T00:00:00Z",
-  "summary": "Configuracion recupera equipo, baja por etiqueta, clave temporal y el registro de movimientos."
+  "summary": "La ficha rene historial y archivos. La agenda se exporta tambien como eventos de calendario."
 }
