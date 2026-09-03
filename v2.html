@@ -5110,7 +5110,19 @@ function cableaLotes(){
     const c = $('etpCuerpo');
     if (!r.ok) { c.innerHTML = '<p class="bajada">' + esc(r.error || 'error') + '</p>'; return; }
     const n = num(r.total) || (r.invalidas || []).length;
-    c.innerHTML = '<div class="dato"><div class="k">Fichas con etapa rota</div><div class="v">' + n + '</div></div>';
+    // Se ensena QUE se va a cambiar y a QUE, no solo cuantas. Mover fichas a "cliente" las
+    // mete en el conteo de ventas: quien pulsa tiene derecho a ver antes si eso cuadra con
+    // lo que recuerda, y a reconocer algunos nombres de la lista.
+    const porEtapa = Object.entries(r.por_etapa || {})
+      .map(([e, k]) => k + ' con etapa «' + esc(e) + '» → ' + esc((r.traducciones || {})[e] || 'sin traducción'))
+      .join('<br>');
+    const muestra = (r.filas || []).slice(0, 8)
+      .map(f => '<div class="dato"><div class="k">' + esc(hora(f.last_message_at)) + '</div>'
+        + '<div class="v">' + esc(f.name || '') + ' · ' + esc(f.lead_status || 'sin estado') + '</div></div>')
+      .join('');
+    c.innerHTML = '<div class="dato"><div class="k">Fichas con etapa rota</div><div class="v">' + n + '</div></div>'
+      + (porEtapa ? '<p class="bajada" style="margin:8px 0">' + porEtapa + '</p>' : '')
+      + (muestra ? '<div class="seccion" style="margin:14px 0 6px">Las más recientes</div>' + muestra : '');
     // El boton solo se enciende si de verdad hay algo que mover: un boton activo que no
     // hace nada al pulsarlo se lee como que el panel fallo.
     $('etpAplicar').disabled = !n;
