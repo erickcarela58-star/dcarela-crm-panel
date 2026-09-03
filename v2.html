@@ -5821,13 +5821,60 @@ async function simulaBroadcast(){
     + '</div>'
     + (Number(r.found || 0) > 0
       ? '<div class="patas"><button class="btn-solido" id="bcEnviar">Enviar a ' + Number(r.found) + '</button>'
+        // El segundo numero --el puente de WhatsApp Web-- no pasa por la API oficial, asi
+        // que no le aplican ni la ventana de 24 h ni las plantillas: puede mandar texto
+        // libre. Lo que si le aplica, y con mas motivo, es el anti-baneo, porque ahi el
+        // numero es una linea normal y perderla es perder el numero.
+        + '<button class="btn-linea" id="bcPuente" title="Manda por el segundo número, con ritmo y variantes">'
+        + 'Enviar por el 2º número</button>'
         + '<button class="btn-linea" id="bcCancelar">Cancelar</button></div>'
       : '')
     + '</div>';
   if (Number(r.found || 0) > 0) {
     $('bcCancelar').onclick = () => { AUDIENCIA = null; $('bcSalida').innerHTML = ''; };
     $('bcEnviar').onclick = enviaBroadcast;
+    $('bcPuente').onclick = enviaPorPuente;
   }
+}
+
+// Campana por el SEGUNDO numero. v2 solo difundia por el oficial, asi que la linea de Fotos
+// no tenia forma de hacer campanas desde el panel -- que es justo la que mas las hace.
+//
+// Se reutiliza la audiencia ya calculada arriba: volver a pedirla podria devolver otra
+// lista, y entonces el numero que el dueno acaba de leer y a quien de verdad le llega
+// dejarian de ser lo mismo.
+async function enviaPorPuente(){
+  if (!AUDIENCIA) return avisa('Simula primero');
+  const destinos = (AUDIENCIA.targets || [])
+    .filter(t => t.phone)
+    .map(t => ({ id: t.id, name: t.name || '', phone: String(t.phone) }));
+  if (!destinos.length) {
+    return avisa('Sin teléfonos', 'La simulación no devolvió números para el segundo canal.');
+  }
+  if (destinos.length > 5000) return avisa('Demasiados', 'El tope por campaña es 5000.');
+  const texto = ($('bcTexto').value || '').trim();
+  // Por el puente NO hay plantillas: es texto libre siempre. Mandar aqui una plantilla
+  // llegaria con las llaves sin rellenar, y el cliente lo ve.
+  if (!texto) return avisa('Escribe el mensaje', 'El segundo número manda texto libre, no plantillas.');
+
+  const previo = await llama({ action:'bridgeBulk', operation:'preview',
+    template: texto, targets: destinos, purpose: $('bcProposito').value });
+  if (!previo.ok) return avisa('No se pudo preparar', previo.error);
+  const entran = Number(previo.eligible?.length ?? previo.total ?? destinos.length);
+  const fuera = Object.entries(previo.reasons || {})
+    .map(([k, v]) => v + ' por ' + k).join(', ');
+  if (!confirm('Se va a mandar por el segundo número a ' + entran + ' contacto(s).\n\n'
+    + (fuera ? 'Quedan fuera: ' + fuera + '.\n\n' : '')
+    + 'Sale con ritmo y con variantes del texto, para no quemar la línea. ¿Seguimos?')) return;
+
+  const b = $('bcPuente'); b.disabled = true; b.textContent = 'Encolando…';
+  const r = await llama({ action:'bridgeBulk', operation:'send',
+    template: texto, targets: destinos, purpose: $('bcProposito').value });
+  b.disabled = false; b.textContent = 'Enviar por el 2º número';
+  if (!r.ok) return avisa('No se pudo encolar', r.error);
+  AUDIENCIA = null; $('bcSalida').innerHTML = '';
+  avisa('Campaña encolada', (r.queued ?? entran) + ' mensaje(s) salen por el segundo número, '
+    + 'repartidos en el tiempo. No hace falta dejar el panel abierto.');
 }
 
 // ===== ANTI-BLOQUEO =====
