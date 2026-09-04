@@ -1,6 +1,6 @@
 {
-  "version": "2026-09-03-reconstruir-historial-v79",
+  "version": "2026-09-03-auditoria-seis-fallos-v80",
   "channel": "crm",
   "released_at": "2026-09-02T00:00:00Z",
-  "summary": "Reconstruir el historial contestaba siempre que no habia nada: leia un nombre que el servidor no manda."
+  "summary": "Seis fallos que encontro auditar el panel ya promovido, tres de ellos del mismo dia."
 }
