@@ -1,6 +1,6 @@
 {
-  "version": "2026-09-04-proposito-explicado-v81",
+  "version": "2026-09-04-de-quien-es-el-limite-v82",
   "channel": "crm",
-  "released_at": "2026-09-02T00:00:00Z",
-  "summary": "Campanas dice a cuanta gente llega cada proposito ANTES de simular, y por que."
+  "released_at": "2026-09-04T00:00:00Z",
+  "summary": "Al importar historial se dice de quien es el tope: Meta expone 3 hilos de Instagram y 47 de Messenger, y el CRM los trae todos."
 }
