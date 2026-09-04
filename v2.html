@@ -3611,13 +3611,17 @@ function montaRecordatorios(){
       // produccion dejaba al negocio sin seguimientos ni recordatorios de sesion: el
       // servidor sabe mandarlos --action followup, mode scheduled-- pero nadie se lo pedia.
       + '<div class="filtros" style="padding:0 0 14px">'
-      +   '<button class="btn-solido" id="recEnviar">Procesar los vencidos ahora</button>'
+      // id propio: 'recEnviar' YA existe en la barra de grabar audio (linea 1490). Como las
+      // vistas se ocultan pero no se destruyen, $() devolvia siempre el primero: este boton
+      // quedaba muerto y su manejador se lo comia el 'Enviar' de la nota de voz -- que
+      // entonces disparaba un envio masivo en vez de mandar el audio.
+      +   '<button class="btn-solido" id="recProcesar">Procesar los vencidos ahora</button>'
       + '</div>'
       + '<p class="aviso" style="margin:0 0 16px">Abrir esta pantalla no envía nada. Al pulsar, '
       +   'el servidor revisa uno por uno el consentimiento, el canal y la ventana de 24 horas '
       +   'antes de cada envío, y respeta la norma de los dos intentos.</p>'
       + '<div id="recLista"></div></div>');
-    $('recEnviar').onclick = procesaRecordatorios;
+    $('recProcesar').onclick = procesaRecordatorios;
   }
   pintaRecordatorios();
 }
@@ -3628,7 +3632,7 @@ async function procesaRecordatorios(){
   if (!confirm('¿Procesar ahora los seguimientos y recordatorios vencidos?\n\n'
     + 'Dentro de 24 horas se manda texto libre; fuera, solo una plantilla aprobada. '
     + 'Quien haya pedido la baja no recibe nada.')) return;
-  const b = $('recEnviar'); const antes = b.textContent;
+  const b = $('recProcesar'); const antes = b.textContent;
   b.disabled = true; b.textContent = 'Procesando…';
   const r = await llama({ action:'followup', mode:'scheduled' });
   b.disabled = false; b.textContent = antes;
@@ -3657,11 +3661,15 @@ function pintaRecordatorios(){
       + 'Se pone desde la ficha del lead o desde el Planificador.</p>';
     return;
   }
+  // El acercamiento de Limpieza guarda el mensaje personalizado en pending_questions y
+  // promete que "aparecera en Recordatorios para revisarlo antes de enviarlo". No aparecia
+  // en ningun sitio: se escribia y se perdia de vista. Aqui se enseña.
   const vencidos = filas.filter(f => f.cuando <= ahora).length;
   cont.innerHTML = (vencidos
       ? '<p class="bajada"><b>' + vencidos + ' vencido(s)</b> — ya tocaba.</p>' : '')
     + '<div class="tabla" style="max-width:900px">'
-    + '<div class="fila cabecera"><span>Cuándo</span><span>Contacto</span><span>Etapa</span><span>Próximo paso</span></div>'
+    + '<div class="fila cabecera"><span>Cuándo</span><span>Contacto</span><span>Etapa</span>'
+    +   '<span>Mensaje preparado</span></div>'
     + filas.map(({c, cuando, iso}) => {
         const vencido = cuando <= ahora;
         return '<div class="fila">'
@@ -3669,7 +3677,10 @@ function pintaRecordatorios(){
         +   (vencido ? '<small style="color:var(--bad)">vencido</small>' : '<small>pendiente</small>') + '</span>'
         + '<span>' + esc(nombreDe(c)) + '</span>'
         + '<span>' + esc((c.lifecycle_stage || 'nuevo').replace(/_/g,' ')) + '</span>'
-        + '<span>' + esc(String(c.next_step_suggested || '—').slice(0,70)) + '</span>'
+        // El acercamiento de Limpieza guarda aqui el mensaje ya personalizado, y la pantalla
+        // promete que se podra revisar en Recordatorios. No se enseñaba en ninguna parte: se
+        // escribia y se perdia. Si no hay mensaje preparado, se cae al proximo paso.
+        + '<span>' + esc(String(c.pending_questions || c.next_step_suggested || '—').slice(0,90)) + '</span>'
         + '</div>';
       }).join('') + '</div>';
 }
@@ -4724,16 +4735,16 @@ async function pintaUsuarios(esAdmin){
     + filas.map((x,i) => '<div class="fila" style="grid-template-columns:minmax(0,2fr) 1fr auto">'
       + '<span><b>' + esc(x.display_name || x.email || '—') + '</b><small>' + esc(x.email || '') + '</small></span>'
       + '<span>' + (esAdmin
-          ? '<select data-rol="' + esc(x.uid || x.id || '') + '">'
+          ? '<select data-rol="' + esc(x.user_id || x.uid || x.id || '') + '">'
             + ['agent','supervisor','admin'].map(rr => '<option value="' + rr + '"'
               + (x.role === rr ? ' selected' : '') + '>' + rr + '</option>').join('') + '</select>'
           : esc(x.role || '—')) + '</span>'
       + '<span><button class="interruptor' + (x.active === false ? '' : ' on') + '"'
-      +   (esAdmin ? ' data-activo="' + esc(x.uid || x.id || '') + '"' : ' disabled')
+      +   (esAdmin ? ' data-activo="' + esc(x.user_id || x.uid || x.id || '') + '"' : ' disabled')
       +   '>' + (x.active === false ? 'inactivo' : 'activo') + '</button>'
       // Sin esto, quien pierde la clave se queda fuera y no habia boton para nada: habia
       // que entrar a la consola de Firebase, que es justo lo que este panel evita.
-      +   (esAdmin ? '<button class="btn-linea" data-clave="' + esc(x.uid || x.id || '') + '"'
+      +   (esAdmin ? '<button class="btn-linea" data-clave="' + esc(x.user_id || x.uid || x.id || '') + '"'
             + ' style="margin-left:6px">clave</button>' : '')
       +   '</span></div>').join('')
     + '</div>';
@@ -5986,8 +5997,11 @@ async function enviaPorPuente(){
   const previo = await llama({ action:'bridgeBulk', operation:'preview',
     template: texto, targets: destinos, purpose: $('bcProposito').value });
   if (!previo.ok) return avisa('No se pudo preparar', previo.error);
-  const entran = Number(previo.eligible?.length ?? previo.total ?? destinos.length);
-  const fuera = Object.entries(previo.reasons || {})
+  // El servidor contesta en espanol: elegibles, saltados, motivos. Leyendo 'eligible' y
+  // 'reasons' caia al respaldo y se confirmaba el total de la AUDIENCIA, no los que de
+  // verdad iban a recibirlo -- y los excluidos no se enseñaban nunca.
+  const entran = Number(previo.elegibles ?? destinos.length);
+  const fuera = Object.entries(previo.motivos || {})
     .map(([k, v]) => v + ' por ' + k).join(', ');
   if (!confirm('Se va a mandar por el segundo número a ' + entran + ' contacto(s).\n\n'
     + (fuera ? 'Quedan fuera: ' + fuera + '.\n\n' : '')
@@ -5999,7 +6013,7 @@ async function enviaPorPuente(){
   b.disabled = false; b.textContent = 'Enviar por el 2º número';
   if (!r.ok) return avisa('No se pudo encolar', r.error);
   AUDIENCIA = null; $('bcSalida').innerHTML = '';
-  avisa('Campaña encolada', (r.queued ?? entran) + ' mensaje(s) salen por el segundo número, '
+  avisa('Campaña encolada', (r.elegibles ?? entran) + ' mensaje(s) salen por el segundo número, '
     + 'repartidos en el tiempo. No hace falta dejar el panel abierto.');
 }
 
@@ -6163,7 +6177,11 @@ let COLABORADORES = null;
 async function cargaColaboradores(){
   if (COLABORADORES) return COLABORADORES;
   const r = await llama({ action:'data', table:'collaborators', operation:'select', limit:100 });
-  COLABORADORES = r.ok ? (r.data || r.rows || []) : [];
+  // Un fallo de red NO se cachea. Antes se guardaba [] y quedaba fijo toda la sesion: el
+  // panel decia "no hay nadie dado de alta" para siempre, que es indistinguible de la
+  // verdad y hace pensar que el equipo se borro.
+  if (!r.ok) return null;
+  COLABORADORES = r.data || r.rows || [];
   return COLABORADORES;
 }
 
@@ -6318,8 +6336,20 @@ function etiquetasElegidas(){
 async function cableaHistorial(c){
   const caja = $('fichaHistorial'); if (!caja) return;
   const idConv = c.id || c._id;
-  const archivos = MSGS.filter(m => m.media_url || (m.msg_type && m.msg_type !== 'text'))
-    .sort((a,b) => String(b.created_at||'').localeCompare(String(a.created_at||'')));
+  // Se consulta por conversacion en vez de filtrar MSGS. abre() llama a pintaFicha ANTES de
+  // escuchaMensajes, asi que aqui MSGS todavia tiene los mensajes del cliente ANTERIOR: la
+  // ficha de una clienta listaba las fotos y el comprobante de pago de otra, con enlaces que
+  // se abren de verdad. Y en el primer chat tras cargar la pagina, MSGS esta vacio y decia
+  // "no ha mandado archivos" aunque hubiera veinte.
+  let archivos = [];
+  try {
+    const qm = query(collection(db,'crm_messages'), where('business_id','==',NEGOCIO),
+      where('conversation_id','==', idConv), limit(400));
+    const sm = await getDocs(qm);
+    archivos = sm.docs.map(d => d.data())
+      .filter(m => m.media_url || (m.msg_type && m.msg_type !== 'text'))
+      .sort((a,b) => String(b.created_at||'').localeCompare(String(a.created_at||'')));
+  } catch (e) { archivos = null; }
   let eventos = [];
   try {
     const q = query(collection(db,'timeline_events'), where('conversation_id','==', idConv), limit(60));
@@ -6328,13 +6358,17 @@ async function cableaHistorial(c){
       .sort((a,b) => String(b.created_at||'').localeCompare(String(a.created_at||'')));
   } catch (e) { /* sin historial se sigue: los archivos si valen por si solos */ }
 
-  const bloqueArchivos = archivos.length
-    ? archivos.slice(0, 40).map(m => '<div class="dato"><div class="k">' + esc(hora(m.created_at)) + '</div>'
-        + '<div class="v">' + (m.media_url
-            ? '<a href="' + esc(m.media_url) + '" target="_blank" rel="noopener">'
-              + esc(m.msg_type || 'archivo') + '</a>'
-            : esc(m.msg_type || 'archivo') + ' · sin enlace') + '</div></div>').join('')
-    : '<p class="quien">No ha mandado archivos.</p>';
+  // Vacio y roto no se enseñan igual: "no ha mandado archivos" cuando en realidad no se
+  // pudo consultar es la clase de mentira que hace buscar el fallo en otro sitio.
+  const bloqueArchivos = archivos === null
+    ? '<p class="quien">No se pudieron consultar los archivos.</p>'
+    : archivos.length
+      ? archivos.slice(0, 40).map(m => '<div class="dato"><div class="k">' + esc(hora(m.created_at)) + '</div>'
+          + '<div class="v">' + (m.media_url
+              ? '<a href="' + esc(m.media_url) + '" target="_blank" rel="noopener">'
+                + esc(m.msg_type || 'archivo') + '</a>'
+              : esc(m.msg_type || 'archivo') + ' · sin enlace') + '</div></div>').join('')
+      : '<p class="quien">No ha mandado archivos.</p>';
   const bloqueEventos = eventos.length
     ? eventos.slice(0, 40).map(e => '<div class="dato"><div class="k">' + esc(hora(e.created_at)) + '</div>'
         + '<div class="v">' + esc(e.title || e.event_type || 'movimiento') + '</div></div>').join('')
