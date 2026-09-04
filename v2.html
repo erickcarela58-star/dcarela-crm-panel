@@ -5736,11 +5736,15 @@ function montaBroadcast(){
     +       '<option value="template">Plantilla aprobada (llega aunque lleve días callado)</option>'
     +     '</select></div>'
     +     '<div class="campo"><label>Propósito</label><select id="bcProposito">'
-    +       '<option value="marketing">Marketing</option>'
+    +       '<option value="marketing">Marketing · promoción</option>'
     +       '<option value="followup">Seguimiento</option>'
     +       '<option value="session_reminder">Recordatorio de sesión</option>'
     +     '</select></div>'
     +   '</div>'
+    // El proposito NO es una etiqueta: decide a cuanta gente llega. Marketing exige permiso
+    // EXPRESO y casi nadie lo tiene, asi que una campana de promocion sale a un punado y el
+    // dueno lo descubria simulando, sin entender por que. Aqui se dice antes.
+    +   '<p class="aviso" id="bcAvisoProp" style="margin:0 0 14px"></p>'
     +   '<div id="bcLibre">'
     +     '<div class="campo"><label>Mensaje</label>'
     +       '<textarea id="bcTexto" rows="4" placeholder="Lo que le llegará a cada contacto"></textarea></div>'
@@ -5783,6 +5787,20 @@ function montaBroadcast(){
     if (plantilla) await llenaPlantillasBc();
   };
   $('bcSimular').onclick = simulaBroadcast;
+  const avisoProp = () => {
+    const p = $('bcProposito').value;
+    $('bcAvisoProp').innerHTML = p === 'marketing'
+      ? '<b>Promoción:</b> solo llega a quien dio permiso expreso de marketing. Suelen ser '
+        + 'muy pocos. Para ampliar esa lista se pide el permiso con la plantilla de consentimiento.'
+      : p === 'followup'
+        ? '<b>Seguimiento:</b> llega a todos menos a quien se dio de baja o quedó desinteresado. '
+          + 'Es para retomar una conversación, no para promocionar: usarlo como promoción es '
+          + 'lo que hace que Meta baje la calidad del número.'
+        : '<b>Recordatorio:</b> para avisar de una sesión ya acordada. Llega a todos menos a '
+          + 'quien lo rechazó.';
+  };
+  $('bcProposito').onchange = avisoProp;
+  avisoProp();
   cableaPackEstados();
 }
 
