@@ -4343,9 +4343,24 @@ async function pintaCanales(){
       if (r.fallidos) pegas.push(r.fallidos + ' conversación(es) no se pudieron leer');
       if (r.truncados) pegas.push(r.truncados + ' conversación(es) son tan largas que se '
         + 'trajeron solo sus últimos mensajes');
+      // Cuando NO falta nada, hay que decirlo con todas las letras. El mensaje anterior
+      // solo daba un numero, y un numero pequeno se lee como fallo: se importaban las 3
+      // conversaciones que Meta expone de Instagram y la conclusion era "el CRM no sube los
+      // mensajes". No lo era -- comprobado contra la API el 04/09/2026: Instagram devuelve 3
+      // hilos y Messenger 47, que es exactamente lo que hay en el CRM. Lo que faltaba era
+      // decir de quien es el limite.
+      const limite = pegas.length ? '' : ' Meta no tiene más que enseñar por su API: esto es '
+        + 'todo lo que deja ver de este canal.'
+        + (sinc.dataset.sync === 'instagram'
+          ? ' Si en el teléfono ves más chats, quien no los comparte es la app de Instagram: '
+            + 'Configuración → Mensajes y respuestas a historias → Herramientas conectadas → '
+            + 'Permitir acceso a los mensajes.'
+          : ' Los chats de Marketplace que vendes desde tu perfil personal no pasan por aquí: '
+            + 'Meta retiró hace años el permiso que los leía. Solo entran los de Marketplace '
+            + 'vendidos desde la página.');
       avisa(pegas.length ? 'Historial importado a medias' : 'Historial importado',
         r.hilos + ' conversación(es), ' + r.mensajes + ' mensaje(s) nuevo(s).'
-        + (pegas.length ? ' ' + pegas.join('. ') + '.' : ''));
+        + (pegas.length ? ' ' + pegas.join('. ') + '.' : limite));
       return pintaCanales();
     }
     const bot = ev.target.closest('[data-canal-bot]');
