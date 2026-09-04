@@ -1,6 +1,6 @@
 {
-  "version": "2026-09-03-auditoria-seis-fallos-v80",
+  "version": "2026-09-04-proposito-explicado-v81",
   "channel": "crm",
   "released_at": "2026-09-02T00:00:00Z",
-  "summary": "Seis fallos que encontro auditar el panel ya promovido, tres de ellos del mismo dia."
+  "summary": "Campanas dice a cuanta gente llega cada proposito ANTES de simular, y por que."
 }
