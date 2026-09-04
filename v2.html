@@ -5622,7 +5622,11 @@ async function escaneaDesinteres(){
   const r = await llama({ action:'disinterest', operation:'scan' });
   b.disabled = false;
   if (!r.ok) { $('recoCuerpo').innerHTML = ''; return avisa('No se pudo escanear', r.error); }
-  const filas = r.candidates || r.candidatos || r.rows || [];
+  // 'candidatas', en femenino y sin traducir. Se leia 'candidates || candidatos || rows' y
+  // NINGUNA existe: filas salia siempre vacia, asi que la herramienta contestaba "el
+  // historial ya esta al dia" aunque el servidor hubiera encontrado ciento ochenta. Un falso
+  // todo-en-orden es peor que un error: el error se investiga, esto se cree.
+  const filas = r.candidatas || [];
   if (!filas.length) {
     $('recoCuerpo').innerHTML = '<p class="bajada">Ninguno. El historial ya está al día: nadie '
       + 'cumple la norma sin estar marcado.</p>';
@@ -5648,7 +5652,7 @@ async function escaneaDesinteres(){
     ap.disabled = false;
     if (!r2.ok) { ap.textContent = 'Marcar los ' + filas.length; return avisa('No se pudo aplicar', r2.error); }
     $('recoCuerpo').innerHTML = '<p class="bajada">Historial reconstruido: '
-      + (r2.marked ?? r2.marcados ?? filas.length) + ' contacto(s) marcados.</p>';
+      + (r2.marcadas ?? filas.length) + ' contacto(s) marcados.</p>';
     avisa('Historial reconstruido', 'Ya no cuentan en las métricas.');
   };
 }
