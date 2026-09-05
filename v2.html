@@ -1344,7 +1344,12 @@ function avisaMensajesNuevos(){
     VISTO_ENTRANTE.set(id, t);
     // En el primer vistazo solo se toma nota. Avisar aqui soltaria una notificacion por cada
     // conversacion pendiente que ya existiera, cada vez que se abre el panel.
-    if (primerVistazo || antes === undefined || t <= antes) continue;
+    if (primerVistazo) continue;
+    // Y OJO: 'antes === undefined' significa conversacion NUEVA, no "nada que avisar". Al
+    // saltarla se perdia justo el aviso que mas importa -- el primer mensaje de alguien que
+    // nunca habia escrito, que es un cliente nuevo llamando a la puerta. Solo se salta
+    // cuando ya se conocia y no ha entrado nada mas nuevo.
+    if (antes !== undefined && t <= antes) continue;
     nuevos.push(c);
   }
   primerVistazo = false;
@@ -1361,7 +1366,16 @@ function avisaMensajesNuevos(){
         // reemplaza el aviso en vez de apilar cinco.
         tag: 'crm-' + (c.id || c._id),
       });
-      n.onclick = () => { window.focus(); abre(c); n.close(); };
+      n.onclick = () => {
+        window.focus();
+        // Primero la vista, despues el chat. abre() toca $('sinChat') y $('conversacion'),
+        // que solo existen con Conversaciones montada: pulsando el aviso desde Kanban, la
+        // Agenda o Configuracion saltaba un TypeError, el chat no se abria, y el mensaje
+        // quedaba marcado como leido sin que nadie lo hubiera visto.
+        if (vistaActual !== 'conversations') ve('conversations');
+        abre(c);
+        n.close();
+      };
     } catch (error) { /* si el navegador lo bloquea, quedan el titulo y el globito */ }
   }
 }
