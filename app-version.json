@@ -1,6 +1,6 @@
 {
-  "version": "2026-09-05-importar-dice-que-paso-v85",
+  "version": "2026-09-05-avisos-de-mensaje-nuevo-v86",
   "channel": "crm",
   "released_at": "2026-09-05T00:00:00Z",
-  "summary": "El resultado de importar historial se queda escrito en la tarjeta del canal, y el boton lleva contador: una espera de 20 segundos ya no parece un cuelgue."
+  "summary": "El panel avisa cuando escribe un cliente: contador en la pestana del navegador y notificacion de Chrome. Antes solo cambiaba un globito del menu lateral."
 }
