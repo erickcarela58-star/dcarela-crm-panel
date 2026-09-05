@@ -1003,6 +1003,7 @@ video.mmedia{cursor:default}
     <div class="titulo" id="tituloVista"></div>
     <div class="der">
       <span class="quien" id="quien"></span>
+      <button class="btn-linea" id="btnAvisos" hidden>Activar avisos</button>
       <button class="btn-linea" id="btnTema">Modo oscuro</button>
       <a class="btn-linea" href="./manual.html" target="_blank" rel="noopener">Manual</a>
     </div>
@@ -1071,7 +1072,9 @@ $('marca').textContent = CFG.productName || 'CRM';
 $('submarca').textContent = CFG.subtitle || '';
 $('marcaAcceso').textContent = CFG.brandName || "D'Carela";
 $('subAcceso').textContent = CFG.subtitle || '';
-document.title = CFG.appTitle || "D'Carela CRM";
+// Se guarda aparte porque pintaCuentas le antepone el numero de conversaciones sin leer.
+const TITULO_BASE = CFG.appTitle || "D'Carela CRM";
+document.title = TITULO_BASE;
 
 /* ---- Menu ---------------------------------------------------------------- */
 // Tres entradas siempre a la vista y el resto tras la hamburguesa. Ojo: quien
@@ -1115,6 +1118,26 @@ pintaMenu();
 //
 // Ahora 'menu-abierto' significa una sola cosa --el cajon esta abierto-- y solo la mueve la
 // hamburguesa, que el CSS unicamente ensena por debajo de 760px.
+// El navegador NO deja pedir el permiso de notificaciones por las buenas: hace falta que lo
+// pulse una persona. Por eso hay boton, y solo aparece mientras el permiso este sin decidir:
+// si ya esta concedido no estorba, y si esta denegado el boton no serviria de nada --hay que
+// deshacerlo desde el candado de la barra de direcciones--.
+const btnAvisos = $('btnAvisos');
+if (btnAvisos && typeof Notification !== 'undefined') {
+  const pinta = () => { btnAvisos.hidden = Notification.permission !== 'default'; };
+  pinta();
+  btnAvisos.onclick = async () => {
+    try {
+      const r = await Notification.requestPermission();
+      pinta();
+      avisa(r === 'granted' ? 'Avisos activados' : 'Avisos no activados',
+        r === 'granted'
+          ? 'Chrome te avisará cuando escriba un cliente, aunque el CRM esté en otra pestaña.'
+          : 'Sin permiso no se puede avisar. Se puede volver a dar desde el candado de la barra de direcciones.');
+    } catch (error) { avisa('No se pudieron activar', error?.message || 'el navegador lo rechazó'); }
+  };
+}
+
 const velo = $('velo'), hamb = $('hamb');
 const cierraMenu = () => {
   document.body.classList.remove('menu-abierto');
@@ -1235,6 +1258,7 @@ function escuchaConversaciones(){
     if (vistaActual === 'agenda') pintaAgenda();
     if (vistaActual === 'reminders') pintaRecordatorios();
     pintaCuentas();
+    avisaMensajesNuevos();
   }, err => marcaEstado(false, 'Sin datos en vivo: ' + (err?.code || 'error')));
 }
 function escuchaMensajes(idConv){
@@ -1297,6 +1321,49 @@ function pintaCuentas(){
   const pend = CONVS.filter(c => Number(c.unread || 0) > 0).length;
   const e = document.querySelector('[data-cuenta="conversations"]');
   if (e) { e.textContent = pend; e.hidden = pend === 0; }
+  // Y en el titulo de la pestana. Lo unico que cambiaba al llegar un mensaje era ese globito
+  // del menu lateral: con el panel en otra pestana --que es donde esta casi siempre-- no
+  // habia absolutamente nada que delatara que un cliente habia escrito. En Chrome el titulo
+  // se lee sin cambiar de pestana, asi que es el aviso mas barato que existe.
+  document.title = (pend ? '(' + pend + ') ' : '') + TITULO_BASE;
+}
+
+/* ---- Avisos de mensaje nuevo --------------------------------------------- */
+// Ultima respuesta del cliente ya conocida, por conversacion: es lo que distingue "ha
+// entrado un mensaje" de "la lista se ha repintado", que pasa constantemente.
+const VISTO_ENTRANTE = new Map();
+let primerVistazo = true;
+
+function avisaMensajesNuevos(){
+  const nuevos = [];
+  for (const c of CONVS) {
+    const id = c.id || c._id;
+    const t = String(c.last_customer_reply_at || '');
+    if (!t) continue;
+    const antes = VISTO_ENTRANTE.get(id);
+    VISTO_ENTRANTE.set(id, t);
+    // En el primer vistazo solo se toma nota. Avisar aqui soltaria una notificacion por cada
+    // conversacion pendiente que ya existiera, cada vez que se abre el panel.
+    if (primerVistazo || antes === undefined || t <= antes) continue;
+    nuevos.push(c);
+  }
+  primerVistazo = false;
+  if (!nuevos.length) return;
+  if (typeof Notification === 'undefined' || Notification.permission !== 'granted') return;
+  // Del chat que se esta mirando no se avisa: ya se ve.
+  const idSel = sel ? (sel.id || sel._id) : null;
+  for (const c of nuevos.slice(0, 3)) {
+    if (!document.hidden && (c.id || c._id) === idSel) continue;
+    try {
+      const n = new Notification(nombreDe(c), {
+        body: String(c.last_inbound_preview || c.last_message_preview || 'Mensaje nuevo').slice(0, 140),
+        // Una etiqueta por conversacion: si alguien manda cinco mensajes seguidos se
+        // reemplaza el aviso en vez de apilar cinco.
+        tag: 'crm-' + (c.id || c._id),
+      });
+      n.onclick = () => { window.focus(); abre(c); n.close(); };
+    } catch (error) { /* si el navegador lo bloquea, quedan el titulo y el globito */ }
+  }
 }
 
 /* ---- Vistas: montaje ----------------------------------------------------- */
