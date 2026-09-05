@@ -105,7 +105,11 @@ button{cursor:pointer;background:none;border:0;padding:0}
    puro, sin depender de que ningun script haya corrido antes: si no hay clase, se
    ven todas. Un menu de mas nunca es tan grave como un menu vacio. */
 .nav .secundarias{display:none;margin-top:12px;padding-top:12px;border-top:1px solid var(--line)}
-body.menu-abierto .nav .secundarias{display:block}
+/* Las secundarias YA NO dependen de que el cajon este abierto. Iban atadas a
+   body.menu-abierto, y como el cajon del movil usa esa misma clase, "ensenar el menu entero"
+   y "tener el cajon abierto" eran la misma cosa: por eso el movil nacia con el cajon abierto
+   y sin forma de cerrarlo. Se ven siempre, que es lo que se queria. */
+.nav .secundarias{display:block}
 .nav .rotulo{padding:10px 12px 5px;font-size:9.5px;font-weight:800;letter-spacing:.9px;
   text-transform:uppercase;color:var(--mut)}
 
@@ -123,10 +127,26 @@ body.menu-abierto .nav .secundarias{display:block}
 /* flex-shrink:0 en el grupo derecho: sin eso "Manual" se recortaba contra el borde
    cuando el titulo era largo. */
 .barra .der{display:flex;align-items:center;gap:9px;flex:0 0 auto}
+/* La hamburguesa NO vuelve al escritorio: alli el menu se ve entero y el boton solo servia
+   para esconderlo, que es por lo que se quito. Aparece solo por debajo de 760px, donde el
+   menu es un cajon que tapa la aplicacion y sin boton no hay manera de cerrarlo. */
+.hamb{display:none;align-items:center;justify-content:center;background:none;
+  border:1px solid var(--line2);border-radius:var(--r);cursor:pointer;
+  color:var(--fg);flex:0 0 auto;width:36px;height:34px;padding:0}
+.hamb:hover{background:var(--hover)}
+.velo{display:none;position:fixed;inset:0;z-index:45;background:rgba(0,0,0,.45)}
+body.menu-abierto .velo{display:block}
 .btn-linea{padding:8px 13px;border:1px solid var(--line2);border-radius:var(--r);
   font-size:12.5px;font-weight:600;color:var(--fg);text-decoration:none;white-space:nowrap;
   flex:0 0 auto}
-.btn-linea:hover{background:var(--hover)}
+.btn-linea:hover:not(:disabled){background:var(--hover)}
+/* .btn-linea era la unica clase de boton sin estado deshabilitado --las otras tres, .enviar,
+   .btn-solido y .tplchip, si lo tenian-- y es justo la de los botones del puente en Canales,
+   que se apagan solos cuando el segundo numero no esta en linea. Se pintaban identicos a uno
+   vivo: el dueno los pulsaba, no pasaba nada, y la lectura era "el panel esta roto". El
+   :hover tambien delataba lo contrario de la verdad, porque seguia iluminando un boton
+   muerto; por eso ahora lleva :not(:disabled). */
+.btn-linea:disabled{opacity:.45;cursor:not-allowed}
 .quien{font-size:11.5px;color:var(--mut);max-width:190px;overflow:hidden;
   text-overflow:ellipsis;white-space:nowrap}
 
@@ -141,15 +161,24 @@ body.menu-abierto .nav .secundarias{display:block}
 .agbarra{display:flex;align-items:center;gap:8px;margin:0 0 14px;flex-wrap:wrap}
 .agbarra strong{min-width:180px;text-align:center;text-transform:capitalize;font-size:15px}
 .agbarra .ag-suscribe{margin-left:auto}
-.agscroll{overflow-x:auto;border:1px solid var(--line);border-radius:var(--r2);background:var(--panel)}
-.agcal{min-width:760px;display:grid;grid-template-columns:repeat(7,minmax(0,1fr))}
+/* Aqui vivia un calendario anterior, y sus restos seguian pesando sobre el de ahora:
+   .agscroll no aparece ni una vez en el marcado --era el contenedor con scroll lateral que
+   justificaba el min-width-- y .agdia hoy significa otra cosa, el grupo de un dia en la
+   lista (linea ~3972), no una celda del mes. Las celdas son .agcel.
+
+   Lo que hacian esos restos:
+     - .agcal{min-width:760px} forzaba el calendario a 760px dentro de una columna de ~343
+       en el telefono. Como ya no habia .agscroll que lo envolviera, se salia por el lado y
+       los nombres de los dias no cuadraban con sus columnas. La Agenda abre en vista
+       calendario por defecto, asi que era lo primero que se veia.
+     - .agdia{min-height:116px;border-right;border-bottom} le ponia 116px de alto minimo y
+       dos bordes sueltos a CADA grupo de dia de la lista, y .agdia:nth-child(7n), .fuera y
+       .hoy no coinciden ya con nada.
+
+   Se quedan .agnum y .agevento, que el marcado de ahora si usa. El tamano del calendario lo
+   fija la regla de mas abajo: repeat(7,1fr) con max-width 820. */
 .agsem{padding:9px 8px;border-bottom:1px solid var(--line);color:var(--mut);font-size:10.5px;
   font-weight:750;text-transform:uppercase;letter-spacing:.5px;text-align:center}
-.agdia{min-height:116px;padding:8px;border-right:1px solid var(--line);border-bottom:1px solid var(--line);
-  min-width:0;background:var(--panel)}
-.agdia:nth-child(7n){border-right:0}
-.agdia.fuera{background:var(--hover);color:var(--mut)}
-.agdia.hoy{box-shadow:inset 0 0 0 2px var(--ink)}
 .agnum{display:block;margin-bottom:6px;font-size:11.5px;font-weight:700}
 .agevento{display:block;width:100%;padding:5px 6px;margin:0 0 4px;border-radius:6px;text-align:left;
   background:var(--ink);color:var(--on-ink);font-size:10.5px;line-height:1.25;overflow:hidden}
@@ -339,10 +368,15 @@ video.mmedia{cursor:default}
 /* Previo de plantilla: se pinta como un globo de WhatsApp a proposito. Lo que hay que
    juzgar antes de enviar no es una ficha tecnica, es el mensaje tal como le va a llegar. */
 .tplprevio{margin:2px 0 14px;padding:10px 12px;border-radius:10px;background:var(--out);
-  color:#111b21;font-size:13.5px;line-height:1.45;white-space:pre-wrap;word-break:break-word;
+  /* var(--fg), no un negro fijo. Con #111b21 el previo era legible en claro y de 2,19:1 en
+     oscuro --por debajo del minimo incluso para texto grande--, o sea una mancha verde. Y
+     este recuadro es justo el que dice "Asi le va a llegar": es lo unico que hay para revisar
+     el mensaje literal antes de gastar una plantilla en un cliente real. El globo de verdad
+     del chat (.globo.sale) ya heredaba var(--fg); solo estos dos previos clavaban el color. */
+  color:var(--fg);font-size:13.5px;line-height:1.45;white-space:pre-wrap;word-break:break-word;
   border:1px solid rgba(0,0,0,.06)}
-.tplprevio .hueco{background:rgba(176,0,0,.14);color:#8a1a1a;border-radius:3px;padding:0 3px;
-  font-weight:600}
+.tplprevio .hueco{background:color-mix(in srgb,var(--bad) 22%,transparent);color:var(--bad);
+  border-radius:3px;padding:0 3px;font-weight:600}
 .tplprevio-t{font-size:11px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;
   color:var(--mut);margin:10px 0 5px}
 .mbotones{margin:6px -9px -6px;display:flex;flex-wrap:wrap}
@@ -580,7 +614,7 @@ video.mmedia{cursor:default}
   display:flex;align-items:center;justify-content:center;margin-top:2px}
 /* El mensaje que se prepararia se ve como el globo que va a ser, no como una cita. */
 .amsg{position:relative;padding:11px 14px;border-radius:10px;background:var(--out);
-  color:#111b21;font-size:13.5px;line-height:1.5;white-space:pre-wrap;
+  color:var(--fg);font-size:13.5px;line-height:1.5;white-space:pre-wrap;
   border:1px solid rgba(0,0,0,.06)}
 .acopiar{position:absolute;top:7px;right:7px;padding:3px 9px;border-radius:6px;
   border:1px solid rgba(0,0,0,.12);background:rgba(255,255,255,.75);color:#111b21;
@@ -880,6 +914,33 @@ video.mmedia{cursor:default}
   .lateral{position:fixed;left:0;top:0;bottom:0;z-index:50;transform:translateX(-100%);
     transition:transform .2s;box-shadow:var(--sombra)}
   body.menu-abierto .lateral{transform:none}
+  .hamb{display:flex}
+  /* A 375px no caben titulo + nombre + "Modo oscuro" + "Manual" + la hamburguesa, y como
+     .der lleva flex:0 0 auto a proposito, lo que sobra se sale de la pantalla en vez de
+     encogerse: "Manual" quedaba cortado contra el borde. Se recorta el hueco y se quita el
+     nombre de quien ha entrado, que ya esta abajo en el menu. */
+  /* La barra pasa a dos lineas en vez de recortarse. A 375px no caben hamburguesa, titulo,
+     "Modo oscuro" y "Manual" en una fila, y como .der lleva flex:0 0 auto a proposito --para
+     que "Manual" no se recorte cuando el titulo es largo-- lo que sobra no encogia: se salia
+     de la pantalla, y esos dos botones no se podian ni leer ni pulsar. Ya pasaba antes de
+     tocar el menu. Envolviendo, la barra crece un poco y no se pierde nada. */
+  .barra{gap:8px;padding:8px 10px;min-width:0;height:auto;flex-wrap:wrap}
+  .barra .quien{display:none}
+  .barra .der{margin-left:auto;min-width:0}
+}
+/* Por debajo de 430px el grupo de la derecha baja a su propia fila, sin depender de que el
+   navegador decida que "no cabe": con flex:1 0 100% la fila se parte siempre. Envolver a
+   secas no bastaba porque el titulo lleva flex:1 --base 0-- asi que la suma de las bases
+   cabia de sobra y nunca se rompia; lo que se salia era el resultado de repartir el espacio
+   sobrante, ya con la fila cerrada. */
+@media(max-width:430px){
+  /* Con grid en vez de flex. Envolver con flex no basta: el titulo lleva flex:1 --base 0--
+     asi que la suma de las bases siempre cabe y la fila nunca se parte; lo que se salia era
+     el reparto del espacio sobrante, con la fila ya cerrada. En grid la segunda fila esta
+     declarada, no deducida, asi que no depende de ningun calculo de sobrantes. */
+  .barra{display:grid;grid-template-columns:auto minmax(0,1fr);align-items:center;
+    row-gap:8px;column-gap:8px}
+  .barra .der{grid-column:1/-1;justify-content:flex-end;margin-left:0}
   #app.on{grid-template-columns:minmax(0,1fr)}
   .barra,.lienzo{grid-column:1}
   .lista{width:100%}
@@ -933,7 +994,12 @@ video.mmedia{cursor:default}
 
   <!-- Sin hamburguesa y sin buscador aqui. Habia dos buscadores en pantalla, y el menu
        estaba entero a la vista igualmente: el boton solo servia para esconderlo. -->
+  <div class="velo" id="velo"></div>
+
   <header class="barra">
+    <button class="hamb" id="hamb" aria-label="Abrir menu" aria-expanded="false">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+    </button>
     <div class="titulo" id="tituloVista"></div>
     <div class="der">
       <span class="quien" id="quien"></span>
@@ -1041,8 +1107,29 @@ function pintaMenu(){
 }
 pintaMenu();
 
-// El menu se ve entero siempre. Ya no hay nada que desplegar.
-document.body.classList.add('menu-abierto');
+// El menu se ve entero siempre: de eso se encarga ahora el CSS de .nav .secundarias, sin
+// depender de ninguna clase. Aqui NO se pone 'menu-abierto', que era el error: esa clase la
+// usa tambien el cajon del movil, asi que ponerla al arrancar dejaba el cajon abierto encima
+// de la aplicacion, y como la hamburguesa se habia quitado no quedaba nada que lo cerrara.
+// En un telefono de 375px el cajon se come 250: de la lista de chats solo asomaba la hora.
+//
+// Ahora 'menu-abierto' significa una sola cosa --el cajon esta abierto-- y solo la mueve la
+// hamburguesa, que el CSS unicamente ensena por debajo de 760px.
+const velo = $('velo'), hamb = $('hamb');
+const cierraMenu = () => {
+  document.body.classList.remove('menu-abierto');
+  hamb?.setAttribute('aria-expanded', 'false');
+};
+hamb?.addEventListener('click', () => {
+  const abierto = document.body.classList.toggle('menu-abierto');
+  hamb.setAttribute('aria-expanded', abierto ? 'true' : 'false');
+});
+velo?.addEventListener('click', cierraMenu);
+// Al elegir una vista el cajon se cierra solo. Sin esto el dueno toca "Kanban", el cajon se
+// queda encima, y parece que el enlace no ha hecho nada.
+$('nav')?.addEventListener('click', ev => { if (ev.target.closest('a')) cierraMenu(); });
+// Escape cierra, que es lo que espera cualquiera que use teclado.
+document.addEventListener('keydown', ev => { if (ev.key === 'Escape') cierraMenu(); });
 
 /* ---- Enrutado ------------------------------------------------------------ */
 let vistaActual = null;
@@ -3363,8 +3450,12 @@ async function pintaScorecard(filas){
     p.suma += media; p.n += 1;
     porPersona.set(id, p);
   }
+  // cargaColaboradores devuelve null cuando la lectura FALLA --distinto de "no hay nadie"--
+  // y aqui se desreferenciaba sin mirar: un 403 por rol o un arranque en frio de la funcion
+  // tiraba un TypeError y la tarjeta entera desaparecia sin decir nada. El ranking se puede
+  // pintar igual: lo unico que falta son los nombres.
   const nombreDe2 = id => {
-    const x = equipo.find(e => String(e.id) === String(id));
+    const x = (equipo || []).find(e => String(e.id) === String(id));
     return x ? (x.name || x.display_name || x.email || 'sin nombre') : 'colaborador ' + String(id).slice(0,6);
   };
   const rank = [...porPersona.entries()]
@@ -3372,6 +3463,7 @@ async function pintaScorecard(filas){
     .sort((a,b) => b.media - a.media);
 
   if (!rank.length && !huerfanas) return '';
+  const sinEquipo = equipo === null;
   return '<div class="pgraf" style="max-width:1000px;margin-bottom:16px">'
     + '<div class="pgcab"><b>Por colaborador</b><span>nota media · nº de opiniones</span></div>'
     + (rank.length
@@ -3386,6 +3478,9 @@ async function pintaScorecard(filas){
     + (huerfanas ? '<p class="cfgnota" style="margin:' + (rank.length ? '12px 0 0' : '0') + '">'
         + huerfanas + ' opinión(es) sin colaborador asignado: no cuentan aquí. '
         + 'Al enviar la encuesta desde el chat, elige quién atendió.</p>' : '')
+    // Sin esto, "colaborador 4f2a1b" en vez de un nombre parece un dato roto en la base.
+    + (sinEquipo ? '<p class="cfgnota" style="margin:12px 0 0">No se pudo leer la lista del '
+        + 'equipo, así que arriba salen códigos en vez de nombres. Las notas sí son correctas.</p>' : '')
     + '</div>';
 }
 
@@ -4808,6 +4903,16 @@ async function cableaEquipo(){
   const pinta = async () => {
     COLABORADORES = null;                       // se relee: acabamos de cambiarla
     const equipo = await cargaColaboradores();
+    // null es "no se pudo leer", [] es "no hay nadie". Tratarlos igual decia "Todavia no hay
+    // nadie dado de alta" cuando el equipo estaba entero, y ademas equipo.length sobre null
+    // tiraba una excepcion DENTRO del await de mas abajo: el cableado del boton "Dar de alta"
+    // no llegaba a ejecutarse y quedaba muerto el resto de la sesion.
+    if (equipo === null) {
+      c.innerHTML = '<p class="cfgnota">No se pudo leer el equipo. '
+        + '<button class="btn-linea" id="cfgEquipoReintentar">Reintentar</button></p>';
+      const rp = $('cfgEquipoReintentar'); if (rp) rp.onclick = () => pinta();
+      return;
+    }
     c.innerHTML = equipo.length
       ? equipo.map(e => '<div class="dato"><div class="k">' + esc(e.role || e.puesto || '—') + '</div>'
           + '<div class="v">' + esc(e.name || e.display_name || e.email || 'sin nombre') + '</div>'
@@ -5653,32 +5758,43 @@ async function escaneaDesinteres(){
   // historial ya esta al dia" aunque el servidor hubiera encontrado ciento ochenta. Un falso
   // todo-en-orden es peor que un error: el error se investiga, esto se cree.
   const filas = r.candidatas || [];
+  // El servidor devuelve la lista RECORTADA a 200, pero 'apply' marca TODAS las que
+  // encuentre --barre hasta 2000 conversaciones--. El panel contaba filas.length, asi que con
+  // mas de 200 candidatas leias "Marcar los 200", confirmabas "Se marcaran 200 contactos" y
+  // se marcaban, por ejemplo, 380. A los 180 que nunca viste se les apaga el marketing y los
+  // seguimientos de golpe, y eso no se deshace con un boton.
+  //
+  // El total venia en la respuesta desde el principio; solo habia que mirarlo.
+  const total = Number.isFinite(Number(r.total)) ? Number(r.total) : filas.length;
+  const recortada = total > filas.length;
   if (!filas.length) {
     $('recoCuerpo').innerHTML = '<p class="bajada">Ninguno. El historial ya está al día: nadie '
       + 'cumple la norma sin estar marcado.</p>';
     return;
   }
   $('recoCuerpo').innerHTML = '<div class="propuesta" style="max-width:900px">'
-    + '<div class="tapa"><b>' + filas.length + ' contacto(s) deberían estar marcados</b></div>'
+    + '<div class="tapa"><b>' + total + ' contacto(s) deberían estar marcados</b></div>'
     + '<div class="cuerpo"><p class="aviso" style="margin:0 0 10px">Recibieron dos seguimientos y no '
     +   'contestaron. Marcarlos apaga marketing y seguimientos; pueden seguir escribiendo y se les '
     +   'puede contestar a mano.</p>'
     + '<div class="destinos">' + filas.slice(0,80).map(f =>
         '<span>' + esc(f.customer_name || f.contact_name || f.wa_phone || f.conversation_id) + '</span>').join('')
-    + (filas.length > 80 ? '<span>… y ' + (filas.length-80) + ' más</span>' : '') + '</div></div>'
-    + '<div class="patas"><button class="btn-solido" id="recoAplicar">Marcar los ' + filas.length + '</button>'
+    + (total > 80 ? '<span>… y ' + (total-80) + ' más</span>' : '') + '</div></div>'
+    + (recortada ? '<p class="aviso" style="margin:0 12px 10px">De los ' + total + ' solo se '
+        + 'pueden listar ' + filas.length + ' aquí, pero el botón los marca <b>todos</b>.</p>' : '')
+    + '<div class="patas"><button class="btn-solido" id="recoAplicar">Marcar los ' + total + '</button>'
     +   '<button class="btn-linea" id="recoCancelar">Cancelar</button></div></div>';
   $('recoCancelar').onclick = () => { $('recoCuerpo').innerHTML = ''; };
   $('recoAplicar').onclick = async () => {
-    if (!confirm('Se marcarán ' + filas.length + ' contactos como desinteresados.\n\n'
+    if (!confirm('Se marcarán ' + total + ' contactos como desinteresados.\n\n'
       + 'Dejan de contar en las métricas y de recibir marketing y seguimientos.\n\n¿Continuar?')) return;
     const ap = $('recoAplicar');
     ap.disabled = true; ap.textContent = 'Marcando…';
     const r2 = await llama({ action:'disinterest', operation:'apply' });
     ap.disabled = false;
-    if (!r2.ok) { ap.textContent = 'Marcar los ' + filas.length; return avisa('No se pudo aplicar', r2.error); }
+    if (!r2.ok) { ap.textContent = 'Marcar los ' + total; return avisa('No se pudo aplicar', r2.error); }
     $('recoCuerpo').innerHTML = '<p class="bajada">Historial reconstruido: '
-      + (r2.marcadas ?? filas.length) + ' contacto(s) marcados.</p>';
+      + (r2.marcadas ?? total) + ' contacto(s) marcados.</p>';
     avisa('Historial reconstruido', 'Ya no cuentan en las métricas.');
   };
 }
@@ -6242,6 +6358,14 @@ function abreEncuesta(c){
 
   cargaColaboradores().then(lista => {
     const s = $('encColab'); if (!s) return;
+    // lista.map sobre null reventaba dentro del .then: la promesa quedaba rechazada sin que
+    // nadie la mirara y el desplegable se quedaba con "— sin especificar —" y nada mas. El
+    // agente mandaba la encuesta sin colaborador, y esa opinion no cuenta en el ranking.
+    if (lista === null) {
+      s.innerHTML = '<option value="">— sin especificar —</option>'
+        + '<option disabled>(no se pudo leer el equipo: la nota no se le asignará a nadie)</option>';
+      return;
+    }
     s.innerHTML = '<option value="">— sin especificar —</option>'
       + lista.map(x => '<option value="' + esc(x.id || '') + '">'
         + esc(x.name || x.display_name || x.email || 'sin nombre') + '</option>').join('');
