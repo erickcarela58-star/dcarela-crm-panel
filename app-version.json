@@ -1,6 +1,6 @@
 {
-  "version": "2026-09-05-ruta-instagram-corregida-v84",
+  "version": "2026-09-05-importar-dice-que-paso-v85",
   "channel": "crm",
   "released_at": "2026-09-05T00:00:00Z",
-  "summary": "La ruta del ajuste de Instagram llevaba un nivel de menos, y ahora avisa de que las Solicitudes de mas de 30 dias no vuelven nunca."
+  "summary": "El resultado de importar historial se queda escrito en la tarjeta del canal, y el boton lleva contador: una espera de 20 segundos ya no parece un cuelgue."
 }
