@@ -4447,9 +4447,16 @@ async function pintaCanales(){
       const limite = pegas.length ? '' : ' Meta no tiene más que enseñar por su API: esto es '
         + 'todo lo que deja ver de este canal.'
         + (sinc.dataset.sync === 'instagram'
+          // La ruta lleva un nivel mas del que se puso al principio: "Controles de mensajes"
+          // va entre medias, y sin ese paso no aparece "Herramientas conectadas". Verificado
+          // contra la ayuda de Meta el 05/09/2026, despues de que el dueno no la encontrara.
           ? ' Si en el teléfono ves más chats, quien no los comparte es la app de Instagram: '
-            + 'Configuración → Mensajes y respuestas a historias → Herramientas conectadas → '
-            + 'Permitir acceso a los mensajes.'
+            + 'Configuración y privacidad → Mensajes y respuestas a historias → Controles de '
+            + 'mensajes → Herramientas conectadas → Permitir acceso a los mensajes. '
+            // Y aunque se active, hay una parte que no volvera nunca: conviene saberlo antes
+            // de dar por hecho que el CRM esta roto.
+            + 'Aun así, los mensajes de la carpeta Solicitudes con más de 30 días Meta no los '
+            + 'devuelve nunca, por mucho que se active el permiso.'
           : ' Los chats de Marketplace que vendes desde tu perfil personal no pasan por aquí: '
             + 'Meta retiró hace años el permiso que los leía. Solo entran los de Marketplace '
             + 'vendidos desde la página.');
