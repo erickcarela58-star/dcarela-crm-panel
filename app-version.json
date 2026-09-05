@@ -1,6 +1,6 @@
 {
-  "version": "2026-09-05-auditoria-cinco-frentes-v83",
+  "version": "2026-09-05-ruta-instagram-corregida-v84",
   "channel": "crm",
   "released_at": "2026-09-05T00:00:00Z",
-  "summary": "Once fallos salidos de una auditoria de cinco frentes: campanas que se cortaban solas, cuentas que se desactivaban al cambiar el rol, consentimiento que no se aplicaba en IG y Messenger, y el panel usable en el telefono."
+  "summary": "La ruta del ajuste de Instagram llevaba un nivel de menos, y ahora avisa de que las Solicitudes de mas de 30 dias no vuelven nunca."
 }
