@@ -1177,6 +1177,9 @@ async function llama(cuerpo){
 }
 const callFn = cuerpo => llama(cuerpo);
 
+// Lo que dejo la ultima importacion de cada red, para que no se pierda con el aviso.
+const ULTIMA_IMPORTACION = {};
+
 /* ---- Datos en vivo ------------------------------------------------------- */
 let CONVS = [], MSGS = [], sel = null, paraMsgs = null;
 
@@ -4363,6 +4366,13 @@ async function pintaCanales(){
   // de datos habria puesto dos credenciales en el navegador.
   const est = await llama({ action:'socialStatus' });
   const redes = est.ok ? (est.redes || {}) : {};
+  // El resultado de una importacion vivia SOLO en un aviso que se borra a los 4,2 segundos,
+  // y la importacion tarda unos veinte. O sea que quien pulsa el boton, mira a otro lado
+  // mientras espera --que es lo que se hace-- y vuelve, no encuentra el resultado en ninguna
+  // parte. Y si no entro ningun mensaje, la pantalla queda exactamente igual que antes: la
+  // unica lectura posible es "no hizo nada". Paso de verdad, tres veces seguidas.
+  //
+  // Ahora el resultado se queda escrito en la tarjeta del canal hasta la siguiente.
   const tarjetaRed = (clave, estadoGuardado, detalle) => {
     const hay = cuenta(clave);
     const suscrita = estadoGuardado?.suscrita === true;
@@ -4378,6 +4388,7 @@ async function pintaCanales(){
               + (estadoGuardado.ultimo_sync_at
                   ? ' Último historial importado: ' + esc(String(estadoGuardado.ultimo_sync_at).slice(0,16).replace('T',' ')) + '.'
                   : ' Todavía no se ha importado el historial.')
+              + (ULTIMA_IMPORTACION[clave] ? '<br>' + ULTIMA_IMPORTACION[clave] : '')
             : ''),
       '<button class="btn-linea" data-conecta="' + clave + '">'
       + (conectada ? 'Volver a iniciar sesión' : 'Iniciar sesión y dar permisos') + '</button>'
@@ -4422,7 +4433,14 @@ async function pintaCanales(){
     if (sinc) {
       const antes = sinc.textContent;
       sinc.disabled = true; sinc.textContent = 'Importando…';
+      // Con el contador corriendo se ve que sigue viva. Una importacion de Instagram tarda
+      // unos veinte segundos --Meta responde despacio y hay que reintentar-- y un boton que
+      // dice "Importando…" sin moverse durante ese rato es indistinguible de uno colgado.
+      // Pulsarlo otra vez es lo natural, y es justo lo peor: Meta ya esta limitando.
+      let seg = 0;
+      const reloj = setInterval(() => { seg += 1; sinc.textContent = 'Importando… ' + seg + ' s'; }, 1000);
       const r = await llama({ action:'syncSocial', red: sinc.dataset.sync, paginas: 25 });
+      clearInterval(reloj);
       sinc.disabled = false; sinc.textContent = antes;
       if (!r.ok) return avisa('No se pudo importar', r.error);
       // Se dicen los dos numeros: si hay hilos pero cero mensajes nuevos, es que ya
@@ -4460,6 +4478,19 @@ async function pintaCanales(){
           : ' Los chats de Marketplace que vendes desde tu perfil personal no pasan por aquí: '
             + 'Meta retiró hace años el permiso que los leía. Solo entran los de Marketplace '
             + 'vendidos desde la página.');
+      const red = sinc.dataset.sync;
+      const cuando = new Date().toLocaleTimeString('es-DO', { hour:'2-digit', minute:'2-digit' });
+      // "0 mensajes nuevos" NO es un fallo, y hay que decirlo con esas palabras: significa
+      // que ya estaban todos. Sin eso se lee como que la importacion no funciono.
+      const resumen = r.mensajes === 0
+        ? '<b>' + cuando + ':</b> ' + r.hilos + ' conversación(es), ninguna novedad — ya estaban '
+          + 'todas importadas.'
+        : '<b>' + cuando + ':</b> ' + r.hilos + ' conversación(es), ' + r.mensajes + ' mensaje(s) nuevo(s).';
+      ULTIMA_IMPORTACION[red] = resumen
+        + (pegas.length ? ' ' + esc(pegas.join('. ')) + '.' : '')
+        // El tope de Meta se repite aqui porque es donde se mira despues, no en el aviso.
+        + (!pegas.length && red === 'instagram'
+            ? ' Instagram no expone más: volver a pulsar no va a traer nada.' : '');
       avisa(pegas.length ? 'Historial importado a medias' : 'Historial importado',
         r.hilos + ' conversación(es), ' + r.mensajes + ' mensaje(s) nuevo(s).'
         + (pegas.length ? ' ' + pegas.join('. ') + '.' : limite));
