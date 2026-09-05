@@ -1,6 +1,6 @@
 {
-  "version": "2026-09-05-avisos-de-mensaje-nuevo-v86",
+  "version": "2026-09-05-regresiones-de-hoy-v87",
   "channel": "crm",
   "released_at": "2026-09-05T00:00:00Z",
-  "summary": "El panel avisa cuando escribe un cliente: contador en la pestana del navegador y notificacion de Chrome. Antes solo cambiaba un globito del menu lateral."
+  "summary": "Siete regresiones introducidas hoy, encontradas auditando mis propios cambios: la tanda automatica no podia enviar nada, los recordatorios de sesion se cancelaban solos, y el primer mensaje de un cliente nuevo no avisaba."
 }
