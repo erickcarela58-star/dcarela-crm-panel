@@ -1,6 +1,6 @@
 {
-  "version": "2026-09-05-regresiones-de-hoy-v87",
+  "version": "2026-09-07-la-llave-de-mas-v88",
   "channel": "crm",
-  "released_at": "2026-09-05T00:00:00Z",
-  "summary": "Siete regresiones introducidas hoy, encontradas auditando mis propios cambios: la tanda automatica no podia enviar nada, los recordatorios de sesion se cancelaban solos, y el primer mensaje de un cliente nuevo no avisaba."
+  "released_at": "2026-09-07T00:00:00Z",
+  "summary": "Entre 431 y 760 px el panel se quedaba con la rejilla de escritorio por una llave de mas, y la palabra 'baja' suelta daba de baja total a quien preguntaba por la resolucion."
 }
