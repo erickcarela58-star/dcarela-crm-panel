@@ -1,6 +1,6 @@
 {
-  "version": "2026-09-09-solo-whatsapp-v90",
+  "version": "2026-09-09-guardar-borraba-v91",
   "channel": "crm",
   "released_at": "2026-09-09T00:00:00Z",
-  "summary": "Las automatizaciones vuelven a ser solo de WhatsApp, y cada canal dice cuando entro su ultimo mensaje: 'conectado' no queria decir que llegara nada."
+  "summary": "Las reglas del negocio se cargan al abrir el cuadro. Abriendolo desde Configuracion salia vacio y pulsar Guardar borraba las reglas reales."
 }
