@@ -148,6 +148,11 @@ body.menu-abierto .velo{display:block}
    :hover tambien delataba lo contrario de la verdad, porque seguia iluminando un boton
    muerto; por eso ahora lleva :not(:disabled). */
 .btn-linea:disabled{opacity:.45;cursor:not-allowed}
+/* El campo del numero a vincular va en la misma fila que los botones del puente, asi que
+   comparte alto y borde con ellos: si no, se ve como un injerto. */
+.entrada-linea{padding:8px 12px;border:1px solid var(--line2);border-radius:var(--r);
+  background:var(--panel);color:var(--fg);font-size:12.5px;width:150px;flex:0 0 auto}
+.entrada-linea:focus{outline:2px solid var(--ink);outline-offset:-1px}
 .quien{font-size:11.5px;color:var(--mut);max-width:190px;overflow:hidden;
   text-overflow:ellipsis;white-space:nowrap}
 
@@ -4271,6 +4276,9 @@ function bridgeControlsHtml(p){
   const botEnabled = p.bot_enabled === true;
   return '<div class="bridge-tools">'
     + '<button class="btn-linea" id="bridgeRefreshBtn">Actualizar estado</button>'
+    + '<input id="bridgePairPhone" class="entrada-linea" inputmode="numeric" '
+    +   'placeholder="18091234567" value="' + esc(TELEFONO_PUENTE) + '" '
+    +   'aria-label="Número a vincular" title="Código de país y solo dígitos">'
     + '<button class="btn-linea" id="bridgePairBtn">Generar código</button>'
     + '<button class="btn-linea" id="bridgePauseBtn">Pausar envíos</button>'
     + '<button class="btn-linea" id="bridgeHistoryBtn">Sincronizar historial</button>'
@@ -4285,8 +4293,7 @@ function bridgeControlsHtml(p){
     // solo admite la linea Fotos --el servidor rechaza cualquier otra-- asi que el codigo
     // salia siempre para ese numero y quien lo metia en otro telefono recibia de WhatsApp un
     // "no se puede vincular dispositivo" que no explica nada. Ahora se dice antes de teclear.
-    +   '<p class="bridge-meta"><b>Este código es solo para el ' + esc(TELEFONO_PUENTE_BONITO) + '</b>'
-    +     ' — en cualquier otro teléfono WhatsApp lo rechaza.</p>'
+    +   '<p class="bridge-meta" id="bridgeCodeFor"></p>'
     +   '<p class="bridge-meta" id="bridgeCodeMeta">Preparando el código seguro…</p>'
     +   '<button class="btn-linea danger" id="bridgeCancelPair">Cancelar</button>'
     + '</div>'
@@ -4360,7 +4367,22 @@ async function refreshBridgeStatus(){
 }
 
 async function requestBridgePairing(){
-  const phone = TELEFONO_PUENTE;
+  // El numero lo escribe el dueno. Antes estaba fijo en el codigo y el servidor ademas solo
+  // aceptaba uno: no habia donde teclearlo, y el codigo salia siempre para otra linea. Metido
+  // en el telefono equivocado, WhatsApp responde "no se puede vincular dispositivo" y no
+  // explica nada -- ese rato ya se perdio una vez.
+  const campo = $('bridgePairPhone');
+  const phone = soloDigitos(campo ? campo.value : TELEFONO_PUENTE);
+  if (!/^[1-9][0-9]{7,14}$/.test(phone)) {
+    if (campo) campo.focus();
+    return renderBridgeControlState(bridgeControlState,
+      'Escribe el número con código de país y solo dígitos. Por ejemplo 18091234567.');
+  }
+  // Se deja dicho ANTES de que salga el codigo: es lo unico que evita teclearlo donde no va.
+  const bonito = phone.replace(/^1(\d{3})(\d{3})(\d{4})$/, '$1-$2-$3');
+  const para = $('bridgeCodeFor');
+  if (para) para.innerHTML = '<b>Este código es solo para el ' + esc(bonito) + '</b>'
+    + ' — en cualquier otro teléfono WhatsApp lo rechaza.';
   const result = await callBridgeControl('request_pairing', { phone });
   if (result.bridge) renderBridgeControlState(result.bridge, result.ok ? '' : result.error);
   else renderBridgeControlState(bridgeControlState, result.error || 'No se pudo pedir el código.');
