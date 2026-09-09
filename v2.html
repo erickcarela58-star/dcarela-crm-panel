@@ -4325,6 +4325,7 @@ function formatBridgeCode(value){
 async function callBridgeControl(action, payload = {}){
   const actionMap = {
     status:'bridgeStatus', request_pairing:'requestBridgePairing', cancel:'cancelBridgePairing',
+    activate:'activateBridgeTransport',
     pause:'pauseBridge', resume:'resumeBridge', logout:'logoutBridge',
     sync_history:'syncBridgeHistory', rebuild_link:'rebuildBridge',
     enable_photo_bot:'setPhotoBot', disable_photo_bot:'setPhotoBot',
@@ -4345,6 +4346,7 @@ function bridgeControlsHtml(p){
     +   'placeholder="18091234567" value="' + esc(TELEFONO_PUENTE) + '" '
     +   'aria-label="Número a vincular" title="Código de país y solo dígitos">'
     + '<button class="btn-linea" id="bridgePairBtn">Generar código</button>'
+    + '<button class="btn-linea" id="bridgeActivateBtn" hidden>Activar envíos de este número</button>'
     + '<button class="btn-linea" id="bridgePauseBtn">Pausar envíos</button>'
     + '<button class="btn-linea" id="bridgeHistoryBtn">Sincronizar historial</button>'
     + '<button class="btn-linea" id="bridgeRebuildBtn">Reconstruir vínculo e historial</button>'
@@ -4390,6 +4392,12 @@ function renderBridgeControlState(state, explicitError = ''){
   if (pair) {
     pair.disabled = !hostOnline || active || connected;
     pair.textContent = active ? 'Procesando…' : (connected ? 'Ya vinculado' : 'Generar código');
+  }
+  const activar = $('bridgeActivateBtn');
+  if (activar) {
+    const bloqueado = String(bridgeControlState.transport_mode || 'reconnect_only') !== 'active';
+    activar.hidden = !(connected && bloqueado);
+    activar.disabled = !hostOnline;
   }
   const pause = $('bridgePauseBtn');
   if (pause) {
@@ -4532,6 +4540,21 @@ async function cancelBridgePairing(){
   else renderBridgeControlState(bridgeControlState, result.error || 'No se pudo cancelar.');
 }
 
+// El transporte del segundo numero nace bloqueado --transport_mode 'reconnect_only'-- y hasta
+// ahora no habia forma de desbloquearlo: "Reanudar envios" contestaba siempre "los envios
+// siguen bloqueados hasta validar la reconexion" y la validacion no existia en ninguna parte.
+// Este es ese paso, y sigue siendo deliberado: hay que confirmarlo escribiendo.
+async function activateBridgeTransport(){
+  if (!window.confirm('Vas a ACTIVAR los envíos por el segundo número.\n\n'
+    + 'A partir de aquí este CRM puede escribir por WhatsApp Web. Los envíos masivos van con '
+    + 'freno (40 a 120 s entre mensajes, pausa de 10 min cada 20, tope de 80 al día), pero es '
+    + 'un número personal: si se abusa, WhatsApp lo bloquea.\n\n¿Continuar?')) return;
+  const result = await callBridgeControl('activate', { confirmation: 'ACTIVAR ENVIOS' });
+  if (result.bridge) renderBridgeControlState(result.bridge, result.ok ? '' : result.error);
+  else renderBridgeControlState(bridgeControlState, result.error || 'No se pudo activar.');
+  if (result.ok) avisa('Envíos activados', 'Ya puedes escribir por el segundo número.');
+}
+
 async function toggleBridgePause(){
   const result = await callBridgeControl(bridgeControlState.paused ? 'resume' : 'pause');
   if (result.bridge) renderBridgeControlState(result.bridge, result.ok ? '' : result.error);
@@ -4572,6 +4595,7 @@ function bindBridgeControls(){
   if ($('bridgePairBtn')) $('bridgePairBtn').onclick = requestBridgePairing;
   if ($('bridgeCancelPair')) $('bridgeCancelPair').onclick = cancelBridgePairing;
   if ($('bridgePauseBtn')) $('bridgePauseBtn').onclick = toggleBridgePause;
+  if ($('bridgeActivateBtn')) $('bridgeActivateBtn').onclick = activateBridgeTransport;
   if ($('bridgeRefreshBtn')) $('bridgeRefreshBtn').onclick = refreshBridgeStatus;
   if ($('bridgeHistoryBtn')) $('bridgeHistoryBtn').onclick = requestBridgeHistorySync;
   if ($('bridgeRebuildBtn')) $('bridgeRebuildBtn').onclick = rebuildBridgeLinkAndHistory;
