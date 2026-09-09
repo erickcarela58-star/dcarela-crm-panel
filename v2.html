@@ -4431,13 +4431,32 @@ async function pintaCanales(){
   bridgeControlState = p;
 
   const cuenta = clave => CONVS.filter(c => canalDe(c) === clave).length;
+  // "Conectado" no quiere decir que llegue nada. Una red puede estar suscrita, con su token
+  // vivo y su historial importado, y aun asi no entregar un solo mensaje nuevo -- que es
+  // exactamente lo que pasa con Instagram y Messenger mientras la app siga sin publicar en
+  // Meta. La tarjeta se veia en verde igual, y eso hace creer que el canal esta atendiendo
+  // clientes cuando lleva meses mudo.
+  //
+  // La fecha del ultimo mensaje ENTRANTE no se puede discutir ni se queda vieja: si hoy
+  // entra uno, se actualiza sola. Vale para los cuatro canales, no solo para las redes: un
+  // WhatsApp callado tres semanas tambien es algo que hay que ver.
+  const ultimoEntrante = (clave) => {
+    const fechas = CONVS.filter(c => canalDe(c) === clave)
+      .map(c => String(c.last_customer_reply_at || '')).filter(Boolean).sort();
+    const ultima = fechas[fechas.length - 1];
+    if (!ultima) return '';
+    const dias = Math.floor((Date.now() - Date.parse(ultima)) / 86400000);
+    if (!Number.isFinite(dias)) return '';
+    return ' · último recibido ' + (dias <= 0 ? 'hoy' : dias === 1 ? 'ayer' : 'hace ' + dias + ' días');
+  };
+
   const tarjeta = (clave, listo, detalle, acciones) => {
     const d = CANALES[clave];
     return '<div class="canal">'
       + '<div class="cabecera-canal">'
       +   '<span class="clogo" style="background:' + d.color + '22;color:' + d.color + '">' + d.logo + '</span>'
       +   '<div class="cinfo"><b>' + esc(d.nombre) + '</b>'
-      +     '<span>' + cuenta(clave) + ' conversación(es)</span></div>'
+      +     '<span>' + cuenta(clave) + ' conversación(es)' + ultimoEntrante(clave) + '</span></div>'
       +   '<i class="chip ' + (listo === true ? 'ok' : listo === false ? 'mal' : 'medio') + '">'
       +     (listo === true ? 'conectado' : listo === false ? 'sin conectar' : 'sin usar') + '</i>'
       + '</div>'
