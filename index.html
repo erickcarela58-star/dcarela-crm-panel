@@ -150,6 +150,21 @@ body.menu-abierto .velo{display:block}
 .btn-linea:disabled{opacity:.45;cursor:not-allowed}
 /* El campo del numero a vincular va en la misma fila que los botones del puente, asi que
    comparte alto y borde con ellos: si no, se ve como un injerto. */
+/* La x aparece al pasar el cursor. Visible siempre ocuparia sitio en una barra que ya va
+   justa, y en tactil no hay hover: por eso en pantallas sin puntero se queda fija. */
+.filtro .quitaetq{display:none;margin-left:6px;font-style:normal;opacity:.55;font-size:13px;
+  line-height:1}
+.filtro:hover .quitaetq,.filtro:focus-within .quitaetq{display:inline}
+.filtro .quitaetq:hover{opacity:1;color:var(--bad)}
+@media(hover:none){.filtro .quitaetq{display:inline}}
+.filtro.masetq{font-weight:700;padding-left:11px;padding-right:11px}
+.etqlista{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:6px;
+  max-height:340px;overflow-y:auto}
+.etqop{display:flex;align-items:center;gap:8px;padding:7px 9px;border:1px solid var(--line);
+  border-radius:var(--r);font-size:12.5px;cursor:pointer}
+.etqop:hover{background:var(--hover)}
+.etqop span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.etqop b{color:var(--mut);font-weight:600}
 .entrada-linea{padding:8px 12px;border:1px solid var(--line2);border-radius:var(--r);
   background:var(--panel);color:var(--fg);font-size:12.5px;width:150px;flex:0 0 auto}
 .entrada-linea:focus{outline:2px solid var(--ink);outline-offset:-1px}
@@ -1452,7 +1467,26 @@ function montaConversaciones(){
     + '<div class="vacio" id="sinChat">Selecciona una conversación para verla.</div>'
     + '<aside class="ficha" id="ficha" style="display:none"></aside>');
   $('buscaChat').addEventListener('input', pintaChats);
-  $('filtros').addEventListener('click', ev => {
+  $('filtros').addEventListener('click', async ev => {
+    // La x va ANTES que el filtro: esta dentro del boton, asi que sin cortar aqui quitar una
+    // etiqueta la seleccionaria de paso, y la barra se repintaria con el filtro puesto en una
+    // etiqueta que acaba de desaparecer.
+    const x = ev.target.closest('[data-quitaetq]');
+    if (x) {
+      ev.stopPropagation();
+      const fuera = x.dataset.quitaetq;
+      const quedan = etiquetasElegidas().filter(e => e !== fuera);
+      // Si era la ultima, la lista queda vacia y eso significa "automatico", no "ninguna".
+      // Se dice, porque volver al automatico no es lo mismo que quedarse sin barra.
+      if (!await guardaAjuste('etiquetas_filtro', quedan.join(','))) return;
+      if (filtro === 'etq:' + fuera) filtro = 'todos';
+      pintaChats();
+      avisa('Etiqueta quitada de la barra', quedan.length
+        ? 'Sigue en las fichas; solo deja de ocupar sitio arriba.'
+        : 'Sin ninguna elegida, la barra vuelve a enseñar sola las más usadas.');
+      return;
+    }
+    if (ev.target.closest('#masEtq')) { abreEtiquetasBarra(); return; }
     const b = ev.target.closest('[data-filtro]');
     if (!b) return;
     filtro = b.dataset.filtro; pintaChats();
@@ -1588,9 +1622,20 @@ function pintaChats(){
       const n2 = f.startsWith('etq:') ? CONVS.filter(c => !puenteApagado(c) && etiquetasDe(c).includes(f.slice(4))).length
         : f.startsWith('can:') ? CONVS.filter(c => canalDe(c) === f.slice(4)).length
         : cuenta(f);
+      // La x solo en las de etiqueta, y solo cuando el negocio ha elegido lista propia: en
+      // modo automatico no hay nada que quitar --la barra se recalcula sola-- y una x que no
+      // hace lo que promete es peor que no tenerla.
+      const quitable = f.startsWith('etq:') && elegidas.length;
       return '<button class="filtro' + (filtro===f?' on':'') + (f.startsWith('etq:')?' etqf':'')
-        + '" data-filtro="' + esc(f) + '">' + esc(n) + '<b>' + n2 + '</b></button>';
-    }).join('');
+        + '" data-filtro="' + esc(f) + '">' + esc(n) + '<b>' + n2 + '</b>'
+        + (quitable ? '<i class="quitaetq" data-quitaetq="' + esc(f.slice(4))
+            + '" title="Quitar de la barra" aria-label="Quitar ' + esc(n) + ' de la barra">×</i>' : '')
+        + '</button>';
+    }).join('')
+    // El + va al final, siempre. Elegir que etiquetas se ven estaba solo en Configuracion,
+    // a cuatro clics de donde se usan: quien filtra esta mirando la barra, no los ajustes.
+    + '<button class="filtro masetq" id="masEtq" title="Elegir etiquetas de la barra" '
+    +   'aria-label="Elegir etiquetas de la barra">+</button>';
 
   const filas = filtradas();
   if (!filas.length) {
@@ -6707,6 +6752,46 @@ function etiquetasEnUso(){
 // verian filtros distintos y ninguna sabria por que. Vacio significa automatico.
 function etiquetasElegidas(){
   return String(AJUSTES.etiquetas_filtro || '').split(',').map(s => s.trim()).filter(Boolean);
+}
+
+// El recuadro del boton +. Elegir que etiquetas se ven estaba solo en Configuracion, a cuatro
+// clics de donde se usan: quien esta filtrando mira la barra, no los ajustes. Es la misma
+// lista y el mismo ajuste del servidor -- no una copia local -- asi que lo que se marque aqui
+// se ve igual en Configuracion y para todo el equipo.
+function abreEtiquetasBarra(){
+  const todas = etiquetasContadas();
+  const elegidas = new Set(etiquetasElegidas());
+  if (!todas.length) {
+    return avisa('Todavía no hay etiquetas', 'Se crean solas al etiquetar conversaciones.');
+  }
+  abreModal('<div class="mtapa"><b>Etiquetas de la barra</b><button class="cerrarm" data-cerrar>×</button></div>'
+    + '<div class="mcuerpo">'
+    + '<p class="aviso">Marca las que quieres ver arriba. El número es en cuántas '
+    +   'conversaciones está cada una. Si no marcas ninguna, la barra enseña sola las más usadas.</p>'
+    + '<div class="etqlista">' + todas.map(([e, n]) =>
+        '<label class="etqop"><input type="checkbox" value="' + esc(e) + '"'
+        + (elegidas.has(e) ? ' checked' : '') + '> <span>' + esc(e) + '</span>'
+        + '<b>' + n + '</b></label>').join('')
+    + '</div></div>'
+    + '<div class="mpatas"><span class="quien" id="etqNota"></span>'
+    +   '<button class="btn-solido" id="etqGuardar">Guardar</button></div>');
+  $('modal').querySelectorAll('[data-cerrar]').forEach(b => { b.onclick = cierraModal; });
+  $('etqGuardar').onclick = async () => {
+    const marcadas = [...$('modal').querySelectorAll('.etqlista input:checked')].map(i => i.value);
+    const boton = $('etqGuardar');
+    boton.disabled = true;
+    const ok = await guardaAjuste('etiquetas_filtro', marcadas.join(','));
+    boton.disabled = false;
+    // Solo se cierra si guardo. Cerrar pase lo que pase es lo que hizo creer que las reglas
+    // del negocio se habian guardado cuando no.
+    if (!ok) return;
+    if (filtro.startsWith('etq:') && marcadas.length && !marcadas.includes(filtro.slice(4))) filtro = 'todos';
+    cierraModal();
+    pintaChats();
+    avisa('Barra actualizada', marcadas.length
+      ? marcadas.length + ' etiqueta(s) en la barra.'
+      : 'Sin ninguna elegida: la barra vuelve a enseñar sola las más usadas.');
+  };
 }
 
 // Historial del lead y sus archivos, juntos y fuera del hilo. Los adjuntos salen de los
