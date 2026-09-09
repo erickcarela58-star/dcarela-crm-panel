@@ -1,6 +1,6 @@
 {
-  "version": "2026-09-09-en-pausa-no-es-desconectado-v100",
+  "version": "2026-09-09-la-llave-que-faltaba-v101",
   "channel": "crm",
   "released_at": "2026-09-09T00:00:00Z",
-  "summary": "Vinculado y en pausa deja de verse como desconectado: era por eso que no podias enviar por el 2.º numero. Y los adjuntos dicen por que no traen archivo."
+  "summary": "El 2.º numero no podia enviar nada: transport_mode nacia bloqueado y nada en el codigo lo desbloqueaba nunca. Ya existe el boton para validarlo."
 }
