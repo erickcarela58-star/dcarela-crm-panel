@@ -1082,7 +1082,13 @@ function perteneceAlCanal(c){
   const numero = soloDigitos(c?.business_number);
   const esFotos = fuente === 'whatsapp_qr' || fuente === 'photos'
     || (NUMERO_FOTOS && numero === NUMERO_FOTOS);
-  return CANAL_FOTOS ? esFotos : !esFotos;
+  // El panel de Fotos atiende SOLO su linea: ahi el filtro sigue siendo excluyente.
+  //
+  // Este, el comercial, enseña LOS DOS numeros. Antes excluia el del puente, y por eso se
+  // podia vincular y sincronizar el historial desde aqui sin que apareciera un solo mensaje:
+  // la barra llegaba al 100% y la pantalla seguia vacia. El dueño lo quiere en este CRM, con
+  // sus frenos anti-bloqueo, asi que aqui no se esconde nada.
+  return CANAL_FOTOS ? esFotos : true;
 }
 ['sigla','siglaAcceso'].forEach(id => { $(id).textContent = sigla; });
 $('marca').textContent = CFG.productName || 'CRM';
@@ -4346,10 +4352,17 @@ function renderBridgeControlState(state, explicitError = ''){
   if ($('bridgeHistoryState')) {
     const imported = Number(bridgeControlState.history_sync_imported || 0);
     const duplicates = Number(bridgeControlState.history_sync_duplicates || 0);
+    // El puente guarda el MOTIVO en history_sync_last_error, y el panel enseñaba solo
+    // "Historial: error." -- una palabra que no se puede investigar. "WhatsApp no esta
+    // conectado" y "se corto a mitad" piden cosas distintas, y aqui se veian igual.
+    const motivo = String(bridgeControlState.history_sync_last_error || '').trim();
     $('bridgeHistoryState').textContent = historyStatus === 'completed'
       ? 'Historial completado: ' + imported + ' nuevos; ' + duplicates + ' duplicados omitidos.'
       : historyActive ? 'Historial en proceso: ' + Number(bridgeControlState.history_sync_progress || 0) + '%.'
-        : 'Historial: ' + historyStatus + '.';
+        : historyStatus === 'error'
+          ? 'Historial: ' + (motivo || 'se cortó sin decir por qué')
+            + (imported ? ' Se guardaron ' + imported + ' antes de cortarse.' : '')
+          : 'Historial: ' + historyStatus + '.';
   }
   if ($('bridgeRebuildState')) $('bridgeRebuildState').textContent =
     'Reconstruir renueva solo el vínculo local; conserva conversaciones y mensajes del CRM.';
@@ -4579,20 +4592,16 @@ async function pintaCanales(){
         + (estado.bot_enabled ? 'encendido' : 'apagado') + '</button>')
 
     + tarjeta('whatsapp_qr', puenteListo ? true : (cuenta('whatsapp_qr') ? false : null),
-      // AVISO GRANDE, y va aqui porque es lo que hace perder una tarde: este panel NO enseña
-      // las conversaciones de este numero. perteneceAlCanal las excluye a proposito
-      // (CANAL_FOTOS es false aqui), porque el segundo numero se atiende en el panel de
-      // Fotos. Desde aqui se vincula y se sincroniza, y el historial entra en la base -- pero
-      // los mensajes salen en el OTRO panel. Sin decirlo, se ve una barra llegar al 100% y
-      // ni un mensaje, y la conclusion logica es que la sincronizacion no funciona.
       (puenteListo
         ? 'Segundo número conectado por WhatsApp Web. <b>Era el de pruebas</b>: si ya no se usa, desconéctalo.'
         : 'Sin sesión activa. Este canal usa WhatsApp Web, no el API: no admite plantillas '
           + 'ni difusiones, solo conversación dentro de la ventana normal.')
-      + '<br><b>Sus conversaciones no se ven en este panel</b>, aunque el historial se '
-      + 'sincronice desde aquí: este CRM atiende el número oficial. Las de este número salen '
-      + 'en <a href="https://fotos.dcarelacompufoto.com" target="_blank" rel="noopener">'
-      + 'fotos.dcarelacompufoto.com</a>.',
+      // Los frenos no son un detalle: son la diferencia entre una campana y un numero
+      // bloqueado. Se dicen aqui porque es donde se decide usar este canal.
+      + '<br>Sus conversaciones <b>sí</b> se ven aquí, junto a las del número oficial. '
+      + 'En envíos masivos va con freno: <b>40 a 120 s entre mensajes</b>, pausa de '
+      + '<b>10 min cada 20</b>, tope de <b>80 al día</b>, texto variado por destinatario y '
+      + 'solo a quien ya te escribió y no se dio de baja.',
       bridgeControlsHtml(p))
 
     + tarjetaRed('instagram', redes.instagram,
