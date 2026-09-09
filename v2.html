@@ -1475,7 +1475,9 @@ function montaConversaciones(){
     if (x) {
       ev.stopPropagation();
       const fuera = x.dataset.quitaetq;
-      const quedan = etiquetasElegidas().filter(e => e !== fuera);
+      // En automatico no hay lista guardada: se fija la que se esta viendo, menos la quitada.
+      // Sin esto, quitar una en automatico no guardaria nada y volveria a salir al repintar.
+      const quedan = etiquetasEnLaBarra().filter(e => e !== fuera);
       // Si era la ultima, la lista queda vacia y eso significa "automatico", no "ninguna".
       // Se dice, porque volver al automatico no es lo mismo que quedarse sin barra.
       if (!await guardaAjuste('etiquetas_filtro', quedan.join(','))) return;
@@ -1606,10 +1608,7 @@ function pintaChats(){
   // Si el negocio eligio cuales quiere en la barra, mandan esas y en el orden que las
   // eligio. El automatico solo entra cuando no ha elegido ninguna: acierta a menudo, pero
   // la etiqueta que importa esta semana no tiene por que ser la mas usada del historico.
-  const elegidas = etiquetasElegidas();
-  const porEtiqueta = elegidas.length
-    ? elegidas.map(e => ['etq:' + e, e])
-    : etiquetasContadas().filter(([, n]) => n >= 2).slice(0, 8).map(([e]) => ['etq:' + e, e]);
+  const porEtiqueta = etiquetasEnLaBarra().map(e => ['etq:' + e, e]);
   // Solo se ofrecen los canales que de verdad tienen conversaciones: un filtro que
   // siempre devuelve cero es ruido.
   const porCanal = Object.keys(CANALES)
@@ -1622,10 +1621,11 @@ function pintaChats(){
       const n2 = f.startsWith('etq:') ? CONVS.filter(c => !puenteApagado(c) && etiquetasDe(c).includes(f.slice(4))).length
         : f.startsWith('can:') ? CONVS.filter(c => canalDe(c) === f.slice(4)).length
         : cuenta(f);
-      // La x solo en las de etiqueta, y solo cuando el negocio ha elegido lista propia: en
-      // modo automatico no hay nada que quitar --la barra se recalcula sola-- y una x que no
-      // hace lo que promete es peor que no tenerla.
-      const quitable = f.startsWith('etq:') && elegidas.length;
+      // La x va en TODAS las de etiqueta. La primera version solo la ponia cuando ya habia
+      // lista elegida, y como en automatico nunca la hay, no aparecia nunca: el dueno paso el
+      // cursor por encima y no salio nada. Quitar una en automatico deja fijada la lista
+      // actual menos esa, que es exactamente lo que espera quien pulsa la x.
+      const quitable = f.startsWith('etq:');
       return '<button class="filtro' + (filtro===f?' on':'') + (f.startsWith('etq:')?' etqf':'')
         + '" data-filtro="' + esc(f) + '">' + esc(n) + '<b>' + n2 + '</b>'
         + (quitable ? '<i class="quitaetq" data-quitaetq="' + esc(f.slice(4))
@@ -4415,8 +4415,17 @@ function renderBridgeControlState(state, explicitError = ''){
             + (imported ? ' Se guardaron ' + imported + ' antes de cortarse.' : '')
           : 'Historial: ' + historyStatus + '.';
   }
-  if ($('bridgeRebuildState')) $('bridgeRebuildState').textContent =
-    'Reconstruir renueva solo el vínculo local; conserva conversaciones y mensajes del CRM.';
+  // Todo lo de este canal --cerrar sesion, generar codigo, sincronizar-- lo ejecuta el
+  // programa del puente en la PC. El panel solo deja el encargo escrito y espera. Si ese
+  // programa no esta corriendo, no pasa nada de nada: los botones se quedan mudos y no habia
+  // forma de saber por que. Al dueno le parecio que "cerrar sesion no hizo nada", que
+  // "generar codigo se quedaba esperando" y que el historial fallaba -- tres sintomas, una
+  // sola causa, y ninguno lo decia. El panel SABE si el host responde: solo faltaba decirlo.
+  if ($('bridgeRebuildState')) $('bridgeRebuildState').textContent = hostOnline
+    ? 'Reconstruir renueva solo el vínculo local; conserva conversaciones y mensajes del CRM.'
+    : 'El programa del puente no está respondiendo en la PC. Hasta que se abra, lo que pulses '
+      + 'aquí queda anotado pero no lo ejecuta nadie.';
+  if ($('bridgeRebuildState')) $('bridgeRebuildState').classList.toggle('mal', !hostOnline);
   if ($('bridgeError')) $('bridgeError').textContent = explicitError || bridgeControlState.last_error || '';
   const bot = $('photoBotGlobalBtn');
   if (bot) {
@@ -4670,9 +4679,15 @@ async function pintaCanales(){
 
     + tarjeta('whatsapp_qr', puenteListo ? true : (cuenta('whatsapp_qr') ? false : null),
       (puenteListo
-        ? 'Segundo número conectado por WhatsApp Web. <b>Era el de pruebas</b>: si ya no se usa, desconéctalo.'
-        : 'Sin sesión activa. Este canal usa WhatsApp Web, no el API: no admite plantillas '
-          + 'ni difusiones, solo conversación dentro de la ventana normal.')
+        ? 'Segundo número conectado por WhatsApp Web. <b>No hay ventana de 24 h ni plantillas</b>: '
+          + 'se escribe como desde el teléfono, a cualquier contacto y en cualquier momento.'
+        // Decia "no admite difusiones, solo conversacion dentro de la ventana normal". Las
+        // dos cosas eran falsas y se contradecian con los frenos de difusion de dos lineas
+        // mas abajo: WhatsApp Web SI hace envios masivos (wa-bridge/src/bulk.js) y NO tiene
+        // ventana de 24 h -- esa es una regla del API oficial, no de WhatsApp Web. Quien lo
+        // leia daba por hecho que no podia escribirle a un cliente de hace un mes.
+        : 'Sin sesión activa. Este canal usa WhatsApp Web, no el API: <b>no hay ventana de '
+          + '24 h ni plantillas</b>, se escribe como desde el teléfono.')
       // Los frenos no son un detalle: son la diferencia entre una campana y un numero
       // bloqueado. Se dicen aqui porque es donde se decide usar este canal.
       + '<br>Sus conversaciones <b>sí</b> se ven aquí, junto a las del número oficial. '
@@ -6784,6 +6799,15 @@ function etiquetasEnUso(){
 // verian filtros distintos y ninguna sabria por que. Vacio significa automatico.
 function etiquetasElegidas(){
   return String(AJUSTES.etiquetas_filtro || '').split(',').map(s => s.trim()).filter(Boolean);
+}
+// Las que la barra enseña AHORA, haya lista elegida o no. La calculaban por separado el
+// pintado y el manejador de la x, en ambitos distintos: el segundo no veia la variable del
+// primero y quitar una etiqueta en modo automatico reventaba. Una sola fuente para los dos.
+function etiquetasEnLaBarra(){
+  const elegidas = etiquetasElegidas();
+  return elegidas.length
+    ? elegidas
+    : etiquetasContadas().filter(([, n]) => n >= 2).slice(0, 8).map(([e]) => e);
 }
 
 // El recuadro del boton +. Elegir que etiquetas se ven estaba solo en Configuracion, a cuatro
