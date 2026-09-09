@@ -4305,6 +4305,9 @@ function bridgeControlsHtml(p){
 
 function renderBridgeControlState(state, explicitError = ''){
   bridgeControlState = state || {};
+  // Arranca o para el sondeo segun lo que acabe de llegar. Va aqui y no en el boton porque el
+  // estado tambien cambia al pedir codigo, al sincronizar y al reconstruir.
+  setTimeout(vigilaPuente, 0);
   const status = String(bridgeControlState.status || bridgeControlState.state || 'offline').toLowerCase();
   const active = ['requested','generating','code_ready','connecting','rebuild_requested','rebuild_clearing'].includes(status);
   const code = formatBridgeCode(bridgeControlState.pairing_code);
@@ -4364,6 +4367,28 @@ async function refreshBridgeStatus(){
   const result = await callBridgeControl('status');
   if (result.bridge) renderBridgeControlState(result.bridge, result.ok ? '' : result.error);
   else renderBridgeControlState(bridgeControlState, result.error || 'No se pudo consultar el puente.');
+}
+
+// El puente tarda: el codigo aparece unos segundos despues de pedirlo, y el historial sube de
+// porcentaje durante minutos. Nada de eso se refrescaba solo, asi que habia que recargar la
+// pagina para ver si algo se movia -- y quien no recarga concluye que se ha quedado colgado.
+// Paso de verdad dos veces seguidas: el codigo "no salia" y el historial "se quedo en 0".
+//
+// Se consulta solo MIENTRAS hay algo en marcha, y se para en cuanto termina: un sondeo que no
+// se apaga es una peticion cada pocos segundos para siempre, tambien de madrugada.
+let relojPuente = null;
+function vigilaPuente(){
+  const estado = String(bridgeControlState.status || '').toLowerCase();
+  const historial = String(bridgeControlState.history_sync_status || 'idle');
+  const enMarcha = ['requested','generating','code_ready','connecting','rebuild_requested','rebuild_clearing'].includes(estado)
+    || ['requested','running','waiting'].includes(historial);
+  if (!enMarcha || relojPuente) { if (!enMarcha && relojPuente) { clearInterval(relojPuente); relojPuente = null; } return; }
+  relojPuente = setInterval(async () => {
+    // Si se cambio de vista, el panel del puente ya no existe: se corta y no se deja el
+    // sondeo huerfano consumiendo peticiones.
+    if (!$('bridgePairBtn')) { clearInterval(relojPuente); relojPuente = null; return; }
+    await refreshBridgeStatus();
+  }, 4000);
 }
 
 async function requestBridgePairing(){
@@ -4554,10 +4579,20 @@ async function pintaCanales(){
         + (estado.bot_enabled ? 'encendido' : 'apagado') + '</button>')
 
     + tarjeta('whatsapp_qr', puenteListo ? true : (cuenta('whatsapp_qr') ? false : null),
-      puenteListo
+      // AVISO GRANDE, y va aqui porque es lo que hace perder una tarde: este panel NO enseña
+      // las conversaciones de este numero. perteneceAlCanal las excluye a proposito
+      // (CANAL_FOTOS es false aqui), porque el segundo numero se atiende en el panel de
+      // Fotos. Desde aqui se vincula y se sincroniza, y el historial entra en la base -- pero
+      // los mensajes salen en el OTRO panel. Sin decirlo, se ve una barra llegar al 100% y
+      // ni un mensaje, y la conclusion logica es que la sincronizacion no funciona.
+      (puenteListo
         ? 'Segundo número conectado por WhatsApp Web. <b>Era el de pruebas</b>: si ya no se usa, desconéctalo.'
         : 'Sin sesión activa. Este canal usa WhatsApp Web, no el API: no admite plantillas '
-          + 'ni difusiones, solo conversación dentro de la ventana normal.',
+          + 'ni difusiones, solo conversación dentro de la ventana normal.')
+      + '<br><b>Sus conversaciones no se ven en este panel</b>, aunque el historial se '
+      + 'sincronice desde aquí: este CRM atiende el número oficial. Las de este número salen '
+      + 'en <a href="https://fotos.dcarelacompufoto.com" target="_blank" rel="noopener">'
+      + 'fotos.dcarelacompufoto.com</a>.',
       bridgeControlsHtml(p))
 
     + tarjetaRed('instagram', redes.instagram,
