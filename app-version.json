@@ -1,6 +1,6 @@
 {
-  "version": "2026-09-09-la-llave-que-faltaba-v101",
+  "version": "2026-09-09-los-archivos-ya-se-guardan-v102",
   "channel": "crm",
-  "released_at": "2026-09-09T00:00:00Z",
-  "summary": "El 2.º numero no podia enviar nada: transport_mode nacia bloqueado y nada en el codigo lo desbloqueaba nunca. Ya existe el boton para validarlo."
+  "released_at": "2026-09-09T17:00:00Z",
+  "summary": "Las fotos, stickers y notas de voz del 2.º numero ya se guardan y se ven en el panel. Lo que entro antes no tiene archivo: nunca llego a guardarse, y el aviso del hueco ahora lo dice asi."
 }
