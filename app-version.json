@@ -1,6 +1,6 @@
 {
-  "version": "2026-09-09-guardar-borraba-v91",
+  "version": "2026-09-09-el-codigo-dice-de-quien-es-v92",
   "channel": "crm",
   "released_at": "2026-09-09T00:00:00Z",
-  "summary": "Las reglas del negocio se cargan al abrir el cuadro. Abriendolo desde Configuracion salia vacio y pulsar Guardar borraba las reglas reales."
+  "summary": "El codigo de vinculacion del segundo numero ahora dice para que telefono es. Metido en otro, WhatsApp lo rechaza sin explicar por que."
 }
