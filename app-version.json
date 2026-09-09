@@ -1,6 +1,6 @@
 {
-  "version": "2026-09-09-el-historial-continua-solo-v97",
+  "version": "2026-09-09-unavailable-dice-que-hacer-v98",
   "channel": "crm",
   "released_at": "2026-09-09T00:00:00Z",
-  "summary": "Una sincronizacion a medias continua sola hasta 3 vueltas mientras siga trayendo mensajes nuevos, en vez de esperar a que alguien vuelva a pulsar."
+  "summary": "El estado 'unavailable' del historial explica que la vinculacion quedo registrada como navegador y como arreglarlo, en vez de enseñar la palabra suelta."
 }
