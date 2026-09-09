@@ -6778,12 +6778,15 @@ function pintaPlanCola(){
 async function cargaReglas(){
   const r = await llama({ action:'data', table:'settings', operation:'select',
     filters:[{ kind:'eq', field:'key', value:'reglas_asistente' }], limit:1 });
-  if (!r.ok) return;
+  // Devuelve si se pudo LEER. Quien abre el dialogo necesita saberlo: guardar sin haber
+  // leido escribe encima de lo que hubiera.
+  if (!r.ok) return false;
   const fila = (r.data || r.rows || [])[0];
   REGLAS = fila?.value || '';
   const caja = $('reglas'); if (caja) caja.value = REGLAS;
   const nota = $('reglasNota');
   if (nota) nota.textContent = REGLAS ? 'Guardadas. Se usan en cada propuesta.' : 'Todavía no hay reglas.';
+  return true;
 }
 async function guardaReglas(){
   const valor = $('reglas').value.trim();
@@ -6792,10 +6795,11 @@ async function guardaReglas(){
     payload:{ id:'reglas_asistente', key:'reglas_asistente', value:valor,
       updated_at:new Date().toISOString() }, on_conflict:'id' });
   $('btnReglas').disabled = false;
-  if (!r.ok) return avisa('No se pudieron guardar', r.error);
+  if (!r.ok) { avisa('No se pudieron guardar', r.error); return false; }
   REGLAS = valor;
   $('reglasNota').textContent = 'Guardadas. Se usan en cada propuesta.';
   avisa('Reglas guardadas', 'El asistente las tendrá en cuenta desde ahora.');
+  return true;
 }
 // ===== ASISTENTE DE PLANIFICACION =====
 // Es un chat, no un formulario. La diferencia no es estetica: en un formulario cada
@@ -7204,18 +7208,42 @@ async function guardaHilo(){
       updated_at:new Date().toISOString() }, on_conflict:'id' });
 }
 
-function abreReglas(){
+// El ejemplo del placeholder NO lleva precios. Llevaba "abono minimo RD$3,000", y esa cifra
+// no es de este negocio: hay combos desde RD$1,700, o sea que el ejemplo pedia un abono mayor
+// que el precio. Peor todavia, se lee como si fuera la regla vigente -- yo mismo la audite
+// como real antes de ver que era el placeholder de un campo vacio.
+const EJEMPLO_REGLAS = '- El abono para apartar la fecha es de RD$…\n'
+  + '- No trabajamos domingos.\n- Nunca prometer una fecha sin confirmarla con el estudio.\n'
+  + '- Tratar de usted a personas mayores.';
+
+// OJO: las reglas se CARGAN aqui, no solo al montar Planificacion. Este dialogo se abre
+// tambien desde Configuracion, y alli esa vista puede no haberse montado nunca: el cuadro
+// salia vacio, con el ejemplo de fondo, y al pulsar Guardar se escribia esa nada ENCIMA de
+// las reglas de verdad. Un borrado silencioso, y desde el boton que dice "Guardar".
+//
+// Hasta que terminan de cargar, el cuadro y el boton estan bloqueados: sin eso, escribir
+// rapido y guardar tendria la misma consecuencia por otra via.
+async function abreReglas(){
   abreModal('<div class="mtapa"><b>Reglas del negocio</b><button class="cerrarm" data-cerrar>×</button></div>'
     + '<div class="mcuerpo">'
     + '<p class="aviso">Esto se le da al asistente en cada propuesta. Sirve para lo que no está en '
     +   'ninguna ficha: cómo se cobra, qué no se promete, qué fechas están cerradas, cómo se habla.</p>'
-    + '<div class="campo"><textarea id="reglas" rows="12" placeholder="- El abono mínimo es de RD$3,000 y no se devuelve.\n'
-    +   '- No trabajamos domingos.\n- Nunca prometer una fecha sin confirmarla con el estudio.\n'
-    +   '- Tratar de usted a personas mayores.">' + esc(REGLAS) + '</textarea></div></div>'
-    + '<div class="mpatas"><span class="quien" id="reglasNota"></span>'
-    +   '<button class="btn-solido" id="btnReglas">Guardar</button></div>');
+    + '<div class="campo"><textarea id="reglas" rows="12" disabled placeholder="' + esc(EJEMPLO_REGLAS) + '">'
+    +   esc(REGLAS) + '</textarea></div></div>'
+    + '<div class="mpatas"><span class="quien" id="reglasNota">Cargando…</span>'
+    +   '<button class="btn-solido" id="btnReglas" disabled>Guardar</button></div>');
   $('modal').querySelectorAll('[data-cerrar]').forEach(b => { b.onclick = cierraModal; });
-  $('btnReglas').onclick = async () => { await guardaReglas(); cierraModal(); };
+  // Solo se cierra si de verdad se guardo. Antes cerraba pase lo que pase, asi que un fallo
+  // se anunciaba en un aviso de 4 segundos y el dialogo desaparecia como si todo fuera bien.
+  $('btnReglas').onclick = async () => { if (await guardaReglas()) cierraModal(); };
+  const ok = await cargaReglas();
+  const caja = $('reglas'); const boton = $('btnReglas');
+  if (!caja || !boton) return;                 // lo cerraron mientras cargaba
+  if (!ok) {
+    $('reglasNota').textContent = 'No se pudieron leer las reglas. No guardes: escribirías encima.';
+    return;
+  }
+  caja.disabled = false; boton.disabled = false;
 }
 
 function contextoTexto(){
