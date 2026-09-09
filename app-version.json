@@ -1,6 +1,6 @@
 {
-  "version": "2026-09-09-unavailable-dice-que-hacer-v98",
+  "version": "2026-09-09-el-puente-dice-si-esta-vivo-v99",
   "channel": "crm",
   "released_at": "2026-09-09T00:00:00Z",
-  "summary": "El estado 'unavailable' del historial explica que la vinculacion quedo registrada como navegador y como arreglarlo, en vez de enseñar la palabra suelta."
+  "summary": "WhatsApp Web deja de anunciar limites del API que no tiene, la x de las etiquetas aparece siempre, y el panel avisa cuando el programa del puente no responde en la PC."
 }
