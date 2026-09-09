@@ -4405,7 +4405,12 @@ function renderBridgeControlState(state, explicitError = ''){
     $('bridgeHistoryState').textContent = historyStatus === 'completed'
       ? 'Historial completado: ' + imported + ' nuevos; ' + duplicates + ' duplicados omitidos.'
       : historyActive ? 'Historial en proceso: ' + Number(bridgeControlState.history_sync_progress || 0) + '%.'
-        : historyStatus === 'error'
+        // Cualquier estado que no sea 'completed' ni 'idle' lleva motivo, no solo 'error'.
+        // 'unavailable' es el peor de todos para dejarlo en una palabra: significa que esta
+        // vinculacion quedo registrada como NAVEGADOR y WhatsApp no le entrega los bloques
+        // historicos -- y la salida es concreta (cerrar sesion y vincular una vez mas), pero
+        // el panel enseñaba "Historial: unavailable." y ahi se acababa la informacion.
+        : (motivo || historyStatus === 'error')
           ? 'Historial: ' + (motivo || 'se cortó sin decir por qué')
             + (imported ? ' Se guardaron ' + imported + ' antes de cortarse.' : '')
           : 'Historial: ' + historyStatus + '.';
