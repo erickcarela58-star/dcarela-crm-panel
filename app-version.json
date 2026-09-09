@@ -1,6 +1,6 @@
 {
-  "version": "2026-09-09-vincular-cualquier-numero-v93",
+  "version": "2026-09-09-el-puente-se-refresca-solo-v94",
   "channel": "crm",
   "released_at": "2026-09-09T00:00:00Z",
-  "summary": "El segundo numero se escribe a mano: el puente ya no esta limitado a una sola linea, y el codigo dice siempre para que telefono es."
+  "summary": "El estado del puente se refresca solo mientras hay algo en marcha, y la tarjeta avisa de que las conversaciones del 2.º numero salen en el panel de Fotos, no aqui."
 }
