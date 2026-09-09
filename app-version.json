@@ -1,6 +1,6 @@
 {
-  "version": "2026-09-09-el-puente-dice-si-esta-vivo-v99",
+  "version": "2026-09-09-en-pausa-no-es-desconectado-v100",
   "channel": "crm",
   "released_at": "2026-09-09T00:00:00Z",
-  "summary": "WhatsApp Web deja de anunciar limites del API que no tiene, la x de las etiquetas aparece siempre, y el panel avisa cuando el programa del puente no responde en la PC."
+  "summary": "Vinculado y en pausa deja de verse como desconectado: era por eso que no podias enviar por el 2.º numero. Y los adjuntos dicen por que no traen archivo."
 }
