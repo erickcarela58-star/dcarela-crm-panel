@@ -43,6 +43,7 @@
   --warn:#b26a00;
   --bad:#b21a1a;
   --sombra:0 12px 34px rgba(11,20,26,.14);
+  --alto-barra:60px;   /* alto de la barra superior; la ficha se cuelga de el */
   --r:8px;             /* radio base   */
   --r2:12px;           /* radio grande */
 }
@@ -78,7 +79,7 @@ button{cursor:pointer;background:none;border:0;padding:0}
 #app.on{display:grid}
 .lateral{grid-row:1/3;width:250px;display:flex;flex-direction:column;
   background:var(--panel);border-right:1px solid var(--line)}
-.barra{grid-column:2;display:flex;align-items:center;gap:14px;height:60px;padding:0 16px;
+header.barra{grid-column:2;display:flex;align-items:center;gap:14px;height:var(--alto-barra);padding:0 16px;
   background:var(--panel);border-bottom:1px solid var(--line)}
 .lienzo{grid-column:2;min-width:0;min-height:0;overflow:hidden;background:var(--bg)}
 
@@ -906,7 +907,10 @@ video.mmedia{cursor:default}
 
 /* --- Estrecho -------------------------------------------------------------- */
 @media(max-width:1080px){
-  .ficha{position:fixed;right:0;top:60px;bottom:0;width:min(330px,92vw);z-index:30;
+  /* La ficha se cuelga de la altura REAL de la barra, no de un 60 escrito a mano. Al
+     hacer que la barra crezca a dos filas en el telefono, este 60px la dejaba metida
+     30px por debajo del borde: la cabecera del contacto quedaba tapada por la barra. */
+  .ficha{position:fixed;right:0;top:var(--alto-barra);bottom:0;width:min(330px,92vw);z-index:30;
     display:none;box-shadow:var(--sombra)}
   .ficha.on{display:flex}
 }
@@ -920,16 +924,20 @@ video.mmedia{cursor:default}
      "Manual" no se recorte cuando el titulo es largo-- lo que sobra no encogia: se salia de
      la pantalla, y esos dos botones no se podian ni leer ni pulsar. Ya pasaba antes de tocar
      el menu. */
-  .barra{gap:8px;padding:8px 10px;min-width:0;height:auto;flex-wrap:wrap}
-  .barra .quien{display:none}
-  .barra .der{margin-left:auto;min-width:0}
+  /* 'header.barra', no '.barra' a secas: esa clase la usa TAMBIEN cada barra de nota del
+     panel de colaboradores (v2.html:3551 y 5248, dentro de .barras). Sin acotar, estas
+     reglas les cambiaban el hueco y el relleno, y la de mas abajo les rompia la rejilla
+     de tres columnas. */
+  header.barra{gap:8px;padding:0 10px;min-width:0}
+  header.barra .quien{display:none}
+  header.barra .der{margin-left:auto;min-width:0}
   /* Estas nueve reglas son el movil de toda la vida: una sola columna, la lista a pantalla
      completa y el chat encima al abrirlo. Estuvieron un dia dentro del bloque de 430px por
      una llave que cerre de mas al anadirlo, asi que entre 431 y 760 --tablets pequenas y
      telefonos grandes en horizontal-- el panel se quedaba con la rejilla de escritorio y
      abrir un chat no ocultaba la lista. */
   #app.on{grid-template-columns:minmax(0,1fr)}
-  .barra,.lienzo{grid-column:1}
+  header.barra,.lienzo{grid-column:1}
   .lista{width:100%}
   body.chat-abierto .lista{display:none}
   .conversacion,.vacio{display:none}
@@ -943,9 +951,11 @@ video.mmedia{cursor:default}
      el titulo lleva flex:1 --base 0-- asi que la suma de las bases siempre cabe y la fila
      nunca se parte; lo que se salia era el reparto del sobrante, con la fila ya cerrada. En
      grid la segunda fila esta declarada, no deducida. */
-  .barra{display:grid;grid-template-columns:auto minmax(0,1fr);align-items:center;
-    row-gap:8px;column-gap:8px}
-  .barra .der{grid-column:1/-1;justify-content:flex-end;margin-left:0}
+  /* Dos filas, asi que la barra mide mas: se dice aqui para que la ficha la siga. */
+  :root{--alto-barra:90px}
+  header.barra{display:grid;grid-template-columns:auto minmax(0,1fr);align-items:center;
+    height:var(--alto-barra);padding:8px 10px;row-gap:8px;column-gap:8px}
+  header.barra .der{grid-column:1/-1;justify-content:flex-end;margin-left:0}
 }
 </style>
 </head>
