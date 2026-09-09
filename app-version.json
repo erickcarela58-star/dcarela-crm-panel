@@ -1,6 +1,6 @@
 {
-  "version": "2026-09-09-etiquetas-desde-la-barra-v96",
+  "version": "2026-09-09-el-historial-continua-solo-v97",
   "channel": "crm",
   "released_at": "2026-09-09T00:00:00Z",
-  "summary": "Las etiquetas del buscador se quitan con una x al pasar el cursor y se anaden con el boton + al final de la barra, sin ir a Configuracion."
+  "summary": "Una sincronizacion a medias continua sola hasta 3 vueltas mientras siga trayendo mensajes nuevos, en vez de esperar a que alguien vuelva a pulsar."
 }
