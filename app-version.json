@@ -1,6 +1,6 @@
 {
-  "version": "2026-09-07-la-llave-de-mas-v88",
+  "version": "2026-09-08-una-clase-dos-cosas-v89",
   "channel": "crm",
-  "released_at": "2026-09-07T00:00:00Z",
-  "summary": "Entre 431 y 760 px el panel se quedaba con la rejilla de escritorio por una llave de mas, y la palabra 'baja' suelta daba de baja total a quien preguntaba por la resolucion."
+  "released_at": "2026-09-08T00:00:00Z",
+  "summary": "'.barra' eran dos cosas distintas y mis reglas de movil caian sobre las dos: las barras de nota del panel de colaboradores se descuadraban. Y la ficha del contacto ya sigue la altura real de la barra."
 }
