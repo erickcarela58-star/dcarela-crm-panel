@@ -4359,6 +4359,7 @@ function renderBridgeControlState(state, explicitError = ''){
   // Arranca o para el sondeo segun lo que acabe de llegar. Va aqui y no en el boton porque el
   // estado tambien cambia al pedir codigo, al sincronizar y al reconstruir.
   setTimeout(vigilaPuente, 0);
+  setTimeout(continuaHistorialSiFaltan, 0);
   const status = String(bridgeControlState.status || bridgeControlState.state || 'offline').toLowerCase();
   const active = ['requested','generating','code_ready','connecting','rebuild_requested','rebuild_clearing'].includes(status);
   const code = formatBridgeCode(bridgeControlState.pairing_code);
@@ -4434,6 +4435,32 @@ async function refreshBridgeStatus(){
 //
 // Se consulta solo MIENTRAS hay algo en marcha, y se para en cuanto termina: un sondeo que no
 // se apaga es una peticion cada pocos segundos para siempre, tambien de madrugada.
+// Una sincronizacion PARCIAL no es un fallo: es progreso a medias. El puente lo dice --"se
+// conservaron N mensajes; vuelve a sincronizar para continuar"-- pero eso deja el trabajo
+// colgando de que alguien se acuerde de pulsar otra vez, y con 182 conversaciones hacen falta
+// varias vueltas. Es el mismo patron que ya se quito de los seguimientos.
+//
+// Se continua solo, con dos frenos: como mucho 3 vueltas seguidas, y solo si la vuelta
+// anterior trajo mensajes NUEVOS. Si deja de avanzar se para, porque insistir sobre algo que
+// no progresa es golpear a WhatsApp sin ganar nada.
+const CONTINUA_MAX = 3;
+let vueltasHistorial = 0;
+let importadosPrevios = -1;
+async function continuaHistorialSiFaltan(){
+  const estado = String(bridgeControlState.history_sync_status || '');
+  const importados = Number(bridgeControlState.history_sync_imported || 0);
+  if (estado !== 'error') { if (estado === 'completed') { vueltasHistorial = 0; importadosPrevios = -1; } return; }
+  // 'error' con cero importados no es parcial: es que no entro nada. Ahi reintentar solo
+  // repite el mismo fallo, y el motivo ya esta escrito en pantalla para poder mirarlo.
+  if (!importados || importados === importadosPrevios || vueltasHistorial >= CONTINUA_MAX) return;
+  importadosPrevios = importados;
+  vueltasHistorial += 1;
+  const nota = $('bridgeHistoryState');
+  if (nota) nota.textContent = 'Historial incompleto: continuando solo (vuelta '
+    + vueltasHistorial + ' de ' + CONTINUA_MAX + '). Se guardaron ' + importados + ' hasta ahora.';
+  await requestBridgeHistorySync();
+}
+
 let relojPuente = null;
 function vigilaPuente(){
   const estado = String(bridgeControlState.status || '').toLowerCase();
