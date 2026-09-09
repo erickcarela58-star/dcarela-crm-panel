@@ -1066,6 +1066,12 @@ const sigla = CFG.logoText || 'DC';
 const CANAL_FOTOS = CFG.lockNumFilter === true || CFG.defaultNumFilter === 'qr';
 const soloDigitos = value => String(value || '').replace(/\D/g, '');
 const NUMERO_FOTOS = soloDigitos(CFG.bridgeBusinessNumber || CFG.bridgeBusinessDisplayNumber);
+// El puente admite UNA sola linea, y el servidor lo comprueba: cualquier otro numero se
+// rechaza con "solo puede vincularse la linea Fotos terminada en 5620". Estaba escrito a
+// mano dentro de requestBridgePairing, asi que el panel no podia decir de que numero era el
+// codigo que ensenaba. Aqui arriba se ve, y de aqui sale tambien el aviso.
+const TELEFONO_PUENTE = NUMERO_FOTOS || '18094785620';
+const TELEFONO_PUENTE_BONITO = TELEFONO_PUENTE.replace(/^1(\d{3})(\d{3})(\d{4})$/, '$1-$2-$3');
 function perteneceAlCanal(c){
   const fuente = String(c?.source || '').toLowerCase();
   const numero = soloDigitos(c?.business_number);
@@ -4275,6 +4281,12 @@ function bridgeControlsHtml(p){
     +   (botEnabled ? 'encendido' : 'apagado') + '</button>'
     + '<div class="bridge-code-panel" id="bridgeCodePanel">'
     +   '<div class="codigo" id="bridgePairCode">--</div>'
+    // El codigo de vinculacion va atado a UN numero, y el panel no decia a cual. Este puente
+    // solo admite la linea Fotos --el servidor rechaza cualquier otra-- asi que el codigo
+    // salia siempre para ese numero y quien lo metia en otro telefono recibia de WhatsApp un
+    // "no se puede vincular dispositivo" que no explica nada. Ahora se dice antes de teclear.
+    +   '<p class="bridge-meta"><b>Este código es solo para el ' + esc(TELEFONO_PUENTE_BONITO) + '</b>'
+    +     ' — en cualquier otro teléfono WhatsApp lo rechaza.</p>'
     +   '<p class="bridge-meta" id="bridgeCodeMeta">Preparando el código seguro…</p>'
     +   '<button class="btn-linea danger" id="bridgeCancelPair">Cancelar</button>'
     + '</div>'
@@ -4348,7 +4360,7 @@ async function refreshBridgeStatus(){
 }
 
 async function requestBridgePairing(){
-  const phone = NUMERO_FOTOS || '18094785620';
+  const phone = TELEFONO_PUENTE;
   const result = await callBridgeControl('request_pairing', { phone });
   if (result.bridge) renderBridgeControlState(result.bridge, result.ok ? '' : result.error);
   else renderBridgeControlState(bridgeControlState, result.error || 'No se pudo pedir el código.');
