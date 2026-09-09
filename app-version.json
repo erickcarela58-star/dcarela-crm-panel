@@ -1,6 +1,6 @@
 {
-  "version": "2026-09-09-el-segundo-numero-en-casa-v95",
+  "version": "2026-09-09-etiquetas-desde-la-barra-v96",
   "channel": "crm",
   "released_at": "2026-09-09T00:00:00Z",
-  "summary": "El segundo numero se ve en este CRM junto al oficial, con sus frenos anti-bloqueo a la vista, y el error del historial dice por que se corto."
+  "summary": "Las etiquetas del buscador se quitan con una x al pasar el cursor y se anaden con el boton + al final de la barra, sin ir a Configuracion."
 }
