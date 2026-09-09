@@ -2958,17 +2958,18 @@ function pesoLegible(n){
 function tarjetaArchivo(a, etiqueta){
   const nombre = a.nombre || etiqueta;
   const detalle = [a.mime, pesoLegible(a.peso)].filter(Boolean).join(' · ');
-  // Sin url no se inventa un enlace roto. Y se dice POR QUE, que no es lo mismo segun el
-  // canal: por WhatsApp Web el archivo no se guarda --wa-bridge/src/supa.js:177, uploadMedia
-  // devuelve null a proposito mientras no haya un bucket con politica de retencion-- asi que
-  // "sin enlace disponible" hacia pensar que se habia perdido algo que nunca se guardo.
+  // Sin url no se inventa un enlace roto, y se dice lo que de verdad pasa. Llegar aqui
+  // significa que el mensaje no trae ni enlace ni id: el archivo no existe en ningun sitio,
+  // no es que no se encuentre. Le pasa a todo lo que entro antes del 09/09/2026 --hasta ese
+  // dia el puente descargaba la foto o la nota de voz y la tiraba, porque el bucket donde
+  // debia guardarla no existia-- y a lo que pase de 8 MB, que el servidor no acepta.
+  // Ya no se separa por canal: desde ese dia los dos numeros guardan igual y el motivo del
+  // hueco es el mismo. Decir que el 2.º número todavía no guarda seria mentira ahora, y
+  // hablar de un enlace que falta se leia como que se habia perdido algo. No se perdio nada:
+  // nunca se guardo.
   if (!a.url) {
-    const porElPuente = sel && canalDe(sel) === 'whatsapp_qr';
     return '<div class="marchivo"><b>' + esc(nombre) + '</b>'
-      + '<span>' + esc(detalle ? detalle + ' · ' : '')
-      + (porElPuente
-          ? 'el 2.º número guarda el tipo y el nombre, todavía no el archivo'
-          : 'sin enlace disponible')
+      + '<span>' + esc(detalle ? detalle + ' · ' : '') + 'el archivo no se guardó'
       + '</span></div>';
   }
   return '<div class="marchivo"><b>' + esc(nombre) + '</b>'
