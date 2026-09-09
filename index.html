@@ -1916,8 +1916,12 @@ function traduceErrorMeta(e){
   if (/transport|reconect/i.test(t)) return 'Meta no está conectada al transporte. Mira Canales.';
   if (/canal incorrecto/i.test(t)) return 'Este chat entró por otro canal. Se está enviando por la vía '
     + 'equivocada; mira Canales.';
-  if (/modo seguro|desconectado|pausado/i.test(t)) return 'El segundo WhatsApp no está conectado. '
-    + 'Conéctalo en Canales.';
+  // "Pausado" y "desconectado" NO son lo mismo, y decirlo mal manda a arreglar lo que ya
+  // funciona. Vinculado y en pausa se ve exactamente igual que sin vincular, y la salida es
+  // distinta: uno se reanuda con un boton, el otro hay que volver a vincularlo entero.
+  if (/pausado|modo seguro/i.test(t)) return 'El segundo WhatsApp está vinculado pero con los '
+    + 'envíos en pausa. Pulsa "Reanudar envíos" en Canales.';
+  if (/desconectado/i.test(t)) return 'El segundo WhatsApp no está conectado. Conéctalo en Canales.';
   if (/almacenamiento dedicado|bridge_media/i.test(t)) return 'WhatsApp Web todavía no envía archivos, '
     + 'solo texto.';
   return t;
@@ -2954,9 +2958,19 @@ function pesoLegible(n){
 function tarjetaArchivo(a, etiqueta){
   const nombre = a.nombre || etiqueta;
   const detalle = [a.mime, pesoLegible(a.peso)].filter(Boolean).join(' · ');
-  // Sin url no se inventa un enlace roto: se dice que el archivo no la trae.
-  if (!a.url) return '<div class="marchivo"><b>' + esc(nombre) + '</b>'
-    + '<span>' + esc(detalle || 'sin enlace disponible') + '</span></div>';
+  // Sin url no se inventa un enlace roto. Y se dice POR QUE, que no es lo mismo segun el
+  // canal: por WhatsApp Web el archivo no se guarda --wa-bridge/src/supa.js:177, uploadMedia
+  // devuelve null a proposito mientras no haya un bucket con politica de retencion-- asi que
+  // "sin enlace disponible" hacia pensar que se habia perdido algo que nunca se guardo.
+  if (!a.url) {
+    const porElPuente = sel && canalDe(sel) === 'whatsapp_qr';
+    return '<div class="marchivo"><b>' + esc(nombre) + '</b>'
+      + '<span>' + esc(detalle ? detalle + ' · ' : '')
+      + (porElPuente
+          ? 'el 2.º número guarda el tipo y el nombre, todavía no el archivo'
+          : 'sin enlace disponible')
+      + '</span></div>';
+  }
   return '<div class="marchivo"><b>' + esc(nombre) + '</b>'
     + '<span>' + esc(detalle || 'archivo') + '</span>'
     + '<a href="' + esc(a.url) + '" target="_blank" rel="noopener">Abrir</a></div>';
@@ -4608,15 +4622,20 @@ async function pintaCanales(){
     return ' · último recibido ' + (dias <= 0 ? 'hoy' : dias === 1 ? 'ayer' : 'hace ' + dias + ' días');
   };
 
-  const tarjeta = (clave, listo, detalle, acciones) => {
+  // 'etiqueta' permite un cuarto estado cuando 'conectado / sin conectar / sin usar' no
+  // alcanza. El caso real: vinculado pero en pausa, que salia como "sin conectar" -- y por eso
+  // se volvia a vincular una y otra vez algo que solo necesitaba pulsar Reanudar.
+  const tarjeta = (clave, listo, detalle, acciones, etiqueta) => {
     const d = CANALES[clave];
     return '<div class="canal">'
       + '<div class="cabecera-canal">'
       +   '<span class="clogo" style="background:' + d.color + '22;color:' + d.color + '">' + d.logo + '</span>'
       +   '<div class="cinfo"><b>' + esc(d.nombre) + '</b>'
       +     '<span>' + cuenta(clave) + ' conversación(es)' + ultimoEntrante(clave) + '</span></div>'
-      +   '<i class="chip ' + (listo === true ? 'ok' : listo === false ? 'mal' : 'medio') + '">'
-      +     (listo === true ? 'conectado' : listo === false ? 'sin conectar' : 'sin usar') + '</i>'
+      +   '<i class="chip ' + (etiqueta ? etiqueta.clase
+      :     (listo === true ? 'ok' : listo === false ? 'mal' : 'medio')) + '">'
+      +     (etiqueta ? esc(etiqueta.texto)
+      :     (listo === true ? 'conectado' : listo === false ? 'sin conectar' : 'sin usar')) + '</i>'
       + '</div>'
       + '<p class="cdetalle">' + detalle + '</p>'
       + (acciones ? '<div class="cacciones">' + acciones + '</div>' : '')
@@ -4661,8 +4680,10 @@ async function pintaCanales(){
 
   const oficialListo = t.ready === true || t.state === 'ready';
   const estadoPuente = String(p.state || p.status || '').toLowerCase();
-  const puenteListo = (p.connected === true || estadoPuente === 'connected' || estadoPuente === 'ready')
-    && p.paused !== true && p.host_online !== false;
+  const puenteVinculado = (p.connected === true || estadoPuente === 'connected' || estadoPuente === 'ready')
+    && p.host_online !== false;
+  const puenteVinculadoEnPausa = puenteVinculado && p.paused === true;
+  const puenteListo = puenteVinculado && p.paused !== true;
   // Esta vista ya sabe si el puente esta vivo: se aprovecha para refrescar el estado que
   // decide si las conversaciones del segundo numero se ven en la lista. Sin esto, tras
   // desconectar habia que recargar la pagina para que desaparecieran.
@@ -4677,10 +4698,17 @@ async function pintaCanales(){
       '<button class="btn-linea" data-canal-bot="official">Bot de este canal: '
         + (estado.bot_enabled ? 'encendido' : 'apagado') + '</button>')
 
+    // Vinculado-pero-en-pausa salia como "sin conectar", igual que sin vincular. El dueno
+    // cerraba sesion y volvia a vincular una y otra vez para arreglar algo que solo necesitaba
+    // un boton. Se distingue.
     + tarjeta('whatsapp_qr', puenteListo ? true : (cuenta('whatsapp_qr') ? false : null),
       (puenteListo
         ? 'Segundo número conectado por WhatsApp Web. <b>No hay ventana de 24 h ni plantillas</b>: '
           + 'se escribe como desde el teléfono, a cualquier contacto y en cualquier momento.'
+        : puenteVinculadoEnPausa
+        ? '<b>Vinculado, pero con los envíos en pausa.</b> Se pausan solos al volver a '
+          + 'vincular, para no soltar una tanda antes de comprobar que la sesión aguanta. '
+          + 'Pulsa <b>Reanudar envíos</b> y ya se puede escribir por este número.'
         // Decia "no admite difusiones, solo conversacion dentro de la ventana normal". Las
         // dos cosas eran falsas y se contradecian con los frenos de difusion de dos lineas
         // mas abajo: WhatsApp Web SI hace envios masivos (wa-bridge/src/bulk.js) y NO tiene
@@ -4694,7 +4722,8 @@ async function pintaCanales(){
       + 'En envíos masivos va con freno: <b>40 a 120 s entre mensajes</b>, pausa de '
       + '<b>10 min cada 20</b>, tope de <b>80 al día</b>, texto variado por destinatario y '
       + 'solo a quien ya te escribió y no se dio de baja.',
-      bridgeControlsHtml(p))
+      bridgeControlsHtml(p),
+      puenteVinculadoEnPausa ? { clase: 'medio', texto: 'en pausa' } : null)
 
     + tarjetaRed('instagram', redes.instagram,
       'Se conecta iniciando sesión con Facebook y aceptando los permisos de la cuenta: '
