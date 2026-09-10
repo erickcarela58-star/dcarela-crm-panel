@@ -5013,6 +5013,66 @@ function campoCfg(clave, etiqueta, marcador){
     + '" placeholder="' + esc(marcador || '') + '"></div>';
 }
 
+// El enlace del calendario LLEVA SU LLAVE, y esa es toda la historia de por que la agenda
+// nunca aparecio en Google. crmAgenda exige ?key= y contesta 401 sin ella; el panel ensenaba
+// la URL pelada, se pegaba en Google, Google recibia un 401 y se quedaba callado. Desde
+// fuera: "el calendario no conecta".
+function urlAgenda(){
+  const base = CFG.firebaseAgendaUrl || '';
+  const llave = AJUSTES.agenda_feed_key || '';
+  if (!base || !llave) return '';
+  return base + (base.includes('?') ? '&' : '?') + 'key=' + encodeURIComponent(llave);
+}
+// La llave viaja dentro de una URL que se pega en Google, o sea que no puede ser adivinable:
+// quien la acierte ve la agenda entera --nombre del cliente, telefono y notas--. 32 bytes del
+// generador del navegador, en hexadecimal.
+function nuevaLlaveAgenda(){
+  const bytes = new Uint8Array(32);
+  crypto.getRandomValues(bytes);
+  return [...bytes].map(b => b.toString(16).padStart(2, '0')).join('');
+}
+// Los limites antibloqueo, tal como los devuelve el servidor. null = todavia no se han pedido
+// (o quien mira no es administrador y no puede verlos).
+let LIMITES = null;
+
+function campoLim(clave, etiqueta, nota, editable){
+  const v = LIMITES && LIMITES[clave] != null ? LIMITES[clave] : '';
+  return '<div class="campo"><label>' + esc(etiqueta) + '</label>'
+    + '<input type="number" data-lim="' + esc(clave) + '" value="' + esc(String(v)) + '"'
+    + (editable ? '' : ' disabled') + '>'
+    + '<i class="cfgnota" style="display:block;margin-top:3px">' + esc(nota) + '</i></div>';
+}
+
+function limitesCfg(esAdmin){
+  if (!esAdmin) return '<p class="cfgnota">Solo un administrador puede ver y cambiar estos límites.</p>';
+  if (!LIMITES) return '<p class="cfgnota">No se pudieron cargar los límites.</p>';
+  return '<div class="grupo">'
+    + campoLim('send_min_sec', 'Espera mínima entre envíos (segundos)', 'Entre 10 y 3600.', true)
+    + campoLim('send_max_sec', 'Espera máxima entre envíos (segundos)', 'La espera real se sortea entre la mínima y esta.', true)
+    + campoLim('long_pause_every', 'Pausa larga cada N envíos', 'Imita el descanso de una persona.', true)
+    + campoLim('long_pause_sec', 'Duración de la pausa larga (segundos)', '600 son diez minutos.', true)
+    + campoLim('daily_cap', 'Tope de envíos por día', 'Al llegar aquí, lo que quede se pasa al día siguiente.', true)
+    + campoLim('resume_hour', 'Hora a la que se reanuda', 'De 0 a 23, hora de La Romana.', true)
+    + campoLim('quality_cutoff', 'Fallos seguidos que pausan el puente', 'El freno de emergencia. De 1 a 20; no se puede quitar.', true)
+    + '</div>'
+    + '<button class="btn-linea" id="cfgGuardaLimites" style="margin-top:8px">Guardar límites</button>';
+}
+
+function agendaCfg(){
+  if (!CFG.firebaseAgendaUrl) return '<p class="cfgnota">No hay URL de agenda configurada.</p>';
+  if (!AJUSTES.agenda_feed_key) {
+    return '<p class="cfgnota">Todavía no está activado: falta la llave del enlace.</p>'
+      + '<button class="btn-linea" id="cfgAgendaActivar">Activar el calendario</button>';
+  }
+  return '<div class="dato"><div class="k">Enlace de suscripción</div>'
+    + '<div class="v" style="word-break:break-all;font-size:11.5px">' + esc(urlAgenda()) + '</div></div>'
+    + '<button class="btn-linea" id="cfgAgendaGoogle" style="margin-top:8px">Añadir a Google Calendar</button>'
+    + '<button class="btn-linea" id="cfgCopiaAgenda" style="margin-top:8px">Copiar enlace</button>'
+    // Cambiar la llave es la unica forma de retirar el acceso a quien ya tenga el enlace:
+    // una URL compartida no se puede "desenviar".
+    + '<button class="btn-linea" id="cfgAgendaRota" style="margin-top:8px">Cambiar el enlace</button>';
+}
+
 function montaConfig(){
   if (!montadas.has('config')) {
     montadas.add('config');
@@ -5029,6 +5089,12 @@ async function pintaConfig(){
   await cargaAjustes();
   const quien = await llama({ action:'whoami' });
   const esAdmin = quien.ok && quien.rol_efectivo === 'admin';
+  // Solo se piden si quien mira puede cambiarlos: al resto el servidor le responde 403 y
+  // pintar un error donde no hay ningun problema confunde mas que no ensenar la tarjeta.
+  if (esAdmin) {
+    const rl = await llama({ action:'bridgeLimits', operation:'get' });
+    LIMITES = rl.ok ? rl.limites : null;
+  }
 
   const dato = (k,v) => '<div class="dato"><div class="k">' + esc(k) + '</div><div class="v">'
     + esc(String(v ?? '—')) + '</div></div>';
@@ -5083,15 +5149,19 @@ async function pintaConfig(){
         interruptorCfg('encuesta_auto', 'Pedir la encuesta automáticamente',
           'Solo a quien terminó comprando.', false))
 
-    + tarjetaCfg('Agenda en el teléfono',
-        'La agenda se publica como calendario suscribible. Se añade una vez en el iPhone o en '
-        + 'Google Calendar y se actualiza sola; no hay que volver a importarla.',
-        (CFG.firebaseAgendaUrl
-          ? '<div class="dato"><div class="k">Enlace de suscripción</div>'
-            + '<div class="v" style="word-break:break-all;font-size:11.5px">'
-            + esc(CFG.firebaseAgendaUrl) + '</div></div>'
-            + '<button class="btn-linea" id="cfgCopiaAgenda" style="margin-top:8px">Copiar enlace</button>'
-          : '<p class="cfgnota">No hay URL de agenda configurada.</p>'))
+    + tarjetaCfg('Límites de seguridad del 2.º número',
+        'El 809-478-5620 es un WhatsApp personal, no una API: si WhatsApp lo ve enviar en '
+        + 'ráfaga, lo bloquea sin aviso y sin dónde reclamar. Estos números son lo único que lo '
+        + 'protege. Se pueden ajustar, pero el servidor los recorta a un rango seguro: no hay '
+        + 'forma de dejarlo sin pausa ni sin freno. <b>El puente los aplica sin reiniciarlo.</b>',
+        limitesCfg(esAdmin))
+
+    + tarjetaCfg('Agenda en Google Calendar',
+        'Las sesiones agendadas se publican como un calendario al que Google se suscribe: se '
+        + 'añade una vez y se actualiza solo, sin volver a importar nada. Google no lo refresca '
+        + 'al instante --suele tardar unas horas en recoger un cambio--, así que el sitio donde '
+        + 'se agenda sigue siendo el CRM; el calendario es para verlo desde el teléfono.',
+        agendaCfg())
 
     + tarjetaCfg('Catálogo público',
         'De aquí salen los combos y los precios que se le mandan al cliente. Se lee de la web, '
@@ -5179,10 +5249,55 @@ async function pintaConfig(){
     gt.disabled = false;
     avisa('Mensajes guardados');
   };
+  // Se vuelve a pintar con lo que el servidor DEVUELVE, no con lo que se escribio: si un
+  // valor venia fuera de rango, cleanPacing lo recorta y hay que ver el numero que de verdad
+  // quedo guardado. Creer que se guardo un tope de 500 cuando el servidor puso otro es la
+  // clase de malentendido que solo se descubre con el numero ya bloqueado.
+  const gl = $('cfgGuardaLimites');
+  if (gl) gl.onclick = async () => {
+    const limites = {};
+    g.querySelectorAll('[data-lim]').forEach(el => { limites[el.dataset.lim] = Number(el.value); });
+    gl.disabled = true;
+    const r = await llama({ action:'bridgeLimits', operation:'save', limites });
+    gl.disabled = false;
+    if (!r.ok) return avisa('No se pudieron guardar', r.error);
+    LIMITES = r.limites;
+    avisa('Límites guardados', 'El puente los aplica sin reiniciarlo.');
+    pintaConfig();
+  };
+  // Se copia la URL COMPLETA, con la llave. Copiar la de antes --sin llave-- era copiar algo
+  // que Google rechaza con 401 sin decir nada.
   const ca = $('cfgCopiaAgenda');
   if (ca) ca.onclick = async () => {
-    try { await navigator.clipboard.writeText(CFG.firebaseAgendaUrl); avisa('Enlace copiado'); }
+    try { await navigator.clipboard.writeText(urlAgenda()); avisa('Enlace copiado'); }
     catch (e) { avisa('No se pudo copiar'); }
+  };
+  const aa = $('cfgAgendaActivar');
+  if (aa) aa.onclick = async () => {
+    aa.disabled = true;
+    const ok = await guardaAjuste('agenda_feed_key', nuevaLlaveAgenda());
+    if (!ok) { aa.disabled = false; return; }
+    avisa('Calendario activado', 'Ya se puede añadir a Google Calendar.');
+    pintaConfig();
+  };
+  // Google pide la URL en "Añadir calendario > Desde URL". Este enlace abre esa pantalla con
+  // la direccion ya puesta; si alguna version de Google la pide a mano, esta el boton de
+  // copiar al lado.
+  const ag = $('cfgAgendaGoogle');
+  if (ag) ag.onclick = () => {
+    const u = urlAgenda(); if (!u) return;
+    window.open('https://calendar.google.com/calendar/r?cid=' + encodeURIComponent(u), '_blank', 'noopener');
+  };
+  const ar = $('cfgAgendaRota');
+  if (ar) ar.onclick = async () => {
+    if (!confirm('Se genera un enlace nuevo y el anterior deja de funcionar.\n\n'
+      + 'Los calendarios que ya lo tengan añadido --el tuyo incluido-- dejarán de '
+      + 'actualizarse hasta que se añada el nuevo.\n\n¿Cambiarlo?')) return;
+    ar.disabled = true;
+    const ok = await guardaAjuste('agenda_feed_key', nuevaLlaveAgenda());
+    if (!ok) { ar.disabled = false; return; }
+    avisa('Enlace cambiado', 'Hay que volver a añadirlo en Google Calendar.');
+    pintaConfig();
   };
   const cr = $('cfgReglas2'); if (cr) cr.onclick = abreReglas;
   const ic = $('cfgIrCanales'); if (ic) ic.onclick = () => ve('canales');
