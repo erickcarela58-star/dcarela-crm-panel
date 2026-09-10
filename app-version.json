@@ -1,6 +1,6 @@
 {
-  "version": "2026-09-09-los-archivos-ya-se-guardan-v102",
+  "version": "2026-09-09-limites-y-calendario-v103",
   "channel": "crm",
-  "released_at": "2026-09-09T17:00:00Z",
-  "summary": "Las fotos, stickers y notas de voz del 2.º numero ya se guardan y se ven en el panel. Lo que entro antes no tiene archivo: nunca llego a guardarse, y el aviso del hueco ahora lo dice asi."
+  "released_at": "2026-09-09T20:30:00Z",
+  "summary": "Los limites antibloqueo del 2.º numero se ajustan desde Configuracion y el puente los aplica sin reiniciarlo. Y el calendario ya se conecta con Google Calendar: el enlace llevaba la llave de menos, y ahora incluye tambien las sesiones tentativas."
 }
