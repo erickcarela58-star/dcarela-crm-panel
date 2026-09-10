@@ -383,6 +383,14 @@ video.mmedia{cursor:default}
 .marchivo b{font-size:13px;word-break:break-word}
 .marchivo span{font-size:11px;color:var(--meta)}
 .marchivo a{margin-top:4px;font-size:12px;font-weight:650;color:inherit}
+/* Registro de llamada. Desde el CRM no se atiende una llamada, pero una perdida es tan
+   pendiente como un mensaje sin contestar: por eso se pinta, y por eso la perdida se
+   distingue de la contestada sin tener que leer. */
+.mllamada{display:flex;align-items:center;gap:9px;padding:7px 10px;margin:2px 0 4px;
+  border-radius:6px;background:rgba(11,20,26,.06);font-size:12.5px}
+:root[data-tema="oscuro"] .mllamada{background:rgba(255,255,255,.07)}
+.mllamada svg{width:17px;height:17px;flex:0 0 auto;stroke-width:1.9}
+.mllamada.perdida{color:var(--bad)}
 .mpie{margin-top:3px;white-space:pre-wrap;word-break:break-word}
 /* Botones de accion tal como los ve el cliente: separados del texto por una linea y
    repartidos en filas. No son pulsables desde aqui -- los pulsa el, no nosotros. */
@@ -2949,6 +2957,20 @@ function adjuntoDe(m){
     url: (m && m.media_url) || a.url || '',
   };
 }
+// El detalle de la llamada viaja en metadata, que segun de donde venga la fila llega como
+// objeto o como texto JSON. Se acepta lo que sea: perder el estado dejaria todas las llamadas
+// pintadas igual, y "perdida" y "contestada" son justo lo que hay que distinguir.
+function llamadaDe(m){
+  let meta = m && m.metadata;
+  if (typeof meta === 'string') { try { meta = JSON.parse(meta); } catch (e) { meta = null; } }
+  const l = (meta && typeof meta === 'object' && meta.llamada) || {};
+  return { estado: String(l.estado || 'perdida'), video: l.video === true, duracion: Number(l.duracion) || 0 };
+}
+const ESTADO_LLAMADA = {
+  perdida: 'perdida', rechazada: 'rechazada', fallida: 'fallida', silenciada: 'silenciada',
+  en_curso: 'en curso', contestada_en_otro_dispositivo: 'contestada en otro dispositivo',
+  contestada: 'contestada',
+};
 function pesoLegible(n){
   if (!n) return '';
   const u = ['B','KB','MB','GB']; let i = 0;
@@ -3073,6 +3095,23 @@ function cuerpoMensaje(m){
     return medio('Sticker', (src, porId) =>
       '<img class="msticker" alt="sticker" loading="lazy"'
       + (porId ? ' data-medio="' + esc(id) + '"' : ' src="' + src + '"') + '>');
+  }
+  // Las llamadas del 2.º número. No se pueden atender desde el CRM --esto no es un teléfono--
+  // pero sin verlas la conversación parecía muerta el día que el cliente llamó tres veces.
+  if (t === 'call') {
+    const l = llamadaDe(m);
+    const sinAtender = ['perdida', 'rechazada', 'fallida'].includes(l.estado);
+    const clase = l.video ? 'Videollamada' : 'Llamada';
+    const dur = l.duracion > 0
+      ? ' · ' + Math.floor(l.duracion / 60) + ':' + String(l.duracion % 60).padStart(2, '0') : '';
+    const icono = l.video
+      ? '<path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2"/>'
+      : '<path d="M22 16.9v3a2 2 0 01-2.2 2 19.8 19.8 0 01-8.6-3.1 19.5 19.5 0 01-6-6A19.8 19.8 0 012.1 4.2 2 2 0 014.1 2h3a2 2 0 012 1.7c.1 1 .3 1.9.6 2.8a2 2 0 01-.5 2.1L8.1 9.7a16 16 0 006 6l1.1-1.1a2 2 0 012.1-.5c.9.3 1.8.5 2.8.6a2 2 0 011.9 2.1z"/>'
+        + (sinAtender ? '<path d="M23 1L17 7M17 1l6 6"/>' : '');
+    return '<div class="mllamada' + (sinAtender ? ' perdida' : '') + '">'
+      + '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">'
+      + icono + '</svg>'
+      + '<span>' + esc(clase + ' ' + (ESTADO_LLAMADA[l.estado] || 'contestada') + dur) + '</span></div>';
   }
   if (t === 'video') {
     return medio('Video', (src, porId) =>
