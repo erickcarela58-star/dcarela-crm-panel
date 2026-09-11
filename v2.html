@@ -2154,13 +2154,22 @@ async function abreRapidas(){
           + 'empezar con seis frases habituales</button></p>'
         : '')
       + (filas.length
-        ? filas.map((q,i) => '<div class="rapida"><button data-usar="' + i + '">'
-            + '<b>' + esc(q.title || q.name || 'Sin título') + '</b>'
+        ? filas.map((q,i) => {
+            const cq = String(q.categoria || '').toLowerCase();
+            return '<div class="rapida"><button data-usar="' + i + '">'
+            + '<b>' + esc(q.title || q.name || 'Sin título')
+            + (cq && CAT_ANUNCIO[cq] ? ' <span class="insig-anuncio">' + esc(CAT_ANUNCIO[cq]) + '</span>' : '') + '</b>'
             + '<span>' + esc(String(q.body || q.text || '').slice(0,110)) + '</span></button>'
-            + '<button class="rx" data-borrar="' + i + '" aria-label="Borrar">×</button></div>').join('')
+            + '<button class="rx" data-borrar="' + i + '" aria-label="Borrar">×</button></div>';
+          }).join('')
         : '')
       + '<div class="seccion" style="margin:16px 0 8px">Añadir una nueva</div>'
       + '<div class="campo"><label>Título</label><input id="rqT" placeholder="Ej. Horario"></div>'
+      + '<div class="campo"><label>Categoría</label><select id="rqCat">'
+      +   '<option value="">Para cualquier sesión</option>'
+      +   Object.keys(CAT_ANUNCIO).map(k => '<option value="' + k + '"'
+          + (catSel === k ? ' selected' : '') + '>' + esc(CAT_ANUNCIO[k]) + '</option>').join('')
+      + '</select></div>'
       + '<div class="campo"><label>Texto</label><textarea id="rqB" rows="3"></textarea></div>'
       + '<button class="btn-solido" id="rqAdd">Guardar</button>';
     // Seis frases que se repiten veinte veces al dia en un estudio fotografico. Son un
@@ -2191,8 +2200,9 @@ async function abreRapidas(){
       const title = $('rqT').value.trim(), body = $('rqB').value.trim();
       if (!title || !body) return avisa('Faltan el título o el texto');
       $('rqAdd').disabled = true;
+      const categoria = ($('rqCat') && $('rqCat').value) || '';
       const r = await llama({ action:'data', table:'quick_replies', operation:'insert',
-        payload:{ title, body, created_at: new Date().toISOString() }, returning:true });
+        payload:{ title, body, categoria: categoria || null, created_at: new Date().toISOString() }, returning:true });
       $('rqAdd').disabled = false;
       if (!r.ok) return avisa('No se pudo guardar', r.error);
       RAPIDAS = null;
