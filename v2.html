@@ -2297,10 +2297,13 @@ async function cargaCombos(forzar){
 // quien la recibe ya esta escribiendo al estudio, y el numero grabado en 39 PNG caduca
 // solo (ya paso una vez).
 //
-// Las genera carela-compufoto-publish/scripts/export_combos_flyer.py leyendo el MISMO
+// Las genera carela-compufoto-publish/scripts/generar_tarjetas_combo.mjs leyendo el MISMO
 // combos.html que lee esta funcion, y catalog-v33.test.js exige que exista una tarjeta
 // para cada uno de los 39 nombres usando este mismo combosSlug(). Si se cambia la regla
 // del slug de aqui abajo, esa prueba y el generador avisan.
+//
+// El panel de texto de la tarjeta va encajado abajo y su alto lo decide el contenido: se
+// eligio asi para no taparle la cara ni el vestuario al sujeto, que es lo que vende.
 //
 // Redibujarlas aqui seria mantener un segundo diseño que se separa del real en cuanto
 // alguien toque la web.
