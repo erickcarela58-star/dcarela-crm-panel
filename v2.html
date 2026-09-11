@@ -320,6 +320,11 @@ img.av{object-fit:cover}
 .cabecera .quien-chat{flex:1;min-width:0}
 .cabecera .quien-chat b{display:block;font-size:15px;font-weight:600}
 .cabecera .quien-chat span{display:block;font-size:12px;color:var(--mut)}
+/* Distintivo del anuncio de origen: se lee de un vistazo sin robarle sitio al nombre. */
+.insig-anuncio{display:inline-block;padding:1px 7px;border-radius:999px;
+  background:rgba(37,99,235,.14);color:#60a5fa;font-weight:600;font-size:11px;
+  vertical-align:baseline;max-width:210px;overflow:hidden;text-overflow:ellipsis;
+  white-space:nowrap}
 .cabecera .modo{padding:8px 14px;border:1px solid var(--line2);border-radius:var(--r2);
   font-size:12.5px;font-weight:600}
 .cabecera .modo:hover{background:var(--hover)}
@@ -1699,7 +1704,7 @@ function abre(c){
     +   '<span class="canalpin" title="' + esc(CANALES[canalDe(c)].nombre) + '" '
     +     'style="background:' + CANALES[canalDe(c)].color + '">' + CANALES[canalDe(c)].logo + '</span></div>'
     + '<div class="quien-chat"><b>' + esc(n) + '</b><span>+' + esc(c.wa_phone || '')
-    +   ' · ' + esc(CANALES[canalDe(c)].corto) + '</span></div>'
+    +   ' · ' + esc(CANALES[canalDe(c)].corto) + insigniaAnuncio(c) + '</span></div>'
     + '<button class="modo" id="btnModo"></button>'
     + '<button class="adj" id="verFicha" title="Ficha del lead" aria-label="Ficha del lead">'
     +   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 8v.01M11 12h1v4h1"/></svg></button>'
@@ -2091,6 +2096,22 @@ function cableaAdjuntos(){
   $('adjRapida').onclick = abreRapidas;
 }
 
+/* ---- De que anuncio viene quien escribe ---------------------------------- */
+// Meta manda el anuncio solo en el primer mensaje; el servidor lo guarda en la ficha.
+// Aqui solo se pinta: sin esto, quien atiende no sabe si contesta a graduacion o a XV.
+const CAT_ANUNCIO = { xv:'XV', infantil:'Infantil', graduacion:'Graduación',
+  cumpleanos:'Cumpleaños', embarazadas:'Maternidad' };
+
+function insigniaAnuncio(c){
+  if (!c || !(c.anuncio_id || c.anuncio_clid || c.anuncio_titular)) return '';
+  const cat = CAT_ANUNCIO[String(c.anuncio_categoria || '').toLowerCase()] || '';
+  const etiqueta = c.anuncio_titular || (c.anuncio_id ? 'Anuncio ' + c.anuncio_id : 'Anuncio');
+  const detalle = [etiqueta, c.anuncio_id ? 'id ' + c.anuncio_id : '', c.anuncio_visto_en ? 'visto ' + c.anuncio_visto_en.slice(0,10) : '']
+    .filter(Boolean).join(' · ');
+  return ' · <span class="insig-anuncio" title="' + esc(detalle) + '">📣 '
+    + esc(cat || etiqueta.slice(0, 28)) + '</span>';
+}
+
 /* ---- Respuestas rapidas -------------------------------------------------- */
 // Frases del equipo, guardadas en el servidor y no en el navegador: si viven en
 // localStorage, cada persona tiene las suyas y lo que escribe el negocio deja de
@@ -2111,8 +2132,20 @@ async function abreRapidas(){
   abreModal('<div class="mtapa"><b>Respuestas rápidas</b><button class="cerrarm" data-cerrar>×</button></div>'
     + '<div class="mcuerpo"><span class="cargando"></span> Cargando…</div>');
   $('modal').querySelectorAll('[data-cerrar]').forEach(b => { b.onclick = cierraModal; });
-  const filas = await cargaRapidas(true);
-  if (!filas) return cierraModal();
+  const todas = await cargaRapidas(true);
+  if (!todas) return cierraModal();
+  // Si la persona llego por un anuncio, primero las frases de esa categoria. Quien
+  // atiende no deberia tener que buscar la respuesta de graduacion entre las de bodas.
+  const catSel = String((sel && sel.anuncio_categoria) || '').toLowerCase();
+  const filas = !catSel ? todas : todas.slice().sort((a, b) => {
+    const ca = String(a.categoria || '').toLowerCase() === catSel ? 0 : 1;
+    const cb = String(b.categoria || '').toLowerCase() === catSel ? 0 : 1;
+    return ca - cb;
+  });
+  if (catSel) {
+    const cuantas = filas.filter(q => String(q.categoria || '').toLowerCase() === catSel).length;
+    if (cuantas) avisa('Vino de ' + (CAT_ANUNCIO[catSel] || catSel), cuantas + ' respuesta(s) de esa categoría, primero');
+  }
   const cuerpo = $('modal').querySelector('.mcuerpo');
   const pinta = () => {
     cuerpo.innerHTML = (!filas.length
