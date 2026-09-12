@@ -2244,8 +2244,9 @@ async function abreRapidas(){
 const COMBO_PAGINA = CFG.publicCatalogUrl || 'https://dcarelacompufoto.com/combos.html';
 const COMBO_IMG = 'https://dcarelacompufoto.com/combos-img/';
 const COMBO_PDF = 'https://dcarelacompufoto.com/pdf/';
+const COMBO_BODA_PAGINA = CFG.publicWeddingUrl || 'https://dcarelacompufoto.com/boda.html';
 const COMBO_CATEGORIAS = { xv:'XV', infantil:'Infantil', graduacion:'Graduación',
-  cumpleanos:'Cumpleaños', embarazadas:'Embarazadas' };
+  cumpleanos:'Cumpleaños', embarazadas:'Embarazadas', boda:'Boda' };
 const COMBO_PDFS = [
   { cat:'xv', label:'XV', n:5 }, { cat:'infantil', label:'Infantil', n:8 },
   { cat:'graduacion', label:'Graduación', n:3 }, { cat:'cumpleanos', label:'Cumpleaños', n:15 },
@@ -2286,6 +2287,41 @@ async function cargaCombos(forzar){
         tarjeta: COMBO_IMG + combosSlug(cat, nombre) + '.png',
       });
     }
+  }
+  // Bodas usan un catálogo específico porque sus combos permiten elegir tamaño
+  // de cuadro. Se consume el JSON publicado junto a boda.html para que nombre,
+  // precio ITBIS y contenido sean siempre los vigentes; la foto optimizada es el
+  // flyer real de esa cobertura y evita las antiguas rutas /combos-img/*.png.
+  try {
+    const bodaDataUrl = new URL('combos-boda-data.json', COMBO_BODA_PAGINA).href;
+    const br = await fetch(bodaDataUrl, { cache: forzar ? 'reload' : 'default' });
+    if (br.ok) {
+      const boda = await br.json();
+      const fotos = { estudio: 0, 'civil-estudio': 3, playa: 6, preboda: 9 };
+      for (const [tipo, grupo] of Object.entries(boda.categorias || {})) {
+        for (const combo of grupo.combos || []) {
+          const foto = fotos[tipo] ?? 0;
+          const flyer = new URL('img/optimized-v33/pf_boda_' + foto + '-960.webp', COMBO_BODA_PAGINA).href;
+          const precio = Number(combo.desde || 0);
+          filas.push({
+            cat: 'boda', catLabel: 'Boda · ' + String(grupo.label || tipo),
+            nombre: String(combo.nombre || (combo.digitales + ' fotos digitales')).trim(),
+            precio: precio ? 'RD$' + precio.toLocaleString('es-DO') : '',
+            digital: combo.digitales ? combo.digitales + ' fotos digitales editadas' : '',
+            items: [
+              combo.digitales ? combo.digitales + ' fotos digitales editadas' : '',
+              '1 cuadro (tamaño a elegir)', '10 fotos impresas 5x7', '2 tazas personalizadas', '2 llaveros'
+            ].filter(Boolean),
+            incluyeLabel: 'Incluye',
+            incluye: 'Precios finales con ITBIS 18% incluido. Cuadro personalizable.',
+            acento: '', insignia: 'ITBIS incluido', nota: boda.nota || '',
+            imagenCruda: flyer, tarjeta: flyer,
+          });
+        }
+      }
+    }
+  } catch (e) {
+    console.warn('No se pudo leer combos de boda', e);
   }
   COMBOS = filas;
   return filas;
