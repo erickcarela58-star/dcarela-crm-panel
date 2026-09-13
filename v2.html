@@ -1288,9 +1288,30 @@ function iniciales(n){
   return String(n || '?').replace(/[^\p{L}\p{N} ]/gu,'').trim().split(/\s+/)
     .slice(0,2).map(p => p[0] || '').join('').toUpperCase() || '#';
 }
+// Instante de un valor de fecha, en milisegundos, o NaN si no se puede leer. Acepta la cadena
+// ISO que escriben casi todos los caminos, el Timestamp de Firestore y un numero.
+function instante(v){
+  if (v == null || v === '') return NaN;
+  if (typeof v === 'number') return v < 10_000_000_000 ? v * 1000 : v;
+  if (typeof v === 'object' && typeof v.seconds === 'number') return v.seconds * 1000;
+  return Date.parse(String(v));
+}
+// Un mensaje sin fecha legible se ordena AL FINAL, no al principio. Llego sin ella porque
+// alguien lo acababa de escribir -- ese era el caso real: los envios del 2.o numero -- asi
+// que el final es donde casi seguro va. Al principio lo dejaba el orden por texto, y ahi
+// parecia un mensaje de hace meses.
+function instanteMsg(m){
+  for (const v of [m.created_at, m.synced_at, m.delivery_updated_at, m.updated_at]) {
+    const t = instante(v);
+    if (Number.isFinite(t)) return t;
+  }
+  return Number.MAX_SAFE_INTEGER;
+}
+
 function hora(v){
   if (!v) return '';
-  const d = new Date(v), hoy = new Date();
+  if (!Number.isFinite(instante(v))) return '';
+  const d = new Date(instante(v)), hoy = new Date();
   if (d.toDateString() === hoy.toDateString())
     return d.toLocaleTimeString('es-DO', { hour:'2-digit', minute:'2-digit' });
   const ayer = new Date(hoy); ayer.setDate(hoy.getDate() - 1);
@@ -1325,8 +1346,10 @@ function escuchaMensajes(idConv){
   const q = query(collection(db,'crm_messages'),
     where('business_id','==',NEGOCIO), where('conversation_id','==',idConv), limit(400));
   paraMsgs = onSnapshot(q, s => {
+    // Se ordena por instante, no por el texto de created_at: un mensaje sin fecha tenia la
+    // cadena vacia y la cadena vacia va antes que cualquier otra.
     MSGS = s.docs.map(d => d.data())
-      .sort((a,b) => String(a.created_at||'').localeCompare(String(b.created_at||'')));
+      .sort((a,b) => instanteMsg(a) - instanteMsg(b));
     if (sel && (sel.id === idConv || sel._id === idConv)) pintaMensajes();
   }, err => {
     const cont = $('mensajes');
@@ -2247,9 +2270,8 @@ async function abreRapidas(){
 const COMBO_PAGINA = CFG.publicCatalogUrl || 'https://dcarelacompufoto.com/combos.html';
 const COMBO_IMG = 'https://dcarelacompufoto.com/combos-img/';
 const COMBO_PDF = 'https://dcarelacompufoto.com/pdf/';
-const COMBO_BODA_PAGINA = CFG.publicWeddingUrl || 'https://dcarelacompufoto.com/boda.html';
 const COMBO_CATEGORIAS = { xv:'XV', infantil:'Infantil', graduacion:'Graduación',
-  cumpleanos:'Cumpleaños', embarazadas:'Embarazadas', boda:'Boda' };
+  cumpleanos:'Cumpleaños', embarazadas:'Embarazadas' };
 const COMBO_PDFS = [
   { cat:'xv', label:'XV', n:5 }, { cat:'infantil', label:'Infantil', n:8 },
   { cat:'graduacion', label:'Graduación', n:3 }, { cat:'cumpleanos', label:'Cumpleaños', n:15 },
@@ -2290,41 +2312,6 @@ async function cargaCombos(forzar){
         tarjeta: COMBO_IMG + combosSlug(cat, nombre) + '.png',
       });
     }
-  }
-  // Bodas usan un catálogo específico porque sus combos permiten elegir tamaño
-  // de cuadro. Se consume el JSON publicado junto a boda.html para que nombre,
-  // precio ITBIS y contenido sean siempre los vigentes; la foto optimizada es el
-  // flyer real de esa cobertura y evita las antiguas rutas /combos-img/*.png.
-  try {
-    const bodaDataUrl = new URL('combos-boda-data.json', COMBO_BODA_PAGINA).href;
-    const br = await fetch(bodaDataUrl, { cache: forzar ? 'reload' : 'default' });
-    if (br.ok) {
-      const boda = await br.json();
-      const fotos = { estudio: 0, 'civil-estudio': 3, playa: 6, preboda: 9 };
-      for (const [tipo, grupo] of Object.entries(boda.categorias || {})) {
-        for (const combo of grupo.combos || []) {
-          const foto = fotos[tipo] ?? 0;
-          const flyer = new URL('img/optimized-v33/pf_boda_' + foto + '-960.webp', COMBO_BODA_PAGINA).href;
-          const precio = Number(combo.desde || 0);
-          filas.push({
-            cat: 'boda', catLabel: 'Boda · ' + String(grupo.label || tipo),
-            nombre: String(combo.nombre || (combo.digitales + ' fotos digitales')).trim(),
-            precio: precio ? 'RD$' + precio.toLocaleString('es-DO') : '',
-            digital: combo.digitales ? combo.digitales + ' fotos digitales editadas' : '',
-            items: [
-              combo.digitales ? combo.digitales + ' fotos digitales editadas' : '',
-              '1 cuadro (tamaño a elegir)', '10 fotos impresas 5x7', '2 tazas personalizadas', '2 llaveros'
-            ].filter(Boolean),
-            incluyeLabel: 'Incluye',
-            incluye: 'Precios finales con ITBIS 18% incluido. Cuadro personalizable.',
-            acento: '', insignia: 'ITBIS incluido', nota: boda.nota || '',
-            imagenCruda: flyer, tarjeta: flyer,
-          });
-        }
-      }
-    }
-  } catch (e) {
-    console.warn('No se pudo leer combos de boda', e);
   }
   COMBOS = filas;
   return filas;
@@ -3240,8 +3227,12 @@ function pintaMensajes(){
   // metadata (index.js:1283), no en el primer nivel. Filtrando por m.deleted_at el
   // mensaje seguia a la vista mientras el panel decia "ocultado".
   const html = MSGS.filter(m => !m.metadata?.deleted && !m.metadata?.deleted_at).map(m => {
-    const d = new Date(m.created_at);
-    const etiquetaDia = d.toLocaleDateString('es-DO', { day:'numeric', month:'short' });
+    const t = instanteMsg(m);
+    const conFecha = t !== Number.MAX_SAFE_INTEGER;
+    const d = new Date(conFecha ? t : Date.now());
+    // Sin fecha no se inventa un separador: se queda bajo el dia anterior. Pintar "Invalid
+    // Date" como separador era lo que lo delataba, pero tambien lo que confundia.
+    const etiquetaDia = conFecha ? d.toLocaleDateString('es-DO', { day:'numeric', month:'short' }) : dia;
     let cabeza = '';
     if (etiquetaDia !== dia) { dia = etiquetaDia; cabeza = '<div class="dia">' + esc(etiquetaDia) + '</div>'; antes = ''; }
     const sale = m.direction === 'out';
@@ -3262,7 +3253,7 @@ function pintaMensajes(){
       + ' data-msg="' + esc(m.id || m.wamid || '') + '">'
       + '<button class="gaccion" aria-label="Opciones del mensaje">⌄</button>'
       + autor + cita + cuerpoMensaje(m)
-      + '<span class="pie-globo">' + esc(d.toLocaleTimeString('es-DO',{hour:'2-digit',minute:'2-digit'})) + ticks + '</span>'
+      + '<span class="pie-globo">' + (conFecha ? esc(d.toLocaleTimeString('es-DO',{hour:'2-digit',minute:'2-digit'})) : '') + ticks + '</span>'
       + '</div>';
   }).join('') || '<div style="margin:auto;color:var(--mut);font-size:13px">Sin mensajes todavía.</div>';
 
