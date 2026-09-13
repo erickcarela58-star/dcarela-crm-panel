@@ -1,6 +1,6 @@
 {
-  "version": "2026-09-09-registro-de-llamadas-v104",
+  "version": "2026-09-13-fechas-mensajes-v105",
   "channel": "crm",
-  "released_at": "2026-09-09T22:00:00Z",
-  "summary": "Las llamadas del 2.º numero ya se ven en la conversacion: perdidas, rechazadas y contestadas, con la perdida marcada. Desde el CRM no se atienden, pero dejan de ser invisibles."
+  "released_at": "2026-09-13T20:00:00Z",
+  "summary": "Los mensajes enviados por el 2.o numero ya no salen arriba del hilo con \"Invalid Date\": se guardan con fecha y el panel ordena por instante. Incluye los arreglos del 11 y 13 de septiembre que no se habian publicado."
 }
