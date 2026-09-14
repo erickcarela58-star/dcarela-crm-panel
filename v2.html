@@ -5329,8 +5329,8 @@ async function pintaConfig(){
         limitesCfg(esAdmin))
 
     + tarjetaCfg('Agenda en Google Calendar',
-        'Las sesiones agendadas se publican como un calendario al que Google se suscribe: se '
-        + 'añade una vez y se actualiza solo, sin volver a importar nada. Google no lo refresca '
+        'Las sesiones agendadas y los seguimientos se publican como un calendario al que Google '
+        + 'se suscribe: se añade una vez y se actualiza solo, sin volver a importar nada. Google no lo refresca '
         + 'al instante --suele tardar unas horas en recoger un cambio--, así que el sitio donde '
         + 'se agenda sigue siendo el CRM; el calendario es para verlo desde el teléfono.',
         agendaCfg())
@@ -5455,10 +5455,15 @@ async function pintaConfig(){
   // Google pide la URL en "Añadir calendario > Desde URL". Este enlace abre esa pantalla con
   // la direccion ya puesta; si alguna version de Google la pide a mano, esta el boton de
   // copiar al lado.
+  //
+  // Con cid=https://... Google a veces contesta "no se pudo añadir el calendario": la forma que
+  // documenta para suscribirse es webcal://. Google lo pide por http y el servidor lo redirige
+  // a https (comprobado: 302 a la misma direccion con la llave), asi que llega igual.
   const ag = $('cfgAgendaGoogle');
   if (ag) ag.onclick = () => {
     const u = urlAgenda(); if (!u) return;
-    window.open('https://calendar.google.com/calendar/r?cid=' + encodeURIComponent(u), '_blank', 'noopener');
+    const webcal = u.replace(/^https?:\/\//, 'webcal://');
+    window.open('https://calendar.google.com/calendar/r?cid=' + encodeURIComponent(webcal), '_blank', 'noopener');
   };
   const ar = $('cfgAgendaRota');
   if (ar) ar.onclick = async () => {
