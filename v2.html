@@ -1058,7 +1058,7 @@ video.mmedia{cursor:default}
 import { initializeApp, getApps } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js';
 import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut }
   from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js';
-import { getFirestore, collection, query, where, onSnapshot, doc, setDoc, getDocs, limit }
+import { getFirestore, collection, query, where, onSnapshot, doc, setDoc, getDocs, limit, orderBy }
   from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
 
 const CFG = window.CRM_CONFIG || window.DCARELA_CRM_CONFIG || {};
@@ -1343,19 +1343,32 @@ function escuchaMensajes(idConv){
   // mensajes, indistinguible de un chat vacio de verdad.
   // Con limit: sin el se descarga la conversacion entera, y hay chats con miles de
   // mensajes. Se traen los ultimos 400, que es mas de lo que nadie sube a leer.
-  const q = query(collection(db,'crm_messages'),
-    where('business_id','==',NEGOCIO), where('conversation_id','==',idConv), limit(400));
-  paraMsgs = onSnapshot(q, s => {
+  //
+  // Con orderBy. Sin el, limit(400) NO trae los ultimos 400: Firestore ordena por id de
+  // documento, y los ids son hashes del wamid, asi que devolvia 400 mensajes al azar de toda
+  // la historia. En un chat de mas de 400 mensajes, un mensaje nuevo cuyo hash cayera fuera
+  // del corte no aparecia nunca en el hilo, aunque la bandeja si enseñara su vista previa.
+  //
+  // Esa consulta necesita un indice compuesto. Si todavia no existe, Firestore responde
+  // failed-precondition y se cae a la consulta vieja: peor orden, pero el chat se ve.
+  const base = [where('business_id','==',NEGOCIO), where('conversation_id','==',idConv)];
+  const esEste = () => sel && (sel.id === idConv || sel._id === idConv);
+  const escucha = (q, esRespaldo) => onSnapshot(q, s => {
     // Se ordena por instante, no por el texto de created_at: un mensaje sin fecha tenia la
     // cadena vacia y la cadena vacia va antes que cualquier otra.
     MSGS = s.docs.map(d => d.data())
       .sort((a,b) => instanteMsg(a) - instanteMsg(b));
-    if (sel && (sel.id === idConv || sel._id === idConv)) pintaMensajes();
+    if (esEste()) pintaMensajes();
   }, err => {
+    if (!esRespaldo && err?.code === 'failed-precondition' && esEste()) {
+      paraMsgs = escucha(query(collection(db,'crm_messages'), ...base, limit(400)), true);
+      return;
+    }
     const cont = $('mensajes');
     if (cont) cont.innerHTML = '<div style="margin:auto;max-width:340px;text-align:center;color:var(--mut);font-size:13px">'
       + 'No se pudieron cargar los mensajes.<br><b>' + esc(err?.code || 'error') + '</b></div>';
   });
+  paraMsgs = escucha(query(collection(db,'crm_messages'), ...base, orderBy('created_at','desc'), limit(400)), false);
 }
 // Version cargada y aviso de que hay otra publicada.
 //
@@ -1877,22 +1890,46 @@ function cableaChat(c){
     // hacia un cliente real.
     const conv = sel.id || sel._id;
     // El canal decide POR DONDE sale. Un chat que entro por WhatsApp Web no puede salir
-    // por el API oficial: el servidor lo rechaza con "canal incorrecto", que es lo que
-    // estaba pasando. Y ese canal todavia no admite archivos, asi que se dice antes de
-    // dejar adjuntar, en vez de fallar despues de subirlo.
+    // por el API oficial: el servidor lo rechaza con "canal incorrecto".
+    //
+    // Y ya manda archivos. Este bloque decia "WhatsApp Web todavía no envía archivos" y
+    // cortaba el envio, pero el puente sabia mandar imagen, audio y documento desde hacia
+    // tiempo, y el almacenamiento existe desde el 09/09: el bloqueo se habia quedado solo.
+    // Van por la misma cola, uno por mensaje, con el texto como pie del ultimo que lo admite.
     const porPuente = canalDe(sel) === 'whatsapp_qr';
-    if (porPuente && COLA.length) {
-      env.disabled = false;
-      return avisa('WhatsApp Web todavía no envía archivos',
-        'Ese canal solo admite texto por ahora. Quita el adjunto o escríbele desde el número oficial.');
-    }
     if (porPuente) {
-      const r = await llama({ action:'bridgeQueue', conversation_id: conv, body: t });
+      const pieEnQr = COLA.map(a => a.tipo).lastIndexOf('image') >= 0
+        ? COLA.map(a => a.tipo).lastIndexOf('image')
+        : COLA.map(a => a.tipo).lastIndexOf('document');
+      let salieronQr = 0, falloQr = null;
+      for (let i = 0; i < COLA.length && !falloQr; i++) {
+        const a = COLA[i];
+        const r = await llama({
+          action:'bridgeQueue', conversation_id: conv,
+          media_kind: a.tipo, media_b64: a.datos, media_filename: a.nombre, media_mime: a.mime,
+          body: (t && i === pieEnQr) ? t : '',
+        });
+        if (r.ok) salieronQr++; else falloQr = r.error;
+      }
+      // Los que ya salieron se quitan, igual que en el oficial: reintentar no los repite.
+      COLA.splice(0, salieronQr);
+      pintaCola();
+      if (!falloQr && t && pieEnQr < 0) {
+        const r = await llama({ action:'bridgeQueue', conversation_id: conv, body: t });
+        if (!r.ok) falloQr = r.error;
+      }
       env.disabled = false;
-      if (!r.ok) return avisa('No se pudo enviar', traduceErrorMeta(r.error));
+      if (falloQr) return avisa('No se pudo enviar', traduceErrorMeta(falloQr));
       caja.value = ''; caja.style.height = 'auto';
       cancelaCita();
       return;
+    }
+    // Instagram y Messenger solo reciben texto desde el CRM. Se dice ANTES de subir nada: el
+    // servidor ya lo rechaza, pero descubrirlo despues de esperar la subida es peor.
+    if (redSocial(sel) && COLA.length) {
+      env.disabled = false;
+      return avisa(redSocial(sel) + ' solo recibe texto desde el CRM',
+        'Quita el adjunto y mándalo desde la app de ' + redSocial(sel) + '.');
     }
     // El audio no admite pie de foto en la API de WhatsApp: si va texto con una nota de
     // voz, el texto se pierde. Por eso el texto viaja con el ultimo adjunto que SI
@@ -1985,7 +2022,13 @@ async function recalculaCola(){
       continue;
     }
     if (a.hd === modoHd && a.datos) continue;      // ya esta en el modo pedido
-    const blob = modoHd ? await comprimeHd(a.archivo) : await comprimeNormal(a.archivo);
+    let blob = modoHd ? await comprimeHd(a.archivo) : await comprimeNormal(a.archivo);
+    // WhatsApp Cloud API solo acepta JPEG y PNG como imagen. Una WebP pequeña pasaba sin
+    // recomprimir y Meta rechazaba el mensaje: asi salian los vestidos del catalogo, que la
+    // web publica en WebP, y la clienta no veia ninguno.
+    if (!/^image\/(jpe?g|png)$/i.test(blob.type || '')) {
+      blob = (await aJpeg(await cargaImagen(blob), modoHd ? 2560 : 1600, 0.9)) || blob;
+    }
     a.datos = await leeBase64(blob);
     a.mime = blob.type || a.archivo.type || 'image/jpeg';
     // Si se reencodeo, el nombre tiene que decir jpg: algunos visores se lian con un
@@ -2212,15 +2255,22 @@ async function abreRapidas(){
         ['Entrega', 'Las fotos editadas se entregan en unos días y te aviso por aquí en cuanto estén listas.'],
         ['Confirmar fecha', 'Déjame revisar la disponibilidad real de ese día y te confirmo enseguida.'],
       ];
+      // Se cuenta lo que de verdad se guardo. Un agente no tiene permiso de escritura aqui, y
+      // antes fallaban las seis y el panel decia igual "Seis respuestas creadas".
+      let creadas = 0, motivo = '';
       for (const [title, body] of base) {
-        await llama({ action:'data', table:'quick_replies', operation:'insert',
+        const r = await llama({ action:'data', table:'quick_replies', operation:'insert',
           payload:{ title, body: body.trim(), created_at: new Date().toISOString() } });
+        if (r.ok) creadas++; else motivo = r.error || motivo;
       }
+      semilla.disabled = false;
       RAPIDAS = null;
       const nuevas = await cargaRapidas(true);
       filas.length = 0; filas.push(...(nuevas || []));
       pinta();
-      avisa('Seis respuestas creadas', 'Edítalas o bórralas como quieras.');
+      if (!creadas) return avisa('No se creó ninguna', motivo || 'No tienes permiso para crear respuestas rápidas.');
+      avisa(creadas === base.length ? 'Seis respuestas creadas' : creadas + ' de ' + base.length + ' creadas',
+        creadas === base.length ? 'Edítalas o bórralas como quieras.' : (motivo || 'Algunas no se pudieron guardar.'));
     };
     $('rqAdd').onclick = async () => {
       const title = $('rqT').value.trim(), body = $('rqB').value.trim();
@@ -2361,7 +2411,9 @@ async function adjuntaVestidos(boton){
     for (const v of lista) {
       const r = await fetch(v.url, { cache:'no-cache' });
       if (!r.ok) continue;
-      const blob = await comprimeNormal(new File([await r.blob()], v.nombre + '.webp', { type:'image/webp' }));
+      const bruto = new File([await r.blob()], v.nombre + '.webp', { type:'image/webp' });
+      // A JPEG siempre: los vestidos se publican en WebP y WhatsApp no acepta WebP como imagen.
+      const blob = (await aJpeg(await cargaImagen(bruto), 1600, 0.88)) || bruto;
       COLA.push({ tipo:'image', mime: blob.type || 'image/jpeg',
         nombre: v.nombre + ' - DCarela.jpg', datos: await leeBase64(blob) });
     }
@@ -5540,7 +5592,9 @@ async function cableaEquipo(){
     const activar = b.textContent.trim() === 'inactivo';
     b.disabled = true;
     const r = await llama({ action:'data', table:'collaborators', operation:'update',
-      payload:{ active: activar }, filters:[{ column:'id', operator:'eq', value: b.dataset.colActivo }] });
+      // kind/field, que es lo unico que acepta el servidor. Con column/operator respondia 400
+      // "filtro invalido" y ningun colaborador se podia activar ni dar de baja.
+      payload:{ active: activar }, filters:[{ kind:'eq', field:'id', value: b.dataset.colActivo }] });
     b.disabled = false;
     if (!r.ok) return avisa('No se pudo cambiar', r.error);
     await pinta();
@@ -6832,9 +6886,31 @@ async function enviaBroadcast(){
   if (Array.isArray(AUDIENCIA.ids) && AUDIENCIA.ids.length) cuerpo.only_ids = AUDIENCIA.ids;
   $('bcEnviar').disabled = true;
   $('bcEnviar').textContent = 'Enviando…';
-  const r = await llama(cuerpo);
-  if (!r.ok) { $('bcEnviar').disabled = false; $('bcEnviar').textContent = 'Enviar a ' + cuantos;
-    return avisa('No se pudo enviar', r.error); }
+  // Por tandas. El servidor procesa lo que cabe en el tiempo de la funcion y devuelve el
+  // resto en pendientes_ids. Antes era una sola peticion que moria hacia el contacto 100:
+  // error sin cifras, y reintentar le volvia a escribir a los que ya lo tenian.
+  const r = { ok:true, sent:0, failed:0, errors:[] };
+  let corte = '', errorTanda = '';
+  for (let vuelta = 0; vuelta < 60; vuelta++) {
+    const t = await llama(cuerpo);
+    if (!t.ok) { errorTanda = t.error || 'error'; break; }
+    r.sent += Number(t.sent || 0);
+    r.failed += Number(t.failed || 0);
+    r.errors.push(...(t.errors || []));
+    $('bcEnviar').textContent = 'Enviando… ' + (r.sent + r.failed) + ' de ' + cuantos;
+    if (t.corte) { corte = t.corte; break; }
+    const quedan = Array.isArray(t.pendientes_ids) ? t.pendientes_ids : [];
+    if (!quedan.length) break;
+    cuerpo.only_ids = quedan;
+  }
+  if (errorTanda && !(r.sent + r.failed)) {
+    $('bcEnviar').disabled = false; $('bcEnviar').textContent = 'Enviar a ' + cuantos;
+    return avisa('No se pudo enviar', errorTanda);
+  }
+  if (errorTanda || corte) {
+    r.errors.unshift({ error: corte || ('Se detuvo a mitad: ' + errorTanda + '. Ya salieron ' + r.sent
+      + '; no vuelvas a enviar a todos o los repetirás.') });
+  }
   AUDIENCIA = null;
   $('bcSalida').innerHTML = '<div class="propuesta"><div class="tapa"><b>Envío terminado</b></div>'
     + '<div class="cuerpo">'
@@ -6980,17 +7056,17 @@ function abreEncuesta(c){
     b.disabled = true;
     // El canal decide la via, igual que al enviar un mensaje normal. El segundo numero
     // no pasa por la Cloud API: mandarlo por ahi responde "canal incorrecto".
+    // Siempre surveyInvite: es quien crea la reseña, pone el enlace y guarda el colaborador,
+    // y ya sabe mandarla por el 2.o numero. Por WhatsApp Web se encolaba solo la
+    // introduccion, sin enlace, y el aviso prometia un enlace que nada creaba.
     const porPuente = canalDe(c) === 'whatsapp_qr';
-    const r = porPuente
-      ? await llama({ action:'bridgeQueue', conversation_id: c.id || c._id, body: $('encMsg').value.trim() })
-      : await llama({ action:'surveyInvite', conversation_id: c.id || c._id,
-          collaborator_id: $('encColab').value || null, intro: $('encMsg').value.trim() });
+    const r = await llama({ action:'surveyInvite', conversation_id: c.id || c._id,
+      collaborator_id: $('encColab').value || null, intro: $('encMsg').value.trim() });
     b.disabled = false;
     if (!r.ok) return avisa('No se pudo enviar', traduceErrorMeta(r.error));
     cierraModal();
-    avisa('Encuesta enviada', porPuente
-      ? 'Va por WhatsApp Web; el enlace de la reseña se crea al entregarse.'
-      : 'Cuando conteste aparecerá en Satisfacción.');
+    avisa('Encuesta enviada', (porPuente ? 'Va por WhatsApp Web, con su enlace. ' : '')
+      + 'Cuando conteste aparecerá en Satisfacción.');
   };
 }
 
@@ -7152,9 +7228,14 @@ async function cableaHistorial(c){
   // "no ha mandado archivos" aunque hubiera veinte.
   let archivos = [];
   try {
-    const qm = query(collection(db,'crm_messages'), where('business_id','==',NEGOCIO),
-      where('conversation_id','==', idConv), limit(400));
-    const sm = await getDocs(qm);
+    // Los mas recientes, con el mismo respaldo que el hilo si el indice aun no existe.
+    const filtros = [where('business_id','==',NEGOCIO), where('conversation_id','==', idConv)];
+    let sm;
+    try { sm = await getDocs(query(collection(db,'crm_messages'), ...filtros, orderBy('created_at','desc'), limit(400))); }
+    catch (e) {
+      if (e?.code !== 'failed-precondition') throw e;
+      sm = await getDocs(query(collection(db,'crm_messages'), ...filtros, limit(400)));
+    }
     archivos = sm.docs.map(d => d.data())
       .filter(m => m.media_url || (m.msg_type && m.msg_type !== 'text'))
       .sort((a,b) => String(b.created_at||'').localeCompare(String(a.created_at||'')));
