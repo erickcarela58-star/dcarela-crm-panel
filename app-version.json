@@ -1,6 +1,6 @@
 {
-  "version": "2026-09-13-fechas-mensajes-v105",
+  "version": "2026-09-13-mensajes-produccion-v106",
   "channel": "crm",
-  "released_at": "2026-09-13T20:00:00Z",
-  "summary": "Los mensajes enviados por el 2.o numero ya no salen arriba del hilo con \"Invalid Date\": se guardan con fecha y el panel ordena por instante. Incluye los arreglos del 11 y 13 de septiembre que no se habian publicado."
+  "released_at": "2026-09-13T22:00:00Z",
+  "summary": "Archivos por WhatsApp Web, el hilo trae los mensajes mas recientes, difusion por tandas, citas que llegan al cliente, encuesta con enlace por el 2.o numero y nueve arreglos mas de la auditoria de produccion."
 }
