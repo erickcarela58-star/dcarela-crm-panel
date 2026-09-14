@@ -1,6 +1,6 @@
 {
-  "version": "2026-09-13-mensajes-produccion-v106",
+  "version": "2026-09-14-agenda-google-v107",
   "channel": "crm",
-  "released_at": "2026-09-13T22:00:00Z",
-  "summary": "Archivos por WhatsApp Web, el hilo trae los mensajes mas recientes, difusion por tandas, citas que llegan al cliente, encuesta con enlace por el 2.o numero y nueve arreglos mas de la auditoria de produccion."
+  "released_at": "2026-09-14T10:30:00Z",
+  "summary": "Google Calendar recibe tambien los seguimientos, lee todas las fichas, las tentativas de solo dia salen el dia correcto y el boton se suscribe con webcal."
 }
