@@ -1,6 +1,6 @@
 {
-  "version": "2026-09-14-agenda-google-v107",
+  "version": "2026-09-14-puente-fotos-redes-v108",
   "channel": "crm",
-  "released_at": "2026-09-14T10:30:00Z",
-  "summary": "Google Calendar recibe tambien los seguimientos, lee todas las fichas, las tentativas de solo dia salen el dia correcto y el boton se suscribe con webcal."
+  "released_at": "2026-09-14T23:30:00Z",
+  "summary": "Fotos de perfil reales del 2.o numero, adjuntos por Instagram y Messenger, no leidos sin perdidas, llamadas y mensajes de contactos LID sin fichas fantasma y recepcion del historial completo de WhatsApp Web."
 }
