@@ -1269,19 +1269,37 @@ function nombreDe(c){
 }
 // Foto de perfil si el canal la trae; si no, las iniciales.
 //
-// Hoy sale SIEMPRE la inicial, y no es un fallo del pintado: la API de WhatsApp Cloud no
-// manda la foto del cliente en el webhook, asi que no hay de donde sacarla. Se deja
-// leyendo profile_pic_url porque Instagram y Messenger SI la exponen: cuando esos
-// canales entren, la foto aparece sola sin tocar nada aqui.
+// La API de WhatsApp Cloud (numero oficial) no manda la foto del cliente en el webhook, asi
+// que ahi sale la inicial y no hay de donde sacar otra cosa. Instagram y Messenger SI la
+// exponen como URL directa (profile_pic_url), y esa manda siempre.
+//
+// El 2.o numero (whatsapp_qr) si la tiene: el puente la pide a WhatsApp con calma, guarda los
+// bytes en bridge-media y deja en la ficha profile_pic_media_id. Ese id no es una URL: se pide
+// a crmMedia con la sesion, igual que las fotos de los mensajes, y un <img src> no puede
+// llevar la cabecera Authorization. Por eso sale primero con iniciales y data-avatar, y
+// resuelveAvatares cambia el circulo por la foto cuando llega. NO usa data-medio: resuelveMedios
+// convierte los fallos en la tarjeta "Archivo · no se pudo recuperar", que en un avatar romperia
+// la fila; aqui un fallo deja las iniciales.
 //
 // referrerpolicy no-referrer porque los CDN de Meta rechazan la peticion si ven el
 // origen, y sin eso saldria un hueco roto en vez de las iniciales.
 function avatarDe(c, n){
   const url = c?.profile_pic_url || c?.avatar_url || c?.metadata?.profile_pic_url || '';
+  const ini = esc(iniciales(n));
+  const vuelveAIniciales = 'onerror="this.replaceWith(Object.assign(document.createElement(\'div\'),'
+    + '{className:\'av\',textContent:this.dataset.ini}))" data-ini="' + ini + '"';
   if (url) return '<img class="av" src="' + esc(url) + '" alt="" loading="lazy" '
-    + 'referrerpolicy="no-referrer" onerror="this.replaceWith(Object.assign(document.createElement(\'div\'),'
-    + '{className:\'av\',textContent:this.dataset.ini}))" data-ini="' + esc(iniciales(n)) + '">';
-  return '<div class="av">' + esc(iniciales(n)) + '</div>';
+    + 'referrerpolicy="no-referrer" ' + vuelveAIniciales + '>';
+  const medio = String(c?.profile_pic_media_id || '');
+  if (medio.startsWith('fbs:')) {
+    const yaBajada = MEDIOS.get(medio);
+    // Ya en cache: se pinta directa, sin parpadeo, en cada snapshot que repinta la lista.
+    if (yaBajada) return '<img class="av" src="' + esc(yaBajada) + '" alt="" ' + vuelveAIniciales + '>';
+    // Ya se intento y no se pudo: iniciales sin volver a pedirla en cada repintado.
+    if (yaBajada !== '') return '<div class="av" data-avatar="' + esc(medio) + '" data-avconv="'
+      + esc(c?._id || c?.id || '') + '" data-ini="' + ini + '">' + ini + '</div>';
+  }
+  return '<div class="av">' + ini + '</div>';
 }
 
 function iniciales(n){
@@ -1714,6 +1732,7 @@ function pintaChats(){
       +   '<div class="marcas">' + marcas.join('') + '</div>'
       + '</div></div>';
   }).join('');
+  resuelveAvatares();
 }
 
 function abre(c){
@@ -1786,6 +1805,8 @@ function abre(c){
     +   '<svg width="19" height="19" viewBox="0 0 24 24" fill="currentColor"><path d="M3 20l18-8L3 4v6l12 2-12 2z"/></svg>'
     +   '</button></div>'
     + '<div class="cola" id="cola" hidden></div>';
+  // La foto de la cabecera, si es del 2.o numero y aun no esta en cache.
+  resuelveAvatares();
   cableaChat(c);
   pintaFicha(c);
   escuchaMensajes(c.id || c._id);
@@ -1924,19 +1945,36 @@ function cableaChat(c){
       cancelaCita();
       return;
     }
-    // Instagram y Messenger solo reciben texto desde el CRM. Se dice ANTES de subir nada: el
-    // servidor ya lo rechaza, pero descubrirlo despues de esperar la subida es peor.
-    if (redSocial(sel) && COLA.length) {
-      env.disabled = false;
-      return avisa(redSocial(sel) + ' solo recibe texto desde el CRM',
-        'Quita el adjunto y mándalo desde la app de ' + redSocial(sel) + '.');
+    // Instagram y Messenger ya reciben archivos: el servidor los guarda y le da a Meta un enlace
+    // temporal para que los descargue. Lo que la red NO admite se dice ANTES de subir nada --el
+    // servidor tambien lo rechaza, pero descubrirlo despues de esperar la subida es peor--, con
+    // la misma tabla que usa el servidor (FORMATOS_RED).
+    const claveRed = redSocial(sel) ? canalDe(sel) : null;
+    if (claveRed) {
+      const pega = COLA.map(a => problemaAdjuntoRed(claveRed, a)).find(Boolean);
+      if (pega) {
+        env.disabled = false;
+        return avisa('No se puede enviar por ' + redSocial(sel), pega);
+      }
     }
+    // Por esas dos redes no salen botones (el servidor los rechaza con social_sin_botones), y
+    // los combos los llevan. Perderlos sin decirlo es lo que ya se quito una vez: las opciones
+    // se escriben al final del texto, que el cliente si recibe.
+    const botonesRed = claveRed ? COLA.flatMap(a => Array.isArray(a.botones) ? a.botones : []) : [];
+    const opcionesRed = [...new Set(botonesRed.map(b => String(b?.titulo || '').trim()).filter(Boolean))];
+    const texto = opcionesRed.length
+      ? [t, 'Responde: ' + opcionesRed.join(' / ')].filter(Boolean).join('\n\n')
+      : t;
     // El audio no admite pie de foto en la API de WhatsApp: si va texto con una nota de
     // voz, el texto se pierde. Por eso el texto viaja con el ultimo adjunto que SI
     // admite pie, y si no hay ninguno se manda aparte.
-    const ultimoConPie = COLA.map(a => a.tipo).lastIndexOf('image') >= 0
+    //
+    // En Instagram y Messenger el archivo y el texto no pueden ir juntos: Meta no los admite en
+    // el mismo mensaje. Con -1 todos los adjuntos salen sin pie ni botones, y el texto va
+    // despues, aparte, por sendText.
+    const ultimoConPie = claveRed ? -1 : (COLA.map(a => a.tipo).lastIndexOf('image') >= 0
       ? COLA.map(a => a.tipo).lastIndexOf('image')
-      : COLA.map(a => a.tipo).lastIndexOf('document');
+      : COLA.map(a => a.tipo).lastIndexOf('document'));
     // Los que ya salieron se quitan de la cola SOBRE LA MARCHA. Si el tercero falla y
     // se reintenta sin esto, los dos primeros se le mandan al cliente otra vez.
     let enviados = 0;
@@ -1955,8 +1993,8 @@ function cableaChat(c){
     COLA.splice(0, enviados);
     pintaCola();
     const textoYaFue = t && ultimoConPie >= 0 && !fallo;
-    if (!fallo && t && !textoYaFue) {
-      const cuerpo = { action:'sendText', conversation_id: conv, body:t };
+    if (!fallo && texto && !textoYaFue) {
+      const cuerpo = { action:'sendText', conversation_id: conv, body:texto };
       // La cita se manda con el wamid del original: asi WhatsApp la enlaza de verdad
       // en el telefono del cliente, en vez de pegar el texto citado a mano.
       if (citando?.wamid) {
@@ -1970,7 +2008,11 @@ function cableaChat(c){
     if (!fallo) cancelaCita();
     env.disabled = false;
     // La cola ya se vacio de lo que SI salio, arriba. Aqui solo se limpia el texto.
-    if (fallo) return avisa('No se pudo enviar', traduceErrorMeta(fallo));
+    //
+    // Los errores de Instagram y Messenger ya vienen explicados por el servidor, en español.
+    // traduceErrorMeta convierte cualquier texto con "24" en el consejo de las plantillas de
+    // WhatsApp, que en esas redes no existen.
+    if (fallo) return avisa('No se pudo enviar', claveRed ? fallo : traduceErrorMeta(fallo));
     caja.value = ''; caja.style.height = 'auto';
   };
 }
@@ -2011,6 +2053,50 @@ let modoHd = false;
 // decodificado (index.html del backend, linea 180). Poner 30 aqui solo conseguiria que
 // el archivo se subiera entero para morir alla, asi que se corta antes.
 const LIMITE_MB = () => (modoHd ? 15 : 12);
+
+// Lo que admite cada red social. Es una COPIA de FORMATOS_SOCIAL
+// (firebase-functions/src/transport-core.js): decide el servidor, y esto solo sirve para avisar
+// antes de subir el archivo entero. Va en JSON estricto porque test/v2-adjuntos-redes.test.js
+// la lee y exige que sea igual a la del servidor: si cambias una, cambia la otra.
+//
+// El tope de las redes es 8 MB, no LIMITE_MB: es donde corta Storage, y un archivo de 9 a 15 MB
+// se subiria entero para acabar en un 413.
+const TOPE_ADJUNTO_RED = 8 * 1024 * 1024;
+const FORMATOS_RED = {
+  "instagram": {
+    "image": ["image/jpeg", "image/png"],
+    "video": ["video/mp4", "video/quicktime", "video/webm", "video/ogg", "video/x-msvideo"],
+    "audio": ["audio/aac", "audio/mp4", "audio/m4a", "audio/x-m4a", "audio/wav", "audio/x-wav", "audio/wave"],
+    "document": ["application/pdf"]
+  },
+  "facebook": {
+    "image": ["image/jpeg", "image/png", "image/gif"],
+    "video": ["video/mp4", "video/quicktime", "video/webm"],
+    "audio": ["audio/aac", "audio/mp4", "audio/m4a", "audio/x-m4a", "audio/wav", "audio/x-wav", "audio/wave", "audio/mpeg"],
+    "document": []
+  }
+};
+
+// Por que un adjunto de la cola NO puede salir por esa red, o '' si puede. Mismas reglas que
+// adjuntoSocial en el servidor: un video o audio que entra por "documento" sale como lo que es,
+// y Messenger manda como archivo lo que no reconoce (asi le llega la nota de voz OGG).
+function problemaAdjuntoRed(red, a){
+  const tabla = FORMATOS_RED[red];
+  if (!tabla) return '';
+  const nombre = red === 'instagram' ? 'Instagram' : 'Messenger';
+  const peso = a.datos ? Math.floor(String(a.datos).length * 3 / 4) : Number(a.archivo?.size || 0);
+  if (peso > TOPE_ADJUNTO_RED) return (a.nombre || 'El archivo') + ' pesa más de 8 MB, el máximo por ' + nombre + '.';
+  const mime = String(a.mime || '').split(';')[0].trim().toLowerCase();
+  const lista = tabla[a.tipo];
+  if (!lista) return nombre + ' no admite ese tipo de archivo.';
+  if (lista.includes(mime)) return '';
+  if (a.tipo === 'document' && ['image', 'video', 'audio'].some(k => tabla[k].includes(mime))) return '';
+  if (red === 'facebook') return '';
+  if (a.tipo === 'audio') return 'Instagram no acepta las notas de voz grabadas aquí (son OGG). '
+    + 'Grábala desde la app de Instagram, o adjunta un audio M4A, AAC o WAV.';
+  return 'Instagram no acepta ' + (a.nombre || 'ese archivo') + ': solo imágenes JPEG o PNG, vídeo MP4, '
+    + 'MOV o WEBM, audio M4A, AAC o WAV y documentos PDF.';
+}
 
 // Comprime cada imagen de la cola con el modo ACTUAL y actualiza su peso. Se llama al
 // adjuntar y cada vez que se pulsa HD, para que el tamaño que se ve sea el que va a
@@ -2812,6 +2898,13 @@ function cableaMicrofono(){
 
   boton.onclick = async () => {
     if (!sel || !caja.hidden) return;
+    // Instagram no acepta la nota de voz que graba el panel: opus-recorder solo sabe OGG/Opus y
+    // Instagram no admite OGG. Se dice ANTES de grabar: descubrirlo al enviar es haber hablado
+    // para nada. Messenger si la recibe (como archivo).
+    if (canalDe(sel) === 'instagram') {
+      return avisa('Instagram no acepta notas de voz grabadas aquí',
+        'Grábala desde la app de Instagram, o adjunta un audio M4A, AAC o WAV como documento.');
+    }
     if (!window.Recorder) return avisa('La grabación aún no está lista', 'Espera dos segundos y vuelve a tocar.');
     cancelada = false; enviarAlParar = false;
     try {
@@ -2977,21 +3070,87 @@ function abreReenviar(m){
 // cabecera Authorization y se pinta desde un blob local. La cache evita volver a
 // bajarlo cada vez que se repintan los globos, que es en cada mensaje nuevo.
 const MEDIOS = new Map();
+// Peticiones en curso, por id. La lista se repinta con cada snapshot de Firestore, y sin esto
+// cada repintado volvia a pedir la misma foto mientras la primera seguia en camino: dos
+// llamadas a crmMedia y un blob que se quedaba sin liberar.
+const MEDIOS_EN_CURSO = new Map();
 const BASE_FN = String(CFG.firebaseFunctionsBase || '').replace(/\/$/, '');
 
-async function urlDeMedio(id){
+// `conv` solo lo pasan las fotos de perfil: le dice a crmMedia de que ficha es el archivo, que
+// no esta en ningun mensaje. Los medios de los mensajes lo piden igual que siempre.
+async function urlDeMedio(id, conv){
   if (!id) return '';
   if (MEDIOS.has(id)) return MEDIOS.get(id);
+  if (MEDIOS_EN_CURSO.has(id)) return MEDIOS_EN_CURSO.get(id);
   const u = auth.currentUser; if (!u) return '';
-  try {
-    const token = await u.getIdToken();
-    const r = await fetch(BASE_FN + '/crmMedia?id=' + encodeURIComponent(id),
-      { headers: { Authorization: 'Bearer ' + token } });
-    if (!r.ok) { MEDIOS.set(id, ''); return ''; }
-    const url = URL.createObjectURL(await r.blob());
-    MEDIOS.set(id, url);
-    return url;
-  } catch (e) { MEDIOS.set(id, ''); return ''; }
+  const pedido = (async () => {
+    try {
+      const token = await u.getIdToken();
+      const r = await fetch(BASE_FN + '/crmMedia?id=' + encodeURIComponent(id)
+        + (conv ? '&conv=' + encodeURIComponent(conv) : ''),
+        { headers: { Authorization: 'Bearer ' + token } });
+      if (!r.ok) { MEDIOS.set(id, ''); return ''; }
+      const url = URL.createObjectURL(await r.blob());
+      MEDIOS.set(id, url);
+      return url;
+    } catch (e) { MEDIOS.set(id, ''); return ''; }
+  })();
+  MEDIOS_EN_CURSO.set(id, pedido);
+  try { return await pedido; } finally { MEDIOS_EN_CURSO.delete(id); }
+}
+
+// Fotos de perfil del 2.o numero (ver avatarDe). Solo se piden las que se ven: pintaChats pinta
+// TODAS las conversaciones, y pedir cien fotos para ensenar quince seria pagar cien llamadas a
+// crmMedia por sesion. Como mucho cuatro a la vez. Si una no llega, se quedan las iniciales:
+// nunca la tarjeta "Archivo" de los mensajes.
+let OBS_AVATARES = null;
+const COLA_AVATARES = [];
+let avataresEnCurso = 0;
+
+function resuelveAvatares(){
+  const pendientes = [...document.querySelectorAll('[data-avatar]')];
+  if (!('IntersectionObserver' in window)) {
+    pendientes.slice(0, 40).forEach(encolaAvatar);
+    return;
+  }
+  OBS_AVATARES ||= new IntersectionObserver(entradas => {
+    for (const e of entradas) {
+      if (!e.isIntersecting) continue;
+      OBS_AVATARES.unobserve(e.target);
+      encolaAvatar(e.target);
+    }
+  }, { rootMargin: '200px' });
+  // Cada repintado sustituye las filas: se deja de observar lo anterior (ya fuera del documento)
+  // y se observa lo que hay ahora, cabecera del chat incluida.
+  OBS_AVATARES.disconnect();
+  pendientes.forEach(el => OBS_AVATARES.observe(el));
+}
+
+function encolaAvatar(el){
+  COLA_AVATARES.push(el);
+  bombeaAvatares();
+}
+
+function bombeaAvatares(){
+  while (avataresEnCurso < 4 && COLA_AVATARES.length) {
+    const el = COLA_AVATARES.shift();
+    if (!el.isConnected || !el.dataset.avatar) continue;
+    avataresEnCurso++;
+    pintaAvatar(el).finally(() => { avataresEnCurso--; bombeaAvatares(); });
+  }
+}
+
+async function pintaAvatar(el){
+  const id = el.dataset.avatar, conv = el.dataset.avconv, ini = el.dataset.ini || el.textContent;
+  el.removeAttribute('data-avatar');
+  const url = await urlDeMedio(id, conv);
+  // Sin foto, o la fila ya se repinto mientras llegaba: se queda como esta. El siguiente
+  // repintado la encuentra en MEDIOS y la pinta directa.
+  if (!url || !el.isConnected) return;
+  const img = Object.assign(document.createElement('img'), { className: 'av', alt: '', src: url });
+  img.dataset.ini = ini;
+  img.onerror = () => img.replaceWith(Object.assign(document.createElement('div'), { className: 'av', textContent: ini }));
+  el.replaceWith(img);
 }
 
 // Se resuelven despues de pintar: el globo sale ya, y la imagen aparece cuando llega.
@@ -5226,6 +5385,9 @@ function limitesCfg(esAdmin){
     + campoLim('daily_cap', 'Tope de envíos por día', 'Al llegar aquí, lo que quede se pasa al día siguiente.', true)
     + campoLim('resume_hour', 'Hora a la que se reanuda', 'De 0 a 23, hora de La Romana.', true)
     + campoLim('quality_cutoff', 'Fallos seguidos que pausan el puente', 'El freno de emergencia. De 1 a 20; no se puede quitar.', true)
+    // No es un envio, pero cada foto es una consulta a WhatsApp desde este numero. Aqui se
+    // apaga sin tocar la PC del negocio.
+    + campoLim('avatar_daily_cap', 'Fotos de perfil consultadas por día', 'De 0 a 120; 0 las apaga. Como mucho una cada 1,5–3 minutos.', true)
     + '</div>'
     + '<button class="btn-linea" id="cfgGuardaLimites" style="margin-top:8px">Guardar límites</button>';
 }
