@@ -1058,7 +1058,7 @@ video.mmedia{cursor:default}
 import { initializeApp, getApps } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js';
 import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut }
   from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js';
-import { getFirestore, collection, query, where, onSnapshot, doc, setDoc, getDocs, limit }
+import { getFirestore, collection, query, where, onSnapshot, doc, setDoc, getDocs, limit, orderBy }
   from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
 
 const CFG = window.CRM_CONFIG || window.DCARELA_CRM_CONFIG || {};
@@ -1099,12 +1099,14 @@ const sigla = CFG.logoText || 'DC';
 const CANAL_FOTOS = CFG.lockNumFilter === true || CFG.defaultNumFilter === 'qr';
 const soloDigitos = value => String(value || '').replace(/\D/g, '');
 const NUMERO_FOTOS = soloDigitos(CFG.bridgeBusinessNumber || CFG.bridgeBusinessDisplayNumber);
-// El puente admite UNA sola linea, y el servidor lo comprueba: cualquier otro numero se
-// rechaza con "solo puede vincularse la linea Fotos terminada en 5620". Estaba escrito a
-// mano dentro de requestBridgePairing, asi que el panel no podia decir de que numero era el
-// codigo que ensenaba. Aqui arriba se ve, y de aqui sale tambien el aviso.
-const TELEFONO_PUENTE = NUMERO_FOTOS || '18094785620';
-const TELEFONO_PUENTE_BONITO = TELEFONO_PUENTE.replace(/^1(\d{3})(\d{3})(\d{4})$/, '$1-$2-$3');
+// Dos numeros de la casa terminan en 5620 (el oficial 18495245620 y la linea vieja de WhatsApp
+// Web). "***5620" no dice cual es, asi que los numeros de linea se ensenan siempre enteros.
+const telefonoLegible = value => { const d = soloDigitos(value); const m = d.match(/^1(\d{3})(\d{3})(\d{4})$/); return m ? m[1] + '-' + m[2] + '-' + m[3] : d; };
+// El numero de la linea de WhatsApp Web ya NO va escrito aqui. Era 18094785620 de respaldo, y al
+// vincular el 18097575644 el campo de vinculacion seguia proponiendo la linea vieja. Desde el
+// 09/09/2026 el dueno vincula el que le conviene: el campo sale con el numero conectado (o el
+// pedido), y esto solo cuenta si crm-config.js declara uno a proposito.
+const TELEFONO_PUENTE = NUMERO_FOTOS;
 function perteneceAlCanal(c){
   const fuente = String(c?.source || '').toLowerCase();
   const numero = soloDigitos(c?.business_number);
@@ -1246,7 +1248,9 @@ async function llama(cuerpo){
       signal: cuerpo.action === 'assistantPlan' ? AbortSignal.timeout(90000) : undefined,
     });
     const j = await r.json().catch(() => ({}));
-    if (!r.ok) return { ok:false, error: j?.error || ('error ' + r.status) };
+    // El codigo viaja con el error: los rechazos del puente se distinguen por el (otra linea,
+    // desconectado, PC sin latido, pausa, modo seguro), no por el texto.
+    if (!r.ok) return { ok:false, error: j?.error || ('error ' + r.status), code: j?.code || null };
     return { ok:true, ...j };
   } catch (e) { return { ok:false, error: e?.message || String(e) }; }
 }
@@ -1256,7 +1260,11 @@ const callFn = cuerpo => llama(cuerpo);
 const ULTIMA_IMPORTACION = {};
 
 /* ---- Datos en vivo ------------------------------------------------------- */
-let CONVS = [], MSGS = [], sel = null, paraMsgs = null;
+// CONVS son las conversaciones VIVAS: de ahi leen la bandeja, los contadores, los avisos, el
+// Dashboard, el Kanban, Limpieza y el asistente. CONVS_TODAS es todo lo que llega de Firestore, y
+// CONVS_OCULTAS lo que sale de la bandeja porque su linea de WhatsApp Web no esta conectada. Se
+// esconde, no se borra: el filtro de la linea las trae y vuelven solas si ese numero se vincula.
+let CONVS = [], CONVS_TODAS = [], CONVS_OCULTAS = [], MSGS = [], sel = null, paraMsgs = null;
 
 function nombreDe(c){
   if (c.customer_name || c.contact_name) return c.customer_name || c.contact_name;
@@ -1269,28 +1277,67 @@ function nombreDe(c){
 }
 // Foto de perfil si el canal la trae; si no, las iniciales.
 //
-// Hoy sale SIEMPRE la inicial, y no es un fallo del pintado: la API de WhatsApp Cloud no
-// manda la foto del cliente en el webhook, asi que no hay de donde sacarla. Se deja
-// leyendo profile_pic_url porque Instagram y Messenger SI la exponen: cuando esos
-// canales entren, la foto aparece sola sin tocar nada aqui.
+// La API de WhatsApp Cloud (numero oficial) no manda la foto del cliente en el webhook, asi
+// que ahi sale la inicial y no hay de donde sacar otra cosa. Instagram y Messenger SI la
+// exponen como URL directa (profile_pic_url), y esa manda siempre.
+//
+// El 2.o numero (whatsapp_qr) si la tiene: el puente la pide a WhatsApp con calma, guarda los
+// bytes en bridge-media y deja en la ficha profile_pic_media_id. Ese id no es una URL: se pide
+// a crmMedia con la sesion, igual que las fotos de los mensajes, y un <img src> no puede
+// llevar la cabecera Authorization. Por eso sale primero con iniciales y data-avatar, y
+// resuelveAvatares cambia el circulo por la foto cuando llega. NO usa data-medio: resuelveMedios
+// convierte los fallos en la tarjeta "Archivo · no se pudo recuperar", que en un avatar romperia
+// la fila; aqui un fallo deja las iniciales.
 //
 // referrerpolicy no-referrer porque los CDN de Meta rechazan la peticion si ven el
 // origen, y sin eso saldria un hueco roto en vez de las iniciales.
 function avatarDe(c, n){
   const url = c?.profile_pic_url || c?.avatar_url || c?.metadata?.profile_pic_url || '';
+  const ini = esc(iniciales(n));
+  const vuelveAIniciales = 'onerror="this.replaceWith(Object.assign(document.createElement(\'div\'),'
+    + '{className:\'av\',textContent:this.dataset.ini}))" data-ini="' + ini + '"';
   if (url) return '<img class="av" src="' + esc(url) + '" alt="" loading="lazy" '
-    + 'referrerpolicy="no-referrer" onerror="this.replaceWith(Object.assign(document.createElement(\'div\'),'
-    + '{className:\'av\',textContent:this.dataset.ini}))" data-ini="' + esc(iniciales(n)) + '">';
-  return '<div class="av">' + esc(iniciales(n)) + '</div>';
+    + 'referrerpolicy="no-referrer" ' + vuelveAIniciales + '>';
+  const medio = String(c?.profile_pic_media_id || '');
+  if (medio.startsWith('fbs:')) {
+    const yaBajada = MEDIOS.get(medio);
+    // Ya en cache: se pinta directa, sin parpadeo, en cada snapshot que repinta la lista.
+    if (yaBajada) return '<img class="av" src="' + esc(yaBajada) + '" alt="" ' + vuelveAIniciales + '>';
+    // Ya se intento y no se pudo: iniciales sin volver a pedirla en cada repintado.
+    if (yaBajada !== '') return '<div class="av" data-avatar="' + esc(medio) + '" data-avconv="'
+      + esc(c?._id || c?.id || '') + '" data-ini="' + ini + '">' + ini + '</div>';
+  }
+  return '<div class="av">' + ini + '</div>';
 }
 
 function iniciales(n){
   return String(n || '?').replace(/[^\p{L}\p{N} ]/gu,'').trim().split(/\s+/)
     .slice(0,2).map(p => p[0] || '').join('').toUpperCase() || '#';
 }
+// Instante de un valor de fecha, en milisegundos, o NaN si no se puede leer. Acepta la cadena
+// ISO que escriben casi todos los caminos, el Timestamp de Firestore y un numero.
+function instante(v){
+  if (v == null || v === '') return NaN;
+  if (typeof v === 'number') return v < 10_000_000_000 ? v * 1000 : v;
+  if (typeof v === 'object' && typeof v.seconds === 'number') return v.seconds * 1000;
+  return Date.parse(String(v));
+}
+// Un mensaje sin fecha legible se ordena AL FINAL, no al principio. Llego sin ella porque
+// alguien lo acababa de escribir -- ese era el caso real: los envios del 2.o numero -- asi
+// que el final es donde casi seguro va. Al principio lo dejaba el orden por texto, y ahi
+// parecia un mensaje de hace meses.
+function instanteMsg(m){
+  for (const v of [m.created_at, m.synced_at, m.delivery_updated_at, m.updated_at]) {
+    const t = instante(v);
+    if (Number.isFinite(t)) return t;
+  }
+  return Number.MAX_SAFE_INTEGER;
+}
+
 function hora(v){
   if (!v) return '';
-  const d = new Date(v), hoy = new Date();
+  if (!Number.isFinite(instante(v))) return '';
+  const d = new Date(instante(v)), hoy = new Date();
   if (d.toDateString() === hoy.toDateString())
     return d.toLocaleTimeString('es-DO', { hour:'2-digit', minute:'2-digit' });
   const ayer = new Date(hoy); ayer.setDate(hoy.getDate() - 1);
@@ -1301,8 +1348,11 @@ function hora(v){
 function escuchaConversaciones(){
   const q = query(collection(db,'crm_conversations'), where('business_id','==',NEGOCIO));
   onSnapshot(q, s => {
-    CONVS = s.docs.map(d => ({ ...d.data(), _id:d.id })).filter(perteneceAlCanal)
+    CONVS_TODAS = s.docs.map(d => ({ ...d.data(), _id:d.id })).filter(perteneceAlCanal)
       .sort((a,b) => String(b.last_message_at||'').localeCompare(String(a.last_message_at||'')));
+    // Un unico punto donde se separa lo vivo de lo oculto. Asi cada vista y cada contador cuenta
+    // lo mismo que se ve, sin repetir el filtro en veinte sitios (y olvidarlo en alguno).
+    recalculaVisibles();
     marcaEstado(true, 'Datos sincronizados · en vivo');
     if (vistaActual === 'conversations') pintaChats();
     if (vistaActual === 'funnel') { pintaKanban(); pintaMovilizacion(); }
@@ -1322,17 +1372,32 @@ function escuchaMensajes(idConv){
   // mensajes, indistinguible de un chat vacio de verdad.
   // Con limit: sin el se descarga la conversacion entera, y hay chats con miles de
   // mensajes. Se traen los ultimos 400, que es mas de lo que nadie sube a leer.
-  const q = query(collection(db,'crm_messages'),
-    where('business_id','==',NEGOCIO), where('conversation_id','==',idConv), limit(400));
-  paraMsgs = onSnapshot(q, s => {
+  //
+  // Con orderBy. Sin el, limit(400) NO trae los ultimos 400: Firestore ordena por id de
+  // documento, y los ids son hashes del wamid, asi que devolvia 400 mensajes al azar de toda
+  // la historia. En un chat de mas de 400 mensajes, un mensaje nuevo cuyo hash cayera fuera
+  // del corte no aparecia nunca en el hilo, aunque la bandeja si enseñara su vista previa.
+  //
+  // Esa consulta necesita un indice compuesto. Si todavia no existe, Firestore responde
+  // failed-precondition y se cae a la consulta vieja: peor orden, pero el chat se ve.
+  const base = [where('business_id','==',NEGOCIO), where('conversation_id','==',idConv)];
+  const esEste = () => sel && (sel.id === idConv || sel._id === idConv);
+  const escucha = (q, esRespaldo) => onSnapshot(q, s => {
+    // Se ordena por instante, no por el texto de created_at: un mensaje sin fecha tenia la
+    // cadena vacia y la cadena vacia va antes que cualquier otra.
     MSGS = s.docs.map(d => d.data())
-      .sort((a,b) => String(a.created_at||'').localeCompare(String(b.created_at||'')));
-    if (sel && (sel.id === idConv || sel._id === idConv)) pintaMensajes();
+      .sort((a,b) => instanteMsg(a) - instanteMsg(b));
+    if (esEste()) pintaMensajes();
   }, err => {
+    if (!esRespaldo && err?.code === 'failed-precondition' && esEste()) {
+      paraMsgs = escucha(query(collection(db,'crm_messages'), ...base, limit(400)), true);
+      return;
+    }
     const cont = $('mensajes');
     if (cont) cont.innerHTML = '<div style="margin:auto;max-width:340px;text-align:center;color:var(--mut);font-size:13px">'
       + 'No se pudieron cargar los mensajes.<br><b>' + esc(err?.code || 'error') + '</b></div>';
   });
+  paraMsgs = escucha(query(collection(db,'crm_messages'), ...base, orderBy('created_at','desc'), limit(400)), false);
 }
 // Version cargada y aviso de que hay otra publicada.
 //
@@ -1388,7 +1453,9 @@ let primerVistazo = true;
 
 function avisaMensajesNuevos(){
   const nuevos = [];
-  for (const c of CONVS) {
+  // Se toma nota de TODAS, tambien las ocultas: si no, al volver a vincular una linea sus fichas
+  // aparecerian como "nunca vistas" y soltarian un aviso por cada chat viejo.
+  for (const c of CONVS_TODAS) {
     const id = c.id || c._id;
     const t = String(c.last_customer_reply_at || '');
     if (!t) continue;
@@ -1402,6 +1469,9 @@ function avisaMensajesNuevos(){
     // nunca habia escrito, que es un cliente nuevo llamando a la puerta. Solo se salta
     // cuando ya se conocia y no ha entrado nada mas nuevo.
     if (antes !== undefined && t <= antes) continue;
+    // De una linea que ya no esta vinculada no se avisa: no se le puede contestar. Con el puente
+    // caido si, porque es la linea que atiende y vuelve en cuanto la PC responda.
+    if (estadoQr(c, LINEA_QR) === 'otra_linea') continue;
     nuevos.push(c);
   }
   primerVistazo = false;
@@ -1518,7 +1588,7 @@ function montaConversaciones(){
       return;
     }
     const f = ev.target.closest('[data-conv]');
-    if (f) abre(CONVS.find(c => c._id === f.dataset.conv));
+    if (f) abre(buscaConv(f.dataset.conv));
   });
   cableaLote();
   pintaChats();
@@ -1570,30 +1640,145 @@ function arrastraFiltros(caja){
   }, { passive:false });
 }
 
-// Estado del puente de WhatsApp Web. null = todavia no se sabe. Se consulta una vez al
-// arrancar, y hasta que conteste no se esconde nada: esconder por defecto seria peor
-// error que enseñar de mas.
-let PUENTE_ON = null;
+// Estado de la linea de WhatsApp Web. null = todavia no se sabe, y mientras no se sepa no se
+// esconde nada: esconder por defecto es peor error que enseñar de mas. El servidor bloquea
+// igual los envios que no deben salir.
+//
+// Antes habia DOS formulas que se contradecian: al entrar solo miraba status (e ignoraba la
+// pausa y la PC), y al abrir Canales miraba ademas paused, asi que con los envios en pausa
+// desaparecian las 580 fichas de la linea viva. Ninguna miraba el numero, de modo que las 37
+// fichas del 18094785620 salian mezcladas con las del 18097575644. Y como bridgeStatus exige
+// admin, a un agente no se le escondia nada. Ahora el estado sale de UN sitio, lineaDesdeControl,
+// y llega en vivo a cualquier rol por el espejo crm_channel_state/whatsapp_qr.
+let LINEA_QR = null;
+// Lo ultimo que se leyo y si viene de la escucha en vivo o de una consulta suelta (bridgeStatus).
+let LINEA_QR_FUENTE = null;
 async function cargaEstadoPuente(){
-  try {
-    const r = await llama({ action:'bridgeStatus' });
-    const p = r.ok ? (r.bridge || r) : {};
-    PUENTE_ON = p.connected === true || p.state === 'connected' || p.status === 'connected';
-  } catch (e) { PUENTE_ON = null; }
-  if (vistaActual === 'conversations') pintaChats();
+  // Respaldo cuando el espejo no existe (servidor viejo) o las reglas no dejan leerlo. Solo lo
+  // contesta a un admin; a los demas les llega un error y la linea sigue en "no se sabe".
+  const r = await llama({ action:'bridgeStatus' });
+  if (r.ok) fijaLineaQr(r.bridge || r, { enVivo:false });
 }
-// Una conversacion del segundo numero con el puente desconectado esta muerta: por ahi no
-// entra ni sale nada, y dejarla en la lista invita a escribirle a alguien que no va a
-// recibirlo. Se esconde, pero NO se borra: el filtro del canal la sigue trayendo, y en
-// cuanto el puente se reconecte reaparece sola.
-function puenteApagado(c){
-  return PUENTE_ON === false && canalDe(c) === 'whatsapp_qr';
+function fijaLineaQr(p, { enVivo = false } = {}){
+  // Una consulta suelta no pisa a la escucha en vivo: se quedaria congelada diciendo que la PC
+  // responde aunque se apague despues.
+  if (p && typeof p === 'object' && (enVivo || !LINEA_QR_FUENTE?.enVivo)) {
+    LINEA_QR_FUENTE = { p, enVivo, leidoEn: Date.now() };
+  }
+  if (!LINEA_QR_FUENTE) return;
+  // Con la escucha en vivo la edad del latido se mide contra el reloj (si la PC se apaga, el
+  // espejo deja de cambiar y envejece). Con una consulta suelta se mide contra cuando se leyo:
+  // de lo que pasa despues no se sabe nada, y eso no puede leerse como "la PC dejo de responder".
+  const f = LINEA_QR_FUENTE;
+  const nueva = lineaDesdeControl(f.p, f.enVivo ? Date.now() : f.leidoEn);
+  const firma = l => l ? [l.numero, l.vinculado, l.pausado, l.hostVivo, l.motivoPausa, l.transporte].join('|') : '';
+  const cambia = firma(nueva) !== firma(LINEA_QR);
+  LINEA_QR = nueva;
+  if (!cambia) return;
+  recalculaVisibles();
+  if (vistaActual === 'conversations') pintaChats();
+  if (vistaActual === 'funnel') { pintaKanban(); pintaMovilizacion(); }
+  if (vistaActual === 'dashboard') pintaDashboard();
+  if (vistaActual === 'agenda') pintaAgenda();
+  if (vistaActual === 'reminders') pintaRecordatorios();
+  pintaCuentas();
+  pintaAvisoLinea();
+}
+function escuchaLineaQr(){
+  if (escuchaLineaQr.para) { escuchaLineaQr.para(); escuchaLineaQr.para = null; }
+  let respaldoPedido = false;
+  const respaldo = () => { if (!respaldoPedido) { respaldoPedido = true; cargaEstadoPuente(); } };
+  try {
+    escuchaLineaQr.para = onSnapshot(doc(db, 'crm_channel_state', 'whatsapp_qr'), s => {
+      if (!s.exists()) return respaldo();
+      fijaLineaQr(s.data(), { enVivo:true });
+    }, () => respaldo());
+  } catch (e) { respaldo(); }
+  // Sin red: cada 30 s se vuelve a mirar la edad del latido. Es lo que esconde las fichas cuando
+  // la PC se apaga, porque entonces ya no llega ningun cambio que lo dispare.
+  if (!escuchaLineaQr.reloj) escuchaLineaQr.reloj = setInterval(() => fijaLineaQr(null), 30_000);
+}
+
+// ---- Funciones puras de la linea (las ejecuta test/v2-linea-qr.test.js) ----
+// vinculado cuenta 'connecting' porque la sesion ya esta abierta y comprobandose. La PC se da por
+// perdida a los 5 min sin latido: el servidor deja de aceptar envios a los 2, pero esconder 580
+// fichas por un reinicio de la PC seria peor que enseñarlas un rato mas.
+function lineaDesdeControl(p, ahora = Date.now(), margenMs = 5 * 60_000){
+  if (!p || typeof p !== 'object') return null;
+  const status = String(p.status || p.state || '').toLowerCase();
+  const visto = Date.parse(String(p.host_last_seen_at || ''));
+  return {
+    numero: soloDigitos(p.connected_phone),
+    vinculado: status === 'connected' || status === 'connecting',
+    pausado: p.paused === true,
+    motivoPausa: String(p.pause_reason || ''),
+    transporte: String(p.transport_mode || ''),
+    hostVivo: Number.isFinite(visto) ? ahora - visto <= margenMs : true,
+  };
+}
+function lineaDe(c){ return soloDigitos(c?.business_number); }
+// 'viva' | 'desconocido' | 'sin_puente' | 'otra_linea' | 'pausada'. Solo aplica a WhatsApp Web.
+function estadoQr(c, linea){
+  if (canalDe(c) !== 'whatsapp_qr') return 'viva';
+  if (!linea) return 'desconocido';
+  if (!linea.vinculado || !linea.hostVivo) return 'sin_puente';
+  // Sin numero conectado o sin numero en la ficha no se puede comparar: no se esconde por eso.
+  // El servidor rechaza igual el envio.
+  if (linea.numero && lineaDe(c) && lineaDe(c) !== linea.numero) return 'otra_linea';
+  if (linea.pausado) return 'pausada';
+  return 'viva';
+}
+// Una conversacion del segundo numero cuya linea no esta conectada esta muerta: por ahi no entra
+// ni sale nada, y dejarla en la lista invita a escribirle a alguien que no va a recibirlo. Se
+// esconde, pero NO se borra: el filtro de su linea la trae, y reaparece sola al volver a vincular.
+// La pausa NO esconde: la linea sigue recibiendo y se reanuda con un boton.
+function oculta(c){
+  const e = estadoQr(c, LINEA_QR);
+  return e === 'otra_linea' || e === 'sin_puente';
+}
+function claveOculta(c){ return lineaDe(c) || 'sin_numero'; }
+function recalculaVisibles(){
+  CONVS = CONVS_TODAS.filter(c => !oculta(c));
+  CONVS_OCULTAS = CONVS_TODAS.filter(oculta);
+}
+// Las busquedas por id miran tambien las ocultas: desde la Agenda, un aviso o la ficha se tiene
+// que poder abrir una conversacion aunque no salga en la bandeja.
+function buscaConv(id){
+  const k = String(id ?? '');
+  const igual = x => String(x._id || x.id) === k;
+  return CONVS.find(igual) || CONVS_OCULTAS.find(igual);
+}
+const MOTIVO_PAUSA = {
+  vinculacion: 'Se pausaron solos al vincular la línea y se reanudan cuando la conexión queda estable.',
+  manual: 'Los pausó una persona desde el panel.',
+  calidad: 'Se pausaron solos porque WhatsApp rechazó varios envíos seguidos: revisa el número antes de reanudar.',
+};
+// Por que no se puede escribir en este chat, con la causa real. Pura: el compositor y el guard
+// del boton de enviar leen lo mismo.
+function avisoLineaQr(c, linea){
+  const estado = estadoQr(c, linea);
+  if (estado === 'otra_linea') return { estado, bloquea:true, titulo:'Línea desvinculada.',
+    texto:'Chat de la línea ' + telefonoLegible(lineaDe(c)) + ', que ya no está vinculada (ahora '
+      + telefonoLegible(linea.numero) + '). Solo lectura; vuelve a activarse si se vincula ese número.' };
+  if (estado === 'sin_puente') return !linea.vinculado
+    ? { estado, bloquea:true, titulo:'WhatsApp Web sin vincular.',
+        texto:'No hay ninguna línea de WhatsApp Web conectada: por aquí no entra ni sale nada. Vincúlala en Canales.' }
+    : { estado, bloquea:true, titulo:'La PC del puente no responde.',
+        texto:'Hace más de 5 minutos que el programa del puente no da señales: lo que escribas no saldría. Revisa la PC del negocio.' };
+  if (estado === 'pausada') return linea.transporte && linea.transporte !== 'active'
+    ? { estado, bloquea:true, titulo:'Envíos en modo seguro.',
+        texto:'Esta línea todavía no tiene los envíos activados. Actívalos en Canales («Activar envíos de este número»).' }
+    : { estado, bloquea:true, reanudar:true, titulo:'Envíos en pausa.',
+        texto:(MOTIVO_PAUSA[linea.motivoPausa] || 'No consta el motivo de la pausa.') + ' Reanudar requiere un administrador.' };
+  return { estado, bloquea:false, titulo:'', texto:'' };
 }
 
 function filtradas(){
   const t = ($('buscaChat')?.value || '').trim().toLowerCase();
-  return CONVS.filter(c => {
-    if (puenteApagado(c) && filtro !== 'can:whatsapp_qr') return false;
+  // 'lin:<numero>' es la salida de las ocultas: sin ella esconder seria borrar.
+  const lin = filtro.startsWith('lin:') ? filtro.slice(4) : null;
+  const base = lin === null ? CONVS : CONVS_OCULTAS.filter(c => claveOculta(c) === lin);
+  return base.filter(c => {
     if (filtro === 'sinleer' && !(Number(c.unread || 0) > 0)) return false;
     if (filtro === 'humano' && !(c.mode === 'human' || c.human_handoff_required)) return false;
     if (filtro === 'bot' && c.mode !== 'bot') return false;
@@ -1607,7 +1792,10 @@ function pintaChats(){
   const cont = $('chats'); if (!cont) return;
   // Las cuentas cuentan lo MISMO que se ve. Un filtro que dice 12 y abre 8 se lee como
   // que el panel perdio cuatro conversaciones.
-  const cuenta = f => CONVS.filter(c => !puenteApagado(c)).filter(c =>
+  // Si la linea de un filtro 'lin:' ya volvio (se vinculo ese numero), el filtro no tiene nada que
+  // ensenar: se vuelve a Todos en vez de dejar la lista vacia sin explicacion.
+  if (filtro.startsWith('lin:') && !CONVS_OCULTAS.some(c => claveOculta(c) === filtro.slice(4))) filtro = 'todos';
+  const cuenta = f => CONVS.filter(c =>
     f === 'todos' ? true
     : f === 'sinleer' ? Number(c.unread||0) > 0
     : f === 'humano' ? (c.mode === 'human' || c.human_handoff_required)
@@ -1627,13 +1815,21 @@ function pintaChats(){
   // siempre devuelve cero es ruido.
   const porCanal = Object.keys(CANALES)
     .filter(k => CONVS.some(c => canalDe(c) === k))
-    .map(k => ['can:' + k,
-      k === 'whatsapp_qr' && PUENTE_ON === false ? 'WA Web · inactivo' : CANALES[k].corto]);
+    .map(k => ['can:' + k, CANALES[k].corto]);
+  // Una salida por cada linea oculta, con su numero entero y por que no sale en Todos: sin esto,
+  // esconder seria borrar. 'desvinculado' si es otro numero que el conectado; 'inactivo' si es
+  // la propia linea con el puente caido.
+  const ocultasPorLinea = new Map();
+  CONVS_OCULTAS.forEach(c => ocultasPorLinea.set(claveOculta(c), (ocultasPorLinea.get(claveOculta(c)) || 0) + 1));
+  const porLinea = [...ocultasPorLinea.keys()].map(k => ['lin:' + k, 'WA Web '
+    + (k === 'sin_numero' ? 'sin número' : telefonoLegible(k)) + ' · '
+    + (LINEA_QR?.numero && k !== LINEA_QR.numero ? 'desvinculado' : 'inactivo')]);
   $('filtros').innerHTML = [['todos','Todos'],['sinleer','Sin leer'],['humano','Humano'],['bot','Bot'],
-      ...porCanal, ...porEtiqueta]
+      ...porCanal, ...porLinea, ...porEtiqueta]
     .map(([f,n]) => {
-      const n2 = f.startsWith('etq:') ? CONVS.filter(c => !puenteApagado(c) && etiquetasDe(c).includes(f.slice(4))).length
+      const n2 = f.startsWith('etq:') ? CONVS.filter(c => etiquetasDe(c).includes(f.slice(4))).length
         : f.startsWith('can:') ? CONVS.filter(c => canalDe(c) === f.slice(4)).length
+        : f.startsWith('lin:') ? (ocultasPorLinea.get(f.slice(4)) || 0)
         : cuenta(f);
       // La x va en TODAS las de etiqueta. La primera version solo la ponia cuando ya habia
       // lista elegida, y como en automatico nunca la hay, no aparecia nunca: el dueno paso el
@@ -1678,6 +1874,7 @@ function pintaChats(){
       +   '<div class="marcas">' + marcas.join('') + '</div>'
       + '</div></div>';
   }).join('');
+  resuelveAvatares();
 }
 
 function abre(c){
@@ -1706,7 +1903,7 @@ function abre(c){
     +     'style="background:' + CANALES[canalDe(c)].color + '">' + CANALES[canalDe(c)].logo + '</span></div>'
     + '<div class="quien-chat"><b>' + esc(n) + '</b><span>+' + esc(c.wa_phone || '')
     +   ' · ' + esc(CANALES[canalDe(c)].corto) + insigniaAnuncio(c) + '</span></div>'
-    + (c.human_handoff_notification_status ? '<span class="etiqueta" title="Aviso interno al encargado 7575644. Enviado no significa leído.">'
+    + (c.human_handoff_notification_status ? '<span class="etiqueta" title="Aviso interno al teléfono de avisos (Configuración), por la línea de WhatsApp Web conectada. Enviado no significa leído.">'
       + esc(({pending:'Aviso pendiente',sent:'Aviso enviado',failed:'Aviso fallido',skipped:'Aviso no enviado'})[c.human_handoff_notification_status] || 'Aviso pendiente') + '</span>' : '')
     + '<button class="modo" id="btnModo"></button>'
     + '<button class="adj" id="verFicha" title="Ficha del lead" aria-label="Ficha del lead">'
@@ -1718,6 +1915,7 @@ function abre(c){
     + '</div>'
     + '<div class="mensajes" id="mensajes"></div>'
     + '<div class="ventana24" id="ventana24" hidden></div>'
+    + '<div class="ventana24" id="avisoLinea" hidden></div>'
     + '<div class="barra-cita" id="barraCita" hidden>'
     +   '<div class="cvertical"></div><div class="ctexto"></div>'
     +   '<button id="citaX" aria-label="Quitar la cita">×</button></div>'
@@ -1750,11 +1948,39 @@ function abre(c){
     +   '<svg width="19" height="19" viewBox="0 0 24 24" fill="currentColor"><path d="M3 20l18-8L3 4v6l12 2-12 2z"/></svg>'
     +   '</button></div>'
     + '<div class="cola" id="cola" hidden></div>';
+  // La foto de la cabecera, si es del 2.o numero y aun no esta en cache.
+  resuelveAvatares();
   cableaChat(c);
+  pintaAvisoLinea();
   pintaFicha(c);
   escuchaMensajes(c.id || c._id);
   marcaLeido(c);
   pintaChats();
+}
+
+// El compositor dice por que no se puede escribir en este chat y no deja intentarlo. Antes se
+// pintaba siempre, se escribia, y el rechazo llegaba despues traducido por "pulsa Reanudar",
+// tambien en fichas de una linea que ya no esta vinculada, donde Reanudar no arregla nada.
+// Se repinta sola cuando cambia la linea (fijaLineaQr).
+function pintaAvisoLinea(){
+  const caja = $('avisoLinea'); if (!caja || !sel) return;
+  const av = avisoLineaQr(sel, LINEA_QR);
+  for (const id of ['texto', 'btnEnviar', 'adjImg', 'adjHd', 'adjDoc', 'adjRapida', 'adjCombo', 'adjTpl', 'adjMic']) {
+    const e = $(id); if (e) e.disabled = av.bloquea;
+  }
+  if (!av.bloquea) { caja.hidden = true; caja.innerHTML = ''; return; }
+  caja.hidden = false;
+  caja.innerHTML = '<div><b>' + esc(av.titulo) + '</b> ' + esc(av.texto) + '</div>'
+    + (av.reanudar ? '<button id="avisoLineaReanudar">Reanudar envíos</button>' : '');
+  const b = $('avisoLineaReanudar');
+  if (b) b.onclick = async () => {
+    b.disabled = true;
+    const r = await llama({ action:'resumeBridge' });
+    b.disabled = false;
+    if (!r.ok) return avisa('No se pudo reanudar', r.error);
+    if (r.bridge) fijaLineaQr(r.bridge, { enVivo:false });
+    avisa('Envíos reanudados', 'Ya se puede escribir por esta línea.');
+  };
 }
 
 // Abrir un chat lo marca como leido. Sin esto el globito y el contador del menu no bajan
@@ -1822,6 +2048,10 @@ function cableaChat(c){
   env.onclick = async () => {
     const t = caja.value.trim();
     if (!t && !COLA.length) return;
+    // La linea manda antes que nada: si por este chat no puede salir nada, se dice la causa real
+    // y no se llama al servidor. El servidor lo rechazaria igual, con su propio codigo.
+    const lineaChat = avisoLineaQr(sel, LINEA_QR);
+    if (lineaChat.bloquea) return avisa('No se puede enviar', lineaChat.texto);
     // Fuera de la ventana de 24 h el envio no falla aqui: Meta lo acepta y lo rechaza
     // despues. Preguntar cuesta un clic; no preguntar costo cuatro mensajes que el
     // dueño creyo enviados. La plantilla es la unica via que si llega.
@@ -1854,29 +2084,71 @@ function cableaChat(c){
     // hacia un cliente real.
     const conv = sel.id || sel._id;
     // El canal decide POR DONDE sale. Un chat que entro por WhatsApp Web no puede salir
-    // por el API oficial: el servidor lo rechaza con "canal incorrecto", que es lo que
-    // estaba pasando. Y ese canal todavia no admite archivos, asi que se dice antes de
-    // dejar adjuntar, en vez de fallar despues de subirlo.
+    // por el API oficial: el servidor lo rechaza con "canal incorrecto".
+    //
+    // Y ya manda archivos. Este bloque decia "WhatsApp Web todavía no envía archivos" y
+    // cortaba el envio, pero el puente sabia mandar imagen, audio y documento desde hacia
+    // tiempo, y el almacenamiento existe desde el 09/09: el bloqueo se habia quedado solo.
+    // Van por la misma cola, uno por mensaje, con el texto como pie del ultimo que lo admite.
     const porPuente = canalDe(sel) === 'whatsapp_qr';
-    if (porPuente && COLA.length) {
-      env.disabled = false;
-      return avisa('WhatsApp Web todavía no envía archivos',
-        'Ese canal solo admite texto por ahora. Quita el adjunto o escríbele desde el número oficial.');
-    }
     if (porPuente) {
-      const r = await llama({ action:'bridgeQueue', conversation_id: conv, body: t });
+      const pieEnQr = COLA.map(a => a.tipo).lastIndexOf('image') >= 0
+        ? COLA.map(a => a.tipo).lastIndexOf('image')
+        : COLA.map(a => a.tipo).lastIndexOf('document');
+      let salieronQr = 0, falloQr = null;
+      for (let i = 0; i < COLA.length && !falloQr; i++) {
+        const a = COLA[i];
+        const r = await llama({
+          action:'bridgeQueue', conversation_id: conv,
+          media_kind: a.tipo, media_b64: a.datos, media_filename: a.nombre, media_mime: a.mime,
+          body: (t && i === pieEnQr) ? t : '',
+        });
+        if (r.ok) salieronQr++; else falloQr = r;
+      }
+      // Los que ya salieron se quitan, igual que en el oficial: reintentar no los repite.
+      COLA.splice(0, salieronQr);
+      pintaCola();
+      if (!falloQr && t && pieEnQr < 0) {
+        const r = await llama({ action:'bridgeQueue', conversation_id: conv, body: t });
+        if (!r.ok) falloQr = r;
+      }
       env.disabled = false;
-      if (!r.ok) return avisa('No se pudo enviar', traduceErrorMeta(r.error));
+      // Con el codigo: el servidor dice si es otra linea, la PC, la pausa o el modo seguro.
+      if (falloQr) return avisa('No se pudo enviar', traduceErrorMeta(falloQr.error, falloQr.code));
       caja.value = ''; caja.style.height = 'auto';
       cancelaCita();
       return;
     }
+    // Instagram y Messenger ya reciben archivos: el servidor los guarda y le da a Meta un enlace
+    // temporal para que los descargue. Lo que la red NO admite se dice ANTES de subir nada --el
+    // servidor tambien lo rechaza, pero descubrirlo despues de esperar la subida es peor--, con
+    // la misma tabla que usa el servidor (FORMATOS_RED).
+    const claveRed = redSocial(sel) ? canalDe(sel) : null;
+    if (claveRed) {
+      const pega = COLA.map(a => problemaAdjuntoRed(claveRed, a)).find(Boolean);
+      if (pega) {
+        env.disabled = false;
+        return avisa('No se puede enviar por ' + redSocial(sel), pega);
+      }
+    }
+    // Por esas dos redes no salen botones (el servidor los rechaza con social_sin_botones), y
+    // los combos los llevan. Perderlos sin decirlo es lo que ya se quito una vez: las opciones
+    // se escriben al final del texto, que el cliente si recibe.
+    const botonesRed = claveRed ? COLA.flatMap(a => Array.isArray(a.botones) ? a.botones : []) : [];
+    const opcionesRed = [...new Set(botonesRed.map(b => String(b?.titulo || '').trim()).filter(Boolean))];
+    const texto = opcionesRed.length
+      ? [t, 'Responde: ' + opcionesRed.join(' / ')].filter(Boolean).join('\n\n')
+      : t;
     // El audio no admite pie de foto en la API de WhatsApp: si va texto con una nota de
     // voz, el texto se pierde. Por eso el texto viaja con el ultimo adjunto que SI
     // admite pie, y si no hay ninguno se manda aparte.
-    const ultimoConPie = COLA.map(a => a.tipo).lastIndexOf('image') >= 0
+    //
+    // En Instagram y Messenger el archivo y el texto no pueden ir juntos: Meta no los admite en
+    // el mismo mensaje. Con -1 todos los adjuntos salen sin pie ni botones, y el texto va
+    // despues, aparte, por sendText.
+    const ultimoConPie = claveRed ? -1 : (COLA.map(a => a.tipo).lastIndexOf('image') >= 0
       ? COLA.map(a => a.tipo).lastIndexOf('image')
-      : COLA.map(a => a.tipo).lastIndexOf('document');
+      : COLA.map(a => a.tipo).lastIndexOf('document'));
     // Los que ya salieron se quitan de la cola SOBRE LA MARCHA. Si el tercero falla y
     // se reintenta sin esto, los dos primeros se le mandan al cliente otra vez.
     let enviados = 0;
@@ -1895,8 +2167,8 @@ function cableaChat(c){
     COLA.splice(0, enviados);
     pintaCola();
     const textoYaFue = t && ultimoConPie >= 0 && !fallo;
-    if (!fallo && t && !textoYaFue) {
-      const cuerpo = { action:'sendText', conversation_id: conv, body:t };
+    if (!fallo && texto && !textoYaFue) {
+      const cuerpo = { action:'sendText', conversation_id: conv, body:texto };
       // La cita se manda con el wamid del original: asi WhatsApp la enlaza de verdad
       // en el telefono del cliente, en vez de pegar el texto citado a mano.
       if (citando?.wamid) {
@@ -1910,7 +2182,11 @@ function cableaChat(c){
     if (!fallo) cancelaCita();
     env.disabled = false;
     // La cola ya se vacio de lo que SI salio, arriba. Aqui solo se limpia el texto.
-    if (fallo) return avisa('No se pudo enviar', traduceErrorMeta(fallo));
+    //
+    // Los errores de Instagram y Messenger ya vienen explicados por el servidor, en español.
+    // traduceErrorMeta convierte cualquier texto con "24" en el consejo de las plantillas de
+    // WhatsApp, que en esas redes no existen.
+    if (fallo) return avisa('No se pudo enviar', claveRed ? fallo : traduceErrorMeta(fallo));
     caja.value = ''; caja.style.height = 'auto';
   };
 }
@@ -1918,8 +2194,20 @@ function cableaChat(c){
 // "Meta rechazo el envio" no le dice a nadie que hacer. Los motivos que de verdad se
 // repiten se explican, y con la salida: casi siempre es la ventana de 24 h cerrada,
 // que se resuelve con una plantilla.
-function traduceErrorMeta(e){
+function traduceErrorMeta(e, codigo){
   const t = String(e || '');
+  // Los rechazos del puente van PRIMERO y por codigo. Antes caian en /pausado|modo seguro/ y todos
+  // decian "pulsa Reanudar", tambien con la ficha de otra linea o con la PC apagada. Y el filtro
+  // de las 24 h de abajo se come cualquier texto con un "24" (el 849-524-5620, por ejemplo).
+  const puente = /^bridge_/.test(String(codigo || '')) ? String(codigo)
+    : (t.match(/\bbridge_(?:other_number|host_offline|disconnected|paused|reconnect_only)\b/) || [''])[0];
+  if (puente === 'bridge_other_number') return /l[ií]nea/i.test(t)
+    ? t : 'Esta conversación es de otra línea de WhatsApp Web, que ya no está vinculada: por aquí no se le puede contestar.';
+  if (puente === 'bridge_host_offline') return 'La PC del puente no responde: el mensaje saldría tarde, así que no '
+    + 'se envió. Revisa que el programa del puente esté abierto en la PC del negocio.';
+  if (puente === 'bridge_disconnected') return 'El WhatsApp Web no está conectado. Vincúlalo en Canales.';
+  if (puente === 'bridge_paused') return 'Los envíos del WhatsApp Web están en pausa. Pulsa "Reanudar envíos" en Canales.';
+  if (puente === 'bridge_reconnect_only') return 'El WhatsApp Web sigue en modo seguro: activa los envíos de este número en Canales.';
   if (/24|window|re-?engagement|131047/i.test(t))
     return 'Pasaron más de 24 h desde su último mensaje. Solo llega con una plantilla aprobada '
       + '(el botón de plantillas del compositor).';
@@ -1952,6 +2240,50 @@ let modoHd = false;
 // el archivo se subiera entero para morir alla, asi que se corta antes.
 const LIMITE_MB = () => (modoHd ? 15 : 12);
 
+// Lo que admite cada red social. Es una COPIA de FORMATOS_SOCIAL
+// (firebase-functions/src/transport-core.js): decide el servidor, y esto solo sirve para avisar
+// antes de subir el archivo entero. Va en JSON estricto porque test/v2-adjuntos-redes.test.js
+// la lee y exige que sea igual a la del servidor: si cambias una, cambia la otra.
+//
+// El tope de las redes es 8 MB, no LIMITE_MB: es donde corta Storage, y un archivo de 9 a 15 MB
+// se subiria entero para acabar en un 413.
+const TOPE_ADJUNTO_RED = 8 * 1024 * 1024;
+const FORMATOS_RED = {
+  "instagram": {
+    "image": ["image/jpeg", "image/png"],
+    "video": ["video/mp4", "video/quicktime", "video/webm", "video/ogg", "video/x-msvideo"],
+    "audio": ["audio/aac", "audio/mp4", "audio/m4a", "audio/x-m4a", "audio/wav", "audio/x-wav", "audio/wave"],
+    "document": ["application/pdf"]
+  },
+  "facebook": {
+    "image": ["image/jpeg", "image/png", "image/gif"],
+    "video": ["video/mp4", "video/quicktime", "video/webm"],
+    "audio": ["audio/aac", "audio/mp4", "audio/m4a", "audio/x-m4a", "audio/wav", "audio/x-wav", "audio/wave", "audio/mpeg"],
+    "document": []
+  }
+};
+
+// Por que un adjunto de la cola NO puede salir por esa red, o '' si puede. Mismas reglas que
+// adjuntoSocial en el servidor: un video o audio que entra por "documento" sale como lo que es,
+// y Messenger manda como archivo lo que no reconoce (asi le llega la nota de voz OGG).
+function problemaAdjuntoRed(red, a){
+  const tabla = FORMATOS_RED[red];
+  if (!tabla) return '';
+  const nombre = red === 'instagram' ? 'Instagram' : 'Messenger';
+  const peso = a.datos ? Math.floor(String(a.datos).length * 3 / 4) : Number(a.archivo?.size || 0);
+  if (peso > TOPE_ADJUNTO_RED) return (a.nombre || 'El archivo') + ' pesa más de 8 MB, el máximo por ' + nombre + '.';
+  const mime = String(a.mime || '').split(';')[0].trim().toLowerCase();
+  const lista = tabla[a.tipo];
+  if (!lista) return nombre + ' no admite ese tipo de archivo.';
+  if (lista.includes(mime)) return '';
+  if (a.tipo === 'document' && ['image', 'video', 'audio'].some(k => tabla[k].includes(mime))) return '';
+  if (red === 'facebook') return '';
+  if (a.tipo === 'audio') return 'Instagram no acepta las notas de voz grabadas aquí (son OGG). '
+    + 'Grábala desde la app de Instagram, o adjunta un audio M4A, AAC o WAV.';
+  return 'Instagram no acepta ' + (a.nombre || 'ese archivo') + ': solo imágenes JPEG o PNG, vídeo MP4, '
+    + 'MOV o WEBM, audio M4A, AAC o WAV y documentos PDF.';
+}
+
 // Comprime cada imagen de la cola con el modo ACTUAL y actualiza su peso. Se llama al
 // adjuntar y cada vez que se pulsa HD, para que el tamaño que se ve sea el que va a
 // salir de verdad y no el del original.
@@ -1962,7 +2294,13 @@ async function recalculaCola(){
       continue;
     }
     if (a.hd === modoHd && a.datos) continue;      // ya esta en el modo pedido
-    const blob = modoHd ? await comprimeHd(a.archivo) : await comprimeNormal(a.archivo);
+    let blob = modoHd ? await comprimeHd(a.archivo) : await comprimeNormal(a.archivo);
+    // WhatsApp Cloud API solo acepta JPEG y PNG como imagen. Una WebP pequeña pasaba sin
+    // recomprimir y Meta rechazaba el mensaje: asi salian los vestidos del catalogo, que la
+    // web publica en WebP, y la clienta no veia ninguno.
+    if (!/^image\/(jpe?g|png)$/i.test(blob.type || '')) {
+      blob = (await aJpeg(await cargaImagen(blob), modoHd ? 2560 : 1600, 0.9)) || blob;
+    }
     a.datos = await leeBase64(blob);
     a.mime = blob.type || a.archivo.type || 'image/jpeg';
     // Si se reencodeo, el nombre tiene que decir jpg: algunos visores se lian con un
@@ -2189,15 +2527,22 @@ async function abreRapidas(){
         ['Entrega', 'Las fotos editadas se entregan en unos días y te aviso por aquí en cuanto estén listas.'],
         ['Confirmar fecha', 'Déjame revisar la disponibilidad real de ese día y te confirmo enseguida.'],
       ];
+      // Se cuenta lo que de verdad se guardo. Un agente no tiene permiso de escritura aqui, y
+      // antes fallaban las seis y el panel decia igual "Seis respuestas creadas".
+      let creadas = 0, motivo = '';
       for (const [title, body] of base) {
-        await llama({ action:'data', table:'quick_replies', operation:'insert',
+        const r = await llama({ action:'data', table:'quick_replies', operation:'insert',
           payload:{ title, body: body.trim(), created_at: new Date().toISOString() } });
+        if (r.ok) creadas++; else motivo = r.error || motivo;
       }
+      semilla.disabled = false;
       RAPIDAS = null;
       const nuevas = await cargaRapidas(true);
       filas.length = 0; filas.push(...(nuevas || []));
       pinta();
-      avisa('Seis respuestas creadas', 'Edítalas o bórralas como quieras.');
+      if (!creadas) return avisa('No se creó ninguna', motivo || 'No tienes permiso para crear respuestas rápidas.');
+      avisa(creadas === base.length ? 'Seis respuestas creadas' : creadas + ' de ' + base.length + ' creadas',
+        creadas === base.length ? 'Edítalas o bórralas como quieras.' : (motivo || 'Algunas no se pudieron guardar.'));
     };
     $('rqAdd').onclick = async () => {
       const title = $('rqT').value.trim(), body = $('rqB').value.trim();
@@ -2247,9 +2592,8 @@ async function abreRapidas(){
 const COMBO_PAGINA = CFG.publicCatalogUrl || 'https://dcarelacompufoto.com/combos.html';
 const COMBO_IMG = 'https://dcarelacompufoto.com/combos-img/';
 const COMBO_PDF = 'https://dcarelacompufoto.com/pdf/';
-const COMBO_BODA_PAGINA = CFG.publicWeddingUrl || 'https://dcarelacompufoto.com/boda.html';
 const COMBO_CATEGORIAS = { xv:'XV', infantil:'Infantil', graduacion:'Graduación',
-  cumpleanos:'Cumpleaños', embarazadas:'Embarazadas', boda:'Boda' };
+  cumpleanos:'Cumpleaños', embarazadas:'Embarazadas' };
 const COMBO_PDFS = [
   { cat:'xv', label:'XV', n:5 }, { cat:'infantil', label:'Infantil', n:8 },
   { cat:'graduacion', label:'Graduación', n:3 }, { cat:'cumpleanos', label:'Cumpleaños', n:15 },
@@ -2290,41 +2634,6 @@ async function cargaCombos(forzar){
         tarjeta: COMBO_IMG + combosSlug(cat, nombre) + '.png',
       });
     }
-  }
-  // Bodas usan un catálogo específico porque sus combos permiten elegir tamaño
-  // de cuadro. Se consume el JSON publicado junto a boda.html para que nombre,
-  // precio ITBIS y contenido sean siempre los vigentes; la foto optimizada es el
-  // flyer real de esa cobertura y evita las antiguas rutas /combos-img/*.png.
-  try {
-    const bodaDataUrl = new URL('combos-boda-data.json', COMBO_BODA_PAGINA).href;
-    const br = await fetch(bodaDataUrl, { cache: forzar ? 'reload' : 'default' });
-    if (br.ok) {
-      const boda = await br.json();
-      const fotos = { estudio: 0, 'civil-estudio': 3, playa: 6, preboda: 9 };
-      for (const [tipo, grupo] of Object.entries(boda.categorias || {})) {
-        for (const combo of grupo.combos || []) {
-          const foto = fotos[tipo] ?? 0;
-          const flyer = new URL('img/optimized-v33/pf_boda_' + foto + '-960.webp', COMBO_BODA_PAGINA).href;
-          const precio = Number(combo.desde || 0);
-          filas.push({
-            cat: 'boda', catLabel: 'Boda · ' + String(grupo.label || tipo),
-            nombre: String(combo.nombre || (combo.digitales + ' fotos digitales')).trim(),
-            precio: precio ? 'RD$' + precio.toLocaleString('es-DO') : '',
-            digital: combo.digitales ? combo.digitales + ' fotos digitales editadas' : '',
-            items: [
-              combo.digitales ? combo.digitales + ' fotos digitales editadas' : '',
-              '1 cuadro (tamaño a elegir)', '10 fotos impresas 5x7', '2 tazas personalizadas', '2 llaveros'
-            ].filter(Boolean),
-            incluyeLabel: 'Incluye',
-            incluye: 'Precios finales con ITBIS 18% incluido. Cuadro personalizable.',
-            acento: '', insignia: 'ITBIS incluido', nota: boda.nota || '',
-            imagenCruda: flyer, tarjeta: flyer,
-          });
-        }
-      }
-    }
-  } catch (e) {
-    console.warn('No se pudo leer combos de boda', e);
   }
   COMBOS = filas;
   return filas;
@@ -2374,7 +2683,9 @@ async function adjuntaVestidos(boton){
     for (const v of lista) {
       const r = await fetch(v.url, { cache:'no-cache' });
       if (!r.ok) continue;
-      const blob = await comprimeNormal(new File([await r.blob()], v.nombre + '.webp', { type:'image/webp' }));
+      const bruto = new File([await r.blob()], v.nombre + '.webp', { type:'image/webp' });
+      // A JPEG siempre: los vestidos se publican en WebP y WhatsApp no acepta WebP como imagen.
+      const blob = (await aJpeg(await cargaImagen(bruto), 1600, 0.88)) || bruto;
       COLA.push({ tipo:'image', mime: blob.type || 'image/jpeg',
         nombre: v.nombre + ' - DCarela.jpg', datos: await leeBase64(blob) });
     }
@@ -2773,6 +3084,13 @@ function cableaMicrofono(){
 
   boton.onclick = async () => {
     if (!sel || !caja.hidden) return;
+    // Instagram no acepta la nota de voz que graba el panel: opus-recorder solo sabe OGG/Opus y
+    // Instagram no admite OGG. Se dice ANTES de grabar: descubrirlo al enviar es haber hablado
+    // para nada. Messenger si la recibe (como archivo).
+    if (canalDe(sel) === 'instagram') {
+      return avisa('Instagram no acepta notas de voz grabadas aquí',
+        'Grábala desde la app de Instagram, o adjunta un audio M4A, AAC o WAV como documento.');
+    }
     if (!window.Recorder) return avisa('La grabación aún no está lista', 'Espera dos segundos y vuelve a tocar.');
     cancelada = false; enviarAlParar = false;
     try {
@@ -2938,21 +3256,87 @@ function abreReenviar(m){
 // cabecera Authorization y se pinta desde un blob local. La cache evita volver a
 // bajarlo cada vez que se repintan los globos, que es en cada mensaje nuevo.
 const MEDIOS = new Map();
+// Peticiones en curso, por id. La lista se repinta con cada snapshot de Firestore, y sin esto
+// cada repintado volvia a pedir la misma foto mientras la primera seguia en camino: dos
+// llamadas a crmMedia y un blob que se quedaba sin liberar.
+const MEDIOS_EN_CURSO = new Map();
 const BASE_FN = String(CFG.firebaseFunctionsBase || '').replace(/\/$/, '');
 
-async function urlDeMedio(id){
+// `conv` solo lo pasan las fotos de perfil: le dice a crmMedia de que ficha es el archivo, que
+// no esta en ningun mensaje. Los medios de los mensajes lo piden igual que siempre.
+async function urlDeMedio(id, conv){
   if (!id) return '';
   if (MEDIOS.has(id)) return MEDIOS.get(id);
+  if (MEDIOS_EN_CURSO.has(id)) return MEDIOS_EN_CURSO.get(id);
   const u = auth.currentUser; if (!u) return '';
-  try {
-    const token = await u.getIdToken();
-    const r = await fetch(BASE_FN + '/crmMedia?id=' + encodeURIComponent(id),
-      { headers: { Authorization: 'Bearer ' + token } });
-    if (!r.ok) { MEDIOS.set(id, ''); return ''; }
-    const url = URL.createObjectURL(await r.blob());
-    MEDIOS.set(id, url);
-    return url;
-  } catch (e) { MEDIOS.set(id, ''); return ''; }
+  const pedido = (async () => {
+    try {
+      const token = await u.getIdToken();
+      const r = await fetch(BASE_FN + '/crmMedia?id=' + encodeURIComponent(id)
+        + (conv ? '&conv=' + encodeURIComponent(conv) : ''),
+        { headers: { Authorization: 'Bearer ' + token } });
+      if (!r.ok) { MEDIOS.set(id, ''); return ''; }
+      const url = URL.createObjectURL(await r.blob());
+      MEDIOS.set(id, url);
+      return url;
+    } catch (e) { MEDIOS.set(id, ''); return ''; }
+  })();
+  MEDIOS_EN_CURSO.set(id, pedido);
+  try { return await pedido; } finally { MEDIOS_EN_CURSO.delete(id); }
+}
+
+// Fotos de perfil del 2.o numero (ver avatarDe). Solo se piden las que se ven: pintaChats pinta
+// TODAS las conversaciones, y pedir cien fotos para ensenar quince seria pagar cien llamadas a
+// crmMedia por sesion. Como mucho cuatro a la vez. Si una no llega, se quedan las iniciales:
+// nunca la tarjeta "Archivo" de los mensajes.
+let OBS_AVATARES = null;
+const COLA_AVATARES = [];
+let avataresEnCurso = 0;
+
+function resuelveAvatares(){
+  const pendientes = [...document.querySelectorAll('[data-avatar]')];
+  if (!('IntersectionObserver' in window)) {
+    pendientes.slice(0, 40).forEach(encolaAvatar);
+    return;
+  }
+  OBS_AVATARES ||= new IntersectionObserver(entradas => {
+    for (const e of entradas) {
+      if (!e.isIntersecting) continue;
+      OBS_AVATARES.unobserve(e.target);
+      encolaAvatar(e.target);
+    }
+  }, { rootMargin: '200px' });
+  // Cada repintado sustituye las filas: se deja de observar lo anterior (ya fuera del documento)
+  // y se observa lo que hay ahora, cabecera del chat incluida.
+  OBS_AVATARES.disconnect();
+  pendientes.forEach(el => OBS_AVATARES.observe(el));
+}
+
+function encolaAvatar(el){
+  COLA_AVATARES.push(el);
+  bombeaAvatares();
+}
+
+function bombeaAvatares(){
+  while (avataresEnCurso < 4 && COLA_AVATARES.length) {
+    const el = COLA_AVATARES.shift();
+    if (!el.isConnected || !el.dataset.avatar) continue;
+    avataresEnCurso++;
+    pintaAvatar(el).finally(() => { avataresEnCurso--; bombeaAvatares(); });
+  }
+}
+
+async function pintaAvatar(el){
+  const id = el.dataset.avatar, conv = el.dataset.avconv, ini = el.dataset.ini || el.textContent;
+  el.removeAttribute('data-avatar');
+  const url = await urlDeMedio(id, conv);
+  // Sin foto, o la fila ya se repinto mientras llegaba: se queda como esta. El siguiente
+  // repintado la encuentra en MEDIOS y la pinta directa.
+  if (!url || !el.isConnected) return;
+  const img = Object.assign(document.createElement('img'), { className: 'av', alt: '', src: url });
+  img.dataset.ini = ini;
+  img.onerror = () => img.replaceWith(Object.assign(document.createElement('div'), { className: 'av', textContent: ini }));
+  el.replaceWith(img);
 }
 
 // Se resuelven despues de pintar: el globo sale ya, y la imagen aparece cuando llega.
@@ -3240,8 +3624,12 @@ function pintaMensajes(){
   // metadata (index.js:1283), no en el primer nivel. Filtrando por m.deleted_at el
   // mensaje seguia a la vista mientras el panel decia "ocultado".
   const html = MSGS.filter(m => !m.metadata?.deleted && !m.metadata?.deleted_at).map(m => {
-    const d = new Date(m.created_at);
-    const etiquetaDia = d.toLocaleDateString('es-DO', { day:'numeric', month:'short' });
+    const t = instanteMsg(m);
+    const conFecha = t !== Number.MAX_SAFE_INTEGER;
+    const d = new Date(conFecha ? t : Date.now());
+    // Sin fecha no se inventa un separador: se queda bajo el dia anterior. Pintar "Invalid
+    // Date" como separador era lo que lo delataba, pero tambien lo que confundia.
+    const etiquetaDia = conFecha ? d.toLocaleDateString('es-DO', { day:'numeric', month:'short' }) : dia;
     let cabeza = '';
     if (etiquetaDia !== dia) { dia = etiquetaDia; cabeza = '<div class="dia">' + esc(etiquetaDia) + '</div>'; antes = ''; }
     const sale = m.direction === 'out';
@@ -3262,7 +3650,7 @@ function pintaMensajes(){
       + ' data-msg="' + esc(m.id || m.wamid || '') + '">'
       + '<button class="gaccion" aria-label="Opciones del mensaje">⌄</button>'
       + autor + cita + cuerpoMensaje(m)
-      + '<span class="pie-globo">' + esc(d.toLocaleTimeString('es-DO',{hour:'2-digit',minute:'2-digit'})) + ticks + '</span>'
+      + '<span class="pie-globo">' + (conFecha ? esc(d.toLocaleTimeString('es-DO',{hour:'2-digit',minute:'2-digit'})) : '') + ticks + '</span>'
       + '</div>';
   }).join('') || '<div style="margin:auto;color:var(--mut);font-size:13px">Sin mensajes todavía.</div>';
 
@@ -4097,6 +4485,14 @@ let agDia = null;            // dia seleccionado en el calendario
 // un compromiso con el cliente y un recordatorio es una tarea nuestra.
 function citasDe(){
   const filas = [];
+  // Una sesion agendada con alguien de una linea desvinculada sigue siendo un compromiso real: sale
+  // en la Agenda, marcada, aunque su chat no salga en la bandeja. Sus recordatorios no: son tareas
+  // nuestras sobre un chat al que ahora no se puede escribir.
+  for (const c of CONVS_OCULTAS) {
+    if (c.scheduled_at || c.tentative_date) {
+      filas.push({ c, iso: String(c.scheduled_at || c.tentative_date), firme: !!c.scheduled_at, tipo: 'sesion', desvinculada: true });
+    }
+  }
   for (const c of CONVS) {
     if (c.scheduled_at || c.tentative_date) {
       filas.push({ c, iso: String(c.scheduled_at || c.tentative_date), firme: !!c.scheduled_at, tipo: 'sesion' });
@@ -4235,7 +4631,7 @@ function montaAgenda(){
       const c = ev.target.closest('[data-agdia]');
       if (c) { agDia = new Date(c.dataset.agdia); pintaAgenda(); return; }
       const ab = ev.target.closest('[data-agconv]');
-      if (ab) { const cv = CONVS.find(x => x._id === ab.dataset.agconv); if (cv) { abre(cv); ve('conversations'); } }
+      if (ab) { const cv = buscaConv(ab.dataset.agconv); if (cv) { abre(cv); ve('conversations'); } }
     });
     $('agNueva').onclick = () => abreAgendar(null);
     $('agICS').onclick = exportaAgendaICS;
@@ -4281,12 +4677,14 @@ function pintaAgenda(){
   }).join('');
 }
 
-function filaCita({c, iso, firme}){
+function filaCita({c, iso, firme, desvinculada}){
   return '<div class="agcita" data-agconv="' + esc(c._id) + '">'
     + '<span class="agh">' + esc(iso.slice(11,16) || '—') + '</span>'
     + '<span class="agn"><b>' + esc(nombreDe(c)) + '</b>'
     +   '<small>' + esc(c.interested_category || 'sin categoría')
     +   (c.selected_combo_name ? ' · ' + esc(c.selected_combo_name) : '') + '</small></span>'
+    + (desvinculada ? '<i class="chip mal" title="Su chat es de la línea ' + esc(telefonoLegible(c.business_number))
+        + ', que ya no está vinculada">línea desvinculada</i>' : '')
     + '<i class="chip ' + (firme ? 'ok' : 'medio') + '">' + (firme ? 'confirmada' : 'tentativa') + '</i>'
     + '</div>';
 }
@@ -4371,7 +4769,7 @@ function abreAgendar(c){
     $('agBusca').oninput = pinta;
     $('agRes').onclick = ev => {
       const b = ev.target.closest('[data-ag]'); if (!b) return;
-      elegido = CONVS.find(x => x._id === b.dataset.ag);
+      elegido = buscaConv(b.dataset.ag);
       $('agBusca').value = nombreDe(elegido);
       $('agRes').innerHTML = '<p class="cfgnota">Elegido: <b>' + esc(nombreDe(elegido)) + '</b></p>';
       if (elegido.interested_category) $('agCat').value = elegido.interested_category;
@@ -4473,7 +4871,7 @@ function bridgeControlsHtml(p){
   return '<div class="bridge-tools">'
     + '<button class="btn-linea" id="bridgeRefreshBtn">Actualizar estado</button>'
     + '<input id="bridgePairPhone" class="entrada-linea" inputmode="numeric" '
-    +   'placeholder="18091234567" value="' + esc(TELEFONO_PUENTE) + '" '
+    +   'placeholder="18091234567" value="' + esc(soloDigitos(p.connected_phone || p.requested_phone || p.last_linked_phone) || TELEFONO_PUENTE) + '" '
     +   'aria-label="Número a vincular" title="Código de país y solo dígitos">'
     + '<button class="btn-linea" id="bridgePairBtn">Generar código</button>'
     + '<button class="btn-linea" id="bridgeActivateBtn" hidden>Activar envíos de este número</button>'
@@ -4502,6 +4900,8 @@ function bridgeControlsHtml(p){
 
 function renderBridgeControlState(state, explicitError = ''){
   bridgeControlState = state || {};
+  // Lo que devuelve cada accion del puente cuenta tambien para la bandeja, por la misma formula.
+  if (state && (state.status || state.state)) fijaLineaQr(state, { enVivo:false });
   // Arranca o para el sondeo segun lo que acabe de llegar. Va aqui y no en el boton porque el
   // estado tambien cambia al pedir codigo, al sincronizar y al reconstruir.
   setTimeout(vigilaPuente, 0);
@@ -4755,8 +5155,26 @@ async function pintaCanales(){
   const t = estado.ok ? (estado.transport || estado) : {};
   const p = puente.ok ? (puente.bridge || puente) : {};
   bridgeControlState = p;
+  // Esta vista ya sabe como esta la linea: se comparte con la bandeja por la MISMA formula que usa
+  // la escucha en vivo. Antes aqui habia otra (con la pausa), que escondia las 580 fichas del
+  // numero conectado solo por tener los envios en pausa.
+  if (puente.ok) fijaLineaQr(p, { enVivo:false });
 
-  const cuenta = clave => CONVS.filter(c => canalDe(c) === clave).length;
+  // Las cuentas incluyen las ocultas: esta tarjeta es donde se mira que hay en cada canal.
+  const cuenta = clave => CONVS_TODAS.filter(c => canalDe(c) === clave).length;
+  // WhatsApp Web se cuenta por linea: "580 de 809-757-5644 · 37 ocultas de 809-478-5620". Junto,
+  // un 617 no dice que 37 son de un numero que ya no esta vinculado.
+  const resumenCuenta = clave => {
+    if (clave !== 'whatsapp_qr' || !cuenta(clave)) return cuenta(clave) + ' conversación(es)';
+    const agrupa = lista => {
+      const m = new Map();
+      lista.filter(c => canalDe(c) === clave).forEach(c => m.set(claveOculta(c), (m.get(claveOculta(c)) || 0) + 1));
+      return [...m.entries()];
+    };
+    const nombre = k => k === 'sin_numero' ? 'sin número' : telefonoLegible(k);
+    return [...agrupa(CONVS).map(([k, n]) => n + ' de ' + nombre(k)),
+      ...agrupa(CONVS_OCULTAS).map(([k, n]) => n + ' ocultas de ' + nombre(k))].join(' · ');
+  };
   // "Conectado" no quiere decir que llegue nada. Una red puede estar suscrita, con su token
   // vivo y su historial importado, y aun asi no entregar un solo mensaje nuevo -- que es
   // exactamente lo que pasa con Instagram y Messenger mientras la app siga sin publicar en
@@ -4785,7 +5203,7 @@ async function pintaCanales(){
       + '<div class="cabecera-canal">'
       +   '<span class="clogo" style="background:' + d.color + '22;color:' + d.color + '">' + d.logo + '</span>'
       +   '<div class="cinfo"><b>' + esc(d.nombre) + '</b>'
-      +     '<span>' + cuenta(clave) + ' conversación(es)' + ultimoEntrante(clave) + '</span></div>'
+      +     '<span>' + esc(resumenCuenta(clave)) + ultimoEntrante(clave) + '</span></div>'
       +   '<i class="chip ' + (etiqueta ? etiqueta.clase
       :     (listo === true ? 'ok' : listo === false ? 'mal' : 'medio')) + '">'
       +     (etiqueta ? esc(etiqueta.texto)
@@ -4838,10 +5256,6 @@ async function pintaCanales(){
     && p.host_online !== false;
   const puenteVinculadoEnPausa = puenteVinculado && p.paused === true;
   const puenteListo = puenteVinculado && p.paused !== true;
-  // Esta vista ya sabe si el puente esta vivo: se aprovecha para refrescar el estado que
-  // decide si las conversaciones del segundo numero se ven en la lista. Sin esto, tras
-  // desconectar habia que recargar la pagina para que desaparecieran.
-  if (PUENTE_ON !== puenteListo) { PUENTE_ON = puenteListo; if (vistaActual === 'conversations') pintaChats(); }
 
   cont.innerHTML =
     tarjeta('whatsapp_cloud', oficialListo,
@@ -4860,8 +5274,11 @@ async function pintaCanales(){
         ? 'Segundo número conectado por WhatsApp Web. <b>No hay ventana de 24 h ni plantillas</b>: '
           + 'se escribe como desde el teléfono, a cualquier contacto y en cualquier momento.'
         : puenteVinculadoEnPausa
-        ? '<b>Vinculado, pero con los envíos en pausa.</b> Se pausan solos al volver a '
-          + 'vincular, para no soltar una tanda antes de comprobar que la sesión aguanta. '
+        // El motivo lo guarda quien pausa (pause_reason). Sin el, la pausa de vincular --que se
+        // levanta sola al quedar estable-- se veia igual que una por calidad, que no debe quitarse
+        // sin revisar el numero.
+        ? '<b>Vinculado, pero con los envíos en pausa.</b> '
+          + esc(MOTIVO_PAUSA[p.pause_reason] || 'No consta el motivo: la pausa es de antes de que se guardara.') + ' '
           + 'Pulsa <b>Reanudar envíos</b> y ya se puede escribir por este número.'
         // Decia "no admite difusiones, solo conversacion dentro de la ventana normal". Las
         // dos cosas eran falsas y se contradecian con los frenos de difusion de dos lineas
@@ -5050,10 +5467,15 @@ async function pintaCanales(){
       return;
     }
     if (ev.target.closest('[data-conecta-puente]')) {
-      // El servidor exige el numero (index.js:1680) y solo admite la linea de Fotos. Sin
-      // mandarlo, este boton fallaba SIEMPRE: se podia desconectar el segundo numero y
-      // despues no habia forma de volver a conectarlo desde el panel.
-      const r = await llama({ action:'requestBridgePairing', phone: '18094785620' });
+      // El servidor exige el numero. Iba 18094785620 escrito a mano, asi que con otra linea
+      // vinculada este boton pedia el codigo para el telefono equivocado. Sale del estado del
+      // puente: el conectado, el ultimo pedido o el ultimo que estuvo vinculado.
+      const phone = soloDigitos(bridgeControlState.connected_phone || bridgeControlState.requested_phone
+        || bridgeControlState.last_linked_phone || TELEFONO_PUENTE);
+      if (!/^[1-9][0-9]{7,14}$/.test(phone)) {
+        return avisa('Falta el número', 'Escribe el número a vincular en el campo de la tarjeta de WhatsApp Web.');
+      }
+      const r = await llama({ action:'requestBridgePairing', phone });
       if (!r.ok) return avisa('No se pudo pedir el código', r.error);
       abreModal('<div class="mtapa"><b>Conectar WhatsApp Web</b><button class="cerrarm" data-cerrar>×</button></div>'
         + '<div class="mcuerpo"><p class="aviso">En el teléfono del segundo número: '
@@ -5183,6 +5605,9 @@ function limitesCfg(esAdmin){
     + campoLim('daily_cap', 'Tope de envíos por día', 'Al llegar aquí, lo que quede se pasa al día siguiente.', true)
     + campoLim('resume_hour', 'Hora a la que se reanuda', 'De 0 a 23, hora de La Romana.', true)
     + campoLim('quality_cutoff', 'Fallos seguidos que pausan el puente', 'El freno de emergencia. De 1 a 20; no se puede quitar.', true)
+    // No es un envio, pero cada foto es una consulta a WhatsApp desde este numero. Aqui se
+    // apaga sin tocar la PC del negocio.
+    + campoLim('avatar_daily_cap', 'Fotos de perfil consultadas por día', 'De 0 a 120; 0 las apaga. Como mucho una cada 1,5–3 minutos.', true)
     + '</div>'
     + '<button class="btn-linea" id="cfgGuardaLimites" style="margin-top:8px">Guardar límites</button>';
 }
@@ -5279,15 +5704,15 @@ async function pintaConfig(){
           'Solo a quien terminó comprando.', false))
 
     + tarjetaCfg('Límites de seguridad del 2.º número',
-        'El 809-478-5620 es un WhatsApp personal, no una API: si WhatsApp lo ve enviar en '
+        'La línea de WhatsApp Web es un WhatsApp personal, no una API: si WhatsApp lo ve enviar en '
         + 'ráfaga, lo bloquea sin aviso y sin dónde reclamar. Estos números son lo único que lo '
         + 'protege. Se pueden ajustar, pero el servidor los recorta a un rango seguro: no hay '
         + 'forma de dejarlo sin pausa ni sin freno. <b>El puente los aplica sin reiniciarlo.</b>',
         limitesCfg(esAdmin))
 
     + tarjetaCfg('Agenda en Google Calendar',
-        'Las sesiones agendadas se publican como un calendario al que Google se suscribe: se '
-        + 'añade una vez y se actualiza solo, sin volver a importar nada. Google no lo refresca '
+        'Las sesiones agendadas y los seguimientos se publican como un calendario al que Google '
+        + 'se suscribe: se añade una vez y se actualiza solo, sin volver a importar nada. Google no lo refresca '
         + 'al instante --suele tardar unas horas en recoger un cambio--, así que el sitio donde '
         + 'se agenda sigue siendo el CRM; el calendario es para verlo desde el teléfono.',
         agendaCfg())
@@ -5343,6 +5768,16 @@ async function pintaConfig(){
         + 'el panel ensena solas las mas usadas. Las que no marques siguen existiendo y '
         + 'poniendose en la ficha del lead: solo dejan de ocupar sitio en la barra.',
         etiquetasFiltroCfg())
+
+    + tarjetaCfg('Avisos de atención humana',
+        'Cuando un chat necesita a una persona, el CRM manda un aviso interno a este teléfono por la '
+        + 'línea de WhatsApp Web que esté conectada. Si el teléfono es la propia línea no se envía '
+        + '(sería escribirse a sí mismo) y queda solo la marca «Aviso no enviado» en la ficha.',
+        '<div class="campo"><label>Teléfono que recibe los avisos</label>'
+        + '<input id="cfgAvisoTel" inputmode="numeric" value="' + esc(AJUSTES.handoff_notify_phone || '')
+        + '" placeholder="18094785620"></div>'
+        + '<p class="cfgnota">Vacío = 18094785620. Código de país y solo dígitos.</p>'
+        + '<button class="btn-linea" id="cfgGuardaAviso" style="margin-top:8px">Guardar teléfono</button>')
 
     + tarjetaCfg('Bot de WhatsApp',
         'Encender o apagar el bot por canal se hace en <b>Canales</b>, no aquí: son ajustes de cada '
@@ -5412,10 +5847,15 @@ async function pintaConfig(){
   // Google pide la URL en "Añadir calendario > Desde URL". Este enlace abre esa pantalla con
   // la direccion ya puesta; si alguna version de Google la pide a mano, esta el boton de
   // copiar al lado.
+  //
+  // Con cid=https://... Google a veces contesta "no se pudo añadir el calendario": la forma que
+  // documenta para suscribirse es webcal://. Google lo pide por http y el servidor lo redirige
+  // a https (comprobado: 302 a la misma direccion con la llave), asi que llega igual.
   const ag = $('cfgAgendaGoogle');
   if (ag) ag.onclick = () => {
     const u = urlAgenda(); if (!u) return;
-    window.open('https://calendar.google.com/calendar/r?cid=' + encodeURIComponent(u), '_blank', 'noopener');
+    const webcal = u.replace(/^https?:\/\//, 'webcal://');
+    window.open('https://calendar.google.com/calendar/r?cid=' + encodeURIComponent(webcal), '_blank', 'noopener');
   };
   const ar = $('cfgAgendaRota');
   if (ar) ar.onclick = async () => {
@@ -5427,6 +5867,19 @@ async function pintaConfig(){
     if (!ok) { ar.disabled = false; return; }
     avisa('Enlace cambiado', 'Hay que volver a añadirlo en Google Calendar.');
     pintaConfig();
+  };
+  // El telefono de avisos se valida aqui: uno mal escrito haria que el servidor volviera en
+  // silencio al de por defecto, y se creeria que los avisos van a otro sitio.
+  const ga = $('cfgGuardaAviso');
+  if (ga) ga.onclick = async () => {
+    const tel = soloDigitos($('cfgAvisoTel')?.value);
+    if (tel && !/^[1-9][0-9]{7,14}$/.test(tel)) {
+      return avisa('Teléfono no válido', 'Código de país y solo dígitos, por ejemplo 18091234567.');
+    }
+    ga.disabled = true;
+    const ok = await guardaAjuste('handoff_notify_phone', tel);
+    ga.disabled = false;
+    if (ok) avisa('Guardado', tel ? 'Los avisos irán al ' + telefonoLegible(tel) + '.' : 'Vuelve al teléfono por defecto.');
   };
   const cr = $('cfgReglas2'); if (cr) cr.onclick = abreReglas;
   const ic = $('cfgIrCanales'); if (ic) ic.onclick = () => ve('canales');
@@ -5549,7 +6002,9 @@ async function cableaEquipo(){
     const activar = b.textContent.trim() === 'inactivo';
     b.disabled = true;
     const r = await llama({ action:'data', table:'collaborators', operation:'update',
-      payload:{ active: activar }, filters:[{ column:'id', operator:'eq', value: b.dataset.colActivo }] });
+      // kind/field, que es lo unico que acepta el servidor. Con column/operator respondia 400
+      // "filtro invalido" y ningun colaborador se podia activar ni dar de baja.
+      payload:{ active: activar }, filters:[{ kind:'eq', field:'id', value: b.dataset.colActivo }] });
     b.disabled = false;
     if (!r.ok) return avisa('No se pudo cambiar', r.error);
     await pinta();
@@ -5671,7 +6126,7 @@ function pintaKanban(){
       ev.preventDefault();
       col.classList.remove('encima');
       const id = ev.dataTransfer.getData('text/plain') || arrastrando?.dataset.conv;
-      const c = CONVS.find(x => x._id === id);
+      const c = buscaConv(id);
       const etapa = col.dataset.etapa;
       if (!c || (c.lifecycle_stage || 'nuevo') === etapa) return;
       const anterior = c.lifecycle_stage;
@@ -5953,7 +6408,7 @@ function pintaMovilizacion(){
   cont.onclick = async ev => {
     const avanzar = ev.target.closest('[data-avanza]');
     if (avanzar) {
-      const c = CONVS.find(x => String(x._id || x.id) === avanzar.dataset.conv);
+      const c = buscaConv(avanzar.dataset.conv);
       const r = REGLAS_LEAD.find(x => x.id === avanzar.dataset.avanza);
       if (!c || !r?.etapa) return;
       if (!confirm('Mover a ' + nombreDe(c) + ' de «' + (c.lifecycle_stage || 'nuevo').replace(/_/g,' ')
@@ -5970,7 +6425,7 @@ function pintaMovilizacion(){
       return;
     }
     const b = ev.target.closest('[data-mov]'); if (!b) return;
-    const c = CONVS.find(x => String(x._id || x.id) === b.dataset.conv);
+    const c = buscaConv(b.dataset.conv);
     const r = REGLAS_LEAD.find(x => x.id === b.dataset.mov);
     if (!c) return;
     // Se abre la conversacion SIEMPRE, aunque haya prompt: hay que ver con quien se
@@ -6841,9 +7296,31 @@ async function enviaBroadcast(){
   if (Array.isArray(AUDIENCIA.ids) && AUDIENCIA.ids.length) cuerpo.only_ids = AUDIENCIA.ids;
   $('bcEnviar').disabled = true;
   $('bcEnviar').textContent = 'Enviando…';
-  const r = await llama(cuerpo);
-  if (!r.ok) { $('bcEnviar').disabled = false; $('bcEnviar').textContent = 'Enviar a ' + cuantos;
-    return avisa('No se pudo enviar', r.error); }
+  // Por tandas. El servidor procesa lo que cabe en el tiempo de la funcion y devuelve el
+  // resto en pendientes_ids. Antes era una sola peticion que moria hacia el contacto 100:
+  // error sin cifras, y reintentar le volvia a escribir a los que ya lo tenian.
+  const r = { ok:true, sent:0, failed:0, errors:[] };
+  let corte = '', errorTanda = '';
+  for (let vuelta = 0; vuelta < 60; vuelta++) {
+    const t = await llama(cuerpo);
+    if (!t.ok) { errorTanda = t.error || 'error'; break; }
+    r.sent += Number(t.sent || 0);
+    r.failed += Number(t.failed || 0);
+    r.errors.push(...(t.errors || []));
+    $('bcEnviar').textContent = 'Enviando… ' + (r.sent + r.failed) + ' de ' + cuantos;
+    if (t.corte) { corte = t.corte; break; }
+    const quedan = Array.isArray(t.pendientes_ids) ? t.pendientes_ids : [];
+    if (!quedan.length) break;
+    cuerpo.only_ids = quedan;
+  }
+  if (errorTanda && !(r.sent + r.failed)) {
+    $('bcEnviar').disabled = false; $('bcEnviar').textContent = 'Enviar a ' + cuantos;
+    return avisa('No se pudo enviar', errorTanda);
+  }
+  if (errorTanda || corte) {
+    r.errors.unshift({ error: corte || ('Se detuvo a mitad: ' + errorTanda + '. Ya salieron ' + r.sent
+      + '; no vuelvas a enviar a todos o los repetirás.') });
+  }
   AUDIENCIA = null;
   $('bcSalida').innerHTML = '<div class="propuesta"><div class="tapa"><b>Envío terminado</b></div>'
     + '<div class="cuerpo">'
@@ -6916,7 +7393,7 @@ async function corridaLote(ids, hacer, verbo){
   const b = $('barraLote');
   let hechos = 0; const fallos = [];
   for (const id of ids) {
-    const c = CONVS.find(x => x._id === id);
+    const c = buscaConv(id);
     if (!c) continue;
     b.innerHTML = '<span><span class="cargando"></span> ' + verbo.toLowerCase() + ' '
       + (hechos + 1) + ' de ' + ids.length + '…</span>';
@@ -6989,17 +7466,17 @@ function abreEncuesta(c){
     b.disabled = true;
     // El canal decide la via, igual que al enviar un mensaje normal. El segundo numero
     // no pasa por la Cloud API: mandarlo por ahi responde "canal incorrecto".
+    // Siempre surveyInvite: es quien crea la reseña, pone el enlace y guarda el colaborador,
+    // y ya sabe mandarla por el 2.o numero. Por WhatsApp Web se encolaba solo la
+    // introduccion, sin enlace, y el aviso prometia un enlace que nada creaba.
     const porPuente = canalDe(c) === 'whatsapp_qr';
-    const r = porPuente
-      ? await llama({ action:'bridgeQueue', conversation_id: c.id || c._id, body: $('encMsg').value.trim() })
-      : await llama({ action:'surveyInvite', conversation_id: c.id || c._id,
-          collaborator_id: $('encColab').value || null, intro: $('encMsg').value.trim() });
+    const r = await llama({ action:'surveyInvite', conversation_id: c.id || c._id,
+      collaborator_id: $('encColab').value || null, intro: $('encMsg').value.trim() });
     b.disabled = false;
-    if (!r.ok) return avisa('No se pudo enviar', traduceErrorMeta(r.error));
+    if (!r.ok) return avisa('No se pudo enviar', traduceErrorMeta(r.error, r.code));
     cierraModal();
-    avisa('Encuesta enviada', porPuente
-      ? 'Va por WhatsApp Web; el enlace de la reseña se crea al entregarse.'
-      : 'Cuando conteste aparecerá en Satisfacción.');
+    avisa('Encuesta enviada', (porPuente ? 'Va por WhatsApp Web, con su enlace. ' : '')
+      + 'Cuando conteste aparecerá en Satisfacción.');
   };
 }
 
@@ -7085,7 +7562,9 @@ function etiquetasDe(c){
 // pinta el filtro sea el mismo que se ve al pulsarlo.
 function etiquetasContadas(){
   const cuenta = new Map();
-  CONVS.filter(c => !puenteApagado(c))
+  // CONVS ya son solo las visibles (recalculaVisibles): una etiqueta que contara las de una linea
+  // oculta diria 2 en el filtro y abriria 1.
+  CONVS
     .forEach(c => etiquetasDe(c).forEach(e => cuenta.set(e, (cuenta.get(e) || 0) + 1)));
   return [...cuenta.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
 }
@@ -7161,9 +7640,14 @@ async function cableaHistorial(c){
   // "no ha mandado archivos" aunque hubiera veinte.
   let archivos = [];
   try {
-    const qm = query(collection(db,'crm_messages'), where('business_id','==',NEGOCIO),
-      where('conversation_id','==', idConv), limit(400));
-    const sm = await getDocs(qm);
+    // Los mas recientes, con el mismo respaldo que el hilo si el indice aun no existe.
+    const filtros = [where('business_id','==',NEGOCIO), where('conversation_id','==', idConv)];
+    let sm;
+    try { sm = await getDocs(query(collection(db,'crm_messages'), ...filtros, orderBy('created_at','desc'), limit(400))); }
+    catch (e) {
+      if (e?.code !== 'failed-precondition') throw e;
+      sm = await getDocs(query(collection(db,'crm_messages'), ...filtros, limit(400)));
+    }
     archivos = sm.docs.map(d => d.data())
       .filter(m => m.media_url || (m.msg_type && m.msg_type !== 'text'))
       .sort((a,b) => String(b.created_at||'').localeCompare(String(a.created_at||'')));
@@ -7875,7 +8359,7 @@ async function aplica(idx){
     avisa(hechas.length ? 'Aplicado a medias' : 'No se pudo aplicar',
       fallos.map(([n,e]) => n + ': ' + traduceErrorMeta(e)).join(' · ').slice(0,180));
   }
-  if (sel) { const f = CONVS.find(c => c._id === sel._id); if (f) pintaFicha(f); }
+  if (sel) { const f = buscaConv(sel._id); if (f) pintaFicha(f); }
 }
 
 function textoDeBorrador(clave){
@@ -7917,7 +8401,9 @@ onAuthStateChanged(auth, async u => {
   // El historial se carga solo al entrar. No hay boton de "actualizar": la escucha
   // en vivo trae los cambios sin que nadie tenga que pedirlos.
   escuchaConversaciones();
-  cargaEstadoPuente();
+  // El estado de la linea llega en vivo y para cualquier rol. Antes se pedia una vez al entrar,
+  // solo le contestaba a un admin, y cambiar algo en el puente obligaba a recargar.
+  escuchaLineaQr();
   vigilaVersion();
   setInterval(vigilaVersion, 300000);
   ve(location.hash.slice(1) || CFG.defaultView || 'conversations');

@@ -1,6 +1,6 @@
 {
-  "version": "2026-09-14-puente-fotos-redes-v108",
+  "version": "2026-09-20-lineas-historial-v109",
   "channel": "crm",
-  "released_at": "2026-09-14T23:30:00Z",
-  "summary": "Fotos de perfil reales del 2.o numero, adjuntos por Instagram y Messenger, no leidos sin perdidas, llamadas y mensajes de contactos LID sin fichas fantasma y recepcion del historial completo de WhatsApp Web."
+  "released_at": "2026-09-20T02:30:00Z",
+  "summary": "Lineas de WhatsApp separadas sin borrar chats; estado del puente en vivo para todos los roles; avisos al responsable por la linea conectada; pausas explicadas e historial sin falsos 100%."
 }
