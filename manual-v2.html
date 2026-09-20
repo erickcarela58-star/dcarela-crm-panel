@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="es">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Guía de uso · CRM D’ Carela v109</title>
+<style>
+:root{color-scheme:light dark;font:16px/1.65 system-ui,sans-serif;background:#fafafa;color:#20252a}
+*{box-sizing:border-box}body{margin:0}main{max-width:850px;margin:auto;padding:24px clamp(16px,5vw,48px) 64px}
+header{border-bottom:1px solid #9995;padding-bottom:24px}h1{font-size:clamp(26px,5vw,38px);line-height:1.2}h2{font-size:22px;margin-top:36px}
+a{color:#076c70;text-underline-offset:3px}nav{display:flex;gap:16px;flex-wrap:wrap}li{margin:8px 0}code{overflow-wrap:anywhere}.nota{border-left:3px solid #0c8583;padding:12px 16px;background:#0c85830c}.muted{color:#596168}details{padding:12px 0;border-bottom:1px solid #9995}summary{cursor:pointer;font-weight:600}
+@media(prefers-color-scheme:dark){:root{background:#15191b;color:#e8edef}a{color:#78d7ce}.muted{color:#b5bdc2}}
+@media print{nav{display:none}details>*{display:block}}
+</style>
+<main>
+<header><nav aria-label="Navegación"><a href="./">Volver al CRM</a><a href="./manual-v2.md">Manual completo</a></nav>
+<p class="muted">D’ Carela · v109 · 20 de septiembre de 2026 (UTC)</p>
+<h1>Atender, preparar y aprobar</h1><p>La misma aplicación sirve a Central y Fotos, con su configuración de canal separada. La raíz y <code>/v2.html</code> muestran la versión vigente.</p></header>
+<h2>1. Antes de responder</h2>
+<ol><li>Inicia sesión y abre <b>Canales</b>. Comprueba el número vinculado, la conexión de la PC y si hay una pausa de envíos.</li>
+<li>Abre el chat y mira su distintivo de canal. Un mensaje conserva el número y la plataforma de esa conversación.</li>
+<li>Revisa la advertencia sobre el compositor. Una línea desvinculada queda en solo lectura; una pausa explica su motivo.</li></ol>
+<p class="nota">Los chats antiguos no se borran. Usa el filtro de su número, marcado como desvinculado o inactivo. No cuentan como conversaciones activas, pero sus citas permanecen en Agenda.</p>
+<h2>2. Mensajes, combos y recordatorios</h2>
+<ul><li>Adjunta imágenes o documentos; revisa el archivo y el texto antes de pulsar enviar. HD recalcula la compresión de las imágenes.</li>
+<li><b>Combos</b> prepara la tarjeta publicada y el texto del catálogo. No envía por seleccionar un combo. Comprueba precio, contenido y fecha antes de ofrecer disponibilidad.</li>
+<li>Las notas de voz muestran la grabación; cambiar de chat cancela la grabación para no enviarla a otra persona.</li>
+<li>Desde el menú del chat puedes añadir un recordatorio. Revisa si es una tarea interna o un seguimiento al cliente y su fecha.</li>
+<li>En WhatsApp oficial, fuera de la ventana de 24 horas utiliza una plantilla aprobada. Un mensaje rechazado no equivale a uno entregado.</li></ul>
+<h2>3. Asistente IA</h2>
+<p>En <b>Planificación</b>, describe lo que necesitas. Puedes aportar imágenes y reglas del negocio. Revisa los campos y destinatarios de la propuesta antes de aprobar. El texto de una respuesta no es evidencia de que un registro se haya guardado.</p>
+<p class="nota">Gemini respondió en la prueba técnica de esta entrega con datos ficticios. No se enviaron mensajes a clientes ni se modificaron sus fichas durante esa prueba.</p>
+<h2>4. Bot y campañas son controles distintos</h2>
+<ul><li>Apaga o enciende el bot de cada canal en <b>Canales</b>. Actualizar el CRM no lo enciende por sí solo.</li>
+<li>Apagar el bot no elimina los chats ni el acceso a campañas. Las bajas de marketing y los bloqueos de contacto se respetan aparte.</li>
+<li>Selecciona varios chats para etiquetar o bloquear bot y marketing. Lee la confirmación antes de aplicar.</li>
+<li>Simula una campaña y revisa destinatarios y exclusiones antes de autorizarla. Las colas ya autorizadas conservan su programación y límites.</li>
+<li>Pack de Estados prepara imágenes para publicarlas manualmente; no publica Estados automáticamente.</li></ul>
+<h2>5. Si algo no funciona</h2>
+<details><summary>No veo un chat de la línea anterior</summary><p>Busca el filtro de su número. Si el puente se desconectó, las conversaciones pueden estar en el filtro de línea inactiva. Se conservan; no hace falta volver a crearlas.</p></details>
+<details><summary>No me deja enviar</summary><p>Lee la causa sobre el compositor: otra línea, sin vincular, PC sin responder o envíos en pausa. Un administrador puede reanudar una pausa; no pulses vincular para resolver una pausa simple.</p></details>
+<details><summary>No se importó todo el historial</summary><p>Un porcentaje parcial no confirma recuperación completa. La conexión actual procede de una vinculación antigua. La recuperación completa puede necesitar volver a vincular desde Canales con el teléfono presente. No cierres la sesión sin tenerlo disponible.</p></details>
+<details><summary>El bot dice que avisó a una persona</summary><p>Comprueba el estado de la derivación y el teléfono de avisos en Configuración. La solicitud, la cola y la entrega son pasos diferentes. No se puede enviar el aviso al mismo número que lo emite.</p></details>
+<details><summary>El asistente falla o propone algo incorrecto</summary><p>No apruebes la propuesta. Conserva el error, el canal y los pasos para reproducirlo. Revisa la sesión y la configuración del proveedor; no cambies un saldo o una ficha para compensar un fallo de conexión.</p></details>
+<h2>6. Alcance de esta comprobación</h2>
+<p>Se verificaron las pruebas automatizadas, los archivos publicados, la conexión del puente y una respuesta sintética de Google. Quedan separadas las pruebas visuales por rol, la entrega real de mensajes y la recuperación histórica que requiera el teléfono. No se da por comprobado lo que no se ejecutó.</p>
+</main>
+</html>

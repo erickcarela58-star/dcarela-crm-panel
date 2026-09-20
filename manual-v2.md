@@ -1,8 +1,10 @@
 # CRM D' Carela — manual de uso
 
-`https://crm.dcarelacompufoto.com/v2.html`
+Versión v109, publicada el 20/09/2026 (UTC).
 
-El panel anterior sigue en `/` por si algo falla. Este documento explica el nuevo.
+Central: `https://crm.dcarelacompufoto.com/` · Fotos: `https://fotos.dcarelacompufoto.com/`.
+La página principal y `/v2.html` muestran ahora el mismo panel. El anterior no es un
+respaldo público vigente. Guía rápida: `manual-v2.html`.
 
 ---
 
@@ -10,8 +12,10 @@ El panel anterior sigue en `/` por si algo falla. Este documento explica el nuev
 
 Tres ideas que explican casi todas las decisiones del panel:
 
-**Nada automático escribe a un cliente sin que alguien lo apruebe.** El asistente
-propone; tú apruebas. Un borrador se deja escrito en el compositor, nunca se envía solo.
+**El asistente propone; tú apruebas.** Un borrador se deja escrito en el compositor,
+nunca se envía por el mero hecho de generarlo. Los bots y automatizaciones que un
+administrador haya habilitado conservan sus propias reglas; revisar Canales y
+Configuración antes de programar campañas.
 
 **El canal decide por dónde sale cada mensaje.** Un chat que entró por WhatsApp Web no
 puede salir por el número oficial, y al revés. El panel lo enruta; si te equivocas de
@@ -163,17 +167,24 @@ El panel traduce los errores de Meta a lo que hay que hacer. Los que más verás
 
 ## Lo que este panel NO hace, a propósito
 
-- **No enciende el bot para todos.** Está apagado salvo para el número de pruebas.
-  Encenderlo es una decisión tuya, en Canales, canal por canal.
+- **No enciende el bot al actualizar.** Conserva la decisión guardada por canal.
+  En la comprobación del 20/09/2026, Fotos estaba apagado y el oficial encendido;
+  eso es una lectura de ese momento, no una promesa sobre su estado futuro.
 - **No publica Estados de WhatsApp.** No existe forma oficial; lo que promete
   automatizarlo usa métodos que **banean el número**.
-- **No envía nada solo.** Ni siquiera lo que programa: llegado el día aparece para que
-  lo revises.
+- **Generar una propuesta no la ejecuta.** Revisa el alcance y los destinatarios al
+  aprobar. Un envío ya autorizado y programado puede ser procesado por la cola.
 
-## Lo que todavía no está
+## Límites y verificaciones pendientes
 
-- **Instagram y Facebook**: el inicio de sesión funciona, pero los mensajes de esas redes
-  todavía no entran ni salen. Falta trabajo de servidor.
-- **Foto de perfil del cliente**: la API de WhatsApp no la manda. Salen las iniciales.
-- **Archivos por WhatsApp Web**: ese canal solo admite texto por ahora.
-- **Métricas de anuncios de Meta**: sin empezar.
+- **Historial antiguo de WhatsApp Web**: la sesión actual es `legacy_web`. No se ha
+  cerrado ni desvinculado para forzar una importación. Recuperar todo lo que el teléfono
+  no entrega puede requerir volver a vincularlo desde Canales con el teléfono presente.
+- **Foto de perfil**: Cloud conserva las iniciales si no hay foto disponible. El puente
+  de WhatsApp Web sí tiene recuperación de fotos, sujeta a disponibilidad y límites.
+- **Instagram, Facebook, archivos y métricas** tienen implementación en servidor y
+  panel; no son funciones «sin empezar». Su entrega real depende de las credenciales,
+  permisos y restricciones del canal. Esta entrega no envió mensajes de prueba.
+- **Prueba en sesión real**: las pruebas automatizadas, los archivos publicados y el
+  proveedor Google fueron comprobados; no sustituyen verificar cada pantalla y cada
+  rol desde una sesión autenticada en navegador.

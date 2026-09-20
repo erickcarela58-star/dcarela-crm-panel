@@ -1044,7 +1044,7 @@ video.mmedia{cursor:default}
       <span class="quien" id="quien"></span>
       <button class="btn-linea" id="btnAvisos" hidden>Activar avisos</button>
       <button class="btn-linea" id="btnTema">Modo oscuro</button>
-      <a class="btn-linea" href="./manual.html" target="_blank" rel="noopener">Manual</a>
+      <a class="btn-linea" href="./manual-v2.html" target="_blank" rel="noopener">Manual</a>
     </div>
   </header>
 
@@ -1525,7 +1525,7 @@ function monta(id){
   if (id === 'reminders') return montaRecordatorios();
   if (id === 'canales') return montaCanales();
   if (id === 'config') return montaConfig();
-  if (id === 'manual') { window.open('./manual.html', '_blank', 'noopener'); return ve('conversations'); }
+  if (id === 'manual') { window.open('./manual-v2.html', '_blank', 'noopener'); return ve('conversations'); }
   if (montadas.has(id)) return;
   montadas.add(id);
   const v = VISTAS.find(x => x.id === id);
