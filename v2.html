@@ -366,6 +366,15 @@ img.av{object-fit:cover}
   margin:1px 0 3px;cursor:zoom-in}
 video.mmedia{cursor:default}
 .msticker{display:block;max-width:130px;max-height:130px;margin:2px 0}
+/* El hueco de un archivo guardado que todavia no se ha pedido. Solo se pide lo que entra en
+   pantalla (resuelveMedios), y un <img> sin src mide cero: sin este alto, todas las fotos del
+   hilo cabrian a la vez en la pantalla y se pedirian de golpe, que es lo que se quiso quitar. */
+.mmedia[data-medio]{width:220px;height:160px;background:rgba(11,20,26,.06);color:transparent;font-size:0}
+/* Chrome pinta el icono de "imagen rota" en un <img> sin src: mientras espera, un GIF vacio. */
+img.mmedia[data-medio]:not([src]),img.msticker[data-medio]:not([src]){
+  content:url("data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7")}
+.msticker[data-medio]{width:110px;height:110px}
+:root[data-tema="oscuro"] .mmedia[data-medio]{background:rgba(255,255,255,.07)}
 /* Nota de voz con la forma de WhatsApp. El <audio controls> del navegador ocupa el
    doble, cambia de aspecto en cada navegador y dentro de un globo se ve como un parche. */
 .voz{display:flex;align-items:center;gap:9px;width:250px;max-width:100%;margin:2px 0 4px}
@@ -388,6 +397,19 @@ video.mmedia{cursor:default}
 .marchivo b{font-size:13px;word-break:break-word}
 .marchivo span{font-size:11px;color:var(--meta)}
 .marchivo a{margin-top:4px;font-size:12px;font-weight:650;color:inherit}
+.marchivo button{margin-top:5px;align-self:flex-start;font-size:12px;font-weight:650;
+  padding:4px 10px;border-radius:9px;background:rgba(11,20,26,.09);color:inherit}
+:root[data-tema="oscuro"] .marchivo button{background:rgba(255,255,255,.13)}
+/* Miniatura de un archivo que NO esta guardado en la nube. Lo que se ve al instante es la
+   vista previa que manda WhatsApp dentro del propio mensaje (unos pocos KB); el archivo
+   entero se le pide al telefono solo si alguien pulsa Ver, y se borra a las horas. */
+.mthumb{position:relative;display:block;padding:0;border-radius:6px;overflow:hidden;
+  max-width:250px;margin:1px 0 3px;cursor:pointer;background:rgba(11,20,26,.06)}
+:root[data-tema="oscuro"] .mthumb{background:rgba(255,255,255,.07)}
+.mthumb img{display:block;width:100%;max-height:320px;object-fit:cover}
+.mthumb .vertag{position:absolute;right:6px;bottom:6px;font-size:11px;font-weight:700;
+  padding:3px 9px;border-radius:9px;background:rgba(11,20,26,.72);color:#fff}
+.mthumb.pidiendo .vertag{opacity:.75}
 /* Registro de llamada. Desde el CRM no se atiende una llamada, pero una perdida es tan
    pendiente como un mensaje sin contestar: por eso se pinta, y por eso la perdida se
    distingue de la contestada sin tener que leer. */
@@ -1265,6 +1287,8 @@ const ULTIMA_IMPORTACION = {};
 // CONVS_OCULTAS lo que sale de la bandeja porque su linea de WhatsApp Web no esta conectada. Se
 // esconde, no se borra: el filtro de la linea las trae y vuelven solas si ese numero se vincula.
 let CONVS = [], CONVS_TODAS = [], CONVS_OCULTAS = [], MSGS = [], sel = null, paraMsgs = null;
+// Globos de lo que el servidor ya acepto y el puente todavia no ha mandado. Ver apuntaEnviando.
+let ENVIANDO = [];
 
 function nombreDe(c){
   if (c.customer_name || c.contact_name) return c.customer_name || c.contact_name;
@@ -1303,9 +1327,19 @@ function avatarDe(c, n){
     const yaBajada = MEDIOS.get(medio);
     // Ya en cache: se pinta directa, sin parpadeo, en cada snapshot que repinta la lista.
     if (yaBajada) return '<img class="av" src="' + esc(yaBajada) + '" alt="" ' + vuelveAIniciales + '>';
-    // Ya se intento y no se pudo: iniciales sin volver a pedirla en cada repintado.
-    if (yaBajada !== '') return '<div class="av" data-avatar="' + esc(medio) + '" data-avconv="'
-      + esc(c?._id || c?.id || '') + '" data-ini="' + ini + '">' + ini + '</div>';
+    // No se ha intentado todavia, o el fallo anterior ya toca reintentarlo. Un 404 o un corte de
+    // red dejaban las iniciales para toda la sesion, y solo recargar la pagina las arreglaba.
+    if (yaBajada !== '' || medioReintentable(medio))
+      return '<div class="av" data-avatar="' + esc(medio) + '" data-avconv="'
+        + esc(c?._id || c?.id || '') + '" data-ini="' + ini + '">' + ini + '</div>';
+  }
+  // Ficha de WhatsApp Web que todavia no tiene foto guardada. Se marca para pedirsela al puente
+  // cuando de verdad se vea en pantalla: es lo que hace que la bandeja recien vinculada tenga
+  // caras en segundos en vez de esperar dias al ritmo de fondo. 'sin_foto' y 'privada' son
+  // respuestas definitivas de WhatsApp y no se vuelven a pedir.
+  if (String(c?.source || '') === 'whatsapp_qr' && !medio
+    && !['sin_foto', 'privada'].includes(String(c?.profile_pic_status || ''))) {
+    return '<div class="av" data-avpend="' + esc(c?._id || c?.id || '') + '">' + ini + '</div>';
   }
   return '<div class="av">' + ini + '</div>';
 }
@@ -1353,6 +1387,9 @@ function escuchaConversaciones(){
     // Un unico punto donde se separa lo vivo de lo oculto. Asi cada vista y cada contador cuenta
     // lo mismo que se ve, sin repetir el filtro en veinte sitios (y olvidarlo en alguno).
     recalculaVisibles();
+    // La conversacion abierta es una copia: sin esto, la foto de perfil que acaba de guardar el
+    // puente, el nombre corregido o el paso a atencion humana no se veian hasta cambiar de chat.
+    refrescaSeleccion();
     marcaEstado(true, 'Datos sincronizados · en vivo');
     if (vistaActual === 'conversations') pintaChats();
     if (vistaActual === 'funnel') { pintaKanban(); pintaMovilizacion(); }
@@ -1366,6 +1403,9 @@ function escuchaConversaciones(){
 function escuchaMensajes(idConv){
   if (paraMsgs) { paraMsgs(); paraMsgs = null; }
   MSGS = [];
+  // Los globos de "enviando" son de la conversacion que se deja: al cambiar de chat ya no hay
+  // MSGS con que confirmarlos, y arrastrarlos seria enseñar un reloj que no se apaga nunca.
+  ENVIANDO = [];
   // business_id va SIEMPRE en la consulta, no solo conversation_id: las reglas de
   // Firestore la rechazan sin el, y el rechazo llega por el callback de error. Sin ese
   // callback la conversacion se quedaba en blanco sin decir nada -- pared beige y cero
@@ -1674,7 +1714,18 @@ function fijaLineaQr(p, { enVivo = false } = {}){
   const firma = l => l ? [l.numero, l.vinculado, l.pausado, l.hostVivo, l.motivoPausa, l.transporte].join('|') : '';
   const cambia = firma(nueva) !== firma(LINEA_QR);
   LINEA_QR = nueva;
-  if (!cambia) return;
+  // Canales lleva su propia firma: el progreso y el estado del historial no cambian la linea, y
+  // meterlos en la de arriba repintaria las 580 fichas, el Kanban y el Dashboard en cada latido
+  // de la importacion. Sin esto, una sincronizacion que arranca sola (nadie pulso "Sincronizar",
+  // asi que vigilaPuente no corre) dejaba la tarjeta con el estado viejo hasta el final. No hay
+  // bucle: la llamada interna de renderBridgeControlState ve la misma firma y no vuelve.
+  const firmaCanales = f.enVivo ? [f.p.history_sync_status, f.p.history_sync_progress].join('|') : '';
+  const cambiaCanales = firmaCanales !== fijaLineaQr.firmaCanales;
+  fijaLineaQr.firmaCanales = firmaCanales;
+  if (!cambia) {
+    if (cambiaCanales && f.enVivo && $('bridgePairBtn')) renderBridgeControlState(controlConEspejo(bridgeControlState, f.p), '');
+    return;
+  }
   recalculaVisibles();
   if (vistaActual === 'conversations') pintaChats();
   if (vistaActual === 'funnel') { pintaKanban(); pintaMovilizacion(); }
@@ -1683,6 +1734,11 @@ function fijaLineaQr(p, { enVivo = false } = {}){
   if (vistaActual === 'reminders') pintaRecordatorios();
   pintaCuentas();
   pintaAvisoLinea();
+  // Canales se pinta con el mismo estado: asi la pausa, el porcentaje del historial y la PC
+  // caida se mueven solos en vez de esperar a que alguien pulse "Actualizar estado". Solo con la
+  // escucha en vivo: una consulta suelta ya viene de renderBridgeControlState y volveria sobre
+  // sus pasos.
+  if (f.enVivo && $('bridgePairBtn')) renderBridgeControlState(controlConEspejo(bridgeControlState, f.p), '');
 }
 function escuchaLineaQr(){
   if (escuchaLineaQr.para) { escuchaLineaQr.para(); escuchaLineaQr.para = null; }
@@ -1715,6 +1771,24 @@ function lineaDesdeControl(p, ahora = Date.now(), margenMs = 5 * 60_000){
     transporte: String(p.transport_mode || ''),
     hostVivo: Number.isFinite(visto) ? ahora - visto <= margenMs : true,
   };
+}
+// El espejo (crm_channel_state) tiene lo que puede ver cualquiera; bridgeStatus, que exige
+// admin, tiene ademas el codigo de vinculacion y los contadores del historial. Esto junta las
+// dos: lo del espejo manda porque llega en vivo, y lo que solo trae crmApi se conserva.
+//
+// host_online no viene en el espejo, se deduce del latido. El espejo recorta ese latido al
+// minuto --para no escribir una vez cada 10 s-- asi que con menos de 3 minutos de margen una PC
+// viva se leeria como caida solo por el redondeo.
+const CAMPOS_ESPEJO = ['status', 'connected_phone', 'paused', 'pause_reason', 'transport_mode',
+  'link_platform', 'history_sync_status', 'history_sync_progress', 'bot_enabled',
+  'last_linked_phone', 'previous_linked_phone', 'line_changed_at', 'host_last_seen_at'];
+function controlConEspejo(previo, p, ahora = Date.now(), margenMs = 3 * 60_000){
+  if (!p || typeof p !== 'object') return previo || {};
+  const copia = {};
+  for (const k of CAMPOS_ESPEJO) if (p[k] !== undefined) copia[k] = p[k];
+  const visto = Date.parse(String(p.host_last_seen_at || ''));
+  if (Number.isFinite(visto)) copia.host_online = ahora - visto <= margenMs;
+  return { ...(previo || {}), ...copia };
 }
 function lineaDe(c){ return soloDigitos(c?.business_number); }
 // 'viva' | 'desconocido' | 'sin_puente' | 'otra_linea' | 'pausada'. Solo aplica a WhatsApp Web.
@@ -1903,7 +1977,7 @@ function abre(c){
     +     'style="background:' + CANALES[canalDe(c)].color + '">' + CANALES[canalDe(c)].logo + '</span></div>'
     + '<div class="quien-chat"><b>' + esc(n) + '</b><span>+' + esc(c.wa_phone || '')
     +   ' · ' + esc(CANALES[canalDe(c)].corto) + insigniaAnuncio(c) + '</span></div>'
-    + (c.human_handoff_notification_status ? '<span class="etiqueta" title="Aviso interno al teléfono de avisos (Configuración), por la línea de WhatsApp Web conectada. Enviado no significa leído.">'
+    + (c.human_handoff_notification_status ? '<span class="etiqueta" data-aviso-handoff="1" title="Aviso interno al teléfono de avisos (Configuración), por la línea de WhatsApp Web conectada. Enviado no significa leído.">'
       + esc(({pending:'Aviso pendiente',sent:'Aviso enviado',failed:'Aviso fallido',skipped:'Aviso no enviado'})[c.human_handoff_notification_status] || 'Aviso pendiente') + '</span>' : '')
     + '<button class="modo" id="btnModo"></button>'
     + '<button class="adj" id="verFicha" title="Ficha del lead" aria-label="Ficha del lead">'
@@ -1930,8 +2004,10 @@ function abre(c){
     +       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M13 2L4.5 13H11l-1 9 8.5-11H12l1-9z"/></svg></button>'
     +     '<button class="adj" id="adjCombo" title="Combos por categoría" aria-label="Combos">'
     +       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20 7l-8-4-8 4 8 4 8-4z"/><path d="M4 12l8 4 8-4M4 17l8 4 8-4"/></svg></button>'
-    +     '<button class="adj" id="adjTpl" title="Plantillas de WhatsApp" aria-label="Plantillas">'
-    +       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 9h6M9 13h6M9 17h3"/></svg></button>'
+    +     (esOficial(c)
+        ? '<button class="adj" id="adjTpl" title="Plantillas de WhatsApp" aria-label="Plantillas">'
+          + '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 9h6M9 13h6M9 17h3"/></svg></button>'
+        : '')
     +     '<button class="adj" id="adjMic" title="Grabar audio" aria-label="Grabar audio">'
     +       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 11a7 7 0 0014 0M12 18v4"/></svg></button>'
     +     '<input type="file" id="fImg" accept="image/*" multiple hidden>'
@@ -1956,6 +2032,91 @@ function abre(c){
   escuchaMensajes(c.id || c._id);
   marcaLeido(c);
   pintaChats();
+}
+
+// La cabecera del chat abierto, repintada sin volver a montarlo. `sel` es una copia de la ficha
+// tomada al abrir y ningun snapshot la tocaba: la foto de perfil que el puente acababa de
+// guardar, el nombre corregido desde la ficha o el aviso de atencion humana solo aparecian al
+// cambiar de chat y volver. Se repinta SOLO lo que cambia, no el chat entero: rehacerlo perderia
+// el texto a medio escribir, los adjuntos en cola y la posicion del hilo.
+function pintaCabeceraChat(){
+  const cab = $('conversacion')?.querySelector('.cabecera');
+  if (!cab || !sel) return;
+  const n = nombreDe(sel), k = canalDe(sel);
+  const av = cab.querySelector('.avwrap');
+  if (av) av.innerHTML = avatarDe(sel, n)
+    + '<span class="canalpin" title="' + esc(CANALES[k].nombre) + '" '
+    + 'style="background:' + CANALES[k].color + '">' + CANALES[k].logo + '</span>';
+  const quien = cab.querySelector('.quien-chat');
+  if (quien) quien.innerHTML = '<b>' + esc(n) + '</b><span>+' + esc(sel.wa_phone || '')
+    + ' · ' + esc(CANALES[k].corto) + insigniaAnuncio(sel) + '</span>';
+  const previo = cab.querySelector('[data-aviso-handoff]');
+  const estado = sel.human_handoff_notification_status;
+  if (!estado) { if (previo) previo.remove(); }
+  else {
+    const et = previo || document.createElement('span');
+    et.className = 'etiqueta';
+    et.dataset.avisoHandoff = '1';
+    et.title = 'Aviso interno al teléfono de avisos (Configuración), por la línea de WhatsApp Web conectada. Enviado no significa leído.';
+    et.textContent = ({pending:'Aviso pendiente',sent:'Aviso enviado',failed:'Aviso fallido',skipped:'Aviso no enviado'})[estado] || 'Aviso pendiente';
+    if (!previo && quien) quien.after(et);
+  }
+  // La foto nueva se pide en cuanto se ve, igual que en la lista.
+  resuelveAvatares();
+}
+
+// El boton de modo dice quien atiende. Lo pinta el chat al abrirse y tambien el snapshot: si el
+// servidor pasa la conversacion a humano --lo hace solo cuando el cliente pide una persona-- el
+// boton seguia diciendo "Bot atiende", y pulsarlo la devolvia al bot, que es lo contrario de lo
+// que esperaba quien lo pulso.
+function pintaModoChat(){
+  const modo = $('btnModo');
+  if (!modo || !sel) return;
+  modo.textContent = (sel.mode === 'human' || sel.human_handoff_required) ? 'Humano atiende' : 'Bot atiende';
+}
+
+// Lo que cambia en la conversacion abierta, sin recargar y sin volver a montar el chat. Se llama
+// desde el snapshot de conversaciones.
+//
+// No se repinta en cada snapshot: la lista se repinta constantemente (cada vista previa, cada
+// contador) y repintar la ficha en cada una tiraria el desplegable abierto. Se compara una firma
+// de los campos que se VEN, sin los que cambian por cualquier mensaje.
+const CAMPOS_VOLATILES = new Set(['last_message_at', 'last_message_preview', 'last_inbound_preview',
+  'updated_at', 'unread']);
+function firmaConv(c){
+  return JSON.stringify(Object.keys(c || {}).filter(k => !CAMPOS_VOLATILES.has(k)).sort()
+    .map(k => [k, c[k]]));
+}
+function refrescaSeleccion(){
+  if (!sel) return;
+  const fresco = buscaConv(sel._id || sel.id);
+  if (!fresco || fresco === sel) return;
+  const cambia = firmaConv(fresco) !== firmaConv(sel);
+  // El panel baja el "sin leer" al abrir el chat y el servidor lo confirma despues: sin esto, el
+  // primer snapshot devolveria el globito que ya se habia apagado.
+  const leido = !Number(sel.unread || 0);
+  // El MISMO objeto, para que los cierres del compositor y del boton de modo sigan valiendo.
+  Object.assign(sel, fresco);
+  if (leido) sel.unread = 0;
+  if (!cambia) return;
+  pintaCabeceraChat();
+  pintaModoChat();
+  pintaVentana24();
+  pintaAvisoLinea();
+  // La ficha NO se repinta mientras alguien escribe en ella: le borraria lo tecleado a media
+  // frase. Queda pendiente y se repinta al salir del campo.
+  const ficha = $('ficha');
+  if (ficha && ficha.contains(document.activeElement)) {
+    if (!refrescaSeleccion.esperando) {
+      refrescaSeleccion.esperando = true;
+      ficha.addEventListener('focusout', () => {
+        refrescaSeleccion.esperando = false;
+        if (sel) pintaFicha(sel);
+      }, { once: true });
+    }
+    return;
+  }
+  pintaFicha(sel);
 }
 
 // El compositor dice por que no se puede escribir en este chat y no deja intentarlo. Antes se
@@ -1999,9 +2160,7 @@ async function marcaLeido(c){
 
 function cableaChat(c){
   const modo = $('btnModo');
-  const pinta = () => { modo.textContent = (sel.mode === 'human' || sel.human_handoff_required)
-    ? 'Humano atiende' : 'Bot atiende'; };
-  pinta();
+  pintaModoChat();
   modo.onclick = async () => {
     const chatEnabled = sel?.mode === 'bot';
     const newMode = chatEnabled ? 'human' : 'bot';
@@ -2010,7 +2169,7 @@ function cableaChat(c){
     const r = await callFn({ action: 'mode', conversation_id: sel.id, mode: newMode });
     modo.disabled = false;
     if (!r.ok) return avisa('No se pudo cambiar', r.error);
-    sel.mode = newMode; pinta();
+    sel.mode = newMode; pintaModoChat();
     avisa(newMode === 'human' ? 'La atiendes tú' : 'Vuelve al bot',
       'El cambio se aplicará únicamente a esta conversación.');
   };
@@ -2101,16 +2260,24 @@ function cableaChat(c){
         const r = await llama({
           action:'bridgeQueue', conversation_id: conv,
           media_kind: a.tipo, media_b64: a.datos, media_filename: a.nombre, media_mime: a.mime,
+          // Se manda la vista previa junto al archivo: el archivo se borra al enviarse y esto
+          // es lo que deja el mensaje visible en el hilo. Ver miniaturaParaEnviar.
+          ...(a.thumb ? { media_thumb_b64: a.thumb } : {}),
           body: (t && i === pieEnQr) ? t : '',
         });
-        if (r.ok) salieronQr++; else falloQr = r;
+        if (r.ok) {
+          salieronQr++;
+          // El servidor ya lo acepto: el globo se pinta AHORA, con reloj, en vez de esperar
+          // a que el puente lo mande y lo guarde.
+          apuntaEnviando({ conv, tipo: a.tipo, body: (t && i === pieEnQr) ? t : '', mime: a.mime, datos: a.datos });
+        } else falloQr = r;
       }
       // Los que ya salieron se quitan, igual que en el oficial: reintentar no los repite.
       COLA.splice(0, salieronQr);
       pintaCola();
       if (!falloQr && t && pieEnQr < 0) {
         const r = await llama({ action:'bridgeQueue', conversation_id: conv, body: t });
-        if (!r.ok) falloQr = r;
+        if (!r.ok) falloQr = r; else apuntaEnviando({ conv, tipo:'text', body: t });
       }
       env.disabled = false;
       // Con el codigo: el servidor dice si es otra linea, la PC, la pausa o el modo seguro.
@@ -2208,10 +2375,17 @@ function traduceErrorMeta(e, codigo){
   if (puente === 'bridge_disconnected') return 'El WhatsApp Web no está conectado. Vincúlalo en Canales.';
   if (puente === 'bridge_paused') return 'Los envíos del WhatsApp Web están en pausa. Pulsa "Reanudar envíos" en Canales.';
   if (puente === 'bridge_reconnect_only') return 'El WhatsApp Web sigue en modo seguro: activa los envíos de este número en Canales.';
-  if (/24|window|re-?engagement|131047/i.test(t))
+  // 'conversacion ... no existe' es del CRM, no de Meta. Con /no existe/ en la regla de abajo se
+  // leia como "ese numero no tiene WhatsApp", que manda a dudar del cliente en vez de recargar.
+  if (/conversaci[oó]n[\s\S]*no existe/i.test(t)) return 'Esta conversación ya no existe en el CRM. '
+    + 'Recarga la lista: puede que se haya cerrado o fusionado.';
+  // La ventana de 24 h es del API oficial. Antes bastaba un "24" en cualquier parte del texto
+  // --el propio numero oficial, 18495245620, lo lleva-- para que el panel recomendara una
+  // plantilla en un chat donde no hay ni ventana ni plantillas.
+  if (/131047|re-?engagement|\b24\s?-?\s?(?:h|horas?|hours?)\b|ventana de 24/i.test(t))
     return 'Pasaron más de 24 h desde su último mensaje. Solo llega con una plantilla aprobada '
-      + '(el botón de plantillas del compositor).';
-  if (/131026|not.*whatsapp|no existe/i.test(t)) return 'Ese número no tiene WhatsApp.';
+      + '(el botón de plantillas del compositor, en el número oficial).';
+  if (/131026|not.*whatsapp/i.test(t)) return 'Ese número no tiene WhatsApp.';
   if (/131049|calidad|quality/i.test(t)) return 'Meta está limitando este número por calidad. '
     + 'Revisa Conexión WhatsApp.';
   if (/excluido|blocked/i.test(t)) return 'Este contacto está excluido de comunicaciones.';
@@ -2309,9 +2483,27 @@ async function recalculaCola(){
       ? String(a.archivo.name || 'imagen').replace(/\.[^.]+$/, '') + '.jpg'
       : a.archivo.name;
     a.kb = Math.round(blob.size / 1024);
+    // La vista previa que se guarda con el mensaje enviado. El archivo que sale del CRM se
+    // borra en cuanto el cliente lo recibe --no se guarda nada en la nube-- asi que sin esta
+    // miniatura el hilo ensenaria una tarjeta sin imagen de lo que uno mismo acaba de mandar.
+    // Baileys genera la suya al enviar si la PC tiene sharp; esta es el respaldo.
+    a.thumb = await miniaturaParaEnviar(blob);
     a.hd = modoHd;
   }
   pintaCola();
+}
+
+// 96 px de lado largo y calidad media: unos 3-6 KB, que es lo que puede viajar en cada
+// mensaje sin engordar el hilo (el panel escucha los ultimos 400). El tope se mide sobre el
+// data URI entero, que es lo que se guarda y lo que miden el puente y el servidor: 12 KB de
+// JPEG son 16 KB en base64, y el servidor los descartaria sin decir nada.
+async function miniaturaParaEnviar(blob){
+  try {
+    const mini = await aJpeg(await cargaImagen(blob), 96, 0.5);
+    if (!mini) return '';
+    const uri = 'data:image/jpeg;base64,' + await leeBase64(mini);
+    return uri.length <= 12 * 1024 ? uri : '';
+  } catch (e) { return ''; }
 }
 
 function pintaCola(){
@@ -2432,7 +2624,8 @@ function cableaAdjuntos(){
     COLA.splice(Number(b.dataset.quita), 1); pintaCola();
   };
   cableaMicrofono();
-  $('adjTpl').onclick = abrePlantillas;
+  // Solo existe en el chat del numero oficial (ver esOficial).
+  if ($('adjTpl')) $('adjTpl').onclick = abrePlantillas;
   $('adjCombo').onclick = abreCombos;
   $('adjRapida').onclick = abreRapidas;
 }
@@ -2891,6 +3084,11 @@ document.addEventListener('click', ev => {
 
 async function abrePlantillas(){
   if (!sel) return avisa('Abre una conversación primero');
+  // Guarda de verdad, no solo esconder el boton: la ventana de 24 h la puede abrir tambien el
+  // aviso del compositor, y por WhatsApp Web una plantilla solo consigue un "canal incorrecto".
+  if (!esOficial(sel)) return avisa('Aquí no hacen falta plantillas',
+    'Las plantillas son del número oficial (API). Por ' + CANALES[canalDe(sel)].corto
+    + ' se escribe texto libre, sin ventana de 24 horas.');
   abreModal('<div class="mtapa"><b>Plantillas aprobadas</b>'
     + '<button class="cerrarm" onclick="void 0" data-cerrar>×</button></div>'
     + '<div class="mcuerpo"><span class="cargando"></span> Cargando…</div>');
@@ -2981,6 +3179,8 @@ function pideVariables(t){
   repintaPrevio();
 
   $('btnEnviarTpl').onclick = async () => {
+    if (!esOficial(sel)) return avisa('Aquí no hacen falta plantillas',
+      'Las plantillas son del número oficial (API); por este canal se escribe texto libre.');
     const variables = campos.map(i => i.value.trim());
     if (variables.some(v => !v)) return avisa('Faltan variables', 'WhatsApp rechaza la plantilla si alguna va vacía.');
     $('btnEnviarTpl').disabled = true;
@@ -3260,26 +3460,49 @@ const MEDIOS = new Map();
 // cada repintado volvia a pedir la misma foto mientras la primera seguia en camino: dos
 // llamadas a crmMedia y un blob que se quedaba sin liberar.
 const MEDIOS_EN_CURSO = new Map();
+// Fallos con hora, para poder reintentarlos. Guardar '' para siempre --lo que se hacia-- convierte
+// un 404 pasajero o un corte de red en iniciales hasta que alguien recarga la pagina. Se reintenta
+// a los 60 s, a los 5 min y a la media hora; despues ya no, que insistir no lo va a arreglar.
+const MEDIOS_FALLO = new Map();
+const ESPERAS_MEDIO = [60_000, 5 * 60_000, 30 * 60_000];
+function apuntaFalloMedio(id){
+  const n = (MEDIOS_FALLO.get(id)?.n || 0) + 1;
+  MEDIOS_FALLO.set(id, { n, hasta: Date.now() + ESPERAS_MEDIO[Math.min(n, ESPERAS_MEDIO.length) - 1] });
+  MEDIOS.set(id, '');
+}
+function medioReintentable(id, ahora = Date.now()){
+  const f = MEDIOS_FALLO.get(id);
+  if (!f) return true;
+  if (f.n > ESPERAS_MEDIO.length) return false;
+  return ahora >= f.hasta;
+}
 const BASE_FN = String(CFG.firebaseFunctionsBase || '').replace(/\/$/, '');
 
 // `conv` solo lo pasan las fotos de perfil: le dice a crmMedia de que ficha es el archivo, que
 // no esta en ningun mensaje. Los medios de los mensajes lo piden igual que siempre.
-async function urlDeMedio(id, conv){
+// `msg` lo pasan los archivos pedidos bajo demanda: esos no estan en ningun mensaje --el
+// mensaje no guarda media_id-- asi que crmMedia comprueba la peticion que los encargo.
+async function urlDeMedio(id, conv, msg){
   if (!id) return '';
-  if (MEDIOS.has(id)) return MEDIOS.get(id);
+  if (MEDIOS.get(id)) return MEDIOS.get(id);
+  // Un fallo guardado vale hasta que toque reintentarlo; mientras tanto no se vuelve a pedir en
+  // cada repintado, que era el motivo de guardarlo.
+  if (MEDIOS.has(id) && !medioReintentable(id)) return '';
   if (MEDIOS_EN_CURSO.has(id)) return MEDIOS_EN_CURSO.get(id);
   const u = auth.currentUser; if (!u) return '';
   const pedido = (async () => {
     try {
       const token = await u.getIdToken();
       const r = await fetch(BASE_FN + '/crmMedia?id=' + encodeURIComponent(id)
-        + (conv ? '&conv=' + encodeURIComponent(conv) : ''),
+        + (conv ? '&conv=' + encodeURIComponent(conv) : '')
+        + (msg ? '&msg=' + encodeURIComponent(msg) : ''),
         { headers: { Authorization: 'Bearer ' + token } });
-      if (!r.ok) { MEDIOS.set(id, ''); return ''; }
+      if (!r.ok) { apuntaFalloMedio(id); return ''; }
       const url = URL.createObjectURL(await r.blob());
       MEDIOS.set(id, url);
+      MEDIOS_FALLO.delete(id);
       return url;
-    } catch (e) { MEDIOS.set(id, ''); return ''; }
+    } catch (e) { apuntaFalloMedio(id); return ''; }
   })();
   MEDIOS_EN_CURSO.set(id, pedido);
   try { return await pedido; } finally { MEDIOS_EN_CURSO.delete(id); }
@@ -3293,17 +3516,23 @@ let OBS_AVATARES = null;
 const COLA_AVATARES = [];
 let avataresEnCurso = 0;
 
+// Dos cosas a la vez, y las dos solo para lo que se VE: bajar del servidor la foto que ya esta
+// guardada (data-avatar) y pedirle al puente la que todavia no existe (data-avpend).
+function atiendeAvatar(el){
+  if (el.dataset.avatar) return encolaAvatar(el);
+  if (el.dataset.avpend) pideAvatarVisible(el.dataset.avpend);
+}
 function resuelveAvatares(){
-  const pendientes = [...document.querySelectorAll('[data-avatar]')];
+  const pendientes = [...document.querySelectorAll('[data-avatar],[data-avpend]')];
   if (!('IntersectionObserver' in window)) {
-    pendientes.slice(0, 40).forEach(encolaAvatar);
+    pendientes.slice(0, 40).forEach(atiendeAvatar);
     return;
   }
   OBS_AVATARES ||= new IntersectionObserver(entradas => {
     for (const e of entradas) {
       if (!e.isIntersecting) continue;
       OBS_AVATARES.unobserve(e.target);
-      encolaAvatar(e.target);
+      atiendeAvatar(e.target);
     }
   }, { rootMargin: '200px' });
   // Cada repintado sustituye las filas: se deja de observar lo anterior (ya fuera del documento)
@@ -3323,6 +3552,37 @@ function bombeaAvatares(){
     if (!el.isConnected || !el.dataset.avatar) continue;
     avataresEnCurso++;
     pintaAvatar(el).finally(() => { avataresEnCurso--; bombeaAvatares(); });
+  }
+}
+
+// Fotos de perfil que el puente todavia no tiene, de los chats que el panel esta ENSENANDO.
+//
+// El trabajador del puente va despacio a proposito, asi que una bandeja recien vinculada tardaria
+// dias en tener caras. WhatsApp Web, en cambio, pide la foto de cada chat que entra en pantalla.
+// Esto es ese atajo: se juntan los ids que se han visto, se mandan de 20 en 20 y el puente los
+// adelanta en su cola. Cada ficha se pide UNA vez por sesion: bajar y subir por la lista no
+// puede convertirse en cien llamadas.
+const AVATARES_PEDIDOS = new Set();
+const AVATARES_POR_PEDIR = new Set();
+let avataresTimer = null;
+function pideAvatarVisible(id){
+  const k = String(id || '');
+  if (!k || AVATARES_PEDIDOS.has(k)) return;
+  AVATARES_PEDIDOS.add(k);
+  AVATARES_POR_PEDIR.add(k);
+  // Se espera a que el desplazamiento pare: mandarlas de una en una seria una llamada por fila.
+  clearTimeout(avataresTimer);
+  avataresTimer = setTimeout(enviaAvataresVisibles, 1500);
+}
+async function enviaAvataresVisibles(){
+  avataresTimer = null;
+  while (AVATARES_POR_PEDIR.size) {
+    const lote = [...AVATARES_POR_PEDIR].slice(0, 20);
+    for (const id of lote) AVATARES_POR_PEDIR.delete(id);
+    const r = await llama({ action:'bridgeAvatarVisible', conversation_ids: lote });
+    // Si el servidor dice que no (puente apagado, sesion caida) no se insiste: es un adorno, no
+    // puede convertirse en un bucle de peticiones.
+    if (!r.ok) return;
   }
 }
 
@@ -3373,8 +3633,12 @@ function cableaVoz(){
         return;
       }
       if (audioActivo) { audioActivo.pause(); const p = vozActiva?.querySelector('.vplay'); if (p) p.textContent = '▶'; }
-      const src = v.dataset.src || (v.dataset.medioAudio ? await urlDeMedio(v.dataset.medioAudio) : '');
-      if (!src) return avisa('No se pudo recuperar la nota de voz');
+      // Bajo demanda la nota de voz se le pide a la PC del negocio, igual que antes se pedia
+      // al almacen: solo al pulsar play, nunca al pintar el hilo.
+      const src = v.dataset.src
+        || (v.dataset.bajo ? await pideMedioCompleto(v.dataset.bajo) : '')
+        || (v.dataset.medioAudio ? await urlDeMedio(v.dataset.medioAudio) : '');
+      if (!src) return v.dataset.bajo ? undefined : avisa('No se pudo recuperar la nota de voz');
       audioActivo = new Audio(src);
       audioActivo.playbackRate = Number(vel.dataset.v || 1);
       vozActiva = v;
@@ -3405,18 +3669,222 @@ function cableaVoz(){
   });
 }
 
-async function resuelveMedios(){
+// ---- pedir el archivo completo de un mensaje ---------------------------------------------
+//
+// Los archivos del 2.º número ya no se guardan en la nube. Cuando alguien quiere ver uno, el
+// servidor se lo encarga a la PC del negocio, que lo baja de WhatsApp y lo deja unas horas en
+// una carpeta temporal. Aquí solo se pide y se espera: puede tardar unos segundos, y hay que
+// decir POR QUÉ cuando no se puede, porque cada causa se arregla de una forma distinta.
+const MOTIVO_MEDIO = {
+  sin_referencia: 'Este mensaje no guardó el archivo; solo queda la vista previa.',
+  puente_desconectado: 'WhatsApp Web está desconectado: solo se ve la vista previa.',
+  otra_linea: 'El archivo está en el teléfono del número anterior; con este no se puede pedir.',
+  demasiado_grande: 'Pasa de 8 MB: ábrelo en el teléfono.',
+  caducado_en_el_telefono: 'El teléfono ya no tiene este archivo.',
+  telefono_sin_respuesta: 'El teléfono no contestó. Inténtalo dentro de un rato.',
+  demasiados_reenvios: 'Se han pedido muchos archivos viejos al teléfono en la última hora. Inténtalo más tarde.',
+  error: 'No se pudo recuperar el archivo.',
+};
+const MEDIO_ESPERA_MS = 1500;
+const MEDIO_INTENTOS = 40;          // unos 60 s: el reenvio al telefono puede tardar
+const MEDIOS_BAJO_CURSO = new Map();
+
+async function pideMedioCompleto(msgId){
+  if (!msgId) return '';
+  if (MEDIOS_BAJO_CURSO.has(msgId)) return MEDIOS_BAJO_CURSO.get(msgId);
+  const pedido = (async () => {
+    for (let intento = 0; intento < MEDIO_INTENTOS; intento++) {
+      // Solo la PRIMERA llamada de cada pulsacion puede volver a pedir algo que fallo: las
+      // demas solo preguntan si ya esta. Si no, un fallo pasajero se convertia en una peticion
+      // nueva al telefono cada segundo y medio mientras el panel esperaba.
+      const r = await llama({ action: 'mediaFull', message_id: msgId, ...(intento === 0 ? { reintentar: true } : {}) });
+      if (!r.ok) { avisa('No se pudo pedir el archivo', r.error || ''); return ''; }
+      if (r.estado === 'listo') {
+        // La cache de blobs es la de siempre; la clave es el id del archivo temporal, que
+        // cambia cada vez que se vuelve a pedir, asi que nunca se sirve uno caducado.
+        const url = await urlDeMedio(r.media_id, null, msgId);
+        if (!url) avisa('No se pudo abrir el archivo');
+        return url;
+      }
+      if (r.estado === 'no_disponible') { avisa(MOTIVO_MEDIO[r.motivo] || MOTIVO_MEDIO.error); return ''; }
+      await new Promise(res => setTimeout(res, MEDIO_ESPERA_MS));
+    }
+    avisa('El archivo está tardando demasiado', 'La PC del negocio no lo ha entregado todavía.');
+    return '';
+  })();
+  MEDIOS_BAJO_CURSO.set(msgId, pedido);
+  try { return await pedido; } finally { MEDIOS_BAJO_CURSO.delete(msgId); }
+}
+
+// Lo unico que se ABRE en una pestana. Un blob: creado aqui hereda el origen del panel, y el
+// tipo del archivo lo decide quien lo mando: un "documento" con mime text/html, o una "imagen"
+// SVG, abierto en una pestana correria su codigo con la sesion del panel. Todo lo que no este en
+// esta lista se DESCARGA como binario, que ningun navegador ejecuta. (El servidor ya lo filtra
+// al guardarlo en la cache; esto es la segunda llave.)
+const TIPO_VISIBLE = /^(?:image\/(?:jpeg|png|webp|gif)|video\/[a-z0-9.+-]+|audio\/[a-z0-9.+-]+|application\/pdf)$/i;
+
+function descargaComoArchivo(blob, nombre){
+  const seguro = new Blob([blob], { type: 'application/octet-stream' });
+  const url = URL.createObjectURL(seguro);
+  const enlace = Object.assign(document.createElement('a'), { href: url, download: nombre || 'archivo', rel: 'noopener' });
+  document.body.appendChild(enlace);
+  enlace.click();
+  enlace.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 60_000);
+}
+
+// El boton que pide el archivo. Se cablea una vez por globo: el hilo se repinta con cada
+// mensaje nuevo y volver a atarlo dispararia la peticion dos veces.
+function cableaBajoDemanda(){
+  document.querySelectorAll('[data-bajo]').forEach(el => {
+    if (el.tagName !== 'BUTTON' || el.dataset.listo) return;
+    el.dataset.listo = '1';
+    el.onclick = async () => {
+      const etiqueta = el.querySelector('.vertag') || el;
+      const antes = etiqueta.textContent;
+      etiqueta.textContent = 'Pidiendo…';
+      el.classList.add('pidiendo');
+      // La pestana se abre YA, dentro del clic. Pedirle el archivo al telefono tarda unos
+      // segundos, y Chrome bloquea sin avisar una ventana que se abre mas de cinco segundos
+      // despues de pulsar: "Ver" no hacia nada. Si al final no es algo que se pueda abrir, se
+      // cierra y se descarga. Un documento con nombre va directo a descarga: no hace falta.
+      const ventana = el.dataset.nombre ? null : window.open('', '_blank');
+      try { ventana?.document.write('<p style="font:14px system-ui;padding:24px;color:#54656f">Pidiendo el archivo a WhatsApp…</p>'); } catch (e) {}
+      try {
+        const url = await pideMedioCompleto(el.dataset.bajo);
+        if (!url) { ventana?.close(); return; }
+        const blob = await (await fetch(url)).blob();
+        if (ventana && !ventana.closed && TIPO_VISIBLE.test(String(blob.type || '').split(';')[0].trim())) {
+          ventana.opener = null;
+          ventana.location.href = url;
+          return;
+        }
+        ventana?.close();
+        descargaComoArchivo(blob, el.dataset.nombre || 'archivo');
+      } catch (e) {
+        ventana?.close();
+        avisa('No se pudo abrir el archivo');
+      } finally {
+        etiqueta.textContent = antes;
+        el.classList.remove('pidiendo');
+      }
+    };
+  });
+}
+
+// ---- archivos que SI estan guardados ---------------------------------------------------
+//
+// Lo de antes del bloque de medios, las fotos de la API oficial y lo que sale por Instagram y
+// Messenger sigue teniendo su archivo, y se baja de crmMedia. Hasta ahora se bajaba TODO al
+// pintar el hilo, uno detras de otro: abrir un chat de 400 mensajes con fotos eran cientos de
+// llamadas y megas de datos para ensenar las cinco de abajo, y la foto que se estaba mirando
+// esperaba a que bajaran todas las de encima.
+//
+// Ahora solo se pide lo que entra en pantalla (con un margen, para que al desplazarse ya este),
+// tres a la vez como mucho. Los documentos no se piden nunca solos: se bajan al pulsar
+// Descargar, porque dentro del globo no se ven. Las notas de voz, al pulsar play, como siempre.
+const MEDIOS_A_LA_VEZ = 3;
+// Sin IntersectionObserver (navegador muy viejo) no se sabe que se ve: solo se piden los
+// ultimos, que son los que quedan a la vista al abrir un chat, porque se abre pegado abajo.
+const MEDIOS_SIN_OBSERVADOR = 12;
+let OBS_MEDIOS = null, RAIZ_MEDIOS = null;
+const COLA_MEDIOS = [];
+let mediosEnCurso = 0;
+
+function resuelveMedios(){
   cableaVoz();
-  const pendientes = [...document.querySelectorAll('[data-medio]')];
+  cableaBajoDemanda();
+  cableaDescargas();
+  const pendientes = [...document.querySelectorAll('[data-medio]:not([data-medio-cola])')];
+  if (!pendientes.length) return;
+  // Lo que ya esta en la cache se pinta en el acto: no cuesta ninguna llamada.
+  const porPedir = [];
   for (const el of pendientes) {
-    const id = el.dataset.medio;
-    el.removeAttribute('data-medio');
-    const url = await urlDeMedio(id);
-    if (!url) { el.replaceWith(Object.assign(document.createElement('div'),
-      { className:'marchivo', innerHTML:'<b>Archivo</b><span>no se pudo recuperar de WhatsApp</span>' })); continue; }
-    el.src = url;
-    if (el.tagName === 'A') { el.href = url; el.removeAttribute('hidden'); }
+    const hecho = MEDIOS.get(el.dataset.medio);
+    if (hecho) ponMedio(el, hecho); else porPedir.push(el);
   }
+  if (!('IntersectionObserver' in window)) {
+    porPedir.slice(-MEDIOS_SIN_OBSERVADOR).forEach(encolaMedio);
+    return;
+  }
+  // El hilo se crea de nuevo al abrir otro chat: un observador atado al contenedor viejo no
+  // veria entrar nada nunca.
+  const raiz = $('mensajes');
+  if (!OBS_MEDIOS || RAIZ_MEDIOS !== raiz) {
+    if (OBS_MEDIOS) OBS_MEDIOS.disconnect();
+    RAIZ_MEDIOS = raiz;
+    OBS_MEDIOS = new IntersectionObserver(entradas => {
+      for (const e of entradas) {
+        if (!e.isIntersecting) continue;
+        OBS_MEDIOS.unobserve(e.target);
+        encolaMedio(e.target);
+      }
+    }, { root: raiz || null, rootMargin: '400px 0px' });
+  }
+  porPedir.forEach(el => OBS_MEDIOS.observe(el));
+}
+
+function encolaMedio(el){
+  if (!el.isConnected || el.dataset.medioCola) return;
+  // Marcado y no desmarcado: el data-medio se queda hasta que llega la imagen, y es lo que le
+  // da al hueco su alto mientras tanto (ver la regla CSS de [data-medio]).
+  el.dataset.medioCola = '1';
+  COLA_MEDIOS.push(el);
+  bombeaMedios();
+}
+
+function bombeaMedios(){
+  while (mediosEnCurso < MEDIOS_A_LA_VEZ && COLA_MEDIOS.length) {
+    const el = COLA_MEDIOS.shift();
+    // Un globo que se repinto mientras esperaba turno ya no esta en el documento: pedirlo
+    // seria bajar un archivo que nadie va a ver.
+    if (!el.isConnected || !el.dataset.medio) continue;
+    mediosEnCurso++;
+    pintaMedio(el).finally(() => { mediosEnCurso--; bombeaMedios(); });
+  }
+}
+
+async function pintaMedio(el){
+  const url = await urlDeMedio(el.dataset.medio);
+  if (!el.isConnected) return;
+  if (!url) {
+    el.replaceWith(Object.assign(document.createElement('div'),
+      { className:'marchivo', innerHTML:'<b>Archivo</b><span>no se pudo recuperar de WhatsApp</span>' }));
+    return;
+  }
+  ponMedio(el, url);
+}
+
+function ponMedio(el, url){
+  el.removeAttribute('data-medio');
+  el.removeAttribute('data-medio-cola');
+  el.src = url;
+}
+
+// Documentos guardados: se bajan al pulsar, no al pintar. El boton se cablea una vez por globo:
+// el hilo se repinta con cada mensaje nuevo y volver a atarlo bajaria el archivo dos veces.
+function cableaDescargas(){
+  document.querySelectorAll('[data-descarga]').forEach(el => {
+    if (el.dataset.listo) return;
+    el.dataset.listo = '1';
+    el.onclick = async () => {
+      const antes = el.textContent;
+      el.textContent = 'Descargando…';
+      el.disabled = true;
+      try {
+        const url = await urlDeMedio(el.dataset.descarga);
+        if (!url) return avisa('No se pudo recuperar el archivo');
+        const enlace = Object.assign(document.createElement('a'),
+          { href: url, download: el.dataset.nombre || 'archivo', rel: 'noopener' });
+        document.body.appendChild(enlace);
+        enlace.click();
+        enlace.remove();
+      } finally {
+        el.textContent = antes;
+        el.disabled = false;
+      }
+    };
+  });
 }
 
 function adjuntoDe(m){
@@ -3472,10 +3940,65 @@ function tarjetaArchivo(a, etiqueta){
     + '<span>' + esc(detalle || 'archivo') + '</span>'
     + '<a href="' + esc(a.url) + '" target="_blank" rel="noopener">Abrir</a></div>';
 }
-// La onda de una nota de voz. Dibujar la real exigiria descargar y decodificar TODOS
-// los audios del hilo solo para pintar barritas, asi que se genera a partir del wamid:
-// siempre la misma para el mismo mensaje, distinta entre mensajes, y sin coste. Es
-// decoracion honesta -- no pretende representar el sonido, marca el avance.
+// ---- archivos que NO estan guardados en la nube -----------------------------------------
+// Las fotos, los videos, las notas de voz y los documentos que entran por WhatsApp Web ya no
+// se guardan: del mensaje quedan la vista previa que manda el propio WhatsApp (unos pocos KB)
+// y sus datos --peso, duracion, paginas--, y el archivo entero se le pide al telefono solo
+// cuando alguien pulsa Ver. Por eso estos mensajes NO llevan data-medio: marcarlos haria que
+// resuelveMedios bajara el hilo entero al pintarlo, que es justo lo que se vino a quitar.
+function esBajoDemanda(m){
+  return String(m && m.media_store || '') === 'bajo_demanda';
+}
+// La miniatura llega como data URI dentro del mensaje. Se valida antes de pintarla: va a un
+// src de <img>, y ahi un 'javascript:' o un data:text/html serian codigo, no una imagen.
+function miniaturaMensaje(m){
+  const uri = String(m && m.media_thumb_b64 || '');
+  return /^data:image\/(?:jpeg|png|webp);base64,[A-Za-z0-9+/]+={0,2}$/.test(uri) && uri.length <= 16384 ? uri : '';
+}
+function detalleBajoDemanda(m, a){
+  return [m.media_mime || a.mime, pesoLegible(Number(m.media_size) || a.peso),
+    Number(m.media_pages) > 0 ? m.media_pages + (Number(m.media_pages) === 1 ? ' página' : ' páginas') : '',
+  ].filter(Boolean).join(' · ');
+}
+function tarjetaBajoDemanda(m, a, etiqueta){
+  const ident = esc(String(m.id || ''));
+  const thumb = miniaturaMensaje(m);
+  if (thumb) {
+    return '<button class="mthumb" data-bajo="' + ident + '" title="Ver el archivo completo">'
+      + '<img src="' + esc(thumb) + '" alt="' + esc(etiqueta) + '" loading="lazy">'
+      + '<span class="vertag">Ver</span></button>';
+  }
+  // Sin vista previa no se inventa una imagen gris: se dice que hay y se ofrece pedirlo. Con
+  // nombre de archivo (un documento) se descarga con ese nombre en vez de abrirse.
+  const detalle = detalleBajoDemanda(m, a);
+  const nombre = a.nombre || m.media_filename || '';
+  return '<div class="marchivo"><b>' + esc(nombre || etiqueta) + '</b>'
+    + '<span>' + esc(detalle || 'archivo') + '</span>'
+    + '<button data-bajo="' + ident + '"' + (nombre ? ' data-nombre="' + esc(nombre) + '"' : '') + '>Ver</button></div>';
+}
+// La onda REAL de la nota de voz. WhatsApp la manda dentro del mensaje (64 valores de 0 a
+// 100) y hasta ahora se tiraba: el panel dibujaba una inventada a partir del wamid. Con la
+// de verdad, los silencios y los golpes de voz se ven donde estan.
+function ondaReal(b64){
+  let bin = '';
+  try { bin = atob(String(b64 || '')); } catch (e) { return ''; }
+  if (bin.length < 8) return '';
+  // 34 barras repartidas por TODA la nota. Con un paso entero, 64 puntos daban paso 1 y se
+  // dibujaba solo la primera mitad: el final de la nota no salia nunca.
+  const barras = Math.min(34, bin.length);
+  let s = '';
+  for (let k = 0; k < barras; k++) {
+    const i = Math.floor(k * bin.length / barras);
+    // WhatsApp manda cada punto ya en porcentaje (0-100); se acota por si llegara otra cosa.
+    s += '<i style="height:' + Math.max(12, Math.min(100, bin.charCodeAt(i))) + '%"></i>';
+  }
+  return s;
+}
+// La onda de una nota de voz que NO trae la real (lo guardado antes del bloque de medios y lo
+// de la API oficial). Dibujarla de verdad exigiria descargar y decodificar TODOS los audios
+// del hilo solo para pintar barritas, asi que se genera a partir del wamid: siempre la misma
+// para el mismo mensaje, distinta entre mensajes, y sin coste. Es decoracion honesta -- no
+// pretende representar el sonido, marca el avance.
 function ondaFalsa(semilla){
   let h = 0;
   for (let i = 0; i < String(semilla).length; i++) h = (h * 31 + String(semilla).charCodeAt(i)) % 100000;
@@ -3534,14 +4057,47 @@ function pintaVentana24(){
   $('v24tpl').onclick = () => $('adjTpl')?.click();
 }
 
+// Por la extension, cuando el mime no viene o viene en blanco.
+const EXT_DE_MEDIO = {
+  jpg:'image', jpeg:'image', png:'image', gif:'image', webp:'image', bmp:'image', heic:'image', heif:'image',
+  mp4:'video', mov:'video', m4v:'video', webm:'video', mkv:'video', '3gp':'video',
+  ogg:'audio', oga:'audio', opus:'audio', mp3:'audio', m4a:'audio', aac:'audio', wav:'audio',
+};
+
+// Que hay DE VERDAD en el mensaje. El tipo guardado no siempre lo dice: una foto que sale del
+// CRM puede quedar como 'document' o 'file' --asi la manda WhatsApp cuando se adjunta por el
+// boton de documento, y asi llegan tambien las importadas-- y entonces el hilo pintaba una
+// tarjeta gris con "Descargar" para una imagen que se puede ver ahi mismo. Quien atiende
+// tenia que bajarse su propia foto para comprobar cual habia mandado.
+//
+// Solo se corrige lo generico: un tipo que ya dice imagen, video, nota de voz o llamada manda
+// siempre, y sin archivo no hay nada que adivinar.
+function tipoRealMedio(m, a){
+  const declarado = String(m.msg_type || 'text').toLowerCase();
+  // 'text' entra en la lista porque un mensaje guardado sin tipo cae aqui como texto, y con
+  // un archivo dentro el hilo lo pintaba como un parrafo vacio.
+  if (!['text', 'file', 'document', 'media', 'archivo'].includes(declarado)) return declarado;
+  if (!(m.media_id || m.media_url || a.url)) return declarado;
+  const mime = String(m.media_mime || a.mime || '').toLowerCase();
+  if (mime.startsWith('image/')) return 'image';
+  if (mime.startsWith('video/')) return 'video';
+  if (mime.startsWith('audio/')) return 'audio';
+  const ext = (String(a.nombre || m.media_filename || '').match(/\.([a-z0-9]{1,5})$/i) || ['',''])[1].toLowerCase();
+  return EXT_DE_MEDIO[ext] || declarado || 'file';
+}
+
 function cuerpoMensaje(m){
-  const t = String(m.msg_type || 'text').toLowerCase();
   const a = adjuntoDe(m);
+  const t = tipoRealMedio(m, a);
   const pie = m.body && !/^\[[a-z]+\]$/i.test(m.body) ? '<div class="mpie">' + esc(m.body) + '</div>' : '';
   const id = m.media_id || '';
+  const bajo = esBajoDemanda(m);
   // Si hay url directa se usa; si solo hay id, se marca el hueco y lo rellena
-  // resuelveMedios() con lo que devuelva crmMedia.
-  const medio = (etiqueta, html) => a.url ? html(esc(a.url))
+  // resuelveMedios() con lo que devuelva crmMedia. Bajo demanda no se marca ningun hueco:
+  // el hilo se pinta con lo que ya trae el mensaje y no se descarga NADA hasta que alguien
+  // pulsa Ver. Abrir un chat de 400 mensajes bajaba antes todas sus fotos, una a una.
+  const medio = (etiqueta, html) => bajo ? tarjetaBajoDemanda(m, a, etiqueta)
+    : a.url ? html(esc(a.url))
     : id ? html('', true) : tarjetaArchivo(a, etiqueta);
 
   // Mensaje con botones de accion. El servidor lo guarda como 'interactive', y sin esta
@@ -3594,26 +4150,87 @@ function cuerpoMensaje(m){
   }
   if (t === 'audio' || t === 'voice') {
     const trans = m.audio_transcript || m.transcription || '';
+    const segundos = Number(m.media_seconds) || 0;
+    const onda = ondaReal(m.media_waveform_b64) || ondaFalsa(m.wamid || m.id || '');
     // Reproductor propio con la forma de WhatsApp: boton redondo, onda, duracion y
     // velocidad. El <audio controls> del navegador ocupa el doble, cambia de aspecto en
     // cada navegador y dentro de un globo de chat se ve como un parche.
-    return medio('Nota de voz', (src, porId) =>
-      '<div class="voz"' + (porId ? ' data-medio-audio="' + esc(id) + '"' : ' data-src="' + src + '"') + '>'
+    //
+    // La nota de voz nunca se descargo al pintar el hilo --solo al pulsar play-- asi que
+    // bajo demanda cambia poco: el audio se pide igual, pero la onda y la duracion ya salen
+    // de lo que mando WhatsApp en vez de inventarse.
+    const reproductor = (attr) => '<div class="voz"' + attr + '>'
       + '<button class="vplay" aria-label="Reproducir">▶</button>'
-      + '<div class="vonda">' + ondaFalsa(m.wamid || m.id || '') + '<span class="vprog"></span></div>'
-      + '<span class="vtiempo">0:00</span>'
+      + '<div class="vonda">' + onda + '<span class="vprog"></span></div>'
+      + '<span class="vtiempo">' + (segundos > 0
+        ? Math.floor(segundos / 60) + ':' + String(Math.floor(segundos % 60)).padStart(2, '0') : '0:00') + '</span>'
       + '<button class="vvel" aria-label="Velocidad">1×</button>'
-      + '</div>')
-      + (trans ? '<div class="mpie">“' + esc(trans) + '”</div>' : '');
+      + '</div>';
+    const cuerpo = bajo ? reproductor(' data-bajo="' + esc(String(m.id || '')) + '"')
+      : (a.url ? reproductor(' data-src="' + esc(a.url) + '"')
+        : id ? reproductor(' data-medio-audio="' + esc(id) + '"')
+        : tarjetaArchivo(a, 'Nota de voz'));
+    return cuerpo + (trans ? '<div class="mpie">“' + esc(trans) + '”</div>' : '');
   }
   if (t === 'document' || t === 'file') {
+    if (!a.url && bajo) return tarjetaBajoDemanda(m, a, 'Documento') + pie;
+    // Un documento guardado no se ve dentro del globo: se baja al pulsar, no al pintar el hilo.
     if (!a.url && id) return '<div class="marchivo"><b>' + esc(a.nombre || m.media_filename || 'Documento') + '</b>'
       + '<span>' + esc(m.media_mime || a.mime || 'archivo') + '</span>'
-      + '<a data-medio="' + esc(id) + '" download="' + esc(a.nombre || m.media_filename || 'archivo') + '" hidden>Descargar</a></div>' + pie;
+      + '<button data-descarga="' + esc(id) + '" data-nombre="' + esc(a.nombre || m.media_filename || 'archivo') + '">Descargar</button></div>' + pie;
     return tarjetaArchivo(a, 'Archivo') + pie;
   }
 
   return esc(m.body || '');
+}
+
+/* ---- Lo que acaba de salir, antes de que exista el globo de verdad ------- */
+// Por WhatsApp Web el mensaje NO se envia en la llamada del panel: se deja en una cola que
+// lee el puente de la PC del negocio, y el globo no aparece hasta que el puente lo manda y lo
+// guarda. Entre una cosa y la otra el chat se quedaba exactamente igual que antes de pulsar
+// Enviar --ni globo, ni reloj, ni nada--, asi que lo normal era volver a escribirlo.
+//
+// Esto NO da por enviado nada: pinta lo que el servidor YA acepto, con reloj de "enviando",
+// y el globo real de Firestore lo sustituye en cuanto el puente lo guarda.
+// (ENVIANDO se declara arriba, junto a MSGS: escuchaMensajes lo vacia al cambiar de chat.)
+const VIDA_ENVIANDO_MS = 10 * 60 * 1000;
+
+function apuntaEnviando({ conv, tipo, body, mime, datos }){
+  if (!conv) return;
+  ENVIANDO.push({
+    _enviando: true,
+    id: 'enviando:' + conv + ':' + Date.now() + ':' + ENVIANDO.length,
+    conversation_id: conv,
+    direction: 'out', sender: 'agent',
+    msg_type: tipo || 'text',
+    body: body || '',
+    media_mime: mime || null,
+    // La vista previa sale del archivo que ya esta en el navegador: no hay que esperar a que
+    // el puente lo suba para ver QUE foto se mando.
+    media_url: datos && mime ? 'data:' + mime + ';base64,' + datos : '',
+    conMedio: !!datos,
+    created_at: new Date().toISOString(),
+    delivery_status: 'enviando',
+    // Con cinco segundos de margen por si el reloj del servidor va por detras del navegador.
+    desde: Date.now() - 5000,
+  });
+  pintaMensajes();
+}
+
+// Un globo optimista desaparece en cuanto llega el de verdad. Solo cuenta lo que se guardo
+// DESPUES de pulsar Enviar: sin esa condicion, un mensaje identico mandado ayer lo borraria
+// de la pantalla al instante y el reloj no se veria nunca.
+function globosEnviando(conv){
+  const ahora = Date.now();
+  // Lo que sale por WhatsApp Web ya no trae media_id --el archivo de transito se borra al
+  // enviarse-- sino su vista previa (media_store 'bajo_demanda'). Sin mirarlo, el globo
+  // provisional de una foto se quedaba diez minutos al lado del real: la misma foto dos veces.
+  ENVIANDO = ENVIANDO.filter(o => ahora - o.desde < VIDA_ENVIANDO_MS && !MSGS.some(m =>
+    m.direction === 'out' && instanteMsg(m) >= o.desde &&
+    (o.conMedio
+      ? !!(m.media_id || m.media_url || esBajoDemanda(m))
+      : String(m.body || '').trim() === String(o.body || '').trim())));
+  return ENVIANDO.filter(o => o.conversation_id === conv);
 }
 
 function pintaMensajes(){
@@ -3623,7 +4240,10 @@ function pintaMensajes(){
   // El borrado es blando: el servidor conserva el mensaje y escribe la marca DENTRO de
   // metadata (index.js:1283), no en el primer nivel. Filtrando por m.deleted_at el
   // mensaje seguia a la vista mientras el panel decia "ocultado".
-  const html = MSGS.filter(m => !m.metadata?.deleted && !m.metadata?.deleted_at).map(m => {
+  const html = MSGS.concat(globosEnviando(sel && (sel.id || sel._id)))
+    .filter(m => !m.metadata?.deleted && !m.metadata?.deleted_at)
+    .sort((a, b) => instanteMsg(a) - instanteMsg(b))
+    .map(m => {
     const t = instanteMsg(m);
     const conFecha = t !== Number.MAX_SAFE_INTEGER;
     const d = new Date(conFecha ? t : Date.now());
@@ -3641,6 +4261,8 @@ function pintaMensajes(){
     const ticks = sale ? ({
       read: ' <b class="leido">✓✓</b>', delivered: ' ✓✓', sent: ' ✓',
       failed: ' <b class="fallo">⚠</b>',
+      // Todavia en la cola del puente: ni un ✓, que seria decir que ya salio.
+      enviando: ' <span title="En cola, saliendo">🕓</span>',
     }[String(m.delivery_status || 'sent')] ?? ' ·') : '';
     const autor = (sale && m.sender === 'bot' && primero) ? '<div class="autor">Bot</div>' : '';
     const cita = m.reply_snippet
@@ -3831,7 +4453,10 @@ function pintaFicha(c){
     + '<details class="grupo"><summary>Automatización '
     +   '<span class="nota">' + Number(c.followup_attempts || 0) + ' de 2 seguimientos</span></summary><div class="dentro">'
     +   '<label class="campo"><input data-c="human_handoff_required" type="checkbox" ' + (c.human_handoff_required ? 'checked' : '') + '> Requiere atención humana</label>'
-    +   '<label class="campo"><input data-c="auto_template_paused" type="checkbox" ' + (c.auto_template_paused ? 'checked' : '') + '> Pausar bot / plantillas automáticas</label>'
+    // Plantillas automaticas solo las manda el numero oficial; en los demas canales la casilla
+    // solo para al bot, y nombrar plantillas ahi hace pensar que existen.
+    +   '<label class="campo"><input data-c="auto_template_paused" type="checkbox" ' + (c.auto_template_paused ? 'checked' : '') + '> '
+    +     (esOficial(c) ? 'Pausar bot / plantillas automáticas' : 'Pausar bot') + '</label>'
     +   '<div class="campo"><label>Motivo de atención humana</label><input data-c="human_handoff_reason" value="' + esc(c.human_handoff_reason || '') + '"></div>'
     +   '<div class="seccion" style="margin:12px 0 6px">Permisos individuales</div>'
     +   '<label class="campo"><input data-c="reminders_opt_in" type="checkbox" ' + (c.reminders_opt_in === false ? '' : 'checked') + (c.proactive_blocked_at ? ' disabled' : '') + '> Permitir recordatorios de sesión</label>'
@@ -4823,6 +5448,12 @@ const CANALES = {
   instagram:      { nombre:'Instagram Direct',          corto:'Instagram', logo:LOGO_IG, color:'#c13584' },
   facebook:       { nombre:'Facebook Messenger',        corto:'Messenger', logo:LOGO_FB, color:'#0084ff' },
 };
+// Las plantillas y la ventana de 24 h son del API oficial de Meta, no de WhatsApp. Por WhatsApp
+// Web se escribe cuando se quiera y como se quiera, igual que desde el telefono, e Instagram y
+// Messenger no tienen plantillas en absoluto. El panel las ofrecia en los cuatro canales: el
+// servidor contestaba "canal incorrecto" y el dueno leia "No se pudo enviar la plantilla", que
+// no explica que ahi no hacia ninguna falta.
+function esOficial(c){ return canalDe(c) === 'whatsapp_cloud'; }
 function canalDe(c){
   const s = String(c?.source || '').toLowerCase();
   if (CANALES[s]) return s;
@@ -5607,7 +6238,7 @@ function limitesCfg(esAdmin){
     + campoLim('quality_cutoff', 'Fallos seguidos que pausan el puente', 'El freno de emergencia. De 1 a 20; no se puede quitar.', true)
     // No es un envio, pero cada foto es una consulta a WhatsApp desde este numero. Aqui se
     // apaga sin tocar la PC del negocio.
-    + campoLim('avatar_daily_cap', 'Fotos de perfil consultadas por día', 'De 0 a 120; 0 las apaga. Como mucho una cada 1,5–3 minutos.', true)
+    + campoLim('avatar_daily_cap', 'Fotos de perfil consultadas por día', 'De 0 a 1000; 0 las apaga. El puente las reparte: una cada 25–45 s de fondo, 60 por hora como mucho, y ráfagas cortas para los chats que estés mirando.', true)
     + '</div>'
     + '<button class="btn-linea" id="cfgGuardaLimites" style="margin-top:8px">Guardar límites</button>';
 }
@@ -7510,8 +8141,18 @@ function abreRecordatorio(c){
     + '</div>'
     + '<div class="campo" id="recMsgCampo" hidden><label>Mensaje</label>'
     +   '<textarea id="recMensaje" rows="3" placeholder="Hola {nombre}, ¿pudiste ver lo que te mandé?"></textarea>'
-    +   '<p class="aviso" style="margin:6px 0 0">Si han pasado más de 24 h desde su último mensaje, '
-    +     'solo llegará con plantilla aprobada. Se avisará entonces.</p></div>'
+    // La ventana de 24 h solo existe en el numero oficial. Por WhatsApp Web el mensaje sale
+    // como desde el telefono, y decir ahi "hace falta plantilla aprobada" es mandar a buscar
+    // algo que no existe en ese canal.
+    +   (esOficial(c)
+        ? '<p class="aviso" style="margin:6px 0 0">Si han pasado más de 24 h desde su último mensaje, '
+          + 'solo llegará con plantilla aprobada. Se avisará entonces.</p>'
+        : redSocial(c)
+          ? '<p class="aviso" style="margin:6px 0 0">Si han pasado más de 24 h desde su último mensaje, '
+            + 'se intentará por atención humana, que ' + redSocial(c) + ' permite hasta 7 días.</p>'
+          : '<p class="aviso" style="margin:6px 0 0">Sale por WhatsApp Web: texto libre, sin ventana '
+            + 'de 24 horas ni plantillas.</p>')
+    + '</div>'
     + '</div>'
     + '<div class="mpatas"><button class="btn-linea" data-cerrar>Cancelar</button>'
     +   '<button class="btn-solido" id="recGuardar">Guardar recordatorio</button></div>');
@@ -8138,7 +8779,8 @@ async function pidePlan(t){
   // por que se rechazo algo que el mismo propuso.
   contexto.push([
     'Reglas del sistema que NO se pueden saltar:',
-    '- Fuera de la ventana de 24 h desde el ultimo mensaje del cliente solo llega una plantilla aprobada.',
+    '- En el numero oficial (API), fuera de la ventana de 24 h desde el ultimo mensaje del cliente',
+    '  solo llega una plantilla aprobada. Por WhatsApp Web no hay ventana ni plantillas: texto libre.',
     '- Un contacto desinteresado, o con exclusion permanente, no recibe marketing ni seguimientos.',
     '- Dos seguimientos sin respuesta y el contacto pasa a desinteresado automaticamente.',
     '- Una difusion con plantilla exige que la plantilla incluya salida de baja (STOP).',
