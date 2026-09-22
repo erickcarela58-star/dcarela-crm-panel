@@ -1,6 +1,6 @@
 {
-  "version": "2026-09-20-lineas-historial-v109",
+  "version": "2026-09-22-mensajes-medios-historial-v110",
   "channel": "crm",
-  "released_at": "2026-09-20T02:30:00Z",
-  "summary": "Lineas de WhatsApp separadas sin borrar chats; estado del puente en vivo para todos los roles; avisos al responsable por la linea conectada; pausas explicadas e historial sin falsos 100%."
+  "released_at": "2026-09-22T12:00:00Z",
+  "summary": "Mensajes que no se veian (albumes, ediciones, borrados), envio rapido, ventana de 24 h solo en el oficial, panel en vivo, fotos de perfil 300/dia, historial solo texto por lotes y fotos y documentos bajo demanda sin guardarse en la nube."
 }
