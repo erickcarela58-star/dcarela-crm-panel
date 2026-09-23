@@ -1,0 +1,235 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Atajo de Recordatorios · CRM D' Carela</title>
+<!--
+  La guia para montar el Atajo del iPhone, en una pagina aparte.
+
+  Estaba metida dentro de una tarjeta de Configuracion, en letra gris de 12 px y ocho pasos
+  seguidos. Eso no se sigue con el telefono en la otra mano: se lee por encima, se pierde el
+  hilo en el paso 4 y se abandona.
+
+  La direccion del Atajo lleva la llave dentro y abre los seguimientos del negocio. Por eso
+  viaja en el FRAGMENTO de la URL (#...), que el navegador NUNCA manda al servidor: no aparece
+  en los registros de GitHub Pages ni en los de nadie. Si se abre sin fragmento, la pagina pide
+  pegarla a mano y no guarda nada en ninguna parte.
+-->
+<style>
+  :root{
+    --fondo:#f7f8fa; --panel:#fff; --texto:#111b21; --meta:#667781; --line:#e6e9ed;
+    --ok:#1f8a4c; --aviso:#8a6d1f; --sombra:0 1px 3px rgba(11,20,26,.12);
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-tema="claro"]){
+      --fondo:#0f1418; --panel:#182229; --texto:#e9edef; --meta:#8696a0; --line:#2a3942;
+      --ok:#4fbe7b; --aviso:#d4b25a; --sombra:0 1px 3px rgba(0,0,0,.4);
+    }
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--fondo);color:var(--texto);
+    font:15px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+  .hoja{max-width:720px;margin:0 auto;padding:26px 16px 70px}
+  h1{font-size:23px;margin:0 0 6px;letter-spacing:-.01em}
+  .bajada{color:var(--meta);font-size:14px;margin:0 0 22px}
+  .aviso{background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--aviso);
+    border-radius:8px;padding:12px 14px;font-size:13.5px;margin:0 0 22px;box-shadow:var(--sombra)}
+  .dir{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px;
+    margin:0 0 24px;box-shadow:var(--sombra)}
+  .dir label{display:block;font-size:11.5px;text-transform:uppercase;letter-spacing:.06em;
+    color:var(--meta);margin-bottom:7px}
+  .dir input{width:100%;padding:10px 11px;border:1px solid var(--line);border-radius:7px;
+    background:var(--fondo);color:var(--texto);font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+    font-size:12px;word-break:break-all}
+  ol.pasos{list-style:none;counter-reset:paso;margin:0;padding:0}
+  ol.pasos > li{counter-increment:paso;position:relative;background:var(--panel);
+    border:1px solid var(--line);border-radius:10px;padding:16px 16px 16px 58px;margin:0 0 12px;
+    box-shadow:var(--sombra)}
+  ol.pasos > li::before{content:counter(paso);position:absolute;left:16px;top:15px;width:28px;
+    height:28px;border-radius:50%;background:var(--ok);color:#fff;display:flex;
+    align-items:center;justify-content:center;font-weight:700;font-size:14px}
+  ol.pasos h2{font-size:15.5px;margin:0 0 7px}
+  ol.pasos p{margin:0 0 8px;font-size:14px}
+  ol.pasos p:last-child{margin-bottom:0}
+  .campo{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:8px 0;
+    background:var(--fondo);border:1px solid var(--line);border-radius:7px;padding:8px 10px}
+  .campo .k{font-size:12px;color:var(--meta);min-width:104px}
+  .campo .v{flex:1;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12.5px;
+    word-break:break-all}
+  button.copia{border:1px solid var(--line);background:var(--panel);color:var(--texto);
+    border-radius:6px;padding:5px 11px;font-size:12.5px;cursor:pointer}
+  button.copia:active{transform:translateY(1px)}
+  button.copia.ok{border-color:var(--ok);color:var(--ok)}
+  .nota{color:var(--meta);font-size:13px}
+  b.res{color:var(--ok)}
+  .porque{margin-top:26px;background:var(--panel);border:1px solid var(--line);border-radius:10px;
+    padding:16px;box-shadow:var(--sombra)}
+  .porque h2{font-size:15px;margin:0 0 8px}
+  .porque p{font-size:13.5px;color:var(--meta);margin:0 0 9px}
+  .porque p:last-child{margin:0}
+  @media print{
+    body{background:#fff}
+    .hoja{max-width:none;padding:0}
+    ol.pasos > li,.dir,.porque,.aviso{box-shadow:none;break-inside:avoid}
+    button.copia{display:none}
+  }
+</style>
+</head>
+<body>
+<div class="hoja">
+  <h1>El Atajo de Recordatorios, paso a paso</h1>
+  <p class="bajada">Con esto, lo que apuntas en <b>Recordatorios</b> del iPhone entra al CRM, y los
+    seguimientos del CRM salen en esa misma lista. No hace falta ninguna contraseña de Apple.</p>
+
+  <p class="aviso"><b>Esta dirección abre los seguimientos del negocio</b> —nombre del cliente,
+    teléfono y el mensaje preparado— sin pedir contraseña. No la pegues en ningún grupo ni en una
+    nota compartida. Si se te escapa, cámbiala desde Configuración: la vieja deja de servir.</p>
+
+  <div class="dir">
+    <label for="url">Tu dirección (la que copiaste en Configuración)</label>
+    <input id="url" spellcheck="false" placeholder="Pégala aquí si no aparece sola">
+  </div>
+
+  <ol class="pasos">
+    <li>
+      <h2>La lista, en la app Recordatorios</h2>
+      <p>Abre <b>Recordatorios</b> → <b>Añadir lista</b>. Llámala exactamente:</p>
+      <div class="campo"><span class="k">Nombre</span><span class="v" id="lista">CRM</span>
+        <button class="copia" data-copia="lista">Copiar</button></div>
+      <p class="nota">Si el nombre no coincide, el Atajo busca en una lista que no existe y no
+        trae nada. Mayúsculas incluidas.</p>
+    </li>
+
+    <li>
+      <h2>El Atajo</h2>
+      <p>App <b>Atajos</b> → <b>+</b> (arriba a la derecha) → toca el nombre y ponle:</p>
+      <div class="campo"><span class="k">Nombre</span><span class="v">Sincronizar CRM</span>
+        <button class="copia" data-texto="Sincronizar CRM">Copiar</button></div>
+    </li>
+
+    <li>
+      <h2>Buscar los recordatorios</h2>
+      <p>Añade la acción <b>Buscar recordatorios</b>. Dentro, pulsa <b>Añadir filtro</b>:</p>
+      <div class="campo"><span class="k">Filtro</span><span class="v">Lista&nbsp;·&nbsp;es&nbsp;·&nbsp;<span class="lista2">CRM</span></span></div>
+      <p>Quita el límite si aparece uno. Añade <b>un segundo</b> «Buscar recordatorios», igual
+        pero con el filtro <b>Completado · es · Sí</b>: así lo que marcas hecho en el teléfono
+        llega al CRM.</p>
+    </li>
+
+    <li>
+      <h2>Convertir cada recordatorio en datos</h2>
+      <p>Añade <b>Repetir con cada</b> (sobre el resultado). Dentro del bucle:</p>
+      <p>1) <b>Diccionario</b>, con estas cuatro claves:</p>
+      <div class="campo"><span class="k">titulo</span><span class="v">Nombre del recordatorio</span></div>
+      <div class="campo"><span class="k">notas</span><span class="v">Notas del recordatorio</span></div>
+      <div class="campo"><span class="k">vence</span><span class="v">Fecha límite del recordatorio</span></div>
+      <div class="campo"><span class="k">completado</span><span class="v">Está completado</span></div>
+      <p class="nota">Cada valor se elige tocando el campo y pulsando la variable
+        «Elemento de repetición» → <b>Detalles</b>.</p>
+      <p>2) <b>Añadir a variable</b>, y llámala:</p>
+      <div class="campo"><span class="k">Variable</span><span class="v">Lista</span>
+        <button class="copia" data-texto="Lista">Copiar</button></div>
+    </li>
+
+    <li>
+      <h2>Mandarlo al CRM</h2>
+      <p>Fuera del bucle, añade <b>Obtener contenido de URL</b>:</p>
+      <div class="campo"><span class="k">URL</span><span class="v" id="url2">—</span>
+        <button class="copia" data-copia="url2">Copiar</button></div>
+      <div class="campo"><span class="k">Método</span><span class="v">POST</span></div>
+      <div class="campo"><span class="k">Cuerpo</span><span class="v">JSON</span></div>
+      <p>Y dentro del cuerpo, dos campos:</p>
+      <div class="campo"><span class="k">recordatorios</span><span class="v">(Matriz) → la variable «Lista»</span></div>
+      <div class="campo"><span class="k">lista_completa</span><span class="v">(Booleano) → Sí</span></div>
+      <p class="nota"><b class="res">Primero manda y después añade.</b> Si se hace al revés, lo que
+        el teléfono ya tiene vuelve como si fuera nuevo y acabas con cada recordatorio dos veces.</p>
+    </li>
+
+    <li>
+      <h2>Traer lo que manda el CRM</h2>
+      <p>Añade <b>Obtener valor del diccionario</b> → clave:</p>
+      <div class="campo"><span class="k">Clave</span><span class="v">pendientes</span>
+        <button class="copia" data-texto="pendientes">Copiar</button></div>
+      <p>Después <b>Repetir con cada</b> y, dentro, <b>Añadir recordatorio</b> a la lista
+        <span class="lista2">CRM</span> con:</p>
+      <div class="campo"><span class="k">Título</span><span class="v">Valor del diccionario · titulo</span></div>
+      <div class="campo"><span class="k">Notas</span><span class="v">Valor del diccionario · notas</span></div>
+      <div class="campo"><span class="k">Fecha límite</span><span class="v">Valor del diccionario · vence</span></div>
+      <p class="nota">Las notas llevan una línea <b>[crm:…]</b>. <b class="res">No la borres.</b> Es lo
+        único que impide que el mismo recordatorio se vuelva a añadir en cada sincronización.</p>
+    </li>
+
+    <li>
+      <h2>Que se ejecute solo</h2>
+      <p>Atajos → pestaña <b>Automatización</b> → <b>+</b> → <b>App</b> → Recordatorios →
+        <b>Se cierra</b> → ejecutar «Sincronizar CRM».</p>
+      <p><b class="res">Desactiva «Preguntar antes de ejecutar».</b> Con eso activado la
+        automatización no corre sola: se queda esperando a que toques una notificación.</p>
+      <p>Repite con <b>Hora del día</b> a una hora fija (por ejemplo 7:00), para que sincronice
+        aunque no abras la app.</p>
+    </li>
+
+    <li>
+      <h2>Probarlo</h2>
+      <p>Escribe un recordatorio cualquiera en la lista <span class="lista2">CRM</span>, ejecuta el
+        Atajo a mano y mira la pantalla <b>Recordatorios</b> del CRM: tiene que aparecer ahí.
+        Después, al revés: pon una fecha de seguimiento a un cliente en el CRM, vuelve a ejecutar
+        el Atajo y compruébalo en el teléfono.</p>
+    </li>
+  </ol>
+
+  <div class="porque">
+    <h2>Por qué hace falta un Atajo y no se conecta solo</h2>
+    <p><b>Recordatorios de Apple no sincroniza con una cuenta de Google.</b> El iPhone solo
+      sincroniza recordatorios por iCloud, CalDAV o Exchange. Lo que ves en el teléfono con tu
+      cuenta de Gmail son los <i>calendarios</i>, no los recordatorios.</p>
+    <p>Entrar en tu iCloud para escribirlos desde el servidor exigiría tu contraseña de Apple, y
+      esa no se pide ni se guarda en ninguna parte.</p>
+    <p>Por eso habla el propio teléfono: el Atajo lee tu lista, la manda, y se trae la del CRM.
+      Todo pasa entre tu iPhone y tu CRM, sin nadie en medio.</p>
+  </div>
+</div>
+
+<script>
+// La direccion llega en el fragmento (#https://...), que el navegador no manda al servidor.
+// Si no viene, se pide a mano. Aqui NO se guarda nada: ni localStorage, ni cookies.
+(function () {
+  const campo = document.getElementById('url');
+  const eco = document.getElementById('url2');
+  const delHash = decodeURIComponent(String(location.hash || '').replace(/^#/, ''));
+  // Solo se acepta lo que parece la direccion de esta funcion. Cualquier otra cosa pegada ahi
+  // --un enlace de otro sitio-- no se pinta como si fuera la buena.
+  const valida = (v) => /^https:\/\/[a-z0-9.-]+\/[^\s]*$/i.test(String(v || '').trim());
+  if (valida(delHash)) campo.value = delHash;
+  const pinta = () => { eco.textContent = valida(campo.value) ? campo.value.trim() : '—'; };
+  campo.addEventListener('input', pinta);
+  pinta();
+
+  // La lista se puede llamar de otra forma si el CRM lo cambia algun dia: el nombre viaja en el
+  // fragmento detras de una barra vertical.
+  const partes = delHash.split('|');
+  if (partes.length > 1 && partes[1].trim()) {
+    document.getElementById('lista').textContent = partes[1].trim();
+    document.querySelectorAll('.lista2').forEach((e) => { e.textContent = partes[1].trim(); });
+    if (valida(partes[0])) { campo.value = partes[0].trim(); pinta(); }
+  }
+
+  document.addEventListener('click', async (ev) => {
+    const b = ev.target.closest('button.copia');
+    if (!b) return;
+    const texto = b.dataset.texto || (b.dataset.copia === 'url2' ? campo.value.trim()
+      : document.getElementById(b.dataset.copia)?.textContent || '');
+    if (!texto || texto === '—') return;
+    try { await navigator.clipboard.writeText(texto); }
+    catch (e) { /* sin permiso de portapapeles queda el texto a la vista para copiarlo a mano */ }
+    const antes = b.textContent;
+    b.textContent = 'Copiado';
+    b.classList.add('ok');
+    setTimeout(() => { b.textContent = antes; b.classList.remove('ok'); }, 1400);
+  });
+})();
+</script>
+</body>
+</html>
