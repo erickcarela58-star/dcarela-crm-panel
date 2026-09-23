@@ -1,6 +1,6 @@
 {
-  "version": "2026-09-24-estados-y-panel-que-abre-v121",
+  "version": "2026-09-24-escribiendo-v122",
   "channel": "crm",
-  "released_at": "2026-09-24T17:05:00Z",
-  "summary": "Arreglo urgente: v118 y v119 no abrian. El buscador de mensajes declaro un segundo fechaCorta en el mismo modulo, y dos declaraciones iguales son un SyntaxError que deja el panel entero sin ejecutar; ahora una prueba compila el panel de verdad antes de publicarlo. Ademas, los Estados de WhatsApp se publican desde el CRM: el Pack deja la foto en 1080x1920 y se publica sin pasar por el telefono, eligiendo si lo ven solo mis numeros, los clientes con movimiento o todos, con la cifra delante antes de confirmar y pudiendo elegir si \"con movimiento\" son 7, 30 o 180 dias."
+  "released_at": "2026-09-24T18:40:00Z",
+  "summary": "El cliente ve \"escribiendo...\" mientras le contestas por WhatsApp Web, igual que cuando se usaba WhatsApp Web: se enciende al teclear y se apaga al enviar, al borrar lo escrito, al cambiar de chat o a los 20 segundos. No manda ningun mensaje y se apaga desde Configuracion. Viene de la version anterior: los Estados se publican desde el panel y el arreglo del panel que no abria."
 }
