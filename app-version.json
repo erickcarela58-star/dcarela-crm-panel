@@ -1,6 +1,6 @@
 {
-  "version": "2026-09-23-guardar-contacto-v114",
+  "version": "2026-09-23-cuadros-y-guia-v115",
   "channel": "crm",
-  "released_at": "2026-09-23T07:45:00Z",
-  "summary": "Guardar contacto: desde el menu del chat, el cliente queda en la base de Clientes con su nombre y telefono --sin tocar su saldo ni su credito, que son de la caja-- y se baja su tarjeta .vcf para meterla en la agenda del telefono, que es como WhatsApp le pone el nombre. Ademas, las respuestas citadas y el acceso directo a la tarjeta de Recordatorios del iPhone."
+  "released_at": "2026-09-23T08:40:00Z",
+  "summary": "El boton Cancelar de los cuadros ya cierra --lo cablea abreModal para todos-- y el de Guardar contacto sale con su formato. Un archivo traido por el historial dice que sigue en el telefono, no que no se guardo. Y la guia del Atajo del iPhone pasa a ser una pagina aparte, con la direccion y cada valor listos para copiar."
 }
