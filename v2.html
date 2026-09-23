@@ -485,6 +485,9 @@ img.mmedia[data-medio]:not([src]),img.msticker[data-medio]:not([src]){
   background:rgba(11,20,26,.06);font-size:12px;color:var(--meta);line-height:1.35}
 :root[data-tema="oscuro"] .cita{background:rgba(255,255,255,.07)}
 .cita b{display:block;color:var(--ok);font-size:11px}
+.cita[data-cita]{cursor:pointer}
+.globo.resaltado{animation:resalta 1.4s ease-out}
+@keyframes resalta{0%,60%{background:var(--ok);filter:brightness(1.12)}100%{}}
 .barra-cita{display:flex;align-items:center;gap:9px;padding:8px 14px;
   background:var(--panel);border-top:1px solid var(--line)}
 .barra-cita[hidden]{display:none}
@@ -3707,6 +3710,18 @@ function cancelaCita(){ citando = null; pintaCita(); }
 // Delegado en el documento: los globos se repintan con cada mensaje nuevo, y un
 // manejador puesto sobre cada boton se perderia en el siguiente repintado.
 document.addEventListener('click', async ev => {
+  // Pulsar la cita salta al mensaje citado, como en WhatsApp. Si ese mensaje no esta cargado
+  // --el hilo trae los ultimos 400-- no se hace nada: mejor eso que un salto a otro sitio.
+  const cita = ev.target.closest('.cita[data-cita]');
+  if (cita) {
+    ev.stopPropagation();
+    const original = document.querySelector('.globo[data-msg="' + CSS.escape(cita.dataset.cita) + '"]');
+    if (!original) return avisa('Ese mensaje no está cargado', 'Es más antiguo que los que tiene abiertos el chat.');
+    original.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    original.classList.add('resaltado');
+    setTimeout(() => original.classList.remove('resaltado'), 1400);
+    return;
+  }
   const b = ev.target.closest('.gaccion');
   if (!b) { document.querySelectorAll('.gmenu').forEach(m => m.remove()); return; }
   ev.stopPropagation();
@@ -4558,6 +4573,22 @@ function globosEnviando(conv){
   return ENVIANDO.filter(o => o.conversation_id === conv);
 }
 
+// A que mensaje contesta este. WhatsApp manda la cita dentro del mensaje y el puente la guarda
+// en metadata.responde_a; reply_snippet es el campo viejo del bot oficial y se sigue leyendo.
+// Sin esto, la respuesta de un cliente llegaba suelta --"si, ese"-- y no habia manera de saber
+// a cual de los tres combos decia que si. En WhatsApp Web eso se ve siempre.
+function citaDelMensaje(m){
+  const r = m.metadata?.responde_a;
+  const texto = r?.texto || m.reply_snippet || '';
+  if (!texto) return '';
+  const mio = r ? r.mio === true : m.reply_sender !== 'customer';
+  // El id del mensaje citado va en el atributo: pulsando la cita se salta al original, como en
+  // WhatsApp. Si ese mensaje no esta cargado (el hilo trae los ultimos 400), no pasa nada.
+  const destino = r?.wamid ? ' data-cita="' + esc(r.wamid) + '"' : '';
+  return '<div class="cita"' + destino + '><b>' + esc(mio ? 'Tú' : nombreDe(sel)) + '</b>'
+    + esc(String(texto).slice(0, 140)) + '</div>';
+}
+
 function pintaMensajes(){
   const cont = $('mensajes'); if (!cont) return;
   const pegado = cont.scrollHeight - cont.scrollTop - cont.clientHeight < 90;
@@ -4590,9 +4621,7 @@ function pintaMensajes(){
       enviando: ' <span title="En cola, saliendo">🕓</span>',
     }[String(m.delivery_status || 'sent')] ?? ' ·') : '';
     const autor = (sale && m.sender === 'bot' && primero) ? '<div class="autor">Bot</div>' : '';
-    const cita = m.reply_snippet
-      ? '<div class="cita"><b>' + esc(m.reply_sender === 'customer' ? nombreDe(sel) : 'Tú') + '</b>'
-        + esc(String(m.reply_snippet).slice(0,140)) + '</div>' : '';
+    const cita = citaDelMensaje(m);
     return cabeza + '<div class="globo ' + (sale ? 'sale' : 'entra') + ' ' + (primero ? 'primero' : 'seguido') + '"'
       + ' data-msg="' + esc(m.id || m.wamid || '') + '">'
       + '<button class="gaccion" aria-label="Opciones del mensaje">⌄</button>'
