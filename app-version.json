@@ -1,6 +1,6 @@
 {
-  "version": "2026-09-23-cuadros-y-guia-v115",
+  "version": "2026-09-23-etiquetas-automaticas-v116",
   "channel": "crm",
-  "released_at": "2026-09-23T08:40:00Z",
-  "summary": "El boton Cancelar de los cuadros ya cierra --lo cablea abreModal para todos-- y el de Guardar contacto sale con su formato. Un archivo traido por el historial dice que sigue en el telefono, no que no se guardo. Y la guia del Atajo del iPhone pasa a ser una pagina aparte, con la direccion y cada valor listos para copiar."
+  "released_at": "2026-09-23T09:40:00Z",
+  "summary": "Etiquetas y contexto automaticos: cada hora, las conversaciones con mensajes nuevos se leen y se clasifican solas --resumen, etiquetas, categoria, etapa solo hacia delante-- y se marcan como \"Esperando a una persona\" las que hablan de pagos, reclaman o piden hablar con alguien. Ignorar y descartar NUNCA se aplican solos. Nace apagado: se enciende en Configuracion."
 }
