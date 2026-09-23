@@ -43,6 +43,12 @@
   .dir input{width:100%;padding:10px 11px;border:1px solid var(--line);border-radius:7px;
     background:var(--fondo);color:var(--texto);font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
     font-size:12px;word-break:break-all}
+  .rapido{background:var(--panel);border:1px solid var(--ok);border-radius:10px;padding:16px;
+    margin:0 0 26px;box-shadow:var(--sombra)}
+  .rapido h2{font-size:16px;margin:0 0 8px}
+  .rapido p{font-size:13.5px;margin:0 0 10px}
+  ol.mini{margin:0;padding-left:20px;display:grid;gap:9px;font-size:13.5px}
+  ol.mini code{background:var(--fondo);border:1px solid var(--line);border-radius:4px;padding:1px 5px}
   ol.pasos{list-style:none;counter-reset:paso;margin:0;padding:0}
   ol.pasos > li{counter-increment:paso;position:relative;background:var(--panel);
     border:1px solid var(--line);border-radius:10px;padding:16px 16px 16px 58px;margin:0 0 12px;
@@ -90,6 +96,26 @@
   <div class="dir">
     <label for="url">Tu dirección (la que copiaste en Configuración)</label>
     <input id="url" spellcheck="false" placeholder="Pégala aquí si no aparece sola">
+  </div>
+
+  <div class="rapido">
+    <h2>¿Solo quieres ver los seguimientos del CRM en tu iPhone?</h2>
+    <p>Eso son <b>cuatro acciones</b> y se hace en tres minutos. No hace falta bajar ninguna
+      protección del teléfono: al construirlo tú, el atajo es tuyo y iOS no pide firma.</p>
+    <ol class="mini">
+      <li><b>Atajos</b> → <b>+</b> → nómbralo «Traer del CRM».</li>
+      <li><b>Obtener contenido de URL</b>. Pega la dirección de abajo. Déjalo en <b>GET</b>.
+        <div class="campo"><span class="k">URL</span><span class="v" id="url3">—</span>
+          <button class="copia" data-copia="url3">Copiar</button></div></li>
+      <li><b>Obtener valor del diccionario</b> → clave <code>pendientes</code>.
+        <button class="copia" data-texto="pendientes">Copiar</button></li>
+      <li><b>Repetir con cada</b> y, dentro, <b>Añadir recordatorio</b>: <i>Título</i> =
+        «Elemento de repetición → titulo», <i>Notas</i> = «→ notas», <i>Fecha límite</i> =
+        «→ vence», y la lista <span class="lista2">CRM</span>.</li>
+    </ol>
+    <p class="nota">Con esto, lo que apuntes en el CRM aparece en tu iPhone. Para la otra
+      dirección —lo que escribes en el teléfono y llega al CRM— sigue con los ocho pasos de
+      abajo, que añaden el envío.</p>
   </div>
 
   <ol class="pasos">
@@ -198,12 +224,17 @@
 (function () {
   const campo = document.getElementById('url');
   const eco = document.getElementById('url2');
+  const eco3 = document.getElementById('url3');
   const delHash = decodeURIComponent(String(location.hash || '').replace(/^#/, ''));
   // Solo se acepta lo que parece la direccion de esta funcion. Cualquier otra cosa pegada ahi
   // --un enlace de otro sitio-- no se pinta como si fuera la buena.
   const valida = (v) => /^https:\/\/[a-z0-9.-]+\/[^\s]*$/i.test(String(v || '').trim());
   if (valida(delHash)) campo.value = delHash;
-  const pinta = () => { eco.textContent = valida(campo.value) ? campo.value.trim() : '—'; };
+  const pinta = () => {
+    const v = valida(campo.value) ? campo.value.trim() : '—';
+    eco.textContent = v;
+    if (eco3) eco3.textContent = v;
+  };
   campo.addEventListener('input', pinta);
   pinta();
 
@@ -219,7 +250,7 @@
   document.addEventListener('click', async (ev) => {
     const b = ev.target.closest('button.copia');
     if (!b) return;
-    const texto = b.dataset.texto || (b.dataset.copia === 'url2' ? campo.value.trim()
+    const texto = b.dataset.texto || (/^url\d$/.test(b.dataset.copia || '') ? campo.value.trim()
       : document.getElementById(b.dataset.copia)?.textContent || '');
     if (!texto || texto === '—') return;
     try { await navigator.clipboard.writeText(texto); }
