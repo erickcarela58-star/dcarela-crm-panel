@@ -7312,6 +7312,20 @@ async function pintaConfig(){
         interruptorCfg('auto_cierre', 'Cerrar solas las conversaciones dormidas',
           'A los 14 días sin respuesta del cliente.', true))
 
+    + tarjetaCfg('Etiquetas y contexto automáticos',
+        'Cada hora, las conversaciones con mensajes nuevos se leen y se clasifican solas: resumen '
+        + 'de qué quiere el cliente, etiquetas, categoría si estaba vacía, y la etapa del embudo '
+        + '<b>solo hacia delante</b> —un reservado no vuelve a interesado—. Si alguien habla de un '
+        + 'pago, reclama o pide hablar con una persona, la conversación se marca como '
+        + '<b>Esperando a una persona</b>.<br><br>'
+        + '<b>Ignorar y descartar a un contacto no se hacen solos</b>, nunca: quedan propuestos en '
+        + 'la ficha para que los confirmes. Esconder o dar por perdido a un cliente de verdad no '
+        + 'se nota hasta que ya pasó.<br><br>'
+        + 'Esto <b>no es el bot</b>: no le escribe a nadie. Solo lee y clasifica. Cada pasada '
+        + 'consume cuota de análisis, y respeta el tope diario que ya tienes puesto.',
+        interruptorCfg('analisis_automatico', 'Etiquetar y clasificar solo',
+          'Cada hora, hasta 25 conversaciones con mensajes nuevos.', false))
+
     + tarjetaCfg('Seguimientos automáticos',
         'La norma de los dos intentos está cableada en el servidor y no se puede desactivar desde '
         + 'aquí: dos seguimientos ignorados y el contacto pasa a desinteresado.',
