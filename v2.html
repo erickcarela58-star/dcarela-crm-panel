@@ -8977,10 +8977,18 @@ function montaBroadcast(){
     +     '<input id="esFoto" type="file" accept="image/*"></div>'
     +   '<div class="campo"><label>Quién lo ve</label><select id="esQuien">'
     +     '<option value="prueba">Solo mis números (prueba)</option>'
-    +     '<option value="activos">Clientes con movimiento (180 días)</option>'
+    +     '<option value="activos">Clientes con movimiento</option>'
     +     '<option value="todos">Todos los clientes</option>'
     +   '</select></div>'
     + '</div>'
+    // Cuanto tiempo atras cuenta como "con movimiento". No es un detalle: la promo de
+    // esta semana tiene sentido para quien escribio esta semana, y empezar por una lista
+    // corta es la forma de estrenar esto sin jugarse el numero a la primera.
+    + '<div class="campo"><label>Movimiento en</label><select id="esDias">'
+    +   '<option value="7">los últimos 7 días</option>'
+    +   '<option value="30">los últimos 30 días</option>'
+    +   '<option value="180" selected>los últimos 180 días</option>'
+    + '</select></div>'
     + '<div id="esPrevia"></div>'
     + '<div class="acciones"><button class="btn-linea" id="esDelPack">Usar la del Pack</button>'
     +   '<button class="btn-linea" id="esVer">Ver a cuántos llega</button>'
@@ -9136,6 +9144,10 @@ function esCuando(v){
   return new Date(t).toLocaleString('es-DO', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' });
 }
 
+function esVentana(){
+  return Number(($('esDias') || {}).value) || 180;
+}
+
 function esPintaPrevia(){
   const p = $('esPrevia'); if (!p) return;
   p.innerHTML = ES_FOTO
@@ -9153,7 +9165,7 @@ function esPintaPrevia(){
 async function esCuenta(silencioso){
   const s = $('esSalida'); if (!s) return null;
   if (!silencioso) s.innerHTML = '<p class="bajada">Contando…</p>';
-  const r = await llama({ action:'statusAudience' });
+  const r = await llama({ action:'statusAudience', dias: esVentana() });
   if (!r.ok) { s.innerHTML = '<p class="aviso">' + esc(r.error) + '</p>'; return null; }
   const d = r.data || {};
   const c = d.conteo || {};
@@ -9191,7 +9203,7 @@ async function esPublicaEstado(){
     + 'Dura 24 horas y no se le puede quitar a quien ya lo haya visto.'
     + '\n\n' + '¿Publicar?')) return;
   ir.disabled = true; ir.textContent = 'Publicando…';
-  const cuerpo = { action:'statusPost', audience: quien, text: texto };
+  const cuerpo = { action:'statusPost', audience: quien, text: texto, dias: esVentana() };
   if (ES_FOTO) {
     try {
       cuerpo.media_b64 = await leeBase64(ES_FOTO.blob);
@@ -9242,6 +9254,9 @@ function cableaPublicarEstado(){
   const ir = $('esIr'); if (!ir) return;
   ir.onclick = esPublicaEstado;
   $('esVer').onclick = () => esCuenta(false);
+  // Cambiar la ventana cambia la cifra que se acaba de leer: se vuelve a contar sola, que
+  // es mas seguro que dejar en pantalla un numero que ya no es el de la opcion elegida.
+  $('esDias').onchange = () => esCuenta(true);
   $('esFoto').onchange = async () => {
     const f = ($('esFoto').files || [])[0];
     ES_FOTO = f ? { blob:f, nombre:f.name, url:URL.createObjectURL(f) } : null;
