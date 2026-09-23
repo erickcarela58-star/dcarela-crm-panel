@@ -1,6 +1,6 @@
 {
-  "version": "2026-09-23-caja-y-contactos-v119",
+  "version": "2026-09-24-estados-y-panel-que-abre-v120",
   "channel": "crm",
-  "released_at": "2026-09-23T19:40:00Z",
-  "summary": "La caja y WhatsApp dejan de ser dos mundos: la ficha del chat dice quien es en la caja, su folio y lo que ha comprado (el saldo se sigue mirando en la caja). Los chats que ya dieron senal de ser clientes se guardan solos en Clientes de caja, y la agenda entera se baja en un .vcf para que WhatsApp ensene nombres y estados. Agendar pasa a la cabecera del chat, y cada recordatorio del iPhone lleva el telefono y el enlace que abre ESA conversacion."
+  "released_at": "2026-09-24T14:10:00Z",
+  "summary": "Arreglo urgente: v118 y v119 no abrian. El buscador de mensajes declaro un segundo fechaCorta en el mismo modulo, y dos declaraciones iguales son un SyntaxError que deja el panel entero sin ejecutar; ahora una prueba compila el panel de verdad antes de publicarlo. Ademas, los Estados de WhatsApp se publican desde el CRM: el Pack deja la foto en 1080x1920 y se publica sin pasar por el telefono, eligiendo si lo ven solo mis numeros, los clientes con movimiento o todos, con la cifra delante antes de confirmar."
 }
