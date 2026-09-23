@@ -2293,6 +2293,7 @@ function abre(c){
     +   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 8v.01M11 12h1v4h1"/></svg></button>'
     + '<div class="mas" id="mas"><button aria-label="Más opciones">⋯</button>'
     +   '<div class="menu"><button data-mas="recordar">Añadir recordatorio</button>'
+    +   '<button data-mas="contacto">Guardar contacto</button>'
     +   '<button data-mas="encuesta">Enviar encuesta</button>'
     +   '<button data-mas="asistente">Preguntar al asistente</button>'
     +   '<button data-mas="cerrar">Cerrar conversación</button></div></div>'
@@ -2505,6 +2506,7 @@ function cableaChat(c){
     // Abre un hilo del asistente sobre ESTE contacto. Es la unica forma en que el chat abierto
     // llega a Planificacion: abrir un chat ya no cambia el contacto de ningun hilo.
     if (b.dataset.mas === 'asistente') return preguntaAlAsistente(sel);
+    if (b.dataset.mas === 'contacto') return abreGuardarContacto(sel);
     if (b.dataset.mas === 'encuesta') { abreEncuesta(sel); } else {
       if (!confirm('¿Cerrar esta conversación?')) return;
       const r = await llama({ action:'updateLead', conversation_id: sel.id || sel._id,
@@ -9653,6 +9655,67 @@ function abreEncuesta(c){
 // Dos cosas distintas con la misma pantalla, porque en la practica son la misma:
 // acordarse de algo, o que el cliente reciba algo. La fecha se guarda en follow_up_at,
 // que es de donde sale la vista de Recordatorios y lo que mira el motor de seguimientos.
+/* ---- Guardar contacto ----------------------------------------------------- */
+// Una conversacion y un cliente eran dos mundos: el CRM sabia el telefono y el nombre, y la base
+// de clientes --la que llena la caja-- no se enteraba. Para apuntar a alguien como cliente habia
+// que escribirlo otra vez, a mano, en la caja.
+//
+// Lo que NO se puede hacer, y por eso no se promete: escribir en la agenda del telefono. Ni
+// Baileys ni la API oficial de WhatsApp lo permiten. El camino honesto es el de siempre --un
+// .vcf que se abre en el movil y entra en Contactos--, y entonces WhatsApp, que lee esa agenda,
+// enseña el nombre solo.
+function abreGuardarContacto(c){
+  if (!c) return;
+  if (ignorada(c)) return avisa('Esa conversación está ignorada',
+    'Déjala de ignorar antes de guardarla como cliente.');
+  const tel = String(c.wa_phone || '');
+  if (!tel) return avisa('Sin teléfono', 'Esta conversación no tiene un número con el que crear un cliente.');
+  const sugerido = c.customer_name || c.display_name || c.contact_name || '';
+  abreModal('<div class="mtapa"><b>Guardar contacto</b><button class="cerrarm" data-cerrar>×</button></div>'
+    + '<div class="mcuerpo">'
+    +   '<div class="campo"><label>Nombre</label><input id="gcNombre" maxlength="120" value="' + esc(sugerido) + '"></div>'
+    +   '<div class="dato"><div class="k">Teléfono</div><div class="v">+' + esc(tel) + '</div></div>'
+    +   '<p class="cfgnota">Se guarda en <b>Clientes de caja</b>, con este nombre y este teléfono. '
+    +     'Si ese número ya es cliente se actualiza el suyo, no se crea otro. <b>Su saldo y su '
+    +     'crédito no se tocan</b>: eso lo lleva la caja.</p>'
+    +   '<p class="cfgnota">WhatsApp no deja que un programa escriba en la agenda del teléfono. '
+    +     'Al guardar te bajas su tarjeta de contacto: la abres en el móvil, entra en Contactos y '
+    +     'WhatsApp enseña el nombre solo.</p>'
+    + '</div>'
+    + '<div class="mpie"><button class="btn-linea" data-cerrar>Cancelar</button>'
+    +   '<button class="btn-solido" id="gcGuardar">Guardar</button></div>');
+  const campo = $('gcNombre');
+  campo.focus();
+  $('gcGuardar').onclick = async ev => {
+    const nombre = campo.value.trim();
+    if (!nombre) { campo.focus(); return avisa('Falta el nombre', 'Sin nombre no se puede guardar el contacto.'); }
+    const boton = ev.currentTarget; boton.disabled = true;
+    const r = await llama({ action:'saveContact', conversation_id: c.id || c._id, nombre });
+    boton.disabled = false;
+    if (!r.ok) return avisa('No se pudo guardar', r.error);
+    cierraModal();
+    if (r.vcard) bajaVcard(r.vcard, nombre);
+    avisa(r.creado ? 'Cliente creado' : 'Cliente actualizado',
+      nombre + ' quedó en Clientes de caja. Te bajaste su tarjeta: ábrela en el teléfono para '
+      + 'que WhatsApp le ponga el nombre.');
+  };
+}
+
+// El .vcf. Se arma aqui con lo que devolvio el servidor: asi el archivo dice exactamente lo que
+// quedo guardado, y no lo que el navegador creia tener.
+function bajaVcard(texto, nombre){
+  try {
+    const url = URL.createObjectURL(new Blob([texto], { type: 'text/vcard;charset=utf-8' }));
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = (String(nombre || 'contacto').replace(/[^\wáéíóúñÁÉÍÓÚÑ -]/g, '').trim() || 'contacto') + '.vcf';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 4000);
+  } catch (error) { /* si el navegador lo bloquea, el cliente ya quedo guardado igual */ }
+}
+
 function abreRecordatorio(c){
   if (!c) return;
   const en = h => { const d = new Date(Date.now() + h*3600000); d.setMinutes(0,0,0); return d; };
