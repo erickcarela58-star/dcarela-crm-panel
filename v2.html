@@ -487,6 +487,7 @@ img.mmedia[data-medio]:not([src]),img.msticker[data-medio]:not([src]){
 .cita b{display:block;color:var(--ok);font-size:11px}
 .cita[data-cita]{cursor:pointer}
 .globo.resaltado{animation:resalta 1.4s ease-out}
+.cfgc.resaltado{outline:2px solid var(--ok);outline-offset:3px}
 @keyframes resalta{0%,60%{background:var(--ok);filter:brightness(1.12)}100%{}}
 .barra-cita{display:flex;align-items:center;gap:9px;padding:8px 14px;
   background:var(--panel);border-top:1px solid var(--line)}
@@ -5392,7 +5393,7 @@ function montaRecordatorios(){
       + '<p class="bajada" id="recIphoneEstado">Leyendo…</p>'
       + '<div class="filtros" style="padding:0 0 14px">'
       +   '<button class="btn-linea" id="recIphoneActualiza">Actualizar</button>'
-      +   '<button class="btn-linea" id="recIphoneComo">Cómo se conecta</button>'
+      +   '<button class="btn-linea" id="recIphoneComo">Conectar el iPhone</button>'
       + '</div>'
       + '<div id="recIphone"></div></div>');
     $('recProcesar').onclick = procesaRecordatorios;
@@ -5402,7 +5403,7 @@ function montaRecordatorios(){
       b.disabled = false;
       pintaRecordatorios();
     };
-    $('recIphoneComo').onclick = () => ve('config');
+    $('recIphoneComo').onclick = () => vaATarjetaCfg('cfgTarjetaIphone');
     // Se cablea una vez; despues cada accion repinta con lo que ya tiene en memoria.
     $('recIphone').addEventListener('click', accionTareaIphone);
     cargaTareasIphone().then(() => { if (vistaActual === 'reminders') pintaRecordatorios(); }).catch(() => {});
@@ -5461,7 +5462,8 @@ function pintaTareasIphone(){
     estado.textContent = !TAREAS_IPHONE_LEIDAS
       ? 'Leyendo…'
       : (!TAREAS_IPHONE.length
-        ? 'Todavía no ha llegado ningún recordatorio del iPhone. Se conecta desde Configuración.'
+        ? 'Todavía no ha llegado ningún recordatorio del iPhone. Pulsa «Conectar el iPhone»: '
+          + 'son dos minutos y no hace falta ninguna contraseña de Apple.'
         : TAREAS_IPHONE.length + ' tarea(s) sincronizadas, ' + vivas + ' sin terminar. '
           + 'Lo que se marque aquí se le pide al iPhone en su próxima ejecución.');
   }
@@ -6988,9 +6990,27 @@ async function guardaAjuste(clave, valor){
   return true;
 }
 
-function tarjetaCfg(titulo, nota, cuerpo){
-  return '<div class="cfgc"><h3>' + esc(titulo) + '</h3>'
+// El `ancla` es para poder traer a alguien A ESTA tarjeta desde otra pantalla. Configuracion
+// tiene quince tarjetas: dejar a alguien arriba del todo y que la busque es como no llevarlo.
+function tarjetaCfg(titulo, nota, cuerpo, ancla){
+  return '<div class="cfgc"' + (ancla ? ' id="' + esc(ancla) + '"' : '') + '><h3>' + esc(titulo) + '</h3>'
     + (nota ? '<p class="cfgnota">' + nota + '</p>' : '') + cuerpo + '</div>';
+}
+
+// Lleva a una tarjeta de Configuracion y la resalta. La vista se pinta sola y tarda (pide
+// ajustes, whoami y el estado de Google), asi que se espera a que exista en vez de dar por
+// hecho que ya esta.
+function vaATarjetaCfg(ancla){
+  ve('config');
+  let vueltas = 0;
+  const busca = () => {
+    const el = document.getElementById(ancla);
+    if (!el) { if (vueltas++ < 60) setTimeout(busca, 100); return; }
+    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    el.classList.add('resaltado');
+    setTimeout(() => el.classList.remove('resaltado'), 1800);
+  };
+  setTimeout(busca, 60);
 }
 // Interruptor con su explicacion al lado. Un interruptor suelto no dice que pasa al
 // encenderlo, y estos cambian lo que se le manda a clientes reales.
@@ -7302,20 +7322,20 @@ async function pintaConfig(){
         + 'se suscribe: se añade una vez y se actualiza solo, sin volver a importar nada. Google no lo refresca '
         + 'al instante --suele tardar unas horas en recoger un cambio--, así que el sitio donde '
         + 'se agenda sigue siendo el CRM; el calendario es para verlo desde el teléfono.',
-        agendaCfg())
+        agendaCfg(), 'cfgTarjetaAgenda')
 
     + tarjetaCfg('Recordatorios del iPhone',
         'Lo que apuntas en la app Recordatorios del iPhone entra aquí, y los seguimientos del CRM '
         + 'salen allí. No hace falta ninguna contraseña de Apple: el trabajo lo hace un Atajo del '
         + 'propio teléfono contra esta dirección. Lo sincronizado se ve en <b>Recordatorios</b>, '
         + 'debajo de los seguimientos del CRM.',
-        iphoneCfg())
+        iphoneCfg(), 'cfgTarjetaIphone')
 
     + tarjetaCfg('Tu Google Calendar dentro del CRM',
         'La otra dirección: lo que ya tienes apuntado en tu Google --un viaje, una boda de la familia, '
         + 'el dentista-- sale en la Agenda marcado en azul, de <b>solo lectura</b>. Así no se agenda una '
         + 'sesión encima de algo que ya estaba. Las sesiones se siguen creando aquí, no en Google.',
-        googleEnCrmCfg(esAdmin))
+        googleEnCrmCfg(esAdmin), 'cfgTarjetaGoogleEnCrm')
 
     + tarjetaCfg('Catálogo público',
         'De aquí salen los combos y los precios que se le mandan al cliente. Se lee de la web, '
