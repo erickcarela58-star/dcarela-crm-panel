@@ -30,6 +30,14 @@ window.CRM_CONFIG = window.DCARELA_CRM_CONFIG = {
   addressText: "Estamos en C/ Juan Pablo Duarte, esquina Freddy Prestol Castillo, Los Mulos, Piedra Linda, Villa Hermosa, La Romana.",
   mapsUrl: "https://maps.app.goo.gl/HwabKLVeUr7czfp16",
 
+  // Identificador PUBLICO de la Pagina de Facebook (D' Carela Compufoto). No es una credencial:
+  // cualquiera lo ve en la propia Pagina. Con el, los accesos del menu abren la bandeja de esta
+  // Pagina en Meta Business Suite; sin el, no se pintan accesos.
+  metaPageId: "278002815394052",
+  // Solo para arreglar una ruta sin republicar el panel: si Meta cambia una direccion de su
+  // bandeja, se pone aqui la buena y se publica solo este archivo. Vacio = las rutas por defecto.
+  metaInboxLinks: {},
+
   businessNumber: "18495245620",
   businessDisplayNumber: "849-524-5620",
   defaultView: "planning"
