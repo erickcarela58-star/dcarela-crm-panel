@@ -2258,13 +2258,17 @@ async function buscaEnLosMensajes(){
     + r.resultados.map(m => '<button class="resfila" data-resconv="' + esc(m.conversation_id) + '"'
       + (m.id ? ' data-resmsg="' + esc(m.id) + '"' : '') + '>'
       + '<span class="resquien">' + esc(m.contacto || 'Sin nombre')
-      +   '<i>' + esc(fechaCorta(m.created_at)) + '</i></span>'
+      +   '<i>' + esc(fechaDelResultado(m.created_at)) + '</i></span>'
       + '<span class="restexto">' + (m.direction === 'out' ? 'Tú: ' : '') + esc(m.texto) + '</span>'
       + '</button>').join('');
 }
 
 // Fecha corta para la lista de resultados. Sin ella, cada fila lleva un ISO de 24 caracteres.
-function fechaCorta(iso){
+//
+// NO se llama fechaCorta: ese nombre ya existe mas abajo, y dos declaraciones iguales en el
+// mismo modulo son un SyntaxError que deja el panel entero sin ejecutar. Paso de verdad entre
+// v118 y v120. Lo vigila test/v2-sintaxis.test.js.
+function fechaDelResultado(iso){
   const t = Date.parse(String(iso || ''));
   if (!Number.isFinite(t)) return '';
   return new Date(t).toLocaleDateString('es-DO', { day:'numeric', month:'short', year:'2-digit' });
@@ -8945,7 +8949,8 @@ function montaBroadcast(){
     // eso importa cuando son de una sesion de un cliente que no ha visto todavia.
     + '<div class="seccion" style="margin:34px 0 6px">Pack de Estados</div>'
     + '<p class="bajada">Deja las fotos a formato Estado de WhatsApp (1080×1920) con la marca '
-    +   'del estudio, listas para subir. Las fotos <b>no salen de este ordenador</b>.</p>'
+    + 'del estudio. Prepararlas pasa entero en este ordenador: <b>la foto no sale de aquí</b> '
+    +   'hasta que tú publiques una abajo, en Estados.</p>'
     + '<div class="par">'
     +   '<div class="campo"><label>Fotos</label><input id="pkFotos" type="file" accept="image/*" multiple></div>'
     +   '<div class="campo"><label>Encuadre</label><select id="pkModo">'
@@ -8956,7 +8961,32 @@ function montaBroadcast(){
     +   '<span><b>Poner la marca del estudio</b><i>Nombre y WhatsApp abajo.</i></span></label>'
     + '<div class="acciones"><button class="btn-solido" id="pkIr">Preparar</button>'
     +   '<button class="btn-linea" id="pkBajar" disabled>Descargar todas</button></div>'
-    + '<div id="pkSalida"></div></div>');
+    + '<div id="pkSalida"></div>'
+
+    // Publicar el Estado desde aqui. Antes habia que bajar la foto, pasarla al telefono y
+    // subirla a mano; era el ultimo motivo para abrir WhatsApp en el movil.
+    + '<div class="seccion" style="margin:34px 0 6px">Publicar en Estados</div>'
+    + '<p class="bajada">Sale del número del negocio y lo ve quien abra la pestaña de '
+    +   '<b>Estados</b> de WhatsApp. <b>No es un mensaje:</b> no suena, no entra en el chat de '
+    +   'nadie y no cuenta para la ventana de 24 horas. Los chats ignorados y quien pidió no '
+    +   'recibir nada quedan fuera siempre. Dura 24 horas y no se puede retirar de quien ya lo vio.</p>'
+    + '<div class="campo"><label>Texto</label>'
+    +   '<textarea id="esTexto" rows="3" placeholder="Lo que se lee en el estado"></textarea></div>'
+    + '<div class="par">'
+    +   '<div class="campo"><label>Foto (opcional)</label>'
+    +     '<input id="esFoto" type="file" accept="image/*"></div>'
+    +   '<div class="campo"><label>Quién lo ve</label><select id="esQuien">'
+    +     '<option value="prueba">Solo mis números (prueba)</option>'
+    +     '<option value="activos">Clientes con movimiento (180 días)</option>'
+    +     '<option value="todos">Todos los clientes</option>'
+    +   '</select></div>'
+    + '</div>'
+    + '<div id="esPrevia"></div>'
+    + '<div class="acciones"><button class="btn-linea" id="esDelPack">Usar la del Pack</button>'
+    +   '<button class="btn-linea" id="esVer">Ver a cuántos llega</button>'
+    +   '<button class="btn-solido" id="esIr">Publicar</button></div>'
+    + '<div id="esSalida"></div>'
+    + '<div id="esHistorial"></div></div>');
 
   $('bcModo').onchange = async () => {
     const plantilla = $('bcModo').value === 'template';
@@ -8981,6 +9011,7 @@ function montaBroadcast(){
   $('bcProposito').onchange = avisoProp;
   avisoProp();
   cableaPackEstados();
+  cableaPublicarEstado();
 }
 
 // ===== PACK DE ESTADOS =====
@@ -9085,6 +9116,147 @@ function cableaPackEstados(){
       a.href = x.url; a.download = 'estado-' + (i + 1) + '.jpg'; a.click();
     }, i * 350));
   };
+}
+
+// ===== PUBLICAR EN ESTADOS =====
+// El Pack ya dejaba la foto en formato de Estado; esto la publica sin pasar por el telefono.
+//
+// Lo publicado no se le puede quitar a quien ya lo vio, asi que el orden importa: se dice a
+// cuantos va ANTES de publicar, se pregunta, y la primera opcion de la lista es la prueba a
+// los numeros del dueno. La audiencia la arma el servidor (estados-core): aqui solo se elige
+// el grupo, nunca los telefonos.
+let ES_FOTO = null;
+const ES_ETIQUETAS = { prueba:'Solo mis números (prueba)', activos:'Clientes con movimiento',
+  todos:'Todos los clientes' };
+
+// Fecha Y hora: en un mismo dia se publica mas de un estado, y '23 sep' no dice cual es cual.
+function esCuando(v){
+  const t = Date.parse(String(v || ''));
+  if (!Number.isFinite(t)) return '';
+  return new Date(t).toLocaleString('es-DO', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' });
+}
+
+function esPintaPrevia(){
+  const p = $('esPrevia'); if (!p) return;
+  p.innerHTML = ES_FOTO
+    ? '<div class="destinos" style="margin:4px 0 10px"><img src="' + ES_FOTO.url + '" '
+      + 'style="width:78px;height:139px;object-fit:cover;border-radius:8px;'
+      + 'border:1px solid var(--line2)"><span class="bajada" style="align-self:center">'
+      + esc(ES_FOTO.nombre) + ' · <a href="#" id="esQuita">quitar</a></span></div>'
+    : '';
+  const q = $('esQuita');
+  if (q) q.onclick = (e) => { e.preventDefault(); ES_FOTO = null; esPintaPrevia(); };
+}
+
+// A cuantos llega cada opcion. No escribe ni manda nada: se puede pulsar las veces que haga
+// falta. Tambien dice si la linea esta lista, que es la otra mitad de por que no sale.
+async function esCuenta(silencioso){
+  const s = $('esSalida'); if (!s) return null;
+  if (!silencioso) s.innerHTML = '<p class="bajada">Contando…</p>';
+  const r = await llama({ action:'statusAudience' });
+  if (!r.ok) { s.innerHTML = '<p class="aviso">' + esc(r.error) + '</p>'; return null; }
+  const d = r.data || {};
+  const c = d.conteo || {};
+  const sel = $('esQuien');
+  if (sel) [...sel.options].forEach(o => {
+    const n = c[o.value] ? c[o.value].total : 0;
+    o.textContent = ES_ETIQUETAS[o.value] + (o.value === 'activos' ? ' (' + (d.dias || 180) + ' días)' : '')
+      + ' — ' + n + (n === 1 ? ' contacto' : ' contactos');
+  });
+  const recorte = c.todos && c.todos.recortado
+    ? '<p class="bajada">De « todos » entran los ' + c.todos.total + ' con movimiento más '
+      + 'reciente; ' + c.todos.recortado + ' se quedan fuera. Un estado se manda en una sola '
+      + 'operación con la lista dentro, y una lista sin tope la paga el número del negocio.</p>'
+    : '';
+  s.innerHTML = (d.listo
+    ? '<p class="bajada">Línea lista: ' + esc(d.linea || '') + '.</p>'
+    : '<p class="aviso">No se puede publicar ahora: ' + esc(d.motivo || 'la línea no está lista') + '</p>') + recorte;
+  return d;
+}
+
+async function esPublicaEstado(){
+  const ir = $('esIr');
+  const texto = ($('esTexto').value || '').trim();
+  if (!texto && !ES_FOTO) return avisa('Falta el estado', 'Escribe un texto o elige una foto.');
+  const quien = $('esQuien').value;
+  const d = await esCuenta(true);
+  if (!d) return;
+  if (!d.listo) return avisa('No se puede publicar', d.motivo || 'la línea no está lista');
+  const total = d.conteo && d.conteo[quien] ? d.conteo[quien].total : 0;
+  if (!total) return avisa('No hay a quién publicárselo', 'Esa opción no alcanza a nadie.');
+  // La cifra en la pregunta, no solo en la pantalla: es lo unico que separa una prueba de
+  // ensenarselo a todos los clientes del negocio.
+  if (!confirm('Se va a publicar en Estados para ' + total + ' contacto(s): '
+    + ES_ETIQUETAS[quien] + '.' + '\n\n'
+    + 'Dura 24 horas y no se le puede quitar a quien ya lo haya visto.'
+    + '\n\n' + '¿Publicar?')) return;
+  ir.disabled = true; ir.textContent = 'Publicando…';
+  const cuerpo = { action:'statusPost', audience: quien, text: texto };
+  if (ES_FOTO) {
+    try {
+      cuerpo.media_b64 = await leeBase64(ES_FOTO.blob);
+      cuerpo.media_mime = ES_FOTO.blob.type || 'image/jpeg';
+      // La miniatura se queda en la ficha cuando el archivo de transito se borre: es lo que
+      // deja ver despues QUE se publico sin guardar la foto en la nube.
+      const mini = await miniaturaParaEnviar(ES_FOTO.blob);
+      if (mini) cuerpo.media_thumb_b64 = mini;
+    } catch (e) {
+      ir.disabled = false; ir.textContent = 'Publicar';
+      return avisa('No se pudo leer la foto', String(e && e.message || e));
+    }
+  }
+  const r = await llama(cuerpo);
+  ir.disabled = false; ir.textContent = 'Publicar';
+  if (!r.ok) return avisa('No se pudo publicar', r.error);
+  const res = r.data || {};
+  avisa('Estado en camino', 'Sale para ' + res.total + ' contacto(s). Aparece abajo en cuanto el '
+    + 'puente lo publique; tarda unos segundos.');
+  $('esTexto').value = ''; ES_FOTO = null; esPintaPrevia();
+  setTimeout(esHistorialEstados, 3500);
+  esHistorialEstados();
+}
+
+// Lo ya publicado. Es la unica forma de saber si de verdad salio: el puente publica despues,
+// y un fallo suyo no llega al navegador por ningun otro camino.
+async function esHistorialEstados(){
+  const h = $('esHistorial'); if (!h) return;
+  const r = await llama({ action:'statusList' });
+  if (!r.ok) { h.innerHTML = ''; return; }
+  const filas = r.data || [];
+  if (!filas.length) { h.innerHTML = '<p class="bajada">Todavía no se ha publicado ningún estado desde aquí.</p>'; return; }
+  const COMO = { pending:'esperando al puente', sending:'saliendo…', sent:'publicado',
+    failed:'no salió', expired:'caducó sin publicarse' };
+  h.innerHTML = '<div class="seccion" style="margin:26px 0 6px">Últimos estados</div>'
+    + filas.map(f => '<div class="cfgc" style="margin:8px 0">'
+      + (f.media_thumb ? '<img src="' + esc(f.media_thumb) + '" style="float:left;width:44px;'
+        + 'height:78px;object-fit:cover;border-radius:6px;margin:0 10px 6px 0">' : '')
+      + '<b>' + esc(COMO[f.status] || f.status) + '</b>'
+      + '<p class="bajada" style="margin:4px 0 0">' + esc(f.body || '(sólo foto)') + '</p>'
+      + '<p class="bajada" style="margin:2px 0 0">' + esc(ES_ETIQUETAS[f.modo] || f.modo) + ' · '
+      + f.total + ' contacto(s) · ' + esc(esCuando(f.sent_at || f.created_at))
+      + (f.error ? ' · ' + esc(f.error) : '') + '</p>'
+      + '<div style="clear:both"></div></div>').join('');
+}
+
+function cableaPublicarEstado(){
+  const ir = $('esIr'); if (!ir) return;
+  ir.onclick = esPublicaEstado;
+  $('esVer').onclick = () => esCuenta(false);
+  $('esFoto').onchange = async () => {
+    const f = ($('esFoto').files || [])[0];
+    ES_FOTO = f ? { blob:f, nombre:f.name, url:URL.createObjectURL(f) } : null;
+    esPintaPrevia();
+  };
+  // La del Pack ya viene en 1080x1920 y con la marca del estudio: es la que hay que publicar,
+  // no la foto original, que WhatsApp recorta por donde le parece.
+  $('esDelPack').onclick = () => {
+    const p = PK_HECHAS[0];
+    if (!p) return avisa('No hay ninguna preparada', 'Prepara una foto arriba, en Pack de Estados.');
+    ES_FOTO = { blob:p.blob, nombre:'estado-1.jpg', url:URL.createObjectURL(p.blob) };
+    esPintaPrevia();
+  };
+  esCuenta(true);
+  esHistorialEstados();
 }
 
 async function llenaPlantillasBc(){
