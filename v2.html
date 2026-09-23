@@ -2391,6 +2391,46 @@ function pintaChats(){
   resuelveAvatares();
 }
 
+// ===== «ESCRIBIENDO…» HACIA EL CLIENTE =====
+//
+// Lo que el cliente nota al dejar WhatsApp Web. Se avisa mientras se teclea --una vez cada
+// cuatro segundos, no en cada tecla-- y se apaga al enviar, al vaciar la caja y al cambiar de
+// conversacion. Si el navegador se cierra a mitad de una frase no llega ningun apagado, y por
+// eso el puente lo apaga solo a los veinte segundos: nadie se queda «escribiendo…» eternamente.
+//
+// Solo por WhatsApp Web: en Instagram y Messenger esto no existe, y por el numero oficial la
+// API no lo permite. El servidor manda de verdad --tiene el interruptor y el estado de la
+// linea--; aqui se cortan las llamadas que se sabe que no valen.
+const ESCRIBIENDO_CADA_MS = 4000;
+let ESCRIBIENDO = { conv:'', en:0 };
+
+function avisaEscribiendo(c, hayTexto){
+  const id = c && (c.id || c._id);
+  if (!id || canalDe(c) !== 'whatsapp_qr') return;
+  if (AJUSTES.escribiendo === 'false') return;
+  const ahora = Date.now();
+  if (!hayTexto) {
+    if (ESCRIBIENDO.conv !== id) return;
+    ESCRIBIENDO = { conv:'', en:0 };
+    llama({ action:'typing', conversation_id:id, state:'paused' }).catch(() => {});
+    return;
+  }
+  if (ESCRIBIENDO.conv === id && ahora - ESCRIBIENDO.en < ESCRIBIENDO_CADA_MS) return;
+  ESCRIBIENDO = { conv:id, en:ahora };
+  // Sin avisar de un fallo: es un adorno. Si no llega, el cliente no ve «escribiendo…» y ya;
+  // un aviso de error por esto taparia los que si importan.
+  llama({ action:'typing', conversation_id:id, state:'composing' }).catch(() => {});
+}
+
+// Al dejar un chat se apaga el de ese chat, no el nuevo: si no, el cliente anterior se queda
+// viendo «escribiendo…» hasta que el puente lo caduque.
+function apagaEscribiendo(){
+  const id = ESCRIBIENDO.conv;
+  if (!id) return;
+  ESCRIBIENDO = { conv:'', en:0 };
+  llama({ action:'typing', conversation_id:id, state:'paused' }).catch(() => {});
+}
+
 function abre(c){
   if (!c) return;
   // Cortar la grabacion ANTES de cambiar de chat. El encoder termina en asincrono y su
@@ -2398,6 +2438,7 @@ function abre(c){
   // conversacion, la nota de voz sale hacia el cliente equivocado. Lo mismo con la cola
   // de adjuntos y la cita: son de la conversacion que se esta dejando atras.
   abortaGrabacion();
+  apagaEscribiendo();
   COLA.length = 0;
   citando = null;
   sel = c;
@@ -2663,6 +2704,7 @@ function cableaChat(c){
   caja.addEventListener('input', () => {
     caja.style.height = 'auto';
     caja.style.height = Math.min(caja.scrollHeight, 150) + 'px';
+    avisaEscribiendo(sel, !!caja.value.trim());
   });
   caja.addEventListener('keydown', e => {
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); env.click(); }
@@ -2751,6 +2793,9 @@ function cableaChat(c){
       // Con el codigo: el servidor dice si es otra linea, la PC, la pausa o el modo seguro.
       if (falloQr) return avisa('No se pudo enviar', traduceErrorMeta(falloQr.error, falloQr.code));
       caja.value = ''; caja.style.height = 'auto';
+      // El mensaje ya salio: dejar el «escribiendo…» encendido despues de enviarlo es
+      // justo lo que hace que el cliente se quede esperando otra cosa.
+      apagaEscribiendo();
       cancelaCita();
       return;
     }
@@ -7492,6 +7537,15 @@ async function pintaConfig(){
         interruptorCfg('redes_sociales_activas', 'Instagram y Messenger dentro del CRM',
           'Encendido vuelven a la bandeja. Tras encenderlo, pulsa «Importar historial» en Canales: '
           + 'la importación automática estuvo en pausa.', false))
+
+    + tarjetaCfg('Cómo te ve el cliente',
+        'Detalles de la línea de WhatsApp Web que el cliente sí nota. No mandan ningún mensaje '
+        + 'ni gastan cupo de envío.',
+        interruptorCfg('escribiendo', 'Que el cliente vea «escribiendo…»',
+          'Mientras escribes en un chat de WhatsApp Web, al cliente le sale «escribiendo…», igual '
+          + 'que cuando contestabas desde WhatsApp Web. Se apaga solo al enviar, al borrar lo '
+          + 'escrito o a los 20 segundos. Apágalo si prefieres que no se sepa cuándo estás '
+          + 'respondiendo.', true))
 
     + tarjetaCfg('Límites de seguridad del 2.º número',
         'La línea de WhatsApp Web es un WhatsApp personal, no una API: si WhatsApp lo ve enviar en '
