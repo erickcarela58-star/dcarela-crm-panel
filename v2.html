@@ -487,6 +487,21 @@ img.mmedia[data-medio]:not([src]),img.msticker[data-medio]:not([src]){
 .cita b{display:block;color:var(--ok);font-size:11px}
 .cita[data-cita]{cursor:pointer}
 .globo.resaltado{animation:resalta 1.4s ease-out}
+/* Los resultados de buscar dentro de los mensajes, encima de la lista de chats. */
+.cabeza #buscaMsgs{margin-left:7px;border:1px solid var(--line);background:var(--panel);
+  color:var(--texto);border-radius:6px;padding:6px 10px;font-size:12.5px;cursor:pointer;white-space:nowrap}
+.cabeza #buscaMsgs[hidden]{display:none}
+.resbusca{max-height:52vh;overflow-y:auto;border-bottom:1px solid var(--line);background:var(--panel)}
+.rescab{padding:8px 13px;font-size:11.5px;text-transform:uppercase;letter-spacing:.05em;
+  color:var(--meta);border-bottom:1px solid var(--line)}
+.resvacio{padding:14px 13px;font-size:13px;color:var(--meta)}
+.resfila{display:block;width:100%;text-align:left;border:0;border-bottom:1px solid var(--line);
+  background:transparent;color:var(--texto);padding:9px 13px;cursor:pointer;font:inherit}
+.resfila:hover{background:var(--fondo)}
+.resquien{display:flex;justify-content:space-between;gap:8px;font-size:13px;font-weight:600}
+.resquien i{font-style:normal;font-weight:400;font-size:11.5px;color:var(--meta)}
+.restexto{display:block;font-size:12.5px;color:var(--meta);margin-top:2px;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .cfgc.resaltado{outline:2px solid var(--ok);outline-offset:3px}
 @keyframes resalta{0%,60%{background:var(--ok);filter:brightness(1.12)}100%{}}
 .barra-cita{display:flex;align-items:center;gap:9px;padding:8px 14px;
@@ -1805,15 +1820,37 @@ function montaConversaciones(){
   montadas.add('conversations');
   hueco('conversations',
     '<div class="lista">'
-    + '<div class="cabeza"><input id="buscaChat" placeholder="Buscar conversación…"></div>'
+    + '<div class="cabeza"><input id="buscaChat" placeholder="Buscar conversación o mensaje…">'
+    +   '<button id="buscaMsgs" title="Buscar dentro de los mensajes" hidden>En los mensajes</button></div>'
     + '<div class="filtros" id="filtros"></div>'
+    + '<div class="resbusca" id="resBusca" hidden></div>'
     + '<div class="barra-lote" id="barraLote" hidden></div>'
     + '<div class="chats" id="chats"></div>'
     + '</div>'
     + '<div class="conversacion" id="conversacion" style="display:none"></div>'
     + '<div class="vacio" id="sinChat">Selecciona una conversación para verla.</div>'
     + '<aside class="ficha" id="ficha" style="display:none"></aside>');
-  $('buscaChat').addEventListener('input', pintaChats);
+  $('buscaChat').addEventListener('input', () => {
+    // El boton solo aparece cuando hay algo que buscar: buscar en los mensajes cuesta una
+    // lectura por mensaje de la ventana, asi que no se dispara mientras se escribe.
+    const t = $('buscaChat').value.trim();
+    $('buscaMsgs').hidden = t.length < 3;
+    if (!t) cierraBusquedaMensajes();
+    pintaChats();
+  });
+  $('buscaChat').addEventListener('keydown', ev => { if (ev.key === 'Enter') buscaEnLosMensajes(); });
+  $('buscaMsgs').onclick = buscaEnLosMensajes;
+  $('resBusca').addEventListener('click', ev => {
+    const fila = ev.target.closest('[data-resconv]');
+    if (!fila) return;
+    const c = buscaConv(fila.dataset.resconv);
+    if (!c) return avisa('No encuentro ese chat', 'Puede que ya no exista o que se haya archivado.');
+    cierraBusquedaMensajes();
+    abre(c);
+    // Y se salta al mensaje, si esta entre los que carga el hilo.
+    const id = fila.dataset.resmsg;
+    if (id) setTimeout(() => saltaAlMensaje(id), 400);
+  });
   $('filtros').addEventListener('click', async ev => {
     // La x va ANTES que el filtro: esta dentro del boton, asi que sin cortar aqui quitar una
     // etiqueta la seleccionaria de paso, y la barra se repintaria con el filtro puesto en una
@@ -2155,6 +2192,62 @@ function filtradas(){
     return (nombreDe(c) + ' ' + (c.wa_phone||'') + ' ' + (c.last_message_preview||'')).toLowerCase().includes(t);
   });
 }
+/* ---- Buscar dentro de los mensajes --------------------------------------- */
+// El buscador de la bandeja mira nombre, telefono y la ultima vista previa. Con 11.000 mensajes
+// eso deja fuera casi todo: "a quien le mande el combo de bodas" no se encontraba de ninguna
+// manera, y en WhatsApp Web si. Esto lo resuelve el servidor, porque Firestore no sabe buscar
+// "contiene" y hay que leer una ventana de mensajes y filtrarla alli.
+function cierraBusquedaMensajes(){
+  const c = $('resBusca'); if (!c) return;
+  c.hidden = true;
+  c.innerHTML = '';
+}
+
+async function buscaEnLosMensajes(){
+  const texto = ($('buscaChat')?.value || '').trim();
+  const caja = $('resBusca'); if (!caja) return;
+  if (texto.length < 3) return cierraBusquedaMensajes();
+  const boton = $('buscaMsgs');
+  if (boton) boton.disabled = true;
+  caja.hidden = false;
+  caja.innerHTML = '<div class="resvacio"><span class="cargando"></span> Buscando en los mensajes…</div>';
+  const r = await llama({ action:'searchMessages', texto });
+  if (boton) boton.disabled = false;
+  if (!r.ok) { caja.innerHTML = '<div class="resvacio">' + esc(r.error || 'No se pudo buscar') + '</div>'; return; }
+  if (!r.resultados || !r.resultados.length) {
+    // Se dice CUANTO se miro: "no hay nada" y "no hay nada en los ultimos 6.000" no son lo mismo,
+    // y con lo segundo el dueno sabe que el mensaje puede estar mas atras.
+    caja.innerHTML = '<div class="resvacio">Sin resultados'
+      + (r.mirados ? ' en los últimos ' + r.mirados.toLocaleString('es-DO') + ' mensajes.' : '.') + '</div>';
+    return;
+  }
+  caja.innerHTML = '<div class="rescab">' + r.resultados.length + ' mensaje(s) en '
+    + r.conversaciones + ' conversación(es)</div>'
+    + r.resultados.map(m => '<button class="resfila" data-resconv="' + esc(m.conversation_id) + '"'
+      + (m.id ? ' data-resmsg="' + esc(m.id) + '"' : '') + '>'
+      + '<span class="resquien">' + esc(m.contacto || 'Sin nombre')
+      +   '<i>' + esc(fechaCorta(m.created_at)) + '</i></span>'
+      + '<span class="restexto">' + (m.direction === 'out' ? 'Tú: ' : '') + esc(m.texto) + '</span>'
+      + '</button>').join('');
+}
+
+// Fecha corta para la lista de resultados. Sin ella, cada fila lleva un ISO de 24 caracteres.
+function fechaCorta(iso){
+  const t = Date.parse(String(iso || ''));
+  if (!Number.isFinite(t)) return '';
+  return new Date(t).toLocaleDateString('es-DO', { day:'numeric', month:'short', year:'2-digit' });
+}
+
+// Saltar al mensaje dentro del hilo, si esta entre los que se cargaron. Si no, no se hace nada:
+// el chat ya esta abierto, que es el 90 % de lo que se venia a hacer.
+function saltaAlMensaje(id){
+  const globo = document.querySelector('.globo[data-msg="' + CSS.escape(String(id)) + '"]');
+  if (!globo) return;
+  globo.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  globo.classList.add('resaltado');
+  setTimeout(() => globo.classList.remove('resaltado'), 1400);
+}
+
 function pintaChats(){
   const cont = $('chats'); if (!cont) return;
   // Las cuentas cuentan lo MISMO que se ve. Un filtro que dice 12 y abre 8 se lee como
