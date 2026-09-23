@@ -1,6 +1,6 @@
 {
-  "version": "2026-09-23-atajo-minimo-v117",
+  "version": "2026-09-23-busca-mensajes-v118",
   "channel": "crm",
-  "released_at": "2026-09-23T16:00:00Z",
-  "summary": "La guia del Atajo abre con la version corta: cuatro acciones para ver los seguimientos del CRM en el iPhone, sin tener que bajar ninguna proteccion del telefono. iOS no instala atajos que no haya firmado Apple, y firmar uno exige un Mac."
+  "released_at": "2026-09-23T16:10:00Z",
+  "summary": "Buscar DENTRO de los mensajes. El buscador miraba nombre, telefono y la ultima vista previa; ahora encuentra \"el combo de bodas\" o \"el abono\" en los 11.000 mensajes, dice de quien es cada resultado y al pulsarlo abre el chat y salta al mensaje. Las ignoradas no salen."
 }
