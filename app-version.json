@@ -1,6 +1,6 @@
 {
-  "version": "2026-09-23-respuesta-citada-v113",
+  "version": "2026-09-23-guardar-contacto-v114",
   "channel": "crm",
-  "released_at": "2026-09-23T07:10:00Z",
-  "summary": "Las respuestas citadas se ven y se puede saltar al mensaje original. Y desde Recordatorios, el boton «Conectar el iPhone» lleva a su tarjeta exacta de Configuracion y la resalta, en vez de dejar al dueno arriba de una pantalla con quince tarjetas."
+  "released_at": "2026-09-23T07:45:00Z",
+  "summary": "Guardar contacto: desde el menu del chat, el cliente queda en la base de Clientes con su nombre y telefono --sin tocar su saldo ni su credito, que son de la caja-- y se baja su tarjeta .vcf para meterla en la agenda del telefono, que es como WhatsApp le pone el nombre. Ademas, las respuestas citadas y el acceso directo a la tarjeta de Recordatorios del iPhone."
 }
