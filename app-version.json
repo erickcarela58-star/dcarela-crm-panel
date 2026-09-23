@@ -1,6 +1,6 @@
 {
-  "version": "2026-09-22-mensajes-medios-historial-v110",
+  "version": "2026-09-23-asistente-ignorados-redes-agenda-v111",
   "channel": "crm",
-  "released_at": "2026-09-22T12:00:00Z",
-  "summary": "Mensajes que no se veian (albumes, ediciones, borrados), envio rapido, ventana de 24 h solo en el oficial, panel en vivo, fotos de perfil 300/dia, historial solo texto por lotes y fotos y documentos bajo demanda sin guardarse en la nube."
+  "released_at": "2026-09-23T05:00:00Z",
+  "summary": "Planificacion como asistente que conversa, contactos ignorados sin borrar nada, analisis de conversaciones con etiquetas y resumen, Instagram y Messenger ocultos con acceso a Meta Business Suite, el Google Calendar del dueno dentro de la Agenda, Recordatorios del iPhone en los dos sentidos, aviso de mensaje nuevo en la linea de WhatsApp Web y mensajes de chats LID que ya no se pierden."
 }
