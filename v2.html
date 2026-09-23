@@ -878,6 +878,12 @@ img.mmedia[data-medio]:not([src]),img.msticker[data-medio]:not([src]){
 .cerrarm:hover{color:var(--fg)}
 .mcuerpo{flex:1;overflow-y:auto;padding:15px 18px}
 .mpatas{display:flex;justify-content:flex-end;gap:9px;padding:13px 18px;border-top:1px solid var(--line)}
+/* Lo que conviene saber antes de pulsar, en renglones cortos. Tres parrafos grises seguidos
+   no se leen: se saltan, que es lo mismo que no haberlos escrito. */
+.mlista{margin:14px 0 0;padding:0;list-style:none;display:grid;gap:8px}
+.mlista li{position:relative;padding-left:18px;font-size:12.5px;color:var(--meta);line-height:1.5}
+.mlista li::before{content:'';position:absolute;left:3px;top:7px;width:6px;height:6px;
+  border-radius:50%;background:var(--ok)}
 .tpl{display:block;width:100%;text-align:left;padding:11px 13px;margin-bottom:8px;
   border:1px solid var(--line);border-radius:var(--r2)}
 .tpl:hover{background:var(--hover);border-color:var(--line2)}
@@ -3395,6 +3401,12 @@ function abreModal(html){
   m.className = 'modal on';
   m.innerHTML = '<div class="caja">' + html + '</div>';
   m.onclick = ev => { if (ev.target === m) cierraModal(); };
+  // Cerrar por defecto TODO lo que lleve data-cerrar. Antes lo cableaba cada cuadro por su
+  // cuenta --diecinueve veces la misma linea-- y el que se olvidaba salia con un «Cancelar» que
+  // no hacia nada: el dueño lo pulsaba y el cuadro se quedaba ahi. Quien necesite otra cosa al
+  // cancelar (devolver null a una promesa, por ejemplo) lo sigue pudiendo pisar despues, porque
+  // su asignacion corre cuando esta ya se hizo.
+  m.querySelectorAll('[data-cerrar]').forEach(b => { b.onclick = cierraModal; });
   return m;
 }
 function cierraModal(){ const m = $('modal'); if (m) m.className = 'modal'; }
@@ -4262,9 +4274,24 @@ function pesoLegible(n){
   while (n >= 1024 && i < u.length - 1) { n /= 1024; i++; }
   return n.toFixed(i ? 1 : 0) + ' ' + u[i];
 }
-function tarjetaArchivo(a, etiqueta){
+// De un mensaje traido por la sincronizacion del historial no se bajo el archivo A PROPOSITO:
+// el dueno pidio que el historial viejo entrara SOLO como texto para no llenar la nube. Ese
+// archivo no se perdio --sigue en el telefono, en el chat de WhatsApp-- y decirle "no se
+// guardo", igual que a los de antes del 09/09/2026, se lee como una averia. Son dos cosas
+// distintas y ahora se dicen distinto.
+function esDelHistorial(m){
+  let meta = m && m.metadata;
+  if (typeof meta === 'string') { try { meta = JSON.parse(meta); } catch (e) { meta = null; } }
+  return !!(meta && typeof meta === 'object' && meta.whatsapp_history_sync);
+}
+function tarjetaArchivo(a, etiqueta, m){
   const nombre = a.nombre || etiqueta;
   const detalle = [a.mime, pesoLegible(a.peso)].filter(Boolean).join(' · ');
+  if (!a.url && esDelHistorial(m)) {
+    return '<div class="marchivo"><b>' + esc(nombre) + '</b>'
+      + '<span>' + esc(detalle ? detalle + ' · ' : '') + 'solo se trajo el texto; el archivo sigue en el teléfono'
+      + '</span></div>';
+  }
   // Sin url no se inventa un enlace roto, y se dice lo que de verdad pasa. Llegar aqui
   // significa que el mensaje no trae ni enlace ni id: el archivo no existe en ningun sitio,
   // no es que no se encuentre. Le pasa a todo lo que entro antes del 09/09/2026 --hasta ese
@@ -4441,7 +4468,7 @@ function cuerpoMensaje(m){
   // pulsa Ver. Abrir un chat de 400 mensajes bajaba antes todas sus fotos, una a una.
   const medio = (etiqueta, html) => bajo ? tarjetaBajoDemanda(m, a, etiqueta)
     : a.url ? html(esc(a.url))
-    : id ? html('', true) : tarjetaArchivo(a, etiqueta);
+    : id ? html('', true) : tarjetaArchivo(a, etiqueta, m);
 
   // Mensaje con botones de accion. El servidor lo guarda como 'interactive', y sin esta
   // rama caia al final de la funcion -- que solo pinta texto. Resultado: en el historial
@@ -4512,7 +4539,7 @@ function cuerpoMensaje(m){
     const cuerpo = bajo ? reproductor(' data-bajo="' + esc(String(m.id || '')) + '"')
       : (a.url ? reproductor(' data-src="' + esc(a.url) + '"')
         : id ? reproductor(' data-medio-audio="' + esc(id) + '"')
-        : tarjetaArchivo(a, 'Nota de voz'));
+        : tarjetaArchivo(a, 'Nota de voz', m));
     return cuerpo + (trans ? '<div class="mpie">“' + esc(trans) + '”</div>' : '');
   }
   if (t === 'document' || t === 'file') {
@@ -4521,7 +4548,7 @@ function cuerpoMensaje(m){
     if (!a.url && id) return '<div class="marchivo"><b>' + esc(a.nombre || m.media_filename || 'Documento') + '</b>'
       + '<span>' + esc(m.media_mime || a.mime || 'archivo') + '</span>'
       + '<button data-descarga="' + esc(id) + '" data-nombre="' + esc(a.nombre || m.media_filename || 'archivo') + '">Descargar</button></div>' + pie;
-    return tarjetaArchivo(a, 'Archivo') + pie;
+    return tarjetaArchivo(a, 'Archivo', m) + pie;
   }
 
   return esc(m.body || '');
@@ -7088,6 +7115,7 @@ function iphoneCfg(){
     + '<div class="v" style="word-break:break-all;font-size:11.5px">' + esc(urlRecordatoriosIphone()) + '</div></div>'
     + '<button class="btn-linea" id="cfgIphoneCopia" style="margin-top:8px">Copiar dirección</button>'
     + '<button class="btn-linea" id="cfgIphoneProbar" style="margin-top:8px">Probarla ahora</button>'
+    + '<button class="btn-solido" id="cfgIphoneGuia" style="margin-top:8px">Abrir la guía paso a paso</button>'
     // Quien tenga la direccion ve los seguimientos del negocio. Una URL compartida no se
     // puede "desenviar": lo unico que retira el acceso es cambiar la llave.
     + '<button class="btn-linea" id="cfgIphoneRota" style="margin-top:8px">Cambiar la llave</button>'
@@ -7514,6 +7542,15 @@ async function pintaConfig(){
     if (!ok) { ia.disabled = false; return; }
     avisa('Conexión activada', 'Ya se puede montar el Atajo en el iPhone.');
     pintaConfig();
+  };
+  // La guia va en su propia pagina, con la direccion y el nombre de la lista ya puestos. Viajan
+  // en el FRAGMENTO (#), que el navegador no manda a ningun servidor: esa direccion lleva la
+  // llave dentro y no puede acabar en los registros de GitHub Pages.
+  const ig = $('cfgIphoneGuia');
+  if (ig) ig.onclick = () => {
+    const u = urlRecordatoriosIphone();
+    if (!u) return avisa('Todavía no hay dirección', 'Activa primero la conexión con el iPhone.');
+    window.open('./atajo-iphone.html#' + encodeURIComponent(u + '|' + LISTA_IPHONE), '_blank', 'noopener');
   };
   const ic2 = $('cfgIphoneCopia');
   if (ic2) ic2.onclick = async () => {
@@ -9675,14 +9712,14 @@ function abreGuardarContacto(c){
     + '<div class="mcuerpo">'
     +   '<div class="campo"><label>Nombre</label><input id="gcNombre" maxlength="120" value="' + esc(sugerido) + '"></div>'
     +   '<div class="dato"><div class="k">Teléfono</div><div class="v">+' + esc(tel) + '</div></div>'
-    +   '<p class="cfgnota">Se guarda en <b>Clientes de caja</b>, con este nombre y este teléfono. '
-    +     'Si ese número ya es cliente se actualiza el suyo, no se crea otro. <b>Su saldo y su '
-    +     'crédito no se tocan</b>: eso lo lleva la caja.</p>'
-    +   '<p class="cfgnota">WhatsApp no deja que un programa escriba en la agenda del teléfono. '
-    +     'Al guardar te bajas su tarjeta de contacto: la abres en el móvil, entra en Contactos y '
-    +     'WhatsApp enseña el nombre solo.</p>'
+    +   '<ul class="mlista">'
+    +     '<li>Va a <b>Clientes de caja</b>. Si ese número ya es cliente, se actualiza el suyo.</li>'
+    +     '<li><b>Su saldo y su crédito no se tocan</b>: eso lo lleva la caja.</li>'
+    +     '<li>Te bajas su tarjeta <b>.vcf</b>. Ábrela en el móvil y WhatsApp le pone el nombre solo: '
+    +       'ningún programa puede escribir en la agenda del teléfono.</li>'
+    +   '</ul>'
     + '</div>'
-    + '<div class="mpie"><button class="btn-linea" data-cerrar>Cancelar</button>'
+    + '<div class="mpatas"><button class="btn-linea" data-cerrar>Cancelar</button>'
     +   '<button class="btn-solido" id="gcGuardar">Guardar</button></div>');
   const campo = $('gcNombre');
   campo.focus();
