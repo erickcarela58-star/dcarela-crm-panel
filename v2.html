@@ -1618,6 +1618,7 @@ function escuchaConversaciones(){
     // La conversacion abierta es una copia: sin esto, la foto de perfil que acaba de guardar el
     // puente, el nombre corregido o el paso a atencion humana no se veian hasta cambiar de chat.
     refrescaSeleccion();
+    abreChatDeLaUrl();
     marcaEstado(true, 'Datos sincronizados · en vivo');
     if (vistaActual === 'conversations') pintaChats();
     if (vistaActual === 'funnel') { pintaKanban(); pintaMovilizacion(); }
@@ -2132,6 +2133,37 @@ function buscaConv(id){
   return CONVS.find(igual) || CONVS_OCULTAS.find(igual)
     || CONVS_REDES.find(igual) || CONVS_IGNORADAS.find(igual);
 }
+
+// Abrir un chat concreto desde fuera: ?chat=<id>. Es lo que convierte un recordatorio del
+// iPhone --o un enlace pegado en cualquier sitio-- en "llevame a ESA conversacion" en vez de
+// "abre el CRM y busca a ver". Sin esto, el recordatorio decia el nombre y tocaba buscarlo a
+// mano en una bandeja de 946 chats.
+//
+// Se intenta en cada llegada de datos, pero solo durante el primer medio minuto: antes no hay
+// a quien abrir, y media hora despues seria arrancarle el chat de delante a quien ya esta
+// trabajando en otro.
+let CHAT_URL_PENDIENTE = (() => {
+  try { return new URLSearchParams(location.search).get('chat') || ''; } catch (e) { return ''; }
+})();
+const CHAT_URL_LIMITE = Date.now() + 30000;
+function abreChatDeLaUrl(){
+  if (!CHAT_URL_PENDIENTE) return;
+  if (Date.now() > CHAT_URL_LIMITE) { CHAT_URL_PENDIENTE = ''; return; }
+  // buscaConv mira los cuatro cubos: tambien se llega asi a una oculta o a una ignorada, que es
+  // justo cuando mas cuesta encontrarla a mano.
+  const c = buscaConv(CHAT_URL_PENDIENTE);
+  if (!c) return;
+  CHAT_URL_PENDIENTE = '';
+  ve('conversations');
+  abre(c);
+  // Y se quita el parametro de la barra: recargar la pagina dos horas despues no puede volver a
+  // saltar al chat de un recordatorio ya atendido.
+  try {
+    const u = new URL(location.href);
+    u.searchParams.delete('chat');
+    history.replaceState(null, '', u.pathname + u.search + u.hash);
+  } catch (e) { /* si el navegador no deja tocar la barra, el chat ya quedo abierto */ }
+}
 const MOTIVO_PAUSA = {
   vinculacion: 'Se pausaron solos al vincular la línea y se reanudan cuando la conexión queda estable.',
   manual: 'Los pausó una persona desde el panel.',
@@ -2390,6 +2422,11 @@ function abre(c){
     + '<button class="modo" id="btnModo"></button>'
     + '<button class="adj" id="verFicha" title="Ficha del lead" aria-label="Ficha del lead">'
     +   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 8v.01M11 12h1v4h1"/></svg></button>'
+    // Agendar es lo que mas se hace desde un chat y estaba escondido dentro del menu de los
+    // tres puntos, a dos clics. Arriba, al lado de la ficha, se pulsa sin buscarlo: es el mismo
+    // cuadro de siempre, no una funcion nueva.
+    + '<button class="adj" id="btnAgendar" title="Agendar un recordatorio" aria-label="Agendar">'
+    +   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4M16 3v4M3 11h18M8 15h3"/></svg></button>'
     + '<div class="mas" id="mas"><button aria-label="Más opciones">⋯</button>'
     +   '<div class="menu"><button data-mas="recordar">Añadir recordatorio</button>'
     +   '<button data-mas="contacto">Guardar contacto</button>'
@@ -2613,6 +2650,8 @@ function cableaChat(c){
       avisa(r.ok ? 'Conversación cerrada' : 'No se pudo cerrar', r.ok ? '' : r.error);
     }
   };
+  const agendar = $('btnAgendar');
+  if (agendar) agendar.onclick = () => abreRecordatorio(sel);
   cableaAdjuntos();
   cancelaCita();
   $('citaX').onclick = cancelaCita;
@@ -4851,6 +4890,8 @@ function pintaFicha(c){
 
     + grupoAnalisisFicha(c)
 
+    + grupoCajaFicha(c)
+
     + '<details class="grupo"><summary>Datos del lead <span class="nota">+' + esc(c.wa_phone||'') + '</span></summary>'
     + '<div class="dentro">'
     +   '<div class="campo"><label>Nombre</label><input data-c="customer_name" value="' + esc(c.customer_name || c.contact_name || '') + '"></div>'
@@ -4954,6 +4995,7 @@ function pintaFicha(c){
   cableaNotas(c);
   cableaHistorial(c);
   cableaAnalisisFicha(c);
+  cableaCajaFicha(c);
   cableaIgnorarFicha(c);
   $('cerrarFicha').onclick = () => { $('ficha').classList.remove('on'); $('ficha').style.display = 'none'; };
   const ver = $('verFicha');
@@ -7529,6 +7571,39 @@ async function pintaConfig(){
         + 'ignoradas nunca se mandan. El servidor pone tope por día y por minuto.',
         analisisCfg())
 
+    + tarjetaCfg('Guardar contactos solo',
+        'Cada madrugada, los chats que ya dieron señal de ser clientes —eligieron un paquete, '
+        + 'tienen fecha, pasaron de «nuevo» en el embudo o ya compraron en la caja— se guardan '
+        + 'en <b>Clientes de caja</b> con su nombre y su teléfono. <b>No entra todo el que '
+        + 'escribió</b>: los 758 chats que nunca pasaron de «nuevo» dejarían la base de clientes '
+        + 'inservible para buscar. Las ignoradas no entran nunca. El saldo y el crédito no se '
+        + 'tocan.<br><br>'
+        + 'Para que WhatsApp enseñe el nombre <b>y los estados</b> hace falta además tenerlos en '
+        + 'la agenda del teléfono: ningún programa puede escribir ahí, así que se baja la agenda '
+        + 'entera en un archivo y se abre en el móvil una sola vez.',
+        interruptorCfg('contactos_auto', 'Guardar contactos solo',
+          'Cada madrugada, hasta 200 por pasada.', true)
+        + '<div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:10px">'
+        + (esAdmin
+          ? '<button class="btn-linea" id="cfgContactosVer">Ver cuántos entrarían</button>'
+            + '<button class="btn-linea" id="cfgContactosYa">Guardarlos ahora</button>'
+          : '')
+        + '<button class="btn-linea" id="cfgAgendaVcf">Bajar la agenda (.vcf)</button></div>'
+        + '<p class="cfgnota" id="cfgContactosSalida" style="margin-top:9px"></p>',
+        'cfgTarjetaContactos')
+
+    + tarjetaCfg('Clientes de caja en el chat',
+        'Cada madrugada se cruzan los <b>clientes de la caja</b> con los teléfonos de WhatsApp. '
+        + 'Cuando casan, la ficha del chat enseña quién es en la caja, su folio y lo que ha '
+        + 'comprado. <b>El saldo y el crédito no se copian</b>: se miran en la caja, para que no '
+        + 'haya dos cifras distintas de lo que alguien debe. Este pase no escribe nada en la caja.',
+        (esAdmin
+          ? '<button class="btn-linea" id="cfgVinculaCaja">Cruzarlos ahora</button>'
+            + '<p class="cfgnota" id="cfgVinculaSalida" style="margin-top:9px">Se hace solo a las 4:35. '
+              + 'Púlsalo si acabas de dar de alta clientes en la caja y no quieres esperar.</p>'
+          : '<p class="cfgnota">Se hace solo cada madrugada.</p>'),
+        'cfgTarjetaCaja')
+
     + tarjetaCfg('Últimos movimientos',
         'Quién hizo qué y cuándo. Se guarda solo, no hay que activarlo.',
         '<div id="cfgAuditoria"><p class="cfgnota">Cargando…</p></div>')
@@ -7578,6 +7653,63 @@ async function pintaConfig(){
         : 'Sin ninguna marcada: vuelve a las mas usadas');
     };
   });
+  const di = (t) => { const s = $('cfgContactosSalida'); if (s) s.textContent = t; };
+  const cv = $('cfgContactosVer');
+  if (cv) cv.onclick = async () => {
+    cv.disabled = true; di('Contando…');
+    const r = await llama({ action:'autoContacts', operation:'preview' });
+    cv.disabled = false;
+    if (!r.ok) { di(''); return avisa('No se pudo contar', r.error); }
+    // Se enseña el desglose por motivo: "¿y este por qué?" tiene que tener respuesta ANTES de
+    // que se guarden doscientas fichas, no después.
+    const porque = Object.entries(r.por_motivo || {}).map(([k, n]) => n + ' ' + k).join(' · ');
+    di(r.candidatas
+      ? r.candidatas + ' entrarían' + (porque ? ' (' + porque + ')' : '') + '.'
+      : 'Ninguno: ya están todos guardados.');
+  };
+  const cy = $('cfgContactosYa');
+  if (cy) cy.onclick = async () => {
+    if (!confirm('Se van a guardar en Clientes de caja los chats que ya dieron señal de ser '
+      + 'clientes.\n\nNo se toca el saldo ni el crédito de nadie, y las ignoradas no entran.'
+      + '\n\n¿Guardarlos?')) return;
+    cy.disabled = true; di('Guardando…');
+    const r = await llama({ action:'autoContacts' });
+    cy.disabled = false;
+    if (!r.ok) { di(''); return avisa('No se pudo guardar', r.error); }
+    di(r.creados + ' creados · ' + r.actualizados + ' actualizados'
+      + (r.fallidos ? ' · ' + r.fallidos + ' con problema' : '') + '.');
+    avisa('Contactos guardados', r.creados + ' clientes nuevos en la caja.');
+  };
+  const av = $('cfgAgendaVcf');
+  if (av) av.onclick = async () => {
+    av.disabled = true; di('Armando la agenda…');
+    const r = await llama({ action:'contactBook' });
+    av.disabled = false;
+    if (!r.ok) { di(''); return avisa('No se pudo bajar', r.error); }
+    if (!r.total) { di('No hay contactos guardados todavía.'); return; }
+    bajaVcard(r.vcard, 'agenda-dcarela');
+    di(r.total + ' contactos en el archivo. Ábrelo en el iPhone y entran todos en Contactos.');
+    avisa('Agenda bajada', 'Ábrela en el teléfono: WhatsApp les pondrá el nombre y podrás ver sus estados.');
+  };
+  const vc = $('cfgVinculaCaja');
+  if (vc) vc.onclick = async () => {
+    vc.disabled = true;
+    const sal = $('cfgVinculaSalida');
+    if (sal) sal.textContent = 'Cruzando…';
+    const r = await llama({ action:'linkPos' });
+    vc.disabled = false;
+    if (!r.ok) { if (sal) sal.textContent = ''; return avisa('No se pudo cruzar', r.error); }
+    // El numero de "vinculadas" es de las fichas que CAMBIARON, no de las que casan: la
+    // segunda vez seguida sale 0 y eso es lo correcto, no un fallo.
+    if (sal) {
+      sal.textContent = r.vinculadas + ' ficha(s) actualizada(s) de ' + r.con_telefono
+        + ' con teléfono · ' + r.clientes_de_caja + ' clientes en la caja · '
+        + r.ventas_miradas + ' ventas miradas.';
+    }
+    avisa('Cruce hecho', r.vinculadas
+      ? r.vinculadas + ' conversación(es) quedaron con su cliente de caja.'
+      : 'Nada nuevo que cruzar: ya estaban todas al día.');
+  };
   const gt = $('cfgGuardaTextos');
   if (gt) gt.onclick = async () => {
     gt.disabled = true;
@@ -9341,6 +9473,58 @@ function cableaIgnorarFicha(c){
   const ec = $('ignEsCliente');
   if (ec) ec.onclick = () => corre(ec, { action:'ignore', operation:'decide', conversation_ids:[id], decision:'es_cliente' },
     () => 'Anotado: no se volverá a proponer');
+}
+
+/* ---- Cliente de caja ------------------------------------------------------ */
+// El CRM y la caja llevaban años siendo dos mundos con las mismas personas dentro: 898
+// clientes de un lado, 946 conversaciones del otro, y mirando un chat no habia forma de saber
+// si esa persona ya habia pasado por el mostrador. Se preguntaba "¿usted ha venido antes?" a
+// gente que viene cada mes.
+//
+// Lo que se enseña aqui son los campos pos_* que escribe el pase de madrugada cruzando por
+// telefono. El SALDO no esta a proposito: vive en la caja y solo ahi. Lo que se enseña es lo
+// que ya paso --que compro y cuando--, que es historia y no cambia de un dia para otro.
+function grupoCajaFicha(c){
+  if (ignorada(c)) return '';
+  const abierto = c.pos_client_id ? ' open' : '';
+  return '<details class="grupo"' + abierto + '><summary>Cliente de caja'
+    + (c.pos_client_id ? ' <span class="nota">' + (c.pos_client_folio ? 'folio ' + esc(c.pos_client_folio) : 'vinculado') + '</span>' : '')
+    + '</summary><div class="dentro">' + cuerpoCajaFicha(c) + '</div></details>';
+}
+
+function cuerpoCajaFicha(c){
+  if (!c.pos_client_id) {
+    // Sin vinculo no se dice "no es cliente": se dice lo que se comprobo. No es lo mismo "no ha
+    // comprado nunca" que "en la caja ese numero no esta escrito", y el arreglo es distinto.
+    return '<p class="aviso" style="margin:0 0 9px">Este número no aparece en <b>Clientes de caja</b>. '
+      + 'Puede ser que nunca haya comprado, o que en la caja esté con otro número.</p>'
+      + '<button class="btn-linea" id="cajaGuardar">Guardarlo como cliente</button>';
+  }
+  const compras = Number(c.pos_compras || 0);
+  const articulos = Array.isArray(c.pos_articulos) ? c.pos_articulos : [];
+  return '<div class="dato"><div class="k">En la caja</div><div class="v">'
+      + esc(c.pos_client_nombre || 'sin nombre')
+      + (c.pos_client_activo === false ? ' · <b>dado de baja</b>' : '') + '</div></div>'
+    + (c.pos_client_folio ? '<div class="dato"><div class="k">Folio</div><div class="v">' + esc(c.pos_client_folio) + '</div></div>' : '')
+    + (compras
+      ? '<div class="dato"><div class="k">Compras</div><div class="v">' + compras
+        + ' · ' + pesos(c.pos_total_centavos) + '</div></div>'
+        + (c.pos_ultima_compra_at ? '<div class="dato"><div class="k">Última</div><div class="v">'
+          + esc(fechaCorta(c.pos_ultima_compra_at)) + '</div></div>' : '')
+        + (articulos.length ? '<div class="dato"><div class="k">Se ha llevado</div><div class="v">'
+          + articulos.map(esc).join(', ') + '</div></div>' : '')
+      // La mayoria de las ventas del mostrador se cobran sin apuntar al cliente. Decir "0
+      // compras" seria mentir; lo honesto es decir por que no se sabe.
+      : '<p class="aviso" style="margin:8px 0 0">Ninguna venta suya quedó apuntada a su nombre en la '
+        + 'caja. Casi todas las ventas del mostrador se cobran sin cliente, así que esto no quiere '
+        + 'decir que no haya comprado.</p>')
+    + '<p class="aviso" style="margin:9px 0 0">El <b>saldo y el crédito</b> se miran en la caja: '
+      + 'el CRM no los copia para que no haya dos cifras distintas de lo que alguien debe.</p>';
+}
+
+function cableaCajaFicha(c){
+  const b = $('cajaGuardar');
+  if (b) b.onclick = () => abreGuardarContacto(c);
 }
 
 function grupoAnalisisFicha(c){
