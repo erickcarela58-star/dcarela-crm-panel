@@ -40,6 +40,7 @@
   --meta:rgba(17,27,33,.45);
   --hover:rgba(11,20,26,.04);
   --ok:#0a8f4d;
+  --enlace:#027eb5;  /* numero o enlace pulsable dentro de un globo */
   --warn:#b26a00;
   --bad:#b21a1a;
   --sombra:0 12px 34px rgba(11,20,26,.14);
@@ -56,6 +57,7 @@
   --meta:rgba(233,237,239,.5);
   --hover:rgba(255,255,255,.045);
   --ok:#25d366; --warn:#ffb454; --bad:#ff8e8e;
+  --enlace:#53bdeb;
   --sombra:0 12px 34px rgba(0,0,0,.5);
 }
 
@@ -484,6 +486,14 @@ img.mmedia[data-medio]:not([src]),img.msticker[data-medio]:not([src]){
 .reacfila{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
 .reac{font-size:26px;line-height:1;padding:8px 12px;border-radius:10px;background:var(--hover)}
 .reac:hover{outline:2px solid var(--line2)}
+.telmsg{color:var(--enlace);text-decoration:underline;cursor:pointer}
+.bushint{padding:8px 16px;font-size:12px;color:var(--mut);border-bottom:1px solid var(--line)}
+.iniciar{display:flex;align-items:center;gap:10px;width:100%;padding:10px 16px;text-align:left;
+  border-bottom:1px solid var(--line);background:var(--hover)}
+.iniciar b{display:block;font-size:13.5px;color:var(--fg)}
+.iniciar i{display:block;font-style:normal;font-size:12px;color:var(--mut)}
+.iniciar .ico{flex:none;width:36px;height:36px;border-radius:50%;display:grid;place-items:center;
+  background:var(--ok);color:#fff;font-size:17px}
 .cita{border-left:3px solid var(--ok);border-radius:4px;padding:4px 8px;margin-bottom:4px;
   background:rgba(11,20,26,.06);font-size:12px;color:var(--meta);line-height:1.35}
 :root[data-tema="oscuro"] .cita{background:rgba(255,255,255,.07)}
@@ -1743,6 +1753,9 @@ function avisaMensajesNuevos(){
     // De una ignorada no se avisa ni suena nada: es la familia o un colega. Se toma nota igual
     // (arriba), para que al dejar de ignorarla no suelte avisos de mensajes viejos.
     if (ignorada(c)) continue;
+    // Y de un chat silenciado tampoco, que es lo que significa silenciarlo en WhatsApp. Se
+    // toma nota igual (arriba): al quitarle el silencio no tiene que soltar avisos viejos.
+    if (silenciado(c)) continue;
     // En el primer vistazo solo se toma nota. Avisar aqui soltaria una notificacion por cada
     // conversacion pendiente que ya existiera, cada vez que se abre el panel.
     if (primerVistazo) continue;
@@ -2201,8 +2214,85 @@ function avisoRedOculta(c){
       + 'Conversaciones). Para volver a atenderlo desde el CRM, actívalo en Configuración.' };
 }
 
+// ---- Buscar un contacto: piezas puras
+//
+// Un solo criterio para TODOS los buscadores del panel: la bandeja, reenviar, agendar y el
+// selector del asistente. Cada uno filtraba a su manera y los cuatro fallaban en lo mismo, que
+// es lo que el dueño reportó --«los clientes no me aparecen al buscarlos por nombre o por su
+// número»--. Medido en producción el 2026-09-25, sobre 951 fichas:
+//
+//  - Solo se miraba UN nombre. El nombre con el que el dueño conoce a un cliente es muchas
+//    veces el de la CAJA (pos_client_nombre): en 64 de las 98 fichas atadas a la caja ese
+//    nombre no estaba en ningún otro campo, y buscarlo no encontraba nada.
+//  - Con tildes: «jose» no encontraba a «José» (45 fichas con tilde o ñ).
+//  - El número tenía que escribirse como se guarda: «809-478-5620» o «(809) 478 5620» no
+//    encontraban a 18094785620.
+//  - Las palabras tenían que ir juntas y en orden: «juan perez» no daba con «Juan Carlos Pérez».
+//
+// Sin dependencias del resto del panel a propósito: se prueba suelto.
+function sinTildes(v){
+  return String(v || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+}
+
+// Todos los nombres por los que se puede conocer a alguien. `name` va por las fichas viejas.
+function nombresDe(c){
+  return [c?.customer_name, c?.contact_name, c?.display_name, c?.pos_client_nombre, c?.name]
+    .filter(Boolean).map(String);
+}
+
+function coincideContacto(c, q, { conVistaPrevia = false } = {}){
+  const bruto = String(q || '').trim();
+  if (!bruto) return true;
+  const digitos = bruto.replace(/\D/g, '');
+  const tel = String(c?.wa_phone || '').replace(/\D/g, '');
+  // Por número se compara SOLO por dígitos, se escriba como se escriba. Cuatro como mínimo:
+  // con dos o tres casi cualquier teléfono coincide.
+  if (digitos.length >= 4 && tel) {
+    if (tel.includes(digitos)) return true;
+    // Buscado con el 1 del país y guardado sin él: es el mismo.
+    if (digitos.length === 11 && digitos.startsWith('1') && tel.includes(digitos.slice(1))) return true;
+  }
+  if (/^[\d\s+().-]+$/.test(bruto)) {
+    // Un número que no es el teléfono puede estar en la vista previa: un precio, un folio.
+    return conVistaPrevia && digitos.length >= 3 && String(c?.last_message_preview || '').includes(bruto);
+  }
+  const pajar = sinTildes([
+    ...nombresDe(c),
+    ...(Array.isArray(c?.labels) ? c.labels : []), ...(Array.isArray(c?.tags) ? c.tags : []),
+    conVistaPrevia ? c?.last_message_preview : '',
+  ].join(' | '));
+  // Cada palabra en cualquier sitio: «juan perez» encuentra a «Juan Carlos Pérez».
+  return sinTildes(bruto).split(/\s+/).filter(Boolean).every(p => pajar.includes(p));
+}
+
+// El número como lo guarda el CRM, o '' si no se sabe cuál es. Mismas reglas que el servidor
+// (inicia-chat-core.js): diez dígitos que empiezan por 809, 829 u 849 son dominicanos y les
+// falta el 1; siete dígitos no se adivinan (podría ser de cualquiera de los tres); otro país
+// tiene que venir con su prefijo entero.
+function telefonoParaChat(entrada){
+  const d = String(entrada || '').replace(/\D/g, '');
+  const rd = ['809', '829', '849'];
+  if (d.length === 10 && rd.includes(d.slice(0, 3))) return '1' + d;
+  if (d.length === 11 && d.startsWith('1') && rd.includes(d.slice(1, 4))) return d;
+  if (d.length >= 11 && d.length <= 15 && !d.startsWith('0')) return d;
+  return '';
+}
+
+// Los teléfonos dominicanos que vienen escritos dentro de un mensaje --«escríbele a mi esposa
+// al 809-555-1234»-- se vuelven pulsables. Se aplica sobre el texto YA escapado: la expresión
+// solo toca dígitos, espacios, puntos, guiones, paréntesis y el +, que esc() no cambia.
+// El primer grupo hace de "lookbehind": que el número no sea la cola de uno más largo.
+const RE_TEL_TEXTO = /(^|[^\d+])((?:\+?1[\s.-]?)?\(?(?:809|829|849)\)?[\s.-]?\d{3}[\s.-]?\d{4})(?!\d)/g;
+function conTelefonos(html){
+  return String(html || '').replace(RE_TEL_TEXTO, (todo, antes, num) => {
+    const tel = telefonoParaChat(num);
+    return tel ? antes + '<a href="#" class="telmsg" data-tel="' + tel + '" title="Abrir un chat con este número">' + num + '</a>' : todo;
+  });
+}
+// ---- Buscar un contacto: fin de las piezas puras
+
 function filtradas(){
-  const t = ($('buscaChat')?.value || '').trim().toLowerCase();
+  const t = ($('buscaChat')?.value || '').trim();
   // 'lin:<numero>' es la salida de las ocultas: sin ella esconder seria borrar.
   const lin = filtro.startsWith('lin:') ? filtro.slice(4) : null;
   // Y 'can:instagram' / 'can:facebook' es la salida de las redes ocultas, por lo mismo. El filtro
@@ -2211,21 +2301,34 @@ function filtradas(){
   // 'ignorados' es la salida de las ignoradas. Y una busqueda por texto en Todos tambien las
   // encuentra, marcadas: si el dueno busca a alguien por su nombre tiene que ver que esta ignorado
   // (y poder deshacerlo) en vez de creer que esa conversacion no existe.
+  //
+  // Escribir en el buscador busca en TODAS las conversaciones, no dentro del filtro elegido.
+  // Antes, con «Sin leer» o una etiqueta puesta, buscar a un cliente que no estaba en ese
+  // filtro decía que no existía; es la primera causa de «no me aparece». Solo las vistas de
+  // salida --ignorados, otra línea, una red apagada-- se buscan por dentro, porque ahí lo que
+  // se mira es esa lista. Las redes apagadas no entran en la búsqueda general: se apagaron para
+  // no verlas.
+  const vistaDeSalida = filtro === 'ignorados' || lin !== null || red;
+  const buscandoEnTodo = !!t && !vistaDeSalida;
   const base = filtro === 'ignorados' ? CONVS_IGNORADAS
     : lin !== null ? CONVS_OCULTAS.filter(c => claveOculta(c) === lin)
     : red ? CONVS_REDES
-    : t && filtro === 'todos'
-      ? [...CONVS, ...CONVS_IGNORADAS].sort((a, b) => String(b.last_message_at || '').localeCompare(String(a.last_message_at || '')))
+    : buscandoEnTodo
+      ? [...CONVS, ...CONVS_IGNORADAS, ...CONVS_OCULTAS].sort((a, b) => String(b.last_message_at || '').localeCompare(String(a.last_message_at || '')))
       : CONVS;
   return base.filter(c => {
-    if (filtro === 'sinleer' && !(Number(c.unread || 0) > 0)) return false;
-    if (filtro === 'humano' && !(c.mode === 'human' || c.human_handoff_required)) return false;
-    if (filtro === 'bot' && c.mode !== 'bot') return false;
-    if (filtro.startsWith('etq:') && !etiquetasDe(c).includes(filtro.slice(4))) return false;
-    if (filtro.startsWith('can:') && canalDe(c) !== filtro.slice(4)) return false;
-    if (!t) return true;
-    return (nombreDe(c) + ' ' + (c.wa_phone||'') + ' ' + (c.last_message_preview||'')).toLowerCase().includes(t);
-  });
+    if (!buscandoEnTodo) {
+      if (filtro === 'sinleer' && !(Number(c.unread || 0) > 0)) return false;
+      if (filtro === 'humano' && !(c.mode === 'human' || c.human_handoff_required)) return false;
+      if (filtro === 'bot' && c.mode !== 'bot') return false;
+      if (filtro.startsWith('etq:') && !etiquetasDe(c).includes(filtro.slice(4))) return false;
+      if (filtro.startsWith('can:') && canalDe(c) !== filtro.slice(4)) return false;
+    }
+    return coincideContacto(c, t, { conVistaPrevia: true });
+  })
+  // Los anclados arriba, como en WhatsApp. La ordenación es estable: entre los anclados, y
+  // entre los demás, se mantiene el orden que ya traían (lo más reciente primero).
+  .sort((a, b) => (anclado(b) ? 1 : 0) - (anclado(a) ? 1 : 0));
 }
 /* ---- Buscar dentro de los mensajes --------------------------------------- */
 // El buscador de la bandeja mira nombre, telefono y la ultima vista previa. Con 11.000 mensajes
@@ -2364,18 +2467,21 @@ function pintaChats(){
     +   'aria-label="Elegir etiquetas de la barra">+</button>';
 
   const filas = filtradas();
+  const arriba = sugerenciasDeBusqueda();
   if (!filas.length) {
-    cont.innerHTML = '<div style="padding:26px 16px;color:var(--mut);font-size:13px;text-align:center">'
-      + 'No hay conversaciones con este filtro.</div>';
+    cont.innerHTML = arriba + '<div style="padding:26px 16px;color:var(--mut);font-size:13px;text-align:center">'
+      + ($('buscaChat')?.value.trim() ? 'Ninguna conversación coincide.' : 'No hay conversaciones con este filtro.') + '</div>';
     return;
   }
-  cont.innerHTML = filas.map(c => {
+  cont.innerHTML = arriba + filas.map(c => {
     const n = nombreDe(c), sinLeer = Number(c.unread || 0) > 0;
     const marcas = [];
     if (ignorada(c)) marcas.push('<span class="etiqueta ign">ignorada · ' + esc(TIPOS_IGNORAR[c.ignored_kind] || 'otro') + '</span>');
     if (c.lifecycle_stage) marcas.push('<span class="etiqueta">' + esc(c.lifecycle_stage) + '</span>');
     if (c.proactive_blocked_at) marcas.push('<span class="etiqueta">sin automatización</span>');
     else if (c.mode === 'human' || c.human_handoff_required) marcas.push('<span class="etiqueta">humano</span>');
+    if (anclado(c)) marcas.push('<span class="etiqueta">📌 anclado</span>');
+    if (silenciado(c)) marcas.push('<span class="etiqueta">🔕 silenciado</span>');
     if (sinLeer) marcas.push('<span class="globito">' + Number(c.unread) + '</span>');
     const canal = CANALES[canalDe(c)];
     return '<div class="chat' + (sel && sel._id === c._id ? ' on' : '') + (sinLeer ? ' sinleer' : '')
@@ -2393,6 +2499,113 @@ function pintaChats(){
   }).join('');
   resuelveAvatares();
 }
+
+// ===== INICIAR UN CHAT CON UN NÚMERO NUEVO =====
+//
+// Pulsar un número --el que un cliente manda por WhatsApp, el que se escribe en el buscador o
+// el de un cliente de la caja que nunca ha escrito-- y que se abra el chat. El servidor
+// comprueba antes, por el puente, que el número tenga WhatsApp (acción startChat); la misma
+// llamada sirve para preguntar y para ver cómo va, así que aquí solo se repite hasta que hay
+// respuesta.
+
+// Los clientes de la caja, para ofrecer los que todavía no tienen chat. Se piden una vez, al
+// empezar a buscar, y valen diez minutos: son ~900 filas pequeñas, no hace falta más.
+let CLIENTES_CAJA = { filas: null, en: 0, pidiendo: null };
+function clientesDeCaja(){
+  const fresco = CLIENTES_CAJA.filas && Date.now() - CLIENTES_CAJA.en < 10 * 60000;
+  if (fresco || CLIENTES_CAJA.pidiendo) return;
+  CLIENTES_CAJA.pidiendo = llama({ action:'posCustomers' }).then(r => {
+    if (r.ok && Array.isArray(r.data)) CLIENTES_CAJA = { filas: r.data, en: Date.now(), pidiendo: null };
+    else CLIENTES_CAJA.pidiendo = null;
+    if ($('buscaChat')?.value.trim()) pintaChats();
+  }).catch(() => { CLIENTES_CAJA.pidiendo = null; });
+}
+
+// Lo que va ENCIMA de la lista mientras se busca: iniciar un chat con el número escrito, si
+// no hay ninguno con él, y los clientes de la caja que coinciden y no tienen chat.
+function sugerenciasDeBusqueda(){
+  const t = ($('buscaChat')?.value || '').trim();
+  if (!t) return '';
+  let html = '';
+  if (filtro !== 'todos' && !['ignorados'].includes(filtro) && !filtro.startsWith('lin:'))
+    html += '<div class="bushint">Buscando en todas las conversaciones, no solo en este filtro.</div>';
+  const conChat = new Set(CONVS_TODAS.map(c => soloDigitos(c.wa_phone)).filter(Boolean));
+  const tel = telefonoParaChat(t);
+  if (tel && !conChat.has(tel)) {
+    html += botonIniciar(tel, '', 'Iniciar chat con ' + telefonoLegible(tel), 'Comprueba si tiene WhatsApp y abre la conversación.');
+  }
+  if (t.length >= 3) {
+    clientesDeCaja();
+    const caja = (CLIENTES_CAJA.filas || [])
+      .map(r => ({ nombre: String(r.name || ''), tel: telefonoParaChat(r.phone) }))
+      .filter(r => r.tel && !conChat.has(r.tel) && r.tel !== tel)
+      .filter(r => coincideContacto({ pos_client_nombre: r.nombre, wa_phone: r.tel }, t))
+      .slice(0, 5);
+    for (const r of caja) {
+      html += botonIniciar(r.tel, r.nombre, r.nombre || telefonoLegible(r.tel),
+        'Cliente de la caja sin chat · ' + telefonoLegible(r.tel) + ' · Iniciar chat');
+    }
+  }
+  return html;
+}
+
+function botonIniciar(tel, nombre, titulo, bajada){
+  return '<button class="iniciar" data-iniciar="' + esc(tel) + '" data-nombre="' + esc(nombre || '') + '">'
+    + '<span class="ico">💬</span><span><b>' + esc(titulo) + '</b><i>' + esc(bajada) + '</i></span></button>';
+}
+
+// La ficha nueva llega por el snapshot de conversaciones, que tarda un instante. Se espera a
+// que esté para abrirla: abrir un id que el panel todavía no conoce no enseñaría nada.
+async function esperaConversacion(id, ms = 8000){
+  const hasta = Date.now() + ms;
+  while (Date.now() < hasta) {
+    const c = buscaConv(id);
+    if (c) return c;
+    await new Promise(r => setTimeout(r, 300));
+  }
+  return null;
+}
+
+let INICIANDO_CHAT = false;
+async function iniciaChat(tel, nombre = ''){
+  if (INICIANDO_CHAT) return;
+  // Si ya está abierto ese chat no hay nada que iniciar.
+  if (sel && soloDigitos(sel.wa_phone) === tel) return avisa('Ya estás en ese chat');
+  INICIANDO_CHAT = true;
+  avisa('Comprobando si tiene WhatsApp…', telefonoLegible(tel));
+  try {
+    const hasta = Date.now() + 30000;
+    let r;
+    for (;;) {
+      r = await llama({ action:'startChat', phone: tel, name: nombre || '' });
+      if (!r.ok) return avisa('No se pudo abrir el chat', r.error);
+      if (r.estado !== 'comprobando') break;
+      // El servidor da por perdida una pregunta sin respuesta al minuto; el panel no espera
+      // tanto: medio minuto sin noticias es que el puente no está atendiendo.
+      if (Date.now() > hasta) return avisa('WhatsApp no contestó a tiempo', 'Inténtalo otra vez en un momento.');
+      await new Promise(res => setTimeout(res, 1500));
+    }
+    if (r.estado === 'sin_whatsapp') return avisa('Ese número no tiene WhatsApp', telefonoLegible(tel));
+    if (r.estado === 'fallo') return avisa('No se pudo comprobar el número', 'Inténtalo otra vez en un momento.');
+    const c = await esperaConversacion(r.conversation_id);
+    if (!c) return avisa('Chat creado', 'Aparecerá en la bandeja en unos segundos.');
+    const caja = $('buscaChat');
+    if (caja && caja.value) { caja.value = ''; cierraBusquedaMensajes(); pintaChats(); }
+    abre(c);
+    if (r.nueva) avisa('Chat nuevo abierto', 'Tiene WhatsApp. Ya puedes escribirle.');
+  } finally {
+    INICIANDO_CHAT = false;
+  }
+}
+
+// Los dos sitios donde se pulsa un número: la sugerencia del buscador y un número dentro de
+// un mensaje. Un solo escuchador en el documento, porque los globos se repintan solos.
+document.addEventListener('click', ev => {
+  const boton = ev.target.closest('[data-iniciar]');
+  if (boton) { ev.preventDefault(); iniciaChat(boton.dataset.iniciar, boton.dataset.nombre || ''); return; }
+  const enlace = ev.target.closest('.telmsg[data-tel]');
+  if (enlace) { ev.preventDefault(); ev.stopPropagation(); iniciaChat(enlace.dataset.tel); }
+});
 
 // ===== «ESCRIBIENDO…» HACIA EL CLIENTE =====
 //
@@ -2478,6 +2691,8 @@ function abre(c){
     + '<div class="mas" id="mas"><button aria-label="Más opciones">⋯</button>'
     +   '<div class="menu"><button data-mas="recordar">Añadir recordatorio</button>'
     +   '<button data-mas="contacto">Guardar contacto</button>'
+    +   '<button data-mas="silenciar" id="masSilenciar">Silenciar…</button>'
+    +   '<button data-mas="anclar" id="masAnclar">Anclar arriba</button>'
     +   '<button data-mas="encuesta">Enviar encuesta</button>'
     +   '<button data-mas="asistente">Preguntar al asistente</button>'
     +   '<button data-mas="cerrar">Cerrar conversación</button></div></div>'
@@ -2534,6 +2749,57 @@ function abre(c){
 // guardar, el nombre corregido desde la ficha o el aviso de atencion humana solo aparecian al
 // cambiar de chat y volver. Se repinta SOLO lo que cambia, no el chat entero: rehacerlo perderia
 // el texto a medio escribir, los adjuntos en cola y la posicion del hilo.
+// ===== SILENCIAR Y ANCLAR =====
+//
+// No son etiquetas del panel: son el silencio y el anclaje de WhatsApp. Silenciar aquí hace
+// que el teléfono del negocio deje de sonar con ese chat, y lo que se ancle en el teléfono
+// sube aquí. Lo aplica el puente; el CRM guarda cómo quedó en la ficha.
+const SILENCIOS = [['8h', '8 horas'], ['1sem', 'Una semana'], ['siempre', 'Siempre']];
+
+// Silenciado quiere decir «hasta una fecha». Pasada, vuelve a sonar solo, como en WhatsApp:
+// sin mirar la hora, un silencio de 8 horas duraría para siempre dentro del panel.
+function silenciado(c){
+  const hasta = Date.parse(String(c?.muted_until || ''));
+  return Number.isFinite(hasta) && hasta > Date.now();
+}
+
+function anclado(c){
+  return !!c?.pinned_at;
+}
+
+function pintaMarcasChat(){
+  if (!sel) return;
+  const s = $('masSilenciar'), a = $('masAnclar');
+  if (s) s.textContent = silenciado(sel) ? 'Quitar el silencio' : 'Silenciar…';
+  if (a) a.textContent = anclado(sel) ? 'Desanclar' : 'Anclar arriba';
+}
+
+async function marcaChat(c, cambio, texto){
+  const r = await llama({ action:'chatFlags', conversation_id: c.id || c._id, ...cambio });
+  if (!r.ok) return avisa('No se pudo cambiar', r.error);
+  // El snapshot lo traerá igual, pero la lista no puede quedarse quieta hasta entonces.
+  if ('muted_until' in r) c.muted_until = r.muted_until;
+  if ('pinned_at' in r) c.pinned_at = r.pinned_at;
+  pintaChats();
+  pintaMarcasChat();
+  avisa(texto);
+}
+
+function abreSilencio(c){
+  if (silenciado(c)) return marcaChat(c, { mute: '' }, 'Este chat vuelve a sonar');
+  abreModal('<div class="mtapa"><b>Silenciar este chat</b><button class="cerrarm" data-cerrar>×</button></div>'
+    + '<div class="mcuerpo" id="silCaja">'
+    + SILENCIOS.map(([k, n]) => '<button class="tpl" data-sil="' + k + '">' + n + '</button>').join('')
+    + '<p class="aviso">Es el silencio de WhatsApp: el teléfono del negocio también deja de '
+    + 'sonar con este chat, y aquí no salta el aviso de mensaje nuevo. Los mensajes siguen '
+    + 'llegando igual.</p></div>');
+  $('silCaja').onclick = ev => {
+    const boton = ev.target.closest('[data-sil]'); if (!boton) return;
+    cierraModal();
+    marcaChat(c, { mute: boton.dataset.sil }, 'Chat silenciado');
+  };
+}
+
 function pintaCabeceraChat(){
   const cab = $('conversacion')?.querySelector('.cabecera');
   if (!cab || !sel) return;
@@ -2596,6 +2862,7 @@ function refrescaSeleccion(){
   if (!cambia) return;
   pintaCabeceraChat();
   pintaModoChat();
+  pintaMarcasChat();
   pintaVentana24();
   pintaAvisoLinea();
   // La ficha NO se repinta mientras alguien escribe en ella: le borraria lo tecleado a media
@@ -2669,6 +2936,7 @@ async function marcaLeido(c){
 function cableaChat(c){
   const modo = $('btnModo');
   pintaModoChat();
+  pintaMarcasChat();
   modo.onclick = async () => {
     const chatEnabled = sel?.mode === 'bot';
     const newMode = chatEnabled ? 'human' : 'bot';
@@ -2698,6 +2966,9 @@ function cableaChat(c){
     // llega a Planificacion: abrir un chat ya no cambia el contacto de ningun hilo.
     if (b.dataset.mas === 'asistente') return preguntaAlAsistente(sel);
     if (b.dataset.mas === 'contacto') return abreGuardarContacto(sel);
+    if (b.dataset.mas === 'silenciar') return abreSilencio(sel);
+    if (b.dataset.mas === 'anclar') return marcaChat(sel, { pin: !anclado(sel) },
+      anclado(sel) ? 'Chat desanclado' : 'Chat anclado arriba');
     if (b.dataset.mas === 'encuesta') { abreEncuesta(sel); } else {
       if (!confirm('¿Cerrar esta conversación?')) return;
       const r = await llama({ action:'updateLead', conversation_id: sel.id || sel._id,
@@ -4008,10 +4279,10 @@ function abreReenviar(m){
     + '<div id="fwdLista"></div></div>');
   $('modal').querySelectorAll('[data-cerrar]').forEach(b => { b.onclick = cierraModal; });
   const pinta = () => {
-    const q = ($('fwdBusca').value || '').trim().toLowerCase();
+    const q = ($('fwdBusca').value || '').trim();
     const filas = CONVS.filter(c => c._id !== (sel?._id))
       .filter(c => !conArchivo || canalDe(c) === 'whatsapp_qr')
-      .filter(c => !q || (nombreDe(c) + ' ' + (c.wa_phone||'')).toLowerCase().includes(q))
+      .filter(c => coincideContacto(c, q))
       .slice(0, 40);
     $('fwdLista').innerHTML = filas.map(c =>
       '<button class="tpl" data-dest="' + esc(c.id || c._id) + '"><b>' + esc(nombreDe(c)) + '</b>'
@@ -4691,7 +4962,7 @@ function tipoRealMedio(m, a){
 function cuerpoMensaje(m){
   const a = adjuntoDe(m);
   const t = tipoRealMedio(m, a);
-  const pie = m.body && !/^\[[a-z]+\]$/i.test(m.body) ? '<div class="mpie">' + esc(m.body) + '</div>' : '';
+  const pie = m.body && !/^\[[a-z]+\]$/i.test(m.body) ? '<div class="mpie">' + conTelefonos(esc(m.body)) + '</div>' : '';
   const id = m.media_id || '';
   const bajo = esBajoDemanda(m);
   // Si hay url directa se usa; si solo hay id, se marca el hueco y lo rellena
@@ -4783,7 +5054,8 @@ function cuerpoMensaje(m){
     return tarjetaArchivo(a, 'Archivo', m) + pie;
   }
 
-  return esc(m.body || '');
+  // Los números que manda el cliente se pueden pulsar para abrir un chat con ellos.
+  return conTelefonos(esc(m.body || ''));
 }
 
 /* ---- Lo que acaba de salir, antes de que exista el globo de verdad ------- */
@@ -6404,9 +6676,9 @@ function abreAgendar(c){
   let elegido = c;
   if (!c) {
     const pinta = () => {
-      const q = ($('agBusca').value || '').trim().toLowerCase();
+      const q = ($('agBusca').value || '').trim();
       $('agRes').innerHTML = !q ? '' : CONVS
-        .filter(x => (nombreDe(x) + ' ' + (x.wa_phone||'')).toLowerCase().includes(q))
+        .filter(x => coincideContacto(x, q))
         .slice(0, 6)
         .map(x => '<button class="tpl" data-ag="' + esc(x._id) + '"><b>' + esc(nombreDe(x)) + '</b>'
           + '<span class="tplmeta">+' + esc(x.wa_phone||'') + '</span></button>').join('')
@@ -10799,21 +11071,11 @@ function formatoSeguro(texto){
 
 // Busca en las conversaciones que ya estan en memoria (CONVS): nombre, telefono, ultimos 4
 // digitos o etiqueta. Sin llamada al servidor: el selector responde al teclear.
+// El selector de contacto del asistente. Usa el mismo criterio que la bandeja
+// (coincideContacto): antes tenía el suyo, y no encontraba a nadie por su nombre en la caja.
 function filtraContactos(lista, q){
-  const n = v => String(v || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
-  const texto = n(q).trim();
-  const digitos = String(q || '').replace(/\D/g, '');
-  const soloNumeros = /^[\d\s+()-]+$/.test(String(q || '').trim());
-  if (!texto) return lista.slice(0, 30);
-  const palabras = texto.split(/\s+/);
-  return lista.filter(c => {
-    const tel = String(c.wa_phone || '').replace(/\D/g, '');
-    if (digitos.length >= 4 && tel.includes(digitos)) return true;
-    if (soloNumeros) return false;
-    const nombre = n(c.customer_name || c.contact_name);
-    const etiquetas = [...(Array.isArray(c.labels) ? c.labels : []), ...(Array.isArray(c.tags) ? c.tags : [])].map(n);
-    return palabras.every(p => nombre.includes(p)) || etiquetas.some(e => e.includes(texto));
-  }).slice(0, 30);
+  if (!String(q || '').trim()) return lista.slice(0, 30);
+  return lista.filter(c => coincideContacto(c, q)).slice(0, 30);
 }
 
 function grupoDeFecha(iso, ahoraMs = Date.now()){
