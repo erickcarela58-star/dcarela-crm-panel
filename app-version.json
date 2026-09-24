@@ -1,6 +1,7 @@
 {
-  "version": "2026-09-24-escribiendo-v122",
+  "version": "2026-09-25-lectura-reenvio-reacciones-v123",
   "channel": "crm",
-  "released_at": "2026-09-24T18:40:00Z",
-  "summary": "El cliente ve \"escribiendo...\" mientras le contestas por WhatsApp Web, igual que cuando se usaba WhatsApp Web: se enciende al teclear y se apaga al enviar, al borrar lo escrito, al cambiar de chat o a los 20 segundos. No manda ningun mensaje y se apaga desde Configuracion. Viene de la version anterior: los Estados se publican desde el panel y el arreglo del panel que no abria."
+  "released_at": "2026-09-25T16:00:00Z",
+  "summary": "Tres cosas que obligaban a volver a WhatsApp Web. Al abrir un chat, al cliente le salen las dos palomas azules (se apaga desde Configuracion). Reenviar ya manda el archivo --foto, video, nota de voz, documento-- y no solo el texto: el archivo no vuelve a pasar por la nube, se copia el mismo original igual que hace WhatsApp. Y se pueden mandar reacciones a un mensaje, no solo recibirlas.",
+  "requiere_puente": "2026-09-25-lectura-v28"
 }
