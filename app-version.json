@@ -1,7 +1,7 @@
 {
-  "version": "2026-09-25-lectura-reenvio-reacciones-v123",
+  "version": "2026-09-25-buscador-iniciar-chat-v124",
   "channel": "crm",
-  "released_at": "2026-09-25T16:00:00Z",
-  "summary": "Tres cosas que obligaban a volver a WhatsApp Web. Al abrir un chat, al cliente le salen las dos palomas azules (se apaga desde Configuracion). Reenviar ya manda el archivo --foto, video, nota de voz, documento-- y no solo el texto: el archivo no vuelve a pasar por la nube, se copia el mismo original igual que hace WhatsApp. Y se pueden mandar reacciones a un mensaje, no solo recibirlas.",
-  "requiere_puente": "2026-09-25-lectura-v28"
+  "released_at": "2026-09-25T20:00:00Z",
+  "summary": "El buscador ya encuentra a los clientes: por el nombre que tienen en la caja, sin tildes, con las palabras en cualquier orden y con el numero escrito como sea (809-555-1234, (809) 555 1234...). Busca en todas las conversaciones aunque haya un filtro puesto. Escribir un numero sin chat, o pulsar un numero que manda un cliente, comprueba si tiene WhatsApp y abre el chat; los clientes de la caja sin chat salen para iniciarlo. Y silenciar y anclar un chat, sincronizado con el telefono.",
+  "requiere_puente": "2026-09-25-chats-v29"
 }
