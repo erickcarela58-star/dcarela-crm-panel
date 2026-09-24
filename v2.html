@@ -481,6 +481,9 @@ img.mmedia[data-medio]:not([src]),img.msticker[data-medio]:not([src]){
 .gmenu button{padding:8px 10px;border-radius:5px;text-align:left;font-size:12.5px;color:var(--fg)}
 .gmenu button:hover{background:var(--hover)}
 .gmenu button.peligro{color:var(--bad)}
+.reacfila{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+.reac{font-size:26px;line-height:1;padding:8px 12px;border-radius:10px;background:var(--hover)}
+.reac:hover{outline:2px solid var(--line2)}
 .cita{border-left:3px solid var(--ok);border-radius:4px;padding:4px 8px;margin-bottom:4px;
   background:rgba(11,20,26,.06);font-size:12px;color:var(--meta);line-height:1.35}
 :root[data-tema="oscuro"] .cita{background:rgba(255,255,255,.07)}
@@ -2653,7 +2656,14 @@ async function marcaLeido(c){
   const r = await llama({ action:'updateLead', conversation_id: c.id || c._id, fields:{ unread: 0 } });
   // Si el servidor dijo que no, se devuelve el numero: un contador que miente es peor
   // que uno alto.
-  if (!r.ok) { c.unread = antes; pintaCuentas(); pintaChats(); }
+  if (!r.ok) { c.unread = antes; pintaCuentas(); pintaChats(); return; }
+
+  // Y la paloma azul del cliente. Va justo aqui porque es el mismo hecho: acabas de ver
+  // esos mensajes. Si falla no se avisa de nada --el chat queda leido igual y el cliente
+  // ve lo de siempre--; lo que no puede es frenar la bandeja.
+  if (canalDe(c) === 'whatsapp_qr' && AJUSTES.confirmar_lectura !== 'false') {
+    llama({ action:'readReceipt', conversation_id: c.id || c._id }).catch(() => {});
+  }
 }
 
 function cableaChat(c){
@@ -3927,7 +3937,11 @@ document.addEventListener('click', async ev => {
   if (!m) return;
   const menu = document.createElement('div');
   menu.className = 'gmenu';
+  // Reaccionar solo por la linea de WhatsApp Web, y solo a algo que exista en WhatsApp:
+  // una nota interna del panel no tiene wamid y no hay a que reaccionar.
+  const puedeReaccionar = canalDe(sel) === 'whatsapp_qr' && !!m.wamid;
   menu.innerHTML = '<button data-op="citar">Responder</button>'
+    + (puedeReaccionar ? '<button data-op="reaccionar">Reaccionar</button>' : '')
     + '<button data-op="reenviar">Reenviar</button>'
     + '<button data-op="copiar">Copiar texto</button>'
     + '<button data-op="borrar" class="peligro">Borrar</button>';
@@ -3941,6 +3955,7 @@ document.addEventListener('click', async ev => {
       try { await navigator.clipboard.writeText(m.body || ''); avisa('Copiado'); }
       catch (e) { avisa('No se pudo copiar'); }
     }
+    else if (op === 'reaccionar') abreReaccion(m);
     else if (op === 'reenviar') abreReenviar(m);
     else if (op === 'borrar') {
       // Borrado blando: WhatsApp no permite quitarlo del telefono del cliente, asi
@@ -3952,17 +3967,50 @@ document.addEventListener('click', async ev => {
   };
 });
 
+// Las seis de WhatsApp. Un selector de emojis entero no cabe aquí y tampoco hace falta:
+// reaccionar es para contestar sin escribir, y el que quiera decir algo escribe.
+const REACCIONES = ['👍', '❤️', '😂', '😮', '😢', '🙏'];
+
+function abreReaccion(m){
+  abreModal('<div class="mtapa"><b>Reaccionar</b><button class="cerrarm" data-cerrar>×</button></div>'
+    + '<div class="mcuerpo" id="reacCaja"><div class="reacfila">'
+    + REACCIONES.map(e => '<button class="reac" data-emoji="' + esc(e) + '">' + e + '</button>').join('')
+    + '</div>'
+    + '<p class="aviso">Le llega al cliente sobre ese mensaje, igual que si reaccionaras desde el teléfono.</p>'
+    + '<button class="tpl" data-emoji="">Quitar la reacción</button></div>');
+  $('reacCaja').onclick = async ev => {
+    const boton = ev.target.closest('[data-emoji]'); if (!boton) return;
+    boton.disabled = true;
+    const r = await llama({ action:'react', message_id: m.id, emoji: boton.dataset.emoji });
+    if (!r.ok) { boton.disabled = false; return avisa('No se pudo reaccionar', r.error); }
+    cierraModal();
+    avisa(boton.dataset.emoji ? 'Reacción enviada' : 'Reacción quitada');
+  };
+}
+
+// Los tipos de mensaje que llevan archivo. Se reenvian enteros --foto, vídeo, nota de voz,
+// documento o sticker-- sin que el archivo vuelva a pasar por la nube: el servidor le pasa al
+// puente la referencia del original y WhatsApp copia el mismo objeto, igual que al reenviar
+// desde el teléfono.
+const TIPOS_CON_ARCHIVO = ['image', 'video', 'audio', 'voice', 'document', 'file', 'sticker'];
+
 function abreReenviar(m){
   const texto = String(m.body || '').trim();
-  if (!texto || /^\[[a-z]+\]$/i.test(texto))
-    return avisa('Por ahora solo se reenvía texto', 'El servidor todavía no reenvía archivos.');
+  const conArchivo = TIPOS_CON_ARCHIVO.includes(String(m.msg_type || '').toLowerCase());
+  if (!conArchivo && (!texto || /^\[[a-z]+\]$/i.test(texto)))
+    return avisa('Ese mensaje no se puede reenviar', 'No tiene ni texto ni archivo.');
   abreModal('<div class="mtapa"><b>Reenviar a…</b><button class="cerrarm" data-cerrar>×</button></div>'
-    + '<div class="mcuerpo"><div class="campo"><input id="fwdBusca" placeholder="Buscar conversación…"></div>'
+    + '<div class="mcuerpo">'
+    // Un archivo solo puede salir por la línea de WhatsApp Web. Por la línea oficial haría
+    // falta una dirección pública del archivo, y los archivos ya no se guardan en la nube.
+    + (conArchivo ? '<p class="aviso">Se reenvía el archivo. Solo aparecen los chats de la línea de WhatsApp Web.</p>' : '')
+    + '<div class="campo"><input id="fwdBusca" placeholder="Buscar conversación…"></div>'
     + '<div id="fwdLista"></div></div>');
   $('modal').querySelectorAll('[data-cerrar]').forEach(b => { b.onclick = cierraModal; });
   const pinta = () => {
     const q = ($('fwdBusca').value || '').trim().toLowerCase();
     const filas = CONVS.filter(c => c._id !== (sel?._id))
+      .filter(c => !conArchivo || canalDe(c) === 'whatsapp_qr')
       .filter(c => !q || (nombreDe(c) + ' ' + (c.wa_phone||'')).toLowerCase().includes(q))
       .slice(0, 40);
     $('fwdLista').innerHTML = filas.map(c =>
@@ -3979,7 +4027,10 @@ function abreReenviar(m){
       target_conversation_id: b.dataset.dest });
     if (!r.ok) { b.disabled = false; return avisa('No se pudo reenviar', r.error); }
     cierraModal();
-    avisa('Reenviado');
+    // Un archivo no sale al instante: entra en la cola del puente con su ritmo. Decir
+    // «Reenviado» a secas haría buscarlo en el chat del cliente antes de que esté.
+    avisa(r.archivo ? 'Reenviando el archivo…' : 'Reenviado',
+      r.archivo ? 'Sale por la línea de WhatsApp Web en unos segundos.' : '');
   };
 }
 
@@ -7545,7 +7596,12 @@ async function pintaConfig(){
           'Mientras escribes en un chat de WhatsApp Web, al cliente le sale «escribiendo…», igual '
           + 'que cuando contestabas desde WhatsApp Web. Se apaga solo al enviar, al borrar lo '
           + 'escrito o a los 20 segundos. Apágalo si prefieres que no se sepa cuándo estás '
-          + 'respondiendo.', true))
+          + 'respondiendo.', true)
+        + interruptorCfg('confirmar_lectura', 'Confirmar al cliente que leíste su mensaje',
+          'Al abrir un chat de WhatsApp Web, al cliente se le ponen las dos palomas azules, igual '
+          + 'que cuando contestabas desde WhatsApp Web. Con esto apagado le quedan las dos '
+          + 'palomas grises aunque ya lo hayas leído, que desde fuera se lee como que no le '
+          + 'has hecho caso.', true))
 
     + tarjetaCfg('Límites de seguridad del 2.º número',
         'La línea de WhatsApp Web es un WhatsApp personal, no una API: si WhatsApp lo ve enviar en '
