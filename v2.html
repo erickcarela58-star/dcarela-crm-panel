@@ -494,6 +494,110 @@ img.mmedia[data-medio]:not([src]),img.msticker[data-medio]:not([src]){
 .iniciar i{display:block;font-style:normal;font-size:12px;color:var(--mut)}
 .iniciar .ico{flex:none;width:36px;height:36px;border-radius:50%;display:grid;place-items:center;
   background:var(--ok);color:#fff;font-size:17px}
+/* --- Estados: como WhatsApp Web ------------------------------------------- */
+/* La lista a la izquierda con el anillo partido en tantos trozos como estados (verde lo que
+   falta por ver, gris lo visto), el hueco de la derecha mientras no se abre ninguno, y el visor
+   a pantalla completa con las barras de avance arriba. Mismos tamanos que WhatsApp Web. */
+:root{--st-verde:#25d366;--st-gris:#c3c7cb;--st-fondo:#f0f2f5;--st-visor:#111b21}
+:root[data-tema="oscuro"]{--st-verde:#21c063;--st-gris:#3b4a54;--st-fondo:#222e35;--st-visor:#0b141a}
+.st-lista{width:min(400px,36vw);flex:0 0 auto;display:flex;flex-direction:column;min-height:0;
+  border-right:1px solid var(--line);background:var(--panel)}
+.st-cab{height:64px;padding:0 12px 0 20px;display:flex;align-items:center;justify-content:space-between;flex:0 0 auto}
+.st-cab h2{margin:0;font-size:22px;font-weight:700;color:var(--fg);letter-spacing:-.2px}
+.st-acc{display:flex;gap:2px;position:relative}
+.st-icono{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;color:var(--fg)}
+.st-icono:hover,.st-icono.on{background:var(--hover)}
+.st-icono svg{width:22px;height:22px}
+.st-menu{position:absolute;top:44px;right:0;z-index:30;min-width:210px;padding:8px 0;border-radius:12px;
+  background:var(--panel);box-shadow:0 2px 5px rgba(11,20,26,.26),0 2px 10px rgba(11,20,26,.16)}
+.st-menu button{display:flex;align-items:center;gap:14px;width:100%;padding:11px 20px;font-size:14.5px;color:var(--fg);text-align:left}
+.st-menu button:hover{background:var(--hover)}
+.st-menu svg{width:20px;height:20px;color:var(--mut)}
+.st-scroll{flex:1;overflow-y:auto;min-height:0;padding-bottom:12px}
+.st-fila{display:flex;align-items:center;gap:15px;width:100%;padding:10px 16px 10px 14px;text-align:left;cursor:pointer}
+.st-fila:hover,.st-fila.on{background:var(--hover)}
+.st-anillo{position:relative;width:50px;height:50px;flex:0 0 auto;display:block}
+.st-anillo .aro{position:absolute;inset:0;width:50px;height:50px;transform:rotate(-90deg)}
+.st-anillo .av{position:absolute;top:5px;left:5px;width:40px;height:40px;font-size:13px}
+.st-mas{position:absolute;right:0;bottom:0;width:19px;height:19px;border-radius:50%;background:var(--st-verde);
+  color:#fff;border:2px solid var(--panel);display:grid;place-items:center;font-size:15px;line-height:1;font-weight:600}
+.st-texto{min-width:0;flex:1;display:block}
+.st-texto b{display:block;font-size:16px;font-weight:400;color:var(--fg);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.st-texto i{display:block;font-style:normal;font-size:13px;color:var(--mut);margin-top:3px}
+.st-sec{padding:18px 20px 10px;font-size:14px;color:var(--mut)}
+.st-nada{padding:18px 22px;font-size:13px;line-height:1.5;color:var(--mut)}
+.st-panel{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;
+  background:var(--st-fondo);color:var(--mut);padding:30px;text-align:center;position:relative}
+.st-panel>svg{width:78px;height:78px;opacity:.55}
+.st-panel p{margin:0;font-size:14px;max-width:360px;line-height:1.5}
+.st-panel .st-nota{position:absolute;bottom:34px;left:0;right:0;display:flex;gap:6px;justify-content:center;
+  align-items:center;font-size:13px}
+.st-panel .st-nota svg{width:13px;height:13px}
+/* Visor */
+.st-visor{position:fixed;inset:0;z-index:400;background:var(--st-visor);color:#fff;display:flex;justify-content:center}
+.st-col{width:min(620px,100vw);height:100%;display:flex;flex-direction:column;position:relative}
+.st-barras{display:flex;gap:4px;padding:14px 14px 0}
+.st-b{flex:1;height:3px;border-radius:2px;background:rgba(255,255,255,.35);overflow:hidden}
+.st-b i{display:block;height:100%;width:0;background:#fff}
+.st-quien{display:flex;align-items:center;gap:12px;padding:12px 10px 10px 6px}
+.st-quien .av{width:40px;height:40px}
+.st-quien-t{flex:1;min-width:0}
+.st-quien-t b{display:block;font-size:16px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.st-quien-t i{display:block;font-style:normal;font-size:13px;opacity:.75;margin-top:1px}
+.st-ctl{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;color:#fff}
+.st-ctl:hover{background:rgba(255,255,255,.1)}
+.st-ctl svg{width:22px;height:22px}
+.st-x{position:absolute;top:14px;right:16px;z-index:2}
+.st-flecha{position:absolute;top:50%;margin-top:-24px;width:48px;height:48px;border-radius:50%;z-index:2;
+  display:grid;place-items:center;color:#fff;background:rgba(255,255,255,.12)}
+.st-flecha:hover{background:rgba(255,255,255,.22)}
+.st-flecha svg{width:26px;height:26px}
+.st-flecha.izq{left:max(12px,calc(50% - 380px))}
+.st-flecha.der{right:max(12px,calc(50% - 380px))}
+.st-escena{flex:1;min-height:0;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden}
+.st-img{max-width:100%;max-height:100%;object-fit:contain;display:block;transition:filter .25s}
+.st-img.cargando{filter:blur(10px);transform:scale(1.02)}
+.st-txt{width:100%;height:100%;display:flex;align-items:center;justify-content:center;padding:40px 48px;
+  text-align:center;font-size:clamp(24px,3.6vw,40px);line-height:1.3;white-space:pre-wrap;word-break:break-word}
+.st-audio{display:flex;flex-direction:column;align-items:center;gap:14px;font-size:15px;opacity:.9}
+.st-audio svg{width:64px;height:64px}
+.st-pie{padding:10px 24px 4px;text-align:center;font-size:15px;line-height:1.45;white-space:pre-wrap;word-break:break-word;min-height:8px}
+.st-abajo{padding:10px 16px 20px;display:flex;justify-content:center}
+.st-resp{display:flex;align-items:center;gap:10px;width:100%}
+.st-resp input{flex:1;height:44px;border-radius:22px;border:0;outline:0;padding:0 20px;font-size:15px;
+  background:rgba(255,255,255,.12);color:#fff}
+.st-resp input::placeholder{color:rgba(255,255,255,.65)}
+.st-enviar{width:44px;height:44px;border-radius:50%;background:var(--st-verde);color:#fff;display:grid;place-items:center;flex:0 0 auto}
+.st-enviar svg{width:22px;height:22px}
+.st-ojo{display:flex;align-items:center;gap:8px;padding:8px 16px;border-radius:20px;font-size:15px;color:#fff}
+.st-ojo:hover{background:rgba(255,255,255,.1)}
+.st-ojo svg{width:22px;height:22px}
+.st-hoja{position:absolute;left:0;right:0;bottom:0;max-height:62%;display:flex;flex-direction:column;
+  background:var(--panel);color:var(--fg);border-radius:14px 14px 0 0;z-index:3}
+.st-hoja-cab{display:flex;align-items:center;justify-content:space-between;padding:16px 16px 12px 22px;font-size:16px}
+.st-hoja-cab button{color:var(--mut);font-size:18px;width:34px;height:34px;border-radius:50%}
+.st-hoja-lista{overflow-y:auto;padding-bottom:10px}
+.st-hoja .st-fila{cursor:default}
+.st-hoja .av{width:40px;height:40px}
+/* Compositor */
+.st-comp{position:fixed;inset:0;z-index:410;display:flex;flex-direction:column;color:#fff;transition:background .2s}
+.st-comp .st-x{position:absolute;top:16px;left:16px;right:auto}
+.st-comp-txt{flex:1;display:flex;align-items:center;justify-content:center;padding:70px 40px 20px}
+.st-comp-txt textarea{width:min(760px,100%);background:transparent;border:0;outline:0;resize:none;color:inherit;
+  text-align:center;font-size:clamp(26px,4vw,46px);line-height:1.3;height:auto;max-height:70vh;overflow-y:auto}
+.st-comp-txt textarea::placeholder{color:rgba(255,255,255,.7)}
+.st-comp-foto{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:70px 20px 10px;min-height:0}
+.st-comp-foto img,.st-comp-foto video{max-width:min(620px,100%);max-height:62vh;object-fit:contain;border-radius:4px}
+.st-comp-foto input[type=text]{width:min(620px,100%);height:44px;border-radius:8px;border:0;outline:0;padding:0 16px;
+  font-size:15px;background:rgba(255,255,255,.12);color:#fff}
+.st-comp-barra{display:flex;align-items:center;gap:10px;padding:14px 22px 22px}
+.st-comp-barra .st-ctl{background:rgba(0,0,0,.18)}
+.st-comp-barra select{flex:1;min-width:0;max-width:420px;height:40px;border-radius:20px;border:0;padding:0 14px;
+  background:rgba(0,0,0,.25);color:#fff;font-size:14px}
+.st-comp-barra select option{color:#111b21}
+.st-comp-barra .st-enviar{margin-left:auto;width:54px;height:54px}
+.st-paleta{display:flex;gap:6px;flex-wrap:wrap;max-width:300px}
+.st-paleta button{width:26px;height:26px;border-radius:50%;border:2px solid rgba(255,255,255,.7)}
 .cita{border-left:3px solid var(--ok);border-radius:4px;padding:4px 8px;margin-bottom:4px;
   background:rgba(11,20,26,.06);font-size:12px;color:var(--meta);line-height:1.35}
 :root[data-tema="oscuro"] .cita{background:rgba(255,255,255,.07)}
@@ -1320,6 +1424,8 @@ const ico = d => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" str
 const VISTAS = [
   { id:'planning',      nombre:'Planificación', fija:true,  icono:ico('<path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/>') },
   { id:'conversations', nombre:'Conversaciones',fija:true,  icono:ico('<path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>') },
+  // Justo debajo de Conversaciones, como en la barra de WhatsApp Web.
+  { id:'estados',       nombre:'Estados',       fija:true,  icono:ico('<circle cx="12" cy="12" r="9" stroke-dasharray="4 2.3"/><circle cx="12" cy="12" r="4"/>') },
   { id:'agenda',        nombre:'Agenda',        fija:true,  icono:ico('<rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/>') },
   { id:'dashboard',     nombre:'Dashboard',     icono:ico('<rect x="3" y="3" width="7" height="9" rx="2"/><rect x="14" y="3" width="7" height="5" rx="2"/><rect x="14" y="12" width="7" height="9" rx="2"/><rect x="3" y="16" width="7" height="5" rx="2"/>') },
   { id:'funnel',        nombre:'Funnel · Kanban', icono:ico('<path d="M22 3H2l8 9.5V19l4 2v-8.5L22 3z"/>') },
@@ -1808,6 +1914,7 @@ function hueco(id, html){
 }
 function monta(id){
   if (id === 'conversations') return montaConversaciones();
+  if (id === 'estados') return montaEstados();
   if (id === 'planning') return montaPlanificacion();
   if (id === 'plantillas') return montaPlantillasVista();
   if (id === 'campanas') return montaBroadcast();
@@ -1828,6 +1935,678 @@ function monta(id){
     + '<p class="bajada">Esta vista todavía no está reconstruida en el panel nuevo. '
     + 'Se está rehaciendo por fases; mientras tanto sigue disponible en el panel anterior.</p></div>');
   ve.ultimo = id;
+}
+
+/* ---- Estados (como WhatsApp Web) ----------------------------------------- */
+// Lo que el dueño pidió: «el panel de estados debe ser exactamente como se ve en el WhatsApp
+// Web». Tres piezas, las mismas que WhatsApp Web:
+//   - la lista: «Mi estado» arriba, luego «Recientes» (lo que falta por ver) y «Vistos», con el
+//     anillo partido en tantos trozos como estados tiene cada contacto;
+//   - el visor a pantalla completa: barras de avance arriba, quién y cuándo, flechas a los
+//     lados, y abajo «Responder» (o, en los tuyos, cuánta gente lo vio y quién);
+//   - el compositor: texto sobre un color, o foto con comentario.
+//
+// De dónde sale cada cosa: los estados de los contactos los guarda el puente en
+// crm_status_feed (texto, miniatura y referencia; 24 horas; nunca el archivo --la foto
+// completa se pide al abrirla, como «Ver» en un mensaje--); quién vio los tuyos, en
+// crm_status_views; y los tuyos, en crm_status_posts (se leen por statusList).
+//
+// Lo que NO es igual a WhatsApp Web, a propósito:
+//   - al publicar se elige a quién (prueba, clientes con movimiento o todos) y la cifra sale en
+//     la confirmación: el CRM publica a una lista, no a «mis contactos» del teléfono;
+//   - abajo no dice «cifrado de extremo a extremo»: los estados pasan por el CRM, y decirlo
+//     sería mentir. Dice lo que sí es verdad: que desaparecen a las 24 horas.
+
+const stIco = inner => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" '
+  + 'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + inner + '</svg>';
+const ST_ICO = {
+  estado: stIco('<circle cx="12" cy="12" r="9.2" stroke-dasharray="4.2 2.4"/><circle cx="12" cy="12" r="4.4" fill="currentColor" stroke="none"/>'),
+  mas: stIco('<path d="M12 5v14M5 12h14"/>'),
+  foto: stIco('<rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/>'),
+  lapiz: stIco('<path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 013 3L7 19l-4 1 1-4z"/>'),
+  cerrar: stIco('<path d="M18 6L6 18M6 6l12 12"/>'),
+  atras: stIco('<path d="M19 12H5M12 19l-7-7 7-7"/>'),
+  izq: stIco('<path d="M15 18l-6-6 6-6"/>'),
+  der: stIco('<path d="M9 18l6-6-6-6"/>'),
+  pausa: stIco('<path d="M8 5v14M16 5v14"/>'),
+  play: stIco('<path d="M7 4l13 8-13 8z" fill="currentColor"/>'),
+  enviar: stIco('<path d="M3 20l18-8L3 4v6l12 2-12 2z" fill="currentColor" stroke="none"/>'),
+  ojo: stIco('<path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"/><circle cx="12" cy="12" r="3"/>'),
+  micro: stIco('<rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0014 0M12 18v3"/>'),
+  letra: stIco('<path d="M4 7V5h16v2M12 5v14M9 19h6"/>'),
+  paleta: stIco('<circle cx="12" cy="12" r="9"/><circle cx="8" cy="10" r="1.3" fill="currentColor"/><circle cx="12" cy="7.5" r="1.3" fill="currentColor"/><circle cx="16" cy="10" r="1.3" fill="currentColor"/>'),
+  reloj: stIco('<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>'),
+  puntos: stIco('<circle cx="12" cy="5" r="1.5" fill="currentColor"/><circle cx="12" cy="12" r="1.5" fill="currentColor"/><circle cx="12" cy="19" r="1.5" fill="currentColor"/>'),
+};
+
+// Los colores de un estado de texto. El primero es el verde del estudio (el de siempre).
+const ST_PALETA = ['#0b5c3a', '#6e267b', '#c1a03f', '#ae8774', '#792138', '#8294ca', '#a62c71',
+  '#90a841', '#c69fcc', '#243640', '#7e90a3', '#54c265', '#fb6533', '#ff7b6b', '#26c4dc',
+  '#5696ff', '#7acba5', '#ffa7a4', '#8b6990', '#b6b327'];
+// Las letras, en el orden del enum de WhatsApp (FontType: 0 sans, 1 serif, 2 Norican,
+// 3 Bryndan, 4 Bebas, 5 Oswald). Se aproximan con fuentes del sistema: el número es lo que
+// viaja a WhatsApp y lo que ve el cliente en su teléfono.
+const ST_FUENTES = [
+  "'Segoe UI',Helvetica,Arial,sans-serif",
+  "Georgia,'Times New Roman',serif",
+  "'Segoe Script','Brush Script MT',cursive",
+  "'Segoe Print','Comic Sans MS',cursive",
+  "Impact,'Arial Narrow',sans-serif",
+  "'Arial Black','Segoe UI Black',sans-serif",
+];
+// Cuánto se ve cada foto o texto. Un vídeo dura lo que dura (con tope de un minuto).
+const ST_DURACION_MS = 6000;
+const ST_DIA_MS = 24 * 3600000;
+
+const ST = { feed: [], vistas: new Map(), mios: [], vistos: new Set(), escuchando: false,
+  sel: '', visor: null, comp: null };
+
+function stVisto(e){ return !!(e && (e.seen_at || ST.vistos.has(e._id))); }
+
+// «hoy a las 10:30», «ayer a las 20:15»: como lo escribe WhatsApp.
+function stCuando(iso){
+  const t = Date.parse(String(iso || ''));
+  if (!Number.isFinite(t)) return '';
+  const d = new Date(t), hoy = new Date();
+  const h = d.toLocaleTimeString('es-DO', { hour:'numeric', minute:'2-digit' });
+  if (d.toDateString() === hoy.toDateString()) return 'hoy a las ' + h;
+  const ayer = new Date(hoy); ayer.setDate(hoy.getDate() - 1);
+  if (d.toDateString() === ayer.toDateString()) return 'ayer a las ' + h;
+  return d.toLocaleDateString('es-DO', { day:'numeric', month:'short' }) + ', ' + h;
+}
+
+// La ficha de quien publicó, para su nombre y su foto. De las visibles y de la línea anterior;
+// de las ignoradas no, que tampoco tienen estados guardados.
+function stConv(tel){
+  let mejor = null;
+  for (const c of [...CONVS, ...CONVS_OCULTAS]) {
+    if (soloDigitos(c.wa_phone) !== tel) continue;
+    if (!mejor || c.source === 'whatsapp_qr') mejor = c;
+  }
+  return mejor;
+}
+function stNombre(tel, e){
+  const c = stConv(tel);
+  return c ? nombreDe(c) : (e?.push_name || '+' + telefonoLegible(tel));
+}
+function stAvatar(tel, e){
+  const c = stConv(tel);
+  return c ? avatarDe(c, stNombre(tel, e)) : '<div class="av">' + esc(iniciales(stNombre(tel, e))) + '</div>';
+}
+function stAvatarPropio(){
+  return '<div class="av">' + esc(iniciales(CFG.productName || 'Mi estado')) + '</div>';
+}
+
+// Los contactos con estados vivos, cada uno con los suyos del más viejo al más nuevo (así se
+// ven en WhatsApp), y la lista con el más reciente arriba.
+function stGrupos(){
+  const ahora = Date.now();
+  const porTel = new Map();
+  for (const e of ST.feed) {
+    if (e.revoked_at || !(Date.parse(String(e.expires_at || '')) > ahora)) continue;
+    const tel = soloDigitos(e.wa_phone);
+    if (!tel) continue;
+    if (!porTel.has(tel)) porTel.set(tel, []);
+    porTel.get(tel).push(e);
+  }
+  return [...porTel.entries()].map(([tel, lista]) => {
+    lista.sort((a, b) => String(a.posted_at || '').localeCompare(String(b.posted_at || '')));
+    return { tel, lista, ultimo: lista[lista.length - 1], pendientes: lista.filter(e => !stVisto(e)).length };
+  }).sort((a, b) => String(b.ultimo.posted_at || '').localeCompare(String(a.ultimo.posted_at || '')));
+}
+
+// Los tuyos que siguen vivos: publicados y de hace menos de un día.
+function stMios(){
+  const ahora = Date.now();
+  return ST.mios.filter(p => p.status === 'sent' && ahora - Date.parse(String(p.sent_at || '')) < ST_DIA_MS)
+    .sort((a, b) => String(a.sent_at || '').localeCompare(String(b.sent_at || '')));
+}
+
+// El anillo: un trozo por estado, verde lo que falta por ver y gris lo visto, empezando arriba.
+function stAro(vistos){
+  const n = Math.max(1, vistos.length);
+  const r = 23.2, C = 2 * Math.PI * r;
+  const hueco = n > 1 ? Math.min(3.2, C / n / 3) : 0;
+  const seg = C / n;
+  let trozos = '';
+  for (let i = 0; i < n; i++) {
+    trozos += '<circle cx="25" cy="25" r="' + r + '" fill="none" stroke-width="2.4" stroke="'
+      + (vistos[i] ? 'var(--st-gris)' : 'var(--st-verde)') + '" stroke-dasharray="'
+      + (seg - hueco).toFixed(2) + ' ' + (C - seg + hueco).toFixed(2) + '" stroke-dashoffset="'
+      + (-(i * seg) - hueco / 2).toFixed(2) + '"/>';
+  }
+  return '<svg class="aro" viewBox="0 0 50 50" aria-hidden="true">' + trozos + '</svg>';
+}
+
+function stFila(g){
+  return '<button class="st-fila' + (ST.sel === g.tel ? ' on' : '') + '" data-sttel="' + esc(g.tel) + '">'
+    + '<span class="st-anillo">' + stAro(g.lista.map(stVisto)) + stAvatar(g.tel, g.ultimo) + '</span>'
+    + '<span class="st-texto"><b>' + esc(stNombre(g.tel, g.ultimo)) + '</b>'
+    + '<i>' + esc(stCuando(g.ultimo.posted_at)) + '</i></span></button>';
+}
+
+function stFilaMia(){
+  const mios = stMios();
+  if (!mios.length) {
+    return '<button class="st-fila" data-stmio="nuevo"><span class="st-anillo">' + stAvatarPropio()
+      + '<span class="st-mas">+</span></span><span class="st-texto"><b>Mi estado</b>'
+      + '<i>Haz clic para añadir una actualización de estado</i></span></button>';
+  }
+  return '<button class="st-fila" data-stmio="ver"><span class="st-anillo">' + stAro(mios.map(() => true))
+    + stAvatarPropio() + '</span><span class="st-texto"><b>Mi estado</b>'
+    + '<i>' + esc(stCuando(mios[mios.length - 1].sent_at)) + '</i></span></button>';
+}
+
+function pintaEstados(){
+  const cont = $('stScroll');
+  if (!cont) return;
+  const grupos = stGrupos();
+  const recientes = grupos.filter(g => g.pendientes > 0);
+  const vistos = grupos.filter(g => !g.pendientes);
+  cont.innerHTML = stFilaMia()
+    + (recientes.length ? '<div class="st-sec">Recientes</div>' + recientes.map(stFila).join('') : '')
+    + (vistos.length ? '<div class="st-sec">Vistos</div>' + vistos.map(stFila).join('') : '')
+    + (!grupos.length ? '<div class="st-nada">Todavía no hay estados de tus contactos. Salen los de quien '
+      + 'tiene guardado el número de la línea de WhatsApp Web; la agenda .vcf de Configuración sirve '
+      + 'para que el teléfono del negocio los tenga a todos.</div>' : '');
+  resuelveAvatares();
+}
+
+function escuchaEstados(){
+  if (ST.escuchando) return;
+  ST.escuchando = true;
+  onSnapshot(query(collection(db, 'crm_status_feed'), where('business_id', '==', NEGOCIO)), s => {
+    ST.feed = s.docs.map(d => ({ ...d.data(), _id: d.id }));
+    pintaEstados();
+  }, err => console.warn('estados de contactos', err?.code || err));
+  onSnapshot(query(collection(db, 'crm_status_views'), where('business_id', '==', NEGOCIO)), s => {
+    const m = new Map();
+    for (const d of s.docs) {
+      const v = d.data();
+      if (!m.has(v.status_wamid)) m.set(v.status_wamid, []);
+      m.get(v.status_wamid).push(v);
+    }
+    ST.vistas = m;
+    stPintaAbajo();
+  }, err => console.warn('vistas de estados', err?.code || err));
+  stCargaMios();
+  // Los tuyos se leen por el servidor (la fila lleva la lista de destinatarios, que no hace
+  // falta bajar al navegador): cada minuto mientras la vista está abierta.
+  setInterval(() => { if (vistaActual === 'estados') stCargaMios(); }, 60000);
+}
+
+async function stCargaMios(){
+  const r = await llama({ action:'statusList' });
+  if (!r.ok) return;
+  ST.mios = r.data || [];
+  pintaEstados();
+}
+
+function montaEstados(){
+  escuchaEstados();
+  if (montadas.has('estados')) { pintaEstados(); return; }
+  montadas.add('estados');
+  const v = hueco('estados', '<div class="st-lista">'
+    + '<div class="st-cab"><h2>Estados</h2><div class="st-acc">'
+    +   '<button class="st-icono" id="stMas" title="Añadir estado" aria-label="Añadir estado">' + ST_ICO.mas + '</button>'
+    +   '<button class="st-icono" id="stPuntos" title="Más opciones" aria-label="Más opciones">' + ST_ICO.puntos + '</button>'
+    +   '<div class="st-menu" id="stMenuNuevo" hidden>'
+    +     '<button data-stnuevo="foto">' + ST_ICO.foto + 'Fotos y videos</button>'
+    +     '<button data-stnuevo="texto">' + ST_ICO.lapiz + 'Texto</button></div>'
+    +   '<div class="st-menu" id="stMenuPuntos" hidden>'
+    +     '<button data-stpuntos="agenda">' + ST_ICO.lapiz + 'Agenda de contactos</button>'
+    +     '<button data-stpuntos="historial">' + ST_ICO.reloj + 'Estados publicados</button></div>'
+    + '</div></div>'
+    + '<div class="st-scroll" id="stScroll"></div></div>'
+    + '<div class="st-panel">' + ST_ICO.estado
+    +   '<p>Haz clic en un contacto para ver sus actualizaciones de estado.</p>'
+    +   '<div class="st-nota">' + ST_ICO.reloj + 'Los estados desaparecen a las 24 horas.</div></div>');
+  const menus = () => { $('stMenuNuevo').hidden = true; $('stMenuPuntos').hidden = true; };
+  $('stMas').onclick = ev => { ev.stopPropagation(); const m = $('stMenuNuevo'); const abrir = m.hidden; menus(); m.hidden = !abrir; };
+  $('stPuntos').onclick = ev => { ev.stopPropagation(); const m = $('stMenuPuntos'); const abrir = m.hidden; menus(); m.hidden = !abrir; };
+  document.addEventListener('click', menus);
+  v.addEventListener('click', ev => {
+    const nuevo = ev.target.closest('[data-stnuevo]');
+    if (nuevo) { menus(); return stCompositor(nuevo.dataset.stnuevo); }
+    if (ev.target.closest('[data-stpuntos="agenda"]')) { menus(); return stAgenda(false); }
+    if (ev.target.closest('[data-stpuntos="historial"]')) {
+      menus(); ve('campanas');
+      setTimeout(() => $('esHistorial')?.scrollIntoView({ behavior:'smooth', block:'start' }), 300);
+      return;
+    }
+    const mio = ev.target.closest('[data-stmio]');
+    if (mio) return mio.dataset.stmio === 'ver' ? stAbreMios() : stCompositor('texto');
+    const fila = ev.target.closest('[data-sttel]');
+    if (fila) stAbreContacto(fila.dataset.sttel);
+  });
+  pintaEstados();
+}
+
+// ---- La agenda del WhatsApp del negocio ----
+// Los clientes que faltan en la agenda del WhatsApp Business se guardan con su nombre (el de la
+// caja primero) y se etiquetan. Se hace solo al publicar un Estado, y aquí se puede pedir a mano
+// y ver cómo fue. Lo que hace de verdad el puente está en wa-bridge/src/agenda-whatsapp.js.
+async function stAgenda(revisar){
+  const r = await llama({ action:'agenda', operation: revisar ? 'revisar' : 'estado' });
+  if (!r.ok) return avisa('No se pudo leer la agenda', r.error);
+  const d = r.data || {};
+  const hora = v => v ? new Date(v).toLocaleString('es-DO', { day:'numeric', month:'short', hour:'numeric', minute:'2-digit' }) : '';
+  let cuerpo;
+  if (revisar) cuerpo = '<p>Revisando la agenda en segundo plano. Guarda uno cada pocos segundos: con cientos '
+    + 'de clientes tarda unos minutos. Vuelve a abrir esto para ver cómo va.</p>';
+  else if (!d.status) cuerpo = '<p>Todavía no se ha revisado nunca.</p>';
+  else if (d.status === 'leyendo') cuerpo = '<p>Revisando ahora (empezó ' + esc(hora(d.started_at)) + ').</p>';
+  else if (d.status === 'fallo') cuerpo = '<p class="aviso">La última revisión falló: ' + esc(d.error || 'error') + '</p>';
+  else cuerpo = '<p><b>' + Number(d.ya_guardados || 0) + '</b> de ' + Number(d.total || 0) + ' clientes ya estaban en la agenda. '
+    + 'En la última revisión (' + esc(hora(d.finished_at)) + ') se guardaron <b>' + Number(d.agregados || 0) + '</b> '
+    + 'y se etiquetaron <b>' + Number(d.etiquetados || 0) + '</b> chats.</p>'
+    + (Number(d.faltan_guardar || 0) + Number(d.faltan_etiquetar || 0)
+      ? '<p class="bajada">Quedan ' + Number(d.faltan_guardar || 0) + ' por guardar y ' + Number(d.faltan_etiquetar || 0)
+        + ' por etiquetar: se hacen en la próxima revisión.</p>' : '')
+    + (Number(d.sin_nombre || 0) ? '<p class="bajada">' + Number(d.sin_nombre) + ' no tienen nombre en el CRM ni en la caja '
+      + 'y no se guardan: un número sin nombre en la agenda no sirve.</p>' : '')
+    + (d.sin_etiquetas_leidas ? '<p class="aviso">No se pudieron leer las etiquetas de WhatsApp: por seguridad no se '
+      + 'crea ninguna (podría renombrar una tuya).</p>' : '');
+  abreModal('<div class="mtapa"><b>Agenda del WhatsApp del negocio</b><button class="cerrarm" data-cerrar>×</button></div>'
+    + '<div class="mcuerpo">' + cuerpo
+    + '<p class="bajada">Se guardan con el nombre de la caja (o el del CRM) y con las etiquetas «Cliente D’Carela» y '
+    + '«Compró en caja». No se toca a quien ya tenías guardado ni a los ignorados.</p>'
+    + '<p class="bajada"><b>Ojo:</b> para que un cliente vea tus estados, <b>él</b> tiene que tener guardado el número '
+    + 'del negocio. Guardarlo aquí hace que tú veas los suyos y que su chat salga con nombre.</p></div>'
+    + '<div class="mpatas"><button class="btn-linea" data-cerrar>Cerrar</button>'
+    + '<button class="btn-solido" id="stAgendaYa">Revisar ahora</button></div>');
+  $('stAgendaYa').onclick = () => { cierraModal(); stAgenda(true); };
+}
+
+// ---- El visor ----
+function stAbreContacto(tel){
+  const grupos = stGrupos();
+  // El mismo orden en que se ven en la lista: primero lo que falta por ver.
+  const orden = [...grupos.filter(g => g.pendientes), ...grupos.filter(g => !g.pendientes)];
+  const gi = orden.findIndex(g => g.tel === tel);
+  if (gi < 0) return;
+  ST.sel = tel;
+  const lista = orden[gi].lista;
+  const i = lista.findIndex(e => !stVisto(e));
+  stVisor({ modo: 'ajenos', grupos: orden, gi, i: i < 0 ? 0 : i });
+}
+
+function stAbreMios(){
+  const mios = stMios();
+  if (!mios.length) return stCompositor('texto');
+  stVisor({ modo: 'mios', grupos: [{ tel: '', lista: mios }], gi: 0, i: 0 });
+}
+
+function stActual(){
+  const v = ST.visor;
+  return v ? v.grupos[v.gi]?.lista[v.i] : null;
+}
+
+function stVisor(estado){
+  stCierraVisor(true);
+  const d = document.createElement('div');
+  d.className = 'st-visor'; d.id = 'stVisor';
+  d.innerHTML = '<button class="st-ctl st-x" data-st="cerrar" aria-label="Cerrar">' + ST_ICO.cerrar + '</button>'
+    + '<button class="st-flecha izq" data-st="ant" aria-label="Anterior">' + ST_ICO.izq + '</button>'
+    + '<button class="st-flecha der" data-st="sig" aria-label="Siguiente">' + ST_ICO.der + '</button>'
+    + '<div class="st-col"><div class="st-barras" id="stBarras"></div>'
+    +   '<div class="st-quien"><button class="st-ctl" data-st="cerrar" aria-label="Volver">' + ST_ICO.atras + '</button>'
+    +     '<span id="stQuienAv"></span><span class="st-quien-t"><b id="stQuienN"></b><i id="stQuienT"></i></span>'
+    +     '<button class="st-ctl" data-st="pausa" id="stPausa" aria-label="Pausar">' + ST_ICO.pausa + '</button></div>'
+    +   '<div class="st-escena" id="stEscena"></div>'
+    +   '<div class="st-pie" id="stPie"></div>'
+    +   '<div class="st-abajo" id="stAbajo"></div></div>';
+  document.body.appendChild(d);
+  // El foco pasa al visor. Si se quedaba en la fila de la lista, la barra espaciadora --pausar,
+  // como en WhatsApp-- pulsaba esa fila y volvia a abrir el visor desde el principio.
+  d.tabIndex = -1;
+  d.focus({ preventScroll: true });
+  ST.visor = { ...estado, raf: 0, dur: ST_DURACION_MS, pasado: 0, desde: null, pausado: false, hoja: false, arrancado: false };
+  d.addEventListener('click', ev => {
+    const b = ev.target.closest('[data-st]');
+    if (!b) return;
+    const q = b.dataset.st;
+    if (q === 'cerrar') stCierraVisor();
+    else if (q === 'ant') stAnterior();
+    else if (q === 'sig') stSiguiente();
+    else if (q === 'pausa') stPausa(!ST.visor.pausado);
+    else if (q === 'enviar') stResponde();
+    else if (q === 'vistas') stHoja(true);
+    else if (q === 'cierrahoja') stHoja(false);
+  });
+  document.addEventListener('keydown', stTeclas);
+  stMuestra();
+}
+
+function stTeclas(ev){
+  if (!ST.visor) return;
+  const escribiendo = ev.target && ev.target.id === 'stResp';
+  if (ev.key === 'Escape') { ev.preventDefault(); return ST.visor.hoja ? stHoja(false) : stCierraVisor(); }
+  if (escribiendo) return;
+  if (ev.key === 'ArrowRight') { ev.preventDefault(); stSiguiente(); }
+  else if (ev.key === 'ArrowLeft') { ev.preventDefault(); stAnterior(); }
+  else if (ev.key === ' ') { ev.preventDefault(); stPausa(!ST.visor.pausado); }
+}
+
+function stCierraVisor(silencioso){
+  const v = ST.visor;
+  if (v) cancelAnimationFrame(v.raf);
+  const d = $('stVisor');
+  if (d) { d.querySelectorAll('video,audio').forEach(m => { try { m.pause(); } catch (e) {} }); d.remove(); }
+  document.removeEventListener('keydown', stTeclas);
+  ST.visor = null;
+  if (!silencioso) pintaEstados();
+}
+
+function stMuestra(){
+  const v = ST.visor, e = stActual();
+  if (!v || !e) return stCierraVisor();
+  cancelAnimationFrame(v.raf);
+  v.pasado = 0; v.desde = null; v.dur = ST_DURACION_MS; v.hoja = false; v.arrancado = false;
+  const lista = v.grupos[v.gi].lista;
+  const mio = v.modo === 'mios';
+  $('stBarras').innerHTML = lista.map((x, k) => '<span class="st-b"><i style="width:' + (k < v.i ? 100 : 0) + '%"></i></span>').join('');
+  $('stQuienAv').innerHTML = mio ? stAvatarPropio() : stAvatar(v.grupos[v.gi].tel, e);
+  $('stQuienN').textContent = mio ? 'Mi estado' : stNombre(v.grupos[v.gi].tel, e);
+  $('stQuienT').textContent = stCuando(mio ? e.sent_at : e.posted_at);
+  const escena = $('stEscena');
+  const pie = $('stPie');
+  escena.querySelectorAll('video,audio').forEach(m => { try { m.pause(); } catch (x) {} });
+  const tipo = String(e.kind || '');
+  const texto = String(e.body || '');
+  pie.textContent = '';
+  if (tipo === 'texto' || tipo === 'text') {
+    const fondo = /^#[0-9a-f]{6}$/i.test(String(e.bg_color || e.color || '')) ? (e.bg_color || e.color) : ST_PALETA[0];
+    const letra = /^#[0-9a-f]{6}$/i.test(String(e.text_color || '')) ? e.text_color : '#ffffff';
+    escena.innerHTML = '<div class="st-txt" style="background:' + fondo + ';color:' + letra
+      + ';font-family:' + (ST_FUENTES[Number(e.font) || 0] || ST_FUENTES[0]) + '">' + esc(texto) + '</div>';
+    stArranca(Math.min(12000, ST_DURACION_MS + texto.length * 30));
+  } else if (mio) {
+    // Lo tuyo se publicó desde aquí y el archivo no se guardó: queda su miniatura.
+    escena.innerHTML = e.media_thumb ? '<img class="st-img" src="' + esc(e.media_thumb) + '" alt="">' : '';
+    pie.textContent = texto;
+    stArranca(ST_DURACION_MS);
+  } else {
+    pie.textContent = texto;
+    const mini = String(e.media_thumb_b64 || '');
+    if (tipo === 'audio') {
+      escena.innerHTML = '<div class="st-audio">' + ST_ICO.micro + '<span>Nota de voz</span></div>';
+    } else {
+      escena.innerHTML = mini ? '<img class="st-img cargando" id="stMedio" src="' + esc(mini) + '" alt="">' : '<span class="cargando"></span>';
+    }
+    // El archivo completo se pide al abrirlo, como «Ver» en un mensaje. Mientras llega se ve la
+    // miniatura borrosa y la barra no avanza: el tiempo empieza cuando hay algo que mirar.
+    const pedido = e._id;
+    const espera = setTimeout(() => { if (stActual()?._id === pedido && !v.arrancado) stArranca(ST_DURACION_MS); }, 9000);
+    pideMedioCompleto(e._id).then(url => {
+      clearTimeout(espera);
+      if (!url || stActual()?._id !== pedido || !ST.visor) { if (!url && stActual()?._id === pedido && !v.arrancado) stArranca(ST_DURACION_MS); return; }
+      if (tipo === 'video' || tipo === 'audio') {
+        const m = document.createElement(tipo === 'video' ? 'video' : 'audio');
+        m.src = url; m.autoplay = true; m.playsInline = true;
+        if (tipo === 'video') m.className = 'st-img';
+        m.onloadedmetadata = () => stArranca(Math.min(60000, Math.max(3000, (m.duration || 6) * 1000)));
+        m.onerror = () => stArranca(ST_DURACION_MS);
+        if (tipo === 'video') escena.innerHTML = '';
+        escena.appendChild(m);
+        m.play().catch(() => { m.muted = true; m.play().catch(() => {}); });
+      } else {
+        const img = $('stMedio');
+        if (img) { img.src = url; img.classList.remove('cargando'); }
+        else escena.innerHTML = '<img class="st-img" src="' + esc(url) + '" alt="">';
+        if (!v.arrancado) stArranca(ST_DURACION_MS);
+      }
+    });
+  }
+  stPintaAbajo();
+  // Visto: el anillo se pone gris en todos los dispositivos y, con la lectura encendida, al
+  // autor le llega que lo viste, como con WhatsApp Web.
+  if (!mio && !stVisto(e)) {
+    ST.vistos.add(e._id);
+    llama({ action:'statusSeen', status_id: e._id }).catch(() => {});
+  }
+}
+
+function stPintaAbajo(){
+  const v = ST.visor, e = stActual(), abajo = $('stAbajo');
+  if (!v || !e || !abajo) return;
+  if (v.modo === 'mios') {
+    const vistas = (ST.vistas.get(e.wamid) || []);
+    abajo.innerHTML = '<button class="st-ojo" data-st="vistas">' + ST_ICO.ojo + '<span>' + vistas.length + '</span></button>';
+    if (v.hoja) stHoja(true);
+    return;
+  }
+  if ($('stResp')) return;
+  abajo.innerHTML = '<div class="st-resp"><input id="stResp" placeholder="Escribe una respuesta…" autocomplete="off">'
+    + '<button class="st-enviar" data-st="enviar" aria-label="Enviar">' + ST_ICO.enviar + '</button></div>';
+  const inp = $('stResp');
+  // Escribir pausa, como en WhatsApp: si no, el estado se va mientras se contesta.
+  inp.onfocus = () => stPausa(true);
+  inp.onblur = () => { if (!inp.value.trim()) stPausa(false); };
+  inp.onkeydown = ev => { if (ev.key === 'Enter') { ev.preventDefault(); stResponde(); } };
+}
+
+function stHoja(abrir){
+  const v = ST.visor, e = stActual();
+  if (!v || !e) return;
+  $('stHoja')?.remove();
+  v.hoja = !!abrir;
+  if (!abrir) return stPausa(false);
+  stPausa(true);
+  const vistas = (ST.vistas.get(e.wamid) || []).slice()
+    .sort((a, b) => String(b.viewed_at || '').localeCompare(String(a.viewed_at || '')));
+  const h = document.createElement('div');
+  h.className = 'st-hoja'; h.id = 'stHoja';
+  h.innerHTML = '<div class="st-hoja-cab"><b>Visto por ' + vistas.length + '</b>'
+    + '<button data-st="cierrahoja" aria-label="Cerrar">✕</button></div><div class="st-hoja-lista">'
+    + (vistas.length ? vistas.map(x => {
+      const tel = soloDigitos(x.wa_phone);
+      return '<div class="st-fila">' + stAvatar(tel, null) + '<span class="st-texto"><b>'
+        + esc(stNombre(tel, null)) + '</b><i>' + esc(stCuando(x.viewed_at)) + '</i></span></div>';
+    }).join('') : '<div class="st-nada">Todavía nadie lo ha visto.</div>')
+    + '</div>';
+  document.querySelector('#stVisor .st-col').appendChild(h);
+  resuelveAvatares();
+}
+
+function stArranca(ms){
+  const v = ST.visor;
+  if (!v) return;
+  v.dur = ms; v.pasado = 0; v.arrancado = true; v.desde = v.pausado ? null : performance.now();
+  stTick();
+}
+
+function stTick(){
+  const v = ST.visor;
+  if (!v) return;
+  cancelAnimationFrame(v.raf);
+  const t = v.pasado + (v.desde ? performance.now() - v.desde : 0);
+  const barra = $('stBarras')?.children[v.i]?.firstElementChild;
+  if (barra) barra.style.width = Math.min(100, (t / v.dur) * 100).toFixed(2) + '%';
+  if (v.desde && t >= v.dur) return stSiguiente();
+  v.raf = requestAnimationFrame(stTick);
+}
+
+function stPausa(pausar){
+  const v = ST.visor;
+  if (!v || v.pausado === pausar) return;
+  if (pausar && v.desde) { v.pasado += performance.now() - v.desde; v.desde = null; }
+  v.pausado = pausar;
+  // Si el tiempo todavía no había empezado (la foto no ha llegado), reanudar no lo arranca.
+  if (!pausar && v.arrancado) v.desde = performance.now();
+  const b = $('stPausa');
+  if (b) { b.innerHTML = pausar ? ST_ICO.play : ST_ICO.pausa; b.setAttribute('aria-label', pausar ? 'Reanudar' : 'Pausar'); }
+  $('stEscena')?.querySelectorAll('video,audio').forEach(m => { try { pausar ? m.pause() : m.play(); } catch (e) {} });
+  stTick();
+}
+
+function stSiguiente(){
+  const v = ST.visor;
+  if (!v) return;
+  if (v.i + 1 < v.grupos[v.gi].lista.length) { v.i += 1; return stMuestra(); }
+  // Al acabar los de un contacto se pasa al siguiente, como en WhatsApp.
+  if (v.gi + 1 < v.grupos.length) {
+    v.gi += 1;
+    const lista = v.grupos[v.gi].lista;
+    const i = lista.findIndex(e => !stVisto(e));
+    v.i = i < 0 ? 0 : i;
+    ST.sel = v.grupos[v.gi].tel;
+    return stMuestra();
+  }
+  stCierraVisor();
+}
+
+function stAnterior(){
+  const v = ST.visor;
+  if (!v) return;
+  if (v.i > 0) { v.i -= 1; return stMuestra(); }
+  if (v.gi > 0) { v.gi -= 1; v.i = v.grupos[v.gi].lista.length - 1; ST.sel = v.grupos[v.gi].tel; return stMuestra(); }
+  stMuestra();
+}
+
+async function stResponde(){
+  const e = stActual(), inp = $('stResp');
+  if (!e || !inp) return;
+  const texto = inp.value.trim();
+  if (!texto) return;
+  inp.disabled = true;
+  const r = await llama({ action:'statusReply', status_id: e._id, text: texto });
+  inp.disabled = false;
+  if (!r.ok) return avisa('No se pudo responder', r.error);
+  inp.value = '';
+  inp.blur();
+  avisa('Respuesta enviada', 'Le llega a ' + stNombre(soloDigitos(e.wa_phone), e) + ' citando su estado.');
+}
+
+// ---- El compositor ----
+// Texto sobre un color o foto con comentario, como en WhatsApp Web. Lo único que se añade es
+// a quién: el CRM publica a una lista, y la cifra sale en la confirmación.
+async function stCompositor(tipo){
+  $('stComp')?.remove();
+  const d = document.createElement('div');
+  d.className = 'st-comp'; d.id = 'stComp';
+  ST.comp = { tipo, color: 0, fuente: 0, foto: null, conteo: null };
+  const barra = '<div class="st-comp-barra">'
+    + (tipo === 'texto'
+      ? '<button class="st-ctl" data-stc="fuente" title="Tipo de letra" aria-label="Tipo de letra">' + ST_ICO.letra + '</button>'
+      + '<button class="st-ctl" data-stc="color" title="Color de fondo" aria-label="Color de fondo">' + ST_ICO.paleta + '</button>'
+      : '')
+    + '<select id="stcQuien" aria-label="A quién se le publica">'
+    +   '<option value="prueba">' + esc(ES_ETIQUETAS.prueba) + '</option>'
+    +   '<option value="activos" selected>' + esc(ES_ETIQUETAS.activos) + '</option>'
+    +   '<option value="todos">' + esc(ES_ETIQUETAS.todos) + '</option></select>'
+    + '<button class="st-enviar" data-stc="enviar" id="stcEnviar" aria-label="Publicar">' + ST_ICO.enviar + '</button></div>';
+  d.innerHTML = '<button class="st-ctl st-x" data-stc="cerrar" aria-label="Cerrar">' + ST_ICO.cerrar + '</button>'
+    + (tipo === 'texto'
+      ? '<div class="st-comp-txt"><textarea id="stcTexto" maxlength="700" placeholder="Escribe un estado"></textarea></div>'
+      : '<div class="st-comp-foto"><input type="file" id="stcArchivo" accept="image/*" hidden>'
+        + '<div class="st-comp-foto" id="stcPrevia"><button class="btn-linea" data-stc="elegir">Elegir foto</button></div></div>')
+    + barra;
+  document.body.appendChild(d);
+  stcPinta();
+  d.addEventListener('click', ev => {
+    const b = ev.target.closest('[data-stc]');
+    if (!b) return;
+    const q = b.dataset.stc;
+    if (q === 'cerrar') return stcCierra();
+    if (q === 'fuente') { ST.comp.fuente = (ST.comp.fuente + 1) % ST_FUENTES.length; return stcPinta(); }
+    if (q === 'color') { ST.comp.color = (ST.comp.color + 1) % ST_PALETA.length; return stcPinta(); }
+    if (q === 'elegir') return $('stcArchivo').click();
+    if (q === 'enviar') return stcPublica();
+  });
+  document.addEventListener('keydown', stcTeclas);
+  if (tipo === 'texto') {
+    // El texto crece con lo que se escribe y queda centrado en la pantalla, como en WhatsApp.
+    const area = $('stcTexto');
+    const ajusta = () => { area.style.height = 'auto'; area.style.height = Math.min(area.scrollHeight, innerHeight * 0.7) + 'px'; };
+    area.addEventListener('input', ajusta);
+    ajusta();
+    setTimeout(() => area.focus(), 50);
+  }
+  else {
+    $('stcArchivo').onchange = () => {
+      const f = ($('stcArchivo').files || [])[0];
+      if (!f) return;
+      ST.comp.foto = { blob: f, url: URL.createObjectURL(f) };
+      // El input del archivo se queda fuera de lo que se repinta: un id repetido en la pagina
+      // hace que getElementById devuelva el que no es.
+      $('stcPrevia').innerHTML = '<img src="' + ST.comp.foto.url + '" alt="">'
+        + '<input type="text" id="stcPie" maxlength="700" placeholder="Añade un comentario…">';
+      $('stcPie').focus();
+    };
+    $('stcArchivo').click();
+  }
+  // La cifra de cada opción, como en la tarjeta de Difusión.
+  const r = await llama({ action:'statusAudience', dias: 180 });
+  if (!r.ok || !$('stComp')) return;
+  ST.comp.conteo = r.data || {};
+  const c = ST.comp.conteo.conteo || {};
+  [...$('stcQuien').options].forEach(o => {
+    const n = c[o.value] ? c[o.value].total : 0;
+    o.textContent = ES_ETIQUETAS[o.value] + (o.value === 'activos' ? ' (180 días)' : '') + ' — ' + n
+      + (n === 1 ? ' contacto' : ' contactos');
+  });
+}
+
+function stcTeclas(ev){
+  if (ev.key === 'Escape' && $('stComp')) { ev.preventDefault(); stcCierra(); }
+}
+
+function stcCierra(){
+  $('stComp')?.remove();
+  if (ST.comp?.foto?.url) URL.revokeObjectURL(ST.comp.foto.url);
+  ST.comp = null;
+  document.removeEventListener('keydown', stcTeclas);
+}
+
+function stcPinta(){
+  const d = $('stComp'), c = ST.comp;
+  if (!d || !c) return;
+  d.style.background = c.tipo === 'texto' ? ST_PALETA[c.color] : 'var(--st-visor)';
+  const t = $('stcTexto');
+  if (t) t.style.fontFamily = ST_FUENTES[c.fuente];
+}
+
+async function stcPublica(){
+  const c = ST.comp;
+  if (!c) return;
+  const texto = c.tipo === 'texto' ? ($('stcTexto')?.value || '').trim() : ($('stcPie')?.value || '').trim();
+  if (c.tipo === 'texto' && !texto) return avisa('Falta el estado', 'Escribe algo.');
+  if (c.tipo === 'foto' && !c.foto) return avisa('Falta la foto', 'Elige una foto.');
+  const quien = $('stcQuien').value;
+  const d = c.conteo || (await llama({ action:'statusAudience', dias: 180 })).data || {};
+  if (!d.listo) return avisa('No se puede publicar', d.motivo || 'la línea no está lista');
+  const total = d.conteo && d.conteo[quien] ? d.conteo[quien].total : 0;
+  if (!total) return avisa('No hay a quién publicárselo', 'Esa opción no alcanza a nadie.');
+  // La misma pregunta que en Difusión, con la cifra dentro.
+  if (!confirm('Se va a publicar en Estados para ' + total + ' contacto(s): '
+    + ES_ETIQUETAS[quien] + '.' + '\n\n'
+    + 'Dura 24 horas y no se le puede quitar a quien ya lo haya visto.'
+    + '\n\n' + '¿Publicar?')) return;
+  const boton = $('stcEnviar');
+  boton.disabled = true;
+  const cuerpo = { action:'statusPost', audience: quien, text: texto, dias: 180 };
+  if (c.tipo === 'texto') { cuerpo.color = ST_PALETA[c.color]; cuerpo.font = c.fuente; }
+  else {
+    try {
+      // HD siempre: la foto entera, hasta 4096 px y 7,5 MB.
+      const hd = await comprimeHdPuente(c.foto.blob);
+      cuerpo.media_b64 = await leeBase64(hd);
+      cuerpo.media_mime = hd.type || c.foto.blob.type || 'image/jpeg';
+      const mini = await miniaturaParaEnviar(c.foto.blob);
+      if (mini) cuerpo.media_thumb_b64 = mini;
+    } catch (e) {
+      boton.disabled = false;
+      return avisa('No se pudo leer la foto', String(e && e.message || e));
+    }
+  }
+  const r = await llama(cuerpo);
+  boton.disabled = false;
+  if (!r.ok) return avisa('No se pudo publicar', r.error);
+  stcCierra();
+  avisa('Estado en camino', 'Sale para ' + (r.data?.total || total) + ' contacto(s). Aparece en «Mi estado» en cuanto se publique.');
+  setTimeout(stCargaMios, 4000);
+  setTimeout(stCargaMios, 12000);
 }
 
 /* ---- Conversaciones ------------------------------------------------------ */
@@ -2707,7 +3486,7 @@ function abre(c){
     +   '<div class="adjuntos">'
     +     '<button class="adj" id="adjImg" title="Enviar imágenes" aria-label="Enviar imágenes">'
     +       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg></button>'
-    +     '<button class="adj hd" id="adjHd" title="HD: envía la imagen sin comprimir" aria-pressed="false">HD</button>'
+    +     '<button class="adj hd' + (modoHd ? ' on' : '') + '" id="adjHd" title="HD: envía la imagen sin comprimir" aria-pressed="' + (modoHd ? 'true' : 'false') + '">HD</button>'
     +     '<button class="adj" id="adjDoc" title="Enviar documento" aria-label="Enviar documento">'
     +       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/></svg></button>'
     +     '<button class="adj" id="adjRapida" title="Respuestas rápidas" aria-label="Respuestas rápidas">'
@@ -3207,11 +3986,22 @@ function traduceErrorMeta(e, codigo){
 /* ---- Adjuntos ------------------------------------------------------------ */
 // Cola visible antes de enviar: lo que se manda a un cliente real se ve primero.
 const COLA = [];
-let modoHd = false;
-// El tope real lo pone el servidor: uploadMetaMedia rechaza por encima de 16 MB ya
-// decodificado (index.html del backend, linea 180). Poner 30 aqui solo conseguiria que
-// el archivo se subiera entero para morir alla, asi que se corta antes.
-const LIMITE_MB = () => (modoHd ? 15 : 12);
+// HD siempre, por defecto. Lo pidio el dueno: «las fotos se deben subir en HD siempre». El
+// boton sigue ahi por si alguna vez hace falta mandar algo ligero, pero arranca encendido.
+let modoHd = true;
+// El tope de ADJUNTAR depende del canal, no es el mismo numero para los dos:
+//  - Meta (Cloud API, el numero oficial): uploadMetaMedia rechaza por encima de 16 MB ya
+//    decodificado (firebase-functions/src/index.js, uploadMetaMedia). Poner mas aqui solo
+//    conseguiria que el archivo se subiera entero para morir alla, asi que se corta antes.
+//  - WhatsApp Web (el puente, 5644): la foto se comprime AQUI antes de mandarla
+//    (comprimeHdPuente, tope real 7,5 MB) sin importar cuanto pese el original, asi que el
+//    tope de Meta no tiene nada que ver: bloqueaba fotos HD de telefono (12-20 MB) que la
+//    compresion iba a bajar de sobra. Solo los documentos van intactos por el puente, y ahi
+//    si manda el tope del servidor (TOPE_MEDIO_PUENTE, 8 MB).
+function LIMITE_MB(porPuente, tipo){
+  if (porPuente) return tipo === 'document' ? 8 : 60;
+  return modoHd ? 15 : 12;
+}
 
 // Lo que admite cada red social. Es una COPIA de FORMATOS_SOCIAL
 // (firebase-functions/src/transport-core.js): decide el servidor, y esto solo sirve para avisar
@@ -3267,12 +4057,13 @@ async function recalculaCola(){
       continue;
     }
     if (a.hd === modoHd && a.datos) continue;      // ya esta en el modo pedido
-    let blob = modoHd ? await comprimeHd(a.archivo) : await comprimeNormal(a.archivo);
+    const porPuente = canalDe(sel) === 'whatsapp_qr';
+    let blob = modoHd ? await (porPuente ? comprimeHdPuente(a.archivo) : comprimeHd(a.archivo)) : await comprimeNormal(a.archivo);
     // WhatsApp Cloud API solo acepta JPEG y PNG como imagen. Una WebP pequeña pasaba sin
     // recomprimir y Meta rechazaba el mensaje: asi salian los vestidos del catalogo, que la
     // web publica en WebP, y la clienta no veia ninguno.
     if (!/^image\/(jpe?g|png)$/i.test(blob.type || '')) {
-      blob = (await aJpeg(await cargaImagen(blob), modoHd ? 2560 : 1600, 0.9)) || blob;
+      blob = (await aJpeg(await cargaImagen(blob), modoHd ? (porPuente ? LADO_HD_PUENTE : 2560) : 1600, 0.9)) || blob;
     }
     a.datos = await leeBase64(blob);
     a.mime = blob.type || a.archivo.type || 'image/jpeg';
@@ -3361,20 +4152,37 @@ async function aJpeg(img, lado, calidad){
   cv.getContext('2d').drawImage(img, 0, 0, cv.width, cv.height);
   return new Promise(res => cv.toBlob(res, 'image/jpeg', calidad));
 }
-async function comprimeHd(file){
+// Por la linea de WhatsApp Web (el puente) no hay recompresion de Meta: lo que se sube es lo que
+// le llega al cliente. Ahi HD es HD de verdad, como el de WhatsApp: hasta 4096 px de lado largo
+// y 7,5 MB (el servidor acepta 8; se deja margen). Por la linea oficial sigue valiendo lo de
+// arriba: 4,8 MB y 2560 px, porque Meta recomprime igual.
+const TOPE_HD_PUENTE = 7.5 * 1024 * 1024;
+const LADO_HD_PUENTE = 4096;
+
+async function comprimeHd(file, tope = TOPE_FIABLE, ladoMax = 2560){
   if (!file.type?.startsWith('image/')) return file;
-  if (/jpe?g/i.test(file.type) && file.size <= TOPE_FIABLE) return file;  // ya cabe: intacta
   try {
+    // Ya cabe y no se pasa de lado: intacta, sin tocar un pixel.
+    if (/jpe?g/i.test(file.type) && file.size <= tope) {
+      if (ladoMax >= LADO_HD_PUENTE) {
+        const img0 = await cargaImagen(file);
+        if (Math.max(img0.width, img0.height) <= ladoMax) return file;
+      } else return file;
+    }
     const img = await cargaImagen(file);
     const mayor = Math.max(img.width, img.height);
-    for (const lado of [Math.min(mayor, 2560), 2400, 2200, 2000, 1800, 1600]) {
-      if (lado > mayor) continue;
+    const lados = [Math.min(mayor, ladoMax), 3600, 3200, 2800, 2560, 2400, 2200, 2000, 1800, 1600]
+      .filter((lado, i, todos) => lado <= Math.min(mayor, ladoMax) && todos.indexOf(lado) === i);
+    for (const lado of lados) {
       const b = await aJpeg(img, lado, 0.92);
-      if (b && b.size <= TOPE_FIABLE) return b;
+      if (b && b.size <= tope) return b;
     }
     return (await aJpeg(img, 1600, 0.85)) || file;
   } catch (e) { return file; }
 }
+
+// La foto en HD para la linea del puente: chats de WhatsApp Web y Estados.
+const comprimeHdPuente = file => comprimeHd(file, TOPE_HD_PUENTE, LADO_HD_PUENTE);
 async function comprimeNormal(file){
   if (!file.type?.startsWith('image/')) return file;
   if (file.size <= 1.8 * 1024 * 1024) return file;
@@ -3384,10 +4192,12 @@ async function comprimeNormal(file){
 
 async function encola(files, tipo){
   let fuera = 0;
+  const porPuente = canalDe(sel) === 'whatsapp_qr';
+  const tope = LIMITE_MB(porPuente, tipo);
   for (const f of files) {
     // HEIC no lo acepta WhatsApp por esta via y se rechaza aqui, no a mitad del envio.
     if (tipo === 'image' && /heic|heif/i.test(f.type + f.name)) { fuera++; continue; }
-    if (f.size > LIMITE_MB() * 1024 * 1024) { fuera++; continue; }
+    if (f.size > tope * 1024 * 1024) { fuera++; continue; }
     // Se guarda el ORIGINAL. La compresion se decide al enviar, no al adjuntar: antes,
     // adjuntar y despues pulsar HD no servia de nada porque la foto ya venia comprimida
     // en calidad normal, y no habia forma de darse cuenta.
@@ -3395,7 +4205,7 @@ async function encola(files, tipo){
   }
   await recalculaCola();
   if (fuera) avisa(fuera + (fuera === 1 ? ' archivo se omitió' : ' archivos se omitieron'),
-    'HEIC o mayor de ' + LIMITE_MB() + ' MB.');
+    'HEIC o mayor de ' + tope + ' MB.');
   pintaCola();
 }
 function cableaAdjuntos(){
@@ -9588,8 +10398,10 @@ async function esPublicaEstado(){
   const cuerpo = { action:'statusPost', audience: quien, text: texto, dias: esVentana() };
   if (ES_FOTO) {
     try {
-      cuerpo.media_b64 = await leeBase64(ES_FOTO.blob);
-      cuerpo.media_mime = ES_FOTO.blob.type || 'image/jpeg';
+      // HD siempre: la foto entera, hasta 4096 px y 7,5 MB. Mas que eso el servidor no la acepta.
+      const hd = await comprimeHdPuente(ES_FOTO.blob);
+      cuerpo.media_b64 = await leeBase64(hd);
+      cuerpo.media_mime = hd.type || ES_FOTO.blob.type || 'image/jpeg';
       // La miniatura se queda en la ficha cuando el archivo de transito se borre: es lo que
       // deja ver despues QUE se publico sin guardar la foto en la nube.
       const mini = await miniaturaParaEnviar(ES_FOTO.blob);
