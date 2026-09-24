@@ -457,6 +457,10 @@ img.mmedia[data-medio]:not([src]),img.msticker[data-medio]:not([src]){
 /* Aviso de ventana de 24 h. Va pegado al compositor porque es donde se decide escribir.
    El ambar se fija en rgba y no en una ficha de color: tiene que leerse igual en claro y
    en oscuro, y es el unico aviso del panel que avisa de algo que aun se puede evitar. */
+/* [hidden] tiene la misma especificidad que .ventana24 y este CSS carga despues del navegador,
+   asi que sin este selector "display:flex" le gana al atributo: el aviso se queda vacio pero
+   VISIBLE --dos barras ambar en blanco al fondo de cada chat-- en vez de desaparecer. */
+.ventana24[hidden]{display:none}
 .ventana24{margin:0 12px 6px;padding:9px 12px;border-radius:var(--r);display:flex;gap:10px;
   align-items:flex-start;background:rgba(255,180,84,.14);border:1px solid rgba(255,180,84,.45);
   color:var(--fg);font-size:12.5px;line-height:1.45}
@@ -1977,6 +1981,7 @@ const ST_ICO = {
   paleta: stIco('<circle cx="12" cy="12" r="9"/><circle cx="8" cy="10" r="1.3" fill="currentColor"/><circle cx="12" cy="7.5" r="1.3" fill="currentColor"/><circle cx="16" cy="10" r="1.3" fill="currentColor"/>'),
   reloj: stIco('<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>'),
   puntos: stIco('<circle cx="12" cy="5" r="1.5" fill="currentColor"/><circle cx="12" cy="12" r="1.5" fill="currentColor"/><circle cx="12" cy="19" r="1.5" fill="currentColor"/>'),
+  grupo: stIco('<circle cx="9" cy="8" r="3.2"/><circle cx="17" cy="9.5" r="2.6"/><path d="M2.5 20c0-3.6 2.9-6.2 6.5-6.2s6.5 2.6 6.5 6.2"/><path d="M15 14.4c2.8.4 4.5 2.7 4.5 5.6"/>'),
 };
 
 // Los colores de un estado de texto. El primero es el verde del estudio (el de siempre).
@@ -2000,6 +2005,9 @@ const ST_DIA_MS = 24 * 3600000;
 
 const ST = { feed: [], vistas: new Map(), mios: [], vistos: new Set(), escuchando: false,
   sel: '', visor: null, comp: null };
+// La audiencia de fotografía elegida en el modal, para preseleccionarla al abrir el compositor.
+// Aparte de ST porque stCompositor la lee UNA vez y la borra; no es parte del estado del Estado.
+let ST_AUDIENCIA_PENDIENTE = '';
 
 function stVisto(e){ return !!(e && (e.seen_at || ST.vistos.has(e._id))); }
 
@@ -2154,6 +2162,7 @@ function montaEstados(){
     +     '<button data-stnuevo="foto">' + ST_ICO.foto + 'Fotos y videos</button>'
     +     '<button data-stnuevo="texto">' + ST_ICO.lapiz + 'Texto</button></div>'
     +   '<div class="st-menu" id="stMenuPuntos" hidden>'
+    +     '<button data-stpuntos="audiencias">' + ST_ICO.grupo + 'Audiencias de fotografía</button>'
     +     '<button data-stpuntos="agenda">' + ST_ICO.lapiz + 'Agenda de contactos</button>'
     +     '<button data-stpuntos="historial">' + ST_ICO.reloj + 'Estados publicados</button></div>'
     + '</div></div>'
@@ -2168,6 +2177,7 @@ function montaEstados(){
   v.addEventListener('click', ev => {
     const nuevo = ev.target.closest('[data-stnuevo]');
     if (nuevo) { menus(); return stCompositor(nuevo.dataset.stnuevo); }
+    if (ev.target.closest('[data-stpuntos="audiencias"]')) { menus(); return stAudiencias(); }
     if (ev.target.closest('[data-stpuntos="agenda"]')) { menus(); return stAgenda(false); }
     if (ev.target.closest('[data-stpuntos="historial"]')) {
       menus(); ve('campanas');
@@ -2180,6 +2190,55 @@ function montaEstados(){
     if (fila) stAbreContacto(fila.dataset.sttel);
   });
   pintaEstados();
+}
+
+// ---- Audiencias de fotografía ----
+// «con los datos de ventas historicas podemos hacer marketing con mas precision, orientado a
+// fotografia». Los segmentos salen de lo que la caja YA sabe que compro cada cliente
+// (pos_familias, calculado por el pase nocturno) — no de nada que se escriba aqui. La logica de
+// quien entra en cada uno vive en audiencias-foto.js, y no se puede saltar: publicar sigue
+// pasando por las mismas cuatro reglas de siempre (ignorados, bajas, la linea conectada).
+async function stAudiencias(){
+  abreModal('<div class="mtapa"><b>Audiencias de fotografía</b><button class="cerrarm" data-cerrar>×</button></div>'
+    + '<div class="mcuerpo" id="audCuerpo"><p class="bajada">Contando…</p></div>');
+  const r = await llama({ action:'audienciaFoto' });
+  const c = $('audCuerpo'); if (!c) return;
+  if (!r.ok) { c.innerHTML = '<p class="aviso">' + esc(r.error || 'No se pudo leer.') + '</p>'; return; }
+  const d = r.data || {};
+  const fila = (aud, nombre, total) => '<div style="display:flex;align-items:center;gap:8px;'
+      + 'padding:9px 0;border-top:1px solid var(--line)">'
+    + '<span style="flex:1;font-size:13px">' + esc(nombre)
+      + '<i style="display:block;color:var(--meta);font-style:normal;font-size:11.5px">'
+      + total + (total === 1 ? ' contacto' : ' contactos') + '</i></span>'
+    + '<button class="btn-linea" data-audpub="' + esc(aud) + '" data-audtipo="texto"' + (total ? '' : ' disabled') + '>Publicar</button>'
+    + '<button class="btn-linea" data-audetq="' + esc(aud) + '"' + (total ? '' : ' disabled') + '>Etiquetar</button></div>';
+  const filas = (d.familias || []).map((f) => fila('familia:' + f.clave, f.nombre, f.total)).join('')
+    + fila('dormidos', 'Dormidos (' + (d.dias || 120) + ' días sin volver a comprar)', d.dormidos || 0)
+    + fila('mejores', 'Mejores clientes', d.mejores || 0);
+  c.innerHTML = '<p class="bajada">Quién compró qué, según la caja. <b>Publicar</b> manda un Estado '
+    + 'solo a ese grupo (pasa por las mismas reglas de siempre: nada de ignorados ni de quien '
+    + 'pidió baja). <b>Etiquetar</b> les pone una etiqueta en el chat, para encontrarlos después '
+    + 'desde el buscador de Conversaciones.</p>' + filas;
+  c.querySelectorAll('[data-audpub]').forEach((b) => b.onclick = () => {
+    cierraModal();
+    ST_AUDIENCIA_PENDIENTE = b.dataset.audpub;
+    stCompositor(b.dataset.audtipo);
+  });
+  c.querySelectorAll('[data-audetq]').forEach((b) => b.onclick = () => stEtiquetaAudiencia(b.dataset.audetq));
+}
+
+// Etiquetar en lote: la MISMA etiqueta (`labels`) que ya usa «Etiquetar» sobre varios chats
+// seleccionados en Conversaciones, y el mismo buscador de siempre la encuentra despues.
+async function stEtiquetaAudiencia(aud){
+  const [tipo, clave] = aud.includes(':') ? aud.split(':') : [aud, ''];
+  const sugerida = clave || tipo;
+  const etiqueta = (window.prompt('Etiqueta para este grupo:', sugerida) || '').trim().toLowerCase();
+  if (!etiqueta) return;
+  const cuerpo = { action:'etiquetaAudienciaFoto', etiqueta, tipo, familia: clave, dias: 120 };
+  const r = await llama(cuerpo);
+  if (!r.ok) return avisa('No se pudo etiquetar', r.error);
+  avisa('Etiquetadas', r.etiquetadas + (r.etiquetadas === 1 ? ' conversación' : ' conversaciones')
+    + ' con «' + etiqueta + '».');
 }
 
 // ---- La agenda del WhatsApp del negocio ----
@@ -2344,7 +2403,10 @@ function stMuestra(){
       if (tipo === 'video' || tipo === 'audio') {
         const m = document.createElement(tipo === 'video' ? 'video' : 'audio');
         m.src = url; m.autoplay = true; m.playsInline = true;
-        if (tipo === 'video') m.className = 'st-img';
+        // Sin poster, un <video> se ve NEGRO desde que se crea hasta que decodifica su primer
+        // fotograma (puede tardar un momento): con esto se ve la misma miniatura borrosa de
+        // siempre hasta ese instante, en vez de un salto a negro que parece un estado roto.
+        if (tipo === 'video') { m.className = 'st-img'; if (mini) m.poster = mini; }
         m.onloadedmetadata = () => stArranca(Math.min(60000, Math.max(3000, (m.duration || 6) * 1000)));
         m.onerror = () => stArranca(ST_DURACION_MS);
         if (tipo === 'video') escena.innerHTML = '';
@@ -2537,15 +2599,41 @@ async function stCompositor(tipo){
     $('stcArchivo').click();
   }
   // La cifra de cada opción, como en la tarjeta de Difusión.
-  const r = await llama({ action:'statusAudience', dias: 180 });
-  if (!r.ok || !$('stComp')) return;
-  ST.comp.conteo = r.data || {};
-  const c = ST.comp.conteo.conteo || {};
-  [...$('stcQuien').options].forEach(o => {
-    const n = c[o.value] ? c[o.value].total : 0;
-    o.textContent = ES_ETIQUETAS[o.value] + (o.value === 'activos' ? ' (180 días)' : '') + ' — ' + n
-      + (n === 1 ? ' contacto' : ' contactos');
-  });
+  const [r, rFoto] = await Promise.all([
+    llama({ action:'statusAudience', dias: 180 }),
+    llama({ action:'audienciaFoto' }),
+  ]);
+  if (!$('stComp')) return;
+  if (r.ok) {
+    ST.comp.conteo = r.data || {};
+    const c = ST.comp.conteo.conteo || {};
+    [...$('stcQuien').options].forEach(o => {
+      const n = c[o.value] ? c[o.value].total : 0;
+      o.textContent = ES_ETIQUETAS[o.value] + (o.value === 'activos' ? ' (180 días)' : '') + ' — ' + n
+        + (n === 1 ? ' contacto' : ' contactos');
+    });
+  }
+  // Las audiencias de fotografía, aparte de las tres de siempre: quien compró qué, según la
+  // caja. Un grupo vacío no se ofrece — mandar «a nadie» no es una opción.
+  if (rFoto.ok) {
+    ST.comp.audienciaFoto = rFoto.data || {};
+    const af = ST.comp.audienciaFoto;
+    const opt = (valor, nombre, total) => total
+      ? '<option value="' + esc(valor) + '">' + esc(nombre) + ' — ' + total + (total === 1 ? ' contacto' : ' contactos') + '</option>'
+      : '';
+    const opciones = (af.familias || []).map((f) => opt('familia:' + f.clave, f.nombre, f.total)).join('')
+      + opt('dormidos', 'Dormidos (' + (af.dias || 120) + ' días sin comprar)', af.dormidos)
+      + opt('mejores', 'Mejores clientes', af.mejores);
+    if (opciones) {
+      $('stcQuien').insertAdjacentHTML('beforeend', '<optgroup label="Por fotografía">' + opciones + '</optgroup>');
+    }
+  }
+  if (ST_AUDIENCIA_PENDIENTE) {
+    if ([...$('stcQuien').options].some((o) => o.value === ST_AUDIENCIA_PENDIENTE)) {
+      $('stcQuien').value = ST_AUDIENCIA_PENDIENTE;
+    }
+    ST_AUDIENCIA_PENDIENTE = '';
+  }
 }
 
 function stcTeclas(ev){
@@ -2576,16 +2664,35 @@ async function stcPublica(){
   const quien = $('stcQuien').value;
   const d = c.conteo || (await llama({ action:'statusAudience', dias: 180 })).data || {};
   if (!d.listo) return avisa('No se puede publicar', d.motivo || 'la línea no está lista');
-  const total = d.conteo && d.conteo[quien] ? d.conteo[quien].total : 0;
+  // 'familia:clave', 'dormidos' o 'mejores' son las audiencias de fotografía; las otras tres
+  // son las de siempre. Cada una trae su propia cifra y su propio texto para la pregunta.
+  const esFamilia = quien.startsWith('familia:');
+  const clave = esFamilia ? quien.slice('familia:'.length) : '';
+  const af = c.audienciaFoto || {};
+  let total, nombreQuien, cuerpoAudiencia;
+  if (esFamilia) {
+    const f = (af.familias || []).find((x) => x.clave === clave);
+    total = f ? f.total : 0;
+    nombreQuien = f ? f.nombre : clave;
+    cuerpoAudiencia = { audience:'familia', familia: clave, dias: af.dias };
+  } else if (quien === 'dormidos' || quien === 'mejores') {
+    total = af[quien] || 0;
+    nombreQuien = quien === 'dormidos' ? 'Dormidos (' + (af.dias || 120) + ' días sin comprar)' : 'Mejores clientes';
+    cuerpoAudiencia = { audience: quien, dias: af.dias };
+  } else {
+    total = d.conteo && d.conteo[quien] ? d.conteo[quien].total : 0;
+    nombreQuien = ES_ETIQUETAS[quien];
+    cuerpoAudiencia = { audience: quien };
+  }
   if (!total) return avisa('No hay a quién publicárselo', 'Esa opción no alcanza a nadie.');
   // La misma pregunta que en Difusión, con la cifra dentro.
   if (!confirm('Se va a publicar en Estados para ' + total + ' contacto(s): '
-    + ES_ETIQUETAS[quien] + '.' + '\n\n'
+    + nombreQuien + '.' + '\n\n'
     + 'Dura 24 horas y no se le puede quitar a quien ya lo haya visto.'
     + '\n\n' + '¿Publicar?')) return;
   const boton = $('stcEnviar');
   boton.disabled = true;
-  const cuerpo = { action:'statusPost', audience: quien, text: texto, dias: 180 };
+  const cuerpo = { action:'statusPost', text: texto, dias: 180, ...cuerpoAudiencia };
   if (c.tipo === 'texto') { cuerpo.color = ST_PALETA[c.color]; cuerpo.font = c.fuente; }
   else {
     try {
