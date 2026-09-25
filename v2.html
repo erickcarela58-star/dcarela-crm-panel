@@ -793,6 +793,14 @@ img.mmedia[data-medio]:not([src]),img.msticker[data-medio]:not([src]){
 .dato{padding:8px 10px;border:1px solid var(--line);border-radius:var(--r);margin-bottom:7px}
 .dato .k{font-size:9.5px;font-weight:800;letter-spacing:.7px;text-transform:uppercase;color:var(--mut)}
 .dato .v{font-size:13px;margin-top:2px;word-break:break-word}
+/* Galeria de fotos/video en la ficha, como el panel de info de contacto de WhatsApp Web.
+   Reusa las mismas tarjetas .mthumb del hilo (bajo demanda incluido), solo que aqui,
+   dentro de una rejilla de casillas chicas, SI recorta a cuadrado -- es una miniatura de
+   galeria, no la vista previa de un mensaje, que es donde importaba no recortar. */
+.ficha-galeria{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;margin-bottom:8px}
+.ficha-galeria .mthumb{width:auto;aspect-ratio:1}
+.ficha-galeria .mthumb img{height:100%;max-height:none;object-fit:cover}
+.ficha-galeria .mthumb .vertag{font-size:9px;padding:2px 6px}
 
 /* --- Planificacion: el prompt unico ---------------------------------------- */
 .prompt{max-width:760px}
@@ -11965,21 +11973,56 @@ async function cableaHistorial(c){
 
   // Vacio y roto no se enseñan igual: "no ha mandado archivos" cuando en realidad no se
   // pudo consultar es la clase de mentira que hace buscar el fallo en otro sitio.
-  const bloqueArchivos = archivos === null
+  //
+  // Foto/sticker/video van en una galeria visual, como el panel de info de WhatsApp Web --
+  // antes esto era una lista con la fecha y un enlace que en la linea de WhatsApp Web decia
+  // siempre "sin enlace", porque ahi los archivos son bajo demanda y nunca tuvieron media_url.
+  // Documento y nota de voz se quedan en la lista de texto, que para eso les basta.
+  const esVisual = m => ['image', 'video', 'sticker'].includes(tipoRealMedio(m, adjuntoDe(m)));
+  const visuales = archivos === null ? [] : archivos.filter(esVisual);
+  const otros = archivos === null ? [] : archivos.filter(m => !esVisual(m));
+  const celdaGaleria = m => {
+    const a = adjuntoDe(m);
+    if (esBajoDemanda(m)) return tarjetaBajoDemanda(m, a, 'Archivo');
+    if (!a.url) return '<div class="mthumb" style="display:flex;align-items:center;'
+      + 'justify-content:center;color:var(--mut);font-size:10px;text-align:center;padding:4px">'
+      + 'sin archivo</div>';
+    // El video no se pinta como <video>: sin poster sale en negro (ya paso una vez con
+    // Estados) y aqui la casilla es demasiado chica para que valga la pena resolverlo.
+    // Un enlace directo abre el video de verdad, solo que en pestaña nueva.
+    if (tipoRealMedio(m, a) === 'video') return '<a class="mthumb" href="' + esc(a.url) + '" target="_blank" '
+      + 'rel="noopener" style="display:flex;align-items:center;justify-content:center;font-size:26px">▶</a>';
+    return '<button class="mthumb" data-vergaleria="' + esc(a.url) + '" title="Ver">'
+      + '<img src="' + esc(a.url) + '" alt="archivo" loading="lazy"></button>';
+  };
+  const bloqueGaleria = archivos === null
     ? '<p class="quien">No se pudieron consultar los archivos.</p>'
-    : archivos.length
-      ? archivos.slice(0, 40).map(m => '<div class="dato"><div class="k">' + esc(hora(m.created_at)) + '</div>'
+    : visuales.length
+      ? '<div class="ficha-galeria">' + visuales.slice(0, 30).map(celdaGaleria).join('') + '</div>'
+      : '<p class="quien">No ha mandado fotos ni videos.</p>';
+  const bloqueOtros = archivos === null ? '' : otros.length
+      ? otros.slice(0, 40).map(m => '<div class="dato"><div class="k">' + esc(hora(m.created_at)) + '</div>'
           + '<div class="v">' + (m.media_url
               ? '<a href="' + esc(m.media_url) + '" target="_blank" rel="noopener">'
                 + esc(m.msg_type || 'archivo') + '</a>'
+              : esBajoDemanda(m) ? esc(m.msg_type || 'archivo') + ' · pedir «Ver» en el chat'
               : esc(m.msg_type || 'archivo') + ' · sin enlace') + '</div></div>').join('')
-      : '<p class="quien">No ha mandado archivos.</p>';
+      : '<p class="quien">Sin documentos ni notas de voz.</p>';
   const bloqueEventos = eventos.length
     ? eventos.slice(0, 40).map(e => '<div class="dato"><div class="k">' + esc(hora(e.created_at)) + '</div>'
         + '<div class="v">' + esc(e.title || e.event_type || 'movimiento') + '</div></div>').join('')
     : '<p class="quien">Sin movimientos registrados.</p>';
-  caja.innerHTML = '<div class="seccion" style="margin:0 0 6px">Archivos que mandó</div>' + bloqueArchivos
+  caja.innerHTML = '<div class="seccion" style="margin:0 0 6px">Fotos y videos</div>' + bloqueGaleria
+    + '<div class="seccion" style="margin:14px 0 6px">Documentos y notas de voz</div>' + bloqueOtros
     + '<div class="seccion" style="margin:14px 0 6px">Movimientos</div>' + bloqueEventos;
+  // Las tarjetas bajo demanda de la galeria son las mismas de tarjetaBajoDemanda(): las
+  // cablea la misma funcion que ya cablea las del hilo (no vuelve a atar las que ya lo estan).
+  cableaBajoDemanda();
+  caja.querySelectorAll('[data-vergaleria]').forEach(b => {
+    if (b.dataset.listo) return;
+    b.dataset.listo = '1';
+    b.onclick = () => muestraLupa('img', b.dataset.vergaleria);
+  });
 }
 
 // Las notas se leen directas de Firestore, como el resto de v2, y se escriben por el
