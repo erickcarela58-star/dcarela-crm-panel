@@ -484,7 +484,11 @@ img.mmedia[data-medio]:not([src]),img.msticker[data-medio]:not([src]){
    limpio, como WhatsApp. En tactil no hay hover, asi que ahi se deja siempre. */
 .gaccion{position:absolute;top:2px;right:3px;width:20px;height:18px;border-radius:4px;
   color:var(--meta);font-size:13px;line-height:1;opacity:0;transition:opacity .12s;
-  background:linear-gradient(90deg,transparent,rgba(0,0,0,.06) 30%)}
+  background:linear-gradient(90deg,transparent,rgba(0,0,0,.06) 30%);
+  /* .mthumb tambien es position:relative y viene despues en el HTML: sin z-index quedaba
+     por ENCIMA de este boton en las fotos/stickers/video bajo demanda, y "opciones del
+     mensaje" no se podia pulsar ahi. Se encontro probando "Seleccionar" en vivo. */
+  z-index:2}
 .globo:hover .gaccion{opacity:1}
 @media(hover:none){.gaccion{opacity:.65}}
 .gmenu{position:absolute;top:20px;right:2px;z-index:20;min-width:154px;padding:4px;
