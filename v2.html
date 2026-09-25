@@ -384,6 +384,7 @@ img.av{object-fit:cover}
 .globo .pie-globo .leido{color:#53bdeb}
 .globo .pie-globo .fallo{color:var(--bad);font-weight:700}
 .globo .pie-globo .editado-tag{font-style:italic}
+.globo .pie-globo .destacado-tag{color:#ffb400}
 .globo .autor{font-size:11px;font-weight:700;color:var(--ok);margin-bottom:1px}
 .mmedia{display:block;max-width:250px;max-height:320px;width:auto;border-radius:6px;
   margin:1px 0 3px;cursor:zoom-in}
@@ -5317,10 +5318,12 @@ document.addEventListener('click', async ev => {
   // Reaccionar solo por la linea de WhatsApp Web, y solo a algo que exista en WhatsApp:
   // una nota interna del panel no tiene wamid y no hay a que reaccionar.
   const puedeReaccionar = canalDe(sel) === 'whatsapp_qr' && !!m.wamid;
+  const destacado = !!m.metadata?.starred;
   menu.innerHTML = '<button data-op="citar">Responder</button>'
     + (puedeReaccionar ? '<button data-op="reaccionar">Reaccionar</button>' : '')
     + '<button data-op="reenviar">Reenviar</button>'
     + '<button data-op="seleccionar">Seleccionar</button>'
+    + '<button data-op="destacar">' + (destacado ? 'Quitar destacado' : 'Destacar') + '</button>'
     + '<button data-op="copiar">Copiar texto</button>'
     + '<button data-op="borrar" class="peligro">Borrar</button>';
   globo.appendChild(menu);
@@ -5336,6 +5339,12 @@ document.addEventListener('click', async ev => {
     else if (op === 'reaccionar') abreReaccion(m);
     else if (op === 'reenviar') abreReenviar([m.id || m.wamid]);
     else if (op === 'seleccionar') entraSeleccion(m.id || m.wamid);
+    else if (op === 'destacar') {
+      // Destacar es solo del CRM: no le llega nada al cliente ni al puente, asi que no
+      // hace falta esperar confirmacion como con reenviar o borrar.
+      const r = await llama({ action:'star', message_id: m.id, starred: !destacado });
+      if (!r.ok) avisa('No se pudo destacar', r.error);
+    }
     else if (op === 'borrar') {
       // Borrado blando: WhatsApp no permite quitarlo del telefono del cliente, asi
       // que se dice claro que solo desaparece de aqui.
@@ -6324,13 +6333,16 @@ function pintaMensajes(){
     // Web ("Editado" antes de la hora). Sin esto se leia como que el cliente escribio eso
     // desde el principio.
     const editado = m.metadata?.editado ? '<span class="editado-tag">Editado</span> ' : '';
+    // Destacar no le llega al cliente ni al puente (ver starMessageAction): es una marca
+    // solo del CRM, igual que en WhatsApp Web se destaca solo para quien lo pulsa.
+    const destacadoTag = m.metadata?.starred ? '<span class="destacado-tag" title="Destacado">★</span> ' : '';
     return cabeza + '<div class="globo ' + (sale ? 'sale' : 'entra') + ' ' + (primero ? 'primero' : 'seguido')
       + (marcado ? ' marcado' : '') + '"'
       + ' data-msg="' + esc(idMsg) + '">'
       + '<input type="checkbox" class="msel" data-msel="' + esc(idMsg) + '"' + (marcado ? ' checked' : '') + '>'
       + '<button class="gaccion" aria-label="Opciones del mensaje">⌄</button>'
       + autor + cita + cuerpoMensaje(m)
-      + '<span class="pie-globo">' + editado + (conFecha ? esc(d.toLocaleTimeString('es-DO',{hour:'2-digit',minute:'2-digit'})) : '') + ticks + '</span>'
+      + '<span class="pie-globo">' + destacadoTag + editado + (conFecha ? esc(d.toLocaleTimeString('es-DO',{hour:'2-digit',minute:'2-digit'})) : '') + ticks + '</span>'
       + '</div>';
   }).join('') || '<div style="margin:auto;color:var(--mut);font-size:13px">Sin mensajes todavía.</div>';
 
