@@ -383,6 +383,7 @@ img.av{object-fit:cover}
 .globo .pie-globo b{font-weight:400}
 .globo .pie-globo .leido{color:#53bdeb}
 .globo .pie-globo .fallo{color:var(--bad);font-weight:700}
+.globo .pie-globo .editado-tag{font-style:italic}
 .globo .autor{font-size:11px;font-weight:700;color:var(--ok);margin-bottom:1px}
 .mmedia{display:block;max-width:250px;max-height:320px;width:auto;border-radius:6px;
   margin:1px 0 3px;cursor:zoom-in}
@@ -6249,13 +6250,18 @@ function pintaMensajes(){
     const cita = citaDelMensaje(m);
     const idMsg = m.id || m.wamid || '';
     const marcado = modoSeleccion && SEL_MSGS.has(idMsg);
+    // El puente reescribe el body con el texto nuevo (index.js:aplicaCambioDeMensaje), asi que
+    // el hilo YA mostraba la version editada; lo unico que faltaba era decirlo, como WhatsApp
+    // Web ("Editado" antes de la hora). Sin esto se leia como que el cliente escribio eso
+    // desde el principio.
+    const editado = m.metadata?.editado ? '<span class="editado-tag">Editado</span> ' : '';
     return cabeza + '<div class="globo ' + (sale ? 'sale' : 'entra') + ' ' + (primero ? 'primero' : 'seguido')
       + (marcado ? ' marcado' : '') + '"'
       + ' data-msg="' + esc(idMsg) + '">'
       + '<input type="checkbox" class="msel" data-msel="' + esc(idMsg) + '"' + (marcado ? ' checked' : '') + '>'
       + '<button class="gaccion" aria-label="Opciones del mensaje">⌄</button>'
       + autor + cita + cuerpoMensaje(m)
-      + '<span class="pie-globo">' + (conFecha ? esc(d.toLocaleTimeString('es-DO',{hour:'2-digit',minute:'2-digit'})) : '') + ticks + '</span>'
+      + '<span class="pie-globo">' + editado + (conFecha ? esc(d.toLocaleTimeString('es-DO',{hour:'2-digit',minute:'2-digit'})) : '') + ticks + '</span>'
       + '</div>';
   }).join('') || '<div style="margin:auto;color:var(--mut);font-size:13px">Sin mensajes todavía.</div>';
 
