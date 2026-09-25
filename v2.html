@@ -368,6 +368,12 @@ img.av{object-fit:cover}
 .globo.entra{align-self:flex-start;background:var(--in);border-radius:0 var(--r) var(--r) var(--r)}
 .globo.sale{align-self:flex-end;background:var(--out);border-radius:var(--r) 0 var(--r) var(--r)}
 .globo.seguido{border-radius:var(--r)}
+/* Selección múltiple para reenviar: una casilla dentro del globo, sin mover el layout
+   sale/entra que ya reparte los mensajes a izquierda o derecha. */
+.msel{display:none;position:absolute;left:5px;top:6px;width:17px;height:17px;accent-color:var(--ok);z-index:1}
+.mensajes.modo-seleccion .globo{padding-left:28px;cursor:pointer}
+.mensajes.modo-seleccion .msel{display:block}
+.globo.marcado{outline:2px solid var(--ok);outline-offset:1px}
 .globo.primero.entra::before{content:"";position:absolute;left:-8px;top:0;
   border-top:8px solid var(--in);border-left:8px solid transparent}
 .globo.primero.sale::before{content:"";position:absolute;right:-8px;top:0;
@@ -422,7 +428,7 @@ img.mmedia[data-medio]:not([src]),img.msticker[data-medio]:not([src]){
 .mthumb{position:relative;display:block;padding:0;border-radius:6px;overflow:hidden;
   max-width:250px;margin:1px 0 3px;cursor:pointer;background:rgba(11,20,26,.06)}
 :root[data-tema="oscuro"] .mthumb{background:rgba(255,255,255,.07)}
-.mthumb img{display:block;width:100%;max-height:320px;object-fit:cover}
+.mthumb img{display:block;width:100%;max-height:320px;object-fit:contain}
 .mthumb .vertag{position:absolute;right:6px;bottom:6px;font-size:11px;font-weight:700;
   padding:3px 9px;border-radius:9px;background:rgba(11,20,26,.72);color:#fff}
 .mthumb.pidiendo .vertag{opacity:.75}
@@ -633,11 +639,28 @@ img.mmedia[data-medio]:not([src]),img.msticker[data-medio]:not([src]){
   overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .barra-cita button{width:26px;height:26px;border-radius:50%;color:var(--mut);font-size:16px}
 .barra-cita button:hover{background:var(--hover)}
-/* Lupa: ver una foto de cerca sin salir del chat ni abrir otra pestaña. */
+.barra-seleccion{display:flex;align-items:center;gap:10px;padding:9px 14px;
+  background:var(--panel);border-top:1px solid var(--line)}
+.barra-seleccion[hidden]{display:none}
+.barra-seleccion .bstexto{flex:1;min-width:0;font-size:12.5px;color:var(--mut)}
+.barra-seleccion .bscancelar{width:26px;height:26px;border-radius:50%;color:var(--mut);font-size:16px}
+.barra-seleccion .bscancelar:hover{background:var(--hover)}
+.barra-seleccion .bsreenviar{padding:7px 16px;font-size:13px}
+.barra-seleccion .bsreenviar:disabled{opacity:.5}
+.fwd-enviar{padding:8px 16px;font-size:13px}
+.fwd-enviar:disabled{opacity:.5}
+/* Lupa: ver una foto, un video o un sticker de cerca sin salir del chat ni abrir otra
+   pestaña. Lo bajo demanda entra por el mismo sitio: se abre YA, en «cargando», y se
+   rellena cuando llega el archivo -- no es una ventana nueva, así que Chrome no la bloquea
+   aunque tarde en llegar. */
 #lupa{display:none;position:fixed;inset:0;z-index:95;background:rgba(11,20,26,.88);
   align-items:center;justify-content:center;padding:26px;cursor:zoom-out}
 #lupa.on{display:flex}
-#lupa img{max-width:100%;max-height:100%;border-radius:6px}
+#lupa img,#lupa video{max-width:100%;max-height:100%;border-radius:6px;display:none}
+#lupa.con-imagen img{display:block}
+#lupa.con-video video{display:block;cursor:default}
+#lupa .lupa-carga{display:none;color:#e9edef;font:14px system-ui}
+#lupa.cargando .lupa-carga{display:block}
 
 /* El compositor se envuelve cuando no cabe. Con siete botones de adjuntar en una fila
    rigida y la ventana estrecha, la caja de texto se quedaba con cuarenta pixeles y
@@ -1025,6 +1048,16 @@ img.mmedia[data-medio]:not([src]),img.msticker[data-medio]:not([src]){
 .tpl:hover{background:var(--hover);border-color:var(--line2)}
 .tpl b{display:block;font-size:13.5px}
 .tplmeta{display:block;margin-top:2px;font-size:11px;color:var(--mut)}
+/* Destinos marcados para reenviar a varios a la vez, y el rotulo de "Frecuentes" que separa
+   los chats mas recientes del resto, como en WhatsApp Web. */
+.tpl.marcado{border-color:var(--ok);background:rgba(37,163,102,.1)}
+.tpl .tplcheck{float:right;width:18px;height:18px;border-radius:50%;border:2px solid var(--line2);
+  background:var(--panel)}
+.tpl.marcado .tplcheck{border-color:var(--ok);background:var(--ok)
+  url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 13l4 4L19 7'/%3E%3C/svg%3E") center/12px no-repeat}
+.fwd-grupo{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.03em;
+  color:var(--mut);margin:14px 0 6px;padding:0 2px}
+.fwd-grupo:first-child{margin-top:0}
 .tplprev{display:block;margin-top:6px;font-size:12px;color:var(--mut);line-height:1.4;
   padding-top:6px;border-top:1px dashed var(--line)}
 .pdfs{display:flex;flex-wrap:wrap;gap:6px}
@@ -1342,7 +1375,7 @@ img.mmedia[data-medio]:not([src]),img.msticker[data-medio]:not([src]){
 </div>
 
 <div id="aviso"></div>
-<div id="lupa"><img alt="imagen ampliada"></div>
+<div id="lupa"><p class="lupa-carga">Pidiendo el archivo a WhatsApp…</p><img alt="imagen ampliada"><video controls></video></div>
 
 <script type="module">
 import { initializeApp, getApps } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js';
@@ -3543,6 +3576,8 @@ function abre(c){
   apagaEscribiendo();
   COLA.length = 0;
   citando = null;
+  modoSeleccion = false;
+  SEL_MSGS.clear();
   sel = c;
   document.body.classList.add('chat-abierto');
   $('sinChat').style.display = 'none';
@@ -3589,6 +3624,10 @@ function abre(c){
     + '<div class="barra-cita" id="barraCita" hidden>'
     +   '<div class="cvertical"></div><div class="ctexto"></div>'
     +   '<button id="citaX" aria-label="Quitar la cita">×</button></div>'
+    + '<div class="barra-seleccion" id="barraSeleccion" hidden>'
+    +   '<button class="bscancelar" aria-label="Cancelar selección">×</button>'
+    +   '<div class="bstexto">0 mensajes seleccionados</div>'
+    +   '<button class="bsreenviar btn-solido" disabled>Reenviar</button></div>'
     + '<div class="escribir">'
     +   '<div class="adjuntos">'
     +     '<button class="adj" id="adjImg" title="Enviar imágenes" aria-label="Enviar imágenes">'
@@ -3867,6 +3906,9 @@ function cableaChat(c){
   cableaAdjuntos();
   cancelaCita();
   $('citaX').onclick = cancelaCita;
+  pintaBarraSeleccion();
+  $('barraSeleccion').querySelector('.bscancelar').onclick = saleSeleccion;
+  $('barraSeleccion').querySelector('.bsreenviar').onclick = () => abreReenviar([...SEL_MSGS]);
   const caja = $('texto'), env = $('btnEnviar');
   caja.addEventListener('input', () => {
     caja.style.height = 'auto';
@@ -4791,16 +4833,45 @@ function abreModal(html){
 function cierraModal(){ const m = $('modal'); if (m) m.className = 'modal'; }
 document.addEventListener('keydown', ev => { if (ev.key === 'Escape') { cierraModal(); cierraLupa(); } });
 
-/* ---- Lupa de imagenes ---------------------------------------------------- */
-function cierraLupa(){ $('lupa').classList.remove('on'); $('lupa').querySelector('img').src = ''; }
+/* ---- Lupa de imagenes, videos y stickers ---------------------------------- */
+function cierraLupa(){
+  const l = $('lupa');
+  l.classList.remove('on', 'cargando', 'con-imagen', 'con-video');
+  l.querySelector('img').src = '';
+  const v = l.querySelector('video');
+  v.pause(); v.removeAttribute('src'); v.load();
+}
+// Se abre YA, antes de tener el archivo: pedirlo bajo demanda puede tardar unos segundos
+// y esto no es una ventana nueva, asi que no la alcanza el bloqueo de popups de Chrome.
+function abreLupaCargando(){
+  const l = $('lupa');
+  l.classList.remove('con-imagen', 'con-video');
+  l.classList.add('on', 'cargando');
+}
+function muestraLupa(tipo, src){
+  const l = $('lupa');
+  l.classList.remove('cargando');
+  l.classList.add('on');
+  if (tipo === 'video') {
+    l.classList.remove('con-imagen'); l.classList.add('con-video');
+    const v = l.querySelector('video'); v.src = src; v.play().catch(() => {});
+  } else {
+    l.classList.remove('con-video'); l.classList.add('con-imagen');
+    l.querySelector('img').src = src;
+  }
+}
 $('lupa').onclick = cierraLupa;
+// El video no cierra la lupa al tocarlo: hacen falta los controles nativos (pausa, avance,
+// volumen) sin que cada toque cierre la vista.
+$('lupa').querySelector('video').onclick = ev => ev.stopPropagation();
 // Delegado en el documento: los globos se repintan en cada mensaje nuevo y un
-// manejador puesto sobre cada imagen se perderia en el siguiente repintado.
+// manejador puesto sobre cada imagen se perderia en el siguiente repintado. Los stickers
+// (.msticker) entran igual que las fotos: antes no tenian lupa y no habia otra forma de
+// verlos de cerca.
 document.addEventListener('click', ev => {
   const img = ev.target;
-  if (img?.tagName === 'IMG' && img.classList.contains('mmedia')) {
-    $('lupa').querySelector('img').src = img.src;
-    $('lupa').classList.add('on');
+  if (img?.tagName === 'IMG' && (img.classList.contains('mmedia') || img.classList.contains('msticker'))) {
+    muestraLupa('img', img.src);
   }
 });
 
@@ -5101,9 +5172,47 @@ function pintaCita(){
 }
 function cancelaCita(){ citando = null; pintaCita(); }
 
+/* ---- Selección múltiple de mensajes, para reenviar varios de una vez -------
+   Como en WhatsApp Web: "Seleccionar" en el menú de un mensaje entra en el modo, aparece
+   una casilla en cada globo, y una barra abajo deja añadir más y reenviarlos juntos. */
+let modoSeleccion = false;
+const SEL_MSGS = new Set();
+
+function entraSeleccion(idInicial){
+  modoSeleccion = true;
+  SEL_MSGS.clear();
+  if (idInicial) SEL_MSGS.add(idInicial);
+  $('mensajes')?.classList.add('modo-seleccion');
+  pintaMensajes();
+  pintaBarraSeleccion();
+}
+function saleSeleccion(){
+  modoSeleccion = false;
+  SEL_MSGS.clear();
+  $('mensajes')?.classList.remove('modo-seleccion');
+  pintaMensajes();
+  pintaBarraSeleccion();
+}
+function alternaSeleccion(id){
+  if (SEL_MSGS.has(id)) SEL_MSGS.delete(id); else SEL_MSGS.add(id);
+  if (!SEL_MSGS.size) return saleSeleccion();
+  pintaMensajes();
+  pintaBarraSeleccion();
+}
+function pintaBarraSeleccion(){
+  const barra = $('barraSeleccion'); if (!barra) return;
+  barra.hidden = !modoSeleccion;
+  if (!modoSeleccion) return;
+  const n = SEL_MSGS.size;
+  barra.querySelector('.bstexto').textContent = n === 1 ? '1 mensaje seleccionado' : n + ' mensajes seleccionados';
+  barra.querySelector('.bsreenviar').disabled = !n;
+}
+
 // Delegado en el documento: los globos se repintan con cada mensaje nuevo, y un
 // manejador puesto sobre cada boton se perderia en el siguiente repintado.
 document.addEventListener('click', async ev => {
+  const casilla = ev.target.closest('.msel[data-msel]');
+  if (casilla) { ev.stopPropagation(); alternaSeleccion(casilla.dataset.msel); return; }
   // Pulsar la cita salta al mensaje citado, como en WhatsApp. Si ese mensaje no esta cargado
   // --el hilo trae los ultimos 400-- no se hace nada: mejor eso que un salto a otro sitio.
   const cita = ev.target.closest('.cita[data-cita]');
@@ -5131,6 +5240,7 @@ document.addEventListener('click', async ev => {
   menu.innerHTML = '<button data-op="citar">Responder</button>'
     + (puedeReaccionar ? '<button data-op="reaccionar">Reaccionar</button>' : '')
     + '<button data-op="reenviar">Reenviar</button>'
+    + '<button data-op="seleccionar">Seleccionar</button>'
     + '<button data-op="copiar">Copiar texto</button>'
     + '<button data-op="borrar" class="peligro">Borrar</button>';
   globo.appendChild(menu);
@@ -5144,7 +5254,8 @@ document.addEventListener('click', async ev => {
       catch (e) { avisa('No se pudo copiar'); }
     }
     else if (op === 'reaccionar') abreReaccion(m);
-    else if (op === 'reenviar') abreReenviar(m);
+    else if (op === 'reenviar') abreReenviar([m.id || m.wamid]);
+    else if (op === 'seleccionar') entraSeleccion(m.id || m.wamid);
     else if (op === 'borrar') {
       // Borrado blando: WhatsApp no permite quitarlo del telefono del cliente, asi
       // que se dice claro que solo desaparece de aqui.
@@ -5182,43 +5293,86 @@ function abreReaccion(m){
 // desde el teléfono.
 const TIPOS_CON_ARCHIVO = ['image', 'video', 'audio', 'voice', 'document', 'file', 'sticker'];
 
-function abreReenviar(m){
-  const texto = String(m.body || '').trim();
-  const conArchivo = TIPOS_CON_ARCHIVO.includes(String(m.msg_type || '').toLowerCase());
-  if (!conArchivo && (!texto || /^\[[a-z]+\]$/i.test(texto)))
-    return avisa('Ese mensaje no se puede reenviar', 'No tiene ni texto ni archivo.');
-  abreModal('<div class="mtapa"><b>Reenviar a…</b><button class="cerrarm" data-cerrar>×</button></div>'
+// Cuantos chats recientes entran en "Frecuentes" antes de separar el resto. CONVS ya viene
+// ordenada por last_message_at: los primeros de esa lista SON con quien mas se habla.
+const FWD_FRECUENTES_N = 8;
+
+// `ids` es un arreglo de ids de mensaje (uno solo, desde "Reenviar" en el menu de un
+// mensaje; varios, desde la barra de seleccion). Los destinos tambien se eligen de a
+// varios, como el modo de reenviar de WhatsApp Web: marcar chats y despues pulsar Enviar.
+function abreReenviar(ids){
+  const lista = (Array.isArray(ids) ? ids : [ids]).filter(Boolean);
+  const msgs = lista.map(id => MSGS.find(x => (x.id || x.wamid) === id)).filter(Boolean);
+  const validos = msgs.filter(m => {
+    const texto = String(m.body || '').trim();
+    const conArchivoM = TIPOS_CON_ARCHIVO.includes(String(m.msg_type || '').toLowerCase());
+    return conArchivoM || (texto && !/^\[[a-z]+\]$/i.test(texto));
+  });
+  if (!validos.length)
+    return avisa('Nada que reenviar', 'Ninguno de esos mensajes tiene texto ni archivo.');
+  const conArchivo = validos.some(m => TIPOS_CON_ARCHIVO.includes(String(m.msg_type || '').toLowerCase()));
+  const destinos = new Set();
+  const titulo = validos.length > 1 ? 'Reenviar ' + validos.length + ' mensajes a…' : 'Reenviar a…';
+  abreModal('<div class="mtapa"><b>' + esc(titulo) + '</b><button class="cerrarm" data-cerrar>×</button></div>'
     + '<div class="mcuerpo">'
     // Un archivo solo puede salir por la línea de WhatsApp Web. Por la línea oficial haría
     // falta una dirección pública del archivo, y los archivos ya no se guardan en la nube.
-    + (conArchivo ? '<p class="aviso">Se reenvía el archivo. Solo aparecen los chats de la línea de WhatsApp Web.</p>' : '')
+    + (conArchivo ? '<p class="aviso">' + (validos.length > 1 ? 'Los archivos se reenvían tal cual. ' : 'Se reenvía el archivo. ')
+        + 'Solo aparecen los chats de la línea de WhatsApp Web.</p>' : '')
     + '<div class="campo"><input id="fwdBusca" placeholder="Buscar conversación…"></div>'
-    + '<div id="fwdLista"></div></div>');
-  $('modal').querySelectorAll('[data-cerrar]').forEach(b => { b.onclick = cierraModal; });
+    + '<div id="fwdLista"></div></div>'
+    + '<div class="mpatas"><button class="fwd-enviar btn-solido" id="fwdEnviar" disabled>Enviar</button></div>');
+  const fila = c => '<button class="tpl' + (destinos.has(c.id || c._id) ? ' marcado' : '') + '" data-dest="'
+    + esc(c.id || c._id) + '"><span class="tplcheck"></span><b>' + esc(nombreDe(c)) + '</b>'
+    + '<span class="tplmeta">+' + esc(c.wa_phone || '') + '</span></button>';
   const pinta = () => {
     const q = ($('fwdBusca').value || '').trim();
-    const filas = CONVS.filter(c => c._id !== (sel?._id))
+    const todas = CONVS.filter(c => c._id !== (sel?._id))
       .filter(c => !conArchivo || canalDe(c) === 'whatsapp_qr')
-      .filter(c => coincideContacto(c, q))
-      .slice(0, 40);
-    $('fwdLista').innerHTML = filas.map(c =>
-      '<button class="tpl" data-dest="' + esc(c.id || c._id) + '"><b>' + esc(nombreDe(c)) + '</b>'
-      + '<span class="tplmeta">+' + esc(c.wa_phone || '') + '</span></button>').join('')
-      || '<p class="aviso">Sin resultados.</p>';
+      .filter(c => coincideContacto(c, q));
+    if (!todas.length) { $('fwdLista').innerHTML = '<p class="aviso">Sin resultados.</p>'; return; }
+    // Sin buscar nada, separar los primeros (los mas recientes: con quien mas se habla) del
+    // resto, con el mismo rotulo que usa WhatsApp Web. Buscando, la lista ya es corta y
+    // separarla en dos grupos solo estorba.
+    if (!q && todas.length > FWD_FRECUENTES_N) {
+      $('fwdLista').innerHTML = '<div class="fwd-grupo">Frecuentes</div>'
+        + todas.slice(0, FWD_FRECUENTES_N).map(fila).join('')
+        + '<div class="fwd-grupo">Todos los chats</div>'
+        + todas.slice(FWD_FRECUENTES_N, 40).map(fila).join('');
+    } else {
+      $('fwdLista').innerHTML = todas.slice(0, 40).map(fila).join('');
+    }
   };
   pinta();
   $('fwdBusca').oninput = pinta;
-  $('fwdLista').onclick = async ev => {
+  $('fwdLista').onclick = ev => {
     const b = ev.target.closest('[data-dest]'); if (!b) return;
-    b.disabled = true;
-    const r = await llama({ action:'forward', source_message_id: m.id,
-      target_conversation_id: b.dataset.dest });
-    if (!r.ok) { b.disabled = false; return avisa('No se pudo reenviar', r.error); }
+    const id = b.dataset.dest;
+    if (destinos.has(id)) destinos.delete(id); else destinos.add(id);
+    b.classList.toggle('marcado', destinos.has(id));
+    $('fwdEnviar').disabled = !destinos.size;
+    $('fwdEnviar').textContent = destinos.size > 1 ? 'Enviar a ' + destinos.size + ' chats' : 'Enviar';
+  };
+  $('fwdEnviar').onclick = async () => {
+    $('fwdEnviar').disabled = true;
+    $('fwdEnviar').textContent = 'Enviando…';
+    let fallos = 0;
+    // De uno en uno: es la misma cola del puente para todo, y mandar muchos a la vez
+    // solo la atasca sin que nada llegue antes.
+    for (const destId of destinos) {
+      for (const m of validos) {
+        const r = await llama({ action:'forward', source_message_id: m.id, target_conversation_id: destId });
+        if (!r.ok) fallos++;
+      }
+    }
     cierraModal();
+    saleSeleccion();
+    const total = destinos.size * validos.length;
     // Un archivo no sale al instante: entra en la cola del puente con su ritmo. Decir
     // «Reenviado» a secas haría buscarlo en el chat del cliente antes de que esté.
-    avisa(r.archivo ? 'Reenviando el archivo…' : 'Reenviado',
-      r.archivo ? 'Sale por la línea de WhatsApp Web en unos segundos.' : '');
+    if (!fallos) avisa(total > 1 ? 'Reenviados' : 'Reenviado',
+      conArchivo ? 'Sale por la línea de WhatsApp Web en unos segundos.' : '');
+    else avisa('Reenviado con fallos', fallos + ' de ' + total + ' no se pudieron mandar.');
   };
 }
 
@@ -5514,22 +5668,31 @@ function cableaBajoDemanda(){
   document.querySelectorAll('[data-bajo]').forEach(el => {
     if (el.tagName !== 'BUTTON' || el.dataset.listo) return;
     el.dataset.listo = '1';
+    // Con miniatura es una foto, un sticker o un video que WhatsApp pudo previsualizar: se
+    // ve dentro del panel, en la lupa. Sin miniatura es un documento (o algo que WhatsApp no
+    // pudo previsualizar) y sigue yendo por pestaña nueva o descarga directa, como antes.
+    const conMiniatura = el.classList.contains('mthumb');
     el.onclick = async () => {
       const etiqueta = el.querySelector('.vertag') || el;
       const antes = etiqueta.textContent;
       etiqueta.textContent = 'Pidiendo…';
       el.classList.add('pidiendo');
-      // La pestana se abre YA, dentro del clic. Pedirle el archivo al telefono tarda unos
-      // segundos, y Chrome bloquea sin avisar una ventana que se abre mas de cinco segundos
-      // despues de pulsar: "Ver" no hacia nada. Si al final no es algo que se pueda abrir, se
-      // cierra y se descarga. Un documento con nombre va directo a descarga: no hace falta.
-      const ventana = el.dataset.nombre ? null : window.open('', '_blank');
+      if (conMiniatura) abreLupaCargando();
+      // La pestana se abre YA, dentro del clic, solo para lo que no tiene miniatura. Pedirle
+      // el archivo al telefono tarda unos segundos, y Chrome bloquea sin avisar una ventana
+      // que se abre mas de cinco segundos despues de pulsar: "Ver" no hacia nada. Un documento
+      // con nombre va directo a descarga: no hace falta pestaña.
+      const ventana = (conMiniatura || el.dataset.nombre) ? null : window.open('', '_blank');
       try { ventana?.document.write('<p style="font:14px system-ui;padding:24px;color:#54656f">Pidiendo el archivo a WhatsApp…</p>'); } catch (e) {}
       try {
         const url = await pideMedioCompleto(el.dataset.bajo);
-        if (!url) { ventana?.close(); return; }
+        if (!url) { ventana?.close(); if (conMiniatura) cierraLupa(); return; }
         const blob = await (await fetch(url)).blob();
-        if (ventana && !ventana.closed && TIPO_VISIBLE.test(String(blob.type || '').split(';')[0].trim())) {
+        const tipo = String(blob.type || '').split(';')[0].trim();
+        if (conMiniatura && /^image\//i.test(tipo)) return muestraLupa('img', url);
+        if (conMiniatura && /^video\//i.test(tipo)) return muestraLupa('video', url);
+        if (conMiniatura) cierraLupa();
+        if (ventana && !ventana.closed && TIPO_VISIBLE.test(tipo)) {
           ventana.opener = null;
           ventana.location.href = url;
           return;
@@ -5538,6 +5701,7 @@ function cableaBajoDemanda(){
         descargaComoArchivo(blob, el.dataset.nombre || 'archivo');
       } catch (e) {
         ventana?.close();
+        if (conMiniatura) cierraLupa();
         avisa('No se pudo abrir el archivo');
       } finally {
         etiqueta.textContent = antes;
@@ -6073,8 +6237,12 @@ function pintaMensajes(){
     }[String(m.delivery_status || 'sent')] ?? ' ·') : '';
     const autor = (sale && m.sender === 'bot' && primero) ? '<div class="autor">Bot</div>' : '';
     const cita = citaDelMensaje(m);
-    return cabeza + '<div class="globo ' + (sale ? 'sale' : 'entra') + ' ' + (primero ? 'primero' : 'seguido') + '"'
-      + ' data-msg="' + esc(m.id || m.wamid || '') + '">'
+    const idMsg = m.id || m.wamid || '';
+    const marcado = modoSeleccion && SEL_MSGS.has(idMsg);
+    return cabeza + '<div class="globo ' + (sale ? 'sale' : 'entra') + ' ' + (primero ? 'primero' : 'seguido')
+      + (marcado ? ' marcado' : '') + '"'
+      + ' data-msg="' + esc(idMsg) + '">'
+      + '<input type="checkbox" class="msel" data-msel="' + esc(idMsg) + '"' + (marcado ? ' checked' : '') + '>'
       + '<button class="gaccion" aria-label="Opciones del mensaje">⌄</button>'
       + autor + cita + cuerpoMensaje(m)
       + '<span class="pie-globo">' + (conFecha ? esc(d.toLocaleTimeString('es-DO',{hour:'2-digit',minute:'2-digit'})) : '') + ticks + '</span>'
