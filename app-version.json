@@ -1,7 +1,7 @@
 {
-  "version": "2026-09-24-reenviar-multiple-lupa-v126",
+  "version": "2026-09-25-editado-emojis-galeria-v127",
   "channel": "crm",
-  "released_at": "2026-09-24T00:00:00Z",
-  "summary": "Reenviar deja marcar varios mensajes (menú del mensaje → Seleccionar, o barra abajo) y varios chats destino a la vez, con «Frecuentes» separado del resto como en WhatsApp Web. Las fotos y stickers pedidos al momento ya no recortan la imagen (era object-fit:cover) y se ven dentro del panel en una lupa —también para video— en vez de abrir una pestaña nueva; los stickers ya cargados también tienen lupa, que antes no tenían.",
+  "released_at": "2026-09-25T00:00:00Z",
+  "summary": "Los mensajes editados por el cliente ahora dicen «Editado» antes de la hora. Nuevo selector de emojis en el compositor, con categorías e inserción en el cursor. La ficha del contacto tiene una galería visual de fotos y video (antes era una lista de texto que en la línea de WhatsApp Web casi siempre decía «sin enlace»). También arreglado: la miniatura bajo demanda se veía diminuta (90×91 px) por no tener ancho fijo, y el botón de opciones del mensaje quedaba tapado por esa misma miniatura.",
   "requiere_puente": "2026-09-26-agenda-v31"
 }
