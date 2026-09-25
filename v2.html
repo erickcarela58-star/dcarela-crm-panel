@@ -425,10 +425,16 @@ img.mmedia[data-medio]:not([src]),img.msticker[data-medio]:not([src]){
 /* Miniatura de un archivo que NO esta guardado en la nube. Lo que se ve al instante es la
    vista previa que manda WhatsApp dentro del propio mensaje (unos pocos KB); el archivo
    entero se le pide al telefono solo si alguien pulsa Ver, y se borra a las horas. */
-.mthumb{position:relative;display:block;padding:0;border-radius:6px;overflow:hidden;
-  max-width:250px;margin:1px 0 3px;cursor:pointer;background:rgba(11,20,26,.06)}
+/* La vista previa que manda el propio WhatsApp dentro del mensaje es minuscula (a veces
+   90x91 px, borrosa a proposito: es del protocolo, no un limite nuestro). Con solo
+   max-width, el recuadro se encogia a ese tamano nativo -- una miniatura del porte de un
+   sello, no una tarjeta de foto -- y ahi el object-fit no tenia nada que recortar ni que
+   arreglar. Un ancho FIJO la escala siempre a un tamano normal, de WhatsApp Web para
+   arriba o para abajo segun haga falta; "Ver" trae la foto real y nitida de todos modos. */
+.mthumb{position:relative;display:block;width:220px;padding:0;border-radius:6px;overflow:hidden;
+  margin:1px 0 3px;cursor:pointer;background:rgba(11,20,26,.06)}
 :root[data-tema="oscuro"] .mthumb{background:rgba(255,255,255,.07)}
-.mthumb img{display:block;width:100%;max-height:320px;object-fit:contain}
+.mthumb img{display:block;width:100%;height:auto;max-height:320px;object-fit:contain}
 .mthumb .vertag{position:absolute;right:6px;bottom:6px;font-size:11px;font-weight:700;
   padding:3px 9px;border-radius:9px;background:rgba(11,20,26,.72);color:#fff}
 .mthumb.pidiendo .vertag{opacity:.75}
