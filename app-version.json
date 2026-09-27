@@ -1,7 +1,7 @@
 {
-  "version": "2026-09-26-tiempo-real-supervision-v128",
+  "version": "2026-09-27-supervision-operadores-v129",
   "channel": "crm",
-  "released_at": "2026-09-26T00:00:00Z",
-  "summary": "La bandeja y el chat recuperan la sincronización con sondeo temporal si Firestore corta la escucha en vivo. Nuevo informe interno, exclusivo de administración y supervisión, que detecta demoras, clientes sin respuesta y señales de trato inadecuado, con avisos revisables.",
+  "released_at": "2026-09-27T00:00:00Z",
+  "summary": "La bandeja y el chat recuperan la sincronización si Firestore corta la escucha en vivo. Informes internos para administración y supervisión detectan demoras, clientes sin respuesta y señales de trato inadecuado. Los avisos repetidos se compactan y ahora identifican al operador responsable cuando existe una respuesta humana atribuible.",
   "requiere_puente": "2026-09-26-agenda-v31"
 }
