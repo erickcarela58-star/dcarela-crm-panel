@@ -6866,13 +6866,16 @@ function pintaInformes(){
     + '<div class="calidad-lista">' + (abiertos.length ? abiertos.slice(0,30).map(a =>
       '<div class="calidad-aviso ' + (a.severity === 'high' ? 'alta' : 'media') + '">'
       + '<div><b>' + esc(a.customer_name || 'Cliente') + ' · ' + esc(a.title || 'Atención requerida') + '</b>'
-      + '<p>' + esc(a.evidence || 'Sin fragmento disponible') + ' · ' + esc(hora(a.message_at || a.created_at)) + '</p></div>'
+      + '<p>' + esc(a.evidence || 'Sin fragmento disponible')
+      + (a.operator_name ? ' · Operador: ' + esc(a.operator_name) : '')
+      + ' · ' + esc(hora(a.message_at || a.created_at)) + '</p></div>'
       + '<div class="acciones"><button class="btn-linea" data-calidad-chat="' + esc(a.conversation_id || '') + '">Ver chat</button> '
       + '<button class="btn-solido" data-calidad-revisar="' + esc(a.id) + '">Revisado</button></div></div>').join('')
       : '<div class="calidad-vacio">No hay avisos pendientes.</div>') + '</div>'
     + '<div class="seccion" style="margin-top:24px">Evaluación por conversación</div>'
-    + (reports.length ? '<div style="overflow:auto"><table class="calidad-tabla"><thead><tr><th>Cliente</th><th>Nota</th><th>Estado</th><th>Respuesta media</th><th>Señales</th><th>Último análisis</th></tr></thead><tbody>'
+    + (reports.length ? '<div style="overflow:auto"><table class="calidad-tabla"><thead><tr><th>Cliente</th><th>Operador(es)</th><th>Nota</th><th>Estado</th><th>Respuesta media</th><th>Señales</th><th>Último análisis</th></tr></thead><tbody>'
       + reports.map(r => '<tr><td>' + esc(r.customer_name || r.customer_phone || 'Cliente') + '</td>'
+        + '<td>' + esc((r.operator_names || []).join(', ') || 'Sin identificar') + '</td>'
         + '<td><span class="calidad-score">' + Number(r.score || 0) + '</span></td>'
         + '<td>' + esc(r.risk === 'high' ? 'Riesgo alto' : r.risk === 'attention' ? 'Atención' : 'Correcto') + '</td>'
         + '<td>' + (r.average_response_minutes == null ? '—' : esc(r.average_response_minutes + ' min')) + '</td>'
