@@ -10745,9 +10745,15 @@ function montaBroadcast(){
     +   '<div class="acciones"><button class="btn-solido" id="bcSimular">Simular envío</button></div>'
     + '</div><div id="bcSalida"></div>'
 
+    // Pack de Estados y Publicar en Estados son dos herramientas aparte del envio de
+    // campana de arriba (una prepara fotos en el navegador, la otra publica un Estado, ni
+    // siquiera son mensajes) -- antes solo las separaba un rotulo, ahora son tarjetas
+    // plegables (mismo patron .grupo que en Limpieza), cerradas por defecto para que la
+    // herramienta principal de esta pantalla, la campana, sea lo primero que se ve entero.
+
     // Pack de Estados. Todo pasa en el navegador: las fotos NO se suben a ningun sitio, y
     // eso importa cuando son de una sesion de un cliente que no ha visto todavia.
-    + '<div class="seccion" style="margin:34px 0 6px">Pack de Estados</div>'
+    + '<details class="grupo" style="margin-top:24px"><summary>Pack de Estados</summary><div class="dentro">'
     + '<p class="bajada">Deja las fotos a formato Estado de WhatsApp (1080×1920) con la marca '
     + 'del estudio. Prepararlas pasa entero en este ordenador: <b>la foto no sale de aquí</b> '
     +   'hasta que tú publiques una abajo, en Estados.</p>'
@@ -10762,10 +10768,11 @@ function montaBroadcast(){
     + '<div class="acciones"><button class="btn-solido" id="pkIr">Preparar</button>'
     +   '<button class="btn-linea" id="pkBajar" disabled>Descargar todas</button></div>'
     + '<div id="pkSalida"></div>'
+    + '</div></details>'
 
     // Publicar el Estado desde aqui. Antes habia que bajar la foto, pasarla al telefono y
     // subirla a mano; era el ultimo motivo para abrir WhatsApp en el movil.
-    + '<div class="seccion" style="margin:34px 0 6px">Publicar en Estados</div>'
+    + '<details class="grupo"><summary>Publicar en Estados</summary><div class="dentro">'
     + '<p class="bajada">Sale del número del negocio y lo ve quien abra la pestaña de '
     +   '<b>Estados</b> de WhatsApp. <b>No es un mensaje:</b> no suena, no entra en el chat de '
     +   'nadie y no cuenta para la ventana de 24 horas. Los chats ignorados y quien pidió no '
@@ -10794,7 +10801,9 @@ function montaBroadcast(){
     +   '<button class="btn-linea" id="esVer">Ver a cuántos llega</button>'
     +   '<button class="btn-solido" id="esIr">Publicar</button></div>'
     + '<div id="esSalida"></div>'
-    + '<div id="esHistorial"></div></div>');
+    + '<div id="esHistorial"></div>'
+    + '</div></details>'
+    + '</div>');
 
   $('bcModo').onchange = async () => {
     const plantilla = $('bcModo').value === 'template';
