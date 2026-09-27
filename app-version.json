@@ -1,7 +1,7 @@
 {
-  "version": "2026-09-27-supervision-operadores-v129",
+  "version": "2026-09-27-resumen-operadores-v130",
   "channel": "crm",
   "released_at": "2026-09-27T00:00:00Z",
-  "summary": "La bandeja y el chat recuperan la sincronización si Firestore corta la escucha en vivo. Informes internos para administración y supervisión detectan demoras, clientes sin respuesta y señales de trato inadecuado. Los avisos repetidos se compactan y ahora identifican al operador responsable cuando existe una respuesta humana atribuible.",
+  "summary": "La bandeja y el chat recuperan la sincronización si Firestore corta la escucha en vivo. Informes internos detectan demoras, clientes sin respuesta y señales de trato inadecuado. Los avisos repetidos se compactan, identifican al operador cuando existe una respuesta humana atribuible y muestran un resumen por operador con respuestas, demora media, respuestas lentas y señales de tono.",
   "requiere_puente": "2026-09-26-agenda-v31"
 }
