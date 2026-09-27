@@ -1345,6 +1345,18 @@ img.mmedia[data-medio]:not([src]),img.msticker[data-medio]:not([src]){
     height:var(--alto-barra);padding:8px 10px;row-gap:8px;column-gap:8px}
   header.barra .der{grid-column:1/-1;justify-content:flex-end;margin-left:0}
 }
+.calidad-resumen{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin:18px 0}
+.calidad-kpi{background:var(--panel);border:1px solid var(--line2);border-radius:14px;padding:14px}
+.calidad-kpi b{display:block;font-size:25px}.calidad-kpi span{color:var(--mut);font-size:12px}
+.calidad-lista{display:grid;gap:9px;margin-top:12px}
+.calidad-aviso{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px 14px;align-items:center;
+  background:var(--panel);border:1px solid var(--line2);border-radius:13px;padding:12px 14px}
+.calidad-aviso.alta{border-left:4px solid #d14b4b}.calidad-aviso.media{border-left:4px solid #d99a25}
+.calidad-aviso p{margin:4px 0;color:var(--mut);font-size:12px}.calidad-aviso .acciones{grid-column:2;grid-row:1/3}
+.calidad-tabla{width:100%;border-collapse:collapse;margin-top:10px}.calidad-tabla th,.calidad-tabla td{
+  text-align:left;padding:10px;border-bottom:1px solid var(--line2);font-size:13px}.calidad-tabla th{color:var(--mut);font-size:11px}
+.calidad-score{display:inline-flex;min-width:38px;justify-content:center;border-radius:999px;padding:4px 8px;
+  background:var(--fondo);font-weight:700}.calidad-vacio{color:var(--mut);padding:18px 0}
 </style>
 </head>
 <body>
@@ -1419,6 +1431,7 @@ import { getFirestore, collection, query, where, onSnapshot, doc, setDoc, getDoc
 const CFG = window.CRM_CONFIG || window.DCARELA_CRM_CONFIG || {};
 const FB  = window.__DCARELA_FIREBASE_CONFIG || {};
 const API = String(CFG.firebaseFunctionsBase || '').replace(/\/$/, '') + '/crmApi';
+const API_CALIDAD = String(CFG.firebaseFunctionsBase || '').replace(/\/$/, '') + '/crmServiceQualityApi';
 const NEGOCIO = 'dcarela';
 
 const app  = getApps().length ? getApps()[0] : initializeApp(FB);
@@ -1490,6 +1503,7 @@ document.title = TITULO_BASE;
 // reordene nodos. Si el modulo no arranca, se ven TODAS. Un menu de mas no es
 // tan grave como un menu vacio, que es como quedo el panel anterior.
 const ico = d => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">' + d + '</svg>';
+let ROL_ACTUAL = '';
 const VISTAS = [
   { id:'planning',      nombre:'Planificación', fija:true,  icono:ico('<path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/>') },
   { id:'conversations', nombre:'Conversaciones',fija:true,  icono:ico('<path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>') },
@@ -1501,6 +1515,7 @@ const VISTAS = [
   { id:'prospecting',   nombre:'Prospección',   icono:ico('<circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4M11 7v8M7 11h8"/>') },
   { id:'poscustomers',  nombre:'Clientes de caja', icono:ico('<path d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M19 8v6M22 11h-6"/>') },
   { id:'satisfaccion',  nombre:'Satisfacción',  icono:ico('<path d="M12 17.3l-5.5 3 1-6.1L3 9.8l6.1-.9L12 3.3l2.9 5.6 6.1.9-4.5 4.4 1 6.1z"/>') },
+  { id:'informes',      nombre:'Informes internos', restringida:true, icono:ico('<path d="M4 19V9M10 19V5M16 19v-7M22 19H2"/><path d="M3 4l5 3 5-4 7 4"/>') },
   { id:'limpieza',      nombre:'Limpieza',       icono:ico('<path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/>') },
   { id:'anuncios',      nombre:'Anuncios',       icono:ico('<path d="M3 11v2a2 2 0 002 2h2l4 4V5L7 9H5a2 2 0 00-2 2z"/><path d="M15 9a4 4 0 010 6"/>') },
   { id:'campanas',      nombre:'Campañas',      icono:ico('<path d="M3 11l18-8-7 18-2-8-9-2z"/>') },
@@ -1556,6 +1571,7 @@ function enlaceMeta(id, texto){
 }
 
 function pintaMenu(){
+  const disponibles = VISTAS.filter(v => !v.restringida || ['admin','supervisor'].includes(ROL_ACTUAL));
   const enlace = v => '<a href="#' + v.id + '" data-vista="' + v.id + '">' + v.icono
     + '<span>' + esc(v.nombre) + '</span><span class="cuenta" data-cuenta="' + v.id + '" hidden></span></a>';
   // Sin data-vista: el enrutador solo intercepta a[data-vista] (mas abajo), asi que estos abren
@@ -1569,9 +1585,9 @@ function pintaMenu(){
     ? '<div class="accesos" role="group" aria-label="Bandejas de Meta">'
       + ACCESOS_META.map(externo).join('') + '</div>' : '';
   $('nav').innerHTML =
-    VISTAS.filter(v => v.fija).map(v => enlace(v) + (v.id === 'conversations' ? accesos : '')).join('')
+    disponibles.filter(v => v.fija).map(v => enlace(v) + (v.id === 'conversations' ? accesos : '')).join('')
     + '<div class="secundarias"><div class="rotulo">Todo lo demás</div>'
-    + VISTAS.filter(v => !v.fija).map(enlace).join('') + '</div>';
+    + disponibles.filter(v => !v.fija).map(enlace).join('') + '</div>';
 }
 pintaMenu();
 
@@ -1622,7 +1638,8 @@ document.addEventListener('keydown', ev => { if (ev.key === 'Escape') cierraMenu
 /* ---- Enrutado ------------------------------------------------------------ */
 let vistaActual = null;
 function ve(id){
-  if (!VISTAS.some(v => v.id === id)) id = CFG.defaultView || 'conversations';
+  if (!VISTAS.some(v => v.id === id && (!v.restringida || ['admin','supervisor'].includes(ROL_ACTUAL))))
+    id = CFG.defaultView || 'conversations';
   vistaActual = id;
   // El montaje va PRIMERO. Al reves, la vista se crea despues de repartir la clase
   // que la hace visible y nace sin ella: sale el marco y por dentro nada. Asi quedo
@@ -1656,7 +1673,7 @@ async function llama(cuerpo, opciones = {}){
   catch (e) { return { ok:false, error: e?.message || String(e), status:401 }; }
   let r;
   try {
-    r = await fetch(API, {
+    r = await fetch(opciones.endpoint || API, {
       method:'POST',
       headers:{ 'Content-Type':'application/json', Authorization:'Bearer ' + token },
       body: JSON.stringify(cuerpo),
@@ -1699,7 +1716,9 @@ const ULTIMA_IMPORTACION = {};
 // CONVS_IGNORADAS son las que el dueno saco del CRM (familia, numeros propios, colegas): fuera de
 // CONVS y de CONVS_OCULTAS, asi que ninguna vista ni contador las cuenta; el chip 'Ignorados' las
 // trae y desde ahi se deshace.
-let CONVS = [], CONVS_TODAS = [], CONVS_OCULTAS = [], CONVS_IGNORADAS = [], MSGS = [], sel = null, paraMsgs = null;
+let CONVS = [], CONVS_TODAS = [], CONVS_OCULTAS = [], CONVS_IGNORADAS = [], MSGS = [], sel = null;
+let paraConvs = null, sondeoConvs = null, reintentoConvs = null;
+let paraMsgs = null, sondeoMsgs = null, reintentoMsgs = null, escuchaMsgId = '';
 // Los mismos tipos que firebase-functions/src/ignore-core.js (TIPOS): solo dicen POR QUE se ignora.
 const TIPOS_IGNORAR = { propio:'número propio', linea_negocio:'línea del negocio', familia:'familia',
   fotografo:'fotógrafo', delivery:'delivery', personal:'personal', proveedor:'proveedor', otro:'otro' };
@@ -1795,9 +1814,7 @@ function hora(v){
   return d.toLocaleDateString('es-DO', { day:'numeric', month:'short' });
 }
 
-function escuchaConversaciones(){
-  const q = query(collection(db,'crm_conversations'), where('business_id','==',NEGOCIO));
-  onSnapshot(q, s => {
+function aplicaConversaciones(s, modo = 'en vivo'){
     CONVS_TODAS = s.docs.map(d => ({ ...d.data(), _id:d.id })).filter(perteneceAlCanal)
       .sort((a,b) => String(b.last_message_at||'').localeCompare(String(a.last_message_at||'')));
     // Un unico punto donde se separa lo vivo de lo oculto. Asi cada vista y cada contador cuenta
@@ -1807,7 +1824,7 @@ function escuchaConversaciones(){
     // puente, el nombre corregido o el paso a atencion humana no se veian hasta cambiar de chat.
     refrescaSeleccion();
     abreChatDeLaUrl();
-    marcaEstado(true, 'Datos sincronizados · en vivo');
+    marcaEstado(true, 'Datos sincronizados · ' + modo);
     if (vistaActual === 'conversations') pintaChats();
     if (vistaActual === 'funnel') { pintaKanban(); pintaMovilizacion(); }
     if (vistaActual === 'dashboard') pintaDashboard();
@@ -1815,10 +1832,101 @@ function escuchaConversaciones(){
     if (vistaActual === 'reminders') pintaRecordatorios();
     pintaCuentas();
     avisaMensajesNuevos();
-  }, err => marcaEstado(false, 'Sin datos en vivo: ' + (err?.code || 'error')));
+}
+function detieneRespaldoConvs(){
+  if (sondeoConvs) { clearInterval(sondeoConvs); sondeoConvs = null; }
+  if (reintentoConvs) { clearTimeout(reintentoConvs); reintentoConvs = null; }
+}
+async function sondeaConversaciones(){
+  try {
+    const q = query(collection(db,'crm_conversations'), where('business_id','==',NEGOCIO));
+    aplicaConversaciones(await getDocs(q), 'respaldo cada 8 s');
+  } catch (error) {
+    marcaEstado(false, 'Sincronización interrumpida: ' + (error?.code || 'sin red'));
+  }
+}
+function activaRespaldoConvs(){
+  if (!sondeoConvs) {
+    void sondeaConversaciones();
+    sondeoConvs = setInterval(() => { if (!document.hidden) void sondeaConversaciones(); }, 8000);
+  }
+  if (!reintentoConvs) reintentoConvs = setTimeout(() => {
+    reintentoConvs = null;
+    escuchaConversaciones();
+  }, 30000);
+}
+function escuchaConversaciones(){
+  if (paraConvs) { paraConvs(); paraConvs = null; }
+  const q = query(collection(db,'crm_conversations'), where('business_id','==',NEGOCIO));
+  paraConvs = onSnapshot(q, s => {
+    detieneRespaldoConvs();
+    aplicaConversaciones(s, 'en vivo');
+  }, err => {
+    paraConvs = null;
+    marcaEstado(false, 'En vivo interrumpido: ' + (err?.code || 'error') + ' · usando respaldo');
+    activaRespaldoConvs();
+  });
+}
+function detieneRespaldoMsgs(){
+  if (sondeoMsgs) { clearInterval(sondeoMsgs); sondeoMsgs = null; }
+  if (reintentoMsgs) { clearTimeout(reintentoMsgs); reintentoMsgs = null; }
+}
+function aplicaMensajes(s, idConv){
+  if (!sel || (sel.id !== idConv && sel._id !== idConv)) return;
+  MSGS = s.docs.map(d => ({ ...d.data(), _id:d.id }))
+    .sort((a,b) => instanteMsg(a) - instanteMsg(b));
+  pintaMensajes();
+}
+async function sondeaMensajes(idConv){
+  if (escuchaMsgId !== idConv) return;
+  const base = [where('business_id','==',NEGOCIO), where('conversation_id','==',idConv)];
+  try {
+    let s;
+    try { s = await getDocs(query(collection(db,'crm_messages'), ...base, orderBy('created_at','desc'), limit(400))); }
+    catch (error) {
+      if (error?.code !== 'failed-precondition') throw error;
+      s = await getDocs(query(collection(db,'crm_messages'), ...base, limit(400)));
+    }
+    aplicaMensajes(s, idConv);
+  } catch (error) {
+    const cont = $('mensajes');
+    if (cont && !MSGS.length) cont.innerHTML = '<div style="margin:auto;max-width:340px;text-align:center;color:var(--mut);font-size:13px">'
+      + 'Reconectando mensajes…<br><b>' + esc(error?.code || 'sin red') + '</b></div>';
+  }
+}
+function activaRespaldoMsgs(idConv){
+  if (!sondeoMsgs) {
+    void sondeaMensajes(idConv);
+    sondeoMsgs = setInterval(() => { if (!document.hidden) void sondeaMensajes(idConv); }, 5000);
+  }
+  if (!reintentoMsgs) reintentoMsgs = setTimeout(() => {
+    reintentoMsgs = null;
+    if (escuchaMsgId === idConv) abreEscuchaMensajes(idConv, false);
+  }, 30000);
+}
+function abreEscuchaMensajes(idConv, esRespaldo){
+  if (paraMsgs) { paraMsgs(); paraMsgs = null; }
+  const base = [where('business_id','==',NEGOCIO), where('conversation_id','==',idConv)];
+  const q = esRespaldo
+    ? query(collection(db,'crm_messages'), ...base, limit(400))
+    : query(collection(db,'crm_messages'), ...base, orderBy('created_at','desc'), limit(400));
+  paraMsgs = onSnapshot(q, s => {
+    detieneRespaldoMsgs();
+    aplicaMensajes(s, idConv);
+  }, err => {
+    paraMsgs = null;
+    if (!esRespaldo && err?.code === 'failed-precondition' && escuchaMsgId === idConv) {
+      abreEscuchaMensajes(idConv, true);
+      return;
+    }
+    if (escuchaMsgId !== idConv) return;
+    activaRespaldoMsgs(idConv);
+  });
 }
 function escuchaMensajes(idConv){
   if (paraMsgs) { paraMsgs(); paraMsgs = null; }
+  detieneRespaldoMsgs();
+  escuchaMsgId = idConv;
   MSGS = [];
   // Los globos de "enviando" son de la conversacion que se deja: al cambiar de chat ya no hay
   // MSGS con que confirmarlos, y arrastrarlos seria enseñar un reloj que no se apaga nunca.
@@ -1837,25 +1945,13 @@ function escuchaMensajes(idConv){
   //
   // Esa consulta necesita un indice compuesto. Si todavia no existe, Firestore responde
   // failed-precondition y se cae a la consulta vieja: peor orden, pero el chat se ve.
-  const base = [where('business_id','==',NEGOCIO), where('conversation_id','==',idConv)];
-  const esEste = () => sel && (sel.id === idConv || sel._id === idConv);
-  const escucha = (q, esRespaldo) => onSnapshot(q, s => {
-    // Se ordena por instante, no por el texto de created_at: un mensaje sin fecha tenia la
-    // cadena vacia y la cadena vacia va antes que cualquier otra.
-    MSGS = s.docs.map(d => d.data())
-      .sort((a,b) => instanteMsg(a) - instanteMsg(b));
-    if (esEste()) pintaMensajes();
-  }, err => {
-    if (!esRespaldo && err?.code === 'failed-precondition' && esEste()) {
-      paraMsgs = escucha(query(collection(db,'crm_messages'), ...base, limit(400)), true);
-      return;
-    }
-    const cont = $('mensajes');
-    if (cont) cont.innerHTML = '<div style="margin:auto;max-width:340px;text-align:center;color:var(--mut);font-size:13px">'
-      + 'No se pudieron cargar los mensajes.<br><b>' + esc(err?.code || 'error') + '</b></div>';
-  });
-  paraMsgs = escucha(query(collection(db,'crm_messages'), ...base, orderBy('created_at','desc'), limit(400)), false);
+  abreEscuchaMensajes(idConv, false);
 }
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden || !auth.currentUser) return;
+  escuchaConversaciones();
+  if (escuchaMsgId && sel) abreEscuchaMensajes(escuchaMsgId, false);
+});
 // Version cargada y aviso de que hay otra publicada.
 //
 // El panel se sirve desde GitHub Pages con Cache-Control: max-age=600, asi que una
@@ -1991,6 +2087,7 @@ function monta(id){
   if (id === 'anuncios') return montaAnuncios();
   if (id === 'funnel') return montaFunnel();
   if (id === 'dashboard') return montaDashboard();
+  if (id === 'informes') return montaInformes();
   if (TABLERO[id]) return montaTablero(id);
   if (id === 'agenda') return montaAgenda();
   if (id === 'reminders') return montaRecordatorios();
@@ -6739,6 +6836,105 @@ async function pintaTablaTpl(forzar){
     b.classList.toggle('on', siguiente);
     b.textContent = siguiente ? 'sí' : 'no';
   };
+}
+
+/* ---- Informes internos: supervisor de atención --------------------------- */
+let CALIDAD = { reports:[], notifications:[], unread:0 };
+let CALIDAD_INICIADA = false, CALIDAD_TIMER = null;
+let CALIDAD_CONOCIDOS = new Set();
+
+function pintaCuentaCalidad(){
+  const cuenta = document.querySelector('[data-cuenta="informes"]');
+  if (!cuenta) return;
+  cuenta.textContent = CALIDAD.unread || '';
+  cuenta.hidden = !CALIDAD.unread;
+}
+
+function pintaInformes(){
+  const cont = $('calidadCuerpo');
+  if (!cont) return;
+  const reports = CALIDAD.reports || [], avisos = CALIDAD.notifications || [];
+  const abiertos = avisos.filter(a => a.status === 'unread');
+  const conRiesgo = reports.filter(r => r.risk === 'high').length;
+  const promedio = reports.length ? Math.round(reports.reduce((s,r) => s + Number(r.score || 0), 0) / reports.length) : 0;
+  cont.innerHTML = '<div class="calidad-resumen">'
+    + '<div class="calidad-kpi"><b>' + abiertos.length + '</b><span>avisos por revisar</span></div>'
+    + '<div class="calidad-kpi"><b>' + conRiesgo + '</b><span>conversaciones de riesgo alto</span></div>'
+    + '<div class="calidad-kpi"><b>' + (reports.length ? promedio : '—') + '</b><span>nota media de atención / 100</span></div>'
+    + '<div class="calidad-kpi"><b>' + reports.length + '</b><span>conversaciones analizadas</span></div></div>'
+    + '<div class="seccion">Notificaciones internas</div>'
+    + '<div class="calidad-lista">' + (abiertos.length ? abiertos.slice(0,30).map(a =>
+      '<div class="calidad-aviso ' + (a.severity === 'high' ? 'alta' : 'media') + '">'
+      + '<div><b>' + esc(a.customer_name || 'Cliente') + ' · ' + esc(a.title || 'Atención requerida') + '</b>'
+      + '<p>' + esc(a.evidence || 'Sin fragmento disponible') + ' · ' + esc(hora(a.message_at || a.created_at)) + '</p></div>'
+      + '<div class="acciones"><button class="btn-linea" data-calidad-chat="' + esc(a.conversation_id || '') + '">Ver chat</button> '
+      + '<button class="btn-solido" data-calidad-revisar="' + esc(a.id) + '">Revisado</button></div></div>').join('')
+      : '<div class="calidad-vacio">No hay avisos pendientes.</div>') + '</div>'
+    + '<div class="seccion" style="margin-top:24px">Evaluación por conversación</div>'
+    + (reports.length ? '<div style="overflow:auto"><table class="calidad-tabla"><thead><tr><th>Cliente</th><th>Nota</th><th>Estado</th><th>Respuesta media</th><th>Señales</th><th>Último análisis</th></tr></thead><tbody>'
+      + reports.map(r => '<tr><td>' + esc(r.customer_name || r.customer_phone || 'Cliente') + '</td>'
+        + '<td><span class="calidad-score">' + Number(r.score || 0) + '</span></td>'
+        + '<td>' + esc(r.risk === 'high' ? 'Riesgo alto' : r.risk === 'attention' ? 'Atención' : 'Correcto') + '</td>'
+        + '<td>' + (r.average_response_minutes == null ? '—' : esc(r.average_response_minutes + ' min')) + '</td>'
+        + '<td>' + Number(r.alert_count || 0) + '</td><td>' + esc(hora(r.scanned_at)) + '</td></tr>').join('')
+      + '</tbody></table></div>' : '<div class="calidad-vacio">Pulsa «Analizar ahora» para crear el primer informe.</div>');
+}
+
+async function cargaCalidad({ scan = false, silencioso = false } = {}){
+  if (!['admin','supervisor'].includes(ROL_ACTUAL) || !auth.currentUser) return;
+  const r = await llama({ action:'serviceQuality', operation: scan ? 'scan' : 'list', max:40, force:scan }, { endpoint:API_CALIDAD });
+  if (!r.ok) {
+    if (!silencioso) avisa('No se pudo cargar el informe', r.error || 'error');
+    return;
+  }
+  CALIDAD = { reports:r.reports || [], notifications:r.notifications || [], unread:Number(r.unread || 0) };
+  pintaCuentaCalidad();
+  pintaInformes();
+  const nuevo = CALIDAD.notifications.find(a => a.status === 'unread' && !CALIDAD_CONOCIDOS.has(a.id));
+  if (CALIDAD_INICIADA && nuevo) {
+    avisa('Atención al cliente', nuevo.customer_name + ': ' + nuevo.title);
+    if (typeof Notification !== 'undefined' && Notification.permission === 'granted' && document.hidden) {
+      try { new Notification('CRM · atención requiere revisión', { body:nuevo.customer_name + ': ' + nuevo.title }); } catch (error) {}
+    }
+  }
+  CALIDAD_CONOCIDOS = new Set(CALIDAD.notifications.map(a => a.id));
+  CALIDAD_INICIADA = true;
+  if (scan && !silencioso) avisa('Análisis actualizado', r.analyzed + ' conversación(es) revisadas · ' + Number(r.new_notifications || 0) + ' aviso(s) nuevo(s).');
+}
+
+function montaInformes(){
+  if (!['admin','supervisor'].includes(ROL_ACTUAL)) return ve('conversations');
+  if (!montadas.has('informes')) {
+    montadas.add('informes');
+    hueco('informes', '<div class="hoja"><h1>Informes internos</h1>'
+      + '<p class="bajada">Supervisor privado de la atención. Detecta demoras, clientes sin respuesta y posibles señales de trato inadecuado. Solo administración y supervisión pueden verlo.</p>'
+      + '<div class="acciones"><button class="btn-solido" id="calidadAnalizar">Analizar ahora</button>'
+      + '<button class="btn-linea" id="calidadRecargar">Recargar</button></div><div id="calidadCuerpo"><span class="cargando"></span></div></div>');
+    $('calidadAnalizar').onclick = async () => {
+      const b = $('calidadAnalizar'); b.disabled = true; b.textContent = 'Analizando…';
+      await cargaCalidad({ scan:true });
+      b.disabled = false; b.textContent = 'Analizar ahora';
+    };
+    $('calidadRecargar').onclick = () => cargaCalidad();
+    $('calidadCuerpo').addEventListener('click', async ev => {
+      const revisar = ev.target.closest('[data-calidad-revisar]');
+      if (revisar) {
+        revisar.disabled = true;
+        const r = await llama({ action:'serviceQuality', operation:'review', notification_id:revisar.dataset.calidadRevisar }, { endpoint:API_CALIDAD });
+        if (!r.ok) { revisar.disabled = false; return avisa('No se pudo marcar', r.error); }
+        await cargaCalidad({ silencioso:true });
+        return;
+      }
+      const abrir = ev.target.closest('[data-calidad-chat]');
+      if (abrir) {
+        const c = buscaConv(abrir.dataset.calidadChat);
+        if (!c) return avisa('No encuentro ese chat', 'Puede estar oculto por su canal o haber sido archivado.');
+        ve('conversations'); abre(c);
+      }
+    });
+  }
+  void cargaCalidad();
+  if (!CALIDAD_TIMER) CALIDAD_TIMER = setInterval(() => cargaCalidad({ silencioso:true }), 60000);
 }
 
 /* ---- Vistas de tabla ----------------------------------------------------- */
@@ -13245,11 +13441,22 @@ onAuthStateChanged(auth, async u => {
     $('acceso').classList.remove('oculto');
     $('app').classList.remove('on');
     if (paraMsgs) { paraMsgs(); paraMsgs = null; }
+    if (paraConvs) { paraConvs(); paraConvs = null; }
+    detieneRespaldoMsgs(); detieneRespaldoConvs();
+    escuchaMsgId = '';
+    if (CALIDAD_TIMER) { clearInterval(CALIDAD_TIMER); CALIDAD_TIMER = null; }
+    CALIDAD = { reports:[], notifications:[], unread:0 }; CALIDAD_INICIADA = false; CALIDAD_CONOCIDOS = new Set();
+    ROL_ACTUAL = ''; pintaMenu();
     return;
   }
   $('acceso').classList.add('oculto');
   $('app').classList.add('on');
   $('quien').textContent = u.email || '';
+  // El servidor decide el rol efectivo. Informes internos ni siquiera entra al menu de un
+  // agente; el endpoint vuelve a validarlo para que ocultar el enlace no sea la seguridad.
+  const identidad = await llama({ action:'whoami' });
+  ROL_ACTUAL = identidad.ok ? String(identidad.rol_efectivo || '') : '';
+  pintaMenu();
   // El historial se carga solo al entrar. No hay boton de "actualizar": la escucha
   // en vivo trae los cambios sin que nadie tenga que pedirlos.
   escuchaConversaciones();
@@ -13263,6 +13470,7 @@ onAuthStateChanged(auth, async u => {
   vigilaVersion();
   setInterval(vigilaVersion, 300000);
   ve(location.hash.slice(1) || CFG.defaultView || 'conversations');
+  if (['admin','supervisor'].includes(ROL_ACTUAL)) void cargaCalidad({ silencioso:true });
 });
 </script>
 </body>
