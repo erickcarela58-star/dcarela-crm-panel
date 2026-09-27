@@ -368,6 +368,12 @@ img.av{object-fit:cover}
 .globo.entra{align-self:flex-start;background:var(--in);border-radius:0 var(--r) var(--r) var(--r)}
 .globo.sale{align-self:flex-end;background:var(--out);border-radius:var(--r) 0 var(--r) var(--r)}
 .globo.seguido{border-radius:var(--r)}
+/* Selección múltiple para reenviar: una casilla dentro del globo, sin mover el layout
+   sale/entra que ya reparte los mensajes a izquierda o derecha. */
+.msel{display:none;position:absolute;left:5px;top:6px;width:17px;height:17px;accent-color:var(--ok);z-index:1}
+.mensajes.modo-seleccion .globo{padding-left:28px;cursor:pointer}
+.mensajes.modo-seleccion .msel{display:block}
+.globo.marcado{outline:2px solid var(--ok);outline-offset:1px}
 .globo.primero.entra::before{content:"";position:absolute;left:-8px;top:0;
   border-top:8px solid var(--in);border-left:8px solid transparent}
 .globo.primero.sale::before{content:"";position:absolute;right:-8px;top:0;
@@ -377,6 +383,8 @@ img.av{object-fit:cover}
 .globo .pie-globo b{font-weight:400}
 .globo .pie-globo .leido{color:#53bdeb}
 .globo .pie-globo .fallo{color:var(--bad);font-weight:700}
+.globo .pie-globo .editado-tag{font-style:italic}
+.globo .pie-globo .destacado-tag{color:#ffb400}
 .globo .autor{font-size:11px;font-weight:700;color:var(--ok);margin-bottom:1px}
 .mmedia{display:block;max-width:250px;max-height:320px;width:auto;border-radius:6px;
   margin:1px 0 3px;cursor:zoom-in}
@@ -419,10 +427,16 @@ img.mmedia[data-medio]:not([src]),img.msticker[data-medio]:not([src]){
 /* Miniatura de un archivo que NO esta guardado en la nube. Lo que se ve al instante es la
    vista previa que manda WhatsApp dentro del propio mensaje (unos pocos KB); el archivo
    entero se le pide al telefono solo si alguien pulsa Ver, y se borra a las horas. */
-.mthumb{position:relative;display:block;padding:0;border-radius:6px;overflow:hidden;
-  max-width:250px;margin:1px 0 3px;cursor:pointer;background:rgba(11,20,26,.06)}
+/* La vista previa que manda el propio WhatsApp dentro del mensaje es minuscula (a veces
+   90x91 px, borrosa a proposito: es del protocolo, no un limite nuestro). Con solo
+   max-width, el recuadro se encogia a ese tamano nativo -- una miniatura del porte de un
+   sello, no una tarjeta de foto -- y ahi el object-fit no tenia nada que recortar ni que
+   arreglar. Un ancho FIJO la escala siempre a un tamano normal, de WhatsApp Web para
+   arriba o para abajo segun haga falta; "Ver" trae la foto real y nitida de todos modos. */
+.mthumb{position:relative;display:block;width:220px;padding:0;border-radius:6px;overflow:hidden;
+  margin:1px 0 3px;cursor:pointer;background:rgba(11,20,26,.06)}
 :root[data-tema="oscuro"] .mthumb{background:rgba(255,255,255,.07)}
-.mthumb img{display:block;width:100%;max-height:320px;object-fit:cover}
+.mthumb img{display:block;width:100%;height:auto;max-height:320px;object-fit:contain}
 .mthumb .vertag{position:absolute;right:6px;bottom:6px;font-size:11px;font-weight:700;
   padding:3px 9px;border-radius:9px;background:rgba(11,20,26,.72);color:#fff}
 .mthumb.pidiendo .vertag{opacity:.75}
@@ -478,7 +492,11 @@ img.mmedia[data-medio]:not([src]),img.msticker[data-medio]:not([src]){
    limpio, como WhatsApp. En tactil no hay hover, asi que ahi se deja siempre. */
 .gaccion{position:absolute;top:2px;right:3px;width:20px;height:18px;border-radius:4px;
   color:var(--meta);font-size:13px;line-height:1;opacity:0;transition:opacity .12s;
-  background:linear-gradient(90deg,transparent,rgba(0,0,0,.06) 30%)}
+  background:linear-gradient(90deg,transparent,rgba(0,0,0,.06) 30%);
+  /* .mthumb tambien es position:relative y viene despues en el HTML: sin z-index quedaba
+     por ENCIMA de este boton en las fotos/stickers/video bajo demanda, y "opciones del
+     mensaje" no se podia pulsar ahi. Se encontro probando "Seleccionar" en vivo. */
+  z-index:2}
 .globo:hover .gaccion{opacity:1}
 @media(hover:none){.gaccion{opacity:.65}}
 .gmenu{position:absolute;top:20px;right:2px;z-index:20;min-width:154px;padding:4px;
@@ -633,11 +651,28 @@ img.mmedia[data-medio]:not([src]),img.msticker[data-medio]:not([src]){
   overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .barra-cita button{width:26px;height:26px;border-radius:50%;color:var(--mut);font-size:16px}
 .barra-cita button:hover{background:var(--hover)}
-/* Lupa: ver una foto de cerca sin salir del chat ni abrir otra pestaña. */
+.barra-seleccion{display:flex;align-items:center;gap:10px;padding:9px 14px;
+  background:var(--panel);border-top:1px solid var(--line)}
+.barra-seleccion[hidden]{display:none}
+.barra-seleccion .bstexto{flex:1;min-width:0;font-size:12.5px;color:var(--mut)}
+.barra-seleccion .bscancelar{width:26px;height:26px;border-radius:50%;color:var(--mut);font-size:16px}
+.barra-seleccion .bscancelar:hover{background:var(--hover)}
+.barra-seleccion .bsreenviar{padding:7px 16px;font-size:13px}
+.barra-seleccion .bsreenviar:disabled{opacity:.5}
+.fwd-enviar{padding:8px 16px;font-size:13px}
+.fwd-enviar:disabled{opacity:.5}
+/* Lupa: ver una foto, un video o un sticker de cerca sin salir del chat ni abrir otra
+   pestaña. Lo bajo demanda entra por el mismo sitio: se abre YA, en «cargando», y se
+   rellena cuando llega el archivo -- no es una ventana nueva, así que Chrome no la bloquea
+   aunque tarde en llegar. */
 #lupa{display:none;position:fixed;inset:0;z-index:95;background:rgba(11,20,26,.88);
   align-items:center;justify-content:center;padding:26px;cursor:zoom-out}
 #lupa.on{display:flex}
-#lupa img{max-width:100%;max-height:100%;border-radius:6px}
+#lupa img,#lupa video{max-width:100%;max-height:100%;border-radius:6px;display:none}
+#lupa.con-imagen img{display:block}
+#lupa.con-video video{display:block;cursor:default}
+#lupa .lupa-carga{display:none;color:#e9edef;font:14px system-ui}
+#lupa.cargando .lupa-carga{display:block}
 
 /* El compositor se envuelve cuando no cabe. Con siete botones de adjuntar en una fila
    rigida y la ventana estrecha, la caja de texto se quedaba con cuarenta pixeles y
@@ -658,7 +693,7 @@ img.mmedia[data-medio]:not([src]),img.msticker[data-medio]:not([src]){
 .pie .version:hover{background:none}
 .pie .version.hay{color:var(--warn);font-weight:700;opacity:1;cursor:pointer;
   text-decoration:underline;text-underline-offset:2px}
-.escribir{display:flex;align-items:flex-end;gap:9px;padding:10px 14px;flex-wrap:wrap;
+.escribir{position:relative;display:flex;align-items:flex-end;gap:9px;padding:10px 14px;flex-wrap:wrap;
   background:var(--panel);border-top:1px solid var(--line)}
 .escribir textarea{flex:1 1 180px;min-width:150px;min-height:40px;max-height:150px;
   padding:10px 14px;resize:none;
@@ -674,6 +709,18 @@ img.mmedia[data-medio]:not([src]),img.msticker[data-medio]:not([src]){
 .adj:hover{background:var(--hover);color:var(--fg)}
 .adj.hd{border:1.5px solid var(--line2)}
 .adj.hd.on{background:var(--ink);color:var(--on-ink);border-color:var(--ink)}
+/* Selector de emojis: un panel propio, sin libreria -- son solo el unicode del sistema,
+   los mismos que ya escribe cualquiera con el teclado de emojis de Windows (Win+.). */
+.emoji-pop{display:none;position:absolute;bottom:56px;left:8px;z-index:30;width:290px;
+  max-height:320px;overflow-y:auto;padding:8px;background:var(--panel);
+  border:1px solid var(--line2);border-radius:var(--r2);box-shadow:var(--sombra)}
+.emoji-pop.on{display:block}
+.emoji-grupo{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.03em;
+  color:var(--mut);margin:10px 2px 4px}
+.emoji-grupo:first-child{margin-top:0}
+.emoji-grid{display:grid;grid-template-columns:repeat(7,1fr)}
+.emoji-grid button{font-size:21px;line-height:1;padding:5px 0;border-radius:6px}
+.emoji-grid button:hover{background:var(--hover)}
 .cola{display:flex;flex-wrap:wrap;gap:6px;padding:0 14px 11px;background:var(--panel)}
 .pieza{display:inline-flex;align-items:center;gap:8px;max-width:250px;padding:5px 8px 5px 5px;
   border:1px solid var(--line2);border-radius:var(--r);font-size:12px}
@@ -747,6 +794,14 @@ img.mmedia[data-medio]:not([src]),img.msticker[data-medio]:not([src]){
 .dato{padding:8px 10px;border:1px solid var(--line);border-radius:var(--r);margin-bottom:7px}
 .dato .k{font-size:9.5px;font-weight:800;letter-spacing:.7px;text-transform:uppercase;color:var(--mut)}
 .dato .v{font-size:13px;margin-top:2px;word-break:break-word}
+/* Galeria de fotos/video en la ficha, como el panel de info de contacto de WhatsApp Web.
+   Reusa las mismas tarjetas .mthumb del hilo (bajo demanda incluido), solo que aqui,
+   dentro de una rejilla de casillas chicas, SI recorta a cuadrado -- es una miniatura de
+   galeria, no la vista previa de un mensaje, que es donde importaba no recortar. */
+.ficha-galeria{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;margin-bottom:8px}
+.ficha-galeria .mthumb{width:auto;aspect-ratio:1}
+.ficha-galeria .mthumb img{height:100%;max-height:none;object-fit:cover}
+.ficha-galeria .mthumb .vertag{font-size:9px;padding:2px 6px}
 
 /* --- Planificacion: el prompt unico ---------------------------------------- */
 .prompt{max-width:760px}
@@ -1025,6 +1080,16 @@ img.mmedia[data-medio]:not([src]),img.msticker[data-medio]:not([src]){
 .tpl:hover{background:var(--hover);border-color:var(--line2)}
 .tpl b{display:block;font-size:13.5px}
 .tplmeta{display:block;margin-top:2px;font-size:11px;color:var(--mut)}
+/* Destinos marcados para reenviar a varios a la vez, y el rotulo de "Frecuentes" que separa
+   los chats mas recientes del resto, como en WhatsApp Web. */
+.tpl.marcado{border-color:var(--ok);background:rgba(37,163,102,.1)}
+.tpl .tplcheck{float:right;width:18px;height:18px;border-radius:50%;border:2px solid var(--line2);
+  background:var(--panel)}
+.tpl.marcado .tplcheck{border-color:var(--ok);background:var(--ok)
+  url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 13l4 4L19 7'/%3E%3C/svg%3E") center/12px no-repeat}
+.fwd-grupo{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.03em;
+  color:var(--mut);margin:14px 0 6px;padding:0 2px}
+.fwd-grupo:first-child{margin-top:0}
 .tplprev{display:block;margin-top:6px;font-size:12px;color:var(--mut);line-height:1.4;
   padding-top:6px;border-top:1px dashed var(--line)}
 .pdfs{display:flex;flex-wrap:wrap;gap:6px}
@@ -1280,6 +1345,18 @@ img.mmedia[data-medio]:not([src]),img.msticker[data-medio]:not([src]){
     height:var(--alto-barra);padding:8px 10px;row-gap:8px;column-gap:8px}
   header.barra .der{grid-column:1/-1;justify-content:flex-end;margin-left:0}
 }
+.calidad-resumen{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin:18px 0}
+.calidad-kpi{background:var(--panel);border:1px solid var(--line2);border-radius:14px;padding:14px}
+.calidad-kpi b{display:block;font-size:25px}.calidad-kpi span{color:var(--mut);font-size:12px}
+.calidad-lista{display:grid;gap:9px;margin-top:12px}
+.calidad-aviso{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px 14px;align-items:center;
+  background:var(--panel);border:1px solid var(--line2);border-radius:13px;padding:12px 14px}
+.calidad-aviso.alta{border-left:4px solid #d14b4b}.calidad-aviso.media{border-left:4px solid #d99a25}
+.calidad-aviso p{margin:4px 0;color:var(--mut);font-size:12px}.calidad-aviso .acciones{grid-column:2;grid-row:1/3}
+.calidad-tabla{width:100%;border-collapse:collapse;margin-top:10px}.calidad-tabla th,.calidad-tabla td{
+  text-align:left;padding:10px;border-bottom:1px solid var(--line2);font-size:13px}.calidad-tabla th{color:var(--mut);font-size:11px}
+.calidad-score{display:inline-flex;min-width:38px;justify-content:center;border-radius:999px;padding:4px 8px;
+  background:var(--fondo);font-weight:700}.calidad-vacio{color:var(--mut);padding:18px 0}
 </style>
 </head>
 <body>
@@ -1342,7 +1419,7 @@ img.mmedia[data-medio]:not([src]),img.msticker[data-medio]:not([src]){
 </div>
 
 <div id="aviso"></div>
-<div id="lupa"><img alt="imagen ampliada"></div>
+<div id="lupa"><p class="lupa-carga">Pidiendo el archivo a WhatsApp…</p><img alt="imagen ampliada"><video controls></video></div>
 
 <script type="module">
 import { initializeApp, getApps } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js';
@@ -1354,6 +1431,7 @@ import { getFirestore, collection, query, where, onSnapshot, doc, setDoc, getDoc
 const CFG = window.CRM_CONFIG || window.DCARELA_CRM_CONFIG || {};
 const FB  = window.__DCARELA_FIREBASE_CONFIG || {};
 const API = String(CFG.firebaseFunctionsBase || '').replace(/\/$/, '') + '/crmApi';
+const API_CALIDAD = String(CFG.firebaseFunctionsBase || '').replace(/\/$/, '') + '/crmServiceQualityApi';
 const NEGOCIO = 'dcarela';
 
 const app  = getApps().length ? getApps()[0] : initializeApp(FB);
@@ -1425,6 +1503,7 @@ document.title = TITULO_BASE;
 // reordene nodos. Si el modulo no arranca, se ven TODAS. Un menu de mas no es
 // tan grave como un menu vacio, que es como quedo el panel anterior.
 const ico = d => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">' + d + '</svg>';
+let ROL_ACTUAL = '';
 const VISTAS = [
   { id:'planning',      nombre:'Planificación', fija:true,  icono:ico('<path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/>') },
   { id:'conversations', nombre:'Conversaciones',fija:true,  icono:ico('<path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>') },
@@ -1436,6 +1515,7 @@ const VISTAS = [
   { id:'prospecting',   nombre:'Prospección',   icono:ico('<circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4M11 7v8M7 11h8"/>') },
   { id:'poscustomers',  nombre:'Clientes de caja', icono:ico('<path d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M19 8v6M22 11h-6"/>') },
   { id:'satisfaccion',  nombre:'Satisfacción',  icono:ico('<path d="M12 17.3l-5.5 3 1-6.1L3 9.8l6.1-.9L12 3.3l2.9 5.6 6.1.9-4.5 4.4 1 6.1z"/>') },
+  { id:'informes',      nombre:'Informes internos', restringida:true, icono:ico('<path d="M4 19V9M10 19V5M16 19v-7M22 19H2"/><path d="M3 4l5 3 5-4 7 4"/>') },
   { id:'limpieza',      nombre:'Limpieza',       icono:ico('<path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/>') },
   { id:'anuncios',      nombre:'Anuncios',       icono:ico('<path d="M3 11v2a2 2 0 002 2h2l4 4V5L7 9H5a2 2 0 00-2 2z"/><path d="M15 9a4 4 0 010 6"/>') },
   { id:'campanas',      nombre:'Campañas',      icono:ico('<path d="M3 11l18-8-7 18-2-8-9-2z"/>') },
@@ -1491,6 +1571,7 @@ function enlaceMeta(id, texto){
 }
 
 function pintaMenu(){
+  const disponibles = VISTAS.filter(v => !v.restringida || ['admin','supervisor'].includes(ROL_ACTUAL));
   const enlace = v => '<a href="#' + v.id + '" data-vista="' + v.id + '">' + v.icono
     + '<span>' + esc(v.nombre) + '</span><span class="cuenta" data-cuenta="' + v.id + '" hidden></span></a>';
   // Sin data-vista: el enrutador solo intercepta a[data-vista] (mas abajo), asi que estos abren
@@ -1504,9 +1585,9 @@ function pintaMenu(){
     ? '<div class="accesos" role="group" aria-label="Bandejas de Meta">'
       + ACCESOS_META.map(externo).join('') + '</div>' : '';
   $('nav').innerHTML =
-    VISTAS.filter(v => v.fija).map(v => enlace(v) + (v.id === 'conversations' ? accesos : '')).join('')
+    disponibles.filter(v => v.fija).map(v => enlace(v) + (v.id === 'conversations' ? accesos : '')).join('')
     + '<div class="secundarias"><div class="rotulo">Todo lo demás</div>'
-    + VISTAS.filter(v => !v.fija).map(enlace).join('') + '</div>';
+    + disponibles.filter(v => !v.fija).map(enlace).join('') + '</div>';
 }
 pintaMenu();
 
@@ -1557,7 +1638,8 @@ document.addEventListener('keydown', ev => { if (ev.key === 'Escape') cierraMenu
 /* ---- Enrutado ------------------------------------------------------------ */
 let vistaActual = null;
 function ve(id){
-  if (!VISTAS.some(v => v.id === id)) id = CFG.defaultView || 'conversations';
+  if (!VISTAS.some(v => v.id === id && (!v.restringida || ['admin','supervisor'].includes(ROL_ACTUAL))))
+    id = CFG.defaultView || 'conversations';
   vistaActual = id;
   // El montaje va PRIMERO. Al reves, la vista se crea despues de repartir la clase
   // que la hace visible y nace sin ella: sale el marco y por dentro nada. Asi quedo
@@ -1591,7 +1673,7 @@ async function llama(cuerpo, opciones = {}){
   catch (e) { return { ok:false, error: e?.message || String(e), status:401 }; }
   let r;
   try {
-    r = await fetch(API, {
+    r = await fetch(opciones.endpoint || API, {
       method:'POST',
       headers:{ 'Content-Type':'application/json', Authorization:'Bearer ' + token },
       body: JSON.stringify(cuerpo),
@@ -1634,7 +1716,9 @@ const ULTIMA_IMPORTACION = {};
 // CONVS_IGNORADAS son las que el dueno saco del CRM (familia, numeros propios, colegas): fuera de
 // CONVS y de CONVS_OCULTAS, asi que ninguna vista ni contador las cuenta; el chip 'Ignorados' las
 // trae y desde ahi se deshace.
-let CONVS = [], CONVS_TODAS = [], CONVS_OCULTAS = [], CONVS_IGNORADAS = [], MSGS = [], sel = null, paraMsgs = null;
+let CONVS = [], CONVS_TODAS = [], CONVS_OCULTAS = [], CONVS_IGNORADAS = [], MSGS = [], sel = null;
+let paraConvs = null, sondeoConvs = null, reintentoConvs = null;
+let paraMsgs = null, sondeoMsgs = null, reintentoMsgs = null, escuchaMsgId = '';
 // Los mismos tipos que firebase-functions/src/ignore-core.js (TIPOS): solo dicen POR QUE se ignora.
 const TIPOS_IGNORAR = { propio:'número propio', linea_negocio:'línea del negocio', familia:'familia',
   fotografo:'fotógrafo', delivery:'delivery', personal:'personal', proveedor:'proveedor', otro:'otro' };
@@ -1730,9 +1814,7 @@ function hora(v){
   return d.toLocaleDateString('es-DO', { day:'numeric', month:'short' });
 }
 
-function escuchaConversaciones(){
-  const q = query(collection(db,'crm_conversations'), where('business_id','==',NEGOCIO));
-  onSnapshot(q, s => {
+function aplicaConversaciones(s, modo = 'en vivo'){
     CONVS_TODAS = s.docs.map(d => ({ ...d.data(), _id:d.id })).filter(perteneceAlCanal)
       .sort((a,b) => String(b.last_message_at||'').localeCompare(String(a.last_message_at||'')));
     // Un unico punto donde se separa lo vivo de lo oculto. Asi cada vista y cada contador cuenta
@@ -1742,7 +1824,7 @@ function escuchaConversaciones(){
     // puente, el nombre corregido o el paso a atencion humana no se veian hasta cambiar de chat.
     refrescaSeleccion();
     abreChatDeLaUrl();
-    marcaEstado(true, 'Datos sincronizados · en vivo');
+    marcaEstado(true, 'Datos sincronizados · ' + modo);
     if (vistaActual === 'conversations') pintaChats();
     if (vistaActual === 'funnel') { pintaKanban(); pintaMovilizacion(); }
     if (vistaActual === 'dashboard') pintaDashboard();
@@ -1750,10 +1832,101 @@ function escuchaConversaciones(){
     if (vistaActual === 'reminders') pintaRecordatorios();
     pintaCuentas();
     avisaMensajesNuevos();
-  }, err => marcaEstado(false, 'Sin datos en vivo: ' + (err?.code || 'error')));
+}
+function detieneRespaldoConvs(){
+  if (sondeoConvs) { clearInterval(sondeoConvs); sondeoConvs = null; }
+  if (reintentoConvs) { clearTimeout(reintentoConvs); reintentoConvs = null; }
+}
+async function sondeaConversaciones(){
+  try {
+    const q = query(collection(db,'crm_conversations'), where('business_id','==',NEGOCIO));
+    aplicaConversaciones(await getDocs(q), 'respaldo cada 8 s');
+  } catch (error) {
+    marcaEstado(false, 'Sincronización interrumpida: ' + (error?.code || 'sin red'));
+  }
+}
+function activaRespaldoConvs(){
+  if (!sondeoConvs) {
+    void sondeaConversaciones();
+    sondeoConvs = setInterval(() => { if (!document.hidden) void sondeaConversaciones(); }, 8000);
+  }
+  if (!reintentoConvs) reintentoConvs = setTimeout(() => {
+    reintentoConvs = null;
+    escuchaConversaciones();
+  }, 30000);
+}
+function escuchaConversaciones(){
+  if (paraConvs) { paraConvs(); paraConvs = null; }
+  const q = query(collection(db,'crm_conversations'), where('business_id','==',NEGOCIO));
+  paraConvs = onSnapshot(q, s => {
+    detieneRespaldoConvs();
+    aplicaConversaciones(s, 'en vivo');
+  }, err => {
+    paraConvs = null;
+    marcaEstado(false, 'En vivo interrumpido: ' + (err?.code || 'error') + ' · usando respaldo');
+    activaRespaldoConvs();
+  });
+}
+function detieneRespaldoMsgs(){
+  if (sondeoMsgs) { clearInterval(sondeoMsgs); sondeoMsgs = null; }
+  if (reintentoMsgs) { clearTimeout(reintentoMsgs); reintentoMsgs = null; }
+}
+function aplicaMensajes(s, idConv){
+  if (!sel || (sel.id !== idConv && sel._id !== idConv)) return;
+  MSGS = s.docs.map(d => ({ ...d.data(), _id:d.id }))
+    .sort((a,b) => instanteMsg(a) - instanteMsg(b));
+  pintaMensajes();
+}
+async function sondeaMensajes(idConv){
+  if (escuchaMsgId !== idConv) return;
+  const base = [where('business_id','==',NEGOCIO), where('conversation_id','==',idConv)];
+  try {
+    let s;
+    try { s = await getDocs(query(collection(db,'crm_messages'), ...base, orderBy('created_at','desc'), limit(400))); }
+    catch (error) {
+      if (error?.code !== 'failed-precondition') throw error;
+      s = await getDocs(query(collection(db,'crm_messages'), ...base, limit(400)));
+    }
+    aplicaMensajes(s, idConv);
+  } catch (error) {
+    const cont = $('mensajes');
+    if (cont && !MSGS.length) cont.innerHTML = '<div style="margin:auto;max-width:340px;text-align:center;color:var(--mut);font-size:13px">'
+      + 'Reconectando mensajes…<br><b>' + esc(error?.code || 'sin red') + '</b></div>';
+  }
+}
+function activaRespaldoMsgs(idConv){
+  if (!sondeoMsgs) {
+    void sondeaMensajes(idConv);
+    sondeoMsgs = setInterval(() => { if (!document.hidden) void sondeaMensajes(idConv); }, 5000);
+  }
+  if (!reintentoMsgs) reintentoMsgs = setTimeout(() => {
+    reintentoMsgs = null;
+    if (escuchaMsgId === idConv) abreEscuchaMensajes(idConv, false);
+  }, 30000);
+}
+function abreEscuchaMensajes(idConv, esRespaldo){
+  if (paraMsgs) { paraMsgs(); paraMsgs = null; }
+  const base = [where('business_id','==',NEGOCIO), where('conversation_id','==',idConv)];
+  const q = esRespaldo
+    ? query(collection(db,'crm_messages'), ...base, limit(400))
+    : query(collection(db,'crm_messages'), ...base, orderBy('created_at','desc'), limit(400));
+  paraMsgs = onSnapshot(q, s => {
+    detieneRespaldoMsgs();
+    aplicaMensajes(s, idConv);
+  }, err => {
+    paraMsgs = null;
+    if (!esRespaldo && err?.code === 'failed-precondition' && escuchaMsgId === idConv) {
+      abreEscuchaMensajes(idConv, true);
+      return;
+    }
+    if (escuchaMsgId !== idConv) return;
+    activaRespaldoMsgs(idConv);
+  });
 }
 function escuchaMensajes(idConv){
   if (paraMsgs) { paraMsgs(); paraMsgs = null; }
+  detieneRespaldoMsgs();
+  escuchaMsgId = idConv;
   MSGS = [];
   // Los globos de "enviando" son de la conversacion que se deja: al cambiar de chat ya no hay
   // MSGS con que confirmarlos, y arrastrarlos seria enseñar un reloj que no se apaga nunca.
@@ -1772,25 +1945,13 @@ function escuchaMensajes(idConv){
   //
   // Esa consulta necesita un indice compuesto. Si todavia no existe, Firestore responde
   // failed-precondition y se cae a la consulta vieja: peor orden, pero el chat se ve.
-  const base = [where('business_id','==',NEGOCIO), where('conversation_id','==',idConv)];
-  const esEste = () => sel && (sel.id === idConv || sel._id === idConv);
-  const escucha = (q, esRespaldo) => onSnapshot(q, s => {
-    // Se ordena por instante, no por el texto de created_at: un mensaje sin fecha tenia la
-    // cadena vacia y la cadena vacia va antes que cualquier otra.
-    MSGS = s.docs.map(d => d.data())
-      .sort((a,b) => instanteMsg(a) - instanteMsg(b));
-    if (esEste()) pintaMensajes();
-  }, err => {
-    if (!esRespaldo && err?.code === 'failed-precondition' && esEste()) {
-      paraMsgs = escucha(query(collection(db,'crm_messages'), ...base, limit(400)), true);
-      return;
-    }
-    const cont = $('mensajes');
-    if (cont) cont.innerHTML = '<div style="margin:auto;max-width:340px;text-align:center;color:var(--mut);font-size:13px">'
-      + 'No se pudieron cargar los mensajes.<br><b>' + esc(err?.code || 'error') + '</b></div>';
-  });
-  paraMsgs = escucha(query(collection(db,'crm_messages'), ...base, orderBy('created_at','desc'), limit(400)), false);
+  abreEscuchaMensajes(idConv, false);
 }
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden || !auth.currentUser) return;
+  escuchaConversaciones();
+  if (escuchaMsgId && sel) abreEscuchaMensajes(escuchaMsgId, false);
+});
 // Version cargada y aviso de que hay otra publicada.
 //
 // El panel se sirve desde GitHub Pages con Cache-Control: max-age=600, asi que una
@@ -1926,6 +2087,7 @@ function monta(id){
   if (id === 'anuncios') return montaAnuncios();
   if (id === 'funnel') return montaFunnel();
   if (id === 'dashboard') return montaDashboard();
+  if (id === 'informes') return montaInformes();
   if (TABLERO[id]) return montaTablero(id);
   if (id === 'agenda') return montaAgenda();
   if (id === 'reminders') return montaRecordatorios();
@@ -3543,6 +3705,8 @@ function abre(c){
   apagaEscribiendo();
   COLA.length = 0;
   citando = null;
+  modoSeleccion = false;
+  SEL_MSGS.clear();
   sel = c;
   document.body.classList.add('chat-abierto');
   $('sinChat').style.display = 'none';
@@ -3589,8 +3753,14 @@ function abre(c){
     + '<div class="barra-cita" id="barraCita" hidden>'
     +   '<div class="cvertical"></div><div class="ctexto"></div>'
     +   '<button id="citaX" aria-label="Quitar la cita">×</button></div>'
+    + '<div class="barra-seleccion" id="barraSeleccion" hidden>'
+    +   '<button class="bscancelar" aria-label="Cancelar selección">×</button>'
+    +   '<div class="bstexto">0 mensajes seleccionados</div>'
+    +   '<button class="bsreenviar btn-solido" disabled>Reenviar</button></div>'
     + '<div class="escribir">'
     +   '<div class="adjuntos">'
+    +     '<button class="adj" id="adjEmoji" title="Emojis" aria-label="Emojis">'
+    +       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M8.5 10.01l.01-.011M15.5 10.01l.01-.011M8 15a5 5 0 008 0"/></svg></button>'
     +     '<button class="adj" id="adjImg" title="Enviar imágenes" aria-label="Enviar imágenes">'
     +       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg></button>'
     +     '<button class="adj hd' + (modoHd ? ' on' : '') + '" id="adjHd" title="HD: envía la imagen sin comprimir" aria-pressed="' + (modoHd ? 'true' : 'false') + '">HD</button>'
@@ -3609,6 +3779,7 @@ function abre(c){
     +     '<input type="file" id="fImg" accept="image/*" multiple hidden>'
     +     '<input type="file" id="fDoc" multiple hidden>'
     +   '</div>'
+    +   '<div class="emoji-pop" id="emojiPop"></div>'
     +   '<div class="grabando" id="grabando" hidden>'
     +     '<span class="pulso"></span><span id="reloj">0:00</span>'
     +     '<canvas id="ondas" aria-hidden="true"></canvas>'
@@ -3867,6 +4038,9 @@ function cableaChat(c){
   cableaAdjuntos();
   cancelaCita();
   $('citaX').onclick = cancelaCita;
+  pintaBarraSeleccion();
+  $('barraSeleccion').querySelector('.bscancelar').onclick = saleSeleccion;
+  $('barraSeleccion').querySelector('.bsreenviar').onclick = () => abreReenviar([...SEL_MSGS]);
   const caja = $('texto'), env = $('btnEnviar');
   caja.addEventListener('input', () => {
     caja.style.height = 'auto';
@@ -4344,7 +4518,53 @@ function cableaAdjuntos(){
   if ($('adjTpl')) $('adjTpl').onclick = abrePlantillas;
   $('adjCombo').onclick = abreCombos;
   $('adjRapida').onclick = abreRapidas;
+  $('adjEmoji').onclick = abreEmojis;
 }
+
+/* ---- Selector de emojis ---------------------------------------------------
+   Son el unicode del propio sistema -- los mismos que ya escribe cualquiera con el
+   teclado de emojis de Windows (Win+.) -- asi que no hace falta traer una libreria
+   ni imagenes: el navegador ya sabe dibujarlos. */
+const EMOJIS = [
+  ['Caras', ['😀','😁','😂','🤣','😊','😍','😘','😉','😎','🤩','🥳','😢','😭','😡','😱','😴','🤔','😅','🙄','😇','🤗','🥺','😏','😬']],
+  ['Gestos', ['👍','👎','👏','🙌','🙏','💪','👌','✌️','🤝','👋','🤞','💅','👀','🤙','✋']],
+  ['Corazones', ['❤️','🧡','💛','💚','💙','💜','🖤','🤍','💕','💖','💗','💘','💝','😻']],
+  ['Celebración', ['🎉','🎊','🥳','🎂','🎁','🎈','✨','🔥','⭐','🌟','💯','🏆']],
+  ['Fotografía', ['📷','📸','🖼️','💍','👰','🤵','🎓','👶','👧','🧒']],
+  ['Objetos', ['📅','⏰','📍','📱','✅','❌','⚠️','💰','💵','📦','✍️','🖊️']],
+];
+// Insertar EN EL CURSOR, no al final: es lo que hace WhatsApp Web, y lo que se
+// esperaria si a uno se le ocurre poner un emoji a mitad de frase.
+function insertaEnCaja(texto){
+  const caja = $('texto');
+  const ini = caja.selectionStart ?? caja.value.length;
+  const fin = caja.selectionEnd ?? caja.value.length;
+  caja.value = caja.value.slice(0, ini) + texto + caja.value.slice(fin);
+  const pos = ini + texto.length;
+  caja.focus();
+  caja.setSelectionRange(pos, pos);
+  caja.dispatchEvent(new Event('input'));
+}
+function cierraEmojis(){ $('emojiPop')?.classList.remove('on'); }
+function abreEmojis(){
+  const pop = $('emojiPop');
+  if (pop.classList.contains('on')) return cierraEmojis();
+  pop.innerHTML = EMOJIS.map(([grupo, lista]) =>
+    '<div class="emoji-grupo">' + esc(grupo) + '</div><div class="emoji-grid">'
+    + lista.map(e => '<button type="button">' + e + '</button>').join('') + '</div>'
+  ).join('');
+  pop.onclick = ev => {
+    const b = ev.target.closest('button'); if (!b) return;
+    insertaEnCaja(b.textContent);
+  };
+  pop.classList.add('on');
+}
+// Delegados una sola vez: cerrar al tocar fuera o con Escape, como el resto de menus.
+document.addEventListener('click', ev => {
+  if (ev.target.closest('#emojiPop') || ev.target.closest('#adjEmoji')) return;
+  cierraEmojis();
+});
+document.addEventListener('keydown', ev => { if (ev.key === 'Escape') cierraEmojis(); });
 
 /* ---- De que anuncio viene quien escribe ---------------------------------- */
 // Meta manda el anuncio solo en el primer mensaje; el servidor lo guarda en la ficha.
@@ -4791,16 +5011,45 @@ function abreModal(html){
 function cierraModal(){ const m = $('modal'); if (m) m.className = 'modal'; }
 document.addEventListener('keydown', ev => { if (ev.key === 'Escape') { cierraModal(); cierraLupa(); } });
 
-/* ---- Lupa de imagenes ---------------------------------------------------- */
-function cierraLupa(){ $('lupa').classList.remove('on'); $('lupa').querySelector('img').src = ''; }
+/* ---- Lupa de imagenes, videos y stickers ---------------------------------- */
+function cierraLupa(){
+  const l = $('lupa');
+  l.classList.remove('on', 'cargando', 'con-imagen', 'con-video');
+  l.querySelector('img').src = '';
+  const v = l.querySelector('video');
+  v.pause(); v.removeAttribute('src'); v.load();
+}
+// Se abre YA, antes de tener el archivo: pedirlo bajo demanda puede tardar unos segundos
+// y esto no es una ventana nueva, asi que no la alcanza el bloqueo de popups de Chrome.
+function abreLupaCargando(){
+  const l = $('lupa');
+  l.classList.remove('con-imagen', 'con-video');
+  l.classList.add('on', 'cargando');
+}
+function muestraLupa(tipo, src){
+  const l = $('lupa');
+  l.classList.remove('cargando');
+  l.classList.add('on');
+  if (tipo === 'video') {
+    l.classList.remove('con-imagen'); l.classList.add('con-video');
+    const v = l.querySelector('video'); v.src = src; v.play().catch(() => {});
+  } else {
+    l.classList.remove('con-video'); l.classList.add('con-imagen');
+    l.querySelector('img').src = src;
+  }
+}
 $('lupa').onclick = cierraLupa;
+// El video no cierra la lupa al tocarlo: hacen falta los controles nativos (pausa, avance,
+// volumen) sin que cada toque cierre la vista.
+$('lupa').querySelector('video').onclick = ev => ev.stopPropagation();
 // Delegado en el documento: los globos se repintan en cada mensaje nuevo y un
-// manejador puesto sobre cada imagen se perderia en el siguiente repintado.
+// manejador puesto sobre cada imagen se perderia en el siguiente repintado. Los stickers
+// (.msticker) entran igual que las fotos: antes no tenian lupa y no habia otra forma de
+// verlos de cerca.
 document.addEventListener('click', ev => {
   const img = ev.target;
-  if (img?.tagName === 'IMG' && img.classList.contains('mmedia')) {
-    $('lupa').querySelector('img').src = img.src;
-    $('lupa').classList.add('on');
+  if (img?.tagName === 'IMG' && (img.classList.contains('mmedia') || img.classList.contains('msticker'))) {
+    muestraLupa('img', img.src);
   }
 });
 
@@ -5101,9 +5350,47 @@ function pintaCita(){
 }
 function cancelaCita(){ citando = null; pintaCita(); }
 
+/* ---- Selección múltiple de mensajes, para reenviar varios de una vez -------
+   Como en WhatsApp Web: "Seleccionar" en el menú de un mensaje entra en el modo, aparece
+   una casilla en cada globo, y una barra abajo deja añadir más y reenviarlos juntos. */
+let modoSeleccion = false;
+const SEL_MSGS = new Set();
+
+function entraSeleccion(idInicial){
+  modoSeleccion = true;
+  SEL_MSGS.clear();
+  if (idInicial) SEL_MSGS.add(idInicial);
+  $('mensajes')?.classList.add('modo-seleccion');
+  pintaMensajes();
+  pintaBarraSeleccion();
+}
+function saleSeleccion(){
+  modoSeleccion = false;
+  SEL_MSGS.clear();
+  $('mensajes')?.classList.remove('modo-seleccion');
+  pintaMensajes();
+  pintaBarraSeleccion();
+}
+function alternaSeleccion(id){
+  if (SEL_MSGS.has(id)) SEL_MSGS.delete(id); else SEL_MSGS.add(id);
+  if (!SEL_MSGS.size) return saleSeleccion();
+  pintaMensajes();
+  pintaBarraSeleccion();
+}
+function pintaBarraSeleccion(){
+  const barra = $('barraSeleccion'); if (!barra) return;
+  barra.hidden = !modoSeleccion;
+  if (!modoSeleccion) return;
+  const n = SEL_MSGS.size;
+  barra.querySelector('.bstexto').textContent = n === 1 ? '1 mensaje seleccionado' : n + ' mensajes seleccionados';
+  barra.querySelector('.bsreenviar').disabled = !n;
+}
+
 // Delegado en el documento: los globos se repintan con cada mensaje nuevo, y un
 // manejador puesto sobre cada boton se perderia en el siguiente repintado.
 document.addEventListener('click', async ev => {
+  const casilla = ev.target.closest('.msel[data-msel]');
+  if (casilla) { ev.stopPropagation(); alternaSeleccion(casilla.dataset.msel); return; }
   // Pulsar la cita salta al mensaje citado, como en WhatsApp. Si ese mensaje no esta cargado
   // --el hilo trae los ultimos 400-- no se hace nada: mejor eso que un salto a otro sitio.
   const cita = ev.target.closest('.cita[data-cita]');
@@ -5128,9 +5415,12 @@ document.addEventListener('click', async ev => {
   // Reaccionar solo por la linea de WhatsApp Web, y solo a algo que exista en WhatsApp:
   // una nota interna del panel no tiene wamid y no hay a que reaccionar.
   const puedeReaccionar = canalDe(sel) === 'whatsapp_qr' && !!m.wamid;
+  const destacado = !!m.metadata?.starred;
   menu.innerHTML = '<button data-op="citar">Responder</button>'
     + (puedeReaccionar ? '<button data-op="reaccionar">Reaccionar</button>' : '')
     + '<button data-op="reenviar">Reenviar</button>'
+    + '<button data-op="seleccionar">Seleccionar</button>'
+    + '<button data-op="destacar">' + (destacado ? 'Quitar destacado' : 'Destacar') + '</button>'
     + '<button data-op="copiar">Copiar texto</button>'
     + '<button data-op="borrar" class="peligro">Borrar</button>';
   globo.appendChild(menu);
@@ -5144,7 +5434,14 @@ document.addEventListener('click', async ev => {
       catch (e) { avisa('No se pudo copiar'); }
     }
     else if (op === 'reaccionar') abreReaccion(m);
-    else if (op === 'reenviar') abreReenviar(m);
+    else if (op === 'reenviar') abreReenviar([m.id || m.wamid]);
+    else if (op === 'seleccionar') entraSeleccion(m.id || m.wamid);
+    else if (op === 'destacar') {
+      // Destacar es solo del CRM: no le llega nada al cliente ni al puente, asi que no
+      // hace falta esperar confirmacion como con reenviar o borrar.
+      const r = await llama({ action:'star', message_id: m.id, starred: !destacado });
+      if (!r.ok) avisa('No se pudo destacar', r.error);
+    }
     else if (op === 'borrar') {
       // Borrado blando: WhatsApp no permite quitarlo del telefono del cliente, asi
       // que se dice claro que solo desaparece de aqui.
@@ -5182,43 +5479,86 @@ function abreReaccion(m){
 // desde el teléfono.
 const TIPOS_CON_ARCHIVO = ['image', 'video', 'audio', 'voice', 'document', 'file', 'sticker'];
 
-function abreReenviar(m){
-  const texto = String(m.body || '').trim();
-  const conArchivo = TIPOS_CON_ARCHIVO.includes(String(m.msg_type || '').toLowerCase());
-  if (!conArchivo && (!texto || /^\[[a-z]+\]$/i.test(texto)))
-    return avisa('Ese mensaje no se puede reenviar', 'No tiene ni texto ni archivo.');
-  abreModal('<div class="mtapa"><b>Reenviar a…</b><button class="cerrarm" data-cerrar>×</button></div>'
+// Cuantos chats recientes entran en "Frecuentes" antes de separar el resto. CONVS ya viene
+// ordenada por last_message_at: los primeros de esa lista SON con quien mas se habla.
+const FWD_FRECUENTES_N = 8;
+
+// `ids` es un arreglo de ids de mensaje (uno solo, desde "Reenviar" en el menu de un
+// mensaje; varios, desde la barra de seleccion). Los destinos tambien se eligen de a
+// varios, como el modo de reenviar de WhatsApp Web: marcar chats y despues pulsar Enviar.
+function abreReenviar(ids){
+  const lista = (Array.isArray(ids) ? ids : [ids]).filter(Boolean);
+  const msgs = lista.map(id => MSGS.find(x => (x.id || x.wamid) === id)).filter(Boolean);
+  const validos = msgs.filter(m => {
+    const texto = String(m.body || '').trim();
+    const conArchivoM = TIPOS_CON_ARCHIVO.includes(String(m.msg_type || '').toLowerCase());
+    return conArchivoM || (texto && !/^\[[a-z]+\]$/i.test(texto));
+  });
+  if (!validos.length)
+    return avisa('Nada que reenviar', 'Ninguno de esos mensajes tiene texto ni archivo.');
+  const conArchivo = validos.some(m => TIPOS_CON_ARCHIVO.includes(String(m.msg_type || '').toLowerCase()));
+  const destinos = new Set();
+  const titulo = validos.length > 1 ? 'Reenviar ' + validos.length + ' mensajes a…' : 'Reenviar a…';
+  abreModal('<div class="mtapa"><b>' + esc(titulo) + '</b><button class="cerrarm" data-cerrar>×</button></div>'
     + '<div class="mcuerpo">'
     // Un archivo solo puede salir por la línea de WhatsApp Web. Por la línea oficial haría
     // falta una dirección pública del archivo, y los archivos ya no se guardan en la nube.
-    + (conArchivo ? '<p class="aviso">Se reenvía el archivo. Solo aparecen los chats de la línea de WhatsApp Web.</p>' : '')
+    + (conArchivo ? '<p class="aviso">' + (validos.length > 1 ? 'Los archivos se reenvían tal cual. ' : 'Se reenvía el archivo. ')
+        + 'Solo aparecen los chats de la línea de WhatsApp Web.</p>' : '')
     + '<div class="campo"><input id="fwdBusca" placeholder="Buscar conversación…"></div>'
-    + '<div id="fwdLista"></div></div>');
-  $('modal').querySelectorAll('[data-cerrar]').forEach(b => { b.onclick = cierraModal; });
+    + '<div id="fwdLista"></div></div>'
+    + '<div class="mpatas"><button class="fwd-enviar btn-solido" id="fwdEnviar" disabled>Enviar</button></div>');
+  const fila = c => '<button class="tpl' + (destinos.has(c.id || c._id) ? ' marcado' : '') + '" data-dest="'
+    + esc(c.id || c._id) + '"><span class="tplcheck"></span><b>' + esc(nombreDe(c)) + '</b>'
+    + '<span class="tplmeta">+' + esc(c.wa_phone || '') + '</span></button>';
   const pinta = () => {
     const q = ($('fwdBusca').value || '').trim();
-    const filas = CONVS.filter(c => c._id !== (sel?._id))
+    const todas = CONVS.filter(c => c._id !== (sel?._id))
       .filter(c => !conArchivo || canalDe(c) === 'whatsapp_qr')
-      .filter(c => coincideContacto(c, q))
-      .slice(0, 40);
-    $('fwdLista').innerHTML = filas.map(c =>
-      '<button class="tpl" data-dest="' + esc(c.id || c._id) + '"><b>' + esc(nombreDe(c)) + '</b>'
-      + '<span class="tplmeta">+' + esc(c.wa_phone || '') + '</span></button>').join('')
-      || '<p class="aviso">Sin resultados.</p>';
+      .filter(c => coincideContacto(c, q));
+    if (!todas.length) { $('fwdLista').innerHTML = '<p class="aviso">Sin resultados.</p>'; return; }
+    // Sin buscar nada, separar los primeros (los mas recientes: con quien mas se habla) del
+    // resto, con el mismo rotulo que usa WhatsApp Web. Buscando, la lista ya es corta y
+    // separarla en dos grupos solo estorba.
+    if (!q && todas.length > FWD_FRECUENTES_N) {
+      $('fwdLista').innerHTML = '<div class="fwd-grupo">Frecuentes</div>'
+        + todas.slice(0, FWD_FRECUENTES_N).map(fila).join('')
+        + '<div class="fwd-grupo">Todos los chats</div>'
+        + todas.slice(FWD_FRECUENTES_N, 40).map(fila).join('');
+    } else {
+      $('fwdLista').innerHTML = todas.slice(0, 40).map(fila).join('');
+    }
   };
   pinta();
   $('fwdBusca').oninput = pinta;
-  $('fwdLista').onclick = async ev => {
+  $('fwdLista').onclick = ev => {
     const b = ev.target.closest('[data-dest]'); if (!b) return;
-    b.disabled = true;
-    const r = await llama({ action:'forward', source_message_id: m.id,
-      target_conversation_id: b.dataset.dest });
-    if (!r.ok) { b.disabled = false; return avisa('No se pudo reenviar', r.error); }
+    const id = b.dataset.dest;
+    if (destinos.has(id)) destinos.delete(id); else destinos.add(id);
+    b.classList.toggle('marcado', destinos.has(id));
+    $('fwdEnviar').disabled = !destinos.size;
+    $('fwdEnviar').textContent = destinos.size > 1 ? 'Enviar a ' + destinos.size + ' chats' : 'Enviar';
+  };
+  $('fwdEnviar').onclick = async () => {
+    $('fwdEnviar').disabled = true;
+    $('fwdEnviar').textContent = 'Enviando…';
+    let fallos = 0;
+    // De uno en uno: es la misma cola del puente para todo, y mandar muchos a la vez
+    // solo la atasca sin que nada llegue antes.
+    for (const destId of destinos) {
+      for (const m of validos) {
+        const r = await llama({ action:'forward', source_message_id: m.id, target_conversation_id: destId });
+        if (!r.ok) fallos++;
+      }
+    }
     cierraModal();
+    saleSeleccion();
+    const total = destinos.size * validos.length;
     // Un archivo no sale al instante: entra en la cola del puente con su ritmo. Decir
     // «Reenviado» a secas haría buscarlo en el chat del cliente antes de que esté.
-    avisa(r.archivo ? 'Reenviando el archivo…' : 'Reenviado',
-      r.archivo ? 'Sale por la línea de WhatsApp Web en unos segundos.' : '');
+    if (!fallos) avisa(total > 1 ? 'Reenviados' : 'Reenviado',
+      conArchivo ? 'Sale por la línea de WhatsApp Web en unos segundos.' : '');
+    else avisa('Reenviado con fallos', fallos + ' de ' + total + ' no se pudieron mandar.');
   };
 }
 
@@ -5514,22 +5854,31 @@ function cableaBajoDemanda(){
   document.querySelectorAll('[data-bajo]').forEach(el => {
     if (el.tagName !== 'BUTTON' || el.dataset.listo) return;
     el.dataset.listo = '1';
+    // Con miniatura es una foto, un sticker o un video que WhatsApp pudo previsualizar: se
+    // ve dentro del panel, en la lupa. Sin miniatura es un documento (o algo que WhatsApp no
+    // pudo previsualizar) y sigue yendo por pestaña nueva o descarga directa, como antes.
+    const conMiniatura = el.classList.contains('mthumb');
     el.onclick = async () => {
       const etiqueta = el.querySelector('.vertag') || el;
       const antes = etiqueta.textContent;
       etiqueta.textContent = 'Pidiendo…';
       el.classList.add('pidiendo');
-      // La pestana se abre YA, dentro del clic. Pedirle el archivo al telefono tarda unos
-      // segundos, y Chrome bloquea sin avisar una ventana que se abre mas de cinco segundos
-      // despues de pulsar: "Ver" no hacia nada. Si al final no es algo que se pueda abrir, se
-      // cierra y se descarga. Un documento con nombre va directo a descarga: no hace falta.
-      const ventana = el.dataset.nombre ? null : window.open('', '_blank');
+      if (conMiniatura) abreLupaCargando();
+      // La pestana se abre YA, dentro del clic, solo para lo que no tiene miniatura. Pedirle
+      // el archivo al telefono tarda unos segundos, y Chrome bloquea sin avisar una ventana
+      // que se abre mas de cinco segundos despues de pulsar: "Ver" no hacia nada. Un documento
+      // con nombre va directo a descarga: no hace falta pestaña.
+      const ventana = (conMiniatura || el.dataset.nombre) ? null : window.open('', '_blank');
       try { ventana?.document.write('<p style="font:14px system-ui;padding:24px;color:#54656f">Pidiendo el archivo a WhatsApp…</p>'); } catch (e) {}
       try {
         const url = await pideMedioCompleto(el.dataset.bajo);
-        if (!url) { ventana?.close(); return; }
+        if (!url) { ventana?.close(); if (conMiniatura) cierraLupa(); return; }
         const blob = await (await fetch(url)).blob();
-        if (ventana && !ventana.closed && TIPO_VISIBLE.test(String(blob.type || '').split(';')[0].trim())) {
+        const tipo = String(blob.type || '').split(';')[0].trim();
+        if (conMiniatura && /^image\//i.test(tipo)) return muestraLupa('img', url);
+        if (conMiniatura && /^video\//i.test(tipo)) return muestraLupa('video', url);
+        if (conMiniatura) cierraLupa();
+        if (ventana && !ventana.closed && TIPO_VISIBLE.test(tipo)) {
           ventana.opener = null;
           ventana.location.href = url;
           return;
@@ -5538,6 +5887,7 @@ function cableaBajoDemanda(){
         descargaComoArchivo(blob, el.dataset.nombre || 'archivo');
       } catch (e) {
         ventana?.close();
+        if (conMiniatura) cierraLupa();
         avisa('No se pudo abrir el archivo');
       } finally {
         etiqueta.textContent = antes;
@@ -6073,11 +6423,23 @@ function pintaMensajes(){
     }[String(m.delivery_status || 'sent')] ?? ' ·') : '';
     const autor = (sale && m.sender === 'bot' && primero) ? '<div class="autor">Bot</div>' : '';
     const cita = citaDelMensaje(m);
-    return cabeza + '<div class="globo ' + (sale ? 'sale' : 'entra') + ' ' + (primero ? 'primero' : 'seguido') + '"'
-      + ' data-msg="' + esc(m.id || m.wamid || '') + '">'
+    const idMsg = m.id || m.wamid || '';
+    const marcado = modoSeleccion && SEL_MSGS.has(idMsg);
+    // El puente reescribe el body con el texto nuevo (index.js:aplicaCambioDeMensaje), asi que
+    // el hilo YA mostraba la version editada; lo unico que faltaba era decirlo, como WhatsApp
+    // Web ("Editado" antes de la hora). Sin esto se leia como que el cliente escribio eso
+    // desde el principio.
+    const editado = m.metadata?.editado ? '<span class="editado-tag">Editado</span> ' : '';
+    // Destacar no le llega al cliente ni al puente (ver starMessageAction): es una marca
+    // solo del CRM, igual que en WhatsApp Web se destaca solo para quien lo pulsa.
+    const destacadoTag = m.metadata?.starred ? '<span class="destacado-tag" title="Destacado">★</span> ' : '';
+    return cabeza + '<div class="globo ' + (sale ? 'sale' : 'entra') + ' ' + (primero ? 'primero' : 'seguido')
+      + (marcado ? ' marcado' : '') + '"'
+      + ' data-msg="' + esc(idMsg) + '">'
+      + '<input type="checkbox" class="msel" data-msel="' + esc(idMsg) + '"' + (marcado ? ' checked' : '') + '>'
       + '<button class="gaccion" aria-label="Opciones del mensaje">⌄</button>'
       + autor + cita + cuerpoMensaje(m)
-      + '<span class="pie-globo">' + (conFecha ? esc(d.toLocaleTimeString('es-DO',{hour:'2-digit',minute:'2-digit'})) : '') + ticks + '</span>'
+      + '<span class="pie-globo">' + destacadoTag + editado + (conFecha ? esc(d.toLocaleTimeString('es-DO',{hour:'2-digit',minute:'2-digit'})) : '') + ticks + '</span>'
       + '</div>';
   }).join('') || '<div style="margin:auto;color:var(--mut);font-size:13px">Sin mensajes todavía.</div>';
 
@@ -6474,6 +6836,105 @@ async function pintaTablaTpl(forzar){
     b.classList.toggle('on', siguiente);
     b.textContent = siguiente ? 'sí' : 'no';
   };
+}
+
+/* ---- Informes internos: supervisor de atención --------------------------- */
+let CALIDAD = { reports:[], notifications:[], unread:0 };
+let CALIDAD_INICIADA = false, CALIDAD_TIMER = null;
+let CALIDAD_CONOCIDOS = new Set();
+
+function pintaCuentaCalidad(){
+  const cuenta = document.querySelector('[data-cuenta="informes"]');
+  if (!cuenta) return;
+  cuenta.textContent = CALIDAD.unread || '';
+  cuenta.hidden = !CALIDAD.unread;
+}
+
+function pintaInformes(){
+  const cont = $('calidadCuerpo');
+  if (!cont) return;
+  const reports = CALIDAD.reports || [], avisos = CALIDAD.notifications || [];
+  const abiertos = avisos.filter(a => a.status === 'unread');
+  const conRiesgo = reports.filter(r => r.risk === 'high').length;
+  const promedio = reports.length ? Math.round(reports.reduce((s,r) => s + Number(r.score || 0), 0) / reports.length) : 0;
+  cont.innerHTML = '<div class="calidad-resumen">'
+    + '<div class="calidad-kpi"><b>' + abiertos.length + '</b><span>avisos por revisar</span></div>'
+    + '<div class="calidad-kpi"><b>' + conRiesgo + '</b><span>conversaciones de riesgo alto</span></div>'
+    + '<div class="calidad-kpi"><b>' + (reports.length ? promedio : '—') + '</b><span>nota media de atención / 100</span></div>'
+    + '<div class="calidad-kpi"><b>' + reports.length + '</b><span>conversaciones analizadas</span></div></div>'
+    + '<div class="seccion">Notificaciones internas</div>'
+    + '<div class="calidad-lista">' + (abiertos.length ? abiertos.slice(0,30).map(a =>
+      '<div class="calidad-aviso ' + (a.severity === 'high' ? 'alta' : 'media') + '">'
+      + '<div><b>' + esc(a.customer_name || 'Cliente') + ' · ' + esc(a.title || 'Atención requerida') + '</b>'
+      + '<p>' + esc(a.evidence || 'Sin fragmento disponible') + ' · ' + esc(hora(a.message_at || a.created_at)) + '</p></div>'
+      + '<div class="acciones"><button class="btn-linea" data-calidad-chat="' + esc(a.conversation_id || '') + '">Ver chat</button> '
+      + '<button class="btn-solido" data-calidad-revisar="' + esc(a.id) + '">Revisado</button></div></div>').join('')
+      : '<div class="calidad-vacio">No hay avisos pendientes.</div>') + '</div>'
+    + '<div class="seccion" style="margin-top:24px">Evaluación por conversación</div>'
+    + (reports.length ? '<div style="overflow:auto"><table class="calidad-tabla"><thead><tr><th>Cliente</th><th>Nota</th><th>Estado</th><th>Respuesta media</th><th>Señales</th><th>Último análisis</th></tr></thead><tbody>'
+      + reports.map(r => '<tr><td>' + esc(r.customer_name || r.customer_phone || 'Cliente') + '</td>'
+        + '<td><span class="calidad-score">' + Number(r.score || 0) + '</span></td>'
+        + '<td>' + esc(r.risk === 'high' ? 'Riesgo alto' : r.risk === 'attention' ? 'Atención' : 'Correcto') + '</td>'
+        + '<td>' + (r.average_response_minutes == null ? '—' : esc(r.average_response_minutes + ' min')) + '</td>'
+        + '<td>' + Number(r.alert_count || 0) + '</td><td>' + esc(hora(r.scanned_at)) + '</td></tr>').join('')
+      + '</tbody></table></div>' : '<div class="calidad-vacio">Pulsa «Analizar ahora» para crear el primer informe.</div>');
+}
+
+async function cargaCalidad({ scan = false, silencioso = false } = {}){
+  if (!['admin','supervisor'].includes(ROL_ACTUAL) || !auth.currentUser) return;
+  const r = await llama({ action:'serviceQuality', operation: scan ? 'scan' : 'list', max:40, force:scan }, { endpoint:API_CALIDAD });
+  if (!r.ok) {
+    if (!silencioso) avisa('No se pudo cargar el informe', r.error || 'error');
+    return;
+  }
+  CALIDAD = { reports:r.reports || [], notifications:r.notifications || [], unread:Number(r.unread || 0) };
+  pintaCuentaCalidad();
+  pintaInformes();
+  const nuevo = CALIDAD.notifications.find(a => a.status === 'unread' && !CALIDAD_CONOCIDOS.has(a.id));
+  if (CALIDAD_INICIADA && nuevo) {
+    avisa('Atención al cliente', nuevo.customer_name + ': ' + nuevo.title);
+    if (typeof Notification !== 'undefined' && Notification.permission === 'granted' && document.hidden) {
+      try { new Notification('CRM · atención requiere revisión', { body:nuevo.customer_name + ': ' + nuevo.title }); } catch (error) {}
+    }
+  }
+  CALIDAD_CONOCIDOS = new Set(CALIDAD.notifications.map(a => a.id));
+  CALIDAD_INICIADA = true;
+  if (scan && !silencioso) avisa('Análisis actualizado', r.analyzed + ' conversación(es) revisadas · ' + Number(r.new_notifications || 0) + ' aviso(s) nuevo(s).');
+}
+
+function montaInformes(){
+  if (!['admin','supervisor'].includes(ROL_ACTUAL)) return ve('conversations');
+  if (!montadas.has('informes')) {
+    montadas.add('informes');
+    hueco('informes', '<div class="hoja"><h1>Informes internos</h1>'
+      + '<p class="bajada">Supervisor privado de la atención. Detecta demoras, clientes sin respuesta y posibles señales de trato inadecuado. Solo administración y supervisión pueden verlo.</p>'
+      + '<div class="acciones"><button class="btn-solido" id="calidadAnalizar">Analizar ahora</button>'
+      + '<button class="btn-linea" id="calidadRecargar">Recargar</button></div><div id="calidadCuerpo"><span class="cargando"></span></div></div>');
+    $('calidadAnalizar').onclick = async () => {
+      const b = $('calidadAnalizar'); b.disabled = true; b.textContent = 'Analizando…';
+      await cargaCalidad({ scan:true });
+      b.disabled = false; b.textContent = 'Analizar ahora';
+    };
+    $('calidadRecargar').onclick = () => cargaCalidad();
+    $('calidadCuerpo').addEventListener('click', async ev => {
+      const revisar = ev.target.closest('[data-calidad-revisar]');
+      if (revisar) {
+        revisar.disabled = true;
+        const r = await llama({ action:'serviceQuality', operation:'review', notification_id:revisar.dataset.calidadRevisar }, { endpoint:API_CALIDAD });
+        if (!r.ok) { revisar.disabled = false; return avisa('No se pudo marcar', r.error); }
+        await cargaCalidad({ silencioso:true });
+        return;
+      }
+      const abrir = ev.target.closest('[data-calidad-chat]');
+      if (abrir) {
+        const c = buscaConv(abrir.dataset.calidadChat);
+        if (!c) return avisa('No encuentro ese chat', 'Puede estar oculto por su canal o haber sido archivado.');
+        ve('conversations'); abre(c);
+      }
+    });
+  }
+  void cargaCalidad();
+  if (!CALIDAD_TIMER) CALIDAD_TIMER = setInterval(() => cargaCalidad({ silencioso:true }), 60000);
 }
 
 /* ---- Vistas de tabla ----------------------------------------------------- */
@@ -11720,21 +12181,56 @@ async function cableaHistorial(c){
 
   // Vacio y roto no se enseñan igual: "no ha mandado archivos" cuando en realidad no se
   // pudo consultar es la clase de mentira que hace buscar el fallo en otro sitio.
-  const bloqueArchivos = archivos === null
+  //
+  // Foto/sticker/video van en una galeria visual, como el panel de info de WhatsApp Web --
+  // antes esto era una lista con la fecha y un enlace que en la linea de WhatsApp Web decia
+  // siempre "sin enlace", porque ahi los archivos son bajo demanda y nunca tuvieron media_url.
+  // Documento y nota de voz se quedan en la lista de texto, que para eso les basta.
+  const esVisual = m => ['image', 'video', 'sticker'].includes(tipoRealMedio(m, adjuntoDe(m)));
+  const visuales = archivos === null ? [] : archivos.filter(esVisual);
+  const otros = archivos === null ? [] : archivos.filter(m => !esVisual(m));
+  const celdaGaleria = m => {
+    const a = adjuntoDe(m);
+    if (esBajoDemanda(m)) return tarjetaBajoDemanda(m, a, 'Archivo');
+    if (!a.url) return '<div class="mthumb" style="display:flex;align-items:center;'
+      + 'justify-content:center;color:var(--mut);font-size:10px;text-align:center;padding:4px">'
+      + 'sin archivo</div>';
+    // El video no se pinta como <video>: sin poster sale en negro (ya paso una vez con
+    // Estados) y aqui la casilla es demasiado chica para que valga la pena resolverlo.
+    // Un enlace directo abre el video de verdad, solo que en pestaña nueva.
+    if (tipoRealMedio(m, a) === 'video') return '<a class="mthumb" href="' + esc(a.url) + '" target="_blank" '
+      + 'rel="noopener" style="display:flex;align-items:center;justify-content:center;font-size:26px">▶</a>';
+    return '<button class="mthumb" data-vergaleria="' + esc(a.url) + '" title="Ver">'
+      + '<img src="' + esc(a.url) + '" alt="archivo" loading="lazy"></button>';
+  };
+  const bloqueGaleria = archivos === null
     ? '<p class="quien">No se pudieron consultar los archivos.</p>'
-    : archivos.length
-      ? archivos.slice(0, 40).map(m => '<div class="dato"><div class="k">' + esc(hora(m.created_at)) + '</div>'
+    : visuales.length
+      ? '<div class="ficha-galeria">' + visuales.slice(0, 30).map(celdaGaleria).join('') + '</div>'
+      : '<p class="quien">No ha mandado fotos ni videos.</p>';
+  const bloqueOtros = archivos === null ? '' : otros.length
+      ? otros.slice(0, 40).map(m => '<div class="dato"><div class="k">' + esc(hora(m.created_at)) + '</div>'
           + '<div class="v">' + (m.media_url
               ? '<a href="' + esc(m.media_url) + '" target="_blank" rel="noopener">'
                 + esc(m.msg_type || 'archivo') + '</a>'
+              : esBajoDemanda(m) ? esc(m.msg_type || 'archivo') + ' · pedir «Ver» en el chat'
               : esc(m.msg_type || 'archivo') + ' · sin enlace') + '</div></div>').join('')
-      : '<p class="quien">No ha mandado archivos.</p>';
+      : '<p class="quien">Sin documentos ni notas de voz.</p>';
   const bloqueEventos = eventos.length
     ? eventos.slice(0, 40).map(e => '<div class="dato"><div class="k">' + esc(hora(e.created_at)) + '</div>'
         + '<div class="v">' + esc(e.title || e.event_type || 'movimiento') + '</div></div>').join('')
     : '<p class="quien">Sin movimientos registrados.</p>';
-  caja.innerHTML = '<div class="seccion" style="margin:0 0 6px">Archivos que mandó</div>' + bloqueArchivos
+  caja.innerHTML = '<div class="seccion" style="margin:0 0 6px">Fotos y videos</div>' + bloqueGaleria
+    + '<div class="seccion" style="margin:14px 0 6px">Documentos y notas de voz</div>' + bloqueOtros
     + '<div class="seccion" style="margin:14px 0 6px">Movimientos</div>' + bloqueEventos;
+  // Las tarjetas bajo demanda de la galeria son las mismas de tarjetaBajoDemanda(): las
+  // cablea la misma funcion que ya cablea las del hilo (no vuelve a atar las que ya lo estan).
+  cableaBajoDemanda();
+  caja.querySelectorAll('[data-vergaleria]').forEach(b => {
+    if (b.dataset.listo) return;
+    b.dataset.listo = '1';
+    b.onclick = () => muestraLupa('img', b.dataset.vergaleria);
+  });
 }
 
 // Las notas se leen directas de Firestore, como el resto de v2, y se escriben por el
@@ -12945,11 +13441,22 @@ onAuthStateChanged(auth, async u => {
     $('acceso').classList.remove('oculto');
     $('app').classList.remove('on');
     if (paraMsgs) { paraMsgs(); paraMsgs = null; }
+    if (paraConvs) { paraConvs(); paraConvs = null; }
+    detieneRespaldoMsgs(); detieneRespaldoConvs();
+    escuchaMsgId = '';
+    if (CALIDAD_TIMER) { clearInterval(CALIDAD_TIMER); CALIDAD_TIMER = null; }
+    CALIDAD = { reports:[], notifications:[], unread:0 }; CALIDAD_INICIADA = false; CALIDAD_CONOCIDOS = new Set();
+    ROL_ACTUAL = ''; pintaMenu();
     return;
   }
   $('acceso').classList.add('oculto');
   $('app').classList.add('on');
   $('quien').textContent = u.email || '';
+  // El servidor decide el rol efectivo. Informes internos ni siquiera entra al menu de un
+  // agente; el endpoint vuelve a validarlo para que ocultar el enlace no sea la seguridad.
+  const identidad = await llama({ action:'whoami' });
+  ROL_ACTUAL = identidad.ok ? String(identidad.rol_efectivo || '') : '';
+  pintaMenu();
   // El historial se carga solo al entrar. No hay boton de "actualizar": la escucha
   // en vivo trae los cambios sin que nadie tenga que pedirlos.
   escuchaConversaciones();
@@ -12963,6 +13470,7 @@ onAuthStateChanged(auth, async u => {
   vigilaVersion();
   setInterval(vigilaVersion, 300000);
   ve(location.hash.slice(1) || CFG.defaultView || 'conversations');
+  if (['admin','supervisor'].includes(ROL_ACTUAL)) void cargaCalidad({ silencioso:true });
 });
 </script>
 </body>
