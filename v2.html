@@ -322,6 +322,7 @@ img.av{object-fit:cover}
 .chat .hora{font-size:10.5px;color:var(--mut);flex:0 0 auto}
 .chat.sinleer .hora{color:var(--ok);font-weight:700}
 .chat .prev{font-size:12px;color:var(--mut);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.chat .prev.escribiendo-cliente{color:var(--ok);font-style:italic}
 .chat .marcas{display:flex;gap:4px;align-items:center;flex:0 0 auto}
 .etiqueta{font-size:8.5px;font-weight:800;letter-spacing:.4px;text-transform:uppercase;
   padding:2px 5px;border-radius:4px;background:var(--hover);color:var(--mut);white-space:nowrap}
@@ -336,6 +337,7 @@ img.av{object-fit:cover}
 .cabecera .quien-chat{flex:1;min-width:0}
 .cabecera .quien-chat b{display:block;font-size:15px;font-weight:600}
 .cabecera .quien-chat span{display:block;font-size:12px;color:var(--mut)}
+.cabecera .quien-chat span.escribiendo-cliente{color:var(--ok);font-style:italic}
 /* Distintivo del anuncio de origen: se lee de un vistazo sin robarle sitio al nombre. */
 .insig-anuncio{display:inline-block;padding:1px 7px;border-radius:999px;
   background:rgba(37,99,235,.14);color:#60a5fa;font-weight:600;font-size:11px;
@@ -3532,6 +3534,7 @@ function pintaChats(){
     if (silenciado(c)) marcas.push('<span class="etiqueta">🔕 silenciado</span>');
     if (sinLeer) marcas.push('<span class="globito">' + Number(c.unread) + '</span>');
     const canal = CANALES[canalDe(c)];
+    const escribeAqui = textoEscribiendoCliente(c);
     return '<div class="chat' + (sel && sel._id === c._id ? ' on' : '') + (sinLeer ? ' sinleer' : '')
       + '" data-conv="' + esc(c._id) + '">'
       + '<button class="marcar' + (LOTE.has(c._id) ? ' on' : '') + '" aria-label="Seleccionar"></button>'
@@ -3541,7 +3544,11 @@ function pintaChats(){
       + '<div class="cuerpo">'
       +   '<div class="fila1"><div class="nom">' + esc(n) + '</div>'
       +     '<div class="hora">' + esc(hora(c.last_message_at)) + '</div></div>'
-      +   '<div class="prev">' + esc(c.last_message_preview || '') + '</div>'
+      // En la lista tambien, como WhatsApp Web: mientras escribe, la vista previa del ultimo
+      // mensaje se cambia por el aviso, no se le suma al lado.
+      +   (escribeAqui
+          ? '<div class="prev escribiendo-cliente">' + esc(escribeAqui) + '</div>'
+          : '<div class="prev">' + esc(c.last_message_preview || '') + '</div>')
       +   '<div class="marcas">' + marcas.join('') + '</div>'
       + '</div></div>';
   }).join('');
@@ -3695,6 +3702,27 @@ function apagaEscribiendo(){
   llama({ action:'typing', conversation_id:id, state:'paused' }).catch(() => {});
 }
 
+// «Escribiendo…»/«grabando audio…» DEL CLIENTE (lo contrario de ESCRIBIENDO, que es lo que el
+// CRM manda hacia el). wa-bridge escribe customer_typing_state/customer_typing_at en la propia
+// conversacion cuando le llega la presencia real de WhatsApp; aqui solo se decide si todavia es
+// reciente y que texto poner, igual que la cabecera de un chat en WhatsApp Web.
+const ESCRIBIENDO_CLIENTE_VENTANA_MS = 10000;
+let TIMER_ESCRIBIENDO_CLIENTE = null;
+function textoEscribiendoCliente(c){
+  const estado = c?.customer_typing_state;
+  if (estado !== 'composing' && estado !== 'recording') return '';
+  const cuando = Date.parse(String(c?.customer_typing_at || ''));
+  if (!Number.isFinite(cuando) || Date.now() - cuando > ESCRIBIENDO_CLIENTE_VENTANA_MS) return '';
+  return estado === 'recording' ? 'grabando audio…' : 'escribiendo…';
+}
+// Solo un WhatsApp de verdad (whatsapp_qr) manda presencia; en los demas canales el campo nunca
+// se llena y esto no hace nada.
+function subtituloChat(c){
+  const escribiendo = textoEscribiendoCliente(c);
+  if (escribiendo) return '<span class="escribiendo-cliente">' + esc(escribiendo) + '</span>';
+  return '<span>+' + esc(c.wa_phone || '') + ' · ' + esc(CANALES[canalDe(c)].corto) + insigniaAnuncio(c) + '</span>';
+}
+
 function abre(c){
   if (!c) return;
   // Cortar la grabacion ANTES de cambiar de chat. El encoder termina en asincrono y su
@@ -3708,6 +3736,11 @@ function abre(c){
   modoSeleccion = false;
   SEL_MSGS.clear();
   sel = c;
+  // El aviso de "escribiendo del cliente" se apaga solo, por tiempo (ver textoEscribiendoCliente):
+  // sin un repintado periodico se quedaria pegado si no vuelve a llegar presencia. Uno por chat
+  // abierto; el de antes se apaga aqui, no al cerrar sesion, para no tocar ese bloque ajeno.
+  if (TIMER_ESCRIBIENDO_CLIENTE) clearInterval(TIMER_ESCRIBIENDO_CLIENTE);
+  TIMER_ESCRIBIENDO_CLIENTE = setInterval(() => { if (sel) pintaCabeceraChat(); }, 4000);
   document.body.classList.add('chat-abierto');
   $('sinChat').style.display = 'none';
   $('conversacion').style.display = 'flex';
@@ -3726,8 +3759,7 @@ function abre(c){
     + '<div class="avwrap">' + avatarDe(c, n)
     +   '<span class="canalpin" title="' + esc(CANALES[canalDe(c)].nombre) + '" '
     +     'style="background:' + CANALES[canalDe(c)].color + '">' + CANALES[canalDe(c)].logo + '</span></div>'
-    + '<div class="quien-chat"><b>' + esc(n) + '</b><span>+' + esc(c.wa_phone || '')
-    +   ' · ' + esc(CANALES[canalDe(c)].corto) + insigniaAnuncio(c) + '</span></div>'
+    + '<div class="quien-chat"><b>' + esc(n) + '</b>' + subtituloChat(c) + '</div>'
     + (c.human_handoff_notification_status ? '<span class="etiqueta" data-aviso-handoff="1" title="Aviso interno al teléfono de avisos (Configuración), por la línea de WhatsApp Web conectada. Enviado no significa leído.">'
       + esc(({pending:'Aviso pendiente',sent:'Aviso enviado',failed:'Aviso fallido',skipped:'Aviso no enviado'})[c.human_handoff_notification_status] || 'Aviso pendiente') + '</span>' : '')
     + '<button class="modo" id="btnModo"></button>'
@@ -3866,8 +3898,7 @@ function pintaCabeceraChat(){
     + '<span class="canalpin" title="' + esc(CANALES[k].nombre) + '" '
     + 'style="background:' + CANALES[k].color + '">' + CANALES[k].logo + '</span>';
   const quien = cab.querySelector('.quien-chat');
-  if (quien) quien.innerHTML = '<b>' + esc(n) + '</b><span>+' + esc(sel.wa_phone || '')
-    + ' · ' + esc(CANALES[k].corto) + insigniaAnuncio(sel) + '</span>';
+  if (quien) quien.innerHTML = '<b>' + esc(n) + '</b>' + subtituloChat(sel);
   const previo = cab.querySelector('[data-aviso-handoff]');
   const estado = sel.human_handoff_notification_status;
   if (!estado) { if (previo) previo.remove(); }
