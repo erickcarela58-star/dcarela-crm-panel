@@ -628,15 +628,15 @@ img.mmedia[data-medio]:not([src]),img.msticker[data-medio]:not([src]){
 .globo.resaltado{animation:resalta 1.4s ease-out}
 /* Los resultados de buscar dentro de los mensajes, encima de la lista de chats. */
 .cabeza #buscaMsgs{margin-left:7px;border:1px solid var(--line);background:var(--panel);
-  color:var(--texto);border-radius:6px;padding:6px 10px;font-size:12.5px;cursor:pointer;white-space:nowrap}
+  color:var(--fg);border-radius:6px;padding:6px 10px;font-size:12.5px;cursor:pointer;white-space:nowrap}
 .cabeza #buscaMsgs[hidden]{display:none}
 .resbusca{max-height:52vh;overflow-y:auto;border-bottom:1px solid var(--line);background:var(--panel)}
 .rescab{padding:8px 13px;font-size:11.5px;text-transform:uppercase;letter-spacing:.05em;
   color:var(--meta);border-bottom:1px solid var(--line)}
 .resvacio{padding:14px 13px;font-size:13px;color:var(--meta)}
 .resfila{display:block;width:100%;text-align:left;border:0;border-bottom:1px solid var(--line);
-  background:transparent;color:var(--texto);padding:9px 13px;cursor:pointer;font:inherit}
-.resfila:hover{background:var(--fondo)}
+  background:transparent;color:var(--fg);padding:9px 13px;cursor:pointer;font:inherit}
+.resfila:hover{background:var(--hover)}
 .resquien{display:flex;justify-content:space-between;gap:8px;font-size:13px;font-weight:600}
 .resquien i{font-style:normal;font-weight:400;font-size:11.5px;color:var(--meta)}
 .restexto{display:block;font-size:12.5px;color:var(--meta);margin-top:2px;
@@ -1356,7 +1356,7 @@ img.mmedia[data-medio]:not([src]),img.msticker[data-medio]:not([src]){
 .calidad-tabla{width:100%;border-collapse:collapse;margin-top:10px}.calidad-tabla th,.calidad-tabla td{
   text-align:left;padding:10px;border-bottom:1px solid var(--line2);font-size:13px}.calidad-tabla th{color:var(--mut);font-size:11px}
 .calidad-score{display:inline-flex;min-width:38px;justify-content:center;border-radius:999px;padding:4px 8px;
-  background:var(--fondo);font-weight:700}.calidad-vacio{color:var(--mut);padding:18px 0}
+  background:var(--hover);font-weight:700}.calidad-vacio{color:var(--mut);padding:18px 0}
 </style>
 </head>
 <body>
@@ -6876,13 +6876,7 @@ function pintaInformes(){
     + '<div class="calidad-kpi"><b>' + conRiesgo + '</b><span>conversaciones de riesgo alto</span></div>'
     + '<div class="calidad-kpi"><b>' + (reports.length ? promedio : '—') + '</b><span>nota media de atención / 100</span></div>'
     + '<div class="calidad-kpi"><b>' + reports.length + '</b><span>conversaciones analizadas</span></div></div>'
-    + '<div class="seccion">Resumen por operador</div>'
-    + (operadores.length ? '<div style="overflow:auto"><table class="calidad-tabla"><thead><tr><th>Operador</th><th>Respuestas</th><th>Respuesta media</th><th>Respuestas lentas</th><th>Señales de tono</th></tr></thead><tbody>'
-      + operadores.map(o => '<tr><td>' + esc(o.nombre) + '</td><td>' + o.replies + '</td><td>'
-        + (o.response_count ? Math.round(o.response_total / o.response_count) + ' min' : '—')
-        + '</td><td>' + o.slow + '</td><td>' + o.tone + '</td></tr>').join('')
-      + '</tbody></table></div>' : '<div class="calidad-vacio">Aún no hay respuestas humanas atribuibles en la ventana analizada.</div>')
-    + '<div class="seccion">Notificaciones internas</div>'
+    + '<div class="seccion" style="margin-top:6px">Notificaciones internas</div>'
     + '<div class="calidad-lista">' + (abiertos.length ? abiertos.slice(0,30).map(a =>
       '<div class="calidad-aviso ' + (a.severity === 'high' ? 'alta' : 'media') + '">'
       + '<div><b>' + esc(a.customer_name || 'Cliente') + ' · ' + esc(a.title || 'Atención requerida') + '</b>'
@@ -6892,7 +6886,20 @@ function pintaInformes(){
       + '<div class="acciones"><button class="btn-linea" data-calidad-chat="' + esc(a.conversation_id || '') + '">Ver chat</button> '
       + '<button class="btn-solido" data-calidad-revisar="' + esc(a.id) + '">Revisado</button></div></div>').join('')
       : '<div class="calidad-vacio">No hay avisos pendientes.</div>') + '</div>'
-    + '<div class="seccion" style="margin-top:24px">Evaluación por conversación</div>'
+    // Las dos tablas son el detalle, no lo primero que hace falta ver: quedan como tarjetas
+    // plegables (el mismo patron .grupo de la ficha del contacto), abierta la de operadores
+    // porque es el resumen que le da nombre a esta version, cerrada la de por-conversacion
+    // porque es la mas larga y la que menos hace falta a diario.
+    + '<details class="grupo" open style="margin-top:20px"><summary>Resumen por operador'
+      + (operadores.length ? ' <span class="nota">' + operadores.length + '</span>' : '') + '</summary><div class="dentro">'
+    + (operadores.length ? '<div style="overflow:auto"><table class="calidad-tabla"><thead><tr><th>Operador</th><th>Respuestas</th><th>Respuesta media</th><th>Respuestas lentas</th><th>Señales de tono</th></tr></thead><tbody>'
+      + operadores.map(o => '<tr><td>' + esc(o.nombre) + '</td><td>' + o.replies + '</td><td>'
+        + (o.response_count ? Math.round(o.response_total / o.response_count) + ' min' : '—')
+        + '</td><td>' + o.slow + '</td><td>' + o.tone + '</td></tr>').join('')
+      + '</tbody></table></div>' : '<div class="calidad-vacio">Aún no hay respuestas humanas atribuibles en la ventana analizada.</div>')
+    + '</div></details>'
+    + '<details class="grupo"><summary>Evaluación por conversación'
+      + (reports.length ? ' <span class="nota">' + reports.length + '</span>' : '') + '</summary><div class="dentro">'
     + (reports.length ? '<div style="overflow:auto"><table class="calidad-tabla"><thead><tr><th>Cliente</th><th>Operador(es)</th><th>Nota</th><th>Estado</th><th>Respuesta media</th><th>Señales</th><th>Último análisis</th></tr></thead><tbody>'
       + reports.map(r => '<tr><td>' + esc(r.customer_name || r.customer_phone || 'Cliente') + '</td>'
         + '<td>' + esc((r.operator_names || []).join(', ') || 'Sin identificar') + '</td>'
@@ -6900,7 +6907,8 @@ function pintaInformes(){
         + '<td>' + esc(r.risk === 'high' ? 'Riesgo alto' : r.risk === 'attention' ? 'Atención' : 'Correcto') + '</td>'
         + '<td>' + (r.average_response_minutes == null ? '—' : esc(r.average_response_minutes + ' min')) + '</td>'
         + '<td>' + Number(r.alert_count || 0) + '</td><td>' + esc(hora(r.scanned_at)) + '</td></tr>').join('')
-      + '</tbody></table></div>' : '<div class="calidad-vacio">Pulsa «Analizar ahora» para crear el primer informe.</div>');
+      + '</tbody></table></div>' : '<div class="calidad-vacio">Pulsa «Analizar ahora» para crear el primer informe.</div>')
+    + '</div></details>';
 }
 
 async function cargaCalidad({ scan = false, silencioso = false } = {}){
@@ -10444,20 +10452,26 @@ function montaLimpieza(){
       +   'Quien ya recibió dos seguimientos sin contestar pasa directo a desinteresado. '
       +   'El segundo número queda fuera.</p>'
       + '<div id="limpiezaCuerpo"></div>'
-      + '<div class="seccion" style="margin:30px 0 6px">Reconstruir el historial</div>'
+
+      // --- Las tres herramientas en lote que el panel viejo si tenia, mas la reconstruccion
+      // del historial: van en tarjetas plegables (el mismo patron .grupo de la ficha del
+      // contacto) porque son cuatro herramientas de administracion, no una lectura seguida
+      // -- antes eran cuatro secciones sueltas apiladas una tras otra, un solo bloque largo
+      // de formularios sin ninguna separacion visual real mas alla del rotulo.
+      // Van aqui y no en Campanas a proposito: las tres recorren TODO el historico, que es
+      // de lo que trata esta pantalla. Campanas es para mandar algo concreto a una lista
+      // que tu eliges; esto es para arreglar o mover lo que ya hay.
+
+      + '<details class="grupo" style="margin-top:20px"><summary>Reconstruir el historial</summary><div class="dentro">'
       + '<p class="bajada">Recorre <b>todas</b> las conversaciones y encuentra a quien ya cumplió la '
       +   'norma de los dos seguimientos sin contestar pero nunca llegó a marcarse. Es el arrastre '
       +   'de meses: gente que hoy cuenta en las métricas y no debería.</p>'
       + '<div class="acciones" style="margin-bottom:14px">'
       +   '<button class="btn-linea" id="recoEscanear">Buscar candidatos</button></div>'
       + '<div id="recoCuerpo"></div>'
+      + '</div></details>'
 
-      // --- Las tres herramientas en lote que el panel viejo si tenia -----------------
-      // Van aqui y no en Campanas a proposito: las tres recorren TODO el historico, que es
-      // de lo que trata esta pantalla. Campanas es para mandar algo concreto a una lista
-      // que tu eliges; esto es para arreglar o mover lo que ya hay.
-
-      + '<div class="seccion" style="margin:30px 0 6px">Auto bot · plantillas en tanda</div>'
+      + '<details class="grupo"><summary>Auto bot · plantillas en tanda</summary><div class="dentro">'
       + '<p class="bajada">Manda la plantilla aprobada a los leads que llevan rato callados. '
       +   'Siempre se puede <b>simular primero</b>: dice a cuántos alcanzaría sin mandar nada.</p>'
       + '<div class="par">'
@@ -10486,8 +10500,9 @@ function montaLimpieza(){
       + '<div class="acciones" style="margin:12px 0"><button class="btn-linea" id="atSimular">Simular</button>'
       +   '<button class="btn-solido" id="atEnviar">Enviar de verdad</button></div>'
       + '<div id="atCuerpo"></div>'
+      + '</div></details>'
 
-      + '<div class="seccion" style="margin:30px 0 6px">Etiquetas en lote</div>'
+      + '<details class="grupo"><summary>Etiquetas en lote</summary><div class="dentro">'
       + '<p class="bajada">Reclasifica y etiqueta muchas conversaciones de una vez, con reglas y '
       +   'con IA. Simula primero para ver cuántas cambiarían antes de tocar nada.</p>'
       + '<div class="par">'
@@ -10507,14 +10522,16 @@ function montaLimpieza(){
       + '<div class="acciones" style="margin:12px 0"><button class="btn-linea" id="etSimular">Simular</button>'
       +   '<button class="btn-solido" id="etAplicar">Aplicar</button></div>'
       + '<div id="etCuerpo"></div>'
+      + '</div></details>'
 
-      + '<div class="seccion" style="margin:30px 0 6px">Reparar etapas rotas</div>'
+      + '<details class="grupo"><summary>Reparar etapas rotas</summary><div class="dentro">'
       + '<p class="bajada">Durante meses se escribió <b>cerrado</b> como etapa, y esa etapa no '
       +   'existe en el embudo. Esos leads no salen bien en el Kanban ni cuentan en las cifras.</p>'
       + '<div class="acciones" style="margin-bottom:14px">'
       +   '<button class="btn-linea" id="etpRevisar">Revisar etapas</button>'
       +   '<button class="btn-solido" id="etpAplicar" disabled>Mover a cliente</button></div>'
       + '<div id="etpCuerpo"></div>'
+      + '</div></details>'
       + '</div>');
     $('recoEscanear').onclick = escaneaDesinteres;
     cableaLotes();
