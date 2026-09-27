@@ -6857,11 +6857,31 @@ function pintaInformes(){
   const abiertos = avisos.filter(a => a.status === 'unread');
   const conRiesgo = reports.filter(r => r.risk === 'high').length;
   const promedio = reports.length ? Math.round(reports.reduce((s,r) => s + Number(r.score || 0), 0) / reports.length) : 0;
+  const porOperador = new Map();
+  for (const report of reports) for (const metric of (report.operator_metrics || [])) {
+    const uid = metric.operator_uid || metric.operator_name;
+    if (!uid) continue;
+    const row = porOperador.get(uid) || { nombre:metric.operator_name || 'Sin identificar', replies:0,
+      response_count:0, response_total:0, slow:0, tone:0 };
+    row.replies += Number(metric.replies || 0);
+    row.response_count += Number(metric.response_count || 0);
+    row.response_total += Number(metric.average_response_minutes || 0) * Number(metric.response_count || 0);
+    row.slow += Number(metric.slow_responses || 0);
+    row.tone += Number(metric.tone_alerts || 0);
+    porOperador.set(uid, row);
+  }
+  const operadores = [...porOperador.values()].sort((a,b) => b.tone - a.tone || b.slow - a.slow || b.replies - a.replies);
   cont.innerHTML = '<div class="calidad-resumen">'
     + '<div class="calidad-kpi"><b>' + abiertos.length + '</b><span>avisos por revisar</span></div>'
     + '<div class="calidad-kpi"><b>' + conRiesgo + '</b><span>conversaciones de riesgo alto</span></div>'
     + '<div class="calidad-kpi"><b>' + (reports.length ? promedio : '—') + '</b><span>nota media de atención / 100</span></div>'
     + '<div class="calidad-kpi"><b>' + reports.length + '</b><span>conversaciones analizadas</span></div></div>'
+    + '<div class="seccion">Resumen por operador</div>'
+    + (operadores.length ? '<div style="overflow:auto"><table class="calidad-tabla"><thead><tr><th>Operador</th><th>Respuestas</th><th>Respuesta media</th><th>Respuestas lentas</th><th>Señales de tono</th></tr></thead><tbody>'
+      + operadores.map(o => '<tr><td>' + esc(o.nombre) + '</td><td>' + o.replies + '</td><td>'
+        + (o.response_count ? Math.round(o.response_total / o.response_count) + ' min' : '—')
+        + '</td><td>' + o.slow + '</td><td>' + o.tone + '</td></tr>').join('')
+      + '</tbody></table></div>' : '<div class="calidad-vacio">Aún no hay respuestas humanas atribuibles en la ventana analizada.</div>')
     + '<div class="seccion">Notificaciones internas</div>'
     + '<div class="calidad-lista">' + (abiertos.length ? abiertos.slice(0,30).map(a =>
       '<div class="calidad-aviso ' + (a.severity === 'high' ? 'alta' : 'media') + '">'
