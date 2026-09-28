@@ -451,6 +451,22 @@ img.mmedia[data-medio]:not([src]),img.msticker[data-medio]:not([src]){
 .mllamada svg{width:17px;height:17px;flex:0 0 auto;stroke-width:1.9}
 .mllamada.perdida{color:var(--bad)}
 .mpie{margin-top:3px;white-space:pre-wrap;word-break:break-word}
+.mubic,.mtarjeta{display:flex;align-items:center;gap:10px;padding:9px 11px;margin:2px 0 4px;
+  border-radius:6px;background:rgba(11,20,26,.06);color:inherit;text-decoration:none}
+:root[data-tema="oscuro"] .mubic,:root[data-tema="oscuro"] .mtarjeta{background:rgba(255,255,255,.07)}
+.mubic svg{width:22px;height:22px;flex:0 0 auto;stroke-width:1.7}
+.mubic span,.mtarjeta span{display:flex;flex-direction:column;gap:1px;min-width:0}
+.mubic b,.mtarjeta b{font-size:13px;word-break:break-word}
+.mubic small,.mtarjeta small{font-size:11px;color:var(--meta)}
+.mtarjeta .av{width:34px;height:34px;flex:0 0 auto;font-size:12px}
+.ayuda{display:block;margin-top:5px;font-size:11.5px;color:var(--mut)}
+a.ayuda{color:var(--enlace)}
+.fila2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.lista-elegir{display:grid;gap:4px;margin-bottom:12px}
+.elegir{display:flex;justify-content:space-between;gap:10px;padding:7px 10px;border:1px solid var(--line);
+  border-radius:8px;font-size:12.5px;text-align:left}
+.elegir:hover{background:var(--hover)}
+.elegir span{color:var(--mut)}
 /* Botones de accion tal como los ve el cliente: separados del texto por una linea y
    repartidos en filas. No son pulsables desde aqui -- los pulsa el, no nosotros. */
 /* Previo de plantilla: se pinta como un globo de WhatsApp a proposito. Lo que hay que
@@ -3776,6 +3792,8 @@ function abre(c){
     +   '<button data-mas="silenciar" id="masSilenciar">Silenciar…</button>'
     +   '<button data-mas="anclar" id="masAnclar">Anclar arriba</button>'
     +   '<button data-mas="encuesta">Enviar encuesta</button>'
+    +   (canalDe(c) === 'whatsapp_qr'
+          ? '<button data-mas="ubicacion">Enviar ubicación…</button><button data-mas="tarjeta">Enviar contacto…</button>' : '')
     +   '<button data-mas="asistente">Preguntar al asistente</button>'
     +   '<button data-mas="cerrar">Cerrar conversación</button></div></div>'
     + '</div>'
@@ -4054,6 +4072,8 @@ function cableaChat(c){
     // llega a Planificacion: abrir un chat ya no cambia el contacto de ningun hilo.
     if (b.dataset.mas === 'asistente') return preguntaAlAsistente(sel);
     if (b.dataset.mas === 'contacto') return abreGuardarContacto(sel);
+    if (b.dataset.mas === 'ubicacion') return abreEnviarUbicacion(sel);
+    if (b.dataset.mas === 'tarjeta') return abreEnviarContacto(sel);
     if (b.dataset.mas === 'silenciar') return abreSilencio(sel);
     if (b.dataset.mas === 'anclar') return marcaChat(sel, { pin: !anclado(sel) },
       anclado(sel) ? 'Chat desanclado' : 'Chat anclado arriba');
@@ -6354,6 +6374,27 @@ function cuerpoMensaje(m){
       + '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">'
       + icono + '</svg>'
       + '<span>' + esc(clase + ' ' + (ESTADO_LLAMADA[l.estado] || 'contestada') + dur) + '</span></div>';
+  }
+  // Ubicacion y contacto llegaban como un parrafo con coordenadas o con BEGIN:VCARD. Ahora son
+  // tarjetas, como en WhatsApp: el mapa se abre con un toque y el telefono abre el chat.
+  if (t === 'location' || t === 'live_location') {
+    const u = ubicacionDeCuerpo(m.body);
+    if (u) {
+      return '<a class="mubic" href="' + esc(urlDeMapa(u.lat, u.lng)) + '" target="_blank" rel="noopener">'
+        + '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">'
+        + '<path d="M12 21s-7-6.2-7-11.5A7 7 0 0119 9.5C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg>'
+        + '<span><b>' + esc(u.nombre || (t === 'live_location' ? 'Ubicación en vivo' : 'Ubicación')) + '</b>'
+        + '<small>' + esc(u.lat + ', ' + u.lng) + ' · Abrir en Google Maps</small></span></a>';
+    }
+  }
+  if (t === 'contact' || t === 'contacts') {
+    const tarjetas = tarjetasDeContacto(m.body);
+    if (tarjetas.length) {
+      return tarjetas.map(x => '<div class="mtarjeta"><div class="av">' + esc(iniciales(x.nombre)) + '</div>'
+        + '<span><b>' + esc(x.nombre) + '</b>'
+        + x.telefonos.map(tel => '<small>' + conTelefonos(esc(tel)) + '</small>').join('')
+        + '</span></div>').join('');
+    }
   }
   if (t === 'video') {
     return medio('Video', (src, porId) =>
@@ -12112,6 +12153,213 @@ function bajaVcard(texto, nombre){
     a.remove();
     setTimeout(() => URL.revokeObjectURL(url), 4000);
   } catch (error) { /* si el navegador lo bloquea, el cliente ya quedo guardado igual */ }
+}
+
+/* ---- Enviar ubicación y tarjeta de contacto ------------------------------- */
+// Lo que WhatsApp Web deja hacer desde el clip y aquí faltaba: mandar la direccion del estudio o
+// el numero de otra persona sin sacar el telefono. Solo por la linea de WhatsApp Web, que es la
+// que manda el puente. Las piezas puras van entre los dos marcadores para que las pruebas las
+// ejecuten de verdad, sin abrir el panel.
+// ---- Ubicación y contacto: piezas puras
+const NUM_COORD = '(-?\\d{1,3}(?:\\.\\d+)?)';
+const RES_COORDENADAS = [
+  // El pin real de un enlace largo de Google Maps. Va primero: la '@' es el centro del mapa, que
+  // puede estar a varias cuadras del punto marcado.
+  new RegExp('!3d' + NUM_COORD + '!4d' + NUM_COORD),
+  new RegExp('[?&](?:q|ll|query|destination|daddr)=' + NUM_COORD + '(?:,|%2C)\\s*' + NUM_COORD, 'i'),
+  new RegExp('@' + NUM_COORD + ',' + NUM_COORD),
+  // Dos numeros sueltos: lo que se copia al mantener pulsado un punto del mapa.
+  new RegExp('^\\s*' + NUM_COORD + '\\s*[,;\\s]\\s*' + NUM_COORD + '\\s*$'),
+];
+function coordenadasValidas(lat, lng){
+  return typeof lat === 'number' && typeof lng === 'number' && Number.isFinite(lat) && Number.isFinite(lng)
+    && Math.abs(lat) <= 90 && Math.abs(lng) <= 180;
+}
+// De un enlace o de "18.48, -69.93" a { lat, lng }, o null. Los enlaces cortos (maps.app.goo.gl)
+// no traen coordenadas: hay que abrirlos, y desde aqui no se puede.
+function coordenadasDeTexto(texto){
+  const t = String(texto || '');
+  for (const re of RES_COORDENADAS) {
+    const m = t.match(re);
+    if (!m) continue;
+    const lat = Number(m[1]), lng = Number(m[2]);
+    if (coordenadasValidas(lat, lng)) return { lat, lng };
+  }
+  return null;
+}
+// Un campo suelto: solo un numero de verdad. Number('') es 0, y eso mandaria al cliente al golfo
+// de Guinea sin que nadie se diera cuenta.
+function numeroDeCampo(valor){
+  const t = String(valor ?? '').trim().replace(',', '.');
+  return /^-?\d+(?:\.\d+)?$/.test(t) ? Number(t) : null;
+}
+function urlDeMapa(lat, lng){
+  return 'https://www.google.com/maps?q=' + encodeURIComponent(lat + ',' + lng);
+}
+// El cuerpo guardado de una ubicacion: "nombre\nlat,lng" (asi entra del cliente y asi lo guarda
+// el puente al mandarla). El nombre puede faltar.
+function ubicacionDeCuerpo(cuerpo){
+  const lineas = String(cuerpo || '').split('\n').map(l => l.trim()).filter(Boolean);
+  const ult = lineas[lineas.length - 1] || '';
+  const m = ult.match(/^(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)$/);
+  if (!m) return null;
+  const lat = Number(m[1]), lng = Number(m[2]);
+  return coordenadasValidas(lat, lng) ? { lat, lng, nombre: lineas.slice(0, -1).join(' · ') } : null;
+}
+const desescapaVcard = t => String(t || '').replace(/\\([,;\\])/g, '$1').replace(/\\n/gi, ' ').trim();
+// Las tarjetas de un mensaje 'contact' / 'contacts': nombre y telefonos de cada vCard. Sin vCard
+// legible se cae al nombre de la primera linea, para no pintar nada vacio.
+function tarjetasDeContacto(cuerpo){
+  const texto = String(cuerpo || '').replace(/\r/g, '');
+  const tarjetas = [];
+  for (const m of texto.matchAll(/BEGIN:VCARD([\s\S]*?)END:VCARD/gi)) {
+    const bloque = m[1];
+    const nombre = desescapaVcard((bloque.match(/^FN[^:\n]*:(.+)$/mi) || [])[1]);
+    const telefonos = [...bloque.matchAll(/^(?:item\d+\.)?TEL[^:\n]*:(.+)$/gmi)]
+      .map(t => t[1].trim()).filter(Boolean);
+    if (nombre || telefonos.length) tarjetas.push({ nombre: nombre || 'Contacto', telefonos });
+  }
+  if (!tarjetas.length) {
+    const nombre = texto.split('\n').map(l => l.trim()).find(Boolean);
+    if (nombre) tarjetas.push({ nombre, telefonos: [] });
+  }
+  return tarjetas;
+}
+// ---- Ubicación y contacto: fin de las piezas puras
+
+const CLAVE_LUGARES = 'dcarela_lugares_v1';
+function lugaresGuardados(){
+  try {
+    const l = JSON.parse(localStorage.getItem(CLAVE_LUGARES) || '[]');
+    return Array.isArray(l) ? l.filter(x => x && coordenadasValidas(x.lat, x.lng)).slice(0, 6) : [];
+  } catch (error) { return []; }
+}
+function recuerdaLugar(lugar){
+  try {
+    const otros = lugaresGuardados().filter(x => !(x.lat === lugar.lat && x.lng === lugar.lng));
+    localStorage.setItem(CLAVE_LUGARES, JSON.stringify([lugar, ...otros].slice(0, 6)));
+  } catch (error) { /* sin almacenamiento: se manda igual, solo no queda recordado */ }
+}
+
+function abreEnviarUbicacion(c){
+  if (!c) return;
+  const lugares = lugaresGuardados();
+  abreModal('<div class="mtapa"><b>Enviar ubicación · ' + esc(nombreDe(c)) + '</b>'
+    + '<button class="cerrarm" data-cerrar>×</button></div>'
+    + '<div class="mcuerpo">'
+    + (lugares.length
+        ? '<div class="pdfs" style="margin-bottom:12px">'
+          + lugares.map((l, i) => '<button class="tplchip" data-lugar="' + i + '">' + esc(l.name || l.address || l.lat + ', ' + l.lng) + '</button>').join('')
+          + '</div>'
+        : '')
+    + '<div class="campo"><label>Enlace de Google Maps o coordenadas</label>'
+    +   '<input id="ubEnlace" placeholder="Pega el enlace largo, o 18.4861, -69.9312" autocomplete="off">'
+    +   '<div class="ayuda" id="ubAyuda"></div></div>'
+    + '<div class="campo"><label>Nombre del lugar</label><input id="ubNombre" maxlength="100" placeholder="Ej. Estudio D\' Carela"></div>'
+    + '<div class="campo"><label>Dirección</label><input id="ubDireccion" maxlength="200"></div>'
+    + '<div class="fila2">'
+    +   '<div class="campo"><label>Latitud</label><input id="ubLat" inputmode="decimal" autocomplete="off"></div>'
+    +   '<div class="campo"><label>Longitud</label><input id="ubLng" inputmode="decimal" autocomplete="off"></div>'
+    + '</div>'
+    + '<a id="ubVer" class="ayuda" target="_blank" rel="noopener" hidden>Ver en el mapa</a>'
+    + '<label class="checkrow" style="display:flex;gap:8px;align-items:center;margin-top:8px;font-size:12.5px">'
+    +   '<input type="checkbox" id="ubRecordar" checked> Recordar este lugar para la próxima vez</label>'
+    + '</div>'
+    + '<div class="mpatas"><button class="btn-linea" data-cerrar>Cancelar</button>'
+    +   '<button class="btn-solido" id="ubEnviar">Enviar</button></div>');
+  const lat = $('ubLat'), lng = $('ubLng'), ayuda = $('ubAyuda'), ver = $('ubVer');
+  const actual = () => ({ lat: numeroDeCampo(lat.value), lng: numeroDeCampo(lng.value) });
+  const refresca = () => {
+    const p = actual();
+    const ok = coordenadasValidas(p.lat, p.lng);
+    ver.hidden = !ok;
+    if (ok) ver.href = urlDeMapa(p.lat, p.lng);
+  };
+  $('ubEnlace').oninput = ev => {
+    const texto = ev.target.value.trim();
+    if (!texto) { ayuda.textContent = ''; return; }
+    const p = coordenadasDeTexto(texto);
+    if (p) { lat.value = p.lat; lng.value = p.lng; ayuda.textContent = 'Coordenadas encontradas.'; }
+    else ayuda.textContent = /goo\.gl|maps\.app/i.test(texto)
+      ? 'Ese enlace corto no trae las coordenadas. Ábrelo y copia el enlace largo, o pega aquí las coordenadas.'
+      : 'No encuentro coordenadas ahí. Pega el enlace largo de Google Maps o escribe latitud y longitud abajo.';
+    refresca();
+  };
+  lat.oninput = lng.oninput = refresca;
+  document.querySelectorAll('#modal [data-lugar]').forEach(b => {
+    b.onclick = () => {
+      const l = lugares[Number(b.dataset.lugar)];
+      if (!l) return;
+      $('ubNombre').value = l.name || ''; $('ubDireccion').value = l.address || '';
+      lat.value = l.lat; lng.value = l.lng; ayuda.textContent = ''; refresca();
+    };
+  });
+  $('ubEnlace').focus();
+  $('ubEnviar').onclick = async ev => {
+    const p = actual();
+    if (!coordenadasValidas(p.lat, p.lng)) {
+      return avisa('Faltan las coordenadas', 'Pega un enlace de Google Maps o escribe latitud y longitud (ej. 18.4861 y -69.9312).');
+    }
+    const lugar = { lat: p.lat, lng: p.lng, name: $('ubNombre').value.trim(), address: $('ubDireccion').value.trim() };
+    const boton = ev.currentTarget; boton.disabled = true;
+    const conv = c.id || c._id;
+    const r = await llama({ action:'bridgeQueue', conversation_id: conv, location: lugar });
+    boton.disabled = false;
+    if (!r.ok) return avisa('No se pudo enviar', traduceErrorMeta(r.error, r.code));
+    if ($('ubRecordar').checked) recuerdaLugar(lugar);
+    cierraModal();
+    apuntaEnviando({ conv, tipo:'location', body: [lugar.name || lugar.address, lugar.lat + ',' + lugar.lng].filter(Boolean).join('\n') });
+  };
+}
+
+function abreEnviarContacto(c){
+  if (!c) return;
+  // CONVS ya deja fuera las ignoradas y las de lineas ocultas: no se le ofrece a nadie la
+  // tarjeta de la familia ni la de un numero que se dejo de usar.
+  const candidatos = CONVS.filter(x => x.wa_phone);
+  abreModal('<div class="mtapa"><b>Enviar contacto · ' + esc(nombreDe(c)) + '</b>'
+    + '<button class="cerrarm" data-cerrar>×</button></div>'
+    + '<div class="mcuerpo">'
+    + '<div class="campo"><label>Buscar entre tus contactos</label>'
+    +   '<input id="tcBusca" placeholder="Nombre o número" autocomplete="off"></div>'
+    + '<div class="lista-elegir" id="tcLista"></div>'
+    + '<div class="campo"><label>Nombre</label><input id="tcNombre" maxlength="100"></div>'
+    + '<div class="campo"><label>Teléfono</label><input id="tcTel" inputmode="tel" placeholder="Con código de país, ej. 1 809 555 0100" autocomplete="off"></div>'
+    + '<div class="ayuda">Al cliente le llega la tarjeta de contacto de WhatsApp, con el botón para escribirle.</div>'
+    + '</div>'
+    + '<div class="mpatas"><button class="btn-linea" data-cerrar>Cancelar</button>'
+    +   '<button class="btn-solido" id="tcEnviar">Enviar</button></div>');
+  const lista = $('tcLista');
+  const pintaLista = () => {
+    const q = $('tcBusca').value.trim();
+    const hallados = (q ? candidatos.filter(x => coincideContacto(x, q)) : candidatos).slice(0, 6);
+    lista.innerHTML = hallados.map((x, i) => '<button class="elegir" data-i="' + i + '"><b>' + esc(nombreDe(x))
+      + '</b><span>+' + esc(x.wa_phone) + '</span></button>').join('')
+      || '<div class="ayuda">Nadie coincide. Escribe el nombre y el número abajo.</div>';
+    lista.querySelectorAll('.elegir').forEach(b => {
+      b.onclick = () => {
+        const x = hallados[Number(b.dataset.i)];
+        $('tcNombre').value = x.customer_name || x.contact_name || x.display_name || '';
+        $('tcTel').value = '+' + x.wa_phone;
+      };
+    });
+  };
+  $('tcBusca').oninput = pintaLista;
+  pintaLista();
+  $('tcBusca').focus();
+  $('tcEnviar').onclick = async ev => {
+    const nombre = $('tcNombre').value.trim();
+    const digitos = $('tcTel').value.replace(/[^0-9]/g, '');
+    if (!nombre) { $('tcNombre').focus(); return avisa('Falta el nombre', 'La tarjeta necesita un nombre.'); }
+    if (!/^[0-9]{7,15}$/.test(digitos)) { $('tcTel').focus(); return avisa('Teléfono no válido', 'Escríbelo con el código de país, de 7 a 15 números.'); }
+    const boton = ev.currentTarget; boton.disabled = true;
+    const conv = c.id || c._id;
+    const r = await llama({ action:'bridgeQueue', conversation_id: conv, contact: { name: nombre, phone: digitos } });
+    boton.disabled = false;
+    if (!r.ok) return avisa('No se pudo enviar', traduceErrorMeta(r.error, r.code));
+    cierraModal();
+    apuntaEnviando({ conv, tipo:'contact', body: nombre + '\nBEGIN:VCARD\nFN:' + nombre + '\nTEL:+' + digitos + '\nEND:VCARD' });
+  };
 }
 
 function abreRecordatorio(c){
