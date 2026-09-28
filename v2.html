@@ -1470,6 +1470,9 @@ a.ayuda{color:var(--enlace)}
   --vidrio:rgba(255,255,255,.58); --vidrio-fuerte:rgba(255,255,255,.80); --vidrio-borde:rgba(255,255,255,.75);
   --vidrio-luz:inset 0 1px 0 rgba(255,255,255,.9);
   --desenfoque:blur(24px) saturate(1.6);
+  --boton:rgba(120,120,128,.10); --boton-hover:rgba(120,120,128,.18); --segmento:rgba(120,120,128,.12);
+  --campo:rgba(255,255,255,.55);
+  color-scheme:light;
   --curva:cubic-bezier(.25,.1,.25,1);
   --tipo:-apple-system,BlinkMacSystemFont,"SF Pro Text","SF Pro Display","Segoe UI Variable Text","Segoe UI Variable",Inter,"Segoe UI",system-ui,Roboto,Helvetica,Arial,sans-serif;
 }
@@ -1485,6 +1488,9 @@ a.ayuda{color:var(--enlace)}
   --cristal:rgba(30,30,34,.42);
   --vidrio:rgba(58,58,64,.40); --vidrio-fuerte:rgba(44,44,50,.78); --vidrio-borde:rgba(255,255,255,.09);
   --vidrio-luz:inset 0 1px 0 rgba(255,255,255,.08);
+  --boton:rgba(255,255,255,.09); --boton-hover:rgba(255,255,255,.16); --segmento:rgba(255,255,255,.08);
+  --campo:rgba(255,255,255,.07);
+  color-scheme:dark;
 }
 body{font-family:var(--tipo);font-size:14px;letter-spacing:-.006em;-webkit-font-smoothing:antialiased;
   text-rendering:optimizeLegibility}
@@ -1853,17 +1859,15 @@ input[type="checkbox"],input[type="radio"]{accent-color:var(--accent)}
 .escribir textarea{background:rgba(120,120,128,.10)}
 
 /* Botones y campos: translucidos con un filo de luz. */
-.btn-linea{background:rgba(120,120,128,.10);box-shadow:inset 0 0 0 .5px rgba(60,60,67,.10),inset 0 1px 0 rgba(255,255,255,.35)}
-.btn-linea:hover:not(:disabled){background:rgba(120,120,128,.18)}
+.btn-linea{background:var(--boton);box-shadow:inset 0 0 0 .5px var(--line),inset 0 1px 0 rgba(255,255,255,.18)}
+.btn-linea:hover:not(:disabled){background:var(--boton-hover)}
 .btn-solido{background:var(--accent);box-shadow:inset 0 1px 0 rgba(255,255,255,.28),0 4px 12px rgba(74,134,232,.22)}
 .btn-solido:hover:not(:disabled){box-shadow:inset 0 1px 0 rgba(255,255,255,.28),0 6px 16px rgba(74,134,232,.28)}
 .filtro.on{background:var(--vidrio-fuerte);color:var(--fg);box-shadow:var(--vidrio-luz),0 0 0 .5px var(--vidrio-borde),0 1px 3px rgba(20,30,60,.10)}
 .campo input,.campo select,.campo textarea,.entrada-linea,.selects-filtro select,.buscaprospectos input,
-.lista .cabeza input,.lista .cabeza select{background:rgba(255,255,255,.55);box-shadow:inset 0 0 0 .5px var(--line),inset 0 1px 2px rgba(20,30,60,.04)}
-:root[data-tema="oscuro"] .campo input,:root[data-tema="oscuro"] .campo select,:root[data-tema="oscuro"] .campo textarea,
-:root[data-tema="oscuro"] .lista .cabeza input{background:rgba(255,255,255,.07)}
+.lista .cabeza input,.lista .cabeza select{background:var(--campo);box-shadow:inset 0 0 0 .5px var(--line),inset 0 1px 2px rgba(20,30,60,.04)}
 .chip-tema.on,:root[data-tema="oscuro"] .chip-tema.on{background:var(--accent-suave);color:var(--accent-fuerte);box-shadow:inset 0 0 0 .5px var(--accent)}
-.hoja .filtros,.agtog{background:rgba(120,120,128,.12);box-shadow:inset 0 0 0 .5px var(--line)}
+.hoja .filtros,.agtog{background:var(--segmento);box-shadow:inset 0 0 0 .5px var(--line)}
 .hoja .filtros .filtro.on,.agtog button.on{background:var(--vidrio-fuerte)}
 
 /* Menus, hojas de dialogo y visores: vidrio mas denso, con el fondo desenfocado detras. */
@@ -1873,11 +1877,103 @@ input[type="checkbox"],input[type="radio"]{accent-color:var(--accent)}
 .gmenu,.mas .menu,.st-menu,.anuevomenu,.amenu{background:var(--vidrio-fuerte);
   -webkit-backdrop-filter:blur(40px) saturate(1.7);backdrop-filter:blur(40px) saturate(1.7);
   box-shadow:var(--vidrio-luz),0 0 0 .5px var(--vidrio-borde),var(--sombra)}
-.pie button{background:rgba(120,120,128,.10);box-shadow:inset 0 0 0 .5px var(--line),inset 0 1px 0 rgba(255,255,255,.35)}
+.pie button{background:var(--boton);box-shadow:inset 0 0 0 .5px var(--line),inset 0 1px 0 rgba(255,255,255,.18)}
 
 /* Graficas en tonos apagados. */
 .glinea{stroke:var(--accent);stroke-width:2.2}
 .garea{fill:var(--accent);opacity:.09}
+
+/* --- Menu flotante, botones de filtro, categorias de Configuracion y Funnel compacto -------------- */
+.menu-flotante{position:fixed;z-index:90;min-width:240px;max-width:min(330px,calc(100vw - 24px));max-height:min(72vh,540px);overflow-y:auto;
+  padding:6px;border-radius:16px;background:var(--vidrio-fuerte);-webkit-backdrop-filter:blur(40px) saturate(1.7);backdrop-filter:blur(40px) saturate(1.7);
+  box-shadow:var(--vidrio-luz),0 0 0 .5px var(--vidrio-borde),var(--sombra)}
+@media(prefers-reduced-motion:no-preference){.menu-flotante{animation:menuEntra .16s var(--curva)}
+  @keyframes menuEntra{from{opacity:0;transform:translateY(-4px) scale(.98)}to{opacity:1;transform:none}}}
+.menu-flotante button{display:flex;align-items:flex-start;gap:8px;width:100%;padding:8px 10px;border-radius:10px;text-align:left;
+  font-size:13.5px;transition:background .12s var(--curva)}
+.menu-flotante button:hover{background:var(--accent-suave)}
+.menu-flotante .mf-visto{flex:0 0 14px;width:14px;font-style:normal;font-weight:700;font-size:12px;line-height:20px;color:var(--accent)}
+.menu-flotante small{display:block;margin-top:1px;font-size:11.5px;color:var(--mut)}
+.menu-flotante hr{border:0;height:.5px;margin:6px 8px;background:var(--line)}
+.mf-rot{padding:8px 10px 4px;font-size:11.5px;font-weight:600;color:var(--mut)}
+.btn-filtro{display:inline-flex;align-items:center;gap:7px}
+.btn-filtro svg{width:16px;height:16px;flex:0 0 auto}
+.btn-filtro.activo{background:var(--accent-suave);color:var(--accent-fuerte);box-shadow:inset 0 0 0 .5px var(--accent)}
+.btn-filtro[hidden],.agbar[hidden]{display:none}
+
+.cfg-barra{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:0 0 22px;max-width:1240px}
+.cfg-tabs{display:inline-flex;flex-wrap:wrap;gap:2px;padding:3px;border-radius:12px;background:var(--segmento);box-shadow:inset 0 0 0 .5px var(--line)}
+.cfg-tab{display:inline-flex;align-items:center;gap:7px;padding:7px 14px;border-radius:9px;font-size:13px;font-weight:600;color:var(--fg);
+  transition:background .15s var(--curva)}
+.cfg-tab i{font-style:normal;font-size:11px;font-weight:600;color:var(--mut)}
+.cfg-tab:hover{background:rgba(120,120,128,.14)}
+.cfg-tab.on{background:var(--vidrio-fuerte);box-shadow:var(--vidrio-luz),0 0 0 .5px var(--vidrio-borde),0 1px 3px rgba(20,30,60,.10)}
+.cfg-tabs.en-busqueda .cfg-tab{opacity:.45}
+.cfg-buscar,.fun-buscar{padding:9px 14px;border:0;border-radius:11px;background:var(--campo);color:var(--fg);
+  box-shadow:inset 0 0 0 .5px var(--line);outline:0}
+.cfg-buscar{margin-left:auto;width:min(270px,100%)}
+.cfg-buscar:focus,.fun-buscar:focus{background:var(--panel);box-shadow:0 0 0 1.5px var(--accent),var(--foco)}
+.cfgc[hidden]{display:none}
+
+.fun-barra{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin:0 0 12px}
+.fun-buscar{flex:1 1 220px;max-width:340px}
+.fun-fichas{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 12px}
+.fun-fichas:empty{display:none}
+.fun-ficha{display:inline-flex;align-items:center;gap:6px;padding:5px 6px 5px 12px;border-radius:999px;background:var(--accent-suave);
+  color:var(--accent-fuerte);font-size:12.5px;font-weight:600}
+.fun-ficha i{display:grid;place-items:center;width:18px;height:18px;border-radius:50%;background:rgba(74,134,232,.2);font-style:normal;font-size:12px}
+.kanban.compacto .columna{flex-basis:268px}
+.columna .ctitulo{display:flex;width:100%;text-align:left;cursor:pointer;border-radius:var(--r3) var(--r3) 0 0}
+.columna .ctitulo:hover{background:rgba(120,120,128,.07)}
+.columna.plegada{flex:0 0 190px;max-height:none}
+.columna.plegada .ctitulo{border-radius:var(--r3);opacity:.75}
+.kanban.compacto .ccuerpo{gap:6px;padding:2px 8px 10px}
+.ktarjeta.compacta{padding:8px 11px;border-radius:12px}
+.kt-fila{display:flex;align-items:center;gap:6px}
+.kt-fila b{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13px;letter-spacing:-.01em}
+.kt-fila i{flex:0 0 auto;margin:0;font-size:11px;font-style:normal;color:var(--meta)}
+.ktarjeta.compacta span{margin-top:1px;font-size:12px}
+.ktarjeta.compacta em{float:right;margin:1px 0 0 8px;padding:1px 7px;border-radius:999px;background:var(--hover);font-style:normal;font-size:10.5px;color:var(--mut)}
+.kt-punto{flex:0 0 8px;width:8px;height:8px;border-radius:50%;background:var(--accent);display:block}
+.kmas-btn{display:block;width:100%;border-radius:10px;color:var(--accent);font-weight:600}
+.kmas-btn:hover{background:var(--hover)}
+
+/* --- Agente de marketing ------------------------------------------------------------------------ */
+.mk{margin:0 0 34px;max-width:1240px}
+.mk-cabecera{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin:0 0 16px}
+.mk-cabecera h2{margin:0 0 4px;font-size:22px;font-weight:700;letter-spacing:-.03em}
+.mk-cabecera p{margin:0;max-width:640px;font-size:13.5px;line-height:1.5;color:var(--mut)}
+.mk-est{display:block;margin-top:6px;font-size:12px;color:var(--mut)}
+.mk-resumen{margin:0 0 18px;padding:14px 18px;border-radius:16px;background:var(--accent-suave)}
+.mk-resumen b{font-size:12px;font-weight:650;color:var(--accent-fuerte)}
+.mk-resumen p{margin:4px 0 0;font-size:13.5px;line-height:1.5}
+.mk-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(360px,1fr));gap:18px;align-items:start;margin:0 0 14px}
+.mk-card{padding:20px 22px 18px;border-radius:var(--r3);min-width:0;background:var(--vidrio);-webkit-backdrop-filter:var(--desenfoque);backdrop-filter:var(--desenfoque);
+  box-shadow:var(--vidrio-luz),0 0 0 .5px var(--vidrio-borde),var(--sombra-suave)}
+.mk-card.decidida{opacity:.72}
+.mk-cab{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:0 0 10px}
+.mk-prio{padding:3px 10px;border-radius:999px;font-size:11.5px;font-weight:650;background:var(--boton);color:var(--mut)}
+.mk-prio.alta{background:color-mix(in srgb,var(--bad) 15%,transparent);color:var(--bad)}
+.mk-prio.media{background:color-mix(in srgb,var(--warn) 16%,transparent);color:var(--warn)}
+.mk-tipo{font-size:11.5px;color:var(--mut)}
+.mk-ia{padding:2px 8px;border-radius:999px;background:var(--accent-suave);color:var(--accent-fuerte);font-size:11px;font-weight:700}
+.mk-card h4{margin:0 0 6px;font-size:16px;font-weight:650;letter-spacing:-.02em}
+.mk-motivo{margin:0 0 12px;font-size:13px;line-height:1.5;color:var(--mut)}
+.mk-datos{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin:0 0 10px;font-size:13px}
+.mk-aud b{margin-right:4px;font-size:24px;font-weight:700;letter-spacing:-.03em}
+.mk-aud small{color:var(--mut)}
+.mk-canal{flex:0 0 auto;padding:3px 10px;border-radius:999px;background:var(--boton);font-size:11.5px;color:var(--mut);white-space:nowrap}
+.mk-texto{margin:0 0 14px;padding:11px 14px;border:0;border-radius:12px;background:rgba(120,120,128,.09);font-size:13px;line-height:1.5}
+.mk-acc{display:flex;align-items:center;gap:8px}
+.mk-estado{margin-right:auto;font-size:12.5px;font-weight:600;color:var(--mut)}
+.mk-ver{margin:2px 0 14px;font-size:13px;font-weight:600;color:var(--accent)}
+.mk-sugerido{margin:0 0 18px;padding:14px 16px;border-radius:14px;background:var(--accent-suave)}
+.mk-sugerido[hidden]{display:none}
+.mk-sugerido b{font-size:12px;font-weight:650;color:var(--accent-fuerte)}
+.mk-sug-texto{margin:6px 0 10px;font-size:13.5px;line-height:1.5;white-space:pre-wrap}
+.mk-sug-nota{margin:0 0 10px;font-size:12px;line-height:1.5;color:var(--mut)}
+.mk-sug-nota[hidden]{display:none}
+@media(max-width:520px){.mk-grid{grid-template-columns:1fr}.mk-cabecera{flex-direction:column}}
 
 /* --- Telefono: el cajon del menu es opaco (no se ve la app a traves) y las paginas respiran menos ---- */
 @media(max-width:760px){
@@ -8966,12 +9062,52 @@ function sumaDiaAg(dia, n){
   return d.toISOString().slice(0, 10);
 }
 
+// ---- Menu flotante: una lista de opciones bajo un boton, como los de Apple ----------------------
+// Sirve para filtros, exportar y reorganizar. Se cierra al pulsar fuera, con Escape o al elegir.
+// opciones: [{ id, texto, nota? }, { rotulo }, { sep:true }]; elegida marca una con un visto.
+function cierraMenusFlotantes(){
+  document.querySelectorAll('.menu-flotante').forEach(m => m.remove());
+}
+// `elegidas` puede ser una funcion (se vuelve a leer al repintar). Con `mantener` el menu sigue abierto
+// tras elegir (filtros y reorganizar se eligen varias a la vez); si no, se cierra al elegir.
+function menuFlotante(boton, opciones, { elegida = null, elegidas = null, alElegir, mantener = false } = {}){
+  const abierto = document.querySelector('.menu-flotante[data-de="' + (boton.id || '') + '"]');
+  cierraMenusFlotantes();
+  if (abierto) return;                       // pulsar el boton otra vez lo cierra
+  const m = document.createElement('div');
+  m.className = 'menu-flotante'; m.setAttribute('role', 'menu'); m.dataset.de = boton.id || '';
+  const pinta = () => {
+    const marcadas = new Set(typeof elegidas === 'function' ? elegidas() : (elegidas || (elegida != null ? [elegida] : [])));
+    m.innerHTML = opciones.map(o => o.sep ? '<hr>' : o.rotulo ? '<div class="mf-rot">' + esc(o.rotulo) + '</div>'
+      : '<button type="button" role="menuitem" data-mf="' + esc(o.id) + '"' + (marcadas.has(o.id) ? ' class="on"' : '') + '>'
+        + '<i class="mf-visto">' + (marcadas.has(o.id) ? '✓' : '') + '</i><span>' + esc(o.texto)
+        + (o.nota ? '<small>' + esc(o.nota) + '</small>' : '') + '</span></button>').join('');
+  };
+  pinta();
+  document.body.appendChild(m);
+  const r = boton.getBoundingClientRect();
+  m.style.top = Math.round(r.bottom + 8) + 'px';
+  m.style.left = Math.max(12, Math.min(r.left, window.innerWidth - m.offsetWidth - 12)) + 'px';
+  m.addEventListener('click', ev => {
+    const b = ev.target.closest('[data-mf]');
+    if (!b) return;
+    if (!mantener) cierraMenusFlotantes();
+    if (alElegir) alElegir(b.dataset.mf);
+    if (mantener && m.isConnected) pinta();
+  });
+}
+document.addEventListener('click', ev => {
+  if (ev.target.closest('.menu-flotante') || ev.target.closest('[data-menu-flotante]')) return;
+  cierraMenusFlotantes();
+});
+document.addEventListener('keydown', ev => { if (ev.key === 'Escape') cierraMenusFlotantes(); });
+
 async function cargaGoogleAgenda(forzar){
   const u = typeof auth !== 'undefined' && auth.currentUser;
   if (!u) return;
   const ahora = Date.now();
   // Sin este freno, cada repintado de la Agenda seria una peticion a Google.
-  if (!forzar && GOOGLE_AG.estado !== 'sin-cargar' && ahora - GOOGLE_AG_PEDIDO < 300000) return;
+  if (!forzar && GOOGLE_AG.estado !== 'sin-cargar' && ahora - GOOGLE_AG_PEDIDO < 60000) return;
   GOOGLE_AG_PEDIDO = ahora;
   try {
     const token = await u.getIdToken();
@@ -9010,7 +9146,7 @@ function relojGoogleAgenda(){
   if (GOOGLE_AG_RELOJ) return;
   GOOGLE_AG_RELOJ = setInterval(() => {
     if (vistaActual === 'agenda' && !document.hidden) cargaGoogleAgenda();
-  }, 300000);
+  }, 120000);
   document.addEventListener('visibilitychange', () => {
     if (!document.hidden && vistaActual === 'agenda') cargaGoogleAgenda();
   });
@@ -9092,14 +9228,16 @@ function montaAgenda(){
       // Solo aparece si hay un id de calendario guardado en Configuración: sin el, el iframe
       // de Google no puede pintar nada y un botón que no lleva a ningún sitio estorba.
       +     '<button data-agv="google" id="agVistaGoogle" style="display:none">Google</button></div>'
-      +   '<div class="agfil" id="agFil"></div>'
-      +   '<button class="btn-linea" id="agICS" title="Descarga un .ics para Recordatorios de Apple">Exportar a Recordatorios</button>'
-      +   '<button class="btn-linea" id="agICSCal" title="Descarga un .ics de eventos, con aviso 24 h antes">Exportar a Calendario</button>'
+      // Un solo boton de filtro (con su icono) y «Agendar» a su lado; lo demas, recogido.
+      +   '<button class="btn-linea btn-filtro" id="agFiltroBtn" data-menu-flotante title="Filtrar la lista">'
+      +     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6.500h16M7 12h10M10.500 17.500h3"/></svg><span id="agFiltroTxt">Próximas</span></button>'
       +   '<button class="btn-solido" id="agNueva">＋ Agendar</button>'
+      +   '<button class="btn-linea" id="agExportar" data-menu-flotante style="margin-left:auto" title="Descargar la agenda">Exportar</button>'
       + '</div>'
-      + '<div class="agbar" style="margin-top:-6px">'
+      // El estado de Google solo se ve cuando algo falla; la lectura es automatica.
+      + '<div class="agbar agbar-estado" id="agEstadoBarra" hidden>'
       +   '<span class="agestado" id="agGoogleEstado"></span>'
-      +   '<button class="btn-linea" id="agGoogleRefresca" title="Vuelve a leer el calendario de Google ahora">Actualizar Google</button>'
+      +   '<button class="btn-linea" id="agGoogleRefresca" hidden title="Vuelve a leer el calendario de Google ahora">Actualizar Google</button>'
       + '</div>'
       + '<div id="agCuerpo"></div></div>');
     $('vista-agenda').addEventListener('click', ev => {
@@ -9120,8 +9258,12 @@ function montaAgenda(){
       if (ab) { const cv = buscaConv(ab.dataset.agconv); if (cv) { abre(cv); ve('conversations'); } }
     });
     $('agNueva').onclick = () => abreAgendar(null);
-    $('agICS').onclick = exportaAgendaICS;
-    $('agICSCal').onclick = exportaAgendaEventos;
+    $('agFiltroBtn').onclick = () => menuFlotante($('agFiltroBtn'),
+      AG_FILTROS.map(([id, texto]) => ({ id, texto })), { elegida: agFiltro, alElegir: id => { agFiltro = id; pintaAgenda(); } });
+    $('agExportar').onclick = () => menuFlotante($('agExportar'), [
+      { id:'recordatorios', texto:'A Recordatorios de Apple', nota:'Archivo .ics de tareas' },
+      { id:'calendario', texto:'A Calendario', nota:'Archivo .ics, con aviso 24 h antes' }],
+      { alElegir: id => (id === 'recordatorios' ? exportaAgendaICS() : exportaAgendaEventos()) });
     $('agGoogleRefresca').onclick = async (ev) => {
       const b = ev.currentTarget; b.disabled = true;
       await cargaGoogleAgenda(true);
@@ -9135,17 +9277,30 @@ function montaAgenda(){
   cargaGoogleAgenda();
 }
 
+// Los filtros de la lista, recogidos en un solo boton.
+const AG_FILTROS = [['proximas','Próximas'],['hoy','Hoy'],['pasadas','Pasadas'],['todas','Todas']];
+
 function pintaAgenda(){
   const cont = $('agCuerpo'); if (!cont) return;
   const todas = filasAgenda();
   const claveHoy = diaAg(new Date().toISOString());
 
-  const fil = $('agFil');
-  if (fil) fil.innerHTML = [['proximas','Próximas'],['hoy','Hoy'],['pasadas','Pasadas'],['todas','Todas']]
-    .map(([k,n]) => '<button class="filtro' + (agFiltro===k?' on':'') + '" data-agf="' + k + '">'
-      + n + '</button>').join('');
+  // El filtro solo tiene sentido en la lista: el mes ya es su propio filtro.
+  const fb = $('agFiltroBtn');
+  if (fb) {
+    fb.hidden = agVista !== 'lista';
+    $('agFiltroTxt').textContent = (AG_FILTROS.find(f => f[0] === agFiltro) || AG_FILTROS[0])[1];
+    fb.classList.toggle('activo', agFiltro !== 'proximas');
+  }
+  // La lectura de Google es automatica: el estado solo se enseña si hay algo que decir.
   const est = $('agGoogleEstado');
   if (est) est.textContent = textoGoogleAgenda();
+  const g = GOOGLE_AG;
+  const problema = g.estado === 'error' || g.error === 'google_unreachable' || g.stale === true;
+  const barra = $('agEstadoBarra');
+  if (barra) barra.hidden = !problema;
+  const reintento = $('agGoogleRefresca');
+  if (reintento) reintento.hidden = !problema;
   const ids = idsCalendarioGoogle();
   const bg = $('agVistaGoogle');
   if (bg) bg.style.display = ids.length ? '' : 'none';
@@ -10139,8 +10294,74 @@ async function guardaAjuste(clave, valor){
 
 // El `ancla` es para poder traer a alguien A ESTA tarjeta desde otra pantalla. Configuracion
 // tiene quince tarjetas: dejar a alguien arriba del todo y que la busque es como no llevarlo.
+// ---- Configuracion por categorias: piezas puras
+// Treinta tarjetas en una sola columna obligaban a bajar y bajar para encontrar un ajuste. Cada
+// tarjeta pertenece a UNA categoria (por su titulo) y se ve una categoria a la vez; el buscador
+// mira todas. Una tarjeta nueva sin categoria cae en «Otros» y se ve, no se pierde.
+const CATEGORIAS_CFG = [
+  { id: 'cuenta',  nombre: 'Cuenta y equipo' },
+  { id: 'mensajes', nombre: 'Mensajería' },
+  { id: 'clientes', nombre: 'Contactos y clientes' },
+  { id: 'auto',    nombre: 'Automatización e IA' },
+  { id: 'agenda',  nombre: 'Agenda y datos' },
+];
+const CAT_DE_TARJETA = {
+  'Tu sesión': 'cuenta', 'Usuarios y permisos del panel': 'cuenta', 'Fotógrafos y colaboradores': 'cuenta',
+  'Últimos movimientos': 'cuenta',
+  'Instagram y Messenger': 'mensajes', 'Cómo te ve el cliente': 'mensajes', 'Límites de seguridad del 2.º número': 'mensajes',
+  'Mensajes por defecto': 'mensajes', 'Avisos de atención humana': 'mensajes', 'Bot de WhatsApp': 'mensajes',
+  'Encuesta de satisfacción': 'mensajes',
+  'Permiso de marketing': 'clientes', 'Contactos ignorados': 'clientes', 'Baja de una lista entera': 'clientes',
+  'Guardar contactos solo': 'clientes', 'Clientes de caja en el chat': 'clientes', 'Etiquetas del buscador': 'clientes',
+  'Auto-cierre a los 14 días': 'auto', 'Cerebro local': 'auto', 'Etiquetas y contexto automáticos': 'auto',
+  'Seguimientos automáticos': 'auto', 'Análisis de conversaciones con IA': 'auto', 'Asistente IA': 'auto',
+  'Agente de marketing': 'auto',
+  'Agenda en Google Calendar': 'agenda', 'Recordatorios del iPhone': 'agenda', 'Tu Google Calendar dentro del CRM': 'agenda',
+  'Catálogo público': 'agenda', 'Datos del negocio': 'agenda',
+};
+function categoriaDeCfg(titulo){ return CAT_DE_TARJETA[titulo] || 'otros'; }
+// Sin acentos ni mayusculas: «configuracion» encuentra «Configuración».
+function planoCfg(t){ return String(t || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, ''); }
+// Que tarjetas se ven: con texto en el buscador, las que lo contienen (de cualquier categoria); sin el,
+// las de la categoria elegida.
+function visibleEnCfg(tarjeta, categoria, busqueda){
+  const q = planoCfg(busqueda).trim();
+  if (q) return planoCfg(tarjeta.texto).includes(q);
+  return tarjeta.cat === categoria;
+}
+// ---- Configuracion por categorias: fin de las piezas puras
+
+let CFG_CAT = 'cuenta';
+try { CFG_CAT = localStorage.getItem('crm_cfg_cat') || 'cuenta'; } catch (e) {}
+let CFG_BUSCA = '';
+
+function aplicaCfgFiltro(){
+  const g = $('cfgGrid'); if (!g) return;
+  const tarjetas = [...g.querySelectorAll('.cfgc')];
+  const cuenta = {};
+  for (const t of tarjetas) cuenta[t.dataset.cat] = (cuenta[t.dataset.cat] || 0) + 1;
+  // Una categoria elegida que ya no existe (o sin tarjetas para este rol) no deja la pagina en blanco.
+  const hay = c => (cuenta[c] || 0) > 0;
+  if (!hay(CFG_CAT)) CFG_CAT = (CATEGORIAS_CFG.find(c => hay(c.id)) || { id: 'otros' }).id;
+  let visibles = 0;
+  for (const t of tarjetas) {
+    const ver = visibleEnCfg({ cat: t.dataset.cat, texto: t.textContent }, CFG_CAT, CFG_BUSCA);
+    t.hidden = !ver;
+    if (ver) visibles++;
+  }
+  const tabs = $('cfgTabs');
+  if (tabs) {
+    const lista = CATEGORIAS_CFG.concat(cuenta.otros ? [{ id: 'otros', nombre: 'Otros' }] : []).filter(c => hay(c.id));
+    tabs.innerHTML = lista.map(c => '<button class="cfg-tab' + (!CFG_BUSCA && CFG_CAT === c.id ? ' on' : '') + '" data-cfgcat="' + c.id + '">'
+      + esc(c.nombre) + '<i>' + cuenta[c.id] + '</i></button>').join('');
+    tabs.classList.toggle('en-busqueda', !!CFG_BUSCA.trim());
+  }
+  const vacio = $('cfgVacio');
+  if (vacio) vacio.hidden = visibles > 0;
+}
+
 function tarjetaCfg(titulo, nota, cuerpo, ancla){
-  return '<div class="cfgc"' + (ancla ? ' id="' + esc(ancla) + '"' : '') + '><h3>' + esc(titulo) + '</h3>'
+  return '<div class="cfgc" data-cat="' + categoriaDeCfg(titulo) + '"' + (ancla ? ' id="' + esc(ancla) + '"' : '') + '><h3>' + esc(titulo) + '</h3>'
     + (nota ? '<p class="cfgnota">' + nota + '</p>' : '') + cuerpo + '</div>';
 }
 
@@ -10153,6 +10374,12 @@ function vaATarjetaCfg(ancla){
   const busca = () => {
     const el = document.getElementById(ancla);
     if (!el) { if (vueltas++ < 60) setTimeout(busca, 100); return; }
+    // La tarjeta puede estar en otra categoria (oculta): se cambia a esa y se limpia el buscador.
+    if (el.dataset.cat && (el.hidden || CFG_BUSCA)) {
+      CFG_CAT = el.dataset.cat; CFG_BUSCA = '';
+      const b = $('cfgBuscar'); if (b) b.value = '';
+      aplicaCfgFiltro();
+    }
     el.scrollIntoView({ behavior: 'smooth', block: 'center' });
     el.classList.add('resaltado');
     setTimeout(() => el.classList.remove('resaltado'), 1800);
@@ -10424,7 +10651,20 @@ function montaConfig(){
     montadas.add('config');
     hueco('config', '<div class="hoja"><h1>Configuración</h1>'
       + '<p class="bajada">Lo que cambia aquí afecta a lo que se les manda a clientes reales.</p>'
-      + '<div class="cfggrid" id="cfgGrid"></div></div>');
+      + '<div class="cfg-barra"><div class="cfg-tabs" id="cfgTabs"></div>'
+      +   '<input type="search" class="cfg-buscar" id="cfgBuscar" placeholder="Buscar un ajuste…" autocomplete="off"></div>'
+      + '<div class="cfggrid" id="cfgGrid"></div>'
+      + vacioApple('<circle cx="10.500" cy="10.500" r="6.500"/><path d="M15.300 15.300L20 20"/>', 'Ningún ajuste coincide', 'Prueba con otra palabra o elige una categoría.')
+        .replace('class="vacio-apple"', 'class="vacio-apple" id="cfgVacio" hidden')
+      + '</div>');
+    $('cfgTabs').addEventListener('click', ev => {
+      const b = ev.target.closest('[data-cfgcat]'); if (!b) return;
+      CFG_CAT = b.dataset.cfgcat; CFG_BUSCA = ''; $('cfgBuscar').value = '';
+      try { localStorage.setItem('crm_cfg_cat', CFG_CAT); } catch (e) {}
+      aplicaCfgFiltro();
+      $('vista-config').querySelector('.hoja').scrollTo({ top: 0 });
+    });
+    $('cfgBuscar').addEventListener('input', () => { CFG_BUSCA = $('cfgBuscar').value; aplicaCfgFiltro(); });
   }
   pintaConfig();
 }
@@ -10592,6 +10832,13 @@ async function pintaConfig(){
         dato('Motor', 'Google Gemini 2.5 Flash')
         + '<button class="btn-linea" id="cfgReglas2" style="margin-top:8px">Editar reglas del negocio</button>')
 
+    + (['admin', 'supervisor'].includes(ROL_ACTUAL) ? tarjetaCfg('Agente de marketing',
+        'Cada mañana a las 8:20 mira tus conversaciones y tus ventas y deja propuestas de campaña en <b>Campañas</b>: cotizaciones '
+        + 'enfriadas, clientes dormidos, fechas que se acercan, categorías que suben. <b>Nunca envía nada</b>: tú decides.',
+        interruptorCfg('agente_marketing', 'Proponer campañas automáticamente', 'Se puede apagar sin perder lo ya propuesto.', true)
+        + interruptorCfg('agente_marketing_ia', 'Que la IA mejore la redacción', 'Usa Gemini solo para el título y el texto; las cifras y a quién le llega salen siempre de tus datos.', true)
+        + interruptorCfg('agente_marketing_avisa', 'Avisarme por WhatsApp de lo importante', 'Como mucho un aviso al día, y solo si hay una propuesta de prioridad alta.', true)) : '')
+
     + tarjetaCfg('Fotógrafos y colaboradores',
         'Quien no esté aquí no sale en la encuesta, y sus reseñas no cuentan para nadie en el '
         + 'ranking. Eso no se arregla después: hay que darle de alta antes de que trabaje.',
@@ -10681,6 +10928,7 @@ async function pintaConfig(){
         'Encender o apagar el bot por canal se hace en <b>Canales</b>, no aquí: son ajustes de cada '
         + 'conexión y mezclarlos lleva a apagar el que no era.',
         '<button class="btn-linea" id="cfgIrCanales">Ir a Canales</button>');
+  aplicaCfgFiltro();
 
   // --- cableado
   g.querySelectorAll('[data-cerebro]').forEach(el => {
@@ -11122,16 +11370,138 @@ function cableaUsuarios(){
 // Arrastrar una tarjeta cambia la etapa del lead de verdad. Por eso la tarjeta vuelve
 // a su sitio si el servidor rechaza el cambio: dejarla en la columna nueva la haria
 // mentir hasta el siguiente refresco, y quien la movio se iria creyendo que se guardo.
+// ---- Funnel: piezas puras
+// El funnel tenia una columna «Nuevo» con mas de mil tarjetas de tres lineas: para llegar a algo
+// habia que desplazarse sin fin. Ahora se filtra, se ordena, las tarjetas son compactas y cada
+// columna se puede plegar o esconder. Nada de esto toca a los contactos: solo cambia lo que se ve.
+const FUN_DEFECTO = { q: '', sinLeer: false, humano: false, cat: '', dias: 0, orden: 'reciente',
+  densidad: 'compacta', ocultarVacias: false, ocultas: [], plegadas: [] };
+const FUN_ORDENES = [['reciente', 'Más reciente primero'], ['antiguo', 'Más antiguo primero'],
+  ['nombre', 'Nombre (A–Z)'], ['sinleer', 'Sin leer primero']];
+const FUN_DIAS = [[0, 'Cualquier fecha'], [1, 'Hoy'], [7, 'Últimos 7 días'], [30, 'Últimos 30 días']];
+const FUN_TANDA = 40;
+function planoFun(t){ return String(t || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, ''); }
+function instanteFun(c){ const t = Date.parse(String(c && c.last_message_at || '')); return Number.isFinite(t) ? t : 0; }
+// `nombre` es nombreDe: se recibe para poder probar esto sin el resto del panel.
+function filtraFunnel(convs, F, ahora, nombre){
+  const q = planoFun(F.q).trim();
+  const desde = F.dias > 0 ? ahora - F.dias * 86400000 : 0;
+  return (convs || []).filter(c => {
+    if (F.sinLeer && !(Number(c.unread) > 0)) return false;
+    if (F.humano && !(c.human_handoff_required || c.lead_status === 'esperando_nosotros')) return false;
+    if (F.cat && String(c.interested_category || '') !== F.cat) return false;
+    if (desde && instanteFun(c) < desde) return false;
+    if (q && !planoFun([nombre(c), c.last_message_preview, c.interested_category].join(' ')).includes(q)) return false;
+    return true;
+  });
+}
+function ordenaFunnel(lista, orden, nombre){
+  const l = lista.slice();
+  if (orden === 'antiguo') return l.sort((a, b) => instanteFun(a) - instanteFun(b));
+  if (orden === 'nombre') return l.sort((a, b) => nombre(a).localeCompare(nombre(b), 'es', { sensitivity: 'base' }));
+  if (orden === 'sinleer') return l.sort((a, b) => (Number(b.unread) > 0) - (Number(a.unread) > 0) || instanteFun(b) - instanteFun(a));
+  return l.sort((a, b) => instanteFun(b) - instanteFun(a));
+}
+// Los filtros activos como fichas que se quitan de una en una.
+function fichasFunnel(F){
+  const f = [];
+  if (F.q.trim()) f.push({ clave: 'q', texto: '«' + F.q.trim() + '»' });
+  if (F.sinLeer) f.push({ clave: 'sinLeer', texto: 'Sin leer' });
+  if (F.humano) f.push({ clave: 'humano', texto: 'Esperando a una persona' });
+  if (F.cat) f.push({ clave: 'cat', texto: F.cat });
+  if (F.dias) f.push({ clave: 'dias', texto: (FUN_DIAS.find(d => d[0] === F.dias) || [0, ''])[1] });
+  return f;
+}
+// ---- Funnel: fin de las piezas puras
+
+let FUN = Object.assign({}, FUN_DEFECTO);
+try { FUN = Object.assign({}, FUN_DEFECTO, JSON.parse(localStorage.getItem('crm_funnel') || '{}')); FUN.q = ''; } catch (e) {}
+const FUN_LIMITE = {};       // cuantas tarjetas se ven por columna (se amplia con «Ver más»)
+function guardaFun(){ try { localStorage.setItem('crm_funnel', JSON.stringify(FUN)); } catch (e) {} }
+
+function categoriasFunnel(){
+  const n = new Map();
+  for (const c of CONVS) { const k = String(c.interested_category || '').trim(); if (k) n.set(k, (n.get(k) || 0) + 1); }
+  return [...n.entries()].sort((a, b) => b[1] - a[1]).slice(0, 12);
+}
+
 function montaFunnel(){
   if (!montadas.has('funnel')) {
     montadas.add('funnel');
     hueco('funnel', '<div class="hoja"><h1>Funnel</h1>'
       + '<p class="bajada">Arrastra un contacto a otra columna para cambiarle la etapa.</p>'
+      + '<div class="fun-barra">'
+      +   '<input type="search" class="fun-buscar" id="funBusca" placeholder="Buscar en el funnel…" autocomplete="off">'
+      +   '<button class="btn-linea btn-filtro" id="funFiltro" data-menu-flotante title="Filtrar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6.500h16M7 12h10M10.500 17.500h3"/></svg><span>Filtros</span></button>'
+      +   '<button class="btn-linea btn-filtro" id="funReorg" data-menu-flotante title="Ordenar, tamaño de las tarjetas y etapas visibles"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4v16M7 20l-3-3M7 20l3-3M17 20V4M17 4l-3 3M17 4l3 3"/></svg><span>Reorganizar</span></button>'
+      + '</div>'
+      + '<div class="fun-fichas" id="funFichas"></div>'
       + '<div class="kanban" id="kanban"></div>'
       + '<div class="seccion" style="margin:30px 0 4px">Leads parados</div>'
       + '<p class="bajada">Por qué no avanzan y qué hacer con cada uno. Nada se mueve solo: '
       +   'cambiar de etapa cambia lo que el sistema le mandará después.</p>'
       + '<div id="movil"></div></div>');
+    $('funBusca').addEventListener('input', () => { FUN.q = $('funBusca').value; pintaKanban(); });
+    $('funFichas').addEventListener('click', ev => {
+      const b = ev.target.closest('[data-quita]'); if (!b) return;
+      const k = b.dataset.quita;
+      FUN[k] = FUN_DEFECTO[k];
+      if (k === 'q') $('funBusca').value = '';
+      guardaFun(); pintaKanban();
+    });
+    $('funFiltro').onclick = () => menuFlotante($('funFiltro'), [
+      { rotulo: 'Mostrar' },
+      { id: 'sinLeer', texto: 'Solo sin leer' },
+      { id: 'humano', texto: 'Esperando a una persona' },
+      { sep: true }, { rotulo: 'Categoría' },
+      { id: 'cat:', texto: 'Todas las categorías' },
+      ...categoriasFunnel().map(([k, n]) => ({ id: 'cat:' + k, texto: k, nota: n + ' contactos' })),
+      { sep: true }, { rotulo: 'Último mensaje' },
+      ...FUN_DIAS.map(([d, t]) => ({ id: 'dias:' + d, texto: t })),
+    ], {
+      mantener: true,
+      elegidas: () => [FUN.sinLeer ? 'sinLeer' : '', FUN.humano ? 'humano' : '', 'cat:' + FUN.cat, 'dias:' + FUN.dias],
+      alElegir: id => {
+        if (id === 'sinLeer' || id === 'humano') FUN[id] = !FUN[id];
+        else if (id.startsWith('cat:')) FUN.cat = id.slice(4);
+        else if (id.startsWith('dias:')) FUN.dias = Number(id.slice(5));
+        guardaFun(); pintaKanban();
+      },
+    });
+    $('funReorg').onclick = () => menuFlotante($('funReorg'), [
+      { rotulo: 'Ordenar por' },
+      ...FUN_ORDENES.map(([k, t]) => ({ id: 'o:' + k, texto: t })),
+      { sep: true }, { rotulo: 'Tarjetas' },
+      { id: 'd:compacta', texto: 'Compactas' }, { id: 'd:comoda', texto: 'Cómodas' },
+      { sep: true }, { rotulo: 'Etapas visibles' },
+      ...ETAPAS.map(e => ({ id: 'e:' + e, texto: e.replace(/_/g, ' '), nota: CONVS.filter(c => (c.lifecycle_stage || 'nuevo') === e).length + '' })),
+      { id: 'vacias', texto: 'Ocultar las etapas vacías' },
+      { sep: true }, { id: 'reset', texto: 'Restablecer' },
+    ], {
+      mantener: true,
+      elegidas: () => ['o:' + FUN.orden, 'd:' + FUN.densidad, FUN.ocultarVacias ? 'vacias' : '',
+        ...ETAPAS.filter(e => !FUN.ocultas.includes(e)).map(e => 'e:' + e)],
+      alElegir: id => {
+        if (id.startsWith('o:')) FUN.orden = id.slice(2);
+        else if (id.startsWith('d:')) FUN.densidad = id.slice(2);
+        else if (id === 'vacias') FUN.ocultarVacias = !FUN.ocultarVacias;
+        else if (id.startsWith('e:')) {
+          const e = id.slice(2);
+          FUN.ocultas = FUN.ocultas.includes(e) ? FUN.ocultas.filter(x => x !== e) : FUN.ocultas.concat(e);
+        } else if (id === 'reset') { FUN = Object.assign({}, FUN_DEFECTO); $('funBusca').value = ''; for (const k in FUN_LIMITE) delete FUN_LIMITE[k]; }
+        guardaFun(); pintaKanban();
+      },
+    });
+    $('kanban').addEventListener('click', ev => {
+      const mas = ev.target.closest('[data-kmas]');
+      if (mas) { FUN_LIMITE[mas.dataset.kmas] = (FUN_LIMITE[mas.dataset.kmas] || FUN_TANDA) + FUN_TANDA; pintaKanban(); return; }
+      const cab = ev.target.closest('[data-kplega]');
+      if (cab) {
+        const e = cab.dataset.kplega;
+        FUN.plegadas = FUN.plegadas.includes(e) ? FUN.plegadas.filter(x => x !== e) : FUN.plegadas.concat(e);
+        guardaFun(); pintaKanban();
+      }
+    });
   }
   pintaKanban();
   pintaMovilizacion();
@@ -11139,19 +11509,48 @@ function montaFunnel(){
 
 function pintaKanban(){
   const cont = $('kanban'); if (!cont) return;
-  cont.innerHTML = ETAPAS.map(e => {
-    const filas = CONVS.filter(c => (c.lifecycle_stage || 'nuevo') === e);
-    return '<div class="columna" data-etapa="' + e + '">'
-      + '<div class="ctitulo">' + esc(e.replace(/_/g,' ')) + '<b>' + filas.length + '</b></div>'
-      + '<div class="ccuerpo">'
-      + filas.slice(0, 60).map(c => '<div class="ktarjeta" draggable="true" data-conv="' + esc(c._id) + '">'
-          + '<b>' + esc(nombreDe(c)) + '</b>'
-          + '<span>' + esc(c.last_message_preview || '') + '</span>'
-          + '<i>' + esc(hora(c.last_message_at)) + (c.interested_category ? ' · ' + esc(c.interested_category) : '') + '</i>'
-        + '</div>').join('')
-      + (filas.length > 60 ? '<div class="kmas">… y ' + (filas.length - 60) + ' más</div>' : '')
-      + '</div></div>';
-  }).join('');
+  const ahora = Date.now();
+  const filtradas = filtraFunnel(CONVS, FUN, ahora, nombreDe);
+  const hayFiltro = fichasFunnel(FUN).length > 0;
+  const fichas = $('funFichas');
+  if (fichas) fichas.innerHTML = fichasFunnel(FUN).map(f => '<button class="fun-ficha" data-quita="' + f.clave + '" title="Quitar este filtro">'
+    + esc(f.texto) + '<i>×</i></button>').join('');
+  for (const id of ['funFiltro', 'funReorg']) {
+    const b = $(id); if (!b) continue;
+    b.classList.toggle('activo', id === 'funFiltro' ? hayFiltro
+      : (FUN.orden !== 'reciente' || FUN.densidad !== 'compacta' || FUN.ocultarVacias || FUN.ocultas.length > 0));
+  }
+  const compacta = FUN.densidad === 'compacta';
+  const columnas = ETAPAS.filter(e => !FUN.ocultas.includes(e)).map(e => {
+    const todas = CONVS.filter(c => (c.lifecycle_stage || 'nuevo') === e);
+    const filas = ordenaFunnel(filtradas.filter(c => (c.lifecycle_stage || 'nuevo') === e), FUN.orden, nombreDe);
+    return { e, todas: todas.length, filas };
+  }).filter(col => !(FUN.ocultarVacias && !col.filas.length));
+  cont.classList.toggle('compacto', compacta);
+  cont.innerHTML = columnas.map(({ e, todas, filas }) => {
+    const plegada = FUN.plegadas.includes(e);
+    const tope = FUN_LIMITE[e] || FUN_TANDA;
+    const tarjeta = c => compacta
+      ? '<div class="ktarjeta compacta" draggable="true" data-conv="' + esc(c._id) + '">'
+        + '<div class="kt-fila"><b>' + esc(nombreDe(c)) + '</b>'
+        + (Number(c.unread) > 0 ? '<u class="kt-punto" title="Sin leer"></u>' : '')
+        + '<i>' + esc(hora(c.last_message_at)) + '</i></div>'
+        + '<span>' + (c.interested_category ? '<em>' + esc(c.interested_category) + '</em>' : '') + esc(c.last_message_preview || '') + '</span></div>'
+      : '<div class="ktarjeta" draggable="true" data-conv="' + esc(c._id) + '">'
+        + '<b>' + esc(nombreDe(c)) + '</b>'
+        + '<span>' + esc(c.last_message_preview || '') + '</span>'
+        + '<i>' + esc(hora(c.last_message_at)) + (c.interested_category ? ' · ' + esc(c.interested_category) : '') + '</i></div>';
+    return '<div class="columna' + (plegada ? ' plegada' : '') + '" data-etapa="' + e + '">'
+      + '<button class="ctitulo" data-kplega="' + e + '" title="' + (plegada ? 'Desplegar' : 'Plegar') + ' esta etapa">'
+      +   '<span>' + esc(e.replace(/_/g, ' ')) + '</span>'
+      +   '<b>' + (hayFiltro ? filas.length + ' de ' + todas : filas.length) + '</b></button>'
+      + (plegada ? '' : '<div class="ccuerpo">'
+        + filas.slice(0, tope).map(tarjeta).join('')
+        + (!filas.length ? '<div class="kmas">' + (hayFiltro ? 'Ninguno con estos filtros' : 'Vacía') + '</div>' : '')
+        + (filas.length > tope ? '<button class="kmas kmas-btn" data-kmas="' + e + '">Ver ' + Math.min(FUN_TANDA, filas.length - tope) + ' más · quedan ' + (filas.length - tope) + '</button>' : '')
+        + '</div>')
+      + '</div>';
+  }).join('') || vacioApple('<path d="M4.200 5.500h15.600L14 12.800v5.900l-4-2v-3.900z"/>', 'No hay etapas visibles', 'Actívalas en «Reorganizar».');
 
   let arrastrando = null;
   cont.querySelectorAll('.ktarjeta').forEach(t => {
@@ -11983,6 +12382,154 @@ async function descartaOlvidados(lista){
   pintaChats();
 }
 
+/* ---- Agente de marketing ------------------------------------------------------- */
+// Analiza el CRM cada dia y PROPONE campañas con cifras reales (firebase-functions/src/marketing-agent.js).
+// Nunca envia nada: «Preparar» abre el formulario o el compositor de Estados con todo puesto, y ahi
+// sigue la simulacion / la confirmacion con la cifra de siempre.
+// ---- Agente de marketing: piezas puras
+const MK_TIPOS = { seguimiento: 'Seguimiento', reactivacion: 'Reactivación', temporada: 'Temporada', demanda: 'Demanda', fidelizacion: 'Fidelización' };
+const MK_CANALES = { estado: 'Estado de WhatsApp', plantilla: 'Plantilla aprobada', libre: 'Mensaje libre' };
+const MK_PRIORIDADES = { alta: 'Prioridad alta', media: 'Prioridad media', baja: 'Prioridad baja' };
+function cuantoHace(iso, ahora = Date.now()){
+  const t = Date.parse(String(iso || ''));
+  if (!Number.isFinite(t)) return '';
+  const min = Math.max(0, Math.round((ahora - t) / 60000));
+  if (min < 2) return 'hace un momento';
+  if (min < 60) return 'hace ' + min + ' min';
+  if (min < 1440) return 'hace ' + Math.round(min / 60) + ' h';
+  return 'hace ' + Math.round(min / 1440) + ' d';
+}
+function nuevasMarketing(propuestas){ return (propuestas || []).filter(p => p.estado === 'nueva').length; }
+function tarjetaMarketing(p){
+  const nueva = p.estado === 'nueva';
+  const ejemplos = (p.audiencia && p.audiencia.ejemplos || []).slice(0, 3);
+  return '<article class="mk-card ' + esc(p.prioridad) + (nueva ? '' : ' decidida') + '" data-mk="' + esc(p.id) + '">'
+    + '<div class="mk-cab"><span class="mk-prio ' + esc(p.prioridad) + '">' + esc(MK_PRIORIDADES[p.prioridad] || 'Prioridad') + '</span>'
+    +   '<span class="mk-tipo">' + esc(MK_TIPOS[p.tipo] || 'Propuesta') + '</span>'
+    +   (p.fuente === 'ia' ? '<span class="mk-ia" title="La redacción la mejoró la IA">IA</span>' : '') + '</div>'
+    + '<h4>' + esc(p.titulo) + '</h4>'
+    + '<p class="mk-motivo">' + esc(p.motivo) + '</p>'
+    + '<div class="mk-datos"><span class="mk-aud"><b>' + Number(p.audiencia && p.audiencia.total || 0) + '</b> ' + esc(p.audiencia && p.audiencia.etiqueta || '')
+    +   (ejemplos.length ? ' <small>· ' + esc(ejemplos.join(', ')) + '…</small>' : '') + '</span>'
+    +   '<span class="mk-canal">' + esc(MK_CANALES[p.canal] || p.canal) + '</span></div>'
+    + '<blockquote class="mk-texto">' + esc(p.texto) + '</blockquote>'
+    + '<div class="mk-acc">'
+    + (nueva
+      ? '<button class="btn-solido" data-mkacc="preparar" data-id="' + esc(p.id) + '">Preparar</button>'
+        + '<button class="btn-linea" data-mkacc="descartar" data-id="' + esc(p.id) + '">Descartar</button>'
+      : '<span class="mk-estado">' + (p.estado === 'aceptada' ? 'Preparada' : 'Descartada') + '</span>'
+        + '<button class="btn-linea" data-mkacc="reabrir" data-id="' + esc(p.id) + '">Reabrir</button>')
+    + '</div></article>';
+}
+// ---- Agente de marketing: fin de las piezas puras
+
+let MK = { cargado: false, cargando: false, propuestas: [], ultima: null, resumen: '', ia: false, activo: true, error: '', verDecididas: false };
+
+function pintaCuentaMarketing(){
+  const e = document.querySelector('[data-cuenta="campanas"]');
+  if (!e) return;
+  const n = nuevasMarketing(MK.propuestas);
+  e.textContent = n; e.hidden = n === 0;
+}
+
+async function cargaMarketing({ silencioso = false } = {}){
+  if (!['admin', 'supervisor'].includes(ROL_ACTUAL) || MK.cargando) return;
+  MK.cargando = true;
+  const r = await llama({ action: 'marketingList' });
+  MK.cargando = false;
+  if (!r.ok) { if (!silencioso) { MK.error = r.error || 'No se pudo leer'; pintaMarketing(); } return; }
+  MK = { ...MK, cargado: true, propuestas: r.propuestas || [], ultima: r.ultima_pasada_at || null, resumen: r.resumen_ia || '',
+    ia: r.ia_usada === true, activo: r.activo !== false, error: '' };
+  pintaCuentaMarketing();
+  pintaMarketing();
+}
+
+function pintaMarketing(){
+  const c = $('mkAgente'); if (!c) return;
+  if (!['admin', 'supervisor'].includes(ROL_ACTUAL)) { c.innerHTML = ''; return; }
+  const nuevas = MK.propuestas.filter(p => p.estado === 'nueva');
+  const decididas = MK.propuestas.filter(p => p.estado !== 'nueva');
+  const estado = !MK.cargado ? (MK.error ? esc(MK.error) : 'Leyendo…')
+    : !MK.activo ? 'Apagado en Configuración'
+    : MK.ultima ? 'Analizó ' + esc(cuantoHace(MK.ultima)) + ' · ' + nuevas.length + (nuevas.length === 1 ? ' propuesta' : ' propuestas')
+    : 'Todavía no ha analizado nada';
+  c.innerHTML = '<section class="mk"><div class="mk-cabecera"><div><h2>Agente de marketing</h2>'
+    + '<p>Analiza tus conversaciones y ventas cada mañana y te propone qué campaña hacer. <b>No envía nada</b> hasta que tú lo apruebes.</p>'
+    + '<small class="mk-est">' + estado + '</small></div>'
+    + '<button class="btn-linea" data-mkacc="analizar"' + (MK.activo ? '' : ' disabled') + '>Analizar ahora</button></div>'
+    + (MK.resumen ? '<div class="mk-resumen"><b>Lo que ve la IA</b><p>' + esc(MK.resumen) + '</p></div>' : '')
+    + (nuevas.length ? '<div class="mk-grid">' + nuevas.map(tarjetaMarketing).join('') + '</div>'
+      : (MK.cargado && MK.activo ? vacioApple('<path d="M9.800 5c.6 4.200 1.800 5.400 6 6-4.200.6-5.400 1.800-6 6-.6-4.200-1.800-5.400-6-6 4.200-.6 5.400-1.800 6-6z"/>',
+        'Nada que proponer por ahora', 'Cuando haya cotizaciones enfriadas, clientes dormidos o una fecha cerca, aparecerá aquí.') : ''))
+    + (decididas.length ? '<button class="mk-ver" data-mkacc="ver">' + (MK.verDecididas ? 'Ocultar' : 'Ver') + ' las ya decididas · ' + decididas.length + '</button>'
+      + (MK.verDecididas ? '<div class="mk-grid">' + decididas.map(tarjetaMarketing).join('') + '</div>' : '') : '')
+    + '</section>';
+}
+
+async function decideMarketing(id, decision){
+  const r = await llama({ action: 'marketingDecide', id, decision });
+  if (!r.ok) { avisa('No se pudo guardar', r.error); return false; }
+  const p = MK.propuestas.find(x => x.id === id);
+  if (p) p.estado = r.estado;
+  pintaCuentaMarketing(); pintaMarketing();
+  return true;
+}
+
+// Preparar = dejar todo puesto y llevar a donde se simula o se confirma. No envia.
+function preparaPropuesta(p){
+  const a = p.accion || {};
+  const texto = a.texto || p.texto || '';
+  if (a.tipo === 'estado') {
+    ST_AUDIENCIA_PENDIENTE = a.audiencia || '';
+    stCompositor('texto');
+    const area = $('stcTexto');
+    if (area) { area.value = texto; area.dispatchEvent(new Event('input')); }
+    avisa('Estado preparado', 'Revisa el texto y elige a quién; antes de publicar te dice cuántos lo verán.');
+    return;
+  }
+  const poner = (id, v) => { const e = $(id); if (e) e.value = v; };
+  poner('bcProposito', a.proposito || 'followup');
+  $('bcProposito')?.dispatchEvent(new Event('change'));
+  poner('bcEtapa', a.etapa || '');
+  poner('bcCategoria', a.categoria || '');
+  const modo = $('bcModo');
+  if (modo) { modo.value = a.modo === 'template' ? 'template' : 'freeform'; modo.onchange && modo.onchange(); }
+  if (a.modo !== 'template') poner('bcTexto', texto);
+  const sug = $('bcSugerido');
+  if (sug) {
+    sug.hidden = false;
+    sug.querySelector('.mk-sug-texto').textContent = texto;
+    sug.querySelector('.mk-sug-nota').hidden = a.modo !== 'template';
+  }
+  document.querySelector('#vista-campanas .prompt')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  avisa('Campaña preparada', 'Pulsa «Simular envío»: verás a quién le llegaría antes de que salga nada.');
+}
+
+function cableaMarketing(){
+  const c = $('mkAgente');
+  if (!c || c.dataset.cableado) return;
+  c.dataset.cableado = '1';
+  c.addEventListener('click', async ev => {
+    const b = ev.target.closest('[data-mkacc]'); if (!b) return;
+    const acc = b.dataset.mkacc, id = b.dataset.id;
+    if (acc === 'ver') { MK.verDecididas = !MK.verDecididas; return pintaMarketing(); }
+    if (acc === 'analizar') {
+      b.disabled = true; b.textContent = 'Analizando…';
+      const r = await llama({ action: 'marketingRun' });
+      if (!r.ok) avisa('No se pudo analizar', r.error);
+      else if (r.omitida) avisa('Ya se analizó hace un momento', 'Se puede repetir pasados unos minutos.');
+      else avisa('Análisis hecho', (r.nuevas || 0) + (r.nuevas === 1 ? ' propuesta nueva' : ' propuestas nuevas'));
+      await cargaMarketing();
+      return;
+    }
+    const p = MK.propuestas.find(x => x.id === id);
+    if (!p) return;
+    if (acc === 'preparar') { if (await decideMarketing(id, 'aceptar')) preparaPropuesta(p); return; }
+    if (acc === 'descartar') { await decideMarketing(id, 'descartar'); return; }
+    if (acc === 'reabrir') { await decideMarketing(id, 'reabrir'); }
+  });
+}
+
 /* ---- Broadcast ----------------------------------------------------------- */
 // Enviar a mucha gente a la vez es lo mas facil de arruinar de todo el CRM. Por eso
 // aqui no hay boton de "enviar" directo: primero se simula (dry) y se ve la lista de
@@ -11998,7 +12545,12 @@ function montaBroadcast(){
     '<div class="hoja"><h1>Campañas</h1>'
     + '<p class="bajada">Escribe una vez y sale a muchos. Primero se simula: verás exactamente '
     +   'a quién le llegaría antes de que salga nada.</p>'
+    + '<div id="mkAgente"></div>'
     + '<div class="prompt">'
+    +   '<div class="mk-sugerido" id="bcSugerido" hidden><b>Texto sugerido por el agente</b>'
+    +     '<p class="mk-sug-texto"></p>'
+    +     '<p class="mk-sug-nota">Fuera de las 24 h solo llega una plantilla aprobada de Meta: elige una abajo, o crea una con este texto en Plantillas.</p>'
+    +     '<button class="btn-linea" id="bcCopiarSug" type="button">Copiar texto</button></div>'
     +   '<div class="par">'
     +     '<div class="campo"><label>Tipo de envío</label><select id="bcModo">'
     +       '<option value="freeform">Mensaje libre (solo a quien escribió en las últimas 24 h)</option>'
@@ -12091,6 +12643,13 @@ function montaBroadcast(){
     + '</div></details>'
     + '</div>');
 
+  $('bcCopiarSug').onclick = async () => {
+    try { await navigator.clipboard.writeText($('bcSugerido').querySelector('.mk-sug-texto').textContent); avisa('Texto copiado'); }
+    catch (e) { avisa('No se pudo copiar'); }
+  };
+  cableaMarketing();
+  pintaMarketing();
+  cargaMarketing();
   $('bcModo').onchange = async () => {
     const plantilla = $('bcModo').value === 'template';
     $('bcLibre').hidden = plantilla;
@@ -15009,6 +15568,13 @@ onAuthStateChanged(auth, async u => {
   // al pulsar «Estados» eran 7 s de lista vacia. Un par de segundos despues, para no competir con
   // lo primero que se ve (la bandeja).
   setTimeout(escuchaEstados, 2500);
+  // Google Calendar se lee solo desde el principio (y se refresca cada 2 min con la Agenda abierta).
+  setTimeout(() => { relojGoogleAgenda(); cargaGoogleAgenda(); }, 4000);
+  // Las propuestas del agente de marketing (numerito en Campañas), al entrar y cada 30 min.
+  if (['admin', 'supervisor'].includes(ROL_ACTUAL)) {
+    setTimeout(() => cargaMarketing({ silencioso: true }), 6000);
+    setInterval(() => { if (!document.hidden) cargaMarketing({ silencioso: true }); }, 1800000);
+  }
   // Si Instagram y Messenger estan encendidos, hay que saberlo YA: arrancan ocultos a proposito,
   // asi que lo unico que esta llamada puede hacer es traerlos de vuelta, nunca hacerlos
   // desaparecer delante de quien mira. socialStatus lo contesta a cualquier rol.
