@@ -1,7 +1,7 @@
 {
-  "version": "2026-09-27-resumen-operadores-v130",
+  "version": "2026-09-28-eliminados-vigilancia-v131",
   "channel": "crm",
-  "released_at": "2026-09-27T00:00:00Z",
-  "summary": "La bandeja y el chat recuperan la sincronización si Firestore corta la escucha en vivo. Informes internos detectan demoras, clientes sin respuesta y señales de trato inadecuado. Los avisos repetidos se compactan, identifican al operador cuando existe una respuesta humana atribuible y muestran un resumen por operador con respuestas, demora media, respuestas lentas y señales de tono.",
-  "requiere_puente": "2026-09-26-agenda-v31"
+  "released_at": "2026-09-28T00:00:00Z",
+  "summary": "Los mensajes eliminados ya no desaparecen: se quedan en el chat con un aviso que dice quién los eliminó y por qué (el cliente, el equipo o el teléfono del negocio). Eliminar un mensaje pide siempre un motivo. Editar conserva lo que decía antes y «Editado» se puede pulsar para verlo. Nuevo: enviar ubicación y tarjeta de contacto al cliente, editar y eliminar para todos, destacar mensajes y ver cuándo el cliente está escribiendo. Informes internos pasa a ser un módulo oculto: lo necesario le llega al dueño por WhatsApp.",
+  "requiere_puente": "2026-09-28-versiones-v33"
 }
