@@ -451,6 +451,15 @@ img.mmedia[data-medio]:not([src]),img.msticker[data-medio]:not([src]){
 .mllamada svg{width:17px;height:17px;flex:0 0 auto;stroke-width:1.9}
 .mllamada.perdida{color:var(--bad)}
 .mpie{margin-top:3px;white-space:pre-wrap;word-break:break-word}
+.globo.eliminado > :not(.meliminado):not(.pie-globo):not(.msel):not(.gaccion):not(.gmenu){opacity:.6}
+.meliminado{display:flex;align-items:flex-start;gap:7px;margin:0 0 5px;padding:5px 8px;border-left:3px solid var(--bad);
+  border-radius:4px;background:rgba(209,75,75,.09);font-size:11.5px}
+.meliminado svg{width:14px;height:14px;flex:0 0 auto;margin-top:1px;color:var(--bad)}
+.meliminado span{display:flex;flex-direction:column;gap:1px;min-width:0}
+.meliminado small{font-size:11px;color:var(--mut);word-break:break-word}
+button.editado-tag{font:inherit;color:inherit;text-decoration:underline dotted;cursor:pointer;padding:0;background:none}
+.mversion{padding:8px 0;border-bottom:1px solid var(--line)}
+.mversion small{color:var(--mut)}
 .mubic,.mtarjeta{display:flex;align-items:center;gap:10px;padding:9px 11px;margin:2px 0 4px;
   border-radius:6px;background:rgba(11,20,26,.06);color:inherit;text-decoration:none}
 :root[data-tema="oscuro"] .mubic,:root[data-tema="oscuro"] .mtarjeta{background:rgba(255,255,255,.07)}
@@ -1533,7 +1542,7 @@ const VISTAS = [
   { id:'prospecting',   nombre:'Prospección',   icono:ico('<circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4M11 7v8M7 11h8"/>') },
   { id:'poscustomers',  nombre:'Clientes de caja', icono:ico('<path d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M19 8v6M22 11h-6"/>') },
   { id:'satisfaccion',  nombre:'Satisfacción',  icono:ico('<path d="M12 17.3l-5.5 3 1-6.1L3 9.8l6.1-.9L12 3.3l2.9 5.6 6.1.9-4.5 4.4 1 6.1z"/>') },
-  { id:'informes',      nombre:'Informes internos', restringida:true, icono:ico('<path d="M4 19V9M10 19V5M16 19v-7M22 19H2"/><path d="M3 4l5 3 5-4 7 4"/>') },
+  { id:'informes',      nombre:'Informes internos', restringida:true, oculta:true, icono:ico('<path d="M4 19V9M10 19V5M16 19v-7M22 19H2"/><path d="M3 4l5 3 5-4 7 4"/>') },
   { id:'limpieza',      nombre:'Limpieza',       icono:ico('<path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/>') },
   { id:'anuncios',      nombre:'Anuncios',       icono:ico('<path d="M3 11v2a2 2 0 002 2h2l4 4V5L7 9H5a2 2 0 00-2 2z"/><path d="M15 9a4 4 0 010 6"/>') },
   { id:'campanas',      nombre:'Campañas',      icono:ico('<path d="M3 11l18-8-7 18-2-8-9-2z"/>') },
@@ -1589,7 +1598,10 @@ function enlaceMeta(id, texto){
 }
 
 function pintaMenu(){
-  const disponibles = VISTAS.filter(v => !v.restringida || ['admin','supervisor'].includes(ROL_ACTUAL));
+  // 'oculta': la vista existe y se abre por su enlace (#informes) para admin y supervisor, pero no
+  // aparece en el menu. Es supervision interna: quien atiende no tiene por que verla, y lo que de
+  // verdad importa le llega al dueno por WhatsApp (owner-vigilancia.js).
+  const disponibles = VISTAS.filter(v => !v.oculta && (!v.restringida || ['admin','supervisor'].includes(ROL_ACTUAL)));
   const enlace = v => '<a href="#' + v.id + '" data-vista="' + v.id + '">' + v.icono
     + '<span>' + esc(v.nombre) + '</span><span class="cuenta" data-cuenta="' + v.id + '" hidden></span></a>';
   // Sin data-vista: el enrutador solo intercepta a[data-vista] (mas abajo), asi que estos abren
@@ -5442,6 +5454,13 @@ function pintaBarraSeleccion(){
 document.addEventListener('click', async ev => {
   const casilla = ev.target.closest('.msel[data-msel]');
   if (casilla) { ev.stopPropagation(); alternaSeleccion(casilla.dataset.msel); return; }
+  const verVersiones = ev.target.closest('[data-versiones]');
+  if (verVersiones) {
+    ev.stopPropagation();
+    const editado = MSGS.find(x => (x.id || x.wamid) === verVersiones.dataset.versiones);
+    if (editado) abreVersiones(editado);
+    return;
+  }
   // Pulsar la cita salta al mensaje citado, como en WhatsApp. Si ese mensaje no esta cargado
   // --el hilo trae los ultimos 400-- no se hace nada: mejor eso que un salto a otro sitio.
   const cita = ev.target.closest('.cita[data-cita]');
@@ -5474,15 +5493,16 @@ document.addEventListener('click', async ev => {
   const esPropioEnWa = canalDe(sel) === 'whatsapp_qr' && m.direction === 'out' && !!m.wamid;
   const puedeEditar = esPropioEnWa && (m.msg_type || 'text') === 'text' && edadMs <= 15 * 60000;
   const puedeRetirar = esPropioEnWa && edadMs <= 48 * 3600000;
-  menu.innerHTML = '<button data-op="citar">Responder</button>'
-    + (puedeReaccionar ? '<button data-op="reaccionar">Reaccionar</button>' : '')
+  const yaEliminado = !!infoEliminado(m);
+  menu.innerHTML = yaEliminado ? '<button data-op="copiar">Copiar texto</button>' : '<button data-op="citar">Responder</button>'
+    + (yaEliminado ? '' : (puedeReaccionar ? '<button data-op="reaccionar">Reaccionar</button>' : '')
     + '<button data-op="reenviar">Reenviar</button>'
     + '<button data-op="seleccionar">Seleccionar</button>'
     + '<button data-op="destacar">' + (destacado ? 'Quitar destacado' : 'Destacar') + '</button>'
     + '<button data-op="copiar">Copiar texto</button>'
     + (puedeEditar ? '<button data-op="editar">Editar</button>' : '')
     + (puedeRetirar ? '<button data-op="retirar" class="peligro">Eliminar para todos</button>' : '')
-    + '<button data-op="borrar" class="peligro">Borrar</button>';
+    + '<button data-op="borrar" class="peligro">Eliminar</button>');
   globo.appendChild(menu);
   menu.onclick = async e2 => {
     e2.stopPropagation();
@@ -5504,22 +5524,110 @@ document.addEventListener('click', async ev => {
     }
     else if (op === 'editar') abreEditar(m);
     else if (op === 'retirar') {
-      if (!confirm('Se eliminará para todos: el cliente verá «Se eliminó este mensaje» en su WhatsApp.\n\n¿Eliminar?')) return;
-      const r = await llama({ action:'ownMsg', operation:'revoke', message_id: m.id });
+      const motivo = await pideMotivo({
+        titulo: 'Eliminar para todos',
+        aviso: 'El cliente verá «Se eliminó este mensaje» en su WhatsApp. Aquí NO se borra: queda marcado como eliminado, con tu nombre y este motivo.',
+        boton: 'Eliminar para todos' });
+      if (!motivo) return;
+      const r = await llama({ action:'ownMsg', operation:'revoke', message_id: m.id, reason: motivo });
       if (!r.ok) return avisa('No se pudo eliminar', r.error);
       // El mensaje sigue en el hilo hasta que WhatsApp lo acepta: el puente lo marca entonces.
       avisa(r.enviado === false ? 'No se envió nada' : 'Eliminando para todos…',
-        r.enviado === false ? 'Ese chat está ignorado.' : 'Desaparece de aquí en cuanto WhatsApp lo confirme.');
+        r.enviado === false ? 'Ese chat está ignorado.' : 'Quedará marcado como eliminado en cuanto WhatsApp lo confirme.');
     }
     else if (op === 'borrar') {
-      // Borrado blando: WhatsApp no permite quitarlo del telefono del cliente, asi
-      // que se dice claro que solo desaparece de aqui.
-      if (!confirm('Se ocultará de este panel. El cliente lo seguirá viendo en su WhatsApp.\n\n¿Borrar?')) return;
-      const r = await llama({ action:'deleteMsg', message_id: m.id });
-      avisa(r.ok ? 'Mensaje ocultado' : 'No se pudo borrar', r.ok ? '' : r.error);
+      // Borrado blando: WhatsApp no permite quitarlo del telefono del cliente, y aqui tampoco
+      // desaparece: se marca como eliminado, con quien y por que.
+      const motivo = await pideMotivo({
+        titulo: 'Eliminar mensaje',
+        aviso: 'El cliente lo seguirá viendo en su WhatsApp. Aquí NO se borra: queda marcado como eliminado, con tu nombre y este motivo.',
+        boton: 'Eliminar' });
+      if (!motivo) return;
+      const r = await llama({ action:'deleteMsg', message_id: m.id, reason: motivo });
+      avisa(r.ok ? 'Mensaje marcado como eliminado' : 'No se pudo eliminar', r.ok ? '' : r.error);
     }
   };
 });
+
+/* ---- Mensajes eliminados y editados: nada se pierde ------------------------ */
+// Un mensaje eliminado --por el cliente, por el equipo desde el CRM o desde el telefono del negocio--
+// no desaparece: se queda en el hilo con un aviso que dice quien, cuando y por que. Un mensaje
+// editado conserva lo que decia antes (metadata.versiones, lo guarda el puente). Las piezas puras
+// van entre los marcadores para que las pruebas las ejecuten de verdad.
+// ---- Mensajes eliminados: piezas puras
+function infoEliminado(m){
+  const md = m?.metadata || {};
+  if (!md.deleted && !md.deleted_at) return null;
+  const cuando = md.deleted_at || null;
+  // Lo que llega del cliente y se retira: el puente lo marca con deleted_by 'whatsapp'.
+  if (m.direction !== 'out') return { quien: 'cliente', alcance: 'todos', cuando, nombre: '', motivo: '' };
+  // Un mensaje NUESTRO retirado con deleted_by 'whatsapp' se elimino desde el telefono del negocio,
+  // no desde el CRM: nadie escribio un motivo.
+  if (md.deleted_by === 'whatsapp') return { quien: 'telefono', alcance: 'todos', cuando, nombre: '', motivo: '' };
+  if (md.deleted_by === 'crm_para_todos') {
+    const pedido = md.delete_request || {};
+    return { quien: 'equipo', alcance: 'todos', cuando, nombre: String(pedido.by_name || ''), motivo: String(pedido.reason || '') };
+  }
+  return { quien: 'equipo', alcance: 'crm', cuando, nombre: String(md.deleted_by_name || ''), motivo: String(md.deleted_reason || '') };
+}
+function tituloEliminado(info){
+  if (info.quien === 'cliente') return 'El cliente eliminó este mensaje';
+  if (info.quien === 'telefono') return 'Eliminado desde el teléfono del negocio';
+  const por = info.nombre ? ' por ' + info.nombre : '';
+  return info.alcance === 'todos' ? 'Eliminado para todos' + por : 'Eliminado' + por + ' · el cliente aún lo ve';
+}
+function versionesDe(m){
+  const l = m?.metadata?.versiones;
+  return Array.isArray(l) ? l.filter(v => v && typeof v.texto === 'string' && v.texto.trim()) : [];
+}
+// ---- Mensajes eliminados: fin de las piezas puras
+
+function avisoDeEliminado(info){
+  const d = info.cuando ? new Date(info.cuando) : null;
+  const hora = d && !Number.isNaN(d.getTime())
+    ? d.toLocaleString('es-DO', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' }) : '';
+  const detalle = info.quien === 'equipo'
+    ? (info.motivo ? 'Motivo: ' + info.motivo : 'Sin motivo registrado') : '';
+  return '<div class="meliminado"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">'
+    + '<path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg>'
+    + '<span><b>' + esc(tituloEliminado(info)) + (hora ? ' · ' + esc(hora) : '') + '</b>'
+    + (detalle ? '<small>' + esc(detalle) + '</small>' : '') + '</span></div>';
+}
+
+// Pide el motivo de una eliminacion. Devuelve el texto, o null si se cancela. Sin motivo (minimo
+// tres letras) no se puede continuar: la idea es que quede escrito por que faltara una frase.
+function pideMotivo({ titulo, aviso, boton }){
+  return new Promise(resolve => {
+    const rapidos = ['Lo escribí por error', 'Chat equivocado', 'Información que no debía enviarse', 'Mensaje duplicado'];
+    const m = abreModal('<div class="mtapa"><b>' + esc(titulo) + '</b><button class="cerrarm" data-cerrar>×</button></div>'
+      + '<div class="mcuerpo"><p class="aviso">' + esc(aviso) + '</p>'
+      + '<div class="pdfs" style="margin:10px 0">'
+      +   rapidos.map(t => '<button class="tplchip" data-rapido="' + esc(t) + '">' + esc(t) + '</button>').join('') + '</div>'
+      + '<div class="campo"><label>Motivo (obligatorio)</label>'
+      +   '<textarea id="mvTexto" rows="3" maxlength="300" placeholder="Escribe por qué se elimina"></textarea></div></div>'
+      + '<div class="mpatas"><button class="btn-linea" data-cerrar>Cancelar</button>'
+      +   '<button class="btn-solido peligro" id="mvOk" disabled>' + esc(boton) + '</button></div>');
+    const caja = $('mvTexto'), ok = $('mvOk');
+    const valido = () => { ok.disabled = caja.value.trim().length < 3; };
+    caja.oninput = valido;
+    m.querySelectorAll('[data-rapido]').forEach(b => { b.onclick = () => { caja.value = b.dataset.rapido; valido(); caja.focus(); }; });
+    m.querySelectorAll('[data-cerrar]').forEach(b => { b.onclick = () => { cierraModal(); resolve(null); }; });
+    ok.onclick = () => { const t = caja.value.trim(); if (t.length < 3) return; cierraModal(); resolve(t); };
+    caja.focus();
+  });
+}
+
+// Lo que decia un mensaje antes de editarse, de la mas nueva a la mas vieja.
+function abreVersiones(m){
+  const v = versionesDe(m).slice().reverse();
+  abreModal('<div class="mtapa"><b>Versiones anteriores</b><button class="cerrarm" data-cerrar>×</button></div>'
+    + '<div class="mcuerpo"><p class="aviso">Este mensaje se editó. Esto es lo que decía antes; el texto actual es el que se ve en el chat.</p>'
+    + v.map(x => {
+      const d = new Date(x.hasta);
+      return '<div class="mversion"><small>' + (Number.isNaN(d.getTime()) ? '' : 'Hasta ' + esc(d.toLocaleString('es-DO', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' })))
+        + '</small><div class="mpie">' + esc(x.texto) + '</div></div>';
+    }).join('') + '</div>');
+}
 
 // Editar un mensaje propio ya enviado. El texto cambia aqui solo cuando WhatsApp lo acepta (lo
 // marca el puente, con «Editado»): mientras tanto se sigue viendo el original.
@@ -6507,11 +6615,10 @@ function pintaMensajes(){
   const cont = $('mensajes'); if (!cont) return;
   const pegado = cont.scrollHeight - cont.scrollTop - cont.clientHeight < 90;
   let dia = '', antes = '';
-  // El borrado es blando: el servidor conserva el mensaje y escribe la marca DENTRO de
-  // metadata (index.js:1283), no en el primer nivel. Filtrando por m.deleted_at el
-  // mensaje seguia a la vista mientras el panel decia "ocultado".
+  // Un mensaje eliminado NO desaparece del hilo: se queda, marcado, con quien lo elimino y por
+  // que (ver infoEliminado). Antes se filtraba y quien borraba algo no dejaba rastro. La marca
+  // vive DENTRO de metadata, no en el primer nivel.
   const html = MSGS.concat(globosEnviando(sel && (sel.id || sel._id)))
-    .filter(m => !m.metadata?.deleted && !m.metadata?.deleted_at)
     .sort((a, b) => instanteMsg(a) - instanteMsg(b))
     .map(m => {
     const t = instanteMsg(m);
@@ -6542,16 +6649,22 @@ function pintaMensajes(){
     // el hilo YA mostraba la version editada; lo unico que faltaba era decirlo, como WhatsApp
     // Web ("Editado" antes de la hora). Sin esto se leia como que el cliente escribio eso
     // desde el principio.
-    const editado = m.metadata?.editado ? '<span class="editado-tag">Editado</span> ' : '';
+    const editado = m.metadata?.editado
+      ? (versionesDe(m).length
+          ? '<button class="editado-tag ver-versiones" data-versiones="' + esc(idMsg) + '" title="Ver lo que decía antes">Editado</button> '
+          : '<span class="editado-tag">Editado</span> ')
+      : '';
     // Destacar no le llega al cliente ni al puente (ver starMessageAction): es una marca
     // solo del CRM, igual que en WhatsApp Web se destaca solo para quien lo pulsa.
     const destacadoTag = m.metadata?.starred ? '<span class="destacado-tag" title="Destacado">★</span> ' : '';
+    const eliminado = infoEliminado(m);
+    const avisoElim = eliminado ? avisoDeEliminado(eliminado) : '';
     return cabeza + '<div class="globo ' + (sale ? 'sale' : 'entra') + ' ' + (primero ? 'primero' : 'seguido')
-      + (marcado ? ' marcado' : '') + '"'
+      + (marcado ? ' marcado' : '') + (eliminado ? ' eliminado' : '') + '"'
       + ' data-msg="' + esc(idMsg) + '">'
       + '<input type="checkbox" class="msel" data-msel="' + esc(idMsg) + '"' + (marcado ? ' checked' : '') + '>'
       + '<button class="gaccion" aria-label="Opciones del mensaje">⌄</button>'
-      + autor + cita + cuerpoMensaje(m)
+      + avisoElim + autor + cita + cuerpoMensaje(m)
       + '<span class="pie-globo">' + destacadoTag + editado + (conFecha ? esc(d.toLocaleTimeString('es-DO',{hour:'2-digit',minute:'2-digit'})) : '') + ticks + '</span>'
       + '</div>';
   }).join('') || '<div style="margin:auto;color:var(--mut);font-size:13px">Sin mensajes todavía.</div>';
