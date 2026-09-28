@@ -1213,6 +1213,20 @@ a.ayuda{color:var(--enlace)}
   max-width:1180px;align-items:start}
 .cfgc{padding:16px 18px 18px;border:1px solid var(--line);border-radius:var(--r2);background:var(--panel)}
 .cfgc h3{margin:0 0 6px;font-size:13.5px;font-weight:650}
+.cb-estado{padding:9px 12px;border-radius:10px;font-size:12.5px;margin-bottom:12px;background:var(--hover)}
+.cb-estado.listo{background:rgba(37,211,102,.14)}
+.cb-estado.apagado{background:rgba(209,75,75,.10)}
+.cb-kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px}
+.cb-kpis div{padding:9px 10px;border:1px solid var(--line);border-radius:10px}
+.cb-kpis b{display:block;font-size:18px;font-weight:700}
+.cb-kpis span{font-size:10.5px;color:var(--mut)}
+.cb-fila{display:grid;grid-template-columns:130px 1fr 62px;gap:2px 10px;align-items:center;padding:5px 0;font-size:12.5px}
+.cb-fila small{grid-column:2 / 4;color:var(--mut);font-size:10.5px}
+.cb-barra{height:6px;border-radius:99px;background:var(--line);overflow:hidden}
+.cb-barra i{display:block;height:100%;background:var(--ink);border-radius:99px}
+.cb-conoc{display:grid;gap:1px;padding:6px 0;border-bottom:1px solid var(--line);font-size:12.5px}
+.cb-conoc span{color:var(--mut)}
+.cb-conoc small{opacity:.7}
 .cfgnota{margin:0 0 12px;font-size:12px;line-height:1.5;color:var(--mut)}
 .cfgc .dato{margin-bottom:6px}
 /* El interruptor lleva su explicacion al lado: uno suelto no dice que pasa al
@@ -1376,6 +1390,19 @@ a.ayuda{color:var(--enlace)}
 .calidad-kpi{background:var(--panel);border:1px solid var(--line2);border-radius:14px;padding:14px}
 .calidad-kpi b{display:block;font-size:25px}.calidad-kpi span{color:var(--mut);font-size:12px}
 .calidad-lista{display:grid;gap:9px;margin-top:12px}
+.calidad-filtros{display:grid;gap:10px;margin-top:14px}
+.chips-tema{display:flex;flex-wrap:wrap;gap:6px}
+.chip-tema{padding:6px 12px;border:1px solid var(--line2);border-radius:999px;font-size:12.5px;font-weight:600;background:var(--panel);color:var(--fg)}
+.chip-tema:hover{background:var(--hover)}
+.chip-tema.on{background:var(--ink);border-color:var(--ink);color:var(--on-ink)}
+.chip-tema .n{font-weight:700;opacity:.65;margin-left:2px}
+.selects-filtro{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end}
+.selects-filtro label{display:grid;gap:3px;font-size:10px;font-weight:800;letter-spacing:.7px;text-transform:uppercase;color:var(--mut)}
+.selects-filtro select{padding:6px 9px;border:1px solid var(--line2);border-radius:9px;background:var(--panel);color:var(--fg);font-size:12.5px;font-weight:500;letter-spacing:0;text-transform:none}
+.tema-tag,.dur-tag{display:inline-block;padding:1px 8px;border-radius:999px;font-size:10.5px;font-weight:700;background:var(--hover);color:var(--mut);margin:0 6px 3px 0}
+.dur-tag{background:rgba(217,154,37,.16);color:#8a5a00}
+:root[data-tema="oscuro"] .dur-tag{color:#ffb454}
+.calidad-aviso.baja{border-left:4px solid var(--line2)}
 .calidad-aviso{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px 14px;align-items:center;
   background:var(--panel);border:1px solid var(--line2);border-radius:13px;padding:12px 14px}
 .calidad-aviso.alta{border-left:4px solid #d14b4b}.calidad-aviso.media{border-left:4px solid #d99a25}
@@ -1384,6 +1411,163 @@ a.ayuda{color:var(--enlace)}
   text-align:left;padding:10px;border-bottom:1px solid var(--line2);font-size:13px}.calidad-tabla th{color:var(--mut);font-size:11px}
 .calidad-score{display:inline-flex;min-width:38px;justify-content:center;border-radius:999px;padding:4px 8px;
   background:var(--hover);font-weight:700}.calidad-vacio{color:var(--mut);padding:18px 0}
+
+/* =============================================================================
+   CAPA MODERNA (28/09/2026)
+   Una sola capa, al final, que renueva fichas de color, tipografia, radios, sombras y el aspecto
+   de controles y tarjetas SIN tocar el marcado ni el comportamiento. Lo de arriba sigue siendo
+   la base; esto solo lo afina. Quitar este bloque devuelve el aspecto anterior.
+   Principios: superficies blancas sobre un fondo suave, un solo acento (verde azulado) para lo
+   activo y el foco, rotulos en minuscula legible (no 9 px en mayusculas), radios generosos y
+   sombras suaves en lugar de bordes duros.
+   ============================================================================= */
+:root{
+  --bg:#f5f6f8; --panel:#ffffff; --line:#e7eaef; --line2:#d6dce4;
+  --fg:#0f172a; --mut:#64748b; --ink:#0f172a; --on-ink:#ffffff;
+  --hover:rgba(15,23,42,.045);
+  --accent:#0f9d8a; --accent-fuerte:#0b7f70; --accent-suave:rgba(15,157,138,.12);
+  --r:10px; --r2:16px;
+  --sombra:0 24px 60px rgba(15,23,42,.22);
+  --sombra-suave:0 1px 2px rgba(15,23,42,.04),0 8px 24px rgba(15,23,42,.05);
+  --foco:0 0 0 3px rgba(15,157,138,.22);
+  --tipo:"Segoe UI Variable Text","Segoe UI Variable",Inter,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+}
+:root[data-tema="oscuro"]{
+  --bg:#0c1318; --panel:#131b21; --line:#212c35; --line2:#2d3a45;
+  --fg:#e7ecf1; --mut:#8ea0af; --ink:#e7ecf1; --on-ink:#0c1318;
+  --hover:rgba(255,255,255,.055);
+  --accent:#2dd4bf; --accent-fuerte:#5eead4; --accent-suave:rgba(45,212,191,.14);
+  --sombra:0 24px 60px rgba(0,0,0,.6);
+  --sombra-suave:0 1px 2px rgba(0,0,0,.4),0 8px 24px rgba(0,0,0,.28);
+  --foco:0 0 0 3px rgba(45,212,191,.28);
+}
+body{font-family:var(--tipo);letter-spacing:-.003em;font-feature-settings:"cv11","ss01"}
+::selection{background:var(--accent-suave)}
+::-webkit-scrollbar{width:10px;height:10px}
+::-webkit-scrollbar-thumb{background:var(--line2);border-radius:10px;border:3px solid transparent;background-clip:content-box}
+::-webkit-scrollbar-thumb:hover{background:var(--mut);background-clip:content-box;border:3px solid transparent}
+
+/* Foco visible y consistente: un anillo del acento, no el contorno azul del navegador. */
+button:focus-visible,a:focus-visible,summary:focus-visible,[tabindex]:focus-visible{outline:0;box-shadow:var(--foco)}
+input:focus-visible,select:focus-visible,textarea:focus-visible{outline:0}
+
+/* --- Lateral: marca, menu y pie -------------------------------------------- */
+.lateral{border-right-color:var(--line);box-shadow:1px 0 0 var(--line)}
+.marca{padding:18px 16px;border-bottom-color:transparent}
+.marca .sigla{background:linear-gradient(135deg,var(--accent),var(--accent-fuerte));color:#fff;
+  box-shadow:0 4px 12px rgba(15,157,138,.35)}
+.marca b{font-size:14.5px;letter-spacing:-.01em}
+.nav{padding:6px 10px}
+.nav a{padding:9px 12px;margin-bottom:2px;border-radius:12px;font-size:13.5px;font-weight:500;color:var(--fg);
+  transition:background .15s,color .15s}
+.nav a svg{stroke-width:1.7;color:var(--mut);transition:color .15s}
+.nav a:hover{background:var(--hover)}
+.nav a:hover svg{color:var(--fg)}
+.nav a.on{background:var(--accent-suave);color:var(--accent-fuerte);font-weight:600}
+.nav a.on svg{color:var(--accent-fuerte)}
+.nav a .cuenta{background:var(--accent);color:#fff;font-weight:700;padding:2px 7px}
+.nav a.on .cuenta{background:var(--accent);color:#fff}
+.nav .secundarias{border-top-color:var(--line)}
+.nav .rotulo{font-size:11px;font-weight:600;letter-spacing:.2px;text-transform:none;padding:12px 12px 6px}
+.nav .accesos a{border-radius:10px}
+.pie{border-top-color:var(--line)}
+.pie button{border-radius:var(--r);background:var(--panel);transition:background .15s,border-color .15s}
+.pie button:hover{border-color:var(--mut)}
+
+/* --- Barra superior --------------------------------------------------------- */
+header.barra{background:color-mix(in srgb,var(--panel) 88%,transparent);
+  -webkit-backdrop-filter:saturate(1.4) blur(12px);backdrop-filter:saturate(1.4) blur(12px);
+  border-bottom-color:var(--line)}
+.titulo{font-size:16px;font-weight:650;letter-spacing:-.015em}
+
+/* --- Botones ---------------------------------------------------------------- */
+.btn-solido{padding:10px 18px;border-radius:var(--r);background:var(--ink);color:var(--on-ink);
+  font-size:13.5px;font-weight:600;box-shadow:0 1px 2px rgba(15,23,42,.2);
+  transition:transform .12s,box-shadow .15s,opacity .15s,background .15s}
+.btn-solido:hover:not(:disabled){box-shadow:0 6px 16px rgba(15,23,42,.24);transform:translateY(-1px)}
+.btn-solido:active:not(:disabled){transform:none;box-shadow:0 1px 2px rgba(15,23,42,.2)}
+.btn-solido.peligro{background:var(--bad);color:#fff}
+.btn-linea{padding:8px 14px;border-radius:var(--r);background:var(--panel);border-color:var(--line2);
+  font-weight:600;transition:border-color .15s,background .15s,box-shadow .15s}
+.btn-linea:hover:not(:disabled){background:var(--panel);border-color:var(--mut)}
+.tplchip,.ejemplo{border-radius:999px;transition:background .15s,border-color .15s}
+.tplchip:hover,.ejemplo:hover{border-color:var(--mut)}
+
+/* --- Formularios ------------------------------------------------------------ */
+.campo label,.seccion,.dato .k,.selects-filtro label{font-size:11.5px;font-weight:600;letter-spacing:0;
+  text-transform:none;color:var(--mut)}
+.campo label{margin-bottom:5px}
+.campo input,.campo select,.campo textarea,.entrada-linea,.selects-filtro select{padding:9px 12px;border:1px solid var(--line2);
+  border-radius:var(--r);background:var(--panel);transition:border-color .15s,box-shadow .15s}
+.campo input:hover,.campo select:hover,.campo textarea:hover{border-color:var(--mut)}
+.campo input:focus,.campo select:focus,.campo textarea:focus,.entrada-linea:focus,.selects-filtro select:focus,
+.prompt textarea:focus{border-color:var(--accent);box-shadow:var(--foco);outline:0}
+.prompt textarea{border-radius:var(--r2);box-shadow:var(--sombra-suave)}
+.cfgsw{padding:10px 0}
+.cfgsw input{accent-color:var(--accent)}
+input[type="checkbox"],input[type="radio"]{accent-color:var(--accent)}
+
+/* --- Paginas y tarjetas ------------------------------------------------------ */
+.hoja{padding:34px clamp(20px,4vw,56px) 48px}
+.hoja h1{font-size:25px;font-weight:700;letter-spacing:-.025em;margin-bottom:6px}
+.hoja .bajada{font-size:13.5px;line-height:1.55;margin-bottom:26px}
+.cfggrid{gap:18px}
+.cfgc{padding:20px 22px 22px;border-radius:var(--r2);border-color:var(--line);box-shadow:var(--sombra-suave)}
+.cfgc h3{font-size:14.5px;font-weight:650;letter-spacing:-.01em;margin-bottom:8px}
+.cfgnota{font-size:12.5px;line-height:1.55}
+.grupo{border-radius:var(--r2);border-color:var(--line);background:var(--panel);box-shadow:var(--sombra-suave);margin-bottom:12px}
+.grupo>summary{padding:14px 18px;font-size:13.5px;font-weight:650;letter-spacing:-.01em;text-transform:none;
+  transition:background .15s}
+.grupo .dentro{padding:4px 18px 18px}
+.grupo .nota{font-size:11.5px}
+.dato{border-radius:var(--r);background:var(--bg);border-color:transparent}
+.tabla,.calidad-tabla{border-color:var(--line)}
+.tabla{border-radius:var(--r2);box-shadow:var(--sombra-suave)}
+.calidad-tabla th{font-size:11.5px;font-weight:600;letter-spacing:0;text-transform:none}
+.calidad-kpi{border-radius:var(--r2);border-color:var(--line);box-shadow:var(--sombra-suave)}
+.calidad-kpi b{font-size:27px;letter-spacing:-.02em}
+.calidad-aviso{border-radius:14px;border-color:var(--line);box-shadow:var(--sombra-suave)}
+
+/* Cifras del Dashboard y de los informes */
+.cifras{gap:14px}
+.cifra{padding:18px 18px 16px;border-radius:var(--r2);border-color:var(--line);box-shadow:var(--sombra-suave);
+  transition:transform .15s,box-shadow .15s,border-color .15s}
+.cifra:hover{background:var(--panel);border-color:var(--line2);transform:translateY(-1px)}
+.cifra b{font-size:30px;letter-spacing:-.03em}
+.cifra span{font-size:12.5px}
+
+/* --- Filtros y chips ---------------------------------------------------------- */
+.filtro{padding:6px 13px;border-radius:999px;font-weight:550;transition:background .15s,color .15s}
+.chip-tema{padding:7px 14px;border-radius:999px;transition:background .15s,border-color .15s,color .15s}
+.chip-tema:hover{border-color:var(--mut)}
+.chip-tema.on{background:var(--accent-fuerte);border-color:var(--accent-fuerte);color:#fff}
+:root[data-tema="oscuro"] .chip-tema.on{background:var(--accent);border-color:var(--accent);color:#0c1318}
+.etq{border-radius:999px}
+
+/* --- Lista de chats y ficha --------------------------------------------------- */
+.lista{border-right-color:var(--line)}
+.chat{padding:11px 14px;transition:background .12s}
+.chat.on{background:var(--accent-suave);box-shadow:inset 3px 0 0 var(--accent)}
+.ficha{border-left-color:var(--line)}
+
+/* --- Cuadros de dialogo -------------------------------------------------------- */
+.modal{background:rgba(15,23,42,.5);-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px)}
+.modal .caja{border-radius:20px;border:1px solid var(--line);box-shadow:var(--sombra)}
+.mtapa{padding:18px 22px}
+.mtapa b{font-size:15px;font-weight:650;letter-spacing:-.01em}
+.mcuerpo{padding:18px 22px}
+.mpatas{padding:14px 22px;background:var(--bg);border-radius:0 0 20px 20px}
+
+/* --- Acceso ---------------------------------------------------------------------- */
+.tarjeta-acceso{border-radius:22px;box-shadow:var(--sombra);border:1px solid var(--line)}
+.tarjeta-acceso button{border-radius:var(--r);background:var(--ink);color:var(--on-ink);font-weight:600}
+
+/* --- Un poco de vida: aparicion suave de las paginas ------------------------------ */
+@media(prefers-reduced-motion:no-preference){
+  .vista.on>.hoja{animation:entra .22s ease-out}
+  @keyframes entra{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+}
+@media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
 </head>
 <body>
@@ -1755,8 +1939,24 @@ const TIPOS_IGNORAR = { propio:'número propio', linea_negocio:'línea del negoc
 // Globos de lo que el servidor ya acepto y el puente todavia no ha mandado. Ver apuntaEnviando.
 let ENVIANDO = [];
 
+// El nombre de la CAJA es el nombre real de la persona; el del contacto de WhatsApp suele ser un
+// apodo, un usuario o emojis. Manda el de la caja, salvo los genericos del mostrador («Cliente»,
+// «Contado»...), que no son nadie. (El servidor tambien lo escribe en customer_name al atar la
+// ficha, pero esto se ve ya, sin esperar a esa pasada.)
+const NOMBRES_GENERICOS_CAJA = ['cliente', 'cliente general', 'cliente mostrador', 'mostrador', 'publico general',
+  'publico', 'contado', 'varios', 'general', 'sin nombre', 'anonimo', 'na', 'n/a'];
+function nombreDeCaja(c){
+  const t = String((c && c.pos_client_nombre) || '').replace(/\s+/g, ' ').trim();
+  if (t.length < 2 || !/\p{L}/u.test(t)) return '';
+  const plano = t.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+  return NOMBRES_GENERICOS_CAJA.includes(plano) ? '' : t;
+}
+function nombreReal(c){
+  return nombreDeCaja(c) || (c && (c.customer_name || c.contact_name)) || '';
+}
 function nombreDe(c){
-  if (c.customer_name || c.contact_name) return c.customer_name || c.contact_name;
+  const real = nombreReal(c);
+  if (real) return real;
   // Instagram y Messenger no traen telefono. Sin este respaldo salia un '+' suelto, IGUAL
   // en todas, y diez conversaciones distintas se veian como diez filas identicas. Se
   // ensenan los ultimos digitos del id para poder distinguirlas mientras no haya nombre.
@@ -5176,8 +5376,8 @@ function pideVariables(t){
     // este mapa no cubria -- 'interes', 'hora', 'impresiones', 'dato', 'pedido' -- asi que
     // el campo salia vacio y habia que escribirlo a mano cada vez.
     const mapa = {
-      nombre: sel.customer_name || sel.contact_name || '',
-      cliente: sel.customer_name || sel.contact_name || '',
+      nombre: nombreReal(sel),
+      cliente: nombreReal(sel),
       combo: sel.selected_combo_name || '',
       precio: sel.selected_combo_price ? 'RD$' + sel.selected_combo_price : '',
       fecha: sel.tentative_date || '',
@@ -6771,7 +6971,7 @@ function pintaFicha(c){
 
     + '<details class="grupo"><summary>Datos del lead <span class="nota">+' + esc(c.wa_phone||'') + '</span></summary>'
     + '<div class="dentro">'
-    +   '<div class="campo"><label>Nombre</label><input data-c="customer_name" value="' + esc(c.customer_name || c.contact_name || '') + '"></div>'
+    +   '<div class="campo"><label>Nombre</label><input data-c="customer_name" value="' + esc(nombreReal(c)) + '"></div>'
     +   '<div class="par">'
     +     '<div class="campo"><label>Etapa</label><select data-c="lifecycle_stage">' + opciones(ETAPAS, c.lifecycle_stage || 'nuevo') + '</select></div>'
     +     '<div class="campo"><label>Categoría</label><select data-c="interested_category">' + categorias + '</select></div>'
@@ -7076,6 +7276,61 @@ function pintaCuentaCalidad(){
   cuenta.hidden = !CALIDAD.unread;
 }
 
+// ---- Informes: filtros (piezas puras)
+// Cada hallazgo del supervisor pertenece a un tema. Este mapa se repite en el servidor
+// (service-quality.js, THEME_OF_CATEGORY) y una prueba comprueba que coinciden.
+const TEMAS_INFORME = [
+  { id:'demora', nombre:'Sin respuesta', categorias:['slow_response','unanswered','repeated_customer_messages'] },
+  { id:'trato', nombre:'Mal tono o servicio', categorias:['operator_tone','customer_concern'] },
+  { id:'informacion', nombre:'Mala información', categorias:['wrong_info'] },
+  { id:'deficiencias', nombre:'Deficiencias', categorias:['deficiency'] },
+  { id:'delicado', nombre:'Temas delicados', categorias:['sensitive'] },
+  { id:'eliminados', nombre:'Eliminados', categorias:['deleted_message'] },
+];
+const DURACIONES_INFORME = [[0,'Cualquier duración'],[15,'15 min o más'],[60,'1 h o más'],[120,'2 h o más'],[240,'4 h o más'],[720,'12 h o más']];
+function temaDeAlerta(a){
+  if (a && a.theme) return a.theme;
+  const t = TEMAS_INFORME.find(x => x.categorias.includes(a && a.category));
+  return t ? t.id : 'otros';
+}
+function minutosDeAlerta(a){
+  const n = Number(a && (a.response_minutes != null ? a.response_minutes : a.waiting_minutes));
+  return Number.isFinite(n) ? n : null;
+}
+function textoDuracion(min){
+  if (min == null) return '';
+  if (min < 60) return min + ' min';
+  const h = Math.floor(min / 60), m = min % 60;
+  return h + ' h' + (m ? ' ' + m + ' min' : '');
+}
+// f = { tema, gravedad, minutos, operador }. gravedad 'relevantes' (lo normal) oculta lo de gravedad
+// baja SOLO mientras se mira «Todos»: elegir el tema Eliminados tiene que enseñar los eliminados.
+function filtraAlertas(alertas, f){
+  return (alertas || []).filter(a => {
+    if (f.tema && f.tema !== 'todos' && temaDeAlerta(a) !== f.tema) return false;
+    if (f.gravedad === 'relevantes') { if ((!f.tema || f.tema === 'todos') && a.severity === 'low') return false; }
+    else if (f.gravedad && a.severity !== f.gravedad) return false;
+    if (f.operador && String(a.operator_name || a.operator_uid || '') !== f.operador) return false;
+    if (f.minutos) { const m = minutosDeAlerta(a); if (m == null || m < f.minutos) return false; }
+    return true;
+  });
+}
+// Cuantos hay por tema con los DEMAS filtros puestos (no el del propio tema).
+function contadoresPorTema(alertas, f){
+  const base = filtraAlertas(alertas, Object.assign({}, f, { tema:'todos' }));
+  const c = { todos: base.length };
+  for (const t of TEMAS_INFORME) c[t.id] = base.filter(a => temaDeAlerta(a) === t.id).length;
+  return c;
+}
+function ordenaAlertas(alertas){
+  const peso = { high:0, medium:1, low:2 };
+  return alertas.slice().sort((a, b) => (peso[a.severity] != null ? peso[a.severity] : 3) - (peso[b.severity] != null ? peso[b.severity] : 3)
+    || String(b.message_at || '').localeCompare(String(a.message_at || '')));
+}
+// ---- Informes: fin de las piezas puras
+let FILTRO_INFORMES = { tema:'todos', gravedad:'relevantes', minutos:0, operador:'' };
+let INFORMES_LIMITE = 30;
+
 function pintaInformes(){
   const cont = $('calidadCuerpo');
   if (!cont) return;
@@ -7097,21 +7352,49 @@ function pintaInformes(){
     porOperador.set(uid, row);
   }
   const operadores = [...porOperador.values()].sort((a,b) => b.tone - a.tone || b.slow - a.slow || b.replies - a.replies);
+  // Todos los hallazgos de todas las conversaciones, con su cliente y, si existe, el aviso por revisar.
+  const hallazgos = reports.flatMap(r => (r.alerts || []).map(a => Object.assign({}, a, {
+    conversation_id: r.conversation_id, customer_name: r.customer_name || r.customer_phone || 'Cliente',
+    aviso: abiertos.find(n => n.conversation_id === r.conversation_id && n.category === a.category && n.message_id === a.message_id) || null,
+  })));
+  const filtrados = ordenaAlertas(filtraAlertas(hallazgos, FILTRO_INFORMES));
+  const conteo = contadoresPorTema(hallazgos, FILTRO_INFORMES);
+  const nombresOperador = [...new Set(hallazgos.map(a => a.operator_name || a.operator_uid).filter(Boolean).map(String))].sort();
+  const filtrosActivos = FILTRO_INFORMES.tema !== 'todos' || FILTRO_INFORMES.minutos || FILTRO_INFORMES.operador
+    || FILTRO_INFORMES.gravedad !== 'relevantes';
+  const conversacionesFiltradas = filtrosActivos
+    ? reports.filter(r => filtrados.some(a => a.conversation_id === r.conversation_id)) : reports;
+  const chip = (id, nombre) => '<button class="chip-tema' + (FILTRO_INFORMES.tema === id ? ' on' : '') + '" data-calidad-tema="' + id + '">'
+    + esc(nombre) + ' <span class="n">' + (conteo[id] || 0) + '</span></button>';
+  const opciones2 = (lista, actual) => lista.map(([v, l]) => '<option value="' + esc(v) + '"' + (String(actual) === String(v) ? ' selected' : '') + '>' + esc(l) + '</option>').join('');
   cont.innerHTML = '<div class="calidad-resumen">'
     + '<div class="calidad-kpi"><b>' + abiertos.length + '</b><span>avisos por revisar</span></div>'
     + '<div class="calidad-kpi"><b>' + conRiesgo + '</b><span>conversaciones de riesgo alto</span></div>'
     + '<div class="calidad-kpi"><b>' + (reports.length ? promedio : '—') + '</b><span>nota media de atención / 100</span></div>'
     + '<div class="calidad-kpi"><b>' + reports.length + '</b><span>conversaciones analizadas</span></div></div>'
-    + '<div class="seccion" style="margin-top:6px">Notificaciones internas</div>'
-    + '<div class="calidad-lista">' + (abiertos.length ? abiertos.slice(0,30).map(a =>
-      '<div class="calidad-aviso ' + (a.severity === 'high' ? 'alta' : 'media') + '">'
-      + '<div><b>' + esc(a.customer_name || 'Cliente') + ' · ' + esc(a.title || 'Atención requerida') + '</b>'
-      + '<p>' + esc(a.evidence || 'Sin fragmento disponible')
-      + (a.operator_name ? ' · Operador: ' + esc(a.operator_name) : '')
-      + ' · ' + esc(hora(a.message_at || a.created_at)) + '</p></div>'
-      + '<div class="acciones"><button class="btn-linea" data-calidad-chat="' + esc(a.conversation_id || '') + '">Ver chat</button> '
-      + '<button class="btn-solido" data-calidad-revisar="' + esc(a.id) + '">Revisado</button></div></div>').join('')
-      : '<div class="calidad-vacio">No hay avisos pendientes.</div>') + '</div>'
+    + '<div class="calidad-filtros">'
+    +   '<div class="chips-tema">' + chip('todos', 'Todos') + TEMAS_INFORME.map(t => chip(t.id, t.nombre)).join('') + '</div>'
+    +   '<div class="selects-filtro">'
+    +     '<label>Gravedad<select data-calidad-filtro="gravedad">' + opciones2([['relevantes','Alta y media'],['high','Solo alta'],['medium','Solo media'],['low','Solo informe (baja)']], FILTRO_INFORMES.gravedad) + '</select></label>'
+    +     '<label>Sin respuesta<select data-calidad-filtro="minutos">' + opciones2(DURACIONES_INFORME, FILTRO_INFORMES.minutos) + '</select></label>'
+    +     '<label>Operador<select data-calidad-filtro="operador"><option value="">Todos</option>' + opciones2(nombresOperador.map(n => [n, n]), FILTRO_INFORMES.operador) + '</select></label>'
+    +     (filtrosActivos ? '<button class="btn-linea" data-calidad-limpiar>Quitar filtros</button>' : '')
+    +   '</div></div>'
+    + '<div class="calidad-lista">' + (filtrados.length ? filtrados.slice(0, INFORMES_LIMITE).map(a => {
+      const tema = TEMAS_INFORME.find(t => t.id === temaDeAlerta(a));
+      const dur = textoDuracion(minutosDeAlerta(a));
+      return '<div class="calidad-aviso ' + (a.severity === 'high' ? 'alta' : a.severity === 'low' ? 'baja' : 'media') + '">'
+        + '<div><span class="tema-tag">' + esc(tema ? tema.nombre : 'Otros') + '</span>'
+        + (dur ? ' <span class="dur-tag">' + esc(dur) + '</span>' : '')
+        + '<b>' + esc(a.customer_name) + ' · ' + esc(a.label || 'Atención requerida') + '</b>'
+        + '<p>' + esc(a.evidence || 'Sin fragmento disponible')
+        + (a.operator_name ? ' · Operador: ' + esc(a.operator_name) : '')
+        + ' · ' + esc(hora(a.message_at)) + '</p></div>'
+        + '<div class="acciones"><button class="btn-linea" data-calidad-chat="' + esc(a.conversation_id || '') + '">Ver chat</button> '
+        + (a.aviso ? '<button class="btn-solido" data-calidad-revisar="' + esc(a.aviso.id) + '">Revisado</button>' : '') + '</div></div>';
+    }).join('') + (filtrados.length > INFORMES_LIMITE
+      ? '<button class="btn-linea" data-calidad-mas style="justify-self:center">Mostrar más (' + (filtrados.length - INFORMES_LIMITE) + ')</button>' : '')
+      : '<div class="calidad-vacio">' + (hallazgos.length ? 'Nada con esos filtros.' : 'No hay hallazgos. Pulsa «Analizar ahora» para revisar las conversaciones recientes.') + '</div>') + '</div>'
     // Las dos tablas son el detalle, no lo primero que hace falta ver: quedan como tarjetas
     // plegables (el mismo patron .grupo de la ficha del contacto), abierta la de operadores
     // porque es el resumen que le da nombre a esta version, cerrada la de por-conversacion
@@ -7125,9 +7408,9 @@ function pintaInformes(){
       + '</tbody></table></div>' : '<div class="calidad-vacio">Aún no hay respuestas humanas atribuibles en la ventana analizada.</div>')
     + '</div></details>'
     + '<details class="grupo"><summary>Evaluación por conversación'
-      + (reports.length ? ' <span class="nota">' + reports.length + '</span>' : '') + '</summary><div class="dentro">'
-    + (reports.length ? '<div style="overflow:auto"><table class="calidad-tabla"><thead><tr><th>Cliente</th><th>Operador(es)</th><th>Nota</th><th>Estado</th><th>Respuesta media</th><th>Señales</th><th>Último análisis</th></tr></thead><tbody>'
-      + reports.map(r => '<tr><td>' + esc(r.customer_name || r.customer_phone || 'Cliente') + '</td>'
+      + (conversacionesFiltradas.length ? ' <span class="nota">' + conversacionesFiltradas.length + '</span>' : '') + '</summary><div class="dentro">'
+    + (conversacionesFiltradas.length ? '<div style="overflow:auto"><table class="calidad-tabla"><thead><tr><th>Cliente</th><th>Operador(es)</th><th>Nota</th><th>Estado</th><th>Respuesta media</th><th>Señales</th><th>Último análisis</th></tr></thead><tbody>'
+      + conversacionesFiltradas.map(r => '<tr><td>' + esc(r.customer_name || r.customer_phone || 'Cliente') + '</td>'
         + '<td>' + esc((r.operator_names || []).join(', ') || 'Sin identificar') + '</td>'
         + '<td><span class="calidad-score">' + Number(r.score || 0) + '</span></td>'
         + '<td>' + esc(r.risk === 'high' ? 'Riesgo alto' : r.risk === 'attention' ? 'Atención' : 'Correcto') + '</td>'
@@ -7164,7 +7447,7 @@ function montaInformes(){
   if (!montadas.has('informes')) {
     montadas.add('informes');
     hueco('informes', '<div class="hoja"><h1>Informes internos</h1>'
-      + '<p class="bajada">Supervisor privado de la atención. Detecta demoras, clientes sin respuesta y posibles señales de trato inadecuado. Solo administración y supervisión pueden verlo.</p>'
+      + '<p class="bajada">Supervisor privado de la atención. Filtra por tema —sin respuesta, mal tono o servicio, mala información, deficiencias, temas delicados y mensajes eliminados—, por gravedad, por cuánto tardó la respuesta y por operador. Solo administración y supervisión pueden verlo.</p>'
       + '<div class="acciones"><button class="btn-solido" id="calidadAnalizar">Analizar ahora</button>'
       + '<button class="btn-linea" id="calidadRecargar">Recargar</button></div><div id="calidadCuerpo"><span class="cargando"></span></div></div>');
     $('calidadAnalizar').onclick = async () => {
@@ -7173,7 +7456,21 @@ function montaInformes(){
       b.disabled = false; b.textContent = 'Analizar ahora';
     };
     $('calidadRecargar').onclick = () => cargaCalidad();
+    $('calidadCuerpo').addEventListener('change', ev => {
+      const sel = ev.target.closest('[data-calidad-filtro]');
+      if (!sel) return;
+      const campo = sel.dataset.calidadFiltro;
+      FILTRO_INFORMES[campo] = campo === 'minutos' ? Number(sel.value) : sel.value;
+      INFORMES_LIMITE = 30;
+      pintaInformes();
+    });
     $('calidadCuerpo').addEventListener('click', async ev => {
+      const tema = ev.target.closest('[data-calidad-tema]');
+      if (tema) { FILTRO_INFORMES.tema = tema.dataset.calidadTema; INFORMES_LIMITE = 30; return pintaInformes(); }
+      if (ev.target.closest('[data-calidad-limpiar]')) {
+        FILTRO_INFORMES = { tema:'todos', gravedad:'relevantes', minutos:0, operador:'' }; INFORMES_LIMITE = 30; return pintaInformes();
+      }
+      if (ev.target.closest('[data-calidad-mas]')) { INFORMES_LIMITE += 30; return pintaInformes(); }
       const revisar = ev.target.closest('[data-calidad-revisar]');
       if (revisar) {
         revisar.disabled = true;
@@ -9393,6 +9690,56 @@ function googleEnCrmCfg(esAdmin){
         : '<p class="cfgnota">Solo un administrador puede configurar la vista incrustada.</p>');
 }
 
+/* ---- Cerebro local: lo que aprendio y si ya puede dejar la API --------------- */
+// El cerebro local etiqueta con reglas y con un clasificador que aprende de lo ya decidido (personas,
+// Gemini, compras de caja), y acumula preguntas frecuentes y precios reales. Esta tarjeta dice en que
+// punto esta y deja prescindir de la API de etiquetado cuando ya coincide con ella.
+// ---- Cerebro local: piezas puras
+const TAREAS_CEREBRO = { categoria:'Categoría', etapa:'Etapa del embudo', interes:'Nivel de interés', humano:'Necesita a una persona' };
+const SERVICIOS_CEREBRO = { general:'Sin servicio claro' };
+function estadoCerebro(e){
+  if (!e || !e.ok) return { id:'sin', texto:'No se pudo leer el estado del cerebro.' };
+  if (!e.activo) return { id:'apagado', texto:'Apagado: no etiqueta ni aprende.' };
+  if (e.madurez && e.madurez.listo) return { id:'listo', texto:'Listo: coincide con la IA lo suficiente para dejar de usarla.' };
+  const cat = e.madurez && e.madurez.tareas && e.madurez.tareas.categoria;
+  const medidos = cat ? cat.total : 0;
+  return { id:'aprendiendo', texto: medidos < 150
+    ? 'Aprendiendo: ha medido ' + medidos + ' de 150 casos para poder compararse con la IA.'
+    : 'Aprendiendo: coincide ' + (cat.coincidencia == null ? '—' : cat.coincidencia) + ' % con la IA en categoría; necesita 90 %.' };
+}
+function textoPrecio(monto){
+  return 'RD$' + Number(monto || 0).toLocaleString('en-US');
+}
+// ---- Cerebro local: fin de las piezas puras
+
+function cerebroCuerpo(e){
+  const est = estadoCerebro(e);
+  const filas = Object.keys(TAREAS_CEREBRO).map(t => {
+    const m = e.madurez && e.madurez.tareas && e.madurez.tareas[t];
+    const pct = m && m.coincidencia != null ? m.coincidencia : null;
+    return '<div class="cb-fila"><span>' + esc(TAREAS_CEREBRO[t]) + '</span>'
+      + '<span class="cb-barra"><i style="width:' + (pct == null ? 0 : pct) + '%"></i></span>'
+      + '<b>' + (pct == null ? 'sin medir' : pct + ' %') + '</b>'
+      + '<small>' + Number((e.muestras && e.muestras[t]) || 0) + ' ejemplos</small></div>';
+  }).join('');
+  const precios = Object.entries(e.precios || {}).filter(([, v]) => v && v.length).slice(0, 6).map(([servicio, v]) =>
+    '<div class="cb-conoc"><b>' + esc(SERVICIOS_CEREBRO[servicio] || servicio) + '</b><span>'
+    + v.map(x => esc(textoPrecio(x.monto)) + ' <small>×' + x.veces + '</small>').join(' · ') + '</span></div>').join('');
+  const faq = Object.entries(e.faq || {}).filter(([, v]) => v && v.length).slice(0, 4).map(([intencion, v]) =>
+    '<div class="cb-conoc"><b>' + esc(intencion.replace(/_/g, ' ')) + '</b><span>' + esc(v[0].respuesta) + ' <small>×' + v[0].veces + '</small></span></div>').join('');
+  return '<div class="cb-estado ' + est.id + '"><b>' + esc(est.texto) + '</b></div>'
+    + '<div class="cb-kpis"><div><b>' + Number(e.aprendidas || 0) + '</b><span>conversaciones aprendidas</span></div>'
+    + '<div><b>' + Number(e.analizadas || 0) + '</b><span>analizadas y etiquetadas</span></div>'
+    + '<div><b>' + Number(e.aplicadas || 0) + '</b><span>con cambios aplicados</span></div></div>'
+    + '<div class="cb-tabla">' + filas + '</div>'
+    + (precios ? '<div class="seccion" style="margin-top:14px">Precios que se han dicho</div>' + precios : '')
+    + (faq ? '<div class="seccion" style="margin-top:14px">Lo que se responde a lo más preguntado</div>' + faq : '')
+    + '<label class="cfgsw"><input type="checkbox" data-cerebro="activo"' + (e.activo ? ' checked' : '') + '><span><b>Cerebro encendido</b>'
+    + '<i>Cada 30 minutos etiqueta y aprende. No llama a ninguna API y no escribe a nadie.</i></span></label>'
+    + '<label class="cfgsw"><input type="checkbox" data-cerebro="api"' + (e.api_apagada ? ' checked' : '') + '><span><b>Dejar de usar la API para etiquetar</b>'
+    + '<i>' + (est.id === 'listo' ? 'Ya coincide con la IA: puedes apagarla y ahorrar esa cuota.' : 'Solo se recomienda cuando coincide con la IA. Puedes forzarlo, pero perderías esa comparación.') + '</i></span></label>';
+}
+
 function montaConfig(){
   if (!montadas.has('config')) {
     montadas.add('config');
@@ -9412,6 +9759,7 @@ async function pintaConfig(){
   await cargaGoogleAgenda();
   const quien = await llama({ action:'whoami' });
   const esAdmin = quien.ok && quien.rol_efectivo === 'admin';
+  const cerebro = ['admin','supervisor'].includes(ROL_ACTUAL) ? await llama({ action:'brainStatus' }) : null;
   // Solo se piden si quien mira puede cambiarlos: al resto el servidor le responde 403 y
   // pintar un error donde no hay ningun problema confunde mas que no ensenar la tarjeta.
   if (esAdmin) {
@@ -9453,6 +9801,11 @@ async function pintaConfig(){
         + 'cliente: dar por vendido lo que nadie confirmó ensucia todas las métricas.',
         interruptorCfg('auto_cierre', 'Cerrar solas las conversaciones dormidas',
           'A los 14 días sin respuesta del cliente.', true))
+
+    + (cerebro && cerebro.ok ? tarjetaCfg('Cerebro local',
+        'Aprende de lo que ya está decidido —tus etiquetas, lo que propuso la IA y lo que compró cada cliente en caja— '
+        + 'y acumula las preguntas frecuentes con su respuesta y los precios que de verdad se han dicho. Es la base para '
+        + 'que el bot deje de depender de una API.', cerebroCuerpo(cerebro), 'cerebro-local') : '')
 
     + tarjetaCfg('Etiquetas y contexto automáticos',
         'Cada hora, las conversaciones con mensajes nuevos se leen y se clasifican solas: resumen '
@@ -9651,6 +10004,19 @@ async function pintaConfig(){
         '<button class="btn-linea" id="cfgIrCanales">Ir a Canales</button>');
 
   // --- cableado
+  g.querySelectorAll('[data-cerebro]').forEach(el => {
+    el.onchange = async () => {
+      const api = el.dataset.cerebro === 'api';
+      const cuerpo = api ? { api_apagada: el.checked } : { activo: el.checked };
+      let r = await llama(Object.assign({ action:'brainSettings' }, cuerpo));
+      if (!r.ok && r.code === 'aun_no_listo' && confirm('El cerebro local todavía no coincide lo suficiente con la IA.\n\n¿Dejar de usar la API de todos modos?')) {
+        r = await llama(Object.assign({ action:'brainSettings', forzar:true }, cuerpo));
+      }
+      if (!r.ok) { el.checked = !el.checked; return avisa('No se pudo cambiar', r.error); }
+      avisa(api ? (el.checked ? 'Etiquetado sin API' : 'Vuelve a usar la API para etiquetar') : (el.checked ? 'Cerebro encendido' : 'Cerebro apagado'));
+      pintaConfig();
+    };
+  });
   g.querySelectorAll('[data-sw]').forEach(el => {
     el.onchange = async () => {
       const ok = await guardaAjuste(el.dataset.sw, el.checked);
@@ -11461,7 +11827,7 @@ function ventanaHorariaOk(){
 // el MISMO mensaje a doscientas personas es el patron mas facil de detectar y el que
 // mas reportes de spam genera.
 function personaliza(texto, c){
-  const nombre = (c.customer_name || c.contact_name || '').trim().split(/\s+/)[0] || '';
+  const nombre = String(nombreReal(c)).trim().split(/\s+/)[0] || '';
   let t = String(texto || '')
     .replace(/\{nombre\}/gi, nombre)
     .replace(/\{categoria\}/gi, c.interested_category || '')
@@ -12148,7 +12514,7 @@ async function cargaColaboradores(){
 
 function abreEncuesta(c){
   if (!c) return;
-  const nombre = (c.customer_name || c.contact_name || '').trim().split(/\s+/)[0] || '';
+  const nombre = String(nombreReal(c)).trim().split(/\s+/)[0] || '';
   const porDefecto = (nombre ? 'Hola ' + nombre + '. ' : 'Hola. ')
     + '¿Nos regalas un minuto para contarnos cómo te fue con nosotros? '
     + 'Nos ayuda muchísimo a mejorar.';
@@ -12222,7 +12588,7 @@ function abreGuardarContacto(c){
     'Déjala de ignorar antes de guardarla como cliente.');
   const tel = String(c.wa_phone || '');
   if (!tel) return avisa('Sin teléfono', 'Esta conversación no tiene un número con el que crear un cliente.');
-  const sugerido = c.customer_name || c.display_name || c.contact_name || '';
+  const sugerido = nombreReal(c) || c.display_name || '';
   abreModal('<div class="mtapa"><b>Guardar contacto</b><button class="cerrarm" data-cerrar>×</button></div>'
     + '<div class="mcuerpo">'
     +   '<div class="campo"><label>Nombre</label><input id="gcNombre" maxlength="120" value="' + esc(sugerido) + '"></div>'
@@ -12452,7 +12818,7 @@ function abreEnviarContacto(c){
     lista.querySelectorAll('.elegir').forEach(b => {
       b.onclick = () => {
         const x = hallados[Number(b.dataset.i)];
-        $('tcNombre').value = x.customer_name || x.contact_name || x.display_name || '';
+        $('tcNombre').value = nombreReal(x) || x.display_name || '';
         $('tcTel').value = '+' + x.wa_phone;
       };
     });
@@ -13008,7 +13374,7 @@ function convPorId(id){
     || CONVS_REDES.find(igual) || CONVS_IGNORADAS.find(igual) || null;
 }
 function etiquetaDe(c){
-  return nombreDe(c) + (c?.wa_phone && (c.customer_name || c.contact_name) ? ' (+' + c.wa_phone + ')' : '');
+  return nombreDe(c) + (c?.wa_phone && nombreReal(c) ? ' (+' + c.wa_phone + ')' : '');
 }
 
 function montaPlanificacion(){
