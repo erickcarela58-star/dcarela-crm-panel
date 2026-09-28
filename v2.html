@@ -442,6 +442,11 @@ img.mmedia[data-medio]:not([src]),img.msticker[data-medio]:not([src]){
 .mthumb .vertag{position:absolute;right:6px;bottom:6px;font-size:11px;font-weight:700;
   padding:3px 9px;border-radius:9px;background:rgba(11,20,26,.72);color:#fff}
 .mthumb.pidiendo .vertag{opacity:.75}
+/* La foto nitida que el panel pidio por adelantado: sin la etiqueta «Ver», a su tamano. */
+.mthumb.nitida{background:none}
+.mthumb.nitida img{max-height:340px}
+.marchivo-op{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+.marchivo-op button{margin-top:0;font-weight:600}
 /* Registro de llamada. Desde el CRM no se atiende una llamada, pero una perdida es tan
    pendiente como un mensaje sin contestar: por eso se pinta, y por eso la perdida se
    distingue de la contestada sin tener que leer. */
@@ -698,8 +703,26 @@ a.ayuda{color:var(--enlace)}
 #lupa img,#lupa video{max-width:100%;max-height:100%;border-radius:6px;display:none}
 #lupa.con-imagen img{display:block}
 #lupa.con-video video{display:block;cursor:default}
-#lupa .lupa-carga{display:none;color:#e9edef;font:14px system-ui}
-#lupa.cargando .lupa-carga{display:block}
+/* Ojo: el estado de espera se llama "esperando" y NO "cargando". Existe una regla global
+   .cargando (la ruedita de 15 px, con borde y giro) y, al llamarse igual, se aplicaba a la
+   lupa entera: una bolita del tamano de un logo, girando arriba a la izquierda con el texto
+   dentro. */
+#lupa .lupa-espera{display:none;flex-direction:column;align-items:center;gap:14px;color:#e9edef}
+#lupa.esperando .lupa-espera{display:flex}
+#lupa .lupa-carga{margin:0;font:14px system-ui}
+#lupa .lupa-rueda{width:30px;height:30px;border:3px solid rgba(233,237,239,.25);border-top-color:#e9edef;
+  border-radius:50%;animation:giro .8s linear infinite}
+/* Barra de acciones de la lupa: lo que WhatsApp Web ofrece al abrir una foto o un video. */
+#lupa .lupa-barra{position:absolute;top:0;left:0;right:0;display:flex;justify-content:flex-end;gap:8px;
+  padding:14px 18px;background:linear-gradient(rgba(11,20,26,.7),transparent);cursor:default;z-index:1}
+#lupa .lupa-barra button{display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border-radius:999px;
+  background:rgba(255,255,255,.14);color:#e9edef;font-size:13px;font-weight:600;
+  -webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);transition:background .15s}
+#lupa .lupa-barra button:hover:not(:disabled){background:rgba(255,255,255,.26)}
+#lupa .lupa-barra button:disabled{opacity:.4;cursor:default}
+#lupa .lupa-barra svg{width:16px;height:16px;stroke-width:1.9}
+#lupa .lupa-barra .lupa-x{padding:8px 11px}
+@media(max-width:640px){#lupa .lupa-barra button span{display:none}}
 
 /* El compositor se envuelve cuando no cabe. Con siete botones de adjuntar en una fila
    rigida y la ventana estrecha, la caja de texto se quedaba con cuarenta pixeles y
@@ -1413,159 +1436,462 @@ a.ayuda{color:var(--enlace)}
   background:var(--hover);font-weight:700}.calidad-vacio{color:var(--mut);padding:18px 0}
 
 /* =============================================================================
-   CAPA MODERNA (28/09/2026)
-   Una sola capa, al final, que renueva fichas de color, tipografia, radios, sombras y el aspecto
-   de controles y tarjetas SIN tocar el marcado ni el comportamiento. Lo de arriba sigue siendo
-   la base; esto solo lo afina. Quitar este bloque devuelve el aspecto anterior.
-   Principios: superficies blancas sobre un fondo suave, un solo acento (verde azulado) para lo
-   activo y el foco, rotulos en minuscula legible (no 9 px en mayusculas), radios generosos y
-   sombras suaves en lugar de bordes duros.
+   CAPA APPLE (28/09/2026)
+   Sustituye a la «capa moderna»: una sola capa, al final, que da a TODO el panel el lenguaje de
+   Apple sin tocar el marcado ni el comportamiento --lo que cambia de estructura vive en el
+   codigo de cada vista--. Quitar este bloque devuelve el aspecto anterior.
+
+   Principios (los de las guias de Apple, no una imitacion de colores):
+   - Color de sistema: azul de accion (#007AFF), grises de etiqueta (primario/secundario/terciario)
+     y fondos agrupados (#F2F2F7 detras, blanco delante). El verde es solo para «bien» y para el
+     chat, que conserva la pared y las burbujas de WhatsApp.
+   - Superficies: tarjetas blancas de esquinas continuas (18-20 px), sin borde duro: una sombra
+     doble muy suave y una linea de medio pixel. Las listas son «agrupadas»: filas con separador
+     inset dentro de una sola tarjeta.
+   - Tipografia: la del sistema (SF en Apple, Segoe UI Variable en Windows), titulos grandes con
+     tracking negativo, rotulos en minuscula legible, nunca 9 px en mayusculas.
+   - Controles: botones en pildora (azul el principal, gris tintado el resto), interruptores
+     de iOS, campos con foco en anillo azul, barras y menus translucidos con desenfoque.
+   - Iconos: baldosas de color con glifo blanco de trazo fino y uniforme, como los Ajustes del sistema.
+   - Movimiento corto y con curva de Apple; se apaga con «reducir movimiento».
    ============================================================================= */
 :root{
-  --bg:#f5f6f8; --panel:#ffffff; --line:#e7eaef; --line2:#d6dce4;
-  --fg:#0f172a; --mut:#64748b; --ink:#0f172a; --on-ink:#ffffff;
-  --hover:rgba(15,23,42,.045);
-  --accent:#0f9d8a; --accent-fuerte:#0b7f70; --accent-suave:rgba(15,157,138,.12);
-  --r:10px; --r2:16px;
-  --sombra:0 24px 60px rgba(15,23,42,.22);
-  --sombra-suave:0 1px 2px rgba(15,23,42,.04),0 8px 24px rgba(15,23,42,.05);
-  --foco:0 0 0 3px rgba(15,157,138,.22);
-  --tipo:"Segoe UI Variable Text","Segoe UI Variable",Inter,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  --bg:#eef0f6; --panel:#ffffff; --line:rgba(60,60,67,.11); --line2:rgba(60,60,67,.24);
+  --fg:#1c1c1e; --mut:#6c6c70; --ink:#1c1c1e; --on-ink:#ffffff;
+  --hover:rgba(120,120,128,.10);
+  --accent:#4a86e8; --accent-fuerte:#3a6fcb; --accent-suave:rgba(74,134,232,.13);
+  --ok:#3f8f5a; --warn:#b0702f; --bad:#c8524a;
+  --verde:#5fbf7a; --rojo:#e2665e; --naranja:#e3a35c; --amarillo:#e6c25a; --morado:#a98ad4;
+  --r:10px; --r2:14px; --r3:20px;
+  --sombra:0 24px 70px rgba(0,0,0,.28);
+  --sombra-suave:0 1px 2px rgba(20,30,60,.04),0 12px 32px rgba(20,30,60,.06);
+  --foco:0 0 0 4px rgba(74,134,232,.28);
+  --cristal:rgba(255,255,255,.46);
+  --vidrio:rgba(255,255,255,.58); --vidrio-fuerte:rgba(255,255,255,.80); --vidrio-borde:rgba(255,255,255,.75);
+  --vidrio-luz:inset 0 1px 0 rgba(255,255,255,.9);
+  --desenfoque:blur(24px) saturate(1.6);
+  --curva:cubic-bezier(.25,.1,.25,1);
+  --tipo:-apple-system,BlinkMacSystemFont,"SF Pro Text","SF Pro Display","Segoe UI Variable Text","Segoe UI Variable",Inter,"Segoe UI",system-ui,Roboto,Helvetica,Arial,sans-serif;
 }
 :root[data-tema="oscuro"]{
-  --bg:#0c1318; --panel:#131b21; --line:#212c35; --line2:#2d3a45;
-  --fg:#e7ecf1; --mut:#8ea0af; --ink:#e7ecf1; --on-ink:#0c1318;
-  --hover:rgba(255,255,255,.055);
-  --accent:#2dd4bf; --accent-fuerte:#5eead4; --accent-suave:rgba(45,212,191,.14);
-  --sombra:0 24px 60px rgba(0,0,0,.6);
-  --sombra-suave:0 1px 2px rgba(0,0,0,.4),0 8px 24px rgba(0,0,0,.28);
-  --foco:0 0 0 3px rgba(45,212,191,.28);
+  --bg:#0b0b0e; --panel:#1c1c1f; --line:rgba(84,84,88,.55); --line2:rgba(84,84,88,.8);
+  --fg:#f5f5f7; --mut:#98989f; --ink:#f5f5f7; --on-ink:#000000;
+  --hover:rgba(120,120,128,.24);
+  --accent:#6ea4f4; --accent-fuerte:#8fb9f7; --accent-suave:rgba(110,164,244,.20);
+  --ok:#63bf7c; --warn:#e3a35c; --bad:#e2766e;
+  --sombra:0 24px 70px rgba(0,0,0,.7);
+  --sombra-suave:0 0 0 .5px rgba(255,255,255,.06),0 1px 2px rgba(0,0,0,.5),0 10px 30px rgba(0,0,0,.4);
+  --foco:0 0 0 4px rgba(110,164,244,.40);
+  --cristal:rgba(30,30,34,.42);
+  --vidrio:rgba(58,58,64,.40); --vidrio-fuerte:rgba(44,44,50,.78); --vidrio-borde:rgba(255,255,255,.09);
+  --vidrio-luz:inset 0 1px 0 rgba(255,255,255,.08);
 }
-body{font-family:var(--tipo);letter-spacing:-.003em;font-feature-settings:"cv11","ss01"}
+body{font-family:var(--tipo);font-size:14px;letter-spacing:-.006em;-webkit-font-smoothing:antialiased;
+  text-rendering:optimizeLegibility}
 ::selection{background:var(--accent-suave)}
-::-webkit-scrollbar{width:10px;height:10px}
-::-webkit-scrollbar-thumb{background:var(--line2);border-radius:10px;border:3px solid transparent;background-clip:content-box}
-::-webkit-scrollbar-thumb:hover{background:var(--mut);background-clip:content-box;border:3px solid transparent}
+/* Barras de desplazamiento finas y discretas, como las de macOS. */
+::-webkit-scrollbar{width:11px;height:11px}
+::-webkit-scrollbar-thumb{background:rgba(120,120,128,.38);border-radius:10px;border:3px solid transparent;background-clip:content-box}
+::-webkit-scrollbar-thumb:hover{background:rgba(120,120,128,.6);background-clip:content-box;border:3px solid transparent}
 
-/* Foco visible y consistente: un anillo del acento, no el contorno azul del navegador. */
+/* Foco: un anillo azul, como los campos de Apple. */
 button:focus-visible,a:focus-visible,summary:focus-visible,[tabindex]:focus-visible{outline:0;box-shadow:var(--foco)}
 input:focus-visible,select:focus-visible,textarea:focus-visible{outline:0}
 
-/* --- Lateral: marca, menu y pie -------------------------------------------- */
-.lateral{border-right-color:var(--line);box-shadow:1px 0 0 var(--line)}
-.marca{padding:18px 16px;border-bottom-color:transparent}
-.marca .sigla{background:linear-gradient(135deg,var(--accent),var(--accent-fuerte));color:#fff;
-  box-shadow:0 4px 12px rgba(15,157,138,.35)}
-.marca b{font-size:14.5px;letter-spacing:-.01em}
-.nav{padding:6px 10px}
-.nav a{padding:9px 12px;margin-bottom:2px;border-radius:12px;font-size:13.5px;font-weight:500;color:var(--fg);
-  transition:background .15s,color .15s}
-.nav a svg{stroke-width:1.7;color:var(--mut);transition:color .15s}
+/* --- Lateral: lista lateral de macOS --------------------------------------------- */
+.lateral{width:264px;background:var(--cristal);
+  -webkit-backdrop-filter:blur(32px) saturate(1.7);backdrop-filter:blur(32px) saturate(1.7);
+  border-right:0;box-shadow:inset -.5px 0 0 var(--line)}
+.marca{padding:20px 16px 14px;border-bottom:0;gap:12px}
+.marca img,.marca .sigla{width:40px;height:40px;border-radius:11px}
+.marca .sigla{background:linear-gradient(160deg,#9cc4f5,#6f9be4 62%,#8d8fe0);color:#fff;font-weight:700;
+  font-size:14px;letter-spacing:.2px;box-shadow:inset 0 1px 0 rgba(255,255,255,.5),0 6px 16px rgba(80,120,200,.22)}
+.marca b{font-size:15px;font-weight:650;letter-spacing:-.02em}
+.marca span{font-size:11.5px}
+.nav{padding:4px 10px 10px}
+.nav a{padding:5px 8px;margin-bottom:1px;border-radius:9px;gap:10px;font-size:13.5px;font-weight:500;
+  color:var(--fg);transition:background .15s var(--curva)}
 .nav a:hover{background:var(--hover)}
-.nav a:hover svg{color:var(--fg)}
-.nav a.on{background:var(--accent-suave);color:var(--accent-fuerte);font-weight:600}
-.nav a.on svg{color:var(--accent-fuerte)}
-.nav a .cuenta{background:var(--accent);color:#fff;font-weight:700;padding:2px 7px}
-.nav a.on .cuenta{background:var(--accent);color:#fff}
-.nav .secundarias{border-top-color:var(--line)}
-.nav .rotulo{font-size:11px;font-weight:600;letter-spacing:.2px;text-transform:none;padding:12px 12px 6px}
-.nav .accesos a{border-radius:10px}
-.pie{border-top-color:var(--line)}
-.pie button{border-radius:var(--r);background:var(--panel);transition:background .15s,border-color .15s}
-.pie button:hover{border-color:var(--mut)}
+.nav a.on{background:var(--vidrio-fuerte);color:var(--fg);font-weight:600;box-shadow:var(--vidrio-luz),0 0 0 .5px var(--vidrio-borde),0 2px 8px rgba(20,30,60,.06)}
+/* La baldosa de color con el glifo blanco: el icono de cada apartado. */
+.nav a svg{--tint:#8e94a0;width:28px;height:28px;padding:6px;border-radius:9px;stroke-width:1.65;
+  color:color-mix(in srgb,var(--tint) 80%,#20232b);
+  background:color-mix(in srgb,var(--tint) 15%,rgba(255,255,255,.35));
+  box-shadow:inset 0 0 0 .5px color-mix(in srgb,var(--tint) 26%,transparent),inset 0 1px 0 rgba(255,255,255,.7)}
+:root[data-tema="oscuro"] .nav a svg{color:color-mix(in srgb,var(--tint) 78%,#fff);background:color-mix(in srgb,var(--tint) 22%,rgba(255,255,255,.04));
+  box-shadow:inset 0 0 0 .5px color-mix(in srgb,var(--tint) 34%,transparent),inset 0 1px 0 rgba(255,255,255,.10)}
+.nav a[data-vista="planning"] svg{--tint:#6c95e8}
+.nav a[data-vista="conversations"] svg{--tint:#5fb47d}
+.nav a[data-vista="estados"] svg{--tint:#df7a92}
+.nav a[data-vista="agenda"] svg{--tint:#df766e}
+.nav a[data-vista="dashboard"] svg{--tint:#8b8bdf}
+.nav a[data-vista="funnel"] svg{--tint:#dfa25c}
+.nav a[data-vista="prospecting"] svg{--tint:#b08ad6}
+.nav a[data-vista="poscustomers"] svg{--tint:#5cb6ab}
+.nav a[data-vista="satisfaccion"] svg{--tint:#dcb256}
+.nav a[data-vista="informes"] svg{--tint:#8b8bdf}
+.nav a[data-vista="limpieza"] svg{--tint:#8e94a0}
+.nav a[data-vista="anuncios"] svg{--tint:#df7890}
+.nav a[data-vista="campanas"] svg{--tint:#6fafdf}
+.nav a[data-vista="plantillas"] svg{--tint:#8a97ad}
+.nav a[data-vista="reminders"] svg{--tint:#e2a35a}
+.nav a[data-vista="canales"] svg{--tint:#62b1b6}
+.nav a[data-vista="config"] svg{--tint:#8a8f99}
+.nav a .cuenta{padding:1px 7px;font-size:11px;font-weight:650;border-radius:999px;background:color-mix(in srgb,var(--rojo) 88%,#fff);color:#fff}
+.nav a.on .cuenta{background:var(--rojo);color:#fff}
+.nav .secundarias{border-top:0;margin-top:6px;padding-top:2px}
+.nav .rotulo{font-size:11.5px;font-weight:600;letter-spacing:0;text-transform:none;padding:12px 8px 4px;color:var(--mut)}
+/* Los accesos a Instagram, Messenger y Marketplace: mas pequenos y sangrados, como subelementos. */
+.nav .accesos{margin:0 0 4px}
+.nav .accesos a{padding:3px 8px 3px 40px;font-size:12.5px;color:var(--mut)}
+.nav .accesos a svg{width:20px;height:20px;padding:4px;border-radius:6px}
+.nav .accesos a:nth-child(1) svg{--tint:#d9698f}
+.nav .accesos a:nth-child(2) svg{--tint:#6a9be0}
+.nav .accesos a:nth-child(3) svg{--tint:#5fb47d}
+.pie{border-top:0;padding:10px 14px 14px}
+.pie .estado{font-size:11.5px}
+.pie button{border:0;background:var(--hover);border-radius:10px;font-weight:600;padding:9px;
+  transition:background .15s var(--curva)}
+.pie button:hover{background:rgba(120,120,128,.2)}
 
-/* --- Barra superior --------------------------------------------------------- */
-header.barra{background:color-mix(in srgb,var(--panel) 88%,transparent);
-  -webkit-backdrop-filter:saturate(1.4) blur(12px);backdrop-filter:saturate(1.4) blur(12px);
-  border-bottom-color:var(--line)}
-.titulo{font-size:16px;font-weight:650;letter-spacing:-.015em}
+/* --- Barra superior: translucida ---------------------------------------------------- */
+header.barra{padding:0 20px;background:var(--cristal);
+  -webkit-backdrop-filter:blur(32px) saturate(1.7);backdrop-filter:blur(32px) saturate(1.7);
+  border-bottom:0;box-shadow:0 .5px 0 var(--line)}
+.titulo{font-size:17px;font-weight:650;letter-spacing:-.022em}
+.quien{font-size:12px}
+header.barra .der .btn-linea{padding:7px 14px}
 
-/* --- Botones ---------------------------------------------------------------- */
-.btn-solido{padding:10px 18px;border-radius:var(--r);background:var(--ink);color:var(--on-ink);
-  font-size:13.5px;font-weight:600;box-shadow:0 1px 2px rgba(15,23,42,.2);
-  transition:transform .12s,box-shadow .15s,opacity .15s,background .15s}
-.btn-solido:hover:not(:disabled){box-shadow:0 6px 16px rgba(15,23,42,.24);transform:translateY(-1px)}
-.btn-solido:active:not(:disabled){transform:none;box-shadow:0 1px 2px rgba(15,23,42,.2)}
-.btn-solido.peligro{background:var(--bad);color:#fff}
-.btn-linea{padding:8px 14px;border-radius:var(--r);background:var(--panel);border-color:var(--line2);
-  font-weight:600;transition:border-color .15s,background .15s,box-shadow .15s}
-.btn-linea:hover:not(:disabled){background:var(--panel);border-color:var(--mut)}
-.tplchip,.ejemplo{border-radius:999px;transition:background .15s,border-color .15s}
-.tplchip:hover,.ejemplo:hover{border-color:var(--mut)}
+/* --- Botones: pildoras ---------------------------------------------------------------------- */
+.btn-linea{padding:8px 15px;border:0;border-radius:999px;background:var(--hover);color:var(--fg);
+  font-size:13px;font-weight:600;letter-spacing:-.006em;
+  transition:background .15s var(--curva),transform .1s var(--curva),opacity .15s}
+.btn-linea:hover:not(:disabled){background:rgba(120,120,128,.2)}
+.btn-linea:active:not(:disabled){transform:scale(.97)}
+.btn-linea.danger{background:rgba(255,59,48,.12);color:var(--bad)}
+.btn-linea.danger:hover:not(:disabled){background:rgba(255,59,48,.2)}
+.btn-solido{padding:9px 18px;border-radius:999px;background:var(--accent);color:#fff;font-size:13.5px;font-weight:600;
+  box-shadow:none;transition:background .15s var(--curva),transform .1s var(--curva),opacity .15s}
+.btn-solido:hover:not(:disabled){background:var(--accent-fuerte);box-shadow:none;transform:none}
+.btn-solido:active:not(:disabled){transform:scale(.97)}
+.btn-solido.peligro{background:var(--rojo);color:#fff}
+.filtro{padding:6px 13px;border-radius:999px;background:var(--hover);color:var(--fg);font-weight:600;font-size:12.5px;
+  transition:background .15s var(--curva),color .15s}
+.filtro:hover{background:rgba(120,120,128,.2)}
+.filtro.on{background:var(--ink);color:var(--on-ink)}
+.tplchip,.ejemplo{border:0;border-radius:999px;background:var(--hover);padding:7px 13px;font-weight:600}
+.tplchip:hover,.ejemplo:hover{background:rgba(120,120,128,.2)}
+.chip-tema{border:0;background:var(--hover);border-radius:999px;padding:7px 14px;font-weight:600;color:var(--fg)}
+.chip-tema:hover{background:rgba(120,120,128,.2)}
+.chip-tema.on,:root[data-tema="oscuro"] .chip-tema.on{background:var(--accent);color:#fff}
+.etq{border-radius:999px}
+.chip{border-radius:999px;padding:3px 9px;font-size:11px;letter-spacing:0}
 
-/* --- Formularios ------------------------------------------------------------ */
-.campo label,.seccion,.dato .k,.selects-filtro label{font-size:11.5px;font-weight:600;letter-spacing:0;
-  text-transform:none;color:var(--mut)}
-.campo label{margin-bottom:5px}
-.campo input,.campo select,.campo textarea,.entrada-linea,.selects-filtro select{padding:9px 12px;border:1px solid var(--line2);
-  border-radius:var(--r);background:var(--panel);transition:border-color .15s,box-shadow .15s}
-.campo input:hover,.campo select:hover,.campo textarea:hover{border-color:var(--mut)}
+/* --- Campos ---------------------------------------------------------------------------------- */
+.campo label,.seccion,.dato .k,.selects-filtro label{font-size:12px;font-weight:600;letter-spacing:0;text-transform:none;color:var(--mut)}
+.campo label{margin-bottom:6px}
+.campo input,.campo select,.campo textarea,.entrada-linea,.selects-filtro select,.buscaprospectos input,
+.lista .cabeza input,.lista .cabeza select{padding:10px 13px;border:0;border-radius:11px;background:var(--hover);color:var(--fg);
+  box-shadow:inset 0 0 0 .5px var(--line);transition:box-shadow .15s var(--curva),background .15s var(--curva)}
+.lista .cabeza input,.lista .cabeza select{height:38px;padding:0 13px}
+.campo input:hover,.campo select:hover,.campo textarea:hover{background:rgba(120,120,128,.16)}
 .campo input:focus,.campo select:focus,.campo textarea:focus,.entrada-linea:focus,.selects-filtro select:focus,
-.prompt textarea:focus{border-color:var(--accent);box-shadow:var(--foco);outline:0}
-.prompt textarea{border-radius:var(--r2);box-shadow:var(--sombra-suave)}
-.cfgsw{padding:10px 0}
-.cfgsw input{accent-color:var(--accent)}
+.buscaprospectos input:focus,.lista .cabeza input:focus,.prompt textarea:focus{background:var(--panel);
+  box-shadow:0 0 0 1.5px var(--accent),var(--foco);outline:0}
+.prompt textarea{border-radius:var(--r3);box-shadow:var(--sombra-suave)}
+::placeholder{color:rgba(120,120,128,.8)}
+/* Interruptor de iOS. */
+.cfgsw{flex-direction:row-reverse;align-items:center;justify-content:space-between;padding:11px 0;gap:14px}
+.cfgsw>span{flex:1;min-width:0}
+.cfgsw input{-webkit-appearance:none;appearance:none;width:44px;height:27px;margin:0;border-radius:999px;position:relative;
+  background:rgba(120,120,128,.32);flex:0 0 auto;cursor:pointer;transition:background .22s var(--curva)}
+.cfgsw input::after{content:"";position:absolute;top:2px;left:2px;width:23px;height:23px;border-radius:50%;background:#fff;
+  box-shadow:0 2px 5px rgba(0,0,0,.25),0 0 0 .5px rgba(0,0,0,.04);transition:transform .22s var(--curva)}
+.cfgsw input:checked{background:var(--verde)}
+.cfgsw input:checked::after{transform:translateX(17px)}
+.cfgsw input:focus-visible{box-shadow:var(--foco)}
 input[type="checkbox"],input[type="radio"]{accent-color:var(--accent)}
 
-/* --- Paginas y tarjetas ------------------------------------------------------ */
-.hoja{padding:34px clamp(20px,4vw,56px) 48px}
-.hoja h1{font-size:25px;font-weight:700;letter-spacing:-.025em;margin-bottom:6px}
-.hoja .bajada{font-size:13.5px;line-height:1.55;margin-bottom:26px}
-.cfggrid{gap:18px}
-.cfgc{padding:20px 22px 22px;border-radius:var(--r2);border-color:var(--line);box-shadow:var(--sombra-suave)}
-.cfgc h3{font-size:14.5px;font-weight:650;letter-spacing:-.01em;margin-bottom:8px}
-.cfgnota{font-size:12.5px;line-height:1.55}
-.grupo{border-radius:var(--r2);border-color:var(--line);background:var(--panel);box-shadow:var(--sombra-suave);margin-bottom:12px}
-.grupo>summary{padding:14px 18px;font-size:13.5px;font-weight:650;letter-spacing:-.01em;text-transform:none;
-  transition:background .15s}
-.grupo .dentro{padding:4px 18px 18px}
-.grupo .nota{font-size:11.5px}
-.dato{border-radius:var(--r);background:var(--bg);border-color:transparent}
-.tabla,.calidad-tabla{border-color:var(--line)}
-.tabla{border-radius:var(--r2);box-shadow:var(--sombra-suave)}
-.calidad-tabla th{font-size:11.5px;font-weight:600;letter-spacing:0;text-transform:none}
-.calidad-kpi{border-radius:var(--r2);border-color:var(--line);box-shadow:var(--sombra-suave)}
-.calidad-kpi b{font-size:27px;letter-spacing:-.02em}
-.calidad-aviso{border-radius:14px;border-color:var(--line);box-shadow:var(--sombra-suave)}
+/* --- Paginas ------------------------------------------------------------------------------------ */
+.hoja{padding:34px clamp(20px,4vw,48px) 56px}
+.hoja h1{font-size:32px;font-weight:700;letter-spacing:-.035em;margin-bottom:6px}
+.hoja .bajada{font-size:14px;line-height:1.5;margin-bottom:26px;max-width:680px}
+.seccion{margin:0 0 10px}
+.hoja>.seccion{font-size:20px;font-weight:700;letter-spacing:-.025em;color:var(--fg);margin:36px 0 6px}
 
-/* Cifras del Dashboard y de los informes */
-.cifras{gap:14px}
-.cifra{padding:18px 18px 16px;border-radius:var(--r2);border-color:var(--line);box-shadow:var(--sombra-suave);
-  transition:transform .15s,box-shadow .15s,border-color .15s}
-.cifra:hover{background:var(--panel);border-color:var(--line2);transform:translateY(-1px)}
-.cifra b{font-size:30px;letter-spacing:-.03em}
-.cifra span{font-size:12.5px}
+/* --- Tarjetas: superficies blancas de esquinas continuas --------------------------------- */
+.cfggrid{grid-template-columns:repeat(auto-fill,minmax(360px,1fr));gap:20px;max-width:1240px}
+.cfgc{padding:22px 24px 24px;border:0;border-radius:var(--r3);box-shadow:var(--sombra-suave)}
+.cfgc h3{font-size:17px;font-weight:650;letter-spacing:-.022em;margin-bottom:8px}
+.cfgnota{font-size:13px;line-height:1.55}
+.grupo{border:0;border-radius:var(--r3);background:var(--panel);box-shadow:var(--sombra-suave);margin-bottom:14px}
+.grupo>summary{padding:15px 18px;font-size:14px;font-weight:600;letter-spacing:-.01em;text-transform:none}
+.grupo>summary:hover{background:var(--hover)}
+.grupo .dentro{padding:2px 18px 18px}
+.grupo .nota{font-size:12px}
+.canal{border:0;border-radius:var(--r3);box-shadow:var(--sombra-suave);max-width:820px}
+.dato{border:0;border-radius:12px;background:var(--hover)}
+.propuesta{border:0;border-radius:var(--r3);box-shadow:var(--sombra-suave)}
+.tpl{border:0;border-radius:16px;background:var(--panel);box-shadow:var(--sombra-suave)}
+.tpl:hover{background:var(--panel);box-shadow:0 0 0 1.5px var(--accent-suave),var(--sombra-suave)}
+.calidad-kpi,.calidad-aviso{border:0;border-radius:var(--r3);box-shadow:var(--sombra-suave)}
+.calidad-kpi b{font-size:30px;letter-spacing:-.03em}
+.cb-kpis div,.cb-estado{border:0;background:var(--hover);border-radius:12px}
 
-/* --- Filtros y chips ---------------------------------------------------------- */
-.filtro{padding:6px 13px;border-radius:999px;font-weight:550;transition:background .15s,color .15s}
-.chip-tema{padding:7px 14px;border-radius:999px;transition:background .15s,border-color .15s,color .15s}
-.chip-tema:hover{border-color:var(--mut)}
-.chip-tema.on{background:var(--accent-fuerte);border-color:var(--accent-fuerte);color:#fff}
-:root[data-tema="oscuro"] .chip-tema.on{background:var(--accent);border-color:var(--accent);color:#0c1318}
-.etq{border-radius:999px}
+/* Cifras del Dashboard: la misma medida para todas (auto-fill, no auto-fit: con auto-fit la ultima
+   fila se estira y salen tarjetas de anchos distintos). */
+.cifras{grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:16px;max-width:1240px}
+.cifra{padding:20px 20px 18px;border:0;border-radius:var(--r3);box-shadow:var(--sombra-suave);
+  transition:transform .2s var(--curva),box-shadow .2s var(--curva)}
+.cifra:hover{background:var(--panel);transform:translateY(-2px);
+  box-shadow:0 0 0 .5px rgba(0,0,0,.05),0 2px 4px rgba(0,0,0,.04),0 16px 36px rgba(0,0,0,.09)}
+.cifra b{font-size:34px;font-weight:700;letter-spacing:-.04em}
+.cifra span{font-size:13px}
+.cifra i{font-size:11.5px}
+.tablero{grid-template-columns:repeat(auto-fill,minmax(360px,1fr));gap:20px;max-width:1240px}
+.pgraf{padding:20px 22px 22px;border:0;border-radius:var(--r3);box-shadow:var(--sombra-suave)}
+.pgcab b{font-size:16px;font-weight:650;letter-spacing:-.02em}
+.pgcab span{font-size:12px}
+.glinea{stroke:var(--accent);stroke-width:2.4}
+.garea{fill:var(--accent);opacity:.10}
+.gpunto{stroke:var(--accent)}
+.epaso .eb{height:10px;border-radius:999px}
+.epaso .eb i{background:var(--accent);opacity:1;border-radius:999px}
+.bp{border-radius:999px}
+.calidad-resumen{grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:16px}
 
-/* --- Lista de chats y ficha --------------------------------------------------- */
-.lista{border-right-color:var(--line)}
-.chat{padding:11px 14px;transition:background .12s}
-.chat.on{background:var(--accent-suave);box-shadow:inset 3px 0 0 var(--accent)}
-.ficha{border-left-color:var(--line)}
+/* --- Listas agrupadas (tablas): una tarjeta, filas con separador inset ------------------ */
+.tabla{border:0;border-radius:var(--r3);background:var(--panel);box-shadow:var(--sombra-suave);max-width:1240px}
+.fila{padding:13px 18px;border-bottom:0;box-shadow:inset 0 -.5px 0 var(--line);margin-left:0;
+  transition:background .12s var(--curva)}
+.fila:not(.cabecera):hover{background:var(--hover)}
+.fila:last-child{box-shadow:none}
+.fila.cabecera{background:transparent;font-size:12px;font-weight:600;letter-spacing:0;text-transform:none;color:var(--mut);
+  padding-top:15px;padding-bottom:9px}
+.calidad-tabla{border:0}
+.calidad-tabla th{font-size:12px;font-weight:600;letter-spacing:0;text-transform:none}
 
-/* --- Cuadros de dialogo -------------------------------------------------------- */
-.modal{background:rgba(15,23,42,.5);-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px)}
-.modal .caja{border-radius:20px;border:1px solid var(--line);box-shadow:var(--sombra)}
-.mtapa{padding:18px 22px}
-.mtapa b{font-size:15px;font-weight:650;letter-spacing:-.01em}
-.mcuerpo{padding:18px 22px}
-.mpatas{padding:14px 22px;background:var(--bg);border-radius:0 0 20px 20px}
+/* --- Funnel: carriles y tarjetas -------------------------------------------------------------- */
+.kanban{gap:16px;padding:2px 2px 18px}
+.columna{flex:0 0 300px;max-height:calc(100dvh - 240px);border:0;border-radius:var(--r3);background:rgba(120,120,128,.09)}
+.columna.encima{background:var(--accent-suave);box-shadow:inset 0 0 0 2px var(--accent)}
+.ctitulo{padding:15px 16px 11px;border-bottom:0;font-size:13.5px;font-weight:650;letter-spacing:-.01em;text-transform:capitalize;color:var(--fg)}
+.ctitulo b{font-size:12px;font-weight:650;padding:2px 9px;border-radius:999px;background:var(--hover);color:var(--mut)}
+.ccuerpo{padding:2px 10px 12px;gap:9px}
+.ktarjeta{padding:12px 14px;border:0;border-radius:14px;background:var(--panel);
+  box-shadow:0 0 0 .5px rgba(0,0,0,.05),0 1px 2px rgba(0,0,0,.06);
+  transition:transform .15s var(--curva),box-shadow .15s var(--curva)}
+.ktarjeta:hover{transform:translateY(-1px);box-shadow:0 0 0 .5px rgba(0,0,0,.06),0 6px 16px rgba(0,0,0,.10)}
+.ktarjeta b{font-size:14px;font-weight:600;letter-spacing:-.012em}
+.ktarjeta span{font-size:12.5px;margin-top:3px}
+.ktarjeta i{font-size:11.5px;margin-top:5px}
+.kmas{font-size:12.5px;padding:9px}
+/* Leads parados: una rejilla de tarjetas de la misma medida, no una fila por cada regla. */
+.lp-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(380px,1fr));gap:20px;max-width:1240px;align-items:start}
+.lp-card{background:var(--panel);border-radius:var(--r3);box-shadow:var(--sombra-suave);padding:20px 22px 12px;min-width:0}
+.lp-cab{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.lp-cab b{font-size:16px;font-weight:650;letter-spacing:-.02em}
+.lp-num{font-size:12px;font-weight:650;padding:3px 10px;border-radius:999px;background:var(--accent-suave);color:var(--accent);flex:0 0 auto}
+.lp-porque{margin:6px 0 10px;font-size:13px;line-height:1.5;color:var(--mut)}
+.lp-fila{display:flex;align-items:center;gap:10px;padding:10px 0;box-shadow:inset 0 .5px 0 var(--line)}
+.lp-quien{flex:1;min-width:0}
+.lp-quien b{display:block;font-size:13.5px;font-weight:600;letter-spacing:-.01em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lp-quien small{display:block;font-size:12px;color:var(--mut);margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lp-acc{display:flex;gap:6px;flex:0 0 auto}
+.lp-acc .btn-linea{padding:6px 12px;font-size:12.5px}
+.lp-mas{display:block;width:100%;padding:12px 0 8px;font-size:13px;font-weight:600;color:var(--accent);text-align:center;
+  box-shadow:inset 0 .5px 0 var(--line)}
+.lp-mas:hover{color:var(--accent-fuerte)}
+@media(max-width:520px){.lp-grid{grid-template-columns:1fr}}
 
-/* --- Acceso ---------------------------------------------------------------------- */
-.tarjeta-acceso{border-radius:22px;box-shadow:var(--sombra);border:1px solid var(--line)}
-.tarjeta-acceso button{border-radius:var(--r);background:var(--ink);color:var(--on-ink);font-weight:600}
+/* --- Lista de chats y ficha -------------------------------------------------------------------- */
+.lista{border-right:0;box-shadow:inset -.5px 0 0 var(--line)}
+.chat{padding:11px 16px;transition:background .12s var(--curva)}
+.chat:hover{background:var(--hover)}
+.chat.on{background:var(--accent-suave);box-shadow:none}
+.chat .nom{font-weight:600;letter-spacing:-.012em}
+.ficha{border-left:0;box-shadow:inset .5px 0 0 var(--line)}
+.escribir textarea{border-radius:20px}
+.cabecera{box-shadow:0 .5px 0 var(--line);border-bottom:0}
 
-/* --- Un poco de vida: aparicion suave de las paginas ------------------------------ */
+/* --- Cuadros de dialogo: hojas de Apple ------------------------------------------------------ */
+.modal{background:rgba(0,0,0,.36);-webkit-backdrop-filter:blur(8px) saturate(1.2);backdrop-filter:blur(8px) saturate(1.2)}
+.modal .caja{border-radius:22px;border:0;box-shadow:var(--sombra);background:var(--panel)}
+.mtapa{padding:18px 22px 14px;border-bottom:0;font-size:17px;letter-spacing:-.02em}
+.mtapa b{font-weight:650}
+.mcuerpo{padding:4px 22px 16px}
+.mpatas{padding:14px 22px 18px;border-top:0;background:transparent}
+.cerrarm{width:28px;height:28px;border-radius:50%;background:var(--hover);font-size:18px;line-height:28px;text-align:center}
+.cerrarm:hover{background:rgba(120,120,128,.24)}
+.gmenu,.mas .menu,.st-menu,.anuevomenu,.amenu{border:0;border-radius:14px;box-shadow:var(--sombra),0 0 0 .5px var(--line);
+  background:var(--cristal);-webkit-backdrop-filter:saturate(1.8) blur(24px);backdrop-filter:saturate(1.8) blur(24px)}
+
+/* --- Acceso ------------------------------------------------------------------------------------- */
+.tarjeta-acceso{border:0;border-radius:26px;box-shadow:var(--sombra)}
+.tarjeta-acceso button{border-radius:999px;background:var(--accent);color:#fff;font-weight:600}
+
+/* --- Estados: lista y visor ----------------------------------------------------------------- */
+.st-cab h2{font-size:22px;font-weight:700;letter-spacing:-.03em}
+.st-fila{border-radius:12px;transition:background .12s var(--curva)}
+.st-sec{font-size:12px;font-weight:600;letter-spacing:0;text-transform:none}
+.st-vermas{display:block;width:calc(100% - 24px);margin:8px 12px 16px;padding:11px;border-radius:12px;background:var(--hover);
+  color:var(--accent);font-size:13px;font-weight:600;transition:background .15s var(--curva)}
+.st-vermas:hover{background:rgba(120,120,128,.2)}
+
+/* --- Estados vacios ----------------------------------------------------------------------------- */
+.vacio-apple{display:flex;flex-direction:column;align-items:center;text-align:center;padding:52px 28px;max-width:640px;
+  background:var(--panel);border-radius:var(--r3);box-shadow:var(--sombra-suave);color:var(--mut)}
+.vacio-apple svg{width:46px;height:46px;stroke-width:1.35;color:rgba(120,120,128,.55);margin-bottom:14px}
+.vacio-apple b{font-size:17px;font-weight:650;letter-spacing:-.02em;color:var(--fg)}
+.vacio-apple p{margin:6px 0 0;max-width:420px;font-size:13.5px;line-height:1.5}
+
+/* --- Controles segmentados: los filtros de una pagina (Anuncios y otros) -------------------- */
+.hoja .filtros{display:inline-flex;gap:2px;padding:3px;border-radius:11px;background:var(--hover);cursor:default;
+  -webkit-mask-image:none;mask-image:none;overflow:visible}
+.hoja .filtros .filtro{border-radius:9px;background:transparent;padding:6px 16px;font-weight:600;color:var(--fg)}
+.hoja .filtros .filtro:hover{background:rgba(120,120,128,.14)}
+.hoja .filtros .filtro.on{background:var(--panel);color:var(--fg);box-shadow:0 1px 2px rgba(0,0,0,.14),0 0 0 .5px rgba(0,0,0,.05)}
+:root[data-tema="oscuro"] .hoja .filtros .filtro.on{background:#636366;color:#fff}
+
+/* --- Formularios de una pagina dentro de una tarjeta ----------------------------------------- */
+#vista-campanas .prompt{max-width:820px;padding:24px 26px 26px;background:var(--panel);border-radius:var(--r3);box-shadow:var(--sombra-suave)}
+#vista-campanas .prompt textarea{box-shadow:none}
+#vista-campanas .grupo{max-width:820px}
+.hoja .prompt .aviso{margin-bottom:16px}
+
+/* --- Barras y medidores en el azul de accion --------------------------------------------------- */
+.bp i,.cb-barra i{background:var(--accent)}
+.cb-barra{background:var(--hover)}
+
+/* --- Compositor del chat: pildora y boton redondo azul ----------------------------------------- */
+.escribir{border-top:0;box-shadow:0 -.5px 0 var(--line);padding:10px 16px;gap:8px}
+.escribir textarea{border:0;border-radius:20px;background:var(--hover);padding:10px 16px;box-shadow:none}
+.escribir textarea:focus{background:var(--panel);box-shadow:0 0 0 1.5px var(--accent),var(--foco)}
+.enviar{width:36px;height:36px;background:var(--accent);color:#fff;transition:background .15s var(--curva),transform .1s var(--curva)}
+.enviar:hover:not(:disabled){background:var(--accent-fuerte)}
+.enviar:active:not(:disabled){transform:scale(.94)}
+.enviar svg{width:18px;height:18px}
+.adj{width:34px;height:34px;color:var(--mut)}
+.adj svg{width:21px;height:21px;stroke-width:1.75}
+.adj:hover{background:var(--hover);color:var(--fg)}
+.adj.hd{border:0;background:var(--hover);font-size:11px;font-weight:700;width:auto;padding:0 9px;border-radius:9px}
+.adj.hd.on{background:var(--accent);color:#fff}
+
+/* --- Cabecera del chat --------------------------------------------------------------------------- */
+.cabecera .modo{border:0;border-radius:999px;background:var(--hover);padding:7px 14px;font-weight:600;font-size:12.5px}
+.cabecera .modo:hover{background:rgba(120,120,128,.2)}
+.mas>button{color:var(--mut)}
+
+/* Todos los iconos con el mismo trazo. */
+.adj svg,.st-icono svg,.st-ctl svg,.hamb svg{stroke-width:1.75;stroke-linecap:round;stroke-linejoin:round}
+
+/* --- Agenda: un calendario como el de Apple, una sola tarjeta con lineas finas --------------- */
+.agbar{gap:10px;margin-bottom:18px}
+.agtog{display:inline-flex;padding:3px;gap:2px;border:0;border-radius:11px;background:var(--hover)}
+.agtog button{padding:6px 16px;border-radius:9px;color:var(--fg);font-weight:600}
+.agtog button.on{background:var(--panel);color:var(--fg);box-shadow:0 1px 2px rgba(0,0,0,.14),0 0 0 .5px rgba(0,0,0,.05)}
+:root[data-tema="oscuro"] .agtog button.on{background:#636366;color:#fff}
+.agfil{gap:4px}
+.agnav{margin-bottom:14px}
+.agnav b{font-size:22px;font-weight:700;letter-spacing:-.03em}
+.agnav .btn-linea{padding:6px 14px}
+.agsem{max-width:1000px;gap:0;margin-bottom:6px}
+.agsem span{font-size:12px;font-weight:600;letter-spacing:0;text-transform:none;padding-left:10px;text-align:left}
+.agcal{max-width:1000px;gap:0;background:var(--panel);border-radius:var(--r3);box-shadow:var(--sombra-suave);overflow:hidden}
+.agcel{min-height:92px;padding:9px 10px;border:0;border-radius:0;background:transparent;
+  box-shadow:inset -.5px -.5px 0 var(--line);transition:background .12s var(--curva)}
+.agcel:hover{background:var(--hover);border:0}
+.agcel.fuera{opacity:.4}
+.agcel .agnum{font-size:14px;font-weight:600;min-width:24px;height:24px;line-height:24px;text-align:center;border-radius:50%}
+.agcel.hoy{border:0}
+.agcel.hoy .agnum{background:var(--rojo);color:#fff}
+.agcel.sel{background:var(--accent-suave)}
+.agcel.sel .agnum{color:var(--fg)}
+.agcel.sel.hoy .agnum{color:#fff}
+.agpanel,.agdia,.agproximas{max-width:1000px}
+.agcita{border:0;border-radius:14px;background:var(--panel);box-shadow:var(--sombra-suave)}
+.agcita:hover{background:var(--panel);box-shadow:0 0 0 1.5px var(--accent-suave),var(--sombra-suave)}
+.agdcab{font-size:15px;font-weight:650;letter-spacing:-.015em;border-bottom:0}
+
+/* =============================================================================
+   VIDRIO. Las superficies son translucidas y desenfocan lo que hay detras, sobre un fondo de
+   luz suave y apagada (tres manchas de color muy tenues) para que el vidrio se note. Colores en
+   tono mate, sin degradados de color fuertes: el color solo lo pone el contenido.
+   ============================================================================= */
+#app{background:
+  radial-gradient(1100px 620px at 8% -12%,rgba(140,165,235,.30),transparent 62%),
+  radial-gradient(900px 520px at 100% 0%,rgba(232,190,210,.26),transparent 58%),
+  radial-gradient(1000px 640px at 55% 112%,rgba(150,215,205,.26),transparent 62%),
+  var(--bg);background-attachment:fixed}
+:root[data-tema="oscuro"] #app{background:
+  radial-gradient(1100px 620px at 8% -12%,rgba(90,110,200,.20),transparent 62%),
+  radial-gradient(900px 520px at 100% 0%,rgba(150,90,140,.14),transparent 58%),
+  radial-gradient(1000px 640px at 55% 112%,rgba(60,130,120,.16),transparent 62%),
+  var(--bg);background-attachment:fixed}
+.lienzo,.vista,.hoja{background:transparent}
+
+/* Superficies de vidrio: tarjetas, listas agrupadas, carriles, formularios y calendario. */
+.cfgc,.cifra,.pgraf,.tabla,.grupo,.canal,.propuesta,.tpl,.calidad-kpi,.calidad-aviso,.lp-card,.vacio-apple,
+.agcal,.agcita,.columna,#vista-campanas .prompt,.cb-kpis div,.st-panel{
+  background:var(--vidrio);-webkit-backdrop-filter:var(--desenfoque);backdrop-filter:var(--desenfoque);
+  box-shadow:var(--vidrio-luz),0 0 0 .5px var(--vidrio-borde),var(--sombra-suave)}
+.cifra:hover,.tpl:hover,.agcita:hover{background:var(--vidrio-fuerte);
+  box-shadow:var(--vidrio-luz),0 0 0 .5px var(--vidrio-borde),0 2px 4px rgba(20,30,60,.04),0 18px 40px rgba(20,30,60,.10)}
+.columna{box-shadow:var(--vidrio-luz),0 0 0 .5px var(--vidrio-borde)}
+.columna.encima{background:var(--accent-suave);box-shadow:inset 0 0 0 2px var(--accent)}
+.ktarjeta{background:var(--vidrio-fuerte);-webkit-backdrop-filter:var(--desenfoque);backdrop-filter:var(--desenfoque);
+  box-shadow:var(--vidrio-luz),0 0 0 .5px var(--vidrio-borde),0 1px 2px rgba(20,30,60,.05)}
+.ktarjeta:hover{box-shadow:var(--vidrio-luz),0 0 0 .5px var(--vidrio-borde),0 8px 20px rgba(20,30,60,.10)}
+.dato,.cb-estado{background:rgba(120,120,128,.08);box-shadow:none}
+.fila{box-shadow:inset 0 -.5px 0 var(--line)}
+.fila:last-child{box-shadow:none}
+
+/* Chat: la lista y la ficha son de vidrio; la conversacion conserva la pared de WhatsApp. */
+.lista,.ficha{background:var(--vidrio);-webkit-backdrop-filter:var(--desenfoque);backdrop-filter:var(--desenfoque)}
+.chat.on{background:var(--accent-suave)}
+.escribir,.cabecera,.barra-cita,.barra-seleccion{background:var(--vidrio-fuerte);-webkit-backdrop-filter:var(--desenfoque);backdrop-filter:var(--desenfoque)}
+.escribir textarea{background:rgba(120,120,128,.10)}
+
+/* Botones y campos: translucidos con un filo de luz. */
+.btn-linea{background:rgba(120,120,128,.10);box-shadow:inset 0 0 0 .5px rgba(60,60,67,.10),inset 0 1px 0 rgba(255,255,255,.35)}
+.btn-linea:hover:not(:disabled){background:rgba(120,120,128,.18)}
+.btn-solido{background:var(--accent);box-shadow:inset 0 1px 0 rgba(255,255,255,.28),0 4px 12px rgba(74,134,232,.22)}
+.btn-solido:hover:not(:disabled){box-shadow:inset 0 1px 0 rgba(255,255,255,.28),0 6px 16px rgba(74,134,232,.28)}
+.filtro.on{background:var(--vidrio-fuerte);color:var(--fg);box-shadow:var(--vidrio-luz),0 0 0 .5px var(--vidrio-borde),0 1px 3px rgba(20,30,60,.10)}
+.campo input,.campo select,.campo textarea,.entrada-linea,.selects-filtro select,.buscaprospectos input,
+.lista .cabeza input,.lista .cabeza select{background:rgba(255,255,255,.55);box-shadow:inset 0 0 0 .5px var(--line),inset 0 1px 2px rgba(20,30,60,.04)}
+:root[data-tema="oscuro"] .campo input,:root[data-tema="oscuro"] .campo select,:root[data-tema="oscuro"] .campo textarea,
+:root[data-tema="oscuro"] .lista .cabeza input{background:rgba(255,255,255,.07)}
+.chip-tema.on,:root[data-tema="oscuro"] .chip-tema.on{background:var(--accent-suave);color:var(--accent-fuerte);box-shadow:inset 0 0 0 .5px var(--accent)}
+.hoja .filtros,.agtog{background:rgba(120,120,128,.12);box-shadow:inset 0 0 0 .5px var(--line)}
+.hoja .filtros .filtro.on,.agtog button.on{background:var(--vidrio-fuerte)}
+
+/* Menus, hojas de dialogo y visores: vidrio mas denso, con el fondo desenfocado detras. */
+.modal{background:rgba(30,35,55,.22);-webkit-backdrop-filter:blur(14px) saturate(1.3);backdrop-filter:blur(14px) saturate(1.3)}
+.modal .caja{background:var(--vidrio-fuerte);-webkit-backdrop-filter:blur(40px) saturate(1.7);backdrop-filter:blur(40px) saturate(1.7);
+  box-shadow:var(--vidrio-luz),0 0 0 .5px var(--vidrio-borde),var(--sombra)}
+.gmenu,.mas .menu,.st-menu,.anuevomenu,.amenu{background:var(--vidrio-fuerte);
+  -webkit-backdrop-filter:blur(40px) saturate(1.7);backdrop-filter:blur(40px) saturate(1.7);
+  box-shadow:var(--vidrio-luz),0 0 0 .5px var(--vidrio-borde),var(--sombra)}
+.pie button{background:rgba(120,120,128,.10);box-shadow:inset 0 0 0 .5px var(--line),inset 0 1px 0 rgba(255,255,255,.35)}
+
+/* Graficas en tonos apagados. */
+.glinea{stroke:var(--accent);stroke-width:2.2}
+.garea{fill:var(--accent);opacity:.09}
+
+/* --- Telefono: el cajon del menu es opaco (no se ve la app a traves) y las paginas respiran menos ---- */
+@media(max-width:760px){
+  .lateral{background:var(--vidrio-fuerte);-webkit-backdrop-filter:blur(40px) saturate(1.7);backdrop-filter:blur(40px) saturate(1.7);box-shadow:var(--sombra)}
+  .hoja{padding:20px 16px 44px}
+  .hoja h1{font-size:28px}
+  header.barra{padding:0 12px}
+}
+@media(max-width:430px){header.barra{padding:8px 10px}}
+
+/* --- Un poco de vida: las paginas aparecen con suavidad -------------------------------------- */
 @media(prefers-reduced-motion:no-preference){
-  .vista.on>.hoja{animation:entra .22s ease-out}
-  @keyframes entra{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+  .vista.on>.hoja{animation:entra .28s var(--curva)}
+  @keyframes entra{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
 }
 @media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
@@ -1630,7 +1956,13 @@ input[type="checkbox"],input[type="radio"]{accent-color:var(--accent)}
 </div>
 
 <div id="aviso"></div>
-<div id="lupa"><p class="lupa-carga">Pidiendo el archivo a WhatsApp…</p><img alt="imagen ampliada"><video controls></video></div>
+<div id="lupa"><div class="lupa-barra" id="lupaBarra">
+  <button type="button" data-lupa="citar" title="Responder a este mensaje"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14L4 9l5-5"/><path d="M20 20v-7a4 4 0 00-4-4H4"/></svg><span>Responder</span></button>
+  <button type="button" data-lupa="reenviar" title="Reenviar a otro chat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M15 14l5-5-5-5"/><path d="M4 20v-7a4 4 0 014-4h12"/></svg><span>Reenviar</span></button>
+  <button type="button" data-lupa="descargar" title="Descargar el archivo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="M7 11l5 5 5-5"/><path d="M5 21h14"/></svg><span>Descargar</span></button>
+  <button type="button" class="lupa-x" data-lupa="cerrar" aria-label="Cerrar" title="Cerrar (Esc)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+</div>
+<div class="lupa-espera"><span class="lupa-rueda"></span><p class="lupa-carga">Pidiendo el archivo a WhatsApp…</p></div><img alt="imagen ampliada"><video controls></video></div>
 
 <script type="module">
 import { initializeApp, getApps } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js';
@@ -1714,26 +2046,32 @@ document.title = TITULO_BASE;
 // reordene nodos. Si el modulo no arranca, se ven TODAS. Un menu de mas no es
 // tan grave como un menu vacio, que es como quedo el panel anterior.
 const ico = d => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">' + d + '</svg>';
+// Un estado vacio como los de Apple: un glifo grande y apagado, un titulo y una linea que dice que
+// llena esta pantalla. `glifo` son las rutas SVG (como en ico()).
+function vacioApple(glifo, titulo, texto){
+  return '<div class="vacio-apple">' + ico(glifo) + '<b>' + esc(titulo) + '</b>'
+    + (texto ? '<p>' + esc(texto) + '</p>' : '') + '</div>';
+}
 let ROL_ACTUAL = '';
 const VISTAS = [
-  { id:'planning',      nombre:'Planificación', fija:true,  icono:ico('<path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/>') },
-  { id:'conversations', nombre:'Conversaciones',fija:true,  icono:ico('<path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>') },
+  { id:'planning',      nombre:'Planificación', fija:true,  icono:ico('<rect x="4.5" y="3.5" width="15" height="17.5" rx="3.2"/><path d="M9 3.5V3a.9.9 0 01.9-.9h4.2A.9.9 0 0115 3v.5"/><path d="M8.4 10.2l1.7 1.7 3-3.2"/><path d="M8.4 16h7.2"/>') },
+  { id:'conversations', nombre:'Conversaciones',fija:true,  icono:ico('<path d="M12 3.4c-4.9 0-8.6 3.2-8.6 7.3 0 2.3 1.2 4.3 3.1 5.6-.1 1.3-.7 2.5-1.7 3.5 2.100-.1 3.800-.8 5-1.900.7.200 1.400.3 2.200.3 4.900 0 8.600-3.200 8.600-7.300S16.900 3.400 12 3.400z"/>') },
   // Justo debajo de Conversaciones, como en la barra de WhatsApp Web.
-  { id:'estados',       nombre:'Estados',       fija:true,  icono:ico('<circle cx="12" cy="12" r="9" stroke-dasharray="4 2.3"/><circle cx="12" cy="12" r="4"/>') },
-  { id:'agenda',        nombre:'Agenda',        fija:true,  icono:ico('<rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/>') },
-  { id:'dashboard',     nombre:'Dashboard',     icono:ico('<rect x="3" y="3" width="7" height="9" rx="2"/><rect x="14" y="3" width="7" height="5" rx="2"/><rect x="14" y="12" width="7" height="9" rx="2"/><rect x="3" y="16" width="7" height="5" rx="2"/>') },
-  { id:'funnel',        nombre:'Funnel · Kanban', icono:ico('<path d="M22 3H2l8 9.5V19l4 2v-8.5L22 3z"/>') },
-  { id:'prospecting',   nombre:'Prospección',   icono:ico('<circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4M11 7v8M7 11h8"/>') },
-  { id:'poscustomers',  nombre:'Clientes de caja', icono:ico('<path d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M19 8v6M22 11h-6"/>') },
-  { id:'satisfaccion',  nombre:'Satisfacción',  icono:ico('<path d="M12 17.3l-5.5 3 1-6.1L3 9.8l6.1-.9L12 3.3l2.9 5.6 6.1.9-4.5 4.4 1 6.1z"/>') },
-  { id:'informes',      nombre:'Informes internos', restringida:true, oculta:true, icono:ico('<path d="M4 19V9M10 19V5M16 19v-7M22 19H2"/><path d="M3 4l5 3 5-4 7 4"/>') },
-  { id:'limpieza',      nombre:'Limpieza',       icono:ico('<path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/>') },
-  { id:'anuncios',      nombre:'Anuncios',       icono:ico('<path d="M3 11v2a2 2 0 002 2h2l4 4V5L7 9H5a2 2 0 00-2 2z"/><path d="M15 9a4 4 0 010 6"/>') },
-  { id:'campanas',      nombre:'Campañas',      icono:ico('<path d="M3 11l18-8-7 18-2-8-9-2z"/>') },
-  { id:'plantillas',    nombre:'Plantillas',    icono:ico('<rect x="5" y="5" width="14" height="16" rx="2"/><path d="M9 11h6M9 15h4"/>') },
-  { id:'reminders',     nombre:'Recordatorios', icono:ico('<path d="M18 8a6 6 0 00-12 0c0 7-3 9-3 9h18s-3-2-3-9M13 21a2 2 0 01-4 0"/>') },
-  { id:'canales',       nombre:'Canales',        icono:ico('<path d="M4 6h16M4 12h16M4 18h10"/><circle cx="19" cy="18" r="2"/>') },
-  { id:'config',        nombre:'Configuración',  icono:ico('<circle cx="12" cy="12" r="3"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3"/>') },
+  { id:'estados',       nombre:'Estados',       fija:true,  icono:ico('<circle cx="12" cy="12" r="8.6" stroke-dasharray="3.4 2.5"/><circle cx="12" cy="12" r="3.4"/>') },
+  { id:'agenda',        nombre:'Agenda',        fija:true,  icono:ico('<rect x="3.5" y="5" width="17" height="15.5" rx="3.6"/><path d="M3.5 10h17M8 3v3.600M16 3v3.600"/><circle cx="8.500" cy="14" r=".7" fill="currentColor"/><circle cx="12" cy="14" r=".7" fill="currentColor"/><circle cx="15.500" cy="14" r=".7" fill="currentColor"/>') },
+  { id:'dashboard',     nombre:'Dashboard',     icono:ico('<rect x="3.500" y="4" width="17" height="16" rx="3.600"/><path d="M8.200 16v-3.400M12 16V8.600M15.800 16v-5.400"/>') },
+  { id:'funnel',        nombre:'Funnel · Kanban', icono:ico('<path d="M4.200 5.500h15.600a.7.7 0 01.5 1.200L14.500 12.800v5.900a.7.7 0 01-1 .6l-3-1.500a.7.7 0 01-.4-.6v-4.400L3.700 6.700a.7.7 0 01.5-1.200z"/>') },
+  { id:'prospecting',   nombre:'Prospección',   icono:ico('<circle cx="12" cy="12" r="7.600"/><circle cx="12" cy="12" r="2.800"/><path d="M12 2.800v3.400M12 17.800v3.400M2.800 12h3.400M17.800 12h3.400"/>') },
+  { id:'poscustomers',  nombre:'Clientes de caja', icono:ico('<circle cx="12" cy="8" r="3.700"/><path d="M4.500 20c.5-3.700 3.500-5.700 7.500-5.700s7 2 7.500 5.700"/>') },
+  { id:'satisfaccion',  nombre:'Satisfacción',  icono:ico('<path d="M12 3.500l2.500 5.200 5.700.8-4.100 4 1 5.700L12 16.500l-5.100 2.700 1-5.700-4.100-4 5.700-.8z"/>') },
+  { id:'informes',      nombre:'Informes internos', restringida:true, oculta:true, icono:ico('<path d="M4.500 19.500V10M10 19.500V5M15.500 19.500v-7M21 19.500H3"/>') },
+  { id:'limpieza',      nombre:'Limpieza',       icono:ico('<path d="M9.800 5c.6 4.200 1.800 5.400 6 6-4.200.6-5.400 1.800-6 6-.6-4.200-1.800-5.400-6-6 4.200-.6 5.400-1.800 6-6z"/><path d="M18.200 3.400c.25 1.700.75 2.200 2.400 2.400-1.650.2-2.150.7-2.400 2.400-.25-1.700-.75-2.200-2.400-2.400 1.650-.2 2.150-.7 2.400-2.400z"/><path d="M18.200 14.600c.3 2 .9 2.600 2.800 2.900-1.900.3-2.500.9-2.800 2.900-.3-2-.9-2.600-2.800-2.900 1.900-.3 2.500-.9 2.800-2.900z"/>') },
+  { id:'anuncios',      nombre:'Anuncios',       icono:ico('<path d="M3.500 10v4a1 1 0 001 1H7l9 4V5L7 9H4.500a1 1 0 00-1 1z"/><path d="M7.500 15l1 4.200a.9.9 0 00.9.700h1.100a.9.9 0 00.9-1.100L11 16.700"/><path d="M19.200 9.200a3.700 3.700 0 010 5.600"/>') },
+  { id:'campanas',      nombre:'Campañas',      icono:ico('<path d="M20.500 3.500L10.200 13.800"/><path d="M20.500 3.500l-6.600 17-3.700-6.700L3.500 10.100z"/>') },
+  { id:'plantillas',    nombre:'Plantillas',    icono:ico('<path d="M7 3h6.600L19 8.400V18a3 3 0 01-3 3H7a3 3 0 01-3-3V6a3 3 0 013-3z"/><path d="M13.400 3.200V8.600H19"/><path d="M8 13h7M8 16.500h4.600"/>') },
+  { id:'reminders',     nombre:'Recordatorios', icono:ico('<path d="M6.300 16.200V11a5.700 5.700 0 0111.400 0v5.200l1.600 2.300H4.700z"/><path d="M10 21a2.200 2.200 0 004 0"/>') },
+  { id:'canales',       nombre:'Canales',        icono:ico('<circle cx="6.200" cy="12" r="2.500"/><circle cx="17.800" cy="6.200" r="2.500"/><circle cx="17.800" cy="17.800" r="2.500"/><path d="M8.400 10.800l7.200-3.500M8.400 13.200l7.200 3.500"/>') },
+  { id:'config',        nombre:'Configuración',  icono:ico('<path d="M18.65 9.24L18.94 10.10L20.93 10.26L20.93 13.74L18.94 13.90L18.65 14.76L18.25 15.57L19.55 17.09L17.09 19.55L15.57 18.25L14.76 18.65L13.90 18.94L13.74 20.93L10.26 20.93L10.10 18.94L9.24 18.65L8.43 18.25L6.91 19.55L4.45 17.09L5.75 15.57L5.35 14.76L5.06 13.90L3.07 13.74L3.07 10.26L5.06 10.10L5.35 9.24L5.75 8.43L4.45 6.91L6.91 4.45L8.43 5.75L9.24 5.35L10.10 5.06L10.26 3.07L13.74 3.07L13.90 5.06L14.76 5.35L15.57 5.75L17.09 4.45L19.55 6.91L18.25 8.43Z"/><circle cx="12" cy="12" r="2.9"/>') },
 ];
 
 /* ---- Accesos a la bandeja de Meta ---------------------------------------- */
@@ -1760,16 +2098,16 @@ const ENLACES_META = CFG.metaInboxLinks || {};
 const ACCESOS_META = !META_PAGINA ? [] : [
   { id:'ig', nombre:'Instagram', url: ENLACES_META.instagram || bandejaMeta('instagram_direct'),
     respaldo: BANDEJA_META, respaldoNombre:'Bandeja general de Meta',
-    icono: ico('<rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1.1" fill="currentColor" stroke="none"/>') },
+    icono: ico('<rect x="3.800" y="3.800" width="16.400" height="16.400" rx="4.800"/><circle cx="12" cy="12" r="3.800"/><circle cx="17" cy="7" r=".9" fill="currentColor" stroke="none"/>') },
   { id:'fb', nombre:'Messenger', url: ENLACES_META.messenger || bandejaMeta('messenger'),
     respaldo: BANDEJA_META, respaldoNombre:'Bandeja general de Meta',
-    icono: ico('<path d="M12 3C6.8 3 3 6.9 3 11.6c0 2.6 1.2 4.9 3.2 6.5V22l3-1.7c.9.3 1.8.4 2.8.4 5.2 0 9-3.9 9-8.6S17.2 3 12 3z"/><path d="M7.5 14.3l3.3-3.5 1.8 1.9 3-1.9-3.4 3.6-1.8-1.9-2.9 1.8z"/>') },
+    icono: ico('<path d="M12 3.500c-4.700 0-8.500 3.500-8.500 7.900 0 2.400 1.100 4.500 2.900 5.900V21l3-1.700c.8.200 1.700.4 2.600.4 4.700 0 8.500-3.500 8.500-7.900S16.700 3.500 12 3.500z"/><path d="M7.700 13.800l3-3.300 2 2 3.500-3.300"/>') },
   // Marketplace es del PERFIL PERSONAL del dueno: Meta no tiene API para esos mensajes (se
   // retiro read_mailbox), asi que lo unico posible es el acceso directo. Solo abre bien con esa
   // sesion de Facebook en el navegador. messenger.com no se enlaza: cerro en abril de 2026.
   { id:'mp', nombre:'Marketplace', url: ENLACES_META.marketplace || 'https://www.facebook.com/marketplace/inbox/',
     respaldo:'https://www.facebook.com/messages/', respaldoNombre:'Mensajes del perfil',
-    icono: ico('<path d="M3 9l1.6-5h14.8L21 9"/><path d="M4 9v11h16V9"/><path d="M9.5 20v-6h5v6"/>') },
+    icono: ico('<path d="M4 9.500l1.300-4.300A1.500 1.500 0 016.700 4h10.600a1.500 1.500 0 011.400 1.200L20 9.500"/><path d="M4 9.500a2.700 2.700 0 005.300 0 2.700 2.700 0 005.400 0 2.700 2.700 0 005.300 0"/><path d="M5.500 12.500V19a1 1 0 001 1h11a1 1 0 001-1v-6.500"/>') },
 ];
 function accesoMeta(id){ return ACCESOS_META.find(a => a.id === id) || null; }
 // Un enlace suelto a la bandeja de Meta, para reutilizarlo donde haga falta decir "contesta alli"
@@ -2417,13 +2755,24 @@ function stCuando(iso){
 
 // La ficha de quien publicó, para su nombre y su foto. De las visibles y de la línea anterior;
 // de las ignoradas no, que tampoco tienen estados guardados.
+// Un mapa telefono -> ficha, armado una vez cada pocos segundos. Antes CADA fila recorria las
+// ~1.500 fichas tres veces (nombre y dos veces el avatar): con 700 contactos con estados eran
+// millones de comparaciones en cada repintado, y hay uno por cada cambio que llega.
+const ST_MAPA = { n: -1, en: 0, m: new Map() };
 function stConv(tel){
-  let mejor = null;
-  for (const c of [...CONVS, ...CONVS_OCULTAS]) {
-    if (soloDigitos(c.wa_phone) !== tel) continue;
-    if (!mejor || c.source === 'whatsapp_qr') mejor = c;
+  const n = CONVS.length + CONVS_OCULTAS.length;
+  const ahora = Date.now();
+  if (ST_MAPA.n !== n || ahora - ST_MAPA.en > 3000) {
+    const m = new Map();
+    for (const c of [...CONVS, ...CONVS_OCULTAS]) {
+      const t = soloDigitos(c.wa_phone);
+      if (!t) continue;
+      // Igual que antes: la de la linea de WhatsApp Web gana; si no, la primera.
+      if (!m.has(t) || c.source === 'whatsapp_qr') m.set(t, c);
+    }
+    ST_MAPA.n = n; ST_MAPA.en = ahora; ST_MAPA.m = m;
   }
-  return mejor;
+  return ST_MAPA.m.get(tel) || null;
 }
 function stNombre(tel, e){
   const c = stConv(tel);
@@ -2497,19 +2846,59 @@ function stFilaMia(){
     + '<i>' + esc(stCuando(mios[mios.length - 1].sent_at)) + '</i></span></button>';
 }
 
+// La lista sale por tandas. Con 700 contactos con estados, pintarlos todos eran 660 KB de HTML
+// y casi 400 ms bloqueados cada vez que llegaba algo; WhatsApp Web tampoco los pinta todos. Al
+// llegar al final de la lista salen otros 60 (o con «Mostrar más»).
+const ST_TANDA = 60;
+// Lo que se pide por adelantado de la lista: el primer estado sin ver de los primeros contactos.
+const ST_ADELANTO_LISTA = 4;
+
 function pintaEstados(){
   const cont = $('stScroll');
   if (!cont) return;
+  // Con otra vista abierta no se pinta para nadie. Al volver, ve() monta la vista ANTES de
+  // hacerla visible, y montaEstados la pinta entonces (vistaActual ya es 'estados').
+  if (vistaActual !== 'estados' && cont.dataset.pintado) return;
   const grupos = stGrupos();
   const recientes = grupos.filter(g => g.pendientes > 0);
   const vistos = grupos.filter(g => !g.pendientes);
+  const limite = Math.max(ST.mostrar || 0, ST_TANDA);
+  let usados = 0;
+  const tanda = lista => { const t = lista.slice(0, Math.max(0, limite - usados)); usados += t.length; return t; };
+  const r = tanda(recientes), v = tanda(vistos);
   cont.innerHTML = stFilaMia()
-    + (recientes.length ? '<div class="st-sec">Recientes</div>' + recientes.map(stFila).join('') : '')
-    + (vistos.length ? '<div class="st-sec">Vistos</div>' + vistos.map(stFila).join('') : '')
+    + (r.length ? '<div class="st-sec">Recientes</div>' + r.map(stFila).join('') : '')
+    + (v.length ? '<div class="st-sec">Vistos</div>' + v.map(stFila).join('') : '')
+    + (usados < grupos.length ? '<button class="st-vermas" data-stvermas>Mostrar más · ' + (grupos.length - usados) + '</button>' : '')
     + (!grupos.length ? '<div class="st-nada">Todavía no hay estados de tus contactos. Salen los de quien '
       + 'tiene guardado el número de la línea de WhatsApp Web; la agenda .vcf de Configuración sirve '
       + 'para que el teléfono del negocio los tenga a todos.</div>' : '');
+  cont.dataset.pintado = '1';
   resuelveAvatares();
+  // Lo primero que se va a abrir ya va de camino cuando se pulse.
+  stAdelanta(recientes.slice(0, ST_ADELANTO_LISTA).map(g => g.lista.find(e => !stVisto(e))).filter(Boolean));
+}
+
+// Los cambios llegan en ráfagas (un snapshot por documento que se actualiza): se juntan en un
+// solo pintado en vez de rehacer la lista por cada uno.
+let ST_PINTA_T = 0;
+function pintaEstadosPronto(){
+  if (ST_PINTA_T) return;
+  ST_PINTA_T = setTimeout(() => { ST_PINTA_T = 0; pintaEstados(); }, 150);
+}
+
+// Pide por adelantado el archivo de estos estados (fotos y videos; el texto no tiene, la nota de voz
+// pesa poco y va con su estado). Sin avisar de nada si no se puede: al abrirlo se pide como siempre.
+// Comparte el cupo de lo que el panel pide solo (pideAdelantado), y cada estado se pide una vez.
+ST.adelantados = new Set();
+function stAdelanta(estados){
+  for (const e of (estados || []).slice(0, 8)) {
+    const tipo = String(e.kind || '');
+    if (!e._id || tipo === 'texto' || tipo === 'text' || ST.adelantados.has(e._id)) continue;
+    if ((Number(e.media_size) || 0) > 6 * 1048576) continue;
+    ST.adelantados.add(e._id);
+    void pideAdelantado(e._id);
+  }
 }
 
 function escuchaEstados(){
@@ -2517,8 +2906,19 @@ function escuchaEstados(){
   ST.escuchando = true;
   onSnapshot(query(collection(db, 'crm_status_feed'), where('business_id', '==', NEGOCIO)), s => {
     ST.feed = s.docs.map(d => ({ ...d.data(), _id: d.id }));
-    pintaEstados();
+    pintaEstadosPronto();
   }, err => console.warn('estados de contactos', err?.code || err));
+  stCargaMios();
+  // Los tuyos se leen por el servidor (la fila lleva la lista de destinatarios, que no hace
+  // falta bajar al navegador): cada minuto mientras la vista está abierta.
+  setInterval(() => { if (vistaActual === 'estados') stCargaMios(); }, 60000);
+}
+
+// Quien vio cada estado tuyo. Es toda la coleccion de vistas del negocio, y solo hace falta al
+// abrir un estado propio: antes se bajaba entera, junto con la lista, al entrar en Estados.
+function escuchaVistasEstados(){
+  if (ST.escuchandoVistas) return;
+  ST.escuchandoVistas = true;
   onSnapshot(query(collection(db, 'crm_status_views'), where('business_id', '==', NEGOCIO)), s => {
     const m = new Map();
     for (const d of s.docs) {
@@ -2529,17 +2929,13 @@ function escuchaEstados(){
     ST.vistas = m;
     stPintaAbajo();
   }, err => console.warn('vistas de estados', err?.code || err));
-  stCargaMios();
-  // Los tuyos se leen por el servidor (la fila lleva la lista de destinatarios, que no hace
-  // falta bajar al navegador): cada minuto mientras la vista está abierta.
-  setInterval(() => { if (vistaActual === 'estados') stCargaMios(); }, 60000);
 }
 
 async function stCargaMios(){
   const r = await llama({ action:'statusList' });
   if (!r.ok) return;
   ST.mios = r.data || [];
-  pintaEstados();
+  pintaEstadosPronto();
 }
 
 function montaEstados(){
@@ -2578,9 +2974,18 @@ function montaEstados(){
     }
     const mio = ev.target.closest('[data-stmio]');
     if (mio) return mio.dataset.stmio === 'ver' ? stAbreMios() : stCompositor('texto');
+    if (ev.target.closest('[data-stvermas]')) { ST.mostrar = (ST.mostrar || ST_TANDA) + ST_TANDA; return pintaEstados(); }
     const fila = ev.target.closest('[data-sttel]');
     if (fila) stAbreContacto(fila.dataset.sttel);
   });
+  // Al llegar casi al final de la lista salen las siguientes, sin tener que pulsar nada.
+  $('stScroll').addEventListener('scroll', () => {
+    const s = $('stScroll');
+    if (s.scrollTop + s.clientHeight < s.scrollHeight - 320) return;
+    if (!s.querySelector('[data-stvermas]')) return;
+    ST.mostrar = (ST.mostrar || ST_TANDA) + ST_TANDA;
+    pintaEstados();
+  }, { passive: true });
   pintaEstados();
 }
 
@@ -2685,6 +3090,7 @@ function stAbreContacto(tel){
 function stAbreMios(){
   const mios = stMios();
   if (!mios.length) return stCompositor('texto');
+  escuchaVistasEstados();
   stVisor({ modo: 'mios', grupos: [{ tel: '', lista: mios }], gi: 0, i: 0 });
 }
 
@@ -2763,6 +3169,13 @@ function stMuestra(){
   const escena = $('stEscena');
   const pie = $('stPie');
   escena.querySelectorAll('video,audio').forEach(m => { try { m.pause(); } catch (x) {} });
+  // Lo que viene despues ya va de camino mientras se mira este: el resto de los de este contacto y
+  // el primero sin ver del siguiente. Es lo que hace que pasar de uno a otro no espere al telefono.
+  if (!mio) {
+    stAdelanta(lista.slice(v.i + 1));
+    const siguiente = v.grupos[v.gi + 1];
+    if (siguiente) stAdelanta([siguiente.lista.find(x => !stVisto(x)) || siguiente.lista[0]].filter(Boolean));
+  }
   const tipo = String(e.kind || '');
   const texto = String(e.body || '');
   pie.textContent = '';
@@ -2787,8 +3200,10 @@ function stMuestra(){
     }
     // El archivo completo se pide al abrirlo, como «Ver» en un mensaje. Mientras llega se ve la
     // miniatura borrosa y la barra no avanza: el tiempo empieza cuando hay algo que mirar.
+    // Ya venia de camino (stAdelanta), asi que casi siempre esta listo al instante. Si tarda,
+    // a los 5 s empieza el tiempo igual: nadie espera 9 s mirando una foto borrosa.
     const pedido = e._id;
-    const espera = setTimeout(() => { if (stActual()?._id === pedido && !v.arrancado) stArranca(ST_DURACION_MS); }, 9000);
+    const espera = setTimeout(() => { if (stActual()?._id === pedido && !v.arrancado) stArranca(ST_DURACION_MS); }, 5000);
     pideMedioCompleto(e._id).then(url => {
       clearTimeout(espera);
       if (!url || stActual()?._id !== pedido || !ST.visor) { if (!url && stActual()?._id === pedido && !v.arrancado) stArranca(ST_DURACION_MS); return; }
@@ -3992,12 +4407,12 @@ function abre(c){
       + esc(({pending:'Aviso pendiente',sent:'Aviso enviado',failed:'Aviso fallido',skipped:'Aviso no enviado'})[c.human_handoff_notification_status] || 'Aviso pendiente') + '</span>' : '')
     + '<button class="modo" id="btnModo"></button>'
     + '<button class="adj" id="verFicha" title="Ficha del lead" aria-label="Ficha del lead">'
-    +   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 8v.01M11 12h1v4h1"/></svg></button>'
+    +   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="8.600"/><path d="M12 11v5.200"/><circle cx="12" cy="7.800" r=".7" fill="currentColor" stroke="none"/></svg></button>'
     // Agendar es lo que mas se hace desde un chat y estaba escondido dentro del menu de los
     // tres puntos, a dos clics. Arriba, al lado de la ficha, se pulsa sin buscarlo: es el mismo
     // cuadro de siempre, no una funcion nueva.
     + '<button class="adj" id="btnAgendar" title="Agendar un recordatorio" aria-label="Agendar">'
-    +   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4M16 3v4M3 11h18M8 15h3"/></svg></button>'
+    +   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3.500" y="5" width="17" height="15.500" rx="3.600"/><path d="M3.500 10h17M8 3v3.600M16 3v3.600"/><circle cx="8.500" cy="14" r=".8" fill="currentColor" stroke="none"/><circle cx="12" cy="14" r=".8" fill="currentColor" stroke="none"/></svg></button>'
     + '<div class="mas" id="mas"><button aria-label="Más opciones">⋯</button>'
     +   '<div class="menu"><button data-mas="recordar">Añadir recordatorio</button>'
     +   '<button data-mas="contacto">Guardar contacto</button>'
@@ -4022,22 +4437,22 @@ function abre(c){
     + '<div class="escribir">'
     +   '<div class="adjuntos">'
     +     '<button class="adj" id="adjEmoji" title="Emojis" aria-label="Emojis">'
-    +       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M8.5 10.01l.01-.011M15.5 10.01l.01-.011M8 15a5 5 0 008 0"/></svg></button>'
+    +       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="8.600"/><path d="M8.600 14.200a4.200 4.200 0 006.800 0"/><circle cx="9.200" cy="9.800" r=".9" fill="currentColor" stroke="none"/><circle cx="14.800" cy="9.800" r=".9" fill="currentColor" stroke="none"/></svg></button>'
     +     '<button class="adj" id="adjImg" title="Enviar imágenes" aria-label="Enviar imágenes">'
-    +       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg></button>'
+    +       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3.500" y="4.500" width="17" height="15" rx="3.200"/><circle cx="9" cy="10" r="1.700"/><path d="M4 17.500l4.500-4.200 3.500 3.200 3-2.800 5 4.300"/></svg></button>'
     +     '<button class="adj hd' + (modoHd ? ' on' : '') + '" id="adjHd" title="HD: envía la imagen sin comprimir" aria-pressed="' + (modoHd ? 'true' : 'false') + '">HD</button>'
     +     '<button class="adj" id="adjDoc" title="Enviar documento" aria-label="Enviar documento">'
-    +       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/></svg></button>'
+    +       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M7 3h6.600L19 8.400V18a3 3 0 01-3 3H7a3 3 0 01-3-3V6a3 3 0 013-3z"/><path d="M13.400 3.200V8.600H19"/></svg></button>'
     +     '<button class="adj" id="adjRapida" title="Respuestas rápidas" aria-label="Respuestas rápidas">'
-    +       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M13 2L4.5 13H11l-1 9 8.5-11H12l1-9z"/></svg></button>'
+    +       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M13.300 2.800L5 13.200h6l-.9 8 8.900-10.800h-6z"/></svg></button>'
     +     '<button class="adj" id="adjCombo" title="Combos por categoría" aria-label="Combos">'
-    +       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20 7l-8-4-8 4 8 4 8-4z"/><path d="M4 12l8 4 8-4M4 17l8 4 8-4"/></svg></button>'
+    +       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3.500l8.500 4.300-8.500 4.300-8.500-4.300z"/><path d="M3.500 12l8.500 4.300 8.500-4.300"/><path d="M3.500 16.200L12 20.500l8.500-4.300"/></svg></button>'
     +     (esOficial(c)
         ? '<button class="adj" id="adjTpl" title="Plantillas de WhatsApp" aria-label="Plantillas">'
-          + '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 9h6M9 13h6M9 17h3"/></svg></button>'
+          + '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M7 3h6.600L19 8.400V18a3 3 0 01-3 3H7a3 3 0 01-3-3V6a3 3 0 013-3z"/><path d="M13.400 3.200V8.600H19"/><path d="M8 13h7M8 16.500h4.600"/></svg></button>'
         : '')
     +     '<button class="adj" id="adjMic" title="Grabar audio" aria-label="Grabar audio">'
-    +       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 11a7 7 0 0014 0M12 18v4"/></svg></button>'
+    +       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="9" y="3" width="6" height="11.500" rx="3"/><path d="M5.500 11.500a6.500 6.500 0 0013 0M12 18v3"/></svg></button>'
     +     '<input type="file" id="fImg" accept="image/*" multiple hidden>'
     +     '<input type="file" id="fDoc" multiple hidden>'
     +   '</div>'
@@ -4050,7 +4465,7 @@ function abre(c){
     +   '</div>'
     +   '<textarea id="texto" rows="1" placeholder="Escribe tu respuesta…"></textarea>'
     +   '<button class="enviar" id="btnEnviar" aria-label="Enviar">'
-    +   '<svg width="19" height="19" viewBox="0 0 24 24" fill="currentColor"><path d="M3 20l18-8L3 4v6l12 2-12 2z"/></svg>'
+    +   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.600" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5.500M5.800 11.500L12 5.300l6.200 6.200"/></svg>'
     +   '</button></div>'
     + '<div class="cola" id="cola" hidden></div>';
   // La foto de la cabecera, si es del 2.o numero y aun no esta en cache.
@@ -5274,24 +5689,57 @@ function abreModal(html){
 function cierraModal(){ const m = $('modal'); if (m) m.className = 'modal'; }
 document.addEventListener('keydown', ev => { if (ev.key === 'Escape') { cierraModal(); cierraLupa(); } });
 
+/* ---- Lupa: nombre con el que se descarga ---------------------------------- */
+// ---- Lupa: piezas puras
+const EXT_DE_MIME = {
+  'image/jpeg':'jpg', 'image/png':'png', 'image/webp':'webp', 'image/gif':'gif',
+  'video/mp4':'mp4', 'video/quicktime':'mov', 'video/webm':'webm', 'video/3gpp':'3gp',
+  'audio/ogg':'ogg', 'audio/mpeg':'mp3', 'audio/mp4':'m4a', 'application/pdf':'pdf',
+};
+// El nombre con el que se guarda lo que se descarga desde la lupa: el del archivo si lo tiene
+// (un documento), y si no uno que dice que es y cuando --imagen-20260928-153045.jpg--, como
+// hace WhatsApp Web. Sin caracteres que Windows no admita en un nombre de archivo.
+function nombreDeDescarga(m, mime, ahora = new Date()){
+  const dado = String((m && (m.media_filename || m.attachments?.[0]?.fileName)) || '')
+    .replace(/[\\/:*?"<>|\u0000-\u001f]/g, '_').trim().slice(0, 120);
+  if (dado) return dado;
+  const t = String(mime || '').split(';')[0].trim().toLowerCase();
+  const tipo = t.startsWith('video/') ? 'video' : t.startsWith('audio/') ? 'audio'
+    : t.startsWith('image/') ? 'imagen' : 'archivo';
+  const p = n => String(n).padStart(2, '0');
+  return tipo + '-' + ahora.getFullYear() + p(ahora.getMonth() + 1) + p(ahora.getDate())
+    + '-' + p(ahora.getHours()) + p(ahora.getMinutes()) + p(ahora.getSeconds())
+    + '.' + (EXT_DE_MIME[t] || 'bin');
+}
+// ---- Lupa: fin de las piezas puras
+
 /* ---- Lupa de imagenes, videos y stickers ---------------------------------- */
+// Que mensaje esta abierto en la lupa: de ahi salen Responder, Reenviar y el nombre al descargar.
+let LUPA_ACTUAL = { msgId: '' };
+function fijaLupa(msgId){ LUPA_ACTUAL = { msgId: String(msgId || '') }; }
+function mensajeDeLupa(){
+  return LUPA_ACTUAL.msgId ? (MSGS.find(x => (x.id || x.wamid) === LUPA_ACTUAL.msgId) || null) : null;
+}
 function cierraLupa(){
   const l = $('lupa');
-  l.classList.remove('on', 'cargando', 'con-imagen', 'con-video');
+  l.classList.remove('on', 'esperando', 'con-imagen', 'con-video');
   l.querySelector('img').src = '';
   const v = l.querySelector('video');
   v.pause(); v.removeAttribute('src'); v.load();
+  LUPA_ACTUAL = { msgId: '' };
 }
 // Se abre YA, antes de tener el archivo: pedirlo bajo demanda puede tardar unos segundos
 // y esto no es una ventana nueva, asi que no la alcanza el bloqueo de popups de Chrome.
 function abreLupaCargando(){
   const l = $('lupa');
   l.classList.remove('con-imagen', 'con-video');
-  l.classList.add('on', 'cargando');
+  l.classList.add('on', 'esperando');
+  l.querySelector('[data-lupa="descargar"]').disabled = true;
 }
 function muestraLupa(tipo, src){
   const l = $('lupa');
-  l.classList.remove('cargando');
+  l.classList.remove('esperando');
+  l.querySelector('[data-lupa="descargar"]').disabled = false;
   l.classList.add('on');
   if (tipo === 'video') {
     l.classList.remove('con-imagen'); l.classList.add('con-video');
@@ -5305,6 +5753,30 @@ $('lupa').onclick = cierraLupa;
 // El video no cierra la lupa al tocarlo: hacen falta los controles nativos (pausa, avance,
 // volumen) sin que cada toque cierre la vista.
 $('lupa').querySelector('video').onclick = ev => ev.stopPropagation();
+// Responder, Reenviar y Descargar sobre el mensaje que esta abierto. Reenviar y Responder
+// cierran la lupa: lo que sigue (elegir chat, escribir) pasa en el panel, no encima de la foto.
+$('lupaBarra').onclick = async ev => {
+  ev.stopPropagation();
+  const boton = ev.target.closest('[data-lupa]');
+  if (!boton || boton.disabled) return;
+  const op = boton.dataset.lupa;
+  if (op === 'cerrar') return cierraLupa();
+  const m = mensajeDeLupa();
+  if (op === 'descargar') {
+    const l = $('lupa');
+    const src = (l.classList.contains('con-video') ? l.querySelector('video') : l.querySelector('img')).getAttribute('src');
+    if (!src) return;
+    try {
+      const blob = await (await fetch(src)).blob();
+      descargaComoArchivo(blob, nombreDeDescarga(m, blob.type));
+    } catch (e) { avisa('No se pudo descargar el archivo'); }
+    return;
+  }
+  if (!m) return avisa('Ese mensaje ya no está abierto', 'Ciérralo y ábrelo de nuevo desde el chat.');
+  cierraLupa();
+  if (op === 'citar') { citando = m; pintaCita(); $('texto')?.focus(); }
+  else if (op === 'reenviar') abreReenviar([m.id || m.wamid]);
+};
 // Delegado en el documento: los globos se repintan en cada mensaje nuevo y un
 // manejador puesto sobre cada imagen se perderia en el siguiente repintado. Los stickers
 // (.msticker) entran igual que las fotos: antes no tenian lupa y no habia otra forma de
@@ -5312,6 +5784,7 @@ $('lupa').querySelector('video').onclick = ev => ev.stopPropagation();
 document.addEventListener('click', ev => {
   const img = ev.target;
   if (img?.tagName === 'IMG' && (img.classList.contains('mmedia') || img.classList.contains('msticker'))) {
+    fijaLupa(img.closest('[data-msg]')?.dataset.msg);
     muestraLupa('img', img.src);
   }
 });
@@ -5654,6 +6127,16 @@ function pintaBarraSeleccion(){
 document.addEventListener('click', async ev => {
   const casilla = ev.target.closest('.msel[data-msel]');
   if (casilla) { ev.stopPropagation(); alternaSeleccion(casilla.dataset.msel); return; }
+  // Responder y Reenviar desde la propia tarjeta de un archivo (ver opsArchivo).
+  const opArchivo = ev.target.closest('[data-gop]');
+  if (opArchivo) {
+    ev.stopPropagation();
+    const m = MSGS.find(x => (x.id || x.wamid) === opArchivo.dataset.gmsg);
+    if (!m) return;
+    if (opArchivo.dataset.gop === 'citar') { citando = m; pintaCita(); $('texto')?.focus(); }
+    else abreReenviar([m.id || m.wamid]);
+    return;
+  }
   const verVersiones = ev.target.closest('[data-versiones]');
   if (verVersiones) {
     ev.stopPropagation();
@@ -6202,33 +6685,56 @@ const MOTIVO_MEDIO = {
 };
 const MEDIO_ESPERA_MS = 1500;
 const MEDIO_INTENTOS = 40;          // unos 60 s: el reenvio al telefono puede tardar
+const MEDIO_INTENTOS_AUTO = 16;     // pedido por el panel solo: si tarda, se deja para cuando alguien lo pulse
 const MEDIOS_BAJO_CURSO = new Map();
+const CURSO_AUTO = new Set();       // los que van en camino pedidos por el panel, no por una persona
+// Lo que ya llego, por id de mensaje: abrir un archivo que el panel pidio por adelantado es
+// instantaneo, sin volver a preguntar. La cache de blobs (MEDIOS) es la que guarda los bytes.
+const LISTOS_BAJO = new Map();
 
-async function pideMedioCompleto(msgId){
+// `auto`: lo pide el propio panel al ver el mensaje, sin que nadie pulsara nada. Va callado (un
+// fallo no es un aviso para nadie: el archivo se sigue pudiendo pedir con Ver), no reintenta
+// lo que fallo y, si el servidor dice que ya pidio demasiados, avisa con `alLimite`.
+async function pideMedioCompleto(msgId, { auto = false, alLimite = null } = {}){
   if (!msgId) return '';
-  if (MEDIOS_BAJO_CURSO.has(msgId)) return MEDIOS_BAJO_CURSO.get(msgId);
+  if (LISTOS_BAJO.get(msgId)) return LISTOS_BAJO.get(msgId);
+  if (MEDIOS_BAJO_CURSO.has(msgId)) {
+    const previo = MEDIOS_BAJO_CURSO.get(msgId);
+    if (auto || !CURSO_AUTO.has(msgId)) return previo;
+    // Alguien pulso Ver mientras el panel lo pedia por adelantado: se espera a ese pedido y, si
+    // fallo callado, se intenta ahora en serio (con aviso), que es lo que la persona espera.
+    const url = await previo;
+    if (url) return url;
+    if (MEDIOS_BAJO_CURSO.has(msgId)) return MEDIOS_BAJO_CURSO.get(msgId);
+  }
   const pedido = (async () => {
-    for (let intento = 0; intento < MEDIO_INTENTOS; intento++) {
+    for (let intento = 0; intento < (auto ? MEDIO_INTENTOS_AUTO : MEDIO_INTENTOS); intento++) {
       // Solo la PRIMERA llamada de cada pulsacion puede volver a pedir algo que fallo: las
       // demas solo preguntan si ya esta. Si no, un fallo pasajero se convertia en una peticion
       // nueva al telefono cada segundo y medio mientras el panel esperaba.
-      const r = await llama({ action: 'mediaFull', message_id: msgId, ...(intento === 0 ? { reintentar: true } : {}) });
-      if (!r.ok) { avisa('No se pudo pedir el archivo', r.error || ''); return ''; }
+      const r = await llama({ action: 'mediaFull', message_id: msgId, ...(intento === 0 && !auto ? { reintentar: true } : {}) });
+      if (!r.ok) {
+        if (auto) { if (r.status === 429 && alLimite) alLimite(); return ''; }
+        avisa('No se pudo pedir el archivo', r.error || '');
+        return '';
+      }
       if (r.estado === 'listo') {
         // La cache de blobs es la de siempre; la clave es el id del archivo temporal, que
         // cambia cada vez que se vuelve a pedir, asi que nunca se sirve uno caducado.
         const url = await urlDeMedio(r.media_id, null, msgId);
-        if (!url) avisa('No se pudo abrir el archivo');
+        if (!url) { if (!auto) avisa('No se pudo abrir el archivo'); }
+        else LISTOS_BAJO.set(msgId, url);
         return url;
       }
-      if (r.estado === 'no_disponible') { avisa(MOTIVO_MEDIO[r.motivo] || MOTIVO_MEDIO.error); return ''; }
+      if (r.estado === 'no_disponible') { if (!auto) avisa(MOTIVO_MEDIO[r.motivo] || MOTIVO_MEDIO.error); return ''; }
       await new Promise(res => setTimeout(res, MEDIO_ESPERA_MS));
     }
-    avisa('El archivo está tardando demasiado', 'La PC del negocio no lo ha entregado todavía.');
+    if (!auto) avisa('El archivo está tardando demasiado', 'La PC del negocio no lo ha entregado todavía.');
     return '';
   })();
   MEDIOS_BAJO_CURSO.set(msgId, pedido);
-  try { return await pedido; } finally { MEDIOS_BAJO_CURSO.delete(msgId); }
+  if (auto) CURSO_AUTO.add(msgId);
+  try { return await pedido; } finally { MEDIOS_BAJO_CURSO.delete(msgId); CURSO_AUTO.delete(msgId); }
 }
 
 // Lo unico que se ABRE en una pestana. Un blob: creado aqui hereda el origen del panel, y el
@@ -6261,9 +6767,12 @@ function cableaBajoDemanda(){
     el.onclick = async () => {
       const etiqueta = el.querySelector('.vertag') || el;
       const antes = etiqueta.textContent;
-      etiqueta.textContent = 'Pidiendo…';
+      const yaEsta = LISTOS_BAJO.has(el.dataset.bajo);
+      // Si el panel ya lo pidio por adelantado no hay nada que esperar: ni «Pidiendo…» ni lupa en
+      // blanco, se abre con la foto.
+      if (!yaEsta) etiqueta.textContent = 'Pidiendo…';
       el.classList.add('pidiendo');
-      if (conMiniatura) abreLupaCargando();
+      if (conMiniatura) { fijaLupa(el.dataset.bajo); if (!yaEsta) abreLupaCargando(); }
       // La pestana se abre YA, dentro del clic, solo para lo que no tiene miniatura. Pedirle
       // el archivo al telefono tarda unos segundos, y Chrome bloquea sin avisar una ventana
       // que se abre mas de cinco segundos despues de pulsar: "Ver" no hacia nada. Un documento
@@ -6295,6 +6804,151 @@ function cableaBajoDemanda(){
       }
     };
   });
+  cableaAutoBajo();
+}
+
+// ---- Pedir por adelantado lo que se ve ------------------------------------------------------
+//
+// Hasta aqui una foto de WhatsApp Web se veia como una miniatura borrosa con «Ver», y el
+// archivo entero se le pedia al telefono al pulsar: unos segundos de espera cada vez. WhatsApp
+// Web no funciona asi: baja lo que entra en pantalla y ya esta cuando lo miras.
+//
+// Ahora el panel lo pide solo, en cuanto el mensaje entra en pantalla, y sustituye la miniatura
+// por la foto nitida. Lo hace con limites, porque cada archivo es una peticion al telefono del
+// negocio desde un numero personal vinculado:
+//   - solo mensajes de las ultimas 12 horas (la copia temporal dura 6; pasado eso pedirlo es
+//     pedirle al telefono que reenvie, que esta limitado a 30 por hora);
+//   - solo archivos razonables (fotos hasta 6 MB, notas de voz y documentos hasta 2 MB);
+//   - dos a la vez, y como mucho 40 cada 10 minutos: de los 60 que da el servidor, el resto se
+//     queda para quien pulse Ver;
+//   - si el servidor dice que ya pidieron demasiados, se para 10 minutos sin avisar a nadie.
+// Lo que no se pida solo sigue como antes: se pide al pulsar Ver.
+// ---- Medios automaticos: piezas puras
+const AUTO_EDAD_MAX_MS = 12 * 3600_000;
+const AUTO_TOPE_BYTES = {
+  image: 6 * 1048576, sticker: 1048576, video: 6 * 1048576, audio: 2 * 1048576, document: 2 * 1048576,
+};
+const AUTO_CUPO = 40;
+const AUTO_CUPO_MS = 10 * 60_000;
+const AUTO_A_LA_VEZ = 2;
+const AUTO_REINTENTO_MS = 5 * 60_000;
+function tipoDeAuto(m){
+  const t = String(m?.msg_type || '').toLowerCase();
+  if (t === 'image' || t === 'sticker' || t === 'video') return t;
+  if (t === 'audio' || t === 'voice' || t === 'ptt') return 'audio';
+  if (t === 'document' || t === 'file') return 'document';
+  return '';
+}
+function elegibleParaAuto(m, ahora = Date.now()){
+  if (!m || String(m.media_store || '') !== 'bajo_demanda') return false;
+  const md = m.metadata && typeof m.metadata === 'object' ? m.metadata : {};
+  if (md.deleted || md.deleted_at || md.whatsapp_history_sync) return false;
+  const tipo = tipoDeAuto(m);
+  if (!tipo) return false;
+  const creado = Date.parse(String(m.created_at || ''));
+  // Sin fecha legible no se adivina la edad: se deja para cuando alguien pulse Ver.
+  if (!Number.isFinite(creado) || ahora - creado > AUTO_EDAD_MAX_MS) return false;
+  // Sin peso conocido pasa (la miniatura de un video puede no traerlo); con peso, dentro del tope.
+  return !((Number(m.media_size) || 0) > AUTO_TOPE_BYTES[tipo]);
+}
+function cupoAuto(marcas, ahora = Date.now()){
+  const recientes = (Array.isArray(marcas) ? marcas : []).filter(t => Number.isFinite(t) && ahora - t < AUTO_CUPO_MS && t <= ahora);
+  return { permitido: recientes.length < AUTO_CUPO, recientes };
+}
+// ---- Medios automaticos: fin de las piezas puras
+
+const NITIDAS = new Map();        // id de mensaje -> foto nitida (image y sticker), para pintarla en el globo
+const COLA_AUTO = [];
+const AUTO_VISTOS = new Set();    // ya encolados: un repintado no los vuelve a pedir
+const AUTO_FALLOS = new Map();    // id -> cuando fallo, para no insistir antes de 5 minutos
+let OBS_AUTO = null, RAIZ_AUTO = null;
+let autoActivos = 0, autoMarcas = [], autoPausaHasta = 0;
+
+function cableaAutoBajo(){
+  const raiz = $('mensajes');
+  if (!raiz || typeof sel === 'undefined' || !sel) return;
+  const ahora = Date.now();
+  let porId = null;
+  const candidatos = [];
+  for (const el of raiz.querySelectorAll('[data-bajo]')) {
+    const id = el.dataset.bajo;
+    if (!id || AUTO_VISTOS.has(id) || LISTOS_BAJO.has(id)) continue;
+    const falloEn = AUTO_FALLOS.get(id);
+    if (falloEn && ahora - falloEn < AUTO_REINTENTO_MS) continue;
+    porId = porId || new Map(MSGS.map(x => [String(x.id || x.wamid || ''), x]));
+    if (elegibleParaAuto(porId.get(id), ahora)) candidatos.push(el);
+  }
+  if (!candidatos.length) return;
+  if (!('IntersectionObserver' in window)) {
+    // Sin saber que se ve, solo los ultimos: son los que quedan a la vista al abrir un chat.
+    candidatos.slice(-8).forEach(el => encolaAuto(el.dataset.bajo));
+    return;
+  }
+  if (!OBS_AUTO || RAIZ_AUTO !== raiz) {
+    if (OBS_AUTO) OBS_AUTO.disconnect();
+    RAIZ_AUTO = raiz;
+    OBS_AUTO = new IntersectionObserver(entradas => {
+      for (const e of entradas) {
+        if (!e.isIntersecting) continue;
+        OBS_AUTO.unobserve(e.target);
+        encolaAuto(e.target.dataset.bajo);
+      }
+    }, { root: raiz, rootMargin: '200px 0px' });
+  }
+  candidatos.forEach(el => OBS_AUTO.observe(el));
+}
+
+function encolaAuto(id){
+  if (!id || AUTO_VISTOS.has(id)) return;
+  AUTO_VISTOS.add(id);
+  COLA_AUTO.push(id);
+  bombeaAuto();
+}
+
+function bombeaAuto(){
+  while (autoActivos < AUTO_A_LA_VEZ && COLA_AUTO.length) {
+    const cupo = cupoAuto(autoMarcas);
+    autoMarcas = cupo.recientes;
+    if (Date.now() < autoPausaHasta || !cupo.permitido) {
+      // Sin cupo o en pausa: lo que esperaba vuelve a poder pedirse mas adelante.
+      COLA_AUTO.splice(0).forEach(id => AUTO_VISTOS.delete(id));
+      return;
+    }
+    const id = COLA_AUTO.shift();
+    if (LISTOS_BAJO.has(id)) continue;
+    autoMarcas.push(Date.now());
+    autoActivos++;
+    pideAuto(id).catch(() => {}).finally(() => { autoActivos--; bombeaAuto(); });
+  }
+}
+
+async function pideAuto(id){
+  const url = await pideMedioCompleto(id, { auto: true, alLimite: () => { autoPausaHasta = Date.now() + AUTO_CUPO_MS; } });
+  if (!url) { AUTO_VISTOS.delete(id); AUTO_FALLOS.set(id, Date.now()); return; }
+  const m = MSGS.find(x => String(x.id || x.wamid || '') === id);
+  const tipo = tipoDeAuto(m);
+  if (tipo !== 'image' && tipo !== 'sticker') return;
+  // Solo una imagen de las que el navegador pinta sin ejecutar nada sustituye a la miniatura.
+  try {
+    const blob = await (await fetch(url)).blob();
+    if (!/^image\/(?:jpeg|png|webp|gif)$/i.test(String(blob.type || '').split(';')[0].trim())) return;
+    NITIDAS.set(id, url);
+    pintaMensajes();
+  } catch (e) { /* se queda la miniatura */ }
+}
+
+// Pedir ahora un archivo concreto por adelantado (lo usa Estados: lo que sigue en el visor y lo
+// primero de la lista), con el mismo cupo y la misma pausa que lo demas que el panel pide solo.
+// Devuelve la url si llego, o '' sin avisar de nada.
+function pideAdelantado(id){
+  if (!id) return Promise.resolve('');
+  if (LISTOS_BAJO.has(id)) return Promise.resolve(LISTOS_BAJO.get(id));
+  if (MEDIOS_BAJO_CURSO.has(id)) return MEDIOS_BAJO_CURSO.get(id);
+  const cupo = cupoAuto(autoMarcas);
+  autoMarcas = cupo.recientes;
+  if (Date.now() < autoPausaHasta || !cupo.permitido) return Promise.resolve('');
+  autoMarcas.push(Date.now());
+  return pideMedioCompleto(id, { auto: true, alLimite: () => { autoPausaHasta = Date.now() + AUTO_CUPO_MS; } });
 }
 
 // ---- archivos que SI estan guardados ---------------------------------------------------
@@ -6478,7 +7132,7 @@ function tarjetaArchivo(a, etiqueta, m){
   }
   return '<div class="marchivo"><b>' + esc(nombre) + '</b>'
     + '<span>' + esc(detalle || 'archivo') + '</span>'
-    + '<a href="' + esc(a.url) + '" target="_blank" rel="noopener">Abrir</a></div>';
+    + '<a href="' + esc(a.url) + '" target="_blank" rel="noopener">Abrir</a>' + opsArchivo(m) + '</div>';
 }
 // ---- archivos que NO estan guardados en la nube -----------------------------------------
 // Las fotos, los videos, las notas de voz y los documentos que entran por WhatsApp Web ya no
@@ -6500,8 +7154,26 @@ function detalleBajoDemanda(m, a){
     Number(m.media_pages) > 0 ? m.media_pages + (Number(m.media_pages) === 1 ? ' página' : ' páginas') : '',
   ].filter(Boolean).join(' · ');
 }
+// La foto nitida que el panel ya pidio por adelantado (ver «Pedir por adelantado lo que se ve»).
+// El typeof es para que este trozo se pueda ejecutar suelto en las pruebas, sin ese bloque.
+function nitidaDe(id){
+  return typeof NITIDAS !== 'undefined' ? (NITIDAS.get(id) || '') : '';
+}
+// Responder y Reenviar sobre un archivo, dentro de su propia tarjeta: en un documento no hay
+// lupa donde ponerlos, y el menu del globo (⌄) no se descubre solo.
+function opsArchivo(m){
+  const id = String(m?.id || '');
+  if (!id || m._enviando) return '';
+  return '<div class="marchivo-op"><button data-gop="citar" data-gmsg="' + esc(id) + '">Responder</button>'
+    + '<button data-gop="reenviar" data-gmsg="' + esc(id) + '">Reenviar</button></div>';
+}
 function tarjetaBajoDemanda(m, a, etiqueta){
   const ident = esc(String(m.id || ''));
+  const nitida = nitidaDe(String(m.id || ''));
+  if (nitida) {
+    return '<button class="mthumb nitida" data-bajo="' + ident + '" title="Abrir">'
+      + '<img src="' + esc(nitida) + '" alt="' + esc(etiqueta) + '"></button>';
+  }
   const thumb = miniaturaMensaje(m);
   if (thumb) {
     return '<button class="mthumb" data-bajo="' + ident + '" title="Ver el archivo completo">'
@@ -6514,7 +7186,8 @@ function tarjetaBajoDemanda(m, a, etiqueta){
   const nombre = a.nombre || m.media_filename || '';
   return '<div class="marchivo"><b>' + esc(nombre || etiqueta) + '</b>'
     + '<span>' + esc(detalle || 'archivo') + '</span>'
-    + '<button data-bajo="' + ident + '"' + (nombre ? ' data-nombre="' + esc(nombre) + '"' : '') + '>Ver</button></div>';
+    + '<button data-bajo="' + ident + '"' + (nombre ? ' data-nombre="' + esc(nombre) + '"' : '') + '>'
+    + (nombre ? 'Descargar' : 'Ver') + '</button>' + opsArchivo(m) + '</div>';
 }
 // La onda REAL de la nota de voz. WhatsApp la manda dentro del mensaje (64 valores de 0 a
 // 100) y hasta ahora se tiraba: el panel dibujaba una inventada a partir del wamid. Con la
@@ -6738,7 +7411,8 @@ function cuerpoMensaje(m){
     // Un documento guardado no se ve dentro del globo: se baja al pulsar, no al pintar el hilo.
     if (!a.url && id) return '<div class="marchivo"><b>' + esc(a.nombre || m.media_filename || 'Documento') + '</b>'
       + '<span>' + esc(m.media_mime || a.mime || 'archivo') + '</span>'
-      + '<button data-descarga="' + esc(id) + '" data-nombre="' + esc(a.nombre || m.media_filename || 'archivo') + '">Descargar</button></div>' + pie;
+      + '<button data-descarga="' + esc(id) + '" data-nombre="' + esc(a.nombre || m.media_filename || 'archivo') + '">Descargar</button>'
+      + opsArchivo(m) + '</div>' + pie;
     return tarjetaArchivo(a, 'Archivo', m) + pie;
   }
 
@@ -6835,8 +7509,13 @@ function pintaMensajes(){
     // El ternario anterior daba ✓ a TODO lo que no fuera leido o entregado, incluido
     // 'failed'. Un mensaje que Meta rechazo se veia igual que uno que salio bien, que
     // es exactamente cuando hace falta enterarse.
+    // Cuando lo leyo el cliente, si el puente lo apunto (read_at): al pasar el raton por las
+    // palomitas azules. Es lo que hace WhatsApp en «Info. del mensaje».
+    const leidoA = m.read_at ? new Date(m.read_at) : null;
+    const leidoTitulo = leidoA && !Number.isNaN(leidoA.getTime())
+      ? ' title="Leído ' + esc(leidoA.toLocaleString('es-DO', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' })) + '"' : '';
     const ticks = sale ? ({
-      read: ' <b class="leido">✓✓</b>', delivered: ' ✓✓', sent: ' ✓',
+      read: ' <b class="leido"' + leidoTitulo + '>✓✓</b>', delivered: ' ✓✓', sent: ' ✓',
       failed: ' <b class="fallo">⚠</b>',
       // Todavia en la cola del puente: ni un ✓, que seria decir que ya salio.
       enviando: ' <span title="En cola, saliendo">🕓</span>',
@@ -7807,8 +8486,8 @@ async function pintaTablero(id){
   if (!filas.length) {
     // Vacio y roto se ven igual si solo se dice "no hay nada". Aqui se explica QUE
     // llena esta tabla, que es lo que permite saber si falta un dato o falta un enlace.
-    cont.innerHTML = '<p class="bajada">Todavía no hay nada aquí.<br><br>'
-      + esc(d.queLoLlena || 'Se llena desde el propio CRM.') + '</p>';
+    cont.innerHTML = vacioApple('<rect x="3.500" y="5" width="17" height="14" rx="3"/><path d="M3.500 10h17"/>',
+      'Todavía no hay nada aquí', d.queLoLlena || 'Se llena desde el propio CRM.');
     return;
   }
   const anchos = d.cols.map(() => 'minmax(0,1fr)').join(' ');
@@ -10748,34 +11427,49 @@ function leadsParados(){
   return REGLAS_LEAD.map(r => ({ regla: r, filas: vivos.filter(r.aplica) })).filter(x => x.filas.length);
 }
 
+// Las tarjetas de leads parados que estan abiertas (ven hasta 25 en vez de 6).
+const LP_ABIERTAS = new Set();
+
 function pintaMovilizacion(){
   const cont = $('movil'); if (!cont) return;
   const grupos = leadsParados();
   if (!grupos.length) {
-    cont.innerHTML = '<p class="bajada">Ningún lead está parado por las razones habituales. '
-      + 'Todos tienen categoría, fecha y el siguiente paso claro.</p>';
+    cont.innerHTML = vacioApple('<circle cx="12" cy="12" r="8.600"/><path d="M8.200 12.300l2.600 2.600 5-5.400"/>',
+      'Ningún lead está parado', 'Todos tienen categoría, fecha y el siguiente paso claro.');
     return;
   }
-  cont.innerHTML = grupos.map(g =>
-    '<div class="pgraf" style="margin-bottom:14px"><div class="pgcab">'
-    + '<b>' + esc(g.regla.titulo) + '</b><span>' + g.filas.length + ' contacto(s)</span></div>'
-    + '<p class="cfgnota">' + esc(g.regla.porque) + '</p>'
-    + '<div class="tabla" style="max-width:none">'
-    + g.filas.slice(0, 25).map(c => '<div class="fila" style="grid-template-columns:minmax(0,2fr) 1fr auto">'
-      + '<span><b>' + esc(nombreDe(c)) + '</b><small>' + esc((c.lifecycle_stage||'nuevo').replace(/_/g,' '))
-      +   ' · ' + llevaDormido(c) + ' días</small></span>'
-      + '<span>' + esc(c.interested_category || '—') + '</span>'
-      + '<span><button class="btn-linea" data-mov="' + esc(g.regla.id) + '" data-conv="' + esc(c._id || c.id) + '">'
-      +   esc(g.regla.hacer) + '</button>'
-      + (g.regla.etapa && c.lifecycle_stage !== g.regla.etapa
-        ? '<button class="btn-linea" style="margin-left:6px" data-avanza="' + esc(g.regla.id)
-          + '" data-conv="' + esc(c._id || c.id) + '">Avanzar a ' + esc(g.regla.etapa.replace(/_/g,' ')) + '</button>' : '')
-      + '</span></div>').join('')
-    + '</div>'
-    + (g.filas.length > 25 ? '<p class="cfgnota" style="margin-top:8px">y ' + (g.filas.length-25) + ' más</p>' : '')
-    + '</div>').join('');
+  // Una rejilla de tarjetas de la MISMA medida (antes cada regla era un bloque de todo el ancho, con
+  // una fila de 1.100 px por contacto y el boton perdido a la derecha). Cada tarjeta ensena seis y
+  // se abre para ver hasta 25; el resto se trabaja desde el chat.
+  const filaLead = (c, g) => '<div class="lp-fila"><div class="lp-quien"><b>' + esc(nombreDe(c)) + '</b>'
+    + '<small>' + esc((c.lifecycle_stage || 'nuevo').replace(/_/g, ' ')) + ' · ' + llevaDormido(c) + ' días'
+    + (c.interested_category ? ' · ' + esc(c.interested_category) : '') + '</small></div>'
+    + '<div class="lp-acc"><button class="btn-linea" data-mov="' + esc(g.regla.id) + '" data-conv="' + esc(c._id || c.id) + '">'
+    +   esc(g.regla.hacer) + '</button>'
+    + (g.regla.etapa && c.lifecycle_stage !== g.regla.etapa
+      ? '<button class="btn-linea" title="Mover a ' + esc(g.regla.etapa.replace(/_/g, ' ')) + '" data-avanza="' + esc(g.regla.id)
+        + '" data-conv="' + esc(c._id || c.id) + '">Avanzar</button>' : '')
+    + '</div></div>';
+  cont.innerHTML = '<div class="lp-grid">' + grupos.map(g => {
+    const abierta = LP_ABIERTAS.has(g.regla.id);
+    const tope = abierta ? 25 : 6;
+    return '<section class="lp-card"><div class="lp-cab"><b>' + esc(g.regla.titulo) + '</b>'
+      + '<span class="lp-num">' + g.filas.length + '</span></div>'
+      + '<p class="lp-porque">' + esc(g.regla.porque) + '</p>'
+      + g.filas.slice(0, tope).map(c => filaLead(c, g)).join('')
+      + (g.filas.length > 6
+        ? '<button class="lp-mas" data-lpmas="' + esc(g.regla.id) + '">'
+          + (abierta ? 'Ver menos' : 'Ver ' + Math.min(25, g.filas.length) + (g.filas.length > 25 ? ' de ' + g.filas.length : '')) + '</button>' : '')
+      + '</section>';
+  }).join('') + '</div>';
 
   cont.onclick = async ev => {
+    const mas = ev.target.closest('[data-lpmas]');
+    if (mas) {
+      const id = mas.dataset.lpmas;
+      if (LP_ABIERTAS.has(id)) LP_ABIERTAS.delete(id); else LP_ABIERTAS.add(id);
+      return pintaMovilizacion();
+    }
     const avanzar = ev.target.closest('[data-avanza]');
     if (avanzar) {
       const c = buscaConv(avanzar.dataset.conv);
@@ -10853,8 +11547,8 @@ async function pintaAnuncios(){
   const rd = n => 'RD$' + Number(n || 0).toLocaleString('es-DO', { maximumFractionDigits: 0 });
 
   if (!filas.length) {
-    cont.innerHTML = '<p class="bajada">Sin datos en este periodo. Puede que no haya campañas '
-      + 'activas, o que Meta todavía no haya consolidado las cifras de hoy.</p>';
+    cont.innerHTML = vacioApple('<path d="M4.500 19.500V10M10 19.500V5M15.500 19.500v-7M21 19.500H3"/>',
+      'Sin datos en este periodo', 'Puede que no haya campañas activas, o que Meta todavía no haya consolidado las cifras de hoy.');
     return;
   }
 
@@ -14311,6 +15005,10 @@ onAuthStateChanged(auth, async u => {
   // El estado de la linea llega en vivo y para cualquier rol. Antes se pedia una vez al entrar,
   // solo le contestaba a un admin, y cambiar algo en el puente obligaba a recargar.
   escuchaLineaQr();
+  // Los Estados se cargan en segundo plano nada mas entrar: son cientos de contactos y bajarlos
+  // al pulsar «Estados» eran 7 s de lista vacia. Un par de segundos despues, para no competir con
+  // lo primero que se ve (la bandeja).
+  setTimeout(escuchaEstados, 2500);
   // Si Instagram y Messenger estan encendidos, hay que saberlo YA: arrancan ocultos a proposito,
   // asi que lo unico que esta llamada puede hacer es traerlos de vuelta, nunca hacerlos
   // desaparecer delante de quien mira. socialStatus lo contesta a cualquier rol.
