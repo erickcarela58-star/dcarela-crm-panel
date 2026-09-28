@@ -1,7 +1,7 @@
 {
-  "version": "2026-09-28-eliminados-vigilancia-v131",
+  "version": "2026-09-28-apple-v133",
   "channel": "crm",
   "released_at": "2026-09-28T00:00:00Z",
-  "summary": "Los mensajes eliminados ya no desaparecen: se quedan en el chat con un aviso que dice quién los eliminó y por qué (el cliente, el equipo o el teléfono del negocio). Eliminar un mensaje pide siempre un motivo. Editar conserva lo que decía antes y «Editado» se puede pulsar para verlo. Nuevo: enviar ubicación y tarjeta de contacto al cliente, editar y eliminar para todos, destacar mensajes y ver cuándo el cliente está escribiendo. Informes internos pasa a ser un módulo oculto: lo necesario le llega al dueño por WhatsApp.",
-  "requiere_puente": "2026-09-28-versiones-v33"
+  "summary": "Nuevo: agente de marketing que analiza el CRM cada mañana y propone campañas (sin enviar nada). Agenda con un solo botón de filtro y Google Calendar que se actualiza solo. Configuración organizada por categorías con buscador. Funnel con filtros, orden, tarjetas compactas, etapas que se pliegan y botón Reorganizar. Modo oscuro afinado. Rediseño Apple con vidrio y colores tenues, iconos nuevos, Estados más rápidos, fotos y archivos que se piden solos, lupa con Responder/Reenviar/Descargar y confirmaciones de lectura y entrega.",
+  "requiere_puente": "2026-09-28-lectura-v34"
 }
