@@ -1836,16 +1836,21 @@ input[type="checkbox"],input[type="radio"]{accent-color:var(--accent)}
   var(--bg);background-attachment:fixed}
 .lienzo,.vista,.hoja{background:transparent}
 
-/* Superficies de vidrio: tarjetas, listas agrupadas, carriles, formularios y calendario. */
-.cfgc,.cifra,.pgraf,.tabla,.grupo,.canal,.propuesta,.tpl,.calidad-kpi,.calidad-aviso,.lp-card,.vacio-apple,
-.agcal,.agcita,.columna,#vista-campanas .prompt,.cb-kpis div,.st-panel{
+/* Superficies de vidrio. El DESENFOQUE (backdrop-filter) solo va en los contenedores grandes y pocos
+   --tarjetas de pagina, carriles, calendario--: es lo mas caro de pintar, y con 200 tarjetas del funnel
+   cada una con su desenfoque el navegador se arrastraba. Lo repetido (tarjetas del funnel, citas,
+   plantillas, avisos) lleva el mismo aspecto con un relleno translucido y sin filtro. */
+.cfgc,.cifra,.pgraf,.tabla,.grupo,.canal,.lp-card,.vacio-apple,.agcal,.columna,#vista-campanas .prompt,.st-panel{
   background:var(--vidrio);-webkit-backdrop-filter:var(--desenfoque);backdrop-filter:var(--desenfoque);
+  box-shadow:var(--vidrio-luz),0 0 0 .5px var(--vidrio-borde),var(--sombra-suave)}
+.propuesta,.tpl,.calidad-kpi,.calidad-aviso,.agcita,.mk-card,.cb-kpis div{
+  background:var(--vidrio-fuerte);-webkit-backdrop-filter:none;backdrop-filter:none;
   box-shadow:var(--vidrio-luz),0 0 0 .5px var(--vidrio-borde),var(--sombra-suave)}
 .cifra:hover,.tpl:hover,.agcita:hover{background:var(--vidrio-fuerte);
   box-shadow:var(--vidrio-luz),0 0 0 .5px var(--vidrio-borde),0 2px 4px rgba(20,30,60,.04),0 18px 40px rgba(20,30,60,.10)}
 .columna{box-shadow:var(--vidrio-luz),0 0 0 .5px var(--vidrio-borde)}
 .columna.encima{background:var(--accent-suave);box-shadow:inset 0 0 0 2px var(--accent)}
-.ktarjeta{background:var(--vidrio-fuerte);-webkit-backdrop-filter:var(--desenfoque);backdrop-filter:var(--desenfoque);
+.ktarjeta{background:var(--vidrio-fuerte);-webkit-backdrop-filter:none;backdrop-filter:none;
   box-shadow:var(--vidrio-luz),0 0 0 .5px var(--vidrio-borde),0 1px 2px rgba(20,30,60,.05)}
 .ktarjeta:hover{box-shadow:var(--vidrio-luz),0 0 0 .5px var(--vidrio-borde),0 8px 20px rgba(20,30,60,.10)}
 .dato,.cb-estado{background:rgba(120,120,128,.08);box-shadow:none}
@@ -1948,8 +1953,7 @@ input[type="checkbox"],input[type="radio"]{accent-color:var(--accent)}
 .mk-resumen b{font-size:12px;font-weight:650;color:var(--accent-fuerte)}
 .mk-resumen p{margin:4px 0 0;font-size:13.5px;line-height:1.5}
 .mk-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(360px,1fr));gap:18px;align-items:start;margin:0 0 14px}
-.mk-card{padding:20px 22px 18px;border-radius:var(--r3);min-width:0;background:var(--vidrio);-webkit-backdrop-filter:var(--desenfoque);backdrop-filter:var(--desenfoque);
-  box-shadow:var(--vidrio-luz),0 0 0 .5px var(--vidrio-borde),var(--sombra-suave)}
+.mk-card{padding:20px 22px 18px;border-radius:var(--r3);min-width:0}
 .mk-card.decidida{opacity:.72}
 .mk-cab{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:0 0 10px}
 .mk-prio{padding:3px 10px;border-radius:999px;font-size:11.5px;font-weight:650;background:var(--boton);color:var(--mut)}
