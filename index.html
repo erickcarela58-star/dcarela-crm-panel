@@ -322,6 +322,7 @@ img.av{object-fit:cover}
 .chat .hora{font-size:10.5px;color:var(--mut);flex:0 0 auto}
 .chat.sinleer .hora{color:var(--ok);font-weight:700}
 .chat .prev{font-size:12px;color:var(--mut);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.chat .prev.escribiendo-cliente{color:var(--ok);font-style:italic}
 .chat .marcas{display:flex;gap:4px;align-items:center;flex:0 0 auto}
 .etiqueta{font-size:8.5px;font-weight:800;letter-spacing:.4px;text-transform:uppercase;
   padding:2px 5px;border-radius:4px;background:var(--hover);color:var(--mut);white-space:nowrap}
@@ -336,6 +337,7 @@ img.av{object-fit:cover}
 .cabecera .quien-chat{flex:1;min-width:0}
 .cabecera .quien-chat b{display:block;font-size:15px;font-weight:600}
 .cabecera .quien-chat span{display:block;font-size:12px;color:var(--mut)}
+.cabecera .quien-chat span.escribiendo-cliente{color:var(--ok);font-style:italic}
 /* Distintivo del anuncio de origen: se lee de un vistazo sin robarle sitio al nombre. */
 .insig-anuncio{display:inline-block;padding:1px 7px;border-radius:999px;
   background:rgba(37,99,235,.14);color:#60a5fa;font-weight:600;font-size:11px;
@@ -449,6 +451,22 @@ img.mmedia[data-medio]:not([src]),img.msticker[data-medio]:not([src]){
 .mllamada svg{width:17px;height:17px;flex:0 0 auto;stroke-width:1.9}
 .mllamada.perdida{color:var(--bad)}
 .mpie{margin-top:3px;white-space:pre-wrap;word-break:break-word}
+.mubic,.mtarjeta{display:flex;align-items:center;gap:10px;padding:9px 11px;margin:2px 0 4px;
+  border-radius:6px;background:rgba(11,20,26,.06);color:inherit;text-decoration:none}
+:root[data-tema="oscuro"] .mubic,:root[data-tema="oscuro"] .mtarjeta{background:rgba(255,255,255,.07)}
+.mubic svg{width:22px;height:22px;flex:0 0 auto;stroke-width:1.7}
+.mubic span,.mtarjeta span{display:flex;flex-direction:column;gap:1px;min-width:0}
+.mubic b,.mtarjeta b{font-size:13px;word-break:break-word}
+.mubic small,.mtarjeta small{font-size:11px;color:var(--meta)}
+.mtarjeta .av{width:34px;height:34px;flex:0 0 auto;font-size:12px}
+.ayuda{display:block;margin-top:5px;font-size:11.5px;color:var(--mut)}
+a.ayuda{color:var(--enlace)}
+.fila2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.lista-elegir{display:grid;gap:4px;margin-bottom:12px}
+.elegir{display:flex;justify-content:space-between;gap:10px;padding:7px 10px;border:1px solid var(--line);
+  border-radius:8px;font-size:12.5px;text-align:left}
+.elegir:hover{background:var(--hover)}
+.elegir span{color:var(--mut)}
 /* Botones de accion tal como los ve el cliente: separados del texto por una linea y
    repartidos en filas. No son pulsables desde aqui -- los pulsa el, no nosotros. */
 /* Previo de plantilla: se pinta como un globo de WhatsApp a proposito. Lo que hay que
@@ -628,15 +646,15 @@ img.mmedia[data-medio]:not([src]),img.msticker[data-medio]:not([src]){
 .globo.resaltado{animation:resalta 1.4s ease-out}
 /* Los resultados de buscar dentro de los mensajes, encima de la lista de chats. */
 .cabeza #buscaMsgs{margin-left:7px;border:1px solid var(--line);background:var(--panel);
-  color:var(--texto);border-radius:6px;padding:6px 10px;font-size:12.5px;cursor:pointer;white-space:nowrap}
+  color:var(--fg);border-radius:6px;padding:6px 10px;font-size:12.5px;cursor:pointer;white-space:nowrap}
 .cabeza #buscaMsgs[hidden]{display:none}
 .resbusca{max-height:52vh;overflow-y:auto;border-bottom:1px solid var(--line);background:var(--panel)}
 .rescab{padding:8px 13px;font-size:11.5px;text-transform:uppercase;letter-spacing:.05em;
   color:var(--meta);border-bottom:1px solid var(--line)}
 .resvacio{padding:14px 13px;font-size:13px;color:var(--meta)}
 .resfila{display:block;width:100%;text-align:left;border:0;border-bottom:1px solid var(--line);
-  background:transparent;color:var(--texto);padding:9px 13px;cursor:pointer;font:inherit}
-.resfila:hover{background:var(--fondo)}
+  background:transparent;color:var(--fg);padding:9px 13px;cursor:pointer;font:inherit}
+.resfila:hover{background:var(--hover)}
 .resquien{display:flex;justify-content:space-between;gap:8px;font-size:13px;font-weight:600}
 .resquien i{font-style:normal;font-weight:400;font-size:11.5px;color:var(--meta)}
 .restexto{display:block;font-size:12.5px;color:var(--meta);margin-top:2px;
@@ -1356,7 +1374,7 @@ img.mmedia[data-medio]:not([src]),img.msticker[data-medio]:not([src]){
 .calidad-tabla{width:100%;border-collapse:collapse;margin-top:10px}.calidad-tabla th,.calidad-tabla td{
   text-align:left;padding:10px;border-bottom:1px solid var(--line2);font-size:13px}.calidad-tabla th{color:var(--mut);font-size:11px}
 .calidad-score{display:inline-flex;min-width:38px;justify-content:center;border-radius:999px;padding:4px 8px;
-  background:var(--fondo);font-weight:700}.calidad-vacio{color:var(--mut);padding:18px 0}
+  background:var(--hover);font-weight:700}.calidad-vacio{color:var(--mut);padding:18px 0}
 </style>
 </head>
 <body>
@@ -3532,6 +3550,7 @@ function pintaChats(){
     if (silenciado(c)) marcas.push('<span class="etiqueta">🔕 silenciado</span>');
     if (sinLeer) marcas.push('<span class="globito">' + Number(c.unread) + '</span>');
     const canal = CANALES[canalDe(c)];
+    const escribeAqui = textoEscribiendoCliente(c);
     return '<div class="chat' + (sel && sel._id === c._id ? ' on' : '') + (sinLeer ? ' sinleer' : '')
       + '" data-conv="' + esc(c._id) + '">'
       + '<button class="marcar' + (LOTE.has(c._id) ? ' on' : '') + '" aria-label="Seleccionar"></button>'
@@ -3541,7 +3560,11 @@ function pintaChats(){
       + '<div class="cuerpo">'
       +   '<div class="fila1"><div class="nom">' + esc(n) + '</div>'
       +     '<div class="hora">' + esc(hora(c.last_message_at)) + '</div></div>'
-      +   '<div class="prev">' + esc(c.last_message_preview || '') + '</div>'
+      // En la lista tambien, como WhatsApp Web: mientras escribe, la vista previa del ultimo
+      // mensaje se cambia por el aviso, no se le suma al lado.
+      +   (escribeAqui
+          ? '<div class="prev escribiendo-cliente">' + esc(escribeAqui) + '</div>'
+          : '<div class="prev">' + esc(c.last_message_preview || '') + '</div>')
       +   '<div class="marcas">' + marcas.join('') + '</div>'
       + '</div></div>';
   }).join('');
@@ -3695,6 +3718,27 @@ function apagaEscribiendo(){
   llama({ action:'typing', conversation_id:id, state:'paused' }).catch(() => {});
 }
 
+// «Escribiendo…»/«grabando audio…» DEL CLIENTE (lo contrario de ESCRIBIENDO, que es lo que el
+// CRM manda hacia el). wa-bridge escribe customer_typing_state/customer_typing_at en la propia
+// conversacion cuando le llega la presencia real de WhatsApp; aqui solo se decide si todavia es
+// reciente y que texto poner, igual que la cabecera de un chat en WhatsApp Web.
+const ESCRIBIENDO_CLIENTE_VENTANA_MS = 10000;
+let TIMER_ESCRIBIENDO_CLIENTE = null;
+function textoEscribiendoCliente(c){
+  const estado = c?.customer_typing_state;
+  if (estado !== 'composing' && estado !== 'recording') return '';
+  const cuando = Date.parse(String(c?.customer_typing_at || ''));
+  if (!Number.isFinite(cuando) || Date.now() - cuando > ESCRIBIENDO_CLIENTE_VENTANA_MS) return '';
+  return estado === 'recording' ? 'grabando audio…' : 'escribiendo…';
+}
+// Solo un WhatsApp de verdad (whatsapp_qr) manda presencia; en los demas canales el campo nunca
+// se llena y esto no hace nada.
+function subtituloChat(c){
+  const escribiendo = textoEscribiendoCliente(c);
+  if (escribiendo) return '<span class="escribiendo-cliente">' + esc(escribiendo) + '</span>';
+  return '<span>+' + esc(c.wa_phone || '') + ' · ' + esc(CANALES[canalDe(c)].corto) + insigniaAnuncio(c) + '</span>';
+}
+
 function abre(c){
   if (!c) return;
   // Cortar la grabacion ANTES de cambiar de chat. El encoder termina en asincrono y su
@@ -3708,6 +3752,11 @@ function abre(c){
   modoSeleccion = false;
   SEL_MSGS.clear();
   sel = c;
+  // El aviso de "escribiendo del cliente" se apaga solo, por tiempo (ver textoEscribiendoCliente):
+  // sin un repintado periodico se quedaria pegado si no vuelve a llegar presencia. Uno por chat
+  // abierto; el de antes se apaga aqui, no al cerrar sesion, para no tocar ese bloque ajeno.
+  if (TIMER_ESCRIBIENDO_CLIENTE) clearInterval(TIMER_ESCRIBIENDO_CLIENTE);
+  TIMER_ESCRIBIENDO_CLIENTE = setInterval(() => { if (sel) pintaCabeceraChat(); }, 4000);
   document.body.classList.add('chat-abierto');
   $('sinChat').style.display = 'none';
   $('conversacion').style.display = 'flex';
@@ -3726,8 +3775,7 @@ function abre(c){
     + '<div class="avwrap">' + avatarDe(c, n)
     +   '<span class="canalpin" title="' + esc(CANALES[canalDe(c)].nombre) + '" '
     +     'style="background:' + CANALES[canalDe(c)].color + '">' + CANALES[canalDe(c)].logo + '</span></div>'
-    + '<div class="quien-chat"><b>' + esc(n) + '</b><span>+' + esc(c.wa_phone || '')
-    +   ' · ' + esc(CANALES[canalDe(c)].corto) + insigniaAnuncio(c) + '</span></div>'
+    + '<div class="quien-chat"><b>' + esc(n) + '</b>' + subtituloChat(c) + '</div>'
     + (c.human_handoff_notification_status ? '<span class="etiqueta" data-aviso-handoff="1" title="Aviso interno al teléfono de avisos (Configuración), por la línea de WhatsApp Web conectada. Enviado no significa leído.">'
       + esc(({pending:'Aviso pendiente',sent:'Aviso enviado',failed:'Aviso fallido',skipped:'Aviso no enviado'})[c.human_handoff_notification_status] || 'Aviso pendiente') + '</span>' : '')
     + '<button class="modo" id="btnModo"></button>'
@@ -3744,6 +3792,8 @@ function abre(c){
     +   '<button data-mas="silenciar" id="masSilenciar">Silenciar…</button>'
     +   '<button data-mas="anclar" id="masAnclar">Anclar arriba</button>'
     +   '<button data-mas="encuesta">Enviar encuesta</button>'
+    +   (canalDe(c) === 'whatsapp_qr'
+          ? '<button data-mas="ubicacion">Enviar ubicación…</button><button data-mas="tarjeta">Enviar contacto…</button>' : '')
     +   '<button data-mas="asistente">Preguntar al asistente</button>'
     +   '<button data-mas="cerrar">Cerrar conversación</button></div></div>'
     + '</div>'
@@ -3866,8 +3916,7 @@ function pintaCabeceraChat(){
     + '<span class="canalpin" title="' + esc(CANALES[k].nombre) + '" '
     + 'style="background:' + CANALES[k].color + '">' + CANALES[k].logo + '</span>';
   const quien = cab.querySelector('.quien-chat');
-  if (quien) quien.innerHTML = '<b>' + esc(n) + '</b><span>+' + esc(sel.wa_phone || '')
-    + ' · ' + esc(CANALES[k].corto) + insigniaAnuncio(sel) + '</span>';
+  if (quien) quien.innerHTML = '<b>' + esc(n) + '</b>' + subtituloChat(sel);
   const previo = cab.querySelector('[data-aviso-handoff]');
   const estado = sel.human_handoff_notification_status;
   if (!estado) { if (previo) previo.remove(); }
@@ -4023,6 +4072,8 @@ function cableaChat(c){
     // llega a Planificacion: abrir un chat ya no cambia el contacto de ningun hilo.
     if (b.dataset.mas === 'asistente') return preguntaAlAsistente(sel);
     if (b.dataset.mas === 'contacto') return abreGuardarContacto(sel);
+    if (b.dataset.mas === 'ubicacion') return abreEnviarUbicacion(sel);
+    if (b.dataset.mas === 'tarjeta') return abreEnviarContacto(sel);
     if (b.dataset.mas === 'silenciar') return abreSilencio(sel);
     if (b.dataset.mas === 'anclar') return marcaChat(sel, { pin: !anclado(sel) },
       anclado(sel) ? 'Chat desanclado' : 'Chat anclado arriba');
@@ -5416,12 +5467,21 @@ document.addEventListener('click', async ev => {
   // una nota interna del panel no tiene wamid y no hay a que reaccionar.
   const puedeReaccionar = canalDe(sel) === 'whatsapp_qr' && !!m.wamid;
   const destacado = !!m.metadata?.starred;
+  // Editar y eliminar-para-todos: solo lo que el negocio mando por WhatsApp Web, y dentro de los
+  // plazos que pone WhatsApp (15 min para editar, 2 dias para retirar). Fuera de plazo no se
+  // ofrece: pulsarlo solo para que salga un error es peor que no verlo.
+  const edadMs = Date.now() - (Date.parse(String(m.created_at || '')) || 0);
+  const esPropioEnWa = canalDe(sel) === 'whatsapp_qr' && m.direction === 'out' && !!m.wamid;
+  const puedeEditar = esPropioEnWa && (m.msg_type || 'text') === 'text' && edadMs <= 15 * 60000;
+  const puedeRetirar = esPropioEnWa && edadMs <= 48 * 3600000;
   menu.innerHTML = '<button data-op="citar">Responder</button>'
     + (puedeReaccionar ? '<button data-op="reaccionar">Reaccionar</button>' : '')
     + '<button data-op="reenviar">Reenviar</button>'
     + '<button data-op="seleccionar">Seleccionar</button>'
     + '<button data-op="destacar">' + (destacado ? 'Quitar destacado' : 'Destacar') + '</button>'
     + '<button data-op="copiar">Copiar texto</button>'
+    + (puedeEditar ? '<button data-op="editar">Editar</button>' : '')
+    + (puedeRetirar ? '<button data-op="retirar" class="peligro">Eliminar para todos</button>' : '')
     + '<button data-op="borrar" class="peligro">Borrar</button>';
   globo.appendChild(menu);
   menu.onclick = async e2 => {
@@ -5442,6 +5502,15 @@ document.addEventListener('click', async ev => {
       const r = await llama({ action:'star', message_id: m.id, starred: !destacado });
       if (!r.ok) avisa('No se pudo destacar', r.error);
     }
+    else if (op === 'editar') abreEditar(m);
+    else if (op === 'retirar') {
+      if (!confirm('Se eliminará para todos: el cliente verá «Se eliminó este mensaje» en su WhatsApp.\n\n¿Eliminar?')) return;
+      const r = await llama({ action:'ownMsg', operation:'revoke', message_id: m.id });
+      if (!r.ok) return avisa('No se pudo eliminar', r.error);
+      // El mensaje sigue en el hilo hasta que WhatsApp lo acepta: el puente lo marca entonces.
+      avisa(r.enviado === false ? 'No se envió nada' : 'Eliminando para todos…',
+        r.enviado === false ? 'Ese chat está ignorado.' : 'Desaparece de aquí en cuanto WhatsApp lo confirme.');
+    }
     else if (op === 'borrar') {
       // Borrado blando: WhatsApp no permite quitarlo del telefono del cliente, asi
       // que se dice claro que solo desaparece de aqui.
@@ -5451,6 +5520,29 @@ document.addEventListener('click', async ev => {
     }
   };
 });
+
+// Editar un mensaje propio ya enviado. El texto cambia aqui solo cuando WhatsApp lo acepta (lo
+// marca el puente, con «Editado»): mientras tanto se sigue viendo el original.
+function abreEditar(m){
+  abreModal('<div class="mtapa"><b>Editar mensaje</b><button class="cerrarm" data-cerrar>×</button></div>'
+    + '<div class="mcuerpo"><div class="campo"><textarea id="edTexto" rows="5" maxlength="4096"></textarea></div>'
+    + '<p class="aviso">Al cliente le aparecerá «Editado». WhatsApp solo deja editar durante los primeros 15 minutos.</p>'
+    + '<div class="acciones"><button class="btn-solido" id="edGuardar">Guardar</button></div></div>');
+  const caja = $('edTexto');
+  caja.value = m.body || '';
+  caja.focus();
+  $('edGuardar').onclick = async () => {
+    const texto = caja.value.trim();
+    if (!texto) return avisa('El mensaje no puede quedar vacío');
+    if (texto === String(m.body || '').trim()) { cierraModal(); return; }
+    const b = $('edGuardar'); b.disabled = true;
+    const r = await llama({ action:'ownMsg', operation:'edit', message_id: m.id, text: texto });
+    if (!r.ok) { b.disabled = false; return avisa('No se pudo editar', r.error); }
+    cierraModal();
+    avisa(r.enviado === false ? 'No se envió nada' : 'Editando…',
+      r.enviado === false ? 'Ese chat está ignorado.' : 'Se actualiza aquí en cuanto WhatsApp lo confirme.');
+  };
+}
 
 // Las seis de WhatsApp. Un selector de emojis entero no cabe aquí y tampoco hace falta:
 // reaccionar es para contestar sin escribir, y el que quiera decir algo escribe.
@@ -6283,6 +6375,27 @@ function cuerpoMensaje(m){
       + icono + '</svg>'
       + '<span>' + esc(clase + ' ' + (ESTADO_LLAMADA[l.estado] || 'contestada') + dur) + '</span></div>';
   }
+  // Ubicacion y contacto llegaban como un parrafo con coordenadas o con BEGIN:VCARD. Ahora son
+  // tarjetas, como en WhatsApp: el mapa se abre con un toque y el telefono abre el chat.
+  if (t === 'location' || t === 'live_location') {
+    const u = ubicacionDeCuerpo(m.body);
+    if (u) {
+      return '<a class="mubic" href="' + esc(urlDeMapa(u.lat, u.lng)) + '" target="_blank" rel="noopener">'
+        + '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">'
+        + '<path d="M12 21s-7-6.2-7-11.5A7 7 0 0119 9.5C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg>'
+        + '<span><b>' + esc(u.nombre || (t === 'live_location' ? 'Ubicación en vivo' : 'Ubicación')) + '</b>'
+        + '<small>' + esc(u.lat + ', ' + u.lng) + ' · Abrir en Google Maps</small></span></a>';
+    }
+  }
+  if (t === 'contact' || t === 'contacts') {
+    const tarjetas = tarjetasDeContacto(m.body);
+    if (tarjetas.length) {
+      return tarjetas.map(x => '<div class="mtarjeta"><div class="av">' + esc(iniciales(x.nombre)) + '</div>'
+        + '<span><b>' + esc(x.nombre) + '</b>'
+        + x.telefonos.map(tel => '<small>' + conTelefonos(esc(tel)) + '</small>').join('')
+        + '</span></div>').join('');
+    }
+  }
   if (t === 'video') {
     return medio('Video', (src, porId) =>
       '<video class="mmedia" controls preload="none"'
@@ -6876,13 +6989,7 @@ function pintaInformes(){
     + '<div class="calidad-kpi"><b>' + conRiesgo + '</b><span>conversaciones de riesgo alto</span></div>'
     + '<div class="calidad-kpi"><b>' + (reports.length ? promedio : '—') + '</b><span>nota media de atención / 100</span></div>'
     + '<div class="calidad-kpi"><b>' + reports.length + '</b><span>conversaciones analizadas</span></div></div>'
-    + '<div class="seccion">Resumen por operador</div>'
-    + (operadores.length ? '<div style="overflow:auto"><table class="calidad-tabla"><thead><tr><th>Operador</th><th>Respuestas</th><th>Respuesta media</th><th>Respuestas lentas</th><th>Señales de tono</th></tr></thead><tbody>'
-      + operadores.map(o => '<tr><td>' + esc(o.nombre) + '</td><td>' + o.replies + '</td><td>'
-        + (o.response_count ? Math.round(o.response_total / o.response_count) + ' min' : '—')
-        + '</td><td>' + o.slow + '</td><td>' + o.tone + '</td></tr>').join('')
-      + '</tbody></table></div>' : '<div class="calidad-vacio">Aún no hay respuestas humanas atribuibles en la ventana analizada.</div>')
-    + '<div class="seccion">Notificaciones internas</div>'
+    + '<div class="seccion" style="margin-top:6px">Notificaciones internas</div>'
     + '<div class="calidad-lista">' + (abiertos.length ? abiertos.slice(0,30).map(a =>
       '<div class="calidad-aviso ' + (a.severity === 'high' ? 'alta' : 'media') + '">'
       + '<div><b>' + esc(a.customer_name || 'Cliente') + ' · ' + esc(a.title || 'Atención requerida') + '</b>'
@@ -6892,7 +6999,20 @@ function pintaInformes(){
       + '<div class="acciones"><button class="btn-linea" data-calidad-chat="' + esc(a.conversation_id || '') + '">Ver chat</button> '
       + '<button class="btn-solido" data-calidad-revisar="' + esc(a.id) + '">Revisado</button></div></div>').join('')
       : '<div class="calidad-vacio">No hay avisos pendientes.</div>') + '</div>'
-    + '<div class="seccion" style="margin-top:24px">Evaluación por conversación</div>'
+    // Las dos tablas son el detalle, no lo primero que hace falta ver: quedan como tarjetas
+    // plegables (el mismo patron .grupo de la ficha del contacto), abierta la de operadores
+    // porque es el resumen que le da nombre a esta version, cerrada la de por-conversacion
+    // porque es la mas larga y la que menos hace falta a diario.
+    + '<details class="grupo" open style="margin-top:20px"><summary>Resumen por operador'
+      + (operadores.length ? ' <span class="nota">' + operadores.length + '</span>' : '') + '</summary><div class="dentro">'
+    + (operadores.length ? '<div style="overflow:auto"><table class="calidad-tabla"><thead><tr><th>Operador</th><th>Respuestas</th><th>Respuesta media</th><th>Respuestas lentas</th><th>Señales de tono</th></tr></thead><tbody>'
+      + operadores.map(o => '<tr><td>' + esc(o.nombre) + '</td><td>' + o.replies + '</td><td>'
+        + (o.response_count ? Math.round(o.response_total / o.response_count) + ' min' : '—')
+        + '</td><td>' + o.slow + '</td><td>' + o.tone + '</td></tr>').join('')
+      + '</tbody></table></div>' : '<div class="calidad-vacio">Aún no hay respuestas humanas atribuibles en la ventana analizada.</div>')
+    + '</div></details>'
+    + '<details class="grupo"><summary>Evaluación por conversación'
+      + (reports.length ? ' <span class="nota">' + reports.length + '</span>' : '') + '</summary><div class="dentro">'
     + (reports.length ? '<div style="overflow:auto"><table class="calidad-tabla"><thead><tr><th>Cliente</th><th>Operador(es)</th><th>Nota</th><th>Estado</th><th>Respuesta media</th><th>Señales</th><th>Último análisis</th></tr></thead><tbody>'
       + reports.map(r => '<tr><td>' + esc(r.customer_name || r.customer_phone || 'Cliente') + '</td>'
         + '<td>' + esc((r.operator_names || []).join(', ') || 'Sin identificar') + '</td>'
@@ -6900,7 +7020,8 @@ function pintaInformes(){
         + '<td>' + esc(r.risk === 'high' ? 'Riesgo alto' : r.risk === 'attention' ? 'Atención' : 'Correcto') + '</td>'
         + '<td>' + (r.average_response_minutes == null ? '—' : esc(r.average_response_minutes + ' min')) + '</td>'
         + '<td>' + Number(r.alert_count || 0) + '</td><td>' + esc(hora(r.scanned_at)) + '</td></tr>').join('')
-      + '</tbody></table></div>' : '<div class="calidad-vacio">Pulsa «Analizar ahora» para crear el primer informe.</div>');
+      + '</tbody></table></div>' : '<div class="calidad-vacio">Pulsa «Analizar ahora» para crear el primer informe.</div>')
+    + '</div></details>';
 }
 
 async function cargaCalidad({ scan = false, silencioso = false } = {}){
@@ -10444,20 +10565,26 @@ function montaLimpieza(){
       +   'Quien ya recibió dos seguimientos sin contestar pasa directo a desinteresado. '
       +   'El segundo número queda fuera.</p>'
       + '<div id="limpiezaCuerpo"></div>'
-      + '<div class="seccion" style="margin:30px 0 6px">Reconstruir el historial</div>'
+
+      // --- Las tres herramientas en lote que el panel viejo si tenia, mas la reconstruccion
+      // del historial: van en tarjetas plegables (el mismo patron .grupo de la ficha del
+      // contacto) porque son cuatro herramientas de administracion, no una lectura seguida
+      // -- antes eran cuatro secciones sueltas apiladas una tras otra, un solo bloque largo
+      // de formularios sin ninguna separacion visual real mas alla del rotulo.
+      // Van aqui y no en Campanas a proposito: las tres recorren TODO el historico, que es
+      // de lo que trata esta pantalla. Campanas es para mandar algo concreto a una lista
+      // que tu eliges; esto es para arreglar o mover lo que ya hay.
+
+      + '<details class="grupo" style="margin-top:20px"><summary>Reconstruir el historial</summary><div class="dentro">'
       + '<p class="bajada">Recorre <b>todas</b> las conversaciones y encuentra a quien ya cumplió la '
       +   'norma de los dos seguimientos sin contestar pero nunca llegó a marcarse. Es el arrastre '
       +   'de meses: gente que hoy cuenta en las métricas y no debería.</p>'
       + '<div class="acciones" style="margin-bottom:14px">'
       +   '<button class="btn-linea" id="recoEscanear">Buscar candidatos</button></div>'
       + '<div id="recoCuerpo"></div>'
+      + '</div></details>'
 
-      // --- Las tres herramientas en lote que el panel viejo si tenia -----------------
-      // Van aqui y no en Campanas a proposito: las tres recorren TODO el historico, que es
-      // de lo que trata esta pantalla. Campanas es para mandar algo concreto a una lista
-      // que tu eliges; esto es para arreglar o mover lo que ya hay.
-
-      + '<div class="seccion" style="margin:30px 0 6px">Auto bot · plantillas en tanda</div>'
+      + '<details class="grupo"><summary>Auto bot · plantillas en tanda</summary><div class="dentro">'
       + '<p class="bajada">Manda la plantilla aprobada a los leads que llevan rato callados. '
       +   'Siempre se puede <b>simular primero</b>: dice a cuántos alcanzaría sin mandar nada.</p>'
       + '<div class="par">'
@@ -10486,8 +10613,9 @@ function montaLimpieza(){
       + '<div class="acciones" style="margin:12px 0"><button class="btn-linea" id="atSimular">Simular</button>'
       +   '<button class="btn-solido" id="atEnviar">Enviar de verdad</button></div>'
       + '<div id="atCuerpo"></div>'
+      + '</div></details>'
 
-      + '<div class="seccion" style="margin:30px 0 6px">Etiquetas en lote</div>'
+      + '<details class="grupo"><summary>Etiquetas en lote</summary><div class="dentro">'
       + '<p class="bajada">Reclasifica y etiqueta muchas conversaciones de una vez, con reglas y '
       +   'con IA. Simula primero para ver cuántas cambiarían antes de tocar nada.</p>'
       + '<div class="par">'
@@ -10507,14 +10635,16 @@ function montaLimpieza(){
       + '<div class="acciones" style="margin:12px 0"><button class="btn-linea" id="etSimular">Simular</button>'
       +   '<button class="btn-solido" id="etAplicar">Aplicar</button></div>'
       + '<div id="etCuerpo"></div>'
+      + '</div></details>'
 
-      + '<div class="seccion" style="margin:30px 0 6px">Reparar etapas rotas</div>'
+      + '<details class="grupo"><summary>Reparar etapas rotas</summary><div class="dentro">'
       + '<p class="bajada">Durante meses se escribió <b>cerrado</b> como etapa, y esa etapa no '
       +   'existe en el embudo. Esos leads no salen bien en el Kanban ni cuentan en las cifras.</p>'
       + '<div class="acciones" style="margin-bottom:14px">'
       +   '<button class="btn-linea" id="etpRevisar">Revisar etapas</button>'
       +   '<button class="btn-solido" id="etpAplicar" disabled>Mover a cliente</button></div>'
       + '<div id="etpCuerpo"></div>'
+      + '</div></details>'
       + '</div>');
     $('recoEscanear').onclick = escaneaDesinteres;
     cableaLotes();
@@ -10728,9 +10858,15 @@ function montaBroadcast(){
     +   '<div class="acciones"><button class="btn-solido" id="bcSimular">Simular envío</button></div>'
     + '</div><div id="bcSalida"></div>'
 
+    // Pack de Estados y Publicar en Estados son dos herramientas aparte del envio de
+    // campana de arriba (una prepara fotos en el navegador, la otra publica un Estado, ni
+    // siquiera son mensajes) -- antes solo las separaba un rotulo, ahora son tarjetas
+    // plegables (mismo patron .grupo que en Limpieza), cerradas por defecto para que la
+    // herramienta principal de esta pantalla, la campana, sea lo primero que se ve entero.
+
     // Pack de Estados. Todo pasa en el navegador: las fotos NO se suben a ningun sitio, y
     // eso importa cuando son de una sesion de un cliente que no ha visto todavia.
-    + '<div class="seccion" style="margin:34px 0 6px">Pack de Estados</div>'
+    + '<details class="grupo" style="margin-top:24px"><summary>Pack de Estados</summary><div class="dentro">'
     + '<p class="bajada">Deja las fotos a formato Estado de WhatsApp (1080×1920) con la marca '
     + 'del estudio. Prepararlas pasa entero en este ordenador: <b>la foto no sale de aquí</b> '
     +   'hasta que tú publiques una abajo, en Estados.</p>'
@@ -10745,10 +10881,11 @@ function montaBroadcast(){
     + '<div class="acciones"><button class="btn-solido" id="pkIr">Preparar</button>'
     +   '<button class="btn-linea" id="pkBajar" disabled>Descargar todas</button></div>'
     + '<div id="pkSalida"></div>'
+    + '</div></details>'
 
     // Publicar el Estado desde aqui. Antes habia que bajar la foto, pasarla al telefono y
     // subirla a mano; era el ultimo motivo para abrir WhatsApp en el movil.
-    + '<div class="seccion" style="margin:34px 0 6px">Publicar en Estados</div>'
+    + '<details class="grupo"><summary>Publicar en Estados</summary><div class="dentro">'
     + '<p class="bajada">Sale del número del negocio y lo ve quien abra la pestaña de '
     +   '<b>Estados</b> de WhatsApp. <b>No es un mensaje:</b> no suena, no entra en el chat de '
     +   'nadie y no cuenta para la ventana de 24 horas. Los chats ignorados y quien pidió no '
@@ -10777,7 +10914,9 @@ function montaBroadcast(){
     +   '<button class="btn-linea" id="esVer">Ver a cuántos llega</button>'
     +   '<button class="btn-solido" id="esIr">Publicar</button></div>'
     + '<div id="esSalida"></div>'
-    + '<div id="esHistorial"></div></div>');
+    + '<div id="esHistorial"></div>'
+    + '</div></details>'
+    + '</div>');
 
   $('bcModo').onchange = async () => {
     const plantilla = $('bcModo').value === 'template';
@@ -12014,6 +12153,213 @@ function bajaVcard(texto, nombre){
     a.remove();
     setTimeout(() => URL.revokeObjectURL(url), 4000);
   } catch (error) { /* si el navegador lo bloquea, el cliente ya quedo guardado igual */ }
+}
+
+/* ---- Enviar ubicación y tarjeta de contacto ------------------------------- */
+// Lo que WhatsApp Web deja hacer desde el clip y aquí faltaba: mandar la direccion del estudio o
+// el numero de otra persona sin sacar el telefono. Solo por la linea de WhatsApp Web, que es la
+// que manda el puente. Las piezas puras van entre los dos marcadores para que las pruebas las
+// ejecuten de verdad, sin abrir el panel.
+// ---- Ubicación y contacto: piezas puras
+const NUM_COORD = '(-?\\d{1,3}(?:\\.\\d+)?)';
+const RES_COORDENADAS = [
+  // El pin real de un enlace largo de Google Maps. Va primero: la '@' es el centro del mapa, que
+  // puede estar a varias cuadras del punto marcado.
+  new RegExp('!3d' + NUM_COORD + '!4d' + NUM_COORD),
+  new RegExp('[?&](?:q|ll|query|destination|daddr)=' + NUM_COORD + '(?:,|%2C)\\s*' + NUM_COORD, 'i'),
+  new RegExp('@' + NUM_COORD + ',' + NUM_COORD),
+  // Dos numeros sueltos: lo que se copia al mantener pulsado un punto del mapa.
+  new RegExp('^\\s*' + NUM_COORD + '\\s*[,;\\s]\\s*' + NUM_COORD + '\\s*$'),
+];
+function coordenadasValidas(lat, lng){
+  return typeof lat === 'number' && typeof lng === 'number' && Number.isFinite(lat) && Number.isFinite(lng)
+    && Math.abs(lat) <= 90 && Math.abs(lng) <= 180;
+}
+// De un enlace o de "18.48, -69.93" a { lat, lng }, o null. Los enlaces cortos (maps.app.goo.gl)
+// no traen coordenadas: hay que abrirlos, y desde aqui no se puede.
+function coordenadasDeTexto(texto){
+  const t = String(texto || '');
+  for (const re of RES_COORDENADAS) {
+    const m = t.match(re);
+    if (!m) continue;
+    const lat = Number(m[1]), lng = Number(m[2]);
+    if (coordenadasValidas(lat, lng)) return { lat, lng };
+  }
+  return null;
+}
+// Un campo suelto: solo un numero de verdad. Number('') es 0, y eso mandaria al cliente al golfo
+// de Guinea sin que nadie se diera cuenta.
+function numeroDeCampo(valor){
+  const t = String(valor ?? '').trim().replace(',', '.');
+  return /^-?\d+(?:\.\d+)?$/.test(t) ? Number(t) : null;
+}
+function urlDeMapa(lat, lng){
+  return 'https://www.google.com/maps?q=' + encodeURIComponent(lat + ',' + lng);
+}
+// El cuerpo guardado de una ubicacion: "nombre\nlat,lng" (asi entra del cliente y asi lo guarda
+// el puente al mandarla). El nombre puede faltar.
+function ubicacionDeCuerpo(cuerpo){
+  const lineas = String(cuerpo || '').split('\n').map(l => l.trim()).filter(Boolean);
+  const ult = lineas[lineas.length - 1] || '';
+  const m = ult.match(/^(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)$/);
+  if (!m) return null;
+  const lat = Number(m[1]), lng = Number(m[2]);
+  return coordenadasValidas(lat, lng) ? { lat, lng, nombre: lineas.slice(0, -1).join(' · ') } : null;
+}
+const desescapaVcard = t => String(t || '').replace(/\\([,;\\])/g, '$1').replace(/\\n/gi, ' ').trim();
+// Las tarjetas de un mensaje 'contact' / 'contacts': nombre y telefonos de cada vCard. Sin vCard
+// legible se cae al nombre de la primera linea, para no pintar nada vacio.
+function tarjetasDeContacto(cuerpo){
+  const texto = String(cuerpo || '').replace(/\r/g, '');
+  const tarjetas = [];
+  for (const m of texto.matchAll(/BEGIN:VCARD([\s\S]*?)END:VCARD/gi)) {
+    const bloque = m[1];
+    const nombre = desescapaVcard((bloque.match(/^FN[^:\n]*:(.+)$/mi) || [])[1]);
+    const telefonos = [...bloque.matchAll(/^(?:item\d+\.)?TEL[^:\n]*:(.+)$/gmi)]
+      .map(t => t[1].trim()).filter(Boolean);
+    if (nombre || telefonos.length) tarjetas.push({ nombre: nombre || 'Contacto', telefonos });
+  }
+  if (!tarjetas.length) {
+    const nombre = texto.split('\n').map(l => l.trim()).find(Boolean);
+    if (nombre) tarjetas.push({ nombre, telefonos: [] });
+  }
+  return tarjetas;
+}
+// ---- Ubicación y contacto: fin de las piezas puras
+
+const CLAVE_LUGARES = 'dcarela_lugares_v1';
+function lugaresGuardados(){
+  try {
+    const l = JSON.parse(localStorage.getItem(CLAVE_LUGARES) || '[]');
+    return Array.isArray(l) ? l.filter(x => x && coordenadasValidas(x.lat, x.lng)).slice(0, 6) : [];
+  } catch (error) { return []; }
+}
+function recuerdaLugar(lugar){
+  try {
+    const otros = lugaresGuardados().filter(x => !(x.lat === lugar.lat && x.lng === lugar.lng));
+    localStorage.setItem(CLAVE_LUGARES, JSON.stringify([lugar, ...otros].slice(0, 6)));
+  } catch (error) { /* sin almacenamiento: se manda igual, solo no queda recordado */ }
+}
+
+function abreEnviarUbicacion(c){
+  if (!c) return;
+  const lugares = lugaresGuardados();
+  abreModal('<div class="mtapa"><b>Enviar ubicación · ' + esc(nombreDe(c)) + '</b>'
+    + '<button class="cerrarm" data-cerrar>×</button></div>'
+    + '<div class="mcuerpo">'
+    + (lugares.length
+        ? '<div class="pdfs" style="margin-bottom:12px">'
+          + lugares.map((l, i) => '<button class="tplchip" data-lugar="' + i + '">' + esc(l.name || l.address || l.lat + ', ' + l.lng) + '</button>').join('')
+          + '</div>'
+        : '')
+    + '<div class="campo"><label>Enlace de Google Maps o coordenadas</label>'
+    +   '<input id="ubEnlace" placeholder="Pega el enlace largo, o 18.4861, -69.9312" autocomplete="off">'
+    +   '<div class="ayuda" id="ubAyuda"></div></div>'
+    + '<div class="campo"><label>Nombre del lugar</label><input id="ubNombre" maxlength="100" placeholder="Ej. Estudio D\' Carela"></div>'
+    + '<div class="campo"><label>Dirección</label><input id="ubDireccion" maxlength="200"></div>'
+    + '<div class="fila2">'
+    +   '<div class="campo"><label>Latitud</label><input id="ubLat" inputmode="decimal" autocomplete="off"></div>'
+    +   '<div class="campo"><label>Longitud</label><input id="ubLng" inputmode="decimal" autocomplete="off"></div>'
+    + '</div>'
+    + '<a id="ubVer" class="ayuda" target="_blank" rel="noopener" hidden>Ver en el mapa</a>'
+    + '<label class="checkrow" style="display:flex;gap:8px;align-items:center;margin-top:8px;font-size:12.5px">'
+    +   '<input type="checkbox" id="ubRecordar" checked> Recordar este lugar para la próxima vez</label>'
+    + '</div>'
+    + '<div class="mpatas"><button class="btn-linea" data-cerrar>Cancelar</button>'
+    +   '<button class="btn-solido" id="ubEnviar">Enviar</button></div>');
+  const lat = $('ubLat'), lng = $('ubLng'), ayuda = $('ubAyuda'), ver = $('ubVer');
+  const actual = () => ({ lat: numeroDeCampo(lat.value), lng: numeroDeCampo(lng.value) });
+  const refresca = () => {
+    const p = actual();
+    const ok = coordenadasValidas(p.lat, p.lng);
+    ver.hidden = !ok;
+    if (ok) ver.href = urlDeMapa(p.lat, p.lng);
+  };
+  $('ubEnlace').oninput = ev => {
+    const texto = ev.target.value.trim();
+    if (!texto) { ayuda.textContent = ''; return; }
+    const p = coordenadasDeTexto(texto);
+    if (p) { lat.value = p.lat; lng.value = p.lng; ayuda.textContent = 'Coordenadas encontradas.'; }
+    else ayuda.textContent = /goo\.gl|maps\.app/i.test(texto)
+      ? 'Ese enlace corto no trae las coordenadas. Ábrelo y copia el enlace largo, o pega aquí las coordenadas.'
+      : 'No encuentro coordenadas ahí. Pega el enlace largo de Google Maps o escribe latitud y longitud abajo.';
+    refresca();
+  };
+  lat.oninput = lng.oninput = refresca;
+  document.querySelectorAll('#modal [data-lugar]').forEach(b => {
+    b.onclick = () => {
+      const l = lugares[Number(b.dataset.lugar)];
+      if (!l) return;
+      $('ubNombre').value = l.name || ''; $('ubDireccion').value = l.address || '';
+      lat.value = l.lat; lng.value = l.lng; ayuda.textContent = ''; refresca();
+    };
+  });
+  $('ubEnlace').focus();
+  $('ubEnviar').onclick = async ev => {
+    const p = actual();
+    if (!coordenadasValidas(p.lat, p.lng)) {
+      return avisa('Faltan las coordenadas', 'Pega un enlace de Google Maps o escribe latitud y longitud (ej. 18.4861 y -69.9312).');
+    }
+    const lugar = { lat: p.lat, lng: p.lng, name: $('ubNombre').value.trim(), address: $('ubDireccion').value.trim() };
+    const boton = ev.currentTarget; boton.disabled = true;
+    const conv = c.id || c._id;
+    const r = await llama({ action:'bridgeQueue', conversation_id: conv, location: lugar });
+    boton.disabled = false;
+    if (!r.ok) return avisa('No se pudo enviar', traduceErrorMeta(r.error, r.code));
+    if ($('ubRecordar').checked) recuerdaLugar(lugar);
+    cierraModal();
+    apuntaEnviando({ conv, tipo:'location', body: [lugar.name || lugar.address, lugar.lat + ',' + lugar.lng].filter(Boolean).join('\n') });
+  };
+}
+
+function abreEnviarContacto(c){
+  if (!c) return;
+  // CONVS ya deja fuera las ignoradas y las de lineas ocultas: no se le ofrece a nadie la
+  // tarjeta de la familia ni la de un numero que se dejo de usar.
+  const candidatos = CONVS.filter(x => x.wa_phone);
+  abreModal('<div class="mtapa"><b>Enviar contacto · ' + esc(nombreDe(c)) + '</b>'
+    + '<button class="cerrarm" data-cerrar>×</button></div>'
+    + '<div class="mcuerpo">'
+    + '<div class="campo"><label>Buscar entre tus contactos</label>'
+    +   '<input id="tcBusca" placeholder="Nombre o número" autocomplete="off"></div>'
+    + '<div class="lista-elegir" id="tcLista"></div>'
+    + '<div class="campo"><label>Nombre</label><input id="tcNombre" maxlength="100"></div>'
+    + '<div class="campo"><label>Teléfono</label><input id="tcTel" inputmode="tel" placeholder="Con código de país, ej. 1 809 555 0100" autocomplete="off"></div>'
+    + '<div class="ayuda">Al cliente le llega la tarjeta de contacto de WhatsApp, con el botón para escribirle.</div>'
+    + '</div>'
+    + '<div class="mpatas"><button class="btn-linea" data-cerrar>Cancelar</button>'
+    +   '<button class="btn-solido" id="tcEnviar">Enviar</button></div>');
+  const lista = $('tcLista');
+  const pintaLista = () => {
+    const q = $('tcBusca').value.trim();
+    const hallados = (q ? candidatos.filter(x => coincideContacto(x, q)) : candidatos).slice(0, 6);
+    lista.innerHTML = hallados.map((x, i) => '<button class="elegir" data-i="' + i + '"><b>' + esc(nombreDe(x))
+      + '</b><span>+' + esc(x.wa_phone) + '</span></button>').join('')
+      || '<div class="ayuda">Nadie coincide. Escribe el nombre y el número abajo.</div>';
+    lista.querySelectorAll('.elegir').forEach(b => {
+      b.onclick = () => {
+        const x = hallados[Number(b.dataset.i)];
+        $('tcNombre').value = x.customer_name || x.contact_name || x.display_name || '';
+        $('tcTel').value = '+' + x.wa_phone;
+      };
+    });
+  };
+  $('tcBusca').oninput = pintaLista;
+  pintaLista();
+  $('tcBusca').focus();
+  $('tcEnviar').onclick = async ev => {
+    const nombre = $('tcNombre').value.trim();
+    const digitos = $('tcTel').value.replace(/[^0-9]/g, '');
+    if (!nombre) { $('tcNombre').focus(); return avisa('Falta el nombre', 'La tarjeta necesita un nombre.'); }
+    if (!/^[0-9]{7,15}$/.test(digitos)) { $('tcTel').focus(); return avisa('Teléfono no válido', 'Escríbelo con el código de país, de 7 a 15 números.'); }
+    const boton = ev.currentTarget; boton.disabled = true;
+    const conv = c.id || c._id;
+    const r = await llama({ action:'bridgeQueue', conversation_id: conv, contact: { name: nombre, phone: digitos } });
+    boton.disabled = false;
+    if (!r.ok) return avisa('No se pudo enviar', traduceErrorMeta(r.error, r.code));
+    cierraModal();
+    apuntaEnviando({ conv, tipo:'contact', body: nombre + '\nBEGIN:VCARD\nFN:' + nombre + '\nTEL:+' + digitos + '\nEND:VCARD' });
+  };
 }
 
 function abreRecordatorio(c){
