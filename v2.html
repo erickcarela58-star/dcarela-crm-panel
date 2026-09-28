@@ -5447,12 +5447,21 @@ document.addEventListener('click', async ev => {
   // una nota interna del panel no tiene wamid y no hay a que reaccionar.
   const puedeReaccionar = canalDe(sel) === 'whatsapp_qr' && !!m.wamid;
   const destacado = !!m.metadata?.starred;
+  // Editar y eliminar-para-todos: solo lo que el negocio mando por WhatsApp Web, y dentro de los
+  // plazos que pone WhatsApp (15 min para editar, 2 dias para retirar). Fuera de plazo no se
+  // ofrece: pulsarlo solo para que salga un error es peor que no verlo.
+  const edadMs = Date.now() - (Date.parse(String(m.created_at || '')) || 0);
+  const esPropioEnWa = canalDe(sel) === 'whatsapp_qr' && m.direction === 'out' && !!m.wamid;
+  const puedeEditar = esPropioEnWa && (m.msg_type || 'text') === 'text' && edadMs <= 15 * 60000;
+  const puedeRetirar = esPropioEnWa && edadMs <= 48 * 3600000;
   menu.innerHTML = '<button data-op="citar">Responder</button>'
     + (puedeReaccionar ? '<button data-op="reaccionar">Reaccionar</button>' : '')
     + '<button data-op="reenviar">Reenviar</button>'
     + '<button data-op="seleccionar">Seleccionar</button>'
     + '<button data-op="destacar">' + (destacado ? 'Quitar destacado' : 'Destacar') + '</button>'
     + '<button data-op="copiar">Copiar texto</button>'
+    + (puedeEditar ? '<button data-op="editar">Editar</button>' : '')
+    + (puedeRetirar ? '<button data-op="retirar" class="peligro">Eliminar para todos</button>' : '')
     + '<button data-op="borrar" class="peligro">Borrar</button>';
   globo.appendChild(menu);
   menu.onclick = async e2 => {
@@ -5473,6 +5482,15 @@ document.addEventListener('click', async ev => {
       const r = await llama({ action:'star', message_id: m.id, starred: !destacado });
       if (!r.ok) avisa('No se pudo destacar', r.error);
     }
+    else if (op === 'editar') abreEditar(m);
+    else if (op === 'retirar') {
+      if (!confirm('Se eliminará para todos: el cliente verá «Se eliminó este mensaje» en su WhatsApp.\n\n¿Eliminar?')) return;
+      const r = await llama({ action:'ownMsg', operation:'revoke', message_id: m.id });
+      if (!r.ok) return avisa('No se pudo eliminar', r.error);
+      // El mensaje sigue en el hilo hasta que WhatsApp lo acepta: el puente lo marca entonces.
+      avisa(r.enviado === false ? 'No se envió nada' : 'Eliminando para todos…',
+        r.enviado === false ? 'Ese chat está ignorado.' : 'Desaparece de aquí en cuanto WhatsApp lo confirme.');
+    }
     else if (op === 'borrar') {
       // Borrado blando: WhatsApp no permite quitarlo del telefono del cliente, asi
       // que se dice claro que solo desaparece de aqui.
@@ -5482,6 +5500,29 @@ document.addEventListener('click', async ev => {
     }
   };
 });
+
+// Editar un mensaje propio ya enviado. El texto cambia aqui solo cuando WhatsApp lo acepta (lo
+// marca el puente, con «Editado»): mientras tanto se sigue viendo el original.
+function abreEditar(m){
+  abreModal('<div class="mtapa"><b>Editar mensaje</b><button class="cerrarm" data-cerrar>×</button></div>'
+    + '<div class="mcuerpo"><div class="campo"><textarea id="edTexto" rows="5" maxlength="4096"></textarea></div>'
+    + '<p class="aviso">Al cliente le aparecerá «Editado». WhatsApp solo deja editar durante los primeros 15 minutos.</p>'
+    + '<div class="acciones"><button class="btn-solido" id="edGuardar">Guardar</button></div></div>');
+  const caja = $('edTexto');
+  caja.value = m.body || '';
+  caja.focus();
+  $('edGuardar').onclick = async () => {
+    const texto = caja.value.trim();
+    if (!texto) return avisa('El mensaje no puede quedar vacío');
+    if (texto === String(m.body || '').trim()) { cierraModal(); return; }
+    const b = $('edGuardar'); b.disabled = true;
+    const r = await llama({ action:'ownMsg', operation:'edit', message_id: m.id, text: texto });
+    if (!r.ok) { b.disabled = false; return avisa('No se pudo editar', r.error); }
+    cierraModal();
+    avisa(r.enviado === false ? 'No se envió nada' : 'Editando…',
+      r.enviado === false ? 'Ese chat está ignorado.' : 'Se actualiza aquí en cuanto WhatsApp lo confirme.');
+  };
+}
 
 // Las seis de WhatsApp. Un selector de emojis entero no cabe aquí y tampoco hace falta:
 // reaccionar es para contestar sin escribir, y el que quiera decir algo escribe.
