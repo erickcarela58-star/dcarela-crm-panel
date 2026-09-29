@@ -3,7 +3,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="robots" content="noindex,nofollow">
-<title>Guía de uso · CRM D’ Carela v109</title>
+<title>Guía de uso · CRM D’ Carela v134</title>
 <style>
 :root{color-scheme:light dark;font:16px/1.65 system-ui,sans-serif;background:#fafafa;color:#20252a}
 *{box-sizing:border-box}body{margin:0}main{max-width:850px;margin:auto;padding:24px clamp(16px,5vw,48px) 64px}
@@ -14,7 +14,7 @@ a{color:#076c70;text-underline-offset:3px}nav{display:flex;gap:16px;flex-wrap:wr
 </style>
 <main>
 <header><nav aria-label="Navegación"><a href="./">Volver al CRM</a><a href="./manual-v2.md">Manual completo</a></nav>
-<p class="muted">D’ Carela · v109 · 20 de septiembre de 2026 (UTC)</p>
+<p class="muted">D’ Carela · v134 · 28 de septiembre de 2026</p>
 <h1>Atender, preparar y aprobar</h1><p>La misma aplicación sirve a Central y Fotos, con su configuración de canal separada. La raíz y <code>/v2.html</code> muestran la versión vigente.</p></header>
 <h2>1. Antes de responder</h2>
 <ol><li>Inicia sesión y abre <b>Canales</b>. Comprueba el número vinculado, la conexión de la PC y si hay una pausa de envíos.</li>
@@ -36,13 +36,18 @@ a{color:#076c70;text-underline-offset:3px}nav{display:flex;gap:16px;flex-wrap:wr
 <li>Selecciona varios chats para etiquetar o bloquear bot y marketing. Lee la confirmación antes de aplicar.</li>
 <li>Simula una campaña y revisa destinatarios y exclusiones antes de autorizarla. Las colas ya autorizadas conservan su programación y límites.</li>
 <li>Pack de Estados prepara imágenes para publicarlas manualmente; no publica Estados automáticamente.</li></ul>
-<h2>5. Si algo no funciona</h2>
+<h2>5. Hoy, leads al día y marketing</h2>
+<ul><li><b>Hoy</b> ordena lo que toca atender: chats donde el último mensaje es del cliente (no es lo mismo que «sin leer»), cotizaciones que se enfrían, seguimientos y sesiones. No envía nada. «No requiere respuesta» lo saca hasta que el cliente vuelva a escribir.</li>
+<li>Los <b>leads se ponen al día solos</b> varias veces al día: lo ya contestado deja de figurar como pendiente, quien compró pasa a cliente, los dormidos se cierran (y se reabren si escriben) y quien pide que no le escriban queda dado de baja. Configuración tiene «Ver qué cambiaría» y «Ponerlos al día ahora».</li>
+<li>El <b>agente de marketing</b> propone campañas con cifras reales, reparte cada audiencia entre el número oficial y el 5644, deja fuera a quien no viene al caso, propone las plantillas de Meta que faltan y las conversaciones que conviene descartar. No envía nada sin tu aprobación.</li>
+<li>En tu WhatsApp escribe <code>ayuda crm</code>: <code>mi día</code>, <code>sin responder</code>, <code>propuestas</code>, <code>embudo</code>, <code>busca María</code>, <code>leads al día</code>…</li></ul>
+<h2>6. Si algo no funciona</h2>
 <details><summary>No veo un chat de la línea anterior</summary><p>Busca el filtro de su número. Si el puente se desconectó, las conversaciones pueden estar en el filtro de línea inactiva. Se conservan; no hace falta volver a crearlas.</p></details>
 <details><summary>No me deja enviar</summary><p>Lee la causa sobre el compositor: otra línea, sin vincular, PC sin responder o envíos en pausa. Un administrador puede reanudar una pausa; no pulses vincular para resolver una pausa simple.</p></details>
 <details><summary>No se importó todo el historial</summary><p>Un porcentaje parcial no confirma recuperación completa. La conexión actual procede de una vinculación antigua. La recuperación completa puede necesitar volver a vincular desde Canales con el teléfono presente. No cierres la sesión sin tenerlo disponible.</p></details>
 <details><summary>El bot dice que avisó a una persona</summary><p>Comprueba el estado de la derivación y el teléfono de avisos en Configuración. La solicitud, la cola y la entrega son pasos diferentes. No se puede enviar el aviso al mismo número que lo emite.</p></details>
 <details><summary>El asistente falla o propone algo incorrecto</summary><p>No apruebes la propuesta. Conserva el error, el canal y los pasos para reproducirlo. Revisa la sesión y la configuración del proveedor; no cambies un saldo o una ficha para compensar un fallo de conexión.</p></details>
-<h2>6. Alcance de esta comprobación</h2>
+<h2>7. Alcance de esta comprobación</h2>
 <p>Se verificaron las pruebas automatizadas, los archivos publicados, la conexión del puente y una respuesta sintética de Google. Quedan separadas las pruebas visuales por rol, la entrega real de mensajes y la recuperación histórica que requiera el teléfono. No se da por comprobado lo que no se ejecutó.</p>
 </main>
 </html>
