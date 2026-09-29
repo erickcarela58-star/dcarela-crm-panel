@@ -1562,6 +1562,12 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{outline:0}
 .nav .accesos-cab .chev{display:inline-block;transition:transform .18s;font-size:15px;line-height:1}
 .nav .accesos-cab[aria-expanded="true"] .chev{transform:rotate(90deg)}
 .nav .accesos-cuerpo[hidden]{display:none}
+.nav .nav-fila{display:flex;align-items:center;gap:2px}
+.nav .nav-fila>a{flex:1 1 auto;min-width:0}
+.nav .nav-flecha{flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border:0;background:none;border-radius:8px;color:var(--mut);cursor:pointer;margin-right:4px}
+.nav .nav-flecha:hover{background:var(--hover);color:var(--fg)}
+.nav .nav-flecha svg{transition:transform .18s}
+.nav .nav-flecha[aria-expanded="true"] svg{transform:rotate(180deg)}
 .pie{border-top:0;padding:10px 14px 14px}
 .pie .estado{font-size:11.5px}
 .pie button{border:0;background:var(--hover);border-radius:10px;font-weight:600;padding:9px;
@@ -2097,6 +2103,28 @@ input[type="checkbox"],input[type="radio"]{accent-color:var(--accent)}
 @media (max-width:720px){.fe-cab{flex-wrap:wrap;row-gap:6px;padding:14px 16px 8px}.fe-cab span{flex:1 1 100%;order:3}.fe-cab .hoy-viejos{margin-left:0;order:2;white-space:normal;text-align:left}}
 @media (max-width:720px){.mk-desc-cab{flex-direction:column;align-items:stretch}.mk-desc-fila{flex-direction:column;align-items:flex-start;gap:6px}.mk-desc-acc{width:100%}.mk-desc-fila span:first-child{width:100%}.mk-desc-fila em{white-space:normal}}
 .mk-acc{flex-wrap:wrap}
+/* Tareas del equipo */
+.tar-form{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;margin:6px 0 4px}
+.tar-form>label:nth-child(1){flex:3 1 100%}
+.tar-form>label:nth-child(2){flex:2 1 180px}
+.tar-form>label:nth-child(3),.tar-form>label:nth-child(4),.tar-form>label:nth-child(5){flex:1 1 120px}
+.tar-form input,.tar-form select,.tar-eq-form input{width:100%;box-sizing:border-box}
+.tar-form label{display:flex;flex-direction:column;gap:3px;font-size:11.5px;color:var(--mut);font-weight:600}
+.tar-sec{margin:18px 0 6px;font-size:12px;font-weight:700;letter-spacing:.02em;color:var(--mut);text-transform:uppercase}
+.tar-sec.vencida{color:var(--rojo,#b3312a)}
+.tar-fila{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px 12px;align-items:center;padding:11px 14px;border-radius:14px;background:var(--panel);margin-bottom:8px;box-shadow:var(--sombra-suave,0 1px 2px rgba(0,0,0,.05))}
+.tar-fila b{display:block;font-size:14px}
+.tar-fila small{color:var(--mut);font-size:12px}
+.tar-acc{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+.tar-acc button{font-size:12px;padding:5px 10px}
+.tar-eq-fila{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--line)}
+.tar-eq-form{display:flex;flex-wrap:wrap;gap:10px;margin-top:10px}
+.tar-eq-form>label{flex:1 1 150px}
+.tar-eq-form>label:nth-child(n+3){flex:1 1 100px}
+.tar-eq-form label{display:flex;flex-direction:column;gap:3px;font-size:11.5px;color:var(--mut);font-weight:600}
+.tar-dias{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0}
+.tar-dias label{flex-direction:row;align-items:center;gap:4px;font-size:12px;color:var(--fg);font-weight:500}
+@media (max-width:720px){.tar-form .btn-solido{flex:1 1 100%}.tar-fila{grid-template-columns:1fr}.tar-acc{justify-content:flex-start}}
 @media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
 </head>
@@ -2306,7 +2334,7 @@ const VISTAS = [
   { id:'anuncios',      nombre:'Anuncios',       icono:ico('<path d="M3.500 10v4a1 1 0 001 1H7l9 4V5L7 9H4.500a1 1 0 00-1 1z"/><path d="M7.500 15l1 4.200a.9.9 0 00.9.700h1.100a.9.9 0 00.9-1.100L11 16.700"/><path d="M19.200 9.200a3.700 3.700 0 010 5.600"/>') },
   { id:'campanas',      nombre:'Campañas',      icono:ico('<path d="M20.500 3.500L10.200 13.800"/><path d="M20.500 3.500l-6.600 17-3.700-6.700L3.500 10.100z"/>') },
   { id:'plantillas',    nombre:'Plantillas',    icono:ico('<path d="M7 3h6.600L19 8.400V18a3 3 0 01-3 3H7a3 3 0 01-3-3V6a3 3 0 013-3z"/><path d="M13.400 3.200V8.600H19"/><path d="M8 13h7M8 16.500h4.600"/>') },
-  { id:'reminders',     nombre:'Recordatorios', icono:ico('<path d="M6.300 16.200V11a5.700 5.700 0 0111.400 0v5.200l1.600 2.300H4.700z"/><path d="M10 21a2.200 2.200 0 004 0"/>') },
+  { id:'reminders',     nombre:'Tareas', icono:ico('<path d="M6.300 16.200V11a5.700 5.700 0 0111.400 0v5.200l1.600 2.300H4.700z"/><path d="M10 21a2.200 2.200 0 004 0"/>') },
   { id:'canales',       nombre:'Canales',        icono:ico('<circle cx="6.200" cy="12" r="2.500"/><circle cx="17.800" cy="6.200" r="2.500"/><circle cx="17.800" cy="17.800" r="2.500"/><path d="M8.400 10.800l7.200-3.500M8.400 13.200l7.200 3.500"/>') },
   { id:'config',        nombre:'Configuración',  icono:ico('<path d="M18.65 9.24L18.94 10.10L20.93 10.26L20.93 13.74L18.94 13.90L18.65 14.76L18.25 15.57L19.55 17.09L17.09 19.55L15.57 18.25L14.76 18.65L13.90 18.94L13.74 20.93L10.26 20.93L10.10 18.94L9.24 18.65L8.43 18.25L6.91 19.55L4.45 17.09L5.75 15.57L5.35 14.76L5.06 13.90L3.07 13.74L3.07 10.26L5.06 10.10L5.35 9.24L5.75 8.43L4.45 6.91L6.91 4.45L8.43 5.75L9.24 5.35L10.10 5.06L10.26 3.07L13.74 3.07L13.90 5.06L14.76 5.35L15.57 5.75L17.09 4.45L19.55 6.91L18.25 8.43Z"/><circle cx="12" cy="12" r="2.9"/>') },
 ];
@@ -2371,16 +2399,19 @@ function pintaMenu(){
     + 'title="Abrir ' + esc(a.nombre) + ' en Meta, en una pestaña nueva">'
     + a.icono + '<span>' + esc(a.nombre) + '</span><span class="ext" aria-hidden="true">↗</span></a>';
   // Acordeon: cerrado por defecto y con memoria (este navegador). Las redes se atienden fuera del CRM, no hace falta verlas siempre.
+  // La flechita va AL LADO de «Conversaciones», en la misma fila; el resto del acordeon (las redes) se abre debajo.
+  const filaConversaciones = (enlaceHtml, accesosHtml) => accesosHtml
+    ? '<div class="nav-fila">' + enlaceHtml + '<button type="button" class="nav-flecha" data-acordeon="redes" aria-expanded="' + redesAbiertas + '" aria-controls="accesosCuerpo" aria-label="Instagram, Messenger y Marketplace" title="Instagram, Messenger y Marketplace">'
+      + '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button></div>' + accesosHtml
+    : enlaceHtml;
   let redesAbiertas = false;
   try { redesAbiertas = localStorage.getItem('crm_menu_redes') === '1'; } catch (e) { /* sin almacenamiento: cerrado */ }
   const accesos = ACCESOS_META.length
     ? '<div class="accesos" role="group" aria-label="Bandejas de Meta">'
-      + '<button type="button" class="accesos-cab" data-acordeon="redes" aria-expanded="' + redesAbiertas + '" aria-controls="accesosCuerpo">'
-      + '<span>Redes y Marketplace</span><span class="chev" aria-hidden="true">›</span></button>'
       + '<div class="accesos-cuerpo" id="accesosCuerpo"' + (redesAbiertas ? '' : ' hidden') + '>'
       + ACCESOS_META.map(externo).join('') + '</div></div>' : '';
   $('nav').innerHTML =
-    disponibles.filter(v => v.fija).map(v => enlace(v) + (v.id === 'conversations' ? accesos : '')).join('')
+    disponibles.filter(v => v.fija).map(v => v.id === 'conversations' ? filaConversaciones(enlace(v), accesos) : enlace(v)).join('')
     + '<div class="secundarias"><div class="rotulo">Todo lo demás</div>'
     + disponibles.filter(v => !v.fija).map(enlace).join('') + '</div>';
 }
@@ -2391,6 +2422,7 @@ $('nav')?.addEventListener('click', ev => {
   if (!b) return;
   const abierto = b.getAttribute('aria-expanded') !== 'true';
   b.setAttribute('aria-expanded', abierto ? 'true' : 'false');
+  b.classList.toggle('abierta', abierto);
   const cuerpo = $('accesosCuerpo'); if (cuerpo) cuerpo.hidden = !abierto;
   try { localStorage.setItem('crm_menu_redes', abierto ? '1' : '0'); } catch (e) { /* nada que guardar */ }
 });
@@ -9018,10 +9050,151 @@ async function pintaTablero(id){
 /* ---- Recordatorios ------------------------------------------------------- */
 // No hay tabla de recordatorios: son conversaciones con follow_up_at puesto. Buscarlos
 // en crm_planning_tasks, como hacia la primera version, devolvia siempre vacio.
+// ---- Tareas del equipo ------------------------------------------------------------------------------------------------------------------
+// El servidor (equipo-tareas-store.js) decide cuando avisar y preguntar; aqui solo se ponen, se ven y se cierran. Los avisos van por WhatsApp, dentro del horario de cada persona.
+const TAR = { tareas: [], personas: [], plantilla: null, hechas: false, cargado: false };
+const DIAS_TAR = [['1', 'L'], ['2', 'M'], ['3', 'X'], ['4', 'J'], ['5', 'V'], ['6', 'S'], ['0', 'D']];
+const hoyRD = () => new Date().toLocaleDateString('en-CA', { timeZone: 'America/Santo_Domingo' });
+const nombreDePersona = id => (TAR.personas.find(x => x.id === id) || {}).nombre || 'Sin asignar';
+async function cargaTareasEquipo(){
+  const r = await llama({ action: 'tareasLista', estados: TAR.hechas ? ['completada'] : ['pendiente'] });
+  if (!r.ok) { const a = $('tarAviso'); if (a) a.innerHTML = '<p class="aviso">No se pudieron leer las tareas: ' + esc(r.error || 'error') + '</p>'; return; }
+  TAR.tareas = r.tareas || []; TAR.personas = r.personas || []; TAR.plantilla = r.plantilla_aprobada; TAR.cargado = true;
+  pintaTareasEquipo();
+}
+function estadoAvisoTarea(t){
+  const n = t.notif || {}, hechos = (n.seguimientos || []).length;
+  if (t.estado === 'completada') return 'completada';
+  const quien = t.asignado_telefono ? '' : ' · sin persona: no se avisa';
+  if (!t.asignado_telefono) return 'sin persona' + quien;
+  if (n.escalada_at) return 'sin respuesta tras 2 preguntas; ya se te avisó';
+  if (n.silenciada_hasta && Date.parse(n.silenciada_hasta) > Date.now()) return 'en proceso o con ayuda pedida';
+  if (hechos) return 'preguntada ' + hechos + ' de 2 veces';
+  if (n.asignacion_at) return 'avisada';
+  return 'aún sin avisar (sale en su horario)';
+}
+function pintaTareasEquipo(){
+  const cont = $('tarLista'); if (!cont) return;
+  const sel = $('tarPersona');
+  if (sel && !sel.dataset.listo || (sel && sel.options.length !== TAR.personas.length + 1)) {
+    sel.innerHTML = '<option value="">Sin asignar (solo anotar)</option>' + TAR.personas.map(x => '<option value="' + esc(x.id) + '">' + esc(x.nombre) + (x.es_dueno ? ' (yo)' : '') + '</option>').join('');
+    sel.dataset.listo = '1';
+  }
+  const aviso = $('tarAviso');
+  if (aviso) aviso.innerHTML = TAR.plantilla === false
+    ? '<p class="aviso" style="margin:0 0 12px">La plantilla de Meta para avisar a tu equipo <b>fuera de las 24 horas</b> todavía no está aprobada. Hasta entonces solo recibe el aviso quien te haya escrito en las últimas 24 horas; el resto espera y se reintenta solo. '
+      + 'Créala en <b>Campañas</b> (propuesta «Crear la plantilla dcarela_tarea_equipo») o con «crear N» por WhatsApp.</p>' : '';
+  const hoy = hoyRD();
+  const grupos = TAR.hechas ? [['Completadas', 'ok', TAR.tareas]] : [
+    ['Vencidas', 'vencida', TAR.tareas.filter(t => t.fecha_limite && t.fecha_limite < hoy)],
+    ['Para hoy', '', TAR.tareas.filter(t => t.fecha_limite === hoy)],
+    ['Próximas', '', TAR.tareas.filter(t => t.fecha_limite && t.fecha_limite > hoy)],
+    ['Sin fecha', '', TAR.tareas.filter(t => !t.fecha_limite)],
+  ];
+  const fila = t => '<div class="tar-fila" data-tid="' + esc(t.id) + '"><div><b>' + esc(t.titulo) + '</b>'
+    + '<small>' + esc(nombreDePersona(t.empleado_id)) + (t.fecha_limite ? ' · ' + esc(t.fecha_limite) + (t.hora_limite ? ' ' + esc(t.hora_limite) : '') : ' · sin fecha')
+    + (t.prioridad === 'alta' ? ' · <b style="display:inline;color:var(--rojo,#b3312a)">alta</b>' : '')
+    + ' · ' + esc(estadoAvisoTarea(t)) + (t.asignada_por && t.asignada_por.nombre ? ' · puesta por ' + esc(t.asignada_por.nombre) : '') + '</small></div>'
+    + '<div class="tar-acc">' + (t.estado === 'completada'
+      ? '<button class="btn-linea" data-tar="reabrir">Reabrir</button>'
+      : '<button class="btn-solido" data-tar="hecha">Hecha ✓</button><button class="btn-linea" data-tar="manana">Mañana</button>'
+        + (t.asignado_telefono ? '<button class="btn-linea" data-tar="avisar" title="Volver a avisar a la persona (sale en su horario)">Avisar de nuevo</button>' : '')
+        + '<button class="btn-linea" data-tar="cancelar">Quitar</button>') + '</div></div>';
+  const cuerpo = grupos.filter(g => g[2].length).map(g => '<div class="tar-sec ' + g[1] + '">' + g[0] + ' · ' + g[2].length + '</div>' + g[2].map(fila).join('')).join('');
+  cont.innerHTML = cuerpo || '<div class="vacio-apple" style="margin:22px auto"><b>' + (TAR.hechas ? 'Todavía no hay tareas completadas' : 'Sin tareas pendientes') + '</b><p>'
+    + (TAR.hechas ? 'Aparecen aquí cuando alguien las marca como hechas.' : 'Añade una arriba: para ti o para alguien de tu equipo.') + '</p></div>';
+  const bt = $('tarVerHechas'); if (bt) bt.textContent = TAR.hechas ? 'Ver las pendientes' : 'Ver las completadas';
+  pintaEquipoTareas();
+}
+function pintaEquipoTareas(){
+  const cont = $('tarEquipoCont'); if (!cont) return;
+  const horario = h => (h && h.desde ? h.desde + '–' + h.hasta : '') + ' · ' + (h && h.dias ? DIAS_TAR.filter(d => h.dias.includes(Number(d[0]))).map(d => d[1]).join(' ') : '');
+  cont.innerHTML = '<p class="aviso" style="margin:0 0 8px">A cada persona solo se le escribe <b>dentro de su horario</b> y como mucho un mensaje cada 3 horas (varias tareas van juntas). Los colaboradores reciben los avisos en su WhatsApp normal; el número debe ser el suyo.</p>'
+    + TAR.personas.map(x => '<div class="tar-eq-fila"><div><b>' + esc(x.nombre) + (x.es_dueno ? ' (tú)' : '') + '</b><br><small style="color:var(--mut)">+' + esc(x.telefono) + ' · ' + esc(horario(x.horario)) + (x.notificar ? '' : ' · avisos apagados') + '</small></div>'
+      + '<div class="tar-acc"><button class="btn-linea" data-eq="editar" data-id="' + esc(x.id) + '">' + (x.es_dueno ? 'Horario' : 'Editar') + '</button>' + (x.es_dueno ? '' : '<button class="btn-linea" data-eq="quitar" data-id="' + esc(x.id) + '">Quitar</button>') + '</div></div>').join('')
+    + '<form id="tarEqForm" autocomplete="off"><input type="hidden" id="eqId"><div class="tar-eq-form">'
+    + '<label>Nombre<input id="eqNombre" maxlength="60" placeholder="Ej. Ashley" required></label>'
+    + '<label>WhatsApp (con código de país)<input id="eqTelefono" inputmode="tel" placeholder="1809…" required></label>'
+    + '<label>Desde<input type="time" id="eqDesde" value="08:00"></label><label>Hasta<input type="time" id="eqHasta" value="18:00"></label></div>'
+    + '<div class="tar-dias">' + DIAS_TAR.map(d => '<label><input type="checkbox" data-dia="' + d[0] + '"' + ('123456'.includes(d[0]) ? ' checked' : '') + '>' + d[1] + '</label>').join('') + '</div>'
+    + '<label class="cfgsw" style="margin:4px 0"><input type="checkbox" id="eqNotifica" checked><span><b>Avisarle sus tareas por WhatsApp</b><i>Si lo apagas, sus tareas se anotan pero no se le escribe.</i></span></label>'
+    + '<div style="display:flex;gap:8px;margin-top:8px"><button class="btn-solido" type="submit" id="eqGuardar">Añadir al equipo</button><button class="btn-linea" type="button" id="eqLimpiar" hidden>Cancelar edición</button></div></form>';
+  const limpia = () => { $('eqId').value = ''; $('eqNombre').value = ''; $('eqTelefono').value = ''; $('eqDesde').value = '08:00'; $('eqHasta').value = '18:00'; $('eqNotifica').checked = true;
+    cont.querySelectorAll('[data-dia]').forEach(c => { c.checked = '123456'.includes(c.dataset.dia); }); $('eqGuardar').textContent = 'Añadir al equipo'; $('eqLimpiar').hidden = true; $('eqNombre').disabled = false; $('eqTelefono').disabled = false; };
+  $('eqLimpiar').onclick = limpia;
+  cont.querySelectorAll('[data-eq]').forEach(b => { b.onclick = async () => {
+    const x = TAR.personas.find(y => y.id === b.dataset.id); if (!x) return;
+    if (b.dataset.eq === 'quitar') {
+      if (!await confirmaAqui('¿Quitar a ' + x.nombre + ' del equipo? Sus tareas viejas se conservan y deja de recibir avisos.')) return;
+      const r = await llama({ action: 'equipoQuita', id: x.id }); if (!r.ok) return avisa('No se pudo', r.error);
+      await cargaTareasEquipo(); return;
+    }
+    $('eqId').value = x.id; $('eqNombre').value = x.nombre; $('eqTelefono').value = x.telefono; $('eqDesde').value = x.horario.desde; $('eqHasta').value = x.horario.hasta; $('eqNotifica').checked = !!x.notificar;
+    cont.querySelectorAll('[data-dia]').forEach(c => { c.checked = x.horario.dias.includes(Number(c.dataset.dia)); });
+    $('eqGuardar').textContent = 'Guardar cambios'; $('eqLimpiar').hidden = false; $('eqNombre').focus();
+  }; });
+  $('tarEqForm').onsubmit = async ev => {
+    ev.preventDefault();
+    const dias = [...cont.querySelectorAll('[data-dia]')].filter(c => c.checked).map(c => Number(c.dataset.dia));
+    if (!dias.length) return avisa('Elige al menos un día');
+    const r = await llama({ action: 'equipoGuarda', id: $('eqId').value || undefined, nombre: $('eqNombre').value, telefono: $('eqTelefono').value, notificar_tareas: $('eqNotifica').checked, horario: { desde: $('eqDesde').value, hasta: $('eqHasta').value, dias } });
+    if (!r.ok) return avisa('No se pudo guardar', r.error);
+    avisa('Guardado', 'Ya se le pueden poner tareas.');
+    await cargaTareasEquipo();
+  };
+}
+function montaTareasEquipo(){
+  const f = $('tarForm'); if (!f || f.dataset.listo) return;
+  f.dataset.listo = '1';
+  $('tarFecha').value = '';
+  f.onsubmit = async ev => {
+    ev.preventDefault();
+    const b = $('tarAnadir'); b.disabled = true;
+    const r = await llama({ action: 'tareaCrear', titulo: $('tarTitulo').value, persona_id: $('tarPersona').value || null, fecha: $('tarFecha').value || null, hora: $('tarHora').value || null, prioridad: $('tarPrioridad').value });
+    b.disabled = false;
+    if (!r.ok) return avisa('No se pudo añadir', r.error);
+    $('tarTitulo').value = ''; $('tarFecha').value = ''; $('tarHora').value = '';
+    avisa('Tarea añadida', $('tarPersona').value ? 'Se le avisa en su horario.' : 'Queda anotada.');
+    await cargaTareasEquipo();
+  };
+  $('tarVerHechas').onclick = async () => { TAR.hechas = !TAR.hechas; await cargaTareasEquipo(); };
+  $('tarLista').addEventListener('click', async ev => {
+    const b = ev.target.closest('[data-tar]'); if (!b) return;
+    const id = b.closest('[data-tid]').dataset.tid;
+    b.disabled = true;
+    let r;
+    if (b.dataset.tar === 'hecha') r = await llama({ action: 'tareaEstado', id, estado: 'completada' });
+    else if (b.dataset.tar === 'reabrir') r = await llama({ action: 'tareaEstado', id, estado: 'pendiente' });
+    else if (b.dataset.tar === 'cancelar') { if (!await confirmaAqui('¿Quitar esta tarea? Dejará de avisarse.')) { b.disabled = false; return; } r = await llama({ action: 'tareaEstado', id, estado: 'cancelada' }); }
+    else if (b.dataset.tar === 'manana') { const d = new Date(Date.now() + 86400000).toLocaleDateString('en-CA', { timeZone: 'America/Santo_Domingo' }); const t = TAR.tareas.find(x => x.id === id); r = await llama({ action: 'tareaReprograma', id, fecha: d, hora: (t && t.hora_limite) || null }); }
+    else r = await llama({ action: 'tareaReenviar', id });
+    b.disabled = false;
+    if (!r.ok) return avisa('No se pudo', r.error);
+    if (b.dataset.tar === 'avisar') avisa('Listo', 'Se le avisa de nuevo en su próximo horario.');
+    await cargaTareasEquipo();
+  });
+  cargaTareasEquipo();
+}
+
 function montaRecordatorios(){
   if (!montadas.has('reminders')) {
     montadas.add('reminders');
-    hueco('reminders', '<div class="hoja"><h1>Recordatorios</h1>'
+    hueco('reminders', '<div class="hoja"><h1>Tareas</h1>'
+      + '<p class="bajada">Pon tareas o recordatorios para ti o para tu equipo. Cada quien los recibe en su WhatsApp <b>dentro de su horario</b>, y el sistema pregunta —sin insistir— si ya se cumplieron: '
+      +   'un aviso al asignarla, uno el día que toca y como máximo dos preguntas de seguimiento. Tus colaboradores contestan por WhatsApp: <b>LISTO</b>, <b>MAÑANA</b>, <b>EN PROCESO</b> o <b>AYUDA</b>.</p>'
+      + '<div id="tarAviso"></div>'
+      + '<form class="tar-form" id="tarForm" autocomplete="off">'
+      +   '<label>Tarea<input id="tarTitulo" maxlength="200" placeholder="Ej. Limpiar las vitrinas" required></label>'
+      +   '<label>Para<select id="tarPersona"></select></label>'
+      +   '<label>Fecha<input type="date" id="tarFecha"></label>'
+      +   '<label>Hora<input type="time" id="tarHora"></label>'
+      +   '<label>Prioridad<select id="tarPrioridad"><option value="normal">Normal</option><option value="alta">Alta</option><option value="baja">Baja</option></select></label>'
+      +   '<button class="btn-solido" id="tarAnadir" type="submit">Añadir</button>'
+      + '</form>'
+      + '<div class="filtros" style="padding:6px 0 0"><button class="btn-linea" id="tarVerHechas">Ver las completadas</button></div>'
+      + '<div id="tarLista"></div>'
+      + '<details class="grupo" id="tarEquipo" style="margin-top:18px"><summary>Equipo y horarios (a quién se le avisa y cuándo)</summary><div class="dentro" id="tarEquipoCont"></div></details>'
+      + '<h2 style="margin:30px 0 4px;font-size:16px">Seguimientos de clientes</h2>'
       + '<p class="bajada">Seguimientos con fecha puesta. Los vencidos van primero: son los que '
       +   'ya deberían haberse hecho.</p>'
       // Esta vista solo ENSEÑABA la lista. Sin este boton, promover v2 al panel de
@@ -9050,6 +9223,7 @@ function montaRecordatorios(){
       + '</div>'
       + '<div id="recIphone"></div></div>');
     $('recProcesar').onclick = procesaRecordatorios;
+    montaTareasEquipo();
     $('recIphoneActualiza').onclick = async (ev) => {
       const b = ev.currentTarget; b.disabled = true;
       await cargaTareasIphone();
