@@ -2029,7 +2029,7 @@ input[type="checkbox"],input[type="radio"]{accent-color:var(--accent)}
 .fe-mover{padding:6px 12px;font-size:12.5px}
 .fe-vacia{padding:30px 20px;text-align:center;color:var(--mut);font-size:13px;border-top:.5px solid var(--line)}
 .fe-lista .kmas-btn{display:block;width:100%;padding:13px;border-top:.5px solid var(--line)}
-@media (max-width:720px){.fe-fila{grid-template-columns:36px minmax(0,1fr) auto;gap:10px;padding:11px 14px}.fe-cat,.fe-hora{display:none}.fe-etapas{grid-template-columns:repeat(2,1fr)}}
+@media (max-width:720px){.fe-fila{grid-template-columns:36px minmax(0,1fr) auto;gap:10px;padding:11px 14px}.fe-cat,.fe-hora{display:none}.fe-etapas{display:flex;overflow-x:auto;gap:8px;padding-bottom:6px;scroll-snap-type:x proximity}.fe-etapas .fe-etapa{flex:0 0 132px;scroll-snap-align:start}}
 
 /* ---- Configuración: secciones en una sola columna ---- */
 #cfgGrid{display:flex;flex-direction:column;gap:14px;max-width:860px}
@@ -2085,6 +2085,9 @@ input[type="checkbox"],input[type="radio"]{accent-color:var(--accent)}
 .hoy-chip.persona{color:var(--rojo,#b3312a)}
 @media (max-width:720px){.hoy-fila{grid-template-columns:36px minmax(0,1fr)}.hoy-acc{grid-column:2;flex-wrap:wrap}}
 
+@media (max-width:720px){.fe-cab{flex-wrap:wrap;row-gap:6px;padding:14px 16px 8px}.fe-cab span{flex:1 1 100%;order:3}.fe-cab .hoy-viejos{margin-left:0;order:2;white-space:normal;text-align:left}}
+@media (max-width:720px){.mk-desc-cab{flex-direction:column;align-items:stretch}.mk-desc-fila{flex-direction:column;align-items:flex-start;gap:6px}.mk-desc-acc{width:100%}.mk-desc-fila span:first-child{width:100%}.mk-desc-fila em{white-space:normal}}
+.mk-acc{flex-wrap:wrap}
 @media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
 </head>
@@ -4774,6 +4777,8 @@ function subtituloChat(c){
 
 function abre(c){
   if (!c) return;
+  // Si la pagina se abrio directamente en otra vista (Hoy, Funnel, Agenda…), Conversaciones aun no esta montada y sus nodos no existen.
+  if (!$('sinChat')) monta('conversations');
   // Cortar la grabacion ANTES de cambiar de chat. El encoder termina en asincrono y su
   // callback empuja el audio a la cola global: si mientras tanto se abrio otra
   // conversacion, la nota de voz sale hacia el cliente equivocado. Lo mismo con la cola
@@ -9072,7 +9077,7 @@ function accionesTareaIphone(t, e){
 
 async function accionTareaIphone(ev){
   const ver = ev.target.closest('[data-tifi]');
-  if (ver) { const c = buscaConv(ver.dataset.tifi); if (c) { abre(c); ve('conversations'); } return; }
+  if (ver) { const c = buscaConv(ver.dataset.tifi); if (c) { ve('conversations'); abre(c); } return; }
   const hecha = ev.target.closest('[data-tihecha]');
   const vuelve = ev.target.closest('[data-tivuelve]');
   const boton = hecha || vuelve; if (!boton) return;
@@ -9565,7 +9570,7 @@ function montaAgenda(){
       const c = ev.target.closest('[data-agdia]');
       if (c) { agDia = new Date(c.dataset.agdia); pintaAgenda(); return; }
       const ab = ev.target.closest('[data-agconv]');
-      if (ab) { const cv = buscaConv(ab.dataset.agconv); if (cv) { abre(cv); ve('conversations'); } }
+      if (ab) { const cv = buscaConv(ab.dataset.agconv); if (cv) { ve('conversations'); abre(cv); } }
     });
     $('agNueva').onclick = () => abreAgendar(null);
     $('agFiltroBtn').onclick = () => menuFlotante($('agFiltroBtn'),
@@ -11951,7 +11956,7 @@ function montaFunnel(){
       const mas = ev.target.closest('[data-kmas]');
       if (mas) { FUN_LIMITE[mas.dataset.kmas] = (FUN_LIMITE[mas.dataset.kmas] || FUN_TANDA) + FUN_TANDA; pintaKanban(); return; }
       const fila = ev.target.closest('[data-fabre]');
-      if (fila) { const c = buscaConv(fila.dataset.fabre); if (c) { abre(c); ve('conversations'); } }
+      if (fila) { const c = buscaConv(fila.dataset.fabre); if (c) { ve('conversations'); abre(c); } }
     });
     $('kanban').addEventListener('click', ev => {
       const mas = ev.target.closest('[data-kmas]');
@@ -11998,7 +12003,7 @@ function pintaEmbudo(filtradas, hayFiltro){
     +   '<small>' + esc(c.last_message_preview || 'Sin mensajes') + '</small></span>'
     + (c.interested_category ? '<em class="fe-cat">' + esc(c.interested_category) + '</em>' : '<em class="fe-cat vacia"></em>')
     + '<i class="fe-hora">' + esc(hora(c.last_message_at)) + '</i>'
-    + '<button class="btn-linea fe-mover" id="fm-' + esc(c._id) + '" data-fmover="' + esc(c._id) + '">Mover a…</button></div>';
+    + '<button class="btn-linea fe-mover" id="fm-' + esc(c._id) + '" data-fmover="' + esc(c._id) + '" data-menu-flotante>Mover a…</button></div>';
   const filas = ordenaFunnel(filtradas.filter(c => (c.lifecycle_stage || 'nuevo') === sel), FUN.orden, nombreDe);
   const tope = FUN_LIMITE[sel] || FUN_TANDA;
   const r = resumen.find(x => x.e === sel) || { n: 0, todas: 0 };
@@ -12137,7 +12142,7 @@ function montaHoy(){
       const rec = ev.target.closest('[data-hrec]');
       if (rec) { abreRecordatorio(buscaConv(rec.dataset.hrec)); return; }
       const fila = ev.target.closest('[data-habre]');
-      if (fila) { const c = buscaConv(fila.dataset.habre); if (c) { abre(c); ve('conversations'); } }
+      if (fila) { const c = buscaConv(fila.dataset.habre); if (c) { ve('conversations'); abre(c); } }
     });
   }
   pintaHoy();
@@ -15453,7 +15458,7 @@ function montaPlanificacion(){
   $('aAbrirChat').onclick = () => {
     const c = convPorId(ASIS.actual?.conversation_id);
     if (!c) return avisa('No encuentro ese chat', 'Puede que ya no exista o que su línea no esté conectada.');
-    abre(c); ve('conversations');
+    ve('conversations'); abre(c);
   };
   $('ahilo').onclick = manejaClicHilo;
   $('ahilo').onkeydown = ev => {
@@ -16151,7 +16156,7 @@ function editaPropuesta(turnId, propId){
 function llevaAlChat(p){
   const c = convPorId(p.conversation_id);
   if (!c) return avisa('No encuentro ese chat', 'Puede que ya no exista o que se haya archivado.');
-  abre(c); ve('conversations');
+  ve('conversations'); abre(c);
   // Por una red oculta no se escribe desde el CRM: el hilo se abre en solo lectura y el
   // compositor esta escondido por CSS, no quitado del DOM. Pegar ahi el borrador dejaria el
   // texto en una caja invisible y un aviso diciendo "pulsa enviar" sin nada que pulsar.
