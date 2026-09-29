@@ -2200,6 +2200,37 @@ function avisa(titulo, detalle){
   avisoT = setTimeout(() => a.classList.remove('on'), 4200);
 }
 
+/* ---- Confirmar dentro de la pagina ------------------------------------------
+   Los dialogos nativos (confirm) no se pueden confiar: el navegador integrado de Claude, el modo app del iPhone o un bloqueador los
+   descartan sin avisar y el boton parecia muerto («se queda estancado»). Esta version vive en la pagina, siempre se ve y devuelve una
+   promesa: true si pulsan Aceptar, false con Cancelar, Escape o tocando fuera. */
+function confirmaAqui(texto, { si = 'Aceptar', no = 'Cancelar' } = {}){
+  return new Promise(resolve => {
+    const previo = document.activeElement;
+    const m = document.createElement('div');
+    m.className = 'modal on'; m.style.zIndex = '95';
+    m.setAttribute('role', 'alertdialog'); m.setAttribute('aria-modal', 'true');
+    m.innerHTML = '<div class="caja" style="max-width:420px"><div class="mcuerpo" style="white-space:pre-line;font-size:14px;line-height:1.55"></div>'
+      + '<div class="mpatas"><button class="btn-linea" data-cf-no></button><button class="btn-solido" data-cf-si></button></div></div>';
+    m.querySelector('.mcuerpo').textContent = String(texto);
+    const bNo = m.querySelector('[data-cf-no]'), bSi = m.querySelector('[data-cf-si]');
+    bNo.textContent = no; bSi.textContent = si;
+    const fin = (valor) => {
+      document.removeEventListener('keydown', tecla, true);
+      m.remove();
+      if (previo && typeof previo.focus === 'function') { try { previo.focus(); } catch (e) {} }
+      resolve(valor);
+    };
+    const tecla = (ev) => { if (ev.key === 'Escape') { ev.preventDefault(); ev.stopPropagation(); fin(false); } };
+    document.addEventListener('keydown', tecla, true);
+    bNo.onclick = () => fin(false);
+    bSi.onclick = () => fin(true);
+    m.addEventListener('mousedown', ev => { if (ev.target === m) fin(false); });
+    document.body.appendChild(m);
+    bSi.focus();
+  });
+}
+
 /* ---- Marca --------------------------------------------------------------- */
 const sigla = CFG.logoText || 'DC';
 const CANAL_FOTOS = CFG.lockNumFilter === true || CFG.defaultNumFilter === 'qr';
@@ -2759,13 +2790,20 @@ const COLA_HOY = (() => {
   const PESO_ETAPA = Object.freeze({ pendiente_reserva: 5, cotizando: 4, reservado: 3, cliente: 3, interesado: 2, nuevo: 1 });
   const CERRADAS = Object.freeze(['desinteresado', 'perdido', 'cerrado']);
   const ETAPAS_QUE_SE_ENFRIAN = Object.freeze(['cotizando', 'pendiente_reserva', 'interesado']);
-  const VENTANA_SIN_RESPONDER_DIAS = 30;
+  const VENTANA_SIN_RESPONDER_DIAS = 14;
+  const ACUSE_DIAS = 2;
   const TOPE = 40;
 
-  // Palabras que, solas, cierran una conversacion y no piden respuesta. Saludos, «ok», «dale» y «si» NO estan: pueden ser la
-  // respuesta a una pregunta nuestra o el primer mensaje, y no contestarlos cuesta un cliente.
+  // Palabras que, solas, cierran una conversacion y no piden respuesta.
   const CORTESIA = new Set(['gracias', 'muchas', 'mil', 'de', 'nada', 'bendiciones', 'dios', 'le', 'te', 'bendiga', 'igualmente', 'cuidate',
-    'amiga', 'amigo', 'hermana', 'hermano', 'recibido', 'entendido', 'hasta', 'luego', 'saludos', 'gracia']);
+    'amiga', 'amigo', 'hermana', 'hermano', 'recibido', 'entendido', 'hasta', 'luego', 'saludos', 'saludo', 'gracia', 'guidate', 'cuidese', 'bb', 'carino', 'amor', 'mi', 'vida', 'y']);
+  // Acuses («ok», «perfecto», «esta bien»). Recien llegados pueden ser el «si» a una pregunta nuestra y se dejan a la vista; con ACUSE_DIAS
+  // dias o mas sin que nadie los contestara, lo acordado ya se hizo o se dejo, y seguir listandolos es ruido (asi los veia el dueno).
+  const ACUSE = new Set(['ok', 'okey', 'okay', 'oki', 'vale', 'bien', 'bn', 'listo', 'dale', 'perfecto', 'excelente', 'bueno', 'buenisimo', 'ya', 'esta',
+    'que', 'ah', 'entiendo', 'claro', 'si', 'sip', 'genial']);
+  // Lo que decimos NOSOTROS al cerrar («de nada», «siempre a la orden», «buen dia»): no hay nada que perseguir.
+  const CIERRE_NUESTRO = new Set(['siempre', 'a', 'la', 'orden', 'con', 'gusto', 'buen', 'buena', 'buenos', 'buenas', 'dia', 'dias', 'tarde', 'tardes',
+    'noche', 'noches', 'para', 'servirle', 'servirte', 'favor', 'no', 'hay', 'de', 'problema', 'placer', 'mucho', 'igual', 'igualmente']);
 
   const ms = (v) => {
     if (v == null || v === '') return NaN;
@@ -2776,12 +2814,26 @@ const COLA_HOY = (() => {
   const plano = (t) => String(t == null ? '' : t).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
   const recorte = (t, n) => { const v = String(t == null ? '' : t).replace(/\s+/g, ' ').trim(); return v.length > n ? v.slice(0, n - 1) + '…' : v; };
 
-  // «Gracias», «bendiciones», un emoji suelto: no hace falta contestar.
-  function esCortesia(texto) {
-    const limpio = plano(texto).replace(/[^a-z0-9\s]/g, ' ').replace(/\s+/g, ' ').trim();
+  const palabrasDe = (texto) => plano(texto).replace(/([a-z])\1{2,}/g, '$1').replace(/[^a-z0-9\s]/g, ' ').replace(/\s+/g, ' ').trim();
+
+  // «Gracias», «bendiciones», un emoji suelto, un aviso del sistema («mensaje de WhatsApp recibido», sticker): no hace falta contestar.
+  // Con edadDias >= ACUSE_DIAS tambien los acuses («ok», «perfecto», «si»).
+  function esCortesia(texto, edadDias) {
+    if (/^\s*\[(mensaje de whatsapp recibido|sticker|reaccion)/.test(plano(texto))) return true;
+    const limpio = palabrasDe(texto);
     if (!limpio) return true;                      // solo emojis o signos
     const palabras = limpio.split(' ');
-    return palabras.length <= 6 && palabras.every((p) => CORTESIA.has(p));
+    if (palabras.length > 6) return false;
+    if (palabras.every((p) => CORTESIA.has(p))) return true;
+    return edadDias >= ACUSE_DIAS && palabras.every((p) => CORTESIA.has(p) || ACUSE.has(p));
+  }
+
+  // El ultimo mensaje NUESTRO cierra la conversacion (no es una cotizacion ni una pregunta): no se cuenta entre los que «se enfrian».
+  function esCierreNuestro(texto) {
+    const limpio = palabrasDe(texto);
+    if (!limpio) return true;
+    const palabras = limpio.split(' ');
+    return palabras.length <= 6 && palabras.every((p) => CORTESIA.has(p) || ACUSE.has(p) || CIERRE_NUESTRO.has(p));
   }
 
   // El dia de La Romana (UTC-4): desde cuando hasta cuando cuenta «hoy» y «manana».
@@ -2818,13 +2870,13 @@ const COLA_HOY = (() => {
       const t = ms(c.last_message_at);
       const edadDias = Number.isFinite(t) ? (ahora - t) / DIA : Infinity;
       if (ultimoEsDelCliente(c)) {
-        if (edadDias <= VENTANA_SIN_RESPONDER_DIAS && !omitida(c) && !esCortesia(c.last_inbound_preview)) {
+        if (edadDias <= VENTANA_SIN_RESPONDER_DIAS && !omitida(c) && !esCortesia(c.last_inbound_preview, edadDias)) {
           const urgencia = edadDias < 1 ? 'hoy' : edadDias <= 3 ? 'atrasado' : 'viejo';
           const puntos = (PESO_ETAPA[etapaDe(c)] || 1) * 10 + Math.min(edadDias, 7) + (Number(c.unread) > 0 ? 1 : 0) + (c.human_handoff_required ? 3 : 0);
           sinResponder.push(item(c, ahora, { urgencia, puntos }));
         }
       } else if (ETAPAS_QUE_SE_ENFRIAN.includes(etapaDe(c)) && edadDias >= 2 && edadDias <= 21 && !c.follow_up_at && !omitida(c)
-        && !c.followups_opt_out_at && c.followups_opt_in !== false && c.last_message_preview) {
+        && !c.followups_opt_out_at && c.followups_opt_in !== false && c.last_message_preview && !esCierreNuestro(c.last_message_preview)) {
         seEnfrian.push(item(c, ahora, { puntos: (PESO_ETAPA[etapaDe(c)] || 1) * 10 - edadDias }));
       }
       const f = ms(c.follow_up_at);
@@ -2848,7 +2900,7 @@ const COLA_HOY = (() => {
       sesiones: { total: sesiones.length, hoy: cuenta(sesiones, 'hoy', true), items: sesiones },
     };
   }
-  return { colaDeTrabajo, esCortesia };
+  return { colaDeTrabajo, esCortesia, esCierreNuestro };
 })();
 // ---- Hoy: fin de las piezas puras
 // El numerito de «Hoy» en el menu: chats por contestar (de hoy y atrasados) mas seguimientos que tocan.
@@ -3900,7 +3952,7 @@ async function stcPublica(){
   }
   if (!total) return avisa('No hay a quién publicárselo', 'Esa opción no alcanza a nadie.');
   // La misma pregunta que en Difusión, con la cifra dentro.
-  if (!confirm('Se va a publicar en Estados para ' + total + ' contacto(s): '
+  if (!await confirmaAqui('Se va a publicar en Estados para ' + total + ' contacto(s): '
     + nombreQuien + '.' + '\n\n'
     + 'Dura 24 horas y no se le puede quitar a quien ya lo haya visto.'
     + '\n\n' + '¿Publicar?')) return;
@@ -5116,7 +5168,7 @@ function cableaChat(c){
     if (b.dataset.mas === 'anclar') return marcaChat(sel, { pin: !anclado(sel) },
       anclado(sel) ? 'Chat desanclado' : 'Chat anclado arriba');
     if (b.dataset.mas === 'encuesta') { abreEncuesta(sel); } else {
-      if (!confirm('¿Cerrar esta conversación?')) return;
+      if (!await confirmaAqui('¿Cerrar esta conversación?')) return;
       const r = await llama({ action:'updateLead', conversation_id: sel.id || sel._id,
         fields:{ status:'closed', lead_status:'cerrado' } });
       avisa(r.ok ? 'Conversación cerrada' : 'No se pudo cerrar', r.ok ? '' : r.error);
@@ -5163,7 +5215,7 @@ function cableaChat(c){
       // EXISTEN: son un producto de WhatsApp. Quien lo leia probaba la plantilla, no
       // funcionaba, y el CRM parecia roto cuando lo que fallaba era el consejo.
       const nombreRed = redSocial(sel);
-      if (!confirm(nombreRed
+      if (!await confirmaAqui(nombreRed
         ? 'Han pasado más de 24 horas desde su último mensaje.'+'\n\n'
           + 'En ' + nombreRed + ' no hay plantillas. Se intentará por la vía de atención '
           + 'humana, que Meta permite hasta 7 días; con más tiempo lo va a rechazar.'
@@ -5793,7 +5845,7 @@ async function abreRapidas(){
     const borrar = ev.target.closest('[data-borrar]');
     if (borrar) {
       const q = filas[Number(borrar.dataset.borrar)];
-      if (!confirm('¿Borrar «' + (q.title || q.name) + '»?')) return;
+      if (!await confirmaAqui('¿Borrar «' + (q.title || q.name) + '»?')) return;
       const r = await llama({ action:'data', table:'quick_replies', operation:'delete',
         filters:[{ kind:'eq', field:'id', value:q.id }] });
       if (!r.ok) return avisa('No se pudo borrar', r.error);
@@ -9105,7 +9157,7 @@ async function accionTareaIphone(ev){
 // Se piden los numeros y se ensenan TODOS, incluidos los omitidos. Un "listo" a secas
 // esconde lo que no salio, y lo que no salio es justo lo que hay que mirar.
 async function procesaRecordatorios(){
-  if (!confirm('¿Procesar ahora los seguimientos y recordatorios vencidos?\n\n'
+  if (!await confirmaAqui('¿Procesar ahora los seguimientos y recordatorios vencidos?\n\n'
     + 'Dentro de 24 horas se manda texto libre; fuera, solo una plantilla aprobada. '
     + 'Quien haya pedido la baja no recibe nada.')) return;
   const b = $('recProcesar'); const antes = b.textContent;
@@ -10080,7 +10132,7 @@ async function cancelBridgePairing(){
 // siguen bloqueados hasta validar la reconexion" y la validacion no existia en ninguna parte.
 // Este es ese paso, y sigue siendo deliberado: hay que confirmarlo escribiendo.
 async function activateBridgeTransport(){
-  if (!window.confirm('Vas a ACTIVAR los envíos por el segundo número.\n\n'
+  if (!await confirmaAqui('Vas a ACTIVAR los envíos por el segundo número.\n\n'
     + 'A partir de aquí este CRM puede escribir por WhatsApp Web. Los envíos masivos van con '
     + 'freno (40 a 120 s entre mensajes, pausa de 10 min cada 20, tope de 80 al día), pero es '
     + 'un número personal: si se abusa, WhatsApp lo bloquea.\n\n¿Continuar?')) return;
@@ -10103,14 +10155,14 @@ async function requestBridgeHistorySync(){
 }
 
 async function logoutBridgeWhatsApp(){
-  if (!window.confirm('Se cerrará solamente la sesión del segundo número. Las conversaciones guardadas no se borrarán. ¿Continuar?')) return;
+  if (!await confirmaAqui('Se cerrará solamente la sesión del segundo número. Las conversaciones guardadas no se borrarán. ¿Continuar?')) return;
   const result = await callBridgeControl('logout');
   if (result.bridge) renderBridgeControlState(result.bridge, result.ok ? '' : result.error);
   else renderBridgeControlState(bridgeControlState, result.error || 'No se pudo cerrar la sesión.');
 }
 
 async function rebuildBridgeLinkAndHistory(){
-  if (!window.confirm('Se renovará solo el dispositivo local para solicitar historial. Los chats y mensajes guardados NO se borrarán. ¿Continuar?')) return;
+  if (!await confirmaAqui('Se renovará solo el dispositivo local para solicitar historial. Los chats y mensajes guardados NO se borrarán. ¿Continuar?')) return;
   const result = await callBridgeControl('rebuild_link');
   if (result.bridge) renderBridgeControlState(result.bridge, result.ok ? '' : result.error);
   else renderBridgeControlState(bridgeControlState, result.error || 'No se pudo reconstruir el vínculo.');
@@ -10118,7 +10170,7 @@ async function rebuildBridgeLinkAndHistory(){
 
 async function togglePhotoBot(){
   const enabled = bridgeControlState.bot_enabled === true;
-  if (!window.confirm('¿Quieres ' + (enabled ? 'desactivar' : 'activar')
+  if (!await confirmaAqui('¿Quieres ' + (enabled ? 'desactivar' : 'activar')
     + ' las respuestas automáticas del WhatsApp Fotos? Las campañas son independientes del bot.')) return;
   const result = await callBridgeControl(enabled ? 'disable_photo_bot' : 'enable_photo_bot',
     { confirmation:enabled ? '' : 'ACTIVAR BOT FOTOS' });
@@ -10452,7 +10504,7 @@ async function pintaCanales(){
       // para el segundo numero apagaba tambien el oficial, y al reves.
       const cual = bot.dataset.canalBot;
       const encendido = /encendido/.test(bot.textContent);
-      if (!confirm((encendido ? 'Apagar' : 'Encender') + ' el bot SOLO en '
+      if (!await confirmaAqui((encendido ? 'Apagar' : 'Encender') + ' el bot SOLO en '
         + (cual === 'official' ? 'WhatsApp oficial' : 'WhatsApp Web') + '.\n\n¿Seguro?')) return;
       bot.disabled = true;
       // Encender el bot del puente exige la frase exacta (index.js:1710). Sin ella el
@@ -10469,7 +10521,7 @@ async function pintaCanales(){
       return;
     }
     if (ev.target.closest('[data-desconecta-puente]')) {
-      if (!confirm('Se cerrará la sesión de WhatsApp Web del segundo número.\n\n'
+      if (!await confirmaAqui('Se cerrará la sesión de WhatsApp Web del segundo número.\n\n'
         + 'Los chats que entraron por ahí se conservan, pero dejarás de recibir mensajes nuevos '
         + 'por ese número hasta volver a conectarlo.\n\n¿Desconectar?')) return;
       const r = await llama({ action:'logoutBridge' });
@@ -11344,7 +11396,7 @@ async function pintaConfig(){
       const api = el.dataset.cerebro === 'api';
       const cuerpo = api ? { api_apagada: el.checked } : { activo: el.checked };
       let r = await llama(Object.assign({ action:'brainSettings' }, cuerpo));
-      if (!r.ok && r.code === 'aun_no_listo' && confirm('El cerebro local todavía no coincide lo suficiente con la IA.\n\n¿Dejar de usar la API de todos modos?')) {
+      if (!r.ok && r.code === 'aun_no_listo' && await confirmaAqui('El cerebro local todavía no coincide lo suficiente con la IA.\n\n¿Dejar de usar la API de todos modos?')) {
         r = await llama(Object.assign({ action:'brainSettings', forzar:true }, cuerpo));
       }
       if (!r.ok) { el.checked = !el.checked; return avisa('No se pudo cambiar', r.error); }
@@ -11361,7 +11413,7 @@ async function pintaConfig(){
   for (const [id, op] of [['cfgLeadsVer', 'preview'], ['cfgLeadsYa', 'apply']]) {
     const b = $(id); if (!b) continue;
     b.onclick = async () => {
-      if (op === 'apply' && !confirm('Se corregirán los estados de los leads como dice la tarjeta. No se envía nada a nadie y cada ficha guarda qué regla la cambió.' + String.fromCharCode(10, 10) + '¿Ponerlos al día ahora?')) return;
+      if (op === 'apply' && !await confirmaAqui('Se corregirán los estados de los leads como dice la tarjeta. No se envía nada a nadie y cada ficha guarda qué regla la cambió.' + String.fromCharCode(10, 10) + '¿Ponerlos al día ahora?')) return;
       b.disabled = true; $('cfgLeadsSalida').textContent = op === 'apply' ? 'Actualizando…' : 'Calculando…';
       const r = await llama({ action: 'leadsAlDia', operation: op });
       b.disabled = false;
@@ -11408,7 +11460,7 @@ async function pintaConfig(){
   };
   const cy = $('cfgContactosYa');
   if (cy) cy.onclick = async () => {
-    if (!confirm('Se van a guardar en Clientes de caja los chats que ya dieron señal de ser '
+    if (!await confirmaAqui('Se van a guardar en Clientes de caja los chats que ya dieron señal de ser '
       + 'clientes.\n\nNo se toca el saldo ni el crédito de nadie, y las ignoradas no entran.'
       + '\n\n¿Guardarlos?')) return;
     cy.disabled = true; di('Guardando…');
@@ -11502,7 +11554,7 @@ async function pintaConfig(){
   };
   const ar = $('cfgAgendaRota');
   if (ar) ar.onclick = async () => {
-    if (!confirm('Se genera un enlace nuevo y el anterior deja de funcionar.\n\n'
+    if (!await confirmaAqui('Se genera un enlace nuevo y el anterior deja de funcionar.\n\n'
       + 'Los calendarios que ya lo tengan añadido --el tuyo incluido-- dejarán de '
       + 'actualizarse hasta que se añada el nuevo.\n\n¿Cambiarlo?')) return;
     ar.disabled = true;
@@ -11558,7 +11610,7 @@ async function pintaConfig(){
   };
   const ir = $('cfgIphoneRota');
   if (ir) ir.onclick = async () => {
-    if (!confirm('Se genera una llave nueva y la anterior deja de funcionar.\n\n'
+    if (!await confirmaAqui('Se genera una llave nueva y la anterior deja de funcionar.\n\n'
       + 'El Atajo del iPhone dejará de sincronizar hasta que le pegues la dirección nueva.\n\n'
       + 'Nada de lo ya sincronizado se borra.\n\n¿Cambiarla?')) return;
     ir.disabled = true;
@@ -11666,7 +11718,7 @@ async function pintaUsuarios(esAdmin){
     const activar = !b.classList.contains('on');
     // Desactivar a alguien le corta tambien los envios y las automatizaciones, no solo
     // la pantalla. Por eso se pregunta.
-    if (!activar && !confirm('Se desactiva la cuenta. Dejará de poder entrar, enviar y difundir.\n\n¿Seguro?')) return;
+    if (!activar && !await confirmaAqui('Se desactiva la cuenta. Dejará de poder entrar, enviar y difundir.\n\n¿Seguro?')) return;
     b.disabled = true;
     const r2 = await llama({ action:'panelUsers', operation:'update', user_id:b.dataset.activo, active:activar });
     b.disabled = false;
@@ -12163,7 +12215,7 @@ async function omiteEnHoy(c, boton){
 async function omiteViejosEnHoy(boton){
   const ids = COLA_HOY.colaDeTrabajo(CONVS, { ahora: Date.now() }).sin_responder.viejos_ids;
   if (!ids.length) return;
-  if (!confirm('Vas a dejar fuera de «Sin responder» ' + ids.length + ' chats de más de 3 días.' + String.fromCharCode(10, 10)
+  if (!await confirmaAqui('Vas a dejar fuera de «Sin responder» ' + ids.length + ' chats de más de 3 días.' + String.fromCharCode(10, 10)
     + 'No se envía nada ni se cambia su etapa, y si el cliente escribe otra vez, vuelve a aparecer.' + String.fromCharCode(10, 10) + '¿Seguimos?')) return;
   boton.disabled = true;
   const r = await llama({ action:'colaOmitir', ids });
@@ -12503,7 +12555,7 @@ function pintaMovilizacion(){
       const c = buscaConv(avanzar.dataset.conv);
       const r = REGLAS_LEAD.find(x => x.id === avanzar.dataset.avanza);
       if (!c || !r?.etapa) return;
-      if (!confirm('Mover a ' + nombreDe(c) + ' de «' + (c.lifecycle_stage || 'nuevo').replace(/_/g,' ')
+      if (!await confirmaAqui('Mover a ' + nombreDe(c) + ' de «' + (c.lifecycle_stage || 'nuevo').replace(/_/g,' ')
         + '» a «' + r.etapa.replace(/_/g,' ') + '».\n\nCriterio: ' + r.porque + '\n\n'
         + 'No se enviará ningún mensaje automáticamente.')) return;
       avanzar.disabled = true;
@@ -12669,7 +12721,7 @@ function cableaLotes(){
     if (!previo.ok) return avisa('No se pudo simular', previo.error);
     const cuantos = num(previo.templateSent) + num(previo.textSent) + num(previo.followUps);
     if (!cuantos) return avisa('No hay a quién', 'Con esos filtros no entra nadie.');
-    if (!confirm('Se va a escribir a ' + cuantos + ' contacto(s) con plantilla aprobada.\n\n'
+    if (!await confirmaAqui('Se va a escribir a ' + cuantos + ' contacto(s) con plantilla aprobada.\n\n'
       + 'Quien pidió la baja no recibe nada. ¿Seguimos?')) return;
     const b = $('atEnviar'); b.disabled = true; b.textContent = 'Enviando…';
     pintaResumen('atCuerpo', await cargaAuto(false), 'Enviado');
@@ -12689,7 +12741,7 @@ function cableaLotes(){
     b.disabled = false;
   };
   $('etAplicar').onclick = async () => {
-    if (!confirm('¿Aplicar los cambios de etiqueta a las conversaciones que entren en el filtro?')) return;
+    if (!await confirmaAqui('¿Aplicar los cambios de etiqueta a las conversaciones que entren en el filtro?')) return;
     const b = $('etAplicar'); b.disabled = true; b.textContent = 'Aplicando…';
     pintaResumen('etCuerpo', await cargaEtq(false), 'Aplicado');
     b.disabled = false; b.textContent = 'Aplicar';
@@ -12734,7 +12786,7 @@ function cableaLotes(){
   $('etpAplicar').onclick = async () => {
     const elegido = [...document.querySelectorAll('[data-etp-destino]')]
       .map(s => s.dataset.etpDestino + ' → ' + s.value).join('\n');
-    if (!confirm('Se van a reparar las fichas así:\n\n' + elegido
+    if (!await confirmaAqui('Se van a reparar las fichas así:\n\n' + elegido
       + '\n\nSe guarda la etapa original por si hay que revisarlo. ¿Seguimos?')) return;
     const b = $('etpAplicar'); b.disabled = true; b.textContent = 'Moviendo…';
     // Se manda lo que el dueno dejo elegido en los desplegables, no lo que el servidor
@@ -12952,7 +13004,7 @@ async function escaneaDesinteres(){
     +   '<button class="btn-linea" id="recoCancelar">Cancelar</button></div></div>';
   $('recoCancelar').onclick = () => { $('recoCuerpo').innerHTML = ''; };
   $('recoAplicar').onclick = async () => {
-    if (!confirm('Se marcarán ' + total + ' contactos como desinteresados.\n\n'
+    if (!await confirmaAqui('Se marcarán ' + total + ' contactos como desinteresados.\n\n'
       + 'Dejan de contar en las métricas y de recibir marketing y seguimientos.\n\n¿Continuar?')) return;
     const ap = $('recoAplicar');
     ap.disabled = true; ap.textContent = 'Marcando…';
@@ -12969,7 +13021,7 @@ async function programaAcercamiento(lista){
   const base = $('limTexto').value.trim();
   if (!base) return avisa('Escribe el mensaje base');
   const mañana = new Date(); mañana.setDate(mañana.getDate() + 1); mañana.setHours(10, 0, 0, 0);
-  if (!confirm('Se programa UN acercamiento para ' + lista.length + ' contactos, mañana a las 10:00.\n\n'
+  if (!await confirmaAqui('Se programa UN acercamiento para ' + lista.length + ' contactos, mañana a las 10:00.\n\n'
     + 'No sale nada hoy. Cada mensaje va personalizado y aparecerá en Recordatorios para '
     + 'revisarlo antes de enviarlo.\n\n¿Continuar?')) return;
   const b = $('limProgramar');
@@ -12992,7 +13044,7 @@ async function programaAcercamiento(lista){
 }
 
 async function descartaOlvidados(lista){
-  if (!confirm('Se marcan ' + lista.length + ' contactos como desinteresados.\n\n'
+  if (!await confirmaAqui('Se marcan ' + lista.length + ' contactos como desinteresados.\n\n'
     + 'Ya recibieron dos seguimientos sin contestar. Dejan de recibir marketing y '
     + 'seguimientos, y dejan de contar en las métricas. Pueden seguir escribiendo.\n\n'
     + '¿Continuar?')) return;
@@ -13202,7 +13254,7 @@ function cableaMarketing(){
     if (acc === 'desc' || acc === 'mant') { b.disabled = true; await decideDescartes([b.dataset.ids], acc === 'desc' ? 'descartar' : 'mantener'); return; }
     if (acc === 'descTodos') {
       const n = MK.descartes.total;
-      if (!confirm('Vas a pasar ' + n + ' conversaciones a «desinteresado».\n\nSalen de las métricas y de toda campaña. No se borra nada y se pueden reabrir una a una.\n\n¿Descartarlas?')) return;
+      if (!await confirmaAqui('Vas a pasar ' + n + ' conversaciones a «desinteresado».\n\nSalen de las métricas y de toda campaña. No se borra nada y se pueden reabrir una a una.\n\n¿Descartarlas?')) return;
       b.disabled = true; await decideDescartes((MK.descartes.items || []).map(i => i.id), 'descartar'); return;
     }
     if (acc === 'ver') { MK.verDecididas = !MK.verDecididas; return pintaMarketing(); }
@@ -13556,7 +13608,7 @@ async function esPublicaEstado(){
   if (!total) return avisa('No hay a quién publicárselo', 'Esa opción no alcanza a nadie.');
   // La cifra en la pregunta, no solo en la pantalla: es lo unico que separa una prueba de
   // ensenarselo a todos los clientes del negocio.
-  if (!confirm('Se va a publicar en Estados para ' + total + ' contacto(s): '
+  if (!await confirmaAqui('Se va a publicar en Estados para ' + total + ' contacto(s): '
     + ES_ETIQUETAS[quien] + '.' + '\n\n'
     + 'Dura 24 horas y no se le puede quitar a quien ya lo haya visto.'
     + '\n\n' + '¿Publicar?')) return;
@@ -13750,7 +13802,7 @@ async function enviaPorPuente(){
   const entran = Number(previo.elegibles ?? destinos.length);
   const fuera = Object.entries(previo.motivos || {})
     .map(([k, v]) => v + ' por ' + k).join(', ');
-  if (!confirm('Se va a mandar por el segundo número a ' + entran + ' contacto(s).\n\n'
+  if (!await confirmaAqui('Se va a mandar por el segundo número a ' + entran + ' contacto(s).\n\n'
     + (fuera ? 'Quedan fuera: ' + fuera + '.\n\n' : '')
     + 'Sale con ritmo y con variantes del texto, para no quemar la línea. ¿Seguimos?')) return;
 
@@ -13814,9 +13866,9 @@ async function enviaBroadcast(){
   if (!AUDIENCIA) return;
   const cuantos = Number(AUDIENCIA.found || 0);
   const { problemas, minutos } = avisoAntibloqueo(cuantos);
-  if (problemas.length && !confirm('Ojo antes de enviar:\n\n• ' + problemas.join('\n• ')
+  if (problemas.length && !await confirmaAqui('Ojo antes de enviar:\n\n• ' + problemas.join('\n• ')
     + '\n\nUna penalización de Meta tarda semanas en irse.\n\n¿Enviar igualmente?')) return;
-  if (!confirm('Se enviará a ' + cuantos + ' contactos reales, personalizando cada mensaje.\n'
+  if (!await confirmaAqui('Se enviará a ' + cuantos + ' contactos reales, personalizando cada mensaje.\n'
     + 'Tardará unos ' + minutos + ' minuto(s) para no ir en ráfaga.\n\n'
     + 'Esto no se puede deshacer. ¿Confirmas?')) return;
   const cuerpo = cuerpoBc(false);
@@ -13903,7 +13955,7 @@ function cableaLote(){
     }
 
     if (op === 'desinteres') {
-      if (!confirm('Se marcarán ' + ids.length + ' contactos como desinteresados.\n\n'
+      if (!await confirmaAqui('Se marcarán ' + ids.length + ' contactos como desinteresados.\n\n'
         + 'Dejan de recibir marketing, seguimientos y auto-plantillas. Pueden seguir escribiendo '
         + 'y se les puede contestar a mano.\n\n¿Seguro?')) return;
       return corridaLote(ids, async c => llama({ action:'disinterest', operation:'mark',
@@ -14138,7 +14190,7 @@ function cableaAnalisisFicha(c){
     const f = $('fichaAnalisis');
     const campos = { etiquetas: [...f.querySelectorAll('[data-anetq]')].filter(x => x.checked).map(x => x.dataset.anetq) };
     f.querySelectorAll('[data-anap]').forEach(x => { campos[x.dataset.anap] = x.checked; });
-    if (campos.ignorar && !confirm('También se ignorará esta conversación y las demás fichas de su número. ¿Seguro?')) return;
+    if (campos.ignorar && !await confirmaAqui('También se ignorará esta conversación y las demás fichas de su número. ¿Seguro?')) return;
     ap.disabled = true;
     const r = await llama({ action:'analyze', operation:'apply', conversation_id:id, campos });
     ap.disabled = false;
@@ -14292,7 +14344,7 @@ async function pintaListaIgnorados(){
     : '<p class="cfgnota">Todavía no hay ningún número en la lista.</p>';
   cont.onclick = async ev => {
     const b = ev.target.closest('[data-ignquita]'); if (!b) return;
-    if (!confirm('Dejar de ignorar el ' + telefonoLegible(b.dataset.ignquita) + '. Sus fichas vuelven a la bandeja. ¿Seguro?')) return;
+    if (!await confirmaAqui('Dejar de ignorar el ' + telefonoLegible(b.dataset.ignquita) + '. Sus fichas vuelven a la bandeja. ¿Seguro?')) return;
     b.disabled = true;
     const q = await llama({ action:'ignore', operation:'remove_number', phone:b.dataset.ignquita });
     if (!q.ok) { b.disabled = false; return avisa('No se pudo', q.error); }
@@ -15075,7 +15127,7 @@ async function cableaNotas(c){
   };
   lista.onclick = async ev => {
     const b = ev.target.closest('[data-borra-nota]'); if (!b) return;
-    if (!confirm('¿Borrar esta nota? No se puede deshacer.')) return;
+    if (!await confirmaAqui('¿Borrar esta nota? No se puede deshacer.')) return;
     const r = await llama({ action:'deleteNote', note_id: b.dataset.borraNota });
     if (!r.ok) return avisa('No se pudo borrar', r.error);
     await pinta();
