@@ -10559,8 +10559,15 @@ async function pintaCanales(){
     const suscrita = estadoGuardado?.suscrita === true;
     const conectada = estadoGuardado?.conectado === true;
     const listo = suscrita ? true : (conectada || hay ? false : null);
-    return tarjeta(clave, listo,
+    // Facebook invalida la sesion (p. ej. al cambiar la contrasena): el CRM lo detecta solo y lo dice aqui, con el remedio.
+    const caida = estadoGuardado?.token_caido === true;
+    return tarjeta(clave, caida ? false : listo,
       detalle
+      + (caida
+          ? '<br><b>La sesión se cerró:</b> Facebook la invalidó (suele pasar al cambiar la contraseña). Pulsa '
+            + '«Volver a iniciar sesión»: es un toque y queda guardada en el servidor, así que en cualquier '
+            + 'navegador o dispositivo ya entra iniciada.'
+          : '')
       + (conectada && !suscrita
           ? '<br><b>Conectado pero sin suscribir:</b> Meta no va a mandar mensajes hasta que '
             + 'la página quede suscrita. Vuelve a iniciar sesión.'
@@ -10572,7 +10579,7 @@ async function pintaCanales(){
               + (ULTIMA_IMPORTACION[clave] ? '<br>' + ULTIMA_IMPORTACION[clave] : '')
             : ''),
       '<button class="btn-linea" data-conecta="' + clave + '">'
-      + (conectada ? 'Volver a iniciar sesión' : 'Iniciar sesión y dar permisos') + '</button>'
+      + (conectada || caida ? 'Volver a iniciar sesión' : 'Iniciar sesión y dar permisos') + '</button>'
       + (conectada ? '<button class="btn-linea" data-sync="' + clave + '">Importar historial</button>' : ''));
   };
 
