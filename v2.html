@@ -1552,9 +1552,16 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{outline:0}
 .nav .accesos{margin:0 0 4px}
 .nav .accesos a{padding:3px 8px 3px 40px;font-size:12.5px;color:var(--mut)}
 .nav .accesos a svg{width:20px;height:20px;padding:4px;border-radius:6px}
-.nav .accesos a:nth-child(1) svg{--tint:#d9698f}
-.nav .accesos a:nth-child(2) svg{--tint:#6a9be0}
-.nav .accesos a:nth-child(3) svg{--tint:#5fb47d}
+.nav .accesos-cuerpo a:nth-child(1) svg{--tint:#d9698f}
+.nav .accesos-cuerpo a:nth-child(2) svg{--tint:#6a9be0}
+.nav .accesos-cuerpo a:nth-child(3) svg{--tint:#5fb47d}
+/* Acordeon: las redes no se ven siempre; una fila con flecha las abre y se acuerda de como quedo. */
+.nav .accesos-cab{display:flex;align-items:center;justify-content:space-between;width:100%;padding:3px 10px 3px 40px;border:0;background:none;
+  font:inherit;font-size:12px;font-weight:600;color:var(--mut);cursor:pointer;border-radius:8px;text-align:left}
+.nav .accesos-cab:hover{color:var(--fg)}
+.nav .accesos-cab .chev{display:inline-block;transition:transform .18s;font-size:15px;line-height:1}
+.nav .accesos-cab[aria-expanded="true"] .chev{transform:rotate(90deg)}
+.nav .accesos-cuerpo[hidden]{display:none}
 .pie{border-top:0;padding:10px 14px 14px}
 .pie .estado{font-size:11.5px}
 .pie button{border:0;background:var(--hover);border-radius:10px;font-weight:600;padding:9px;
@@ -1751,6 +1758,8 @@ input[type="checkbox"],input[type="radio"]{accent-color:var(--accent)}
 .vacio-apple svg{width:46px;height:46px;stroke-width:1.35;color:rgba(120,120,128,.55);margin-bottom:14px}
 .vacio-apple b{font-size:17px;font-weight:650;letter-spacing:-.02em;color:var(--fg)}
 .vacio-apple p{margin:6px 0 0;max-width:420px;font-size:13.5px;line-height:1.5}
+/* «Ningun ajuste coincide» salia siempre al final de Configuracion: display:flex le ganaba al atributo hidden. */
+.vacio-apple[hidden]{display:none}
 
 /* --- Controles segmentados: los filtros de una pagina (Anuncios y otros) -------------------- */
 .hoja .filtros{display:inline-flex;gap:2px;padding:3px;border-radius:11px;background:var(--hover);cursor:default;
@@ -2361,15 +2370,30 @@ function pintaMenu(){
     + 'rel="noopener noreferrer" data-externo="' + esc(a.id) + '" '
     + 'title="Abrir ' + esc(a.nombre) + ' en Meta, en una pestaña nueva">'
     + a.icono + '<span>' + esc(a.nombre) + '</span><span class="ext" aria-hidden="true">↗</span></a>';
+  // Acordeon: cerrado por defecto y con memoria (este navegador). Las redes se atienden fuera del CRM, no hace falta verlas siempre.
+  let redesAbiertas = false;
+  try { redesAbiertas = localStorage.getItem('crm_menu_redes') === '1'; } catch (e) { /* sin almacenamiento: cerrado */ }
   const accesos = ACCESOS_META.length
     ? '<div class="accesos" role="group" aria-label="Bandejas de Meta">'
-      + ACCESOS_META.map(externo).join('') + '</div>' : '';
+      + '<button type="button" class="accesos-cab" data-acordeon="redes" aria-expanded="' + redesAbiertas + '" aria-controls="accesosCuerpo">'
+      + '<span>Redes y Marketplace</span><span class="chev" aria-hidden="true">›</span></button>'
+      + '<div class="accesos-cuerpo" id="accesosCuerpo"' + (redesAbiertas ? '' : ' hidden') + '>'
+      + ACCESOS_META.map(externo).join('') + '</div></div>' : '';
   $('nav').innerHTML =
     disponibles.filter(v => v.fija).map(v => enlace(v) + (v.id === 'conversations' ? accesos : '')).join('')
     + '<div class="secundarias"><div class="rotulo">Todo lo demás</div>'
     + disponibles.filter(v => !v.fija).map(enlace).join('') + '</div>';
 }
 pintaMenu();
+// El acordeon de las redes: abre/cierra y guarda el estado.
+$('nav')?.addEventListener('click', ev => {
+  const b = ev.target.closest('[data-acordeon="redes"]');
+  if (!b) return;
+  const abierto = b.getAttribute('aria-expanded') !== 'true';
+  b.setAttribute('aria-expanded', abierto ? 'true' : 'false');
+  const cuerpo = $('accesosCuerpo'); if (cuerpo) cuerpo.hidden = !abierto;
+  try { localStorage.setItem('crm_menu_redes', abierto ? '1' : '0'); } catch (e) { /* nada que guardar */ }
+});
 
 // El menu se ve entero siempre: de eso se encarga ahora el CSS de .nav .secundarias, sin
 // depender de ninguna clase. Aqui NO se pone 'menu-abierto', que era el error: esa clase la
@@ -7148,7 +7172,7 @@ const MOTIVO_MEDIO = {
 };
 const MEDIO_ESPERA_MS = 1500;
 const MEDIO_INTENTOS = 40;          // unos 60 s: el reenvio al telefono puede tardar
-const MEDIO_INTENTOS_AUTO = 16;     // pedido por el panel solo: si tarda, se deja para cuando alguien lo pulse
+const MEDIO_INTENTOS_AUTO = 30;     // pedido por el panel solo (unos 45 s): si tarda mas, se reintenta solo o se pide con Ver
 const MEDIOS_BAJO_CURSO = new Map();
 const CURSO_AUTO = new Set();       // los que van en camino pedidos por el panel, no por una persona
 // Lo que ya llego, por id de mensaje: abrir un archivo que el panel pidio por adelantado es
@@ -7297,7 +7321,8 @@ const AUTO_TOPE_BYTES = {
 const AUTO_CUPO = 40;
 const AUTO_CUPO_MS = 10 * 60_000;
 const AUTO_A_LA_VEZ = 2;
-const AUTO_REINTENTO_MS = 5 * 60_000;
+const AUTO_REINTENTOS_MS = [20_000, 60_000, 300_000];   // tras un fallo: a los 20 s, al minuto y a los 5 min; despues, con Ver
+const AUTO_PRECARGA = 12;         // las mas recientes del chat abierto se piden ya, sin esperar a que entren en pantalla
 function tipoDeAuto(m){
   const t = String(m?.msg_type || '').toLowerCase();
   if (t === 'image' || t === 'sticker' || t === 'video') return t;
@@ -7327,7 +7352,9 @@ function cupoAuto(marcas, ahora = Date.now()){
 const NITIDAS = new Map();        // id de mensaje -> foto nitida (image y sticker), para pintarla en el globo
 const COLA_AUTO = [];
 const AUTO_VISTOS = new Set();    // ya encolados: un repintado no los vuelve a pedir
-const AUTO_FALLOS = new Map();    // id -> cuando fallo, para no insistir antes de 5 minutos
+const AUTO_FALLOS = new Map();    // id -> cuando fallo, para no insistir antes de tiempo
+const AUTO_INTENTOS = new Map();  // id -> cuantas veces fallo
+let autoTimer = null;
 let OBS_AUTO = null, RAIZ_AUTO = null;
 let autoActivos = 0, autoMarcas = [], autoPausaHasta = 0;
 
@@ -7340,12 +7367,16 @@ function cableaAutoBajo(){
   for (const el of raiz.querySelectorAll('[data-bajo]')) {
     const id = el.dataset.bajo;
     if (!id || AUTO_VISTOS.has(id) || LISTOS_BAJO.has(id)) continue;
-    const falloEn = AUTO_FALLOS.get(id);
-    if (falloEn && ahora - falloEn < AUTO_REINTENTO_MS) continue;
+    const falloEn = AUTO_FALLOS.get(id), fallos = AUTO_INTENTOS.get(id) || 0;
+    if (fallos > AUTO_REINTENTOS_MS.length) continue;
+    if (falloEn && ahora - falloEn < AUTO_REINTENTOS_MS[Math.min(fallos, AUTO_REINTENTOS_MS.length) - 1]) continue;
     porId = porId || new Map(MSGS.map(x => [String(x.id || x.wamid || ''), x]));
     if (elegibleParaAuto(porId.get(id), ahora)) candidatos.push(el);
   }
   if (!candidatos.length) return;
+  // Lo mas reciente del chat se pide ya (la mas nueva primero): antes solo se pedia lo que estaba a la vista y las fotos de mas arriba se
+  // quedaban borrosas hasta desplazarse, que es lo que parecia «a veces carga y a veces no».
+  candidatos.slice(-AUTO_PRECARGA).reverse().forEach(el => encolaAuto(el.dataset.bajo));
   if (!('IntersectionObserver' in window)) {
     // Sin saber que se ve, solo los ultimos: son los que quedan a la vista al abrir un chat.
     candidatos.slice(-8).forEach(el => encolaAuto(el.dataset.bajo));
@@ -7377,8 +7408,11 @@ function bombeaAuto(){
     const cupo = cupoAuto(autoMarcas);
     autoMarcas = cupo.recientes;
     if (Date.now() < autoPausaHasta || !cupo.permitido) {
-      // Sin cupo o en pausa: lo que esperaba vuelve a poder pedirse mas adelante.
-      COLA_AUTO.splice(0).forEach(id => AUTO_VISTOS.delete(id));
+      // Sin cupo o en pausa: lo que esperaba SE QUEDA en la cola y se reintenta en cuanto haya cupo (antes se tiraba y la foto seguia
+      // borrosa hasta que alguien la pulsaba).
+      const libre = Math.max(autoPausaHasta, autoMarcas.length ? Math.min(...autoMarcas) + AUTO_CUPO_MS : 0);
+      clearTimeout(autoTimer);
+      autoTimer = setTimeout(bombeaAuto, Math.max(2000, libre - Date.now() + 500));
       return;
     }
     const id = COLA_AUTO.shift();
@@ -7391,7 +7425,12 @@ function bombeaAuto(){
 
 async function pideAuto(id){
   const url = await pideMedioCompleto(id, { auto: true, alLimite: () => { autoPausaHasta = Date.now() + AUTO_CUPO_MS; } });
-  if (!url) { AUTO_VISTOS.delete(id); AUTO_FALLOS.set(id, Date.now()); return; }
+  if (!url) {
+    AUTO_VISTOS.delete(id); AUTO_FALLOS.set(id, Date.now());
+    const fallos = (AUTO_INTENTOS.get(id) || 0) + 1; AUTO_INTENTOS.set(id, fallos);
+    if (fallos <= AUTO_REINTENTOS_MS.length) setTimeout(cableaAutoBajo, AUTO_REINTENTOS_MS[fallos - 1] + 500);
+    return;
+  }
   const m = MSGS.find(x => String(x.id || x.wamid || '') === id);
   const tipo = tipoDeAuto(m);
   if (tipo !== 'image' && tipo !== 'sticker') return;
@@ -10686,7 +10725,7 @@ const CAT_DE_TARJETA = {
   'Guardar contactos solo': 'clientes', 'Clientes de caja en el chat': 'clientes', 'Etiquetas del buscador': 'clientes',
   'Auto-cierre a los 14 días': 'auto', 'Leads al día': 'auto', 'Cerebro local': 'auto', 'Etiquetas y contexto automáticos': 'auto',
   'Seguimientos automáticos': 'auto', 'Análisis de conversaciones con IA': 'auto', 'Asistente IA': 'auto',
-  'Agente de marketing': 'auto',
+  'Agente de marketing': 'auto', 'Clientes de otros servicios': 'auto',
   'Agenda en Google Calendar': 'agenda', 'Recordatorios del iPhone': 'agenda', 'Tu Google Calendar dentro del CRM': 'agenda',
   'Catálogo público': 'agenda', 'Datos del negocio': 'agenda',
 };
@@ -10712,7 +10751,7 @@ const SECCIONES_CFG = {
   auto: [
     { id: 'asistentes', nombre: 'Asistentes e inteligencia', nota: 'Lo que lee y clasifica tus conversaciones. No le escribe a nadie.', tarjetas: ['Asistente IA', 'Cerebro local', 'Análisis de conversaciones con IA', 'Etiquetas y contexto automáticos'] },
     { id: 'envios', nombre: 'Envíos y cierres automáticos', nota: 'Lo que el sistema hace solo con tus contactos.', tarjetas: ['Leads al día', 'Seguimientos automáticos', 'Auto-cierre a los 14 días'] },
-    { id: 'marketing', nombre: 'Marketing', nota: 'Propuestas de campaña; nunca envía sin tu aprobación.', tarjetas: ['Agente de marketing'] },
+    { id: 'marketing', nombre: 'Marketing', nota: 'Propuestas de campaña; nunca envía sin tu aprobación.', tarjetas: ['Agente de marketing', 'Clientes de otros servicios'] },
   ],
   agenda: [
     { id: 'calendarios', nombre: 'Calendarios', nota: 'Google y el iPhone, en las dos direcciones.', tarjetas: ['Agenda en Google Calendar', 'Tu Google Calendar dentro del CRM', 'Recordatorios del iPhone'] },
@@ -11192,13 +11231,26 @@ async function pintaConfig(){
         'El estado de cada lead se va corrigiendo solo, de 8 a 20 h cada 3 horas, para que no figure como pendiente lo que ya se atendió ni se le escriba a quien no toca. '
         + '<b>Nunca envía nada a un cliente.</b> Quita el «esperando a una persona» y el «sin leer» de lo que ya se contestó, pasa a cliente a quien compró en caja, '
         + 'a reservado a quien tiene sesión, cierra por silencio (14 días sin contestar; 30 si esperaba el abono) y lo reabre si vuelve a escribir, y da de baja a quien dijo «no me interesa» o «dejen de escribirme». '
-        + 'También descarta solo a los proveedores y vendedores que aparecían como clientes (por lo que dice la conversación, con varias pruebas a la vez y sin tocar a nadie que haya comprado). '
+        + 'También descarta solo a los proveedores, vendedores, fotógrafos colegas y contactos ajenos que aparecían como clientes (por lo que dice la conversación, con varias pruebas a la vez y sin tocar a nadie que haya comprado). '
         + 'Cada ficha guarda qué regla la cambió.',
         interruptorCfg('leads_al_dia', 'Mantener los leads al día automáticamente', 'Lo del cierre por silencio se apaga aparte, en «Auto-cierre».', true)
-        + interruptorCfg('descarte_por_contexto', 'Descartar solo a los que no son clientes', 'Proveedores y vendedores (los que ofrecen marcos, papel o insumos, o a quienes les pedimos precios) se ignoran por lo que dice la conversación. No se borra nada y se deshace desde su ficha; si hay una compra en caja o una sesión agendada, solo se propone.', true)
+        + interruptorCfg('descarte_por_contexto', 'Descartar solo a los que no son clientes', 'Proveedores y vendedores (los que ofrecen marcos, papel o insumos, o a quienes les pedimos precios), fotógrafos colegas y contactos ajenos (empleo, número equivocado, publicidad) se ignoran por lo que dice la conversación. No se borra nada y se deshace desde su ficha; si hay una compra en caja o una sesión agendada, solo se propone.', true)
         + '<div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:10px">'
         + (['admin', 'supervisor'].includes(ROL_ACTUAL) ? '<button class="btn-linea" id="cfgLeadsVer">Ver qué cambiaría</button><button class="btn-linea" id="cfgLeadsYa">Ponerlos al día ahora</button>' : '')
         + '</div><p class="cfgnota" id="cfgLeadsSalida" style="margin-top:9px"></p>')
+
+    + tarjetaCfg('Clientes de otros servicios',
+        'El CRM identifica solo qué servicio busca cada persona que escribe. A quien quiere una <b>sesión de fotos</b> se le etiqueta <b>interes_fotografia</b>; '
+        + 'a quien pide sublimación, marcos, diseño, papelería o impresión se le etiqueta <b>cliente_otro_servicio</b> (y su servicio) y se le <b>avisa una sola vez</b>, '
+        + 'por el 5644, de los demás servicios del estudio con foco en las sesiones de fotos (no es una petición de permiso: es un aviso con salida fácil). Quien contesta que le interesa queda con la etiqueta <b>permiso_marketing</b> y el agente le propone la fotografía; por el número oficial el aviso va con una plantilla que propone el agente. '
+        + 'Lo que no es cliente de nada (proveedores, fotógrafos colegas, publicidad) se descarta aparte, en «Leads al día». '
+        + '<b>Solo se pregunta de 9 a 18 h</b>, a quien ya fue atendido y no espera respuesta, con un tope diario y el ritmo antibloqueo de las difusiones.',
+        interruptorCfg('recepcion_servicios', 'Identificar el servicio de cada chat', 'Solo etiqueta; no envía nada. Se hace en cada pasada de «Leads al día».', true)
+        + interruptorCfg('consentimiento_auto', 'Avisar solo de los demás servicios', 'Apagado: solo avisa cuando pulsas «Avisar ahora». Encendido: lo hace solo, hasta 15 al día, de 9 a 18 h.', false)
+        + '<div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:10px">'
+        + '<button class="btn-linea" id="cfgPermEstado">Ver cómo va</button>'
+        + (['admin', 'supervisor'].includes(ROL_ACTUAL) ? '<button class="btn-linea" id="cfgPermVer">Ver a quién avisaría</button><button class="btn-linea" id="cfgPermYa">Avisar ahora</button>' : '')
+        + '</div><p class="cfgnota" id="cfgPermSalida" style="margin-top:9px"></p>')
 
     + tarjetaCfg('Seguimientos automáticos',
         'La norma de los dos intentos está cableada en el servidor y no se puede desactivar desde '
@@ -11414,7 +11466,7 @@ async function pintaConfig(){
   const LEADS_REGLAS = { persona_atendida: 'dejan de «esperar a una persona» (ya se les contestó)', sin_leer_contestado: 'chats se marcan como leídos (ya contestados)',
     cliente_por_compra: 'pasan a cliente (compraron en caja)', reservado_por_sesion: 'pasan a reservado (tienen sesión)',
     cierre_por_silencio: 'se cierran por silencio', rechazo: 'pasan a desinteresado (pidieron que no les escribieran)', reabrir: 'se reabren (volvieron a escribir)',
-    no_cliente: 'se descartan por no ser clientes (proveedores o vendedores)' };
+    no_cliente: 'se descartan por no ser clientes (proveedores, fotógrafos colegas o ajenos)' };
   const nombresRol = (lista, t) => (lista && lista.length ? ' ' + t + ': ' + lista.slice(0, 8).map(x => x.nombre).join(', ') + (lista.length > 8 ? '…' : '') + '.' : '');
   const leadsTexto = r => (!r.total ? 'Ya están al día: no hay nada que corregir.'
     : Object.entries(r.por_regla).map(([k, n]) => n + ' ' + (LEADS_REGLAS[k] || k)).join(' · ') + (r.dry ? '.' : '. Hecho: ' + r.aplicados + ' fichas.'))
@@ -11428,6 +11480,36 @@ async function pintaConfig(){
       b.disabled = false;
       if (!r.ok) { $('cfgLeadsSalida').textContent = ''; return avisa('No se pudo', r.error); }
       $('cfgLeadsSalida').textContent = (op === 'preview' ? 'Cambiaría: ' : 'Listo: ') + leadsTexto(r);
+    };
+  }
+  // Clientes de otros servicios: ver como va, a quien se le preguntaria (no envia nada) o preguntar ahora (con confirmacion).
+  const NOMBRE_SERVICIO = { sublimacion:'sublimación', enmarcado:'enmarcado', diseno:'diseño', papeleria:'papelería', impresion:'impresión', foto_documentos:'fotos de carnet' };
+  const permTexto = r => {
+    const e = (r.resumen && r.resumen.estados) || {}, s = (r.resumen && r.resumen.servicios) || {};
+    const otros = Object.values(s).reduce((a, n) => a + n, 0);
+    return 'Interesados en fotografía: ' + ((r.resumen && r.resumen.fotografia) || 0) + ' · Clientes de otros servicios: ' + otros
+      + (otros ? ' (' + Object.entries(s).sort((a, b) => b[1] - a[1]).map(([k, n]) => n + ' ' + (NOMBRE_SERVICIO[k] || k)).join(', ') + ')' : '')
+      + ' · Avisados: ' + ((e.preguntado || 0) + (e.aceptado || 0) + (e.rechazado || 0) + (e.sin_respuesta || 0)) + ' (se interesaron ' + (e.aceptado || 0) + ', dijeron no ' + (e.rechazado || 0) + ')'
+      + ' · Listos para avisar: ' + ((r.resumen && r.resumen.listos_para_preguntar) || 0) + '.';
+  };
+  for (const [id, op] of [['cfgPermEstado', 'estado'], ['cfgPermVer', 'preview'], ['cfgPermYa', 'send']]) {
+    const b = $(id); if (!b) continue;
+    b.onclick = async () => {
+      const salida = $('cfgPermSalida');
+      if (op === 'send') {
+        const vista = await llama({ action: 'consentimiento', operation: 'preview' });
+        if (!vista.ok) return avisa('No se pudo', vista.error);
+        if (!vista.seleccionadas.length) { salida.textContent = vista.motivo === 'fuera_de_horario' ? 'Ahora no: solo se avisa de 9 a 18 h.' : vista.motivo === 'tope_del_dia' ? 'Ya se llegó al tope de hoy (' + vista.tope + ').' : 'Nadie está listo para que se le avise ahora.'; return; }
+        if (!await confirmaAqui('Se le avisará a ' + (vista.elegibles ?? vista.seleccionadas.length) + ' cliente(s) de otros servicios, por el 5644, de los demás servicios del estudio con foco en las sesiones de fotos. Van de a poco, con el ritmo antibloqueo, y solo a quien ya escribió y fue atendido.' + String.fromCharCode(10, 10) + '¿Seguimos?')) return;
+      }
+      b.disabled = true; salida.textContent = op === 'send' ? 'Encolando…' : 'Calculando…';
+      const r = await llama({ action: 'consentimiento', operation: op });
+      b.disabled = false;
+      if (!r.ok) { salida.textContent = ''; return avisa('No se pudo', r.error || r.motivo); }
+      if (op === 'estado') { salida.textContent = permTexto(r) + (r.automatico ? ' «Avisar solo» está ENCENDIDO (tope ' + r.tope + ' al día).' : ' «Avisar solo» está apagado.'); return; }
+      const nombres = (r.seleccionadas || []).slice(0, 8).map(x => x.nombre).join(', ') + ((r.seleccionadas || []).length > 8 ? '…' : '');
+      if (op === 'preview') { salida.textContent = r.seleccionadas.length ? 'Avisaría a ' + r.seleccionadas.length + ': ' + nombres + '. ' + permTexto(r) : (r.motivo === 'fuera_de_horario' ? 'Fuera de horario (9 a 18 h). ' : 'Nadie está listo ahora. ') + permTexto(r); return; }
+      salida.textContent = 'Listo: ' + (r.encolados || 0) + ' aviso(s) encolados para ' + nombres + '. Salen de a poco por el 5644.';
     };
   }
   g.querySelectorAll('[data-sw]').forEach(el => {
@@ -13077,7 +13159,7 @@ async function descartaOlvidados(lista){
 // Nunca envia nada: «Preparar» abre el formulario o el compositor de Estados con todo puesto, y ahi
 // sigue la simulacion / la confirmacion con la cifra de siempre.
 // ---- Agente de marketing: piezas puras
-const MK_TIPOS = { seguimiento: 'Seguimiento', reactivacion: 'Reactivación', temporada: 'Temporada', demanda: 'Demanda', fidelizacion: 'Fidelización', plantilla: 'Plantilla de Meta' };
+const MK_TIPOS = { seguimiento: 'Seguimiento', conversion: 'A fotografía', reactivacion: 'Reactivación', temporada: 'Temporada', demanda: 'Demanda', fidelizacion: 'Fidelización', plantilla: 'Plantilla de Meta' };
 const MK_CANALES = { estado: 'Estado de WhatsApp', plantilla: 'Plantilla aprobada', libre: 'Mensaje libre' };
 const MK_PRIORIDADES = { alta: 'Prioridad alta', media: 'Prioridad media', baja: 'Prioridad baja' };
 function cuantoHace(iso, ahora = Date.now()){
@@ -13224,7 +13306,7 @@ async function decideDescartes(ids, decision){
 // campaña para el segundo numero (texto libre, sin plantillas); la propuesta queda ligada para excluir a quien dijo que no.
 function preparaPropuesta(p, linea){
   const a = p.accion || {};
-  MK.preparada = a.tipo === 'campana' ? { id: p.id, titulo: p.titulo, linea: linea === 'puente' ? 'puente' : 'oficial' } : null;
+  MK.preparada = a.tipo === 'campana' ? { id: p.id, titulo: p.titulo, linea: linea === 'puente' ? 'puente' : 'oficial', etiqueta: a.etiqueta || '' } : null;
   const texto = a.texto || p.texto || '';
   if (a.tipo === 'estado') {
     ST_AUDIENCIA_PENDIENTE = a.audiencia || '';
@@ -13720,6 +13802,8 @@ function filtroBc(){
   const f = {};
   if ($('bcEtapa').value) f.lifecycle_stage = $('bcEtapa').value;
   if ($('bcCategoria').value.trim()) f.interested_category = $('bcCategoria').value.trim();
+  // Propuestas por etiqueta (clientes de otros servicios con permiso): el filtro viaja con la propuesta preparada.
+  if (MK.preparada && MK.preparada.etiqueta) f.label = MK.preparada.etiqueta;
   return f;
 }
 function cuerpoBc(dry){
