@@ -1,6 +1,6 @@
 # CRM D' Carela — manual de uso
 
-Versión v109, publicada el 20/09/2026 (UTC).
+Versión v134 (28/09/2026). Lo nuevo de esta versión: **Hoy**, **Funnel en embudo**, **Configuración en secciones**, el **agente de marketing**, los **leads al día** y el asistente de WhatsApp con el CRM.
 
 Central: `https://crm.dcarelacompufoto.com/` · Fotos: `https://fotos.dcarelacompufoto.com/`.
 La página principal y `/v2.html` muestran ahora el mismo panel. El anterior no es un
@@ -103,6 +103,27 @@ aplique dos veces.
 
 ## Campañas
 
+### Agente de marketing
+
+Arriba de Campañas, el agente analiza tus conversaciones y ventas cada mañana (8:20) y **propone** campañas con cifras reales.
+No envía nada: **Preparar** deja el formulario armado y ahí se simula. Cada propuesta enseña:
+
+- **Reparto por línea**: número oficial (con cuántos están dentro de las 24 h y cuántos necesitan plantilla) y el segundo número (5644).
+  **Preparar por el 5644** arma la campaña de esa línea (texto libre, con ritmo; solo se simula desde la API, el envío sale por el puente).
+- **Quién queda fuera y por qué**: quien dijo que no, reclamó, está con una persona, vino por documentos o ya recibió marketing hace
+  poco no entra. Al simular y al enviar se respeta.
+- **Plantillas de Meta**: si la campaña necesita una y no existe, propone el borrador (con la salida STOP). **Enviar a Meta** la manda a
+  revisión; hasta que Meta la apruebe no se puede usar.
+- **Conversaciones que conviene descartar** (dijeron que no, escribieron por error, publicidad, más de 90 días sin escribir y nunca
+  compraron): **Descartar** las pasa a desinteresado, **Mantener** no las vuelve a sugerir en 30 días. Nunca se sugieren clientes.
+
+Ojo con el permiso de marketing: casi nadie lo tiene, así que una campaña de tipo *marketing* llega a muy pocos. Los seguimientos
+y los Estados alcanzan a más gente.
+
+Las propuestas también llegan a tu WhatsApp, numeradas como en el panel (ver «Asistente de WhatsApp»).
+
+### Simular y enviar
+
 **Primero simula.** Verás cuántos contactos, cuáles y por qué se excluyeron otros. Solo
 después puedes enviar, y se envía **sobre esos ids**, no sobre una audiencia recalculada.
 
@@ -117,6 +138,41 @@ Lo que hace por ti sin que lo pidas:
 
 En modo plantilla solo se ofrecen las aprobadas **que incluyen salida de baja**. Sin eso
 Meta degrada el número.
+
+---
+
+## Hoy — lo que toca atender
+
+La pantalla **Hoy** ordena el día por importancia y **no envía nada**:
+
+- **Sin responder**: chats donde el último mensaje es del cliente. Ojo, no es lo mismo que «sin leer»: un chat
+  puede estar leído en el teléfono y seguir sin contestar. Un «gracias», una bendición o un emoji suelto no cuenta;
+  «ok», «dale», «sí» y los saludos sí. Primero reservas y cotizaciones, luego lo más antiguo.
+- **Se enfrían**: les escribiste tú, no han contestado (2 a 21 días) y no hay seguimiento puesto.
+- **Seguimientos** de hoy y vencidos, y **sesiones** de hoy y mañana.
+
+Cada fila se abre con un clic. **No requiere respuesta** lo saca de la lista hasta que el cliente escriba otra vez.
+**Recordarme** abre el recordatorio de siempre. El número del menú suma lo de hoy, lo atrasado y los seguimientos.
+
+Cada mañana a las 8:45 llega lo mismo a tu WhatsApp («Tu día en el CRM»), solo si hay algo que atender. Se apaga en
+Configuración > Mensajería > Avisos para ti.
+
+---
+
+## Leads al día
+
+El estado de cada lead se corrige solo (8:05, 11:05, 14:05, 17:05 y 20:05), sin enviar nada a nadie:
+
+- Quien pedía **una persona** y ya recibió respuesta tuya deja de figurar como pendiente. Un seguimiento automático o
+  una respuesta del bot no cuentan como haber contestado.
+- Un chat **sin leer** cuyo último mensaje es tuyo se marca leído.
+- Quien **compró en caja** pasa a cliente; quien tiene una **sesión por venir**, a reservado.
+- **Cierre por silencio**: tras 14 días sin contestar (30 si esperaba el abono) pasa a perdido. Nunca a un cliente.
+  Si vuelve a escribir, **se reabre solo** en su etapa anterior. Se apaga con «Auto-cierre».
+- Quien dice «no me interesa» o «dejen de escribirme» pasa a desinteresado: sin seguimientos ni marketing.
+
+Cada ficha guarda qué regla la cambió. En Configuración > Automatización e IA, **Ver qué cambiaría** cuenta sin tocar
+nada y **Ponerlos al día ahora** aplica. Por WhatsApp: «leads al día».
 
 ---
 
@@ -137,13 +193,31 @@ El segundo número queda fuera. Los dormidos no cuentan en las métricas del Das
 | Pantalla | Para qué |
 |---|---|
 | **Dashboard** | Lo que hay ahora. Las cifras son botones: llevan a verlas con el filtro puesto. El embudo dice **dónde** se pierde la gente. |
-| **Funnel** | Arrastra una tarjeta para cambiar de etapa. Abajo, **leads parados** con el motivo y qué hacer. |
+| **Hoy** | La cola de trabajo: sin responder, se enfrían, seguimientos y sesiones. Ver arriba. |
+| **Funnel** | Vista de **embudo**: cada etapa con su cifra y, debajo, la gente de la etapa elegida con **Mover a…** (o arrastrando sobre la etapa). El interruptor **Tablero** devuelve las columnas. Buscador, filtros y reorganizar. Abajo, **leads parados**. |
 | **Agenda** | Calendario mensual y `＋ Agendar`. Confirmada reserva el hueco; tentativa no. |
 | **Plantillas** | Sincroniza con Meta y crea las tuyas. **Meta las revisa antes de poder usarse** — no cuentes con una nueva para hoy. |
 | **Recordatorios** | Seguimientos con fecha. Los vencidos primero. |
 | **Canales** | Estado real de cada vía. Si uno no está en verde, lo que escribas por ahí **no llega**. Aquí se enciende y apaga el bot **por canal**. |
-| **Configuración** | Cuentas del equipo y los interruptores del negocio. |
+| **Configuración** | Cuentas del equipo y los interruptores del negocio, en cinco categorías con secciones y explicación; los textos largos se pliegan en «Más detalles». El buscador mira todas. |
 | Prospección · Clientes de caja · Satisfacción | Listados. Cada uno explica qué lo llena si está vacío. |
+
+---
+
+## Asistente de WhatsApp (tu número de dueño)
+
+Además de finanzas, entiende el CRM. Las confirmaciones de gasto, ingreso o transferencia salen como una imagen con letra grande.
+Órdenes (nada de esto le escribe a un cliente):
+
+| Escribe | Qué hace |
+|---|---|
+| `mi día` · `sin responder` · `se enfrían` · `seguimientos` | La cola de trabajo |
+| `sin leer` · `embudo` · `leads de hoy` · `cotizando` · `busca María` · `cómo va el CRM` | Consultas del CRM |
+| `propuestas` · `detalle 2` · `preparar 2` · `descartar 2` | El agente de marketing (los números son los del panel) |
+| `crear 3` | Manda a revisión de Meta una plantilla propuesta |
+| `descartes` · `descartar chat 1` · `mantener chat 1` · `descartar chats` (pide `confirmo descartar chats`) | Conversaciones que conviene descartar |
+| `leads al día` | Corrige ya los estados |
+| `ayuda crm` | La lista completa |
 
 ---
 
