@@ -1529,6 +1529,7 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{outline:0}
 .nav a[data-vista="planning"] svg{--tint:#6c95e8}
 .nav a[data-vista="conversations"] svg{--tint:#5fb47d}
 .nav a[data-vista="estados"] svg{--tint:#df7a92}
+.nav a[data-vista="hoy"] svg{--tint:#e0a94e}
 .nav a[data-vista="agenda"] svg{--tint:#df766e}
 .nav a[data-vista="dashboard"] svg{--tint:#8b8bdf}
 .nav a[data-vista="funnel"] svg{--tint:#dfa25c}
@@ -1874,6 +1875,8 @@ input[type="checkbox"],input[type="radio"]{accent-color:var(--accent)}
 .chip-tema.on,:root[data-tema="oscuro"] .chip-tema.on{background:var(--accent-suave);color:var(--accent-fuerte);box-shadow:inset 0 0 0 .5px var(--accent)}
 .hoja .filtros,.agtog{background:var(--segmento);box-shadow:inset 0 0 0 .5px var(--line)}
 .hoja .filtros .filtro.on,.agtog button.on{background:var(--vidrio-fuerte)}
+/* Una fila de botones suelta no es un selector segmentado: sin caja gris detras (Recordatorios). */
+.hoja .filtros:not(:has(> .filtro)){background:transparent;box-shadow:none;border-radius:0;padding:0;gap:8px;flex-wrap:wrap}
 
 /* Menus, hojas de dialogo y visores: vidrio mas denso, con el fondo desenfocado detras. */
 .modal{background:rgba(30,35,55,.22);-webkit-backdrop-filter:blur(14px) saturate(1.3);backdrop-filter:blur(14px) saturate(1.3)}
@@ -1993,6 +1996,95 @@ input[type="checkbox"],input[type="radio"]{accent-color:var(--accent)}
   .vista.on>.hoja{animation:entra .28s var(--curva)}
   @keyframes entra{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
 }
+/* ---- Funnel: vista de embudo ---- */
+.kanban[hidden],.fun-embudo[hidden]{display:none}
+.fun-sw{display:inline-flex;padding:3px;border-radius:12px;background:var(--segmento);box-shadow:inset 0 0 0 .5px var(--line)}
+.fun-sw button{padding:7px 14px;border:0;border-radius:9px;background:transparent;font-size:13px;font-weight:600;color:var(--fg);cursor:pointer}
+.fun-sw button.on{background:var(--vidrio-fuerte);box-shadow:var(--vidrio-luz),0 0 0 .5px var(--vidrio-borde),0 1px 3px rgba(20,30,60,.10)}
+.fe-etapas{display:grid;grid-template-columns:repeat(auto-fit,minmax(132px,1fr));gap:10px;margin:2px 0 18px;max-width:1240px}
+.fe-etapa{display:flex;flex-direction:column;align-items:flex-start;gap:3px;padding:14px 14px 12px;border:0;border-radius:var(--r3);text-align:left;cursor:pointer;
+  background:var(--vidrio);box-shadow:var(--vidrio-luz),0 0 0 .5px var(--vidrio-borde);color:var(--fg);transition:transform .15s,box-shadow .15s}
+.fe-etapa:hover{transform:translateY(-1px)}
+.fe-etapa.on{background:var(--vidrio-fuerte);box-shadow:var(--vidrio-luz),0 0 0 2px var(--accent)}
+.fe-etapa.encima{background:var(--accent-suave);box-shadow:inset 0 0 0 2px var(--accent)}
+.fe-n{font-size:28px;font-weight:700;letter-spacing:-.03em;line-height:1}
+.fe-t{font-size:12.5px;font-weight:600;text-transform:capitalize}
+.fe-barra{display:block;width:100%;height:5px;border-radius:99px;background:rgba(120,120,128,.16);overflow:hidden;margin:5px 0 2px}
+.fe-barra i{display:block;height:100%;border-radius:99px;background:var(--accent)}
+.fe-etapa small{font-size:11px;color:var(--mut)}
+.fe-lista{max-width:1240px;border-radius:var(--r3);background:var(--vidrio);box-shadow:var(--vidrio-luz),0 0 0 .5px var(--vidrio-borde);overflow:hidden}
+.fe-cab{display:flex;align-items:baseline;gap:10px;padding:16px 20px 10px}
+.fe-cab h2{margin:0;font-size:17px;font-weight:650;text-transform:capitalize;letter-spacing:-.02em}
+.fe-cab span{font-size:12.5px;color:var(--mut)}
+.fe-fila{display:grid;grid-template-columns:36px minmax(0,1fr) auto auto auto;align-items:center;gap:14px;padding:11px 20px;border-top:.5px solid var(--line);cursor:pointer}
+.fe-fila:hover{background:rgba(120,120,128,.07)}
+.fe-fila.moviendo{opacity:.4}
+.fe-avatar{width:36px;height:36px;border-radius:50%;display:grid;place-items:center;background:var(--accent-suave);color:var(--accent);font-weight:650;font-size:14px}
+.fe-txt{min-width:0;display:flex;flex-direction:column;gap:1px}
+.fe-txt b{font-size:14px;font-weight:600;display:flex;align-items:center;gap:7px}
+.fe-txt small{font-size:12.5px;color:var(--mut);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fe-cat{padding:2px 9px;border-radius:99px;background:var(--hover);font-style:normal;font-size:11.5px;color:var(--mut);white-space:nowrap}
+.fe-cat.vacia{display:none}
+.fe-hora{font-style:normal;font-size:11.5px;color:var(--mut);min-width:54px;text-align:right}
+.fe-mover{padding:6px 12px;font-size:12.5px}
+.fe-vacia{padding:30px 20px;text-align:center;color:var(--mut);font-size:13px;border-top:.5px solid var(--line)}
+.fe-lista .kmas-btn{display:block;width:100%;padding:13px;border-top:.5px solid var(--line)}
+@media (max-width:720px){.fe-fila{grid-template-columns:36px minmax(0,1fr) auto;gap:10px;padding:11px 14px}.fe-cat,.fe-hora{display:none}.fe-etapas{grid-template-columns:repeat(2,1fr)}}
+
+/* ---- Configuración: secciones en una sola columna ---- */
+#cfgGrid{display:flex;flex-direction:column;gap:14px;max-width:860px}
+#cfgGrid .cfgc{padding:20px 24px 22px}
+.cfg-sec{margin:26px 4px 2px}
+.cfg-sec:first-child{margin-top:4px}
+.cfg-sec h2{margin:0;font-size:12px;font-weight:650;letter-spacing:.07em;text-transform:uppercase;color:var(--mut)}
+.cfg-sec p{margin:4px 0 0;font-size:13px;color:var(--mut)}
+.cfg-sec[hidden]{display:none}
+.cfg-mas{margin:-4px 0 12px}
+.cfg-mas summary{cursor:pointer;font-size:12.5px;font-weight:600;color:var(--accent);list-style:none;width:max-content}
+.cfg-mas summary::-webkit-details-marker{display:none}
+.cfg-mas[open] summary{margin-bottom:8px}
+.cfg-mas .cfgnota{margin-bottom:0}
+
+/* ---- Agente de marketing: líneas, quién queda fuera, plantillas y descartes ---- */
+.mk-lineas{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:0 0 10px}
+.mk-lineas-rot{flex:0 0 100%;font-size:11.5px;color:var(--mut)}
+.mk-linea{display:inline-flex;flex-direction:column;gap:1px;padding:7px 11px;border-radius:11px;background:var(--hover);font-size:13px}
+.mk-linea b{font-size:11.5px;font-weight:600;color:var(--mut)}
+.mk-linea small{font-size:11px;color:var(--mut)}
+.mk-tpl{display:inline-block;margin:0 0 10px;padding:3px 10px;border-radius:99px;font-size:11.5px;font-weight:600;background:var(--hover);color:var(--mut)}
+.mk-tpl.ok{color:var(--verde)}.mk-tpl.mal{color:var(--rojo,#b3312a)}.mk-tpl.falta{color:var(--naranja,#a86a10)}
+.mk-fuera{margin:0 0 10px;font-size:12.5px;color:var(--mut)}
+.mk-fuera summary{cursor:pointer;font-weight:600;list-style:none}
+.mk-fuera summary::-webkit-details-marker{display:none}
+.mk-fuera summary::before{content:"🚫 "}
+.mk-fuera ul{margin:6px 0 0;padding-left:18px}
+.mk-fuera-ej{margin:6px 0 0}
+.mk-pie{margin:-4px 0 12px;font-size:11.5px;color:var(--mut)}
+.mk-descartes{margin:0 0 20px;padding:18px 20px;border-radius:var(--r3);background:var(--vidrio);box-shadow:var(--vidrio-luz),0 0 0 .5px var(--vidrio-borde)}
+.mk-desc-cab{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;margin-bottom:8px}
+.mk-desc-cab b{font-size:15px;font-weight:650}
+.mk-desc-cab p{margin:3px 0 0;font-size:12.5px;color:var(--mut)}
+.mk-desc-fila{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:9px 0;border-top:.5px solid var(--line)}
+.mk-desc-fila span:first-child{min-width:0;display:block}
+.mk-desc-fila small{color:var(--mut);font-weight:400;margin-left:4px}
+.mk-desc-fila em{display:block;font-style:normal;font-size:12.5px;color:var(--mut);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mk-desc-acc{display:flex;gap:6px;flex:0 0 auto}
+.mk-desc-mas{margin:8px 0 0;font-size:12px;color:var(--mut)}
+
+/* ---- Hoy: la cola de trabajo ---- */
+.hoy-sec{margin:0 0 18px}
+.hoy-acc{display:flex;gap:6px}
+.hoy-acc:empty{display:none}
+.hoy-fila .fe-mover{white-space:nowrap}
+#hoyCont .fe-t,#hoyCont .fe-cab h2{text-transform:none}
+#hoyCont .fe-txt b{flex-wrap:wrap;row-gap:3px}
+.fe-cab .hoy-viejos{margin-left:auto}
+.hoy-chip{white-space:nowrap;display:inline-block;padding:1px 8px;border-radius:99px;font-size:10.5px;font-weight:650;background:var(--hover);color:var(--mut)}
+.hoy-chip.hoy{background:var(--accent-suave);color:var(--accent)}
+.hoy-chip.tarde{color:var(--naranja,#a86a10)}
+.hoy-chip.persona{color:var(--rojo,#b3312a)}
+@media (max-width:720px){.hoy-fila{grid-template-columns:36px minmax(0,1fr)}.hoy-acc{grid-column:2;flex-wrap:wrap}}
+
 @media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
 </head>
@@ -2068,7 +2160,7 @@ input[type="checkbox"],input[type="radio"]{accent-color:var(--accent)}
 import { initializeApp, getApps } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js';
 import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut }
   from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js';
-import { getFirestore, collection, query, where, onSnapshot, doc, setDoc, getDocs, limit, orderBy }
+import { getFirestore, collection, query, where, onSnapshot, doc, setDoc, getDoc, getDocs, limit, orderBy }
   from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
 
 const CFG = window.CRM_CONFIG || window.DCARELA_CRM_CONFIG || {};
@@ -2158,6 +2250,8 @@ const VISTAS = [
   { id:'conversations', nombre:'Conversaciones',fija:true,  icono:ico('<path d="M12 3.4c-4.9 0-8.6 3.2-8.6 7.3 0 2.3 1.2 4.3 3.1 5.6-.1 1.3-.7 2.5-1.7 3.5 2.100-.1 3.800-.8 5-1.900.7.200 1.400.3 2.200.3 4.900 0 8.600-3.200 8.600-7.300S16.900 3.400 12 3.400z"/>') },
   // Justo debajo de Conversaciones, como en la barra de WhatsApp Web.
   { id:'estados',       nombre:'Estados',       fija:true,  icono:ico('<circle cx="12" cy="12" r="8.6" stroke-dasharray="3.4 2.5"/><circle cx="12" cy="12" r="3.4"/>') },
+  // Lo que toca atender HOY: chats donde el ultimo mensaje es del cliente, cotizaciones que se enfrian, seguimientos, sesiones.
+  { id:'hoy',           nombre:'Hoy',           fija:true,  icono:ico('<circle cx="12" cy="12" r="3.900"/><path d="M12 3.200v2.100M12 18.700v2.100M3.200 12h2.100M18.700 12h2.100M5.800 5.800l1.500 1.500M16.700 16.700l1.500 1.500M18.200 5.800l-1.500 1.500M7.300 16.700l-1.500 1.500"/>') },
   { id:'agenda',        nombre:'Agenda',        fija:true,  icono:ico('<rect x="3.5" y="5" width="17" height="15.5" rx="3.6"/><path d="M3.5 10h17M8 3v3.600M16 3v3.600"/><circle cx="8.500" cy="14" r=".7" fill="currentColor"/><circle cx="12" cy="14" r=".7" fill="currentColor"/><circle cx="15.500" cy="14" r=".7" fill="currentColor"/>') },
   { id:'dashboard',     nombre:'Dashboard',     icono:ico('<rect x="3.500" y="4" width="17" height="16" rx="3.600"/><path d="M8.200 16v-3.400M12 16V8.600M15.800 16v-5.400"/>') },
   { id:'funnel',        nombre:'Funnel · Kanban', icono:ico('<path d="M4.200 5.500h15.600a.7.7 0 01.5 1.200L14.500 12.800v5.900a.7.7 0 01-1 .6l-3-1.500a.7.7 0 01-.4-.6v-4.400L3.700 6.700a.7.7 0 01.5-1.200z"/>') },
@@ -2496,6 +2590,7 @@ function aplicaConversaciones(s, modo = 'en vivo'){
     if (vistaActual === 'conversations') pintaChats();
     if (vistaActual === 'funnel') { pintaKanban(); pintaMovilizacion(); }
     if (vistaActual === 'dashboard') pintaDashboard();
+    if (vistaActual === 'hoy') pintaHoy();
     if (vistaActual === 'agenda') pintaAgenda();
     if (vistaActual === 'reminders') pintaRecordatorios();
     pintaCuentas();
@@ -2655,8 +2750,115 @@ function marcaEstado(ok, texto){
   $('punto').classList.toggle('mal', !ok);
   $('estadoTexto').textContent = texto;
 }
+// ---- Hoy: piezas puras (copia exacta de firebase-functions/src/crm-cola.js; v2-hoy.test.js las compara)
+const COLA_HOY = (() => {
+  const DIA = 86400000;
+  const PESO_ETAPA = Object.freeze({ pendiente_reserva: 5, cotizando: 4, reservado: 3, cliente: 3, interesado: 2, nuevo: 1 });
+  const CERRADAS = Object.freeze(['desinteresado', 'perdido', 'cerrado']);
+  const ETAPAS_QUE_SE_ENFRIAN = Object.freeze(['cotizando', 'pendiente_reserva', 'interesado']);
+  const VENTANA_SIN_RESPONDER_DIAS = 30;
+  const TOPE = 40;
+
+  // Palabras que, solas, cierran una conversacion y no piden respuesta. Saludos, «ok», «dale» y «si» NO estan: pueden ser la
+  // respuesta a una pregunta nuestra o el primer mensaje, y no contestarlos cuesta un cliente.
+  const CORTESIA = new Set(['gracias', 'muchas', 'mil', 'de', 'nada', 'bendiciones', 'dios', 'le', 'te', 'bendiga', 'igualmente', 'cuidate',
+    'amiga', 'amigo', 'hermana', 'hermano', 'recibido', 'entendido', 'hasta', 'luego', 'saludos', 'gracia']);
+
+  const ms = (v) => {
+    if (v == null || v === '') return NaN;
+    if (typeof v?.toMillis === 'function') return v.toMillis();
+    if (typeof v?.seconds === 'number') return v.seconds * 1000;
+    return Date.parse(String(v));
+  };
+  const plano = (t) => String(t == null ? '' : t).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+  const recorte = (t, n) => { const v = String(t == null ? '' : t).replace(/\s+/g, ' ').trim(); return v.length > n ? v.slice(0, n - 1) + '…' : v; };
+
+  // «Gracias», «bendiciones», un emoji suelto: no hace falta contestar.
+  function esCortesia(texto) {
+    const limpio = plano(texto).replace(/[^a-z0-9\s]/g, ' ').replace(/\s+/g, ' ').trim();
+    if (!limpio) return true;                      // solo emojis o signos
+    const palabras = limpio.split(' ');
+    return palabras.length <= 6 && palabras.every((p) => CORTESIA.has(p));
+  }
+
+  // El dia de La Romana (UTC-4): desde cuando hasta cuando cuenta «hoy» y «manana».
+  const inicioDeHoy = (ahora) => Date.parse(new Date(ahora - 4 * 3600000).toISOString().slice(0, 10) + 'T04:00:00Z');
+
+  const nombreDe = (c) => String(c.pos_client_nombre || c.customer_name || c.contact_name || '').trim().slice(0, 40) || 'Sin nombre';
+  const etapaDe = (c) => String(c.lifecycle_stage || 'nuevo');
+  const lineaDe = (c) => (c.source === 'whatsapp_qr' ? '5644' : 'oficial');
+  const esViva = (c) => !!c && !c.ignored_at && !c.followup_discarded_at && c.lead_status !== 'desinteresado' && !CERRADAS.includes(etapaDe(c));
+  // El ultimo mensaje fue del cliente. Si la ficha guarda cuando escribio por ultima vez (last_customer_reply_at, que se actualiza en
+  // CADA mensaje entrante), manda esa hora contra la del ultimo mensaje; en las fichas viejas que no la tienen, se compara el texto.
+  const ultimoEsDelCliente = (c) => {
+    const r = ms(c.last_customer_reply_at), t = ms(c.last_message_at);
+    if (Number.isFinite(r) && Number.isFinite(t)) return r >= t - 1500;
+    return !!c.last_inbound_preview && String(c.last_inbound_preview) === String(c.last_message_preview);
+  };
+  const omitida = (c) => Number.isFinite(ms(c.cola_omitida_at)) && ms(c.cola_omitida_at) >= (ms(c.last_message_at) || 0);
+
+  function item(c, ahora, extra = {}) {
+    const t = ms(c.last_message_at);
+    return Object.assign({
+      id: c.id || c._id, nombre: nombreDe(c), etapa: etapaDe(c), linea: lineaDe(c),
+      edad_h: Number.isFinite(t) ? Math.max(0, Math.round((ahora - t) / 3600000)) : null,
+      texto: recorte(ultimoEsDelCliente(c) ? c.last_inbound_preview : c.last_message_preview, 80),
+      categoria: String(c.interested_category || ''), sin_leer: Number(c.unread) > 0, persona: c.human_handoff_required === true,
+    }, extra);
+  }
+
+  function colaDeTrabajo(convs, { ahora = Date.now() } = {}) {
+    const hoy0 = inicioDeHoy(ahora), manana1 = hoy0 + 2 * DIA;
+    const vivas = (convs || []).filter(esViva);
+    const sinResponder = [], seEnfrian = [], seguimientos = [], sesiones = [];
+    for (const c of vivas) {
+      const t = ms(c.last_message_at);
+      const edadDias = Number.isFinite(t) ? (ahora - t) / DIA : Infinity;
+      if (ultimoEsDelCliente(c)) {
+        if (edadDias <= VENTANA_SIN_RESPONDER_DIAS && !omitida(c) && !esCortesia(c.last_inbound_preview)) {
+          const urgencia = edadDias < 1 ? 'hoy' : edadDias <= 3 ? 'atrasado' : 'viejo';
+          const puntos = (PESO_ETAPA[etapaDe(c)] || 1) * 10 + Math.min(edadDias, 7) + (Number(c.unread) > 0 ? 1 : 0) + (c.human_handoff_required ? 3 : 0);
+          sinResponder.push(item(c, ahora, { urgencia, puntos }));
+        }
+      } else if (ETAPAS_QUE_SE_ENFRIAN.includes(etapaDe(c)) && edadDias >= 2 && edadDias <= 21 && !c.follow_up_at && !omitida(c)
+        && !c.followups_opt_out_at && c.followups_opt_in !== false && c.last_message_preview) {
+        seEnfrian.push(item(c, ahora, { puntos: (PESO_ETAPA[etapaDe(c)] || 1) * 10 - edadDias }));
+      }
+      const f = ms(c.follow_up_at);
+      if (Number.isFinite(f) && f < hoy0 + DIA && !c.follow_up_sent_at) {
+        seguimientos.push(item(c, ahora, { cuando: c.follow_up_at, vencido: f < hoy0, puntos: -f }));
+      }
+      const s = ms(c.scheduled_at);
+      if (Number.isFinite(s) && s >= hoy0 && s < manana1 && c.session_status !== 'cancelada') {
+        sesiones.push(item(c, ahora, { cuando: c.scheduled_at, hoy: s < hoy0 + DIA, puntos: -s }));
+      }
+    }
+    const orden = (a, b) => b.puntos - a.puntos;
+    sinResponder.sort(orden); seEnfrian.sort(orden); seguimientos.sort(orden); sesiones.sort(orden);
+    const cuenta = (l, k, v) => l.filter((x) => x[k] === v).length;
+    return {
+      ahora,
+      sin_responder: { total: sinResponder.length, hoy: cuenta(sinResponder, 'urgencia', 'hoy'), atrasado: cuenta(sinResponder, 'urgencia', 'atrasado'),
+        viejo: cuenta(sinResponder, 'urgencia', 'viejo'), viejos_ids: sinResponder.filter((x) => x.urgencia === 'viejo').map((x) => x.id), con_persona: sinResponder.filter((x) => x.persona).length, items: sinResponder.slice(0, TOPE) },
+      se_enfrian: { total: seEnfrian.length, items: seEnfrian.slice(0, TOPE) },
+      seguimientos: { total: seguimientos.length, vencidos: cuenta(seguimientos, 'vencido', true), items: seguimientos.slice(0, TOPE) },
+      sesiones: { total: sesiones.length, hoy: cuenta(sesiones, 'hoy', true), items: sesiones },
+    };
+  }
+  return { colaDeTrabajo, esCortesia };
+})();
+// ---- Hoy: fin de las piezas puras
+// El numerito de «Hoy» en el menu: chats por contestar (de hoy y atrasados) mas seguimientos que tocan.
+function pintaCuentaHoy(){
+  const eh = document.querySelector('[data-cuenta="hoy"]');
+  if (!eh) return;
+  const q = COLA_HOY.colaDeTrabajo(CONVS, { ahora: Date.now() });
+  const nh = q.sin_responder.hoy + q.sin_responder.atrasado + q.seguimientos.total;
+  eh.textContent = nh; eh.hidden = nh === 0;
+}
 function pintaCuentas(){
   const pend = CONVS.filter(c => Number(c.unread || 0) > 0).length;
+  if (typeof pintaCuentaHoy === 'function') pintaCuentaHoy();
   const e = document.querySelector('[data-cuenta="conversations"]');
   if (e) { e.textContent = pend; e.hidden = pend === 0; }
   // Y en el titulo de la pestana. Lo unico que cambiaba al llegar un mensaje era ese globito
@@ -2754,6 +2956,7 @@ function monta(id){
   if (id === 'limpieza') return montaLimpieza();
   if (id === 'anuncios') return montaAnuncios();
   if (id === 'funnel') return montaFunnel();
+  if (id === 'hoy') return montaHoy();
   if (id === 'dashboard') return montaDashboard();
   if (id === 'informes') return montaInformes();
   if (TABLERO[id]) return montaTablero(id);
@@ -2997,17 +3200,104 @@ function stAdelanta(estados){
     if (!e._id || tipo === 'texto' || tipo === 'text' || ST.adelantados.has(e._id)) continue;
     if ((Number(e.media_size) || 0) > 6 * 1048576) continue;
     ST.adelantados.add(e._id);
+    void stMini(e);
     void pideAdelantado(e._id);
   }
+}
+
+// ---- Estados: piezas puras
+// Los estados de los contactos eran una escucha de TODA la coleccion: ~3.700 documentos y 14 MB
+// (10 MB de miniaturas que la lista ni dibuja) cada vez que se abria el panel. Ahora la lista se
+// lee con una consulta que deja fuera la miniatura (solo la API REST de Firestore puede
+// proyectar campos) y la miniatura se pide de una en una, cuando se va a ver ese estado.
+const ST_CAMPOS_LISTA = ['id', 'wamid', 'wa_phone', 'author_jid', 'business_number', 'kind', 'body', 'push_name',
+  'posted_at', 'expires_at', 'received_at', 'media_store', 'media_size', 'media_mime', 'media_w', 'media_h',
+  'media_seconds', 'revoked_at', 'bg_color', 'text_color', 'color', 'font', 'media_waveform_b64', 'media_ptt', 'seen_at'];
+function valorFirestore(v){
+  if (!v || typeof v !== 'object') return null;
+  if ('stringValue' in v) return v.stringValue;
+  if ('integerValue' in v) return Number(v.integerValue);
+  if ('doubleValue' in v) return v.doubleValue;
+  if ('booleanValue' in v) return v.booleanValue;
+  if ('timestampValue' in v) return v.timestampValue;
+  if ('arrayValue' in v) return (v.arrayValue.values || []).map(valorFirestore);
+  if ('mapValue' in v) return Object.fromEntries(Object.entries(v.mapValue.fields || {}).map(([k, x]) => [k, valorFirestore(x)]));
+  return null;
+}
+function consultaEstados(negocio){
+  return { structuredQuery: {
+    from: [{ collectionId: 'crm_status_feed' }],
+    select: { fields: ST_CAMPOS_LISTA.map(fieldPath => ({ fieldPath })) },
+    where: { fieldFilter: { field: { fieldPath: 'business_id' }, op: 'EQUAL', value: { stringValue: negocio } } },
+  } };
+}
+// Lo que devuelve runQuery -> filas planas. Las que ya traian su miniatura la conservan: no se
+// vuelve a pedir en cada relectura.
+function filasDeEstados(respuesta, anteriores){
+  const minis = new Map();
+  for (const e of anteriores || []) if (e && e.media_thumb_b64 !== undefined) minis.set(e._id, e.media_thumb_b64);
+  return (Array.isArray(respuesta) ? respuesta : []).filter(x => x && x.document).map(x => {
+    const fila = {};
+    for (const [k, v] of Object.entries(x.document.fields || {})) fila[k] = valorFirestore(v);
+    fila._id = String(x.document.name || '').split('/').pop();
+    if (minis.has(fila._id)) fila.media_thumb_b64 = minis.get(fila._id);
+    return fila;
+  });
+}
+// ---- Estados: fin de las piezas puras
+
+async function stLeeLista(){
+  if (ST.leyendo || !auth.currentUser) return;
+  ST.leyendo = true;
+  try {
+    const token = await auth.currentUser.getIdToken();
+    const r = await fetch('https://firestore.googleapis.com/v1/projects/' + encodeURIComponent(FB.projectId || 'erikccarela')
+      + '/databases/(default)/documents:runQuery', {
+      method: 'POST', headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' },
+      body: JSON.stringify(consultaEstados(NEGOCIO)),
+    });
+    if (!r.ok) throw new Error('http ' + r.status);
+    ST.feed = filasDeEstados(await r.json(), ST.feed);
+    ST.listaLigera = true; ST.leidoEn = Date.now();
+    pintaEstadosPronto();
+  } catch (err) {
+    console.warn('estados de contactos', err?.message || err);
+    // Si la lectura ligera no se puede, se cae a la escucha completa de siempre: mas lenta, pero funciona.
+    if (!ST.listaLigera && !ST.escuchaCompleta) {
+      ST.escuchaCompleta = true;
+      onSnapshot(query(collection(db, 'crm_status_feed'), where('business_id', '==', NEGOCIO)), s => {
+        ST.feed = s.docs.map(d => ({ ...d.data(), _id: d.id }));
+        pintaEstadosPronto();
+      }, e => console.warn('estados de contactos', e?.code || e));
+    }
+  } finally { ST.leyendo = false; }
+}
+
+// La miniatura de un estado, pedida cuando hace falta. Devuelve '' si no la hay.
+// La imagen del visor de Estados (una sola definicion: su id no puede repetirse en el panel).
+function stImgVisor(src){ return '<img class="st-img cargando" id="stMedio" src="' + esc(src) + '" alt="">'; }
+async function stMini(e){
+  if (!e) return '';
+  if (e.media_thumb_b64 !== undefined) return String(e.media_thumb_b64 || '');
+  if (!e._id) return '';
+  if (!e._miniPend) {
+    e._miniPend = getDoc(doc(db, 'crm_status_feed', e._id))
+      .then(s => { e.media_thumb_b64 = s.exists() ? String(s.data().media_thumb_b64 || '') : ''; })
+      .catch(() => { e.media_thumb_b64 = ''; })
+      .finally(() => { e._miniPend = null; });
+  }
+  await e._miniPend;
+  return String(e.media_thumb_b64 || '');
 }
 
 function escuchaEstados(){
   if (ST.escuchando) return;
   ST.escuchando = true;
-  onSnapshot(query(collection(db, 'crm_status_feed'), where('business_id', '==', NEGOCIO)), s => {
-    ST.feed = s.docs.map(d => ({ ...d.data(), _id: d.id }));
-    pintaEstadosPronto();
-  }, err => console.warn('estados de contactos', err?.code || err));
+  stLeeLista();
+  // Sin escucha en vivo (la lista ya no se baja entera): se relee mientras Estados esta a la vista, y
+  // de vez en cuando por debajo para que el contador de sin ver no se quede atras.
+  setInterval(() => { if (vistaActual === 'estados' && !document.hidden) stLeeLista(); }, 45000);
+  setInterval(() => { if (vistaActual !== 'estados' && !document.hidden) stLeeLista(); }, 300000);
   stCargaMios();
   // Los tuyos se leen por el servidor (la fila lleva la lista de destinatarios, que no hace
   // falta bajar al navegador): cada minuto mientras la vista está abierta.
@@ -3040,6 +3330,8 @@ async function stCargaMios(){
 
 function montaEstados(){
   escuchaEstados();
+  // Al volver a la vista la lista se pone al dia (hace mas de 15 s que no se lee).
+  if (ST.leidoEn && Date.now() - ST.leidoEn > 15000) stLeeLista();
   if (montadas.has('estados')) { pintaEstados(); return; }
   montadas.add('estados');
   const v = hueco('estados', '<div class="st-lista">'
@@ -3292,11 +3584,23 @@ function stMuestra(){
     stArranca(ST_DURACION_MS);
   } else {
     pie.textContent = texto;
-    const mini = String(e.media_thumb_b64 || '');
+    let mini = String(e.media_thumb_b64 || '');
+    if (e.media_thumb_b64 === undefined && tipo !== 'audio') {
+      // La lista ya no trae las miniaturas: se pide la de este estado y se pone en cuanto llega.
+      const pedidoMini = e._id;
+      stMini(e).then(m => {
+        if (!m || stActual()?._id !== pedidoMini || !ST.visor) return;
+        const img = $('stMedio');
+        if (img && img.classList.contains('cargando')) img.src = m;
+        else if (!img && $('stEscena')?.querySelector('.cargando')) $('stEscena').innerHTML = stImgVisor(m);
+        const vid = $('stEscena')?.querySelector('video');
+        if (vid && !vid.poster) vid.poster = m;
+      });
+    }
     if (tipo === 'audio') {
       escena.innerHTML = '<div class="st-audio">' + ST_ICO.micro + '<span>Nota de voz</span></div>';
     } else {
-      escena.innerHTML = mini ? '<img class="st-img cargando" id="stMedio" src="' + esc(mini) + '" alt="">' : '<span class="cargando"></span>';
+      escena.innerHTML = mini ? stImgVisor(mini) : '<span class="cargando"></span>';
     }
     // El archivo completo se pide al abrirlo, como «Ver» en un mensaje. Mientras llega se ve la
     // miniatura borrosa y la barra no avanza: el tiempo empieza cuando hay algo que mirar.
@@ -3807,6 +4111,7 @@ function fijaLineaQr(p, { enVivo = false } = {}){
   if (vistaActual === 'conversations') pintaChats();
   if (vistaActual === 'funnel') { pintaKanban(); pintaMovilizacion(); }
   if (vistaActual === 'dashboard') pintaDashboard();
+  if (vistaActual === 'hoy') pintaHoy();
   if (vistaActual === 'agenda') pintaAgenda();
   if (vistaActual === 'reminders') pintaRecordatorios();
   pintaCuentas();
@@ -3930,6 +4235,7 @@ function fijaRedesActivas(activas){
   recalculaVisibles();
   if (vistaActual === 'conversations') pintaChats();
   if (vistaActual === 'dashboard') pintaDashboard();
+  if (vistaActual === 'hoy') pintaHoy();
   if (vistaActual === 'funnel') { pintaKanban(); pintaMovilizacion(); }
   pintaCuentas();
 }
@@ -10313,17 +10619,67 @@ const CAT_DE_TARJETA = {
   'Tu sesión': 'cuenta', 'Usuarios y permisos del panel': 'cuenta', 'Fotógrafos y colaboradores': 'cuenta',
   'Últimos movimientos': 'cuenta',
   'Instagram y Messenger': 'mensajes', 'Cómo te ve el cliente': 'mensajes', 'Límites de seguridad del 2.º número': 'mensajes',
-  'Mensajes por defecto': 'mensajes', 'Avisos de atención humana': 'mensajes', 'Bot de WhatsApp': 'mensajes',
+  'Mensajes por defecto': 'mensajes', 'Avisos de atención humana': 'mensajes', 'Resumen diario del CRM': 'mensajes', 'Bot de WhatsApp': 'mensajes',
   'Encuesta de satisfacción': 'mensajes',
   'Permiso de marketing': 'clientes', 'Contactos ignorados': 'clientes', 'Baja de una lista entera': 'clientes',
   'Guardar contactos solo': 'clientes', 'Clientes de caja en el chat': 'clientes', 'Etiquetas del buscador': 'clientes',
-  'Auto-cierre a los 14 días': 'auto', 'Cerebro local': 'auto', 'Etiquetas y contexto automáticos': 'auto',
+  'Auto-cierre a los 14 días': 'auto', 'Leads al día': 'auto', 'Cerebro local': 'auto', 'Etiquetas y contexto automáticos': 'auto',
   'Seguimientos automáticos': 'auto', 'Análisis de conversaciones con IA': 'auto', 'Asistente IA': 'auto',
   'Agente de marketing': 'auto',
   'Agenda en Google Calendar': 'agenda', 'Recordatorios del iPhone': 'agenda', 'Tu Google Calendar dentro del CRM': 'agenda',
   'Catálogo público': 'agenda', 'Datos del negocio': 'agenda',
 };
 function categoriaDeCfg(titulo){ return CAT_DE_TARJETA[titulo] || 'otros'; }
+// Dentro de cada categoria, las tarjetas van en SECCIONES con su titulo y una linea que dice para que sirven, y en el orden
+// en que se usan: lo primero, lo que mas se toca. Una tarjeta que no este aqui cae al final, en «Otros ajustes».
+const SECCIONES_CFG = {
+  cuenta: [
+    { id: 'yo', nombre: 'Tu cuenta', nota: 'Con qué correo entraste y qué puedes hacer.', tarjetas: ['Tu sesión'] },
+    { id: 'equipo', nombre: 'Equipo', nota: 'Quién entra al panel y quién sale en las encuestas.', tarjetas: ['Usuarios y permisos del panel', 'Fotógrafos y colaboradores'] },
+    { id: 'registro', nombre: 'Registro', nota: 'Quién hizo qué y cuándo.', tarjetas: ['Últimos movimientos'] },
+  ],
+  mensajes: [
+    { id: 'lineas', nombre: 'Tus líneas de WhatsApp', nota: 'El bot, las redes y cómo te ve el cliente.', tarjetas: ['Bot de WhatsApp', 'Instagram y Messenger', 'Cómo te ve el cliente', 'Límites de seguridad del 2.º número'] },
+    { id: 'textos', nombre: 'Lo que se le escribe al cliente', nota: 'Atajos y encuesta.', tarjetas: ['Mensajes por defecto', 'Encuesta de satisfacción'] },
+    { id: 'avisos', nombre: 'Avisos para ti', nota: 'Lo que te llega por WhatsApp para que no se te pase nada.', tarjetas: ['Resumen diario del CRM', 'Avisos de atención humana'] },
+  ],
+  clientes: [
+    { id: 'permisos', nombre: 'Permisos y bajas', nota: 'A quién sí y a quién no se le escribe de marketing.', tarjetas: ['Permiso de marketing', 'Baja de una lista entera'] },
+    { id: 'contactos', nombre: 'Contactos', nota: 'Qué se guarda, a quién se oculta y cómo se cruza con la caja.', tarjetas: ['Contactos ignorados', 'Guardar contactos solo', 'Clientes de caja en el chat'] },
+    { id: 'busqueda', nombre: 'Buscador', nota: 'Qué etiquetas salen en la barra de Conversaciones.', tarjetas: ['Etiquetas del buscador'] },
+  ],
+  auto: [
+    { id: 'asistentes', nombre: 'Asistentes e inteligencia', nota: 'Lo que lee y clasifica tus conversaciones. No le escribe a nadie.', tarjetas: ['Asistente IA', 'Cerebro local', 'Análisis de conversaciones con IA', 'Etiquetas y contexto automáticos'] },
+    { id: 'envios', nombre: 'Envíos y cierres automáticos', nota: 'Lo que el sistema hace solo con tus contactos.', tarjetas: ['Leads al día', 'Seguimientos automáticos', 'Auto-cierre a los 14 días'] },
+    { id: 'marketing', nombre: 'Marketing', nota: 'Propuestas de campaña; nunca envía sin tu aprobación.', tarjetas: ['Agente de marketing'] },
+  ],
+  agenda: [
+    { id: 'calendarios', nombre: 'Calendarios', nota: 'Google y el iPhone, en las dos direcciones.', tarjetas: ['Agenda en Google Calendar', 'Tu Google Calendar dentro del CRM', 'Recordatorios del iPhone'] },
+    { id: 'negocio', nombre: 'Tu negocio', nota: 'Los datos y el catálogo que usa el CRM.', tarjetas: ['Datos del negocio', 'Catálogo público'] },
+  ],
+};
+// Donde va una tarjeta: su categoria, su seccion y su lugar dentro de ella.
+function lugarDeCfg(titulo){
+  const cat = categoriaDeCfg(titulo);
+  const secciones = SECCIONES_CFG[cat] || [];
+  for (let i = 0; i < secciones.length; i++) {
+    const k = secciones[i].tarjetas.indexOf(titulo);
+    if (k >= 0) return { cat, sec: secciones[i].id, rango: i * 100 + k };
+  }
+  return { cat, sec: 'otros', rango: 9999 };
+}
+// Un texto largo se parte en su primera frase (que se ve) y el resto (plegado). Nunca corta una negrita a medias.
+function partesNotaCfg(nota){
+  const t = String(nota || '');
+  if (t.length <= 190) return { resumen: t, resto: '' };
+  const re = /([.!?])\s+(?=[A-ZÁÉÍÓÚ¿¡<])/g;
+  let m;
+  while ((m = re.exec(t))) {
+    const corte = m.index + 1, cabeza = t.slice(0, corte);
+    if (corte >= 40 && (cabeza.match(/<b>/g) || []).length === (cabeza.match(/<\/b>/g) || []).length) return { resumen: cabeza, resto: t.slice(corte).replace(/^(\s|<br>)+/, '') };
+  }
+  return { resumen: t, resto: '' };
+}
 // Sin acentos ni mayusculas: «configuracion» encuentra «Configuración».
 function planoCfg(t){ return String(t || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, ''); }
 // Que tarjetas se ven: con texto en el buscador, las que lo contienen (de cualquier categoria); sin el,
@@ -10362,11 +10718,38 @@ function aplicaCfgFiltro(){
   }
   const vacio = $('cfgVacio');
   if (vacio) vacio.hidden = visibles > 0;
+  for (const h of g.querySelectorAll('.cfg-sec')) {
+    h.hidden = ![...g.querySelectorAll('.cfgc')].some(t => t.dataset.cat === h.dataset.cat && t.dataset.sec === h.dataset.sec && !t.hidden);
+  }
 }
 
 function tarjetaCfg(titulo, nota, cuerpo, ancla){
-  return '<div class="cfgc" data-cat="' + categoriaDeCfg(titulo) + '"' + (ancla ? ' id="' + esc(ancla) + '"' : '') + '><h3>' + esc(titulo) + '</h3>'
-    + (nota ? '<p class="cfgnota">' + nota + '</p>' : '') + cuerpo + '</div>';
+  const l = lugarDeCfg(titulo), n = partesNotaCfg(nota);
+  return '<div class="cfgc" data-cat="' + l.cat + '" data-sec="' + l.sec + '" data-rango="' + l.rango + '"' + (ancla ? ' id="' + esc(ancla) + '"' : '') + '><h3>' + esc(titulo) + '</h3>'
+    + (n.resumen ? '<p class="cfgnota">' + n.resumen + '</p>' : '')
+    + (n.resto ? '<details class="cfg-mas"><summary>Más detalles</summary><p class="cfgnota">' + n.resto + '</p></details>' : '')
+    + cuerpo + '</div>';
+}
+// Pone las tarjetas en el orden de sus secciones y antepone a cada seccion su titulo. Se hace una vez, al pintar.
+function ordenaCfg(g){
+  const tarjetas = [...g.querySelectorAll('.cfgc')];
+  const cat = t => t.dataset.cat;
+  const pos = c => { const i = CATEGORIAS_CFG.findIndex(x => x.id === c); return i < 0 ? 99 : i; };
+  tarjetas.sort((a, b) => pos(cat(a)) - pos(cat(b)) || Number(a.dataset.rango) - Number(b.dataset.rango));
+  g.querySelectorAll('.cfg-sec').forEach(x => x.remove());
+  let previa = '';
+  for (const t of tarjetas) {
+    const clave = cat(t) + ':' + t.dataset.sec;
+    if (clave !== previa) {
+      previa = clave;
+      const def = (SECCIONES_CFG[cat(t)] || []).find(x => x.id === t.dataset.sec) || { nombre: 'Otros ajustes', nota: '' };
+      const h = document.createElement('div');
+      h.className = 'cfg-sec'; h.dataset.cat = cat(t); h.dataset.sec = t.dataset.sec;
+      h.innerHTML = '<h2>' + esc(def.nombre) + '</h2>' + (def.nota ? '<p>' + esc(def.nota) + '</p>' : '');
+      g.appendChild(h);
+    }
+    g.appendChild(t);
+  }
 }
 
 // Lleva a una tarjeta de Configuracion y la resalta. La vista se pinta sola y tarda (pide
@@ -10744,6 +11127,16 @@ async function pintaConfig(){
         interruptorCfg('analisis_automatico', 'Etiquetar y clasificar solo',
           'Cada hora, hasta 25 conversaciones con mensajes nuevos.', false))
 
+    + tarjetaCfg('Leads al día',
+        'El estado de cada lead se va corrigiendo solo, de 8 a 20 h cada 3 horas, para que no figure como pendiente lo que ya se atendió ni se le escriba a quien no toca. '
+        + '<b>Nunca envía nada a un cliente.</b> Quita el «esperando a una persona» y el «sin leer» de lo que ya se contestó, pasa a cliente a quien compró en caja, '
+        + 'a reservado a quien tiene sesión, cierra por silencio (14 días sin contestar; 30 si esperaba el abono) y lo reabre si vuelve a escribir, y da de baja a quien dijo «no me interesa» o «dejen de escribirme». '
+        + 'Cada ficha guarda qué regla la cambió.',
+        interruptorCfg('leads_al_dia', 'Mantener los leads al día automáticamente', 'Lo del cierre por silencio se apaga aparte, en «Auto-cierre».', true)
+        + '<div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:10px">'
+        + (['admin', 'supervisor'].includes(ROL_ACTUAL) ? '<button class="btn-linea" id="cfgLeadsVer">Ver qué cambiaría</button><button class="btn-linea" id="cfgLeadsYa">Ponerlos al día ahora</button>' : '')
+        + '</div><p class="cfgnota" id="cfgLeadsSalida" style="margin-top:9px"></p>')
+
     + tarjetaCfg('Seguimientos automáticos',
         'La norma de los dos intentos está cableada en el servidor y no se puede desactivar desde '
         + 'aquí: dos seguimientos ignorados y el contacto pasa a desinteresado.',
@@ -10918,6 +11311,11 @@ async function pintaConfig(){
         + 'poniendose en la ficha del lead: solo dejan de ocupar sitio en la barra.',
         etiquetasFiltroCfg())
 
+    + tarjetaCfg('Resumen diario del CRM',
+        'Cada mañana a las 8:45 te llega por WhatsApp lo que toca atender: chats sin responder, cotizaciones que se enfrían, seguimientos y sesiones de hoy y mañana. '
+        + 'Un día tranquilo no manda nada. <b>Nunca le escribe a un cliente</b>: es un aviso para ti.',
+        interruptorCfg('resumen_crm_diario', 'Mandarme «Tu día en el CRM» cada mañana', 'Solo si hay algo que atender. Lo mismo, cuando quieras, escribiendo «mi día».', true))
+
     + tarjetaCfg('Avisos de atención humana',
         'Cuando un chat necesita a una persona, el CRM manda un aviso interno a este teléfono por la '
         + 'línea de WhatsApp Web que esté conectada. Si el teléfono es la propia línea no se envía '
@@ -10932,6 +11330,7 @@ async function pintaConfig(){
         'Encender o apagar el bot por canal se hace en <b>Canales</b>, no aquí: son ajustes de cada '
         + 'conexión y mezclarlos lleva a apagar el que no era.',
         '<button class="btn-linea" id="cfgIrCanales">Ir a Canales</button>');
+  ordenaCfg(g);
   aplicaCfgFiltro();
 
   // --- cableado
@@ -10948,6 +11347,23 @@ async function pintaConfig(){
       pintaConfig();
     };
   });
+  // Leads al dia: ver lo que cambiaria (no toca nada) o ponerlos al dia ahora.
+  const LEADS_REGLAS = { persona_atendida: 'dejan de «esperar a una persona» (ya se les contestó)', sin_leer_contestado: 'chats se marcan como leídos (ya contestados)',
+    cliente_por_compra: 'pasan a cliente (compraron en caja)', reservado_por_sesion: 'pasan a reservado (tienen sesión)',
+    cierre_por_silencio: 'se cierran por silencio', rechazo: 'pasan a desinteresado (pidieron que no les escribieran)', reabrir: 'se reabren (volvieron a escribir)' };
+  const leadsTexto = r => !r.total ? 'Ya están al día: no hay nada que corregir.'
+    : Object.entries(r.por_regla).map(([k, n]) => n + ' ' + (LEADS_REGLAS[k] || k)).join(' · ') + (r.dry ? '' : '. Hecho: ' + r.aplicados + ' fichas.');
+  for (const [id, op] of [['cfgLeadsVer', 'preview'], ['cfgLeadsYa', 'apply']]) {
+    const b = $(id); if (!b) continue;
+    b.onclick = async () => {
+      if (op === 'apply' && !confirm('Se corregirán los estados de los leads como dice la tarjeta. No se envía nada a nadie y cada ficha guarda qué regla la cambió.' + String.fromCharCode(10, 10) + '¿Ponerlos al día ahora?')) return;
+      b.disabled = true; $('cfgLeadsSalida').textContent = op === 'apply' ? 'Actualizando…' : 'Calculando…';
+      const r = await llama({ action: 'leadsAlDia', operation: op });
+      b.disabled = false;
+      if (!r.ok) { $('cfgLeadsSalida').textContent = ''; return avisa('No se pudo', r.error); }
+      $('cfgLeadsSalida').textContent = (op === 'preview' ? 'Cambiaría: ' : 'Listo: ') + leadsTexto(r);
+    };
+  }
   g.querySelectorAll('[data-sw]').forEach(el => {
     el.onchange = async () => {
       const ok = await guardaAjuste(el.dataset.sw, el.checked);
@@ -11379,7 +11795,7 @@ function cableaUsuarios(){
 // habia que desplazarse sin fin. Ahora se filtra, se ordena, las tarjetas son compactas y cada
 // columna se puede plegar o esconder. Nada de esto toca a los contactos: solo cambia lo que se ve.
 const FUN_DEFECTO = { q: '', sinLeer: false, humano: false, cat: '', dias: 0, orden: 'reciente',
-  densidad: 'compacta', ocultarVacias: false, ocultas: [], plegadas: [] };
+  densidad: 'compacta', ocultarVacias: false, ocultas: [], plegadas: [], vista: 'embudo', etapa: 'cotizando' };
 const FUN_ORDENES = [['reciente', 'Más reciente primero'], ['antiguo', 'Más antiguo primero'],
   ['nombre', 'Nombre (A–Z)'], ['sinleer', 'Sin leer primero']];
 const FUN_DIAS = [[0, 'Cualquier fecha'], [1, 'Hoy'], [7, 'Últimos 7 días'], [30, 'Últimos 30 días']];
@@ -11416,6 +11832,26 @@ function fichasFunnel(F){
   if (F.dias) f.push({ clave: 'dias', texto: (FUN_DIAS.find(d => d[0] === F.dias) || [0, ''])[1] });
   return f;
 }
+// El embudo en cifras: por etapa, cuantos hay (con los filtros puestos), cuantos son en total y que parte
+// del total representa. `ancho` es el largo de la barra respecto a la etapa mas llena.
+function resumenEmbudo(convs, filtradas, etapas){
+  const de = c => c.lifecycle_stage || 'nuevo';
+  const total = Math.max(1, (convs || []).length);
+  const cuenta = (lista, e) => (lista || []).filter(c => de(c) === e).length;
+  const max = Math.max(1, ...etapas.map(e => cuenta(filtradas, e)));
+  return etapas.map(e => {
+    const todas = cuenta(convs, e), n = cuenta(filtradas, e);
+    return { e, todas, n, pct: Math.round(todas / total * 100), ancho: n ? Math.max(6, Math.round(n / max * 100)) : 0 };
+  });
+}
+// La etapa que se enseña: la elegida si sigue visible; si no, la primera de las que suelen trabajarse que tenga gente.
+function etapaDelEmbudo(resumen, elegida){
+  if (resumen.some(r => r.e === elegida)) return elegida;
+  for (const e of ['cotizando', 'pendiente_reserva', 'interesado', 'nuevo']) {
+    const r = resumen.find(x => x.e === e); if (r && r.n) return e;
+  }
+  return resumen.length ? resumen[0].e : '';
+}
 // ---- Funnel: fin de las piezas puras
 
 let FUN = Object.assign({}, FUN_DEFECTO);
@@ -11433,14 +11869,16 @@ function montaFunnel(){
   if (!montadas.has('funnel')) {
     montadas.add('funnel');
     hueco('funnel', '<div class="hoja"><h1>Funnel</h1>'
-      + '<p class="bajada">Arrastra un contacto a otra columna para cambiarle la etapa.</p>'
+      + '<p class="bajada">Elige una etapa para ver a su gente. Para cambiarle la etapa a alguien, arrástralo o usa «Mover a…».</p>'
       + '<div class="fun-barra">'
+      +   '<div class="fun-sw" id="funSw" role="tablist"><button data-fvista="embudo">Embudo</button><button data-fvista="tablero">Tablero</button></div>'
       +   '<input type="search" class="fun-buscar" id="funBusca" placeholder="Buscar en el funnel…" autocomplete="off">'
       +   '<button class="btn-linea btn-filtro" id="funFiltro" data-menu-flotante title="Filtrar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6.500h16M7 12h10M10.500 17.500h3"/></svg><span>Filtros</span></button>'
       +   '<button class="btn-linea btn-filtro" id="funReorg" data-menu-flotante title="Ordenar, tamaño de las tarjetas y etapas visibles"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4v16M7 20l-3-3M7 20l3-3M17 20V4M17 4l-3 3M17 4l3 3"/></svg><span>Reorganizar</span></button>'
       + '</div>'
       + '<div class="fun-fichas" id="funFichas"></div>'
-      + '<div class="kanban" id="kanban"></div>'
+      + '<div class="fun-embudo" id="funEmbudo"></div>'
+      + '<div class="kanban" id="kanban" hidden></div>'
       + '<div class="seccion" style="margin:30px 0 4px">Leads parados</div>'
       + '<p class="bajada">Por qué no avanzan y qué hacer con cada uno. Nada se mueve solo: '
       +   'cambiar de etapa cambia lo que el sistema le mandará después.</p>'
@@ -11496,6 +11934,25 @@ function montaFunnel(){
         guardaFun(); pintaKanban();
       },
     });
+    $('funSw').addEventListener('click', ev => {
+      const b = ev.target.closest('[data-fvista]'); if (!b) return;
+      FUN.vista = b.dataset.fvista; guardaFun(); pintaKanban();
+    });
+    $('funEmbudo').addEventListener('click', ev => {
+      const et = ev.target.closest('[data-fetapa]');
+      if (et) { FUN.etapa = et.dataset.fetapa; guardaFun(); pintaKanban(); return; }
+      const mv = ev.target.closest('[data-fmover]');
+      if (mv) {
+        const c = buscaConv(mv.dataset.fmover); if (!c) return;
+        menuFlotante(mv, ETAPAS.map(e => ({ id: 'm:' + e, texto: e.replace(/_/g, ' ') })), {
+          elegida: 'm:' + (c.lifecycle_stage || 'nuevo'), alElegir: k => mueveLeadDeEtapa(c, k.slice(2)) });
+        return;
+      }
+      const mas = ev.target.closest('[data-kmas]');
+      if (mas) { FUN_LIMITE[mas.dataset.kmas] = (FUN_LIMITE[mas.dataset.kmas] || FUN_TANDA) + FUN_TANDA; pintaKanban(); return; }
+      const fila = ev.target.closest('[data-fabre]');
+      if (fila) { const c = buscaConv(fila.dataset.fabre); if (c) { abre(c); ve('conversations'); } }
+    });
     $('kanban').addEventListener('click', ev => {
       const mas = ev.target.closest('[data-kmas]');
       if (mas) { FUN_LIMITE[mas.dataset.kmas] = (FUN_LIMITE[mas.dataset.kmas] || FUN_TANDA) + FUN_TANDA; pintaKanban(); return; }
@@ -11511,6 +11968,68 @@ function montaFunnel(){
   pintaMovilizacion();
 }
 
+// Cambia la etapa de un lead. Se mueve ya (para que se sienta inmediato) y vuelve si el servidor dice que no.
+async function mueveLeadDeEtapa(c, etapa){
+  if (!c || (c.lifecycle_stage || 'nuevo') === etapa) return;
+  const anterior = c.lifecycle_stage;
+  c.lifecycle_stage = etapa;
+  pintaKanban();
+  const r = await llama({ action:'updateLead', conversation_id: c.id || c._id, fields:{ lifecycle_stage: etapa } });
+  if (!r.ok) {
+    c.lifecycle_stage = anterior;
+    pintaKanban();
+    return avisa('No se pudo mover', r.error);
+  }
+  avisa(nombreDe(c), 'ahora está en ' + etapa.replace(/_/g,' '));
+  pintaChats();
+}
+
+// La vista de embudo: una fila de etapas (cifra, parte del total y barra) y debajo la gente de la etapa elegida.
+function pintaEmbudo(filtradas, hayFiltro){
+  const cont = $('funEmbudo'); if (!cont) return;
+  const etapas = ETAPAS.filter(e => !FUN.ocultas.includes(e));
+  let resumen = resumenEmbudo(CONVS, filtradas, etapas);
+  if (FUN.ocultarVacias) resumen = resumen.filter(r => r.n);
+  if (!resumen.length) { cont.innerHTML = vacioApple('<path d="M4.200 5.500h15.600L14 12.800v5.900l-4-2v-3.900z"/>', 'No hay etapas visibles', 'Actívalas en «Reorganizar».'); return; }
+  const sel = etapaDelEmbudo(resumen, FUN.etapa);
+  const fila = c => '<div class="fe-fila" data-fabre="' + esc(c._id) + '" draggable="true" data-conv="' + esc(c._id) + '">'
+    + '<span class="fe-avatar">' + esc((nombreDe(c).trim()[0] || '?').toUpperCase()) + '</span>'
+    + '<span class="fe-txt"><b>' + esc(nombreDe(c)) + (Number(c.unread) > 0 ? '<u class="kt-punto" title="Sin leer"></u>' : '') + '</b>'
+    +   '<small>' + esc(c.last_message_preview || 'Sin mensajes') + '</small></span>'
+    + (c.interested_category ? '<em class="fe-cat">' + esc(c.interested_category) + '</em>' : '<em class="fe-cat vacia"></em>')
+    + '<i class="fe-hora">' + esc(hora(c.last_message_at)) + '</i>'
+    + '<button class="btn-linea fe-mover" id="fm-' + esc(c._id) + '" data-fmover="' + esc(c._id) + '">Mover a…</button></div>';
+  const filas = ordenaFunnel(filtradas.filter(c => (c.lifecycle_stage || 'nuevo') === sel), FUN.orden, nombreDe);
+  const tope = FUN_LIMITE[sel] || FUN_TANDA;
+  const r = resumen.find(x => x.e === sel) || { n: 0, todas: 0 };
+  cont.innerHTML = '<div class="fe-etapas">' + resumen.map(x => '<button class="fe-etapa' + (x.e === sel ? ' on' : '') + '" data-fetapa="' + x.e + '" data-etapa="' + x.e + '">'
+      + '<span class="fe-n">' + x.n + '</span>'
+      + '<span class="fe-t">' + esc(x.e.replace(/_/g, ' ')) + '</span>'
+      + '<span class="fe-barra"><i style="width:' + x.ancho + '%"></i></span>'
+      + '<small>' + (hayFiltro ? x.n + ' de ' + x.todas : x.pct + '% del total') + '</small></button>').join('') + '</div>'
+    + '<div class="fe-lista" data-etapa="' + esc(sel) + '">'
+    + '<div class="fe-cab"><h2>' + esc(sel.replace(/_/g, ' ')) + '</h2><span>' + (hayFiltro ? r.n + ' de ' + r.todas : r.n) + (r.n === 1 ? ' contacto' : ' contactos') + '</span></div>'
+    + (filas.length ? filas.slice(0, tope).map(fila).join('')
+      : '<div class="fe-vacia">' + (hayFiltro ? 'Ninguno con estos filtros.' : 'No hay nadie en esta etapa.') + '</div>')
+    + (filas.length > tope ? '<button class="kmas kmas-btn" data-kmas="' + esc(sel) + '">Ver ' + Math.min(FUN_TANDA, filas.length - tope) + ' más · quedan ' + (filas.length - tope) + '</button>' : '')
+    + '</div>';
+  // Arrastrar a alguien sobre una etapa de arriba, o sobre la lista, le cambia la etapa.
+  let arrastrado = null;
+  cont.querySelectorAll('.fe-fila').forEach(t => {
+    t.addEventListener('dragstart', ev => { arrastrado = t; t.classList.add('moviendo'); ev.dataTransfer.setData('text/plain', t.dataset.conv); ev.dataTransfer.effectAllowed = 'move'; });
+    t.addEventListener('dragend', () => { t.classList.remove('moviendo'); arrastrado = null; cont.querySelectorAll('.fe-etapa').forEach(x => x.classList.remove('encima')); });
+  });
+  cont.querySelectorAll('.fe-etapa').forEach(b => {
+    b.addEventListener('dragover', ev => { ev.preventDefault(); b.classList.add('encima'); });
+    b.addEventListener('dragleave', () => b.classList.remove('encima'));
+    b.addEventListener('drop', ev => {
+      ev.preventDefault(); b.classList.remove('encima');
+      const id = ev.dataTransfer.getData('text/plain') || (arrastrado && arrastrado.dataset.conv);
+      mueveLeadDeEtapa(buscaConv(id), b.dataset.etapa);
+    });
+  });
+}
+
 function pintaKanban(){
   const cont = $('kanban'); if (!cont) return;
   const ahora = Date.now();
@@ -11524,6 +12043,13 @@ function pintaKanban(){
     b.classList.toggle('activo', id === 'funFiltro' ? hayFiltro
       : (FUN.orden !== 'reciente' || FUN.densidad !== 'compacta' || FUN.ocultarVacias || FUN.ocultas.length > 0));
   }
+  const sw = $('funSw');
+  if (sw) sw.querySelectorAll('[data-fvista]').forEach(b => b.classList.toggle('on', b.dataset.fvista === FUN.vista));
+  const enEmbudo = FUN.vista !== 'tablero';
+  cont.hidden = enEmbudo;
+  const emb = $('funEmbudo'); if (emb) emb.hidden = !enEmbudo;
+  if (enEmbudo) { pintaEmbudo(filtradas, hayFiltro); return; }
+  if (emb) emb.innerHTML = '';
   const compacta = FUN.densidad === 'compacta';
   const columnas = ETAPAS.filter(e => !FUN.ocultas.includes(e)).map(e => {
     const todas = CONVS.filter(c => (c.lifecycle_stage || 'nuevo') === e);
@@ -11575,23 +12101,117 @@ function pintaKanban(){
       ev.preventDefault();
       col.classList.remove('encima');
       const id = ev.dataTransfer.getData('text/plain') || arrastrando?.dataset.conv;
-      const c = buscaConv(id);
-      const etapa = col.dataset.etapa;
-      if (!c || (c.lifecycle_stage || 'nuevo') === etapa) return;
-      const anterior = c.lifecycle_stage;
-      c.lifecycle_stage = etapa;      // se mueve ya, para que se sienta inmediato
-      pintaKanban();
-      const r = await llama({ action:'updateLead', conversation_id: c.id || c._id,
-        fields:{ lifecycle_stage: etapa } });
-      if (!r.ok) {
-        c.lifecycle_stage = anterior; // y vuelve si el servidor dijo que no
-        pintaKanban();
-        return avisa('No se pudo mover', r.error);
-      }
-      avisa(nombreDe(c), 'ahora está en ' + etapa.replace(/_/g,' '));
-      pintaChats();
+      await mueveLeadDeEtapa(buscaConv(id), col.dataset.etapa);
     });
   });
+}
+
+/* ---- Hoy: la cola de trabajo -------------------------------------------- */
+// Salio de mirar como se usa el CRM de verdad: 144 chats «sin leer» que en realidad ya se leyeron en el telefono, y 82 chats
+// donde el ULTIMO mensaje es del cliente y nadie contesto (64 con mas de 3 dias). Aqui se ve lo que toca, por importancia.
+// Nada se envia desde esta pantalla: abrir el chat, marcar «no requiere respuesta» (vuelve si el cliente escribe otra vez) o
+// ponerse un recordatorio.
+const HOY_TANDA = 12;
+const HOY_LIMITE = {};
+const HOY_SECCIONES = [
+  ['sin_responder', 'Sin responder', 'El último mensaje es del cliente. Lo más importante primero.'],
+  ['se_enfrian', 'Se enfrían', 'Les escribimos, no han contestado y no hay seguimiento puesto.'],
+  ['seguimientos', 'Seguimientos', 'Los que tocan hoy o ya vencieron.'],
+  ['sesiones', 'Sesiones de hoy y mañana', 'Lo que está agendado.'],
+];
+function montaHoy(){
+  if (!montadas.has('hoy')) {
+    montadas.add('hoy');
+    hueco('hoy', '<div class="hoja"><h1>Hoy</h1>'
+      + '<p class="bajada">Lo que toca atender, por orden de importancia. Desde aquí no se envía nada.</p>'
+      + '<div id="hoyCont"></div></div>');
+    $('hoyCont').addEventListener('click', ev => {
+      const mas = ev.target.closest('[data-hmas]');
+      if (mas) { HOY_LIMITE[mas.dataset.hmas] = (HOY_LIMITE[mas.dataset.hmas] || HOY_TANDA) + HOY_TANDA; pintaHoy(); return; }
+      const tile = ev.target.closest('[data-hsec]');
+      if (tile) { document.getElementById('hoy-' + tile.dataset.hsec)?.scrollIntoView({ behavior: 'smooth', block: 'start' }); return; }
+      const viejos = ev.target.closest('[data-hviejos]');
+      if (viejos) { omiteViejosEnHoy(viejos); return; }
+      const om = ev.target.closest('[data-hom]');
+      if (om) { omiteEnHoy(buscaConv(om.dataset.hom), om); return; }
+      const rec = ev.target.closest('[data-hrec]');
+      if (rec) { abreRecordatorio(buscaConv(rec.dataset.hrec)); return; }
+      const fila = ev.target.closest('[data-habre]');
+      if (fila) { const c = buscaConv(fila.dataset.habre); if (c) { abre(c); ve('conversations'); } }
+    });
+  }
+  pintaHoy();
+}
+
+// «No requiere respuesta»: se recuerda POR mensaje (cola_omitida_at = el ultimo mensaje), asi que si el cliente vuelve a escribir, reaparece.
+async function omiteEnHoy(c, boton){
+  if (!c) return;
+  const marca = String(c.last_message_at || new Date().toISOString());
+  if (boton) boton.disabled = true;
+  const r = await llama({ action:'updateLead', conversation_id: c.id || c._id, fields:{ cola_omitida_at: marca } });
+  if (!r.ok) { if (boton) boton.disabled = false; return avisa('No se pudo marcar', r.error); }
+  c.cola_omitida_at = marca;
+  pintaHoy(); pintaCuentas();
+}
+
+// Los de mas de 3 dias sin contestar, todos de una vez: se quedan fuera hasta que el cliente vuelva a escribir. No se envia nada.
+async function omiteViejosEnHoy(boton){
+  const ids = COLA_HOY.colaDeTrabajo(CONVS, { ahora: Date.now() }).sin_responder.viejos_ids;
+  if (!ids.length) return;
+  if (!confirm('Vas a dejar fuera de «Sin responder» ' + ids.length + ' chats de más de 3 días.' + String.fromCharCode(10, 10)
+    + 'No se envía nada ni se cambia su etapa, y si el cliente escribe otra vez, vuelve a aparecer.' + String.fromCharCode(10, 10) + '¿Seguimos?')) return;
+  boton.disabled = true;
+  const r = await llama({ action:'colaOmitir', ids });
+  boton.disabled = false;
+  if (!r.ok) return avisa('No se pudo', r.error);
+  for (const id of ids) { const c = buscaConv(id); if (c) c.cola_omitida_at = String(c.last_message_at || new Date().toISOString()); }
+  avisa('Hecho', r.hechas + ' chats fuera de la lista');
+  pintaHoy(); pintaCuentas();
+}
+
+function pintaHoy(){
+  const cont = $('hoyCont'); if (!cont) return;
+  const cola = COLA_HOY.colaDeTrabajo(CONVS, { ahora: Date.now() });
+  const sr = cola.sin_responder, se = cola.se_enfrian, sg = cola.seguimientos, ss = cola.sesiones;
+  const cuando = h => h == null ? '' : h < 1 ? 'ahora' : h < 24 ? 'hace ' + h + ' h' : 'hace ' + Math.round(h / 24) + ' d';
+  const hora12 = iso => { const d = new Date(iso); return isNaN(d) ? '' : d.toLocaleTimeString('es-DO', { hour: 'numeric', minute: '2-digit' }); };
+  const tiles = [
+    ['sin_responder', sr.total, 'Sin responder', sr.total ? sr.hoy + ' de hoy · ' + sr.atrasado + ' atrasados · ' + sr.viejo + ' viejos' : 'todo contestado'],
+    ['se_enfrian', se.total, 'Se enfrían', 'sin seguimiento puesto'],
+    ['seguimientos', sg.total, 'Seguimientos', sg.vencidos + ' vencidos'],
+    ['sesiones', ss.total, 'Sesiones hoy y mañana', ss.hoy + ' hoy'],
+  ];
+  if (!tiles.some(t => t[1])) {
+    cont.innerHTML = vacioApple('<circle cx="12" cy="12" r="8.600"/><path d="M8.200 12.300l2.600 2.600 5-5.400"/>', 'Todo al día',
+      'No hay chats por contestar, cotizaciones enfriándose ni seguimientos para hoy.');
+    return;
+  }
+  const chip = x => x.urgencia === 'hoy' ? '<b class="hoy-chip hoy">hoy</b>' : x.urgencia === 'atrasado' ? '<b class="hoy-chip tarde">atrasado</b>' : x.urgencia === 'viejo' ? '<b class="hoy-chip viejo">viejo</b>' : '';
+  const acciones = (sec, x) => {
+    const id = esc(x.id);
+    return '<span class="hoy-acc">'
+      + (sec === 'sin_responder' ? '<button class="btn-linea fe-mover" data-hom="' + id + '" title="Se queda fuera hasta que el cliente escriba otra vez">No requiere respuesta</button>' : '')
+      + (sec === 'se_enfrian' ? '<button class="btn-linea fe-mover" data-hrec="' + id + '">Recordarme</button><button class="btn-linea fe-mover" data-hom="' + id + '">Omitir</button>' : '')
+      + '</span>';
+  };
+  const fila = (sec, x) => '<div class="fe-fila hoy-fila" data-habre="' + esc(x.id) + '">'
+    + '<span class="fe-avatar">' + esc((x.nombre.trim()[0] || '?').toUpperCase()) + '</span>'
+    + '<span class="fe-txt"><b>' + esc(x.nombre) + chip(x) + (x.persona ? '<b class="hoy-chip persona">pidió una persona</b>' : '') + '</b>'
+    +   '<small>' + esc(x.texto || 'Sin mensajes') + '</small></span>'
+    + '<em class="fe-cat">' + esc(x.etapa.replace(/_/g, ' ')) + (x.linea === '5644' ? ' · 5644' : '') + '</em>'
+    + '<i class="fe-hora">' + esc(sec === 'sesiones' ? (x.hoy ? 'hoy ' : 'mañana ') + hora12(x.cuando) : sec === 'seguimientos' ? (x.vencido ? 'vencido' : 'hoy ' + hora12(x.cuando)) : cuando(x.edad_h)) + '</i>'
+    + acciones(sec, x) + '</div>';
+  cont.innerHTML = '<div class="fe-etapas">' + tiles.map(t => '<button class="fe-etapa" data-hsec="' + t[0] + '"><span class="fe-n">' + t[1] + '</span>'
+      + '<span class="fe-t">' + esc(t[2]) + '</span><small>' + esc(t[3]) + '</small></button>').join('') + '</div>'
+    + HOY_SECCIONES.map(([sec, titulo, nota]) => {
+      const b = cola[sec]; if (!b.total) return '';
+      const tope = HOY_LIMITE[sec] || HOY_TANDA;
+      return '<section class="fe-lista hoy-sec" id="hoy-' + sec + '"><div class="fe-cab"><h2>' + esc(titulo) + '</h2><span>' + b.total + ' · ' + esc(nota) + '</span>'
+        + (sec === 'sin_responder' && sr.viejo ? '<button class="btn-linea fe-mover hoy-viejos" data-hviejos title="Deja fuera los de más de 3 días hasta que el cliente vuelva a escribir">Marcar los ' + sr.viejo + ' viejos como atendidos</button>' : '') + '</div>'
+        + b.items.slice(0, tope).map(x => fila(sec, x)).join('')
+        + (b.items.length > tope ? '<button class="kmas kmas-btn" data-hmas="' + sec + '">Ver ' + Math.min(HOY_TANDA, b.items.length - tope) + ' más · quedan ' + (b.items.length - tope) + '</button>' : '')
+        + '</section>';
+    }).join('');
 }
 
 /* ---- Dashboard ----------------------------------------------------------- */
@@ -12391,7 +13011,7 @@ async function descartaOlvidados(lista){
 // Nunca envia nada: «Preparar» abre el formulario o el compositor de Estados con todo puesto, y ahi
 // sigue la simulacion / la confirmacion con la cifra de siempre.
 // ---- Agente de marketing: piezas puras
-const MK_TIPOS = { seguimiento: 'Seguimiento', reactivacion: 'Reactivación', temporada: 'Temporada', demanda: 'Demanda', fidelizacion: 'Fidelización' };
+const MK_TIPOS = { seguimiento: 'Seguimiento', reactivacion: 'Reactivación', temporada: 'Temporada', demanda: 'Demanda', fidelizacion: 'Fidelización', plantilla: 'Plantilla de Meta' };
 const MK_CANALES = { estado: 'Estado de WhatsApp', plantilla: 'Plantilla aprobada', libre: 'Mensaje libre' };
 const MK_PRIORIDADES = { alta: 'Prioridad alta', media: 'Prioridad media', baja: 'Prioridad baja' };
 function cuantoHace(iso, ahora = Date.now()){
@@ -12404,6 +13024,27 @@ function cuantoHace(iso, ahora = Date.now()){
   return 'hace ' + Math.round(min / 1440) + ' d';
 }
 function nuevasMarketing(propuestas){ return (propuestas || []).filter(p => p.estado === 'nueva').length; }
+// El reparto de una audiencia entre las dos lineas: la oficial (API: texto libre dentro de 24 h, plantilla fuera) y el 5644.
+function lineasMarketing(a, canal){
+  const l = a && a.por_linea; if (!l) return '';
+  const o = l.oficial || { total: 0 }, pu = l.puente || { total: 0 };
+  return '<div class="mk-lineas">' + (canal === 'estado' ? '<span class="mk-lineas-rot">Si además les escribes directo</span>' : '')
+    + '<span class="mk-linea"><b>Número oficial</b> ' + Number(o.total) + (o.total ? '<small>' + Number(o.en_ventana) + ' dentro de 24 h · ' + Number(o.con_plantilla) + ' con plantilla</small>' : '') + '</span>'
+    + '<span class="mk-linea"><b>Segundo número (5644)</b> ' + Number(pu.total) + '<small>texto libre, con ritmo</small></span></div>';
+}
+// Quien queda fuera de la audiencia por lo que dijo, con el motivo de cada uno.
+function fueraMarketing(a){
+  const d = a && a.descartados; if (!d || !d.total) return '';
+  return '<details class="mk-fuera"><summary>' + Number(d.total) + (d.total === 1 ? ' persona queda fuera' : ' personas quedan fuera') + ' por lo que dijeron</summary><ul>'
+    + (d.motivos || []).map(m => '<li><b>' + Number(m.n) + '</b> ' + esc(m.motivo) + '</li>').join('')
+    + '</ul>' + ((d.ejemplos || []).length ? '<p class="mk-fuera-ej">' + d.ejemplos.slice(0, 4).map(e => esc(e.nombre) + (e.evidencia ? ' («' + esc(e.evidencia) + '»)' : '')).join(' · ') + '</p>' : '')
+    + '</details>';
+}
+function plantillaMarketing(p){
+  const t = p.plantilla; if (!t || p.tipo === 'plantilla') return '';
+  const e = { aprobada: ['ok', 'Plantilla aprobada: ' + t.nombre], pendiente: ['espera', 'Plantilla en revisión de Meta'], rechazada: ['mal', 'Meta rechazó la plantilla'], falta: ['falta', 'Falta la plantilla en Meta'] }[t.estado];
+  return e ? '<span class="mk-tpl ' + e[0] + '">' + esc(e[1]) + '</span>' : '';
+}
 function tarjetaMarketing(p){
   const nueva = p.estado === 'nueva';
   const ejemplos = (p.audiencia && p.audiencia.ejemplos || []).slice(0, 3);
@@ -12413,13 +13054,22 @@ function tarjetaMarketing(p){
     +   (p.fuente === 'ia' ? '<span class="mk-ia" title="La redacción la mejoró la IA">IA</span>' : '') + '</div>'
     + '<h4>' + esc(p.titulo) + '</h4>'
     + '<p class="mk-motivo">' + esc(p.motivo) + '</p>'
-    + '<div class="mk-datos"><span class="mk-aud"><b>' + Number(p.audiencia && p.audiencia.total || 0) + '</b> ' + esc(p.audiencia && p.audiencia.etiqueta || '')
-    +   (ejemplos.length ? ' <small>· ' + esc(ejemplos.join(', ')) + '…</small>' : '') + '</span>'
-    +   '<span class="mk-canal">' + esc(MK_CANALES[p.canal] || p.canal) + '</span></div>'
-    + '<blockquote class="mk-texto">' + esc(p.texto) + '</blockquote>'
+    + (p.tipo === 'plantilla'
+      ? '<div class="mk-datos"><span class="mk-aud"><small>' + esc(p.audiencia && p.audiencia.etiqueta || '') + '</small></span><span class="mk-canal">Categoría ' + esc(p.accion && p.accion.category || 'MARKETING') + '</span></div>'
+      : '<div class="mk-datos"><span class="mk-aud"><b>' + Number(p.audiencia && p.audiencia.total || 0) + '</b> ' + esc(p.audiencia && p.audiencia.etiqueta || '')
+        +   (ejemplos.length ? ' <small>· ' + esc(ejemplos.join(', ')) + '…</small>' : '') + '</span>'
+        +   '<span class="mk-canal">' + esc(MK_CANALES[p.canal] || p.canal) + '</span></div>'
+        + lineasMarketing(p.audiencia, p.canal) + plantillaMarketing(p))
+    + fueraMarketing(p.audiencia)
+    + '<blockquote class="mk-texto">' + esc(p.tipo === 'plantilla' && p.accion ? p.accion.body_text : p.texto) + '</blockquote>'
+    + (p.tipo === 'plantilla' && p.accion ? '<p class="mk-pie">Pie: ' + esc(p.accion.footer_text) + ' · {{1}} = el nombre. Meta la revisa antes de poder usarla.</p>' : '')
     + '<div class="mk-acc">'
     + (nueva
-      ? '<button class="btn-solido" data-mkacc="preparar" data-id="' + esc(p.id) + '">Preparar</button>'
+      ? (p.tipo === 'plantilla'
+          ? '<button class="btn-solido" data-mkacc="meta" data-id="' + esc(p.id) + '">Enviar a Meta</button>'
+          : '<button class="btn-solido" data-mkacc="preparar" data-id="' + esc(p.id) + '">Preparar</button>'
+            + (p.accion && p.accion.tipo === 'campana' && p.audiencia && p.audiencia.por_linea && p.audiencia.por_linea.puente && p.audiencia.por_linea.puente.total
+              ? '<button class="btn-linea" data-mkacc="preparar5644" data-id="' + esc(p.id) + '" title="Prepara la campaña para quienes escriben por el segundo número">Preparar por el 5644</button>' : ''))
         + '<button class="btn-linea" data-mkacc="descartar" data-id="' + esc(p.id) + '">Descartar</button>'
       : '<span class="mk-estado">' + (p.estado === 'aceptada' ? 'Preparada' : 'Descartada') + '</span>'
         + '<button class="btn-linea" data-mkacc="reabrir" data-id="' + esc(p.id) + '">Reabrir</button>')
@@ -12427,7 +13077,21 @@ function tarjetaMarketing(p){
 }
 // ---- Agente de marketing: fin de las piezas puras
 
-let MK = { cargado: false, cargando: false, propuestas: [], ultima: null, resumen: '', ia: false, activo: true, error: '', verDecididas: false };
+let MK = { cargado: false, cargando: false, propuestas: [], ultima: null, resumen: '', ia: false, activo: true, error: '', verDecididas: false,
+  descartes: { total: 0, items: [] }, preparada: null };
+
+// Las conversaciones que el agente sugiere descartar segun lo que dijeron. Descartar = desinteresado (reversible); Mantener = no se vuelve a sugerir en 30 días.
+function bloqueDescartes(d){
+  if (!d || !d.total) return '';
+  const filas = (d.items || []).slice(0, 8).map(i => '<div class="mk-desc-fila"><span><b>' + esc(i.nombre) + '</b> <small>' + esc(i.linea === 'puente' ? '5644' : 'oficial') + '</small>'
+    + '<em>' + esc(i.motivo) + (i.evidencia ? ' · «' + esc(i.evidencia) + '»' : '') + '</em></span>'
+    + '<span class="mk-desc-acc"><button class="btn-linea" data-mkacc="desc" data-ids="' + esc(i.id) + '">Descartar</button>'
+    + '<button class="btn-linea" data-mkacc="mant" data-ids="' + esc(i.id) + '">Mantener</button></span></div>').join('');
+  return '<div class="mk-descartes"><div class="mk-desc-cab"><div><b>' + Number(d.total) + ' conversaciones conviene descartar</b>'
+    + '<p>Por lo que dijeron o porque llevan meses sin escribir. Nada se borra: pasan a «desinteresado» y salen de las campañas.</p></div>'
+    + '<button class="btn-linea" data-mkacc="descTodos">Descartar las ' + Number(d.total) + '</button></div>' + filas
+    + (d.total > 8 ? '<p class="mk-desc-mas">Y ' + (d.total - 8) + ' más; salen al ir decidiendo estas.</p>' : '') + '</div>';
+}
 
 function pintaCuentaMarketing(){
   const e = document.querySelector('[data-cuenta="campanas"]');
@@ -12443,7 +13107,7 @@ async function cargaMarketing({ silencioso = false } = {}){
   MK.cargando = false;
   if (!r.ok) { if (!silencioso) { MK.error = r.error || 'No se pudo leer'; pintaMarketing(); } return; }
   MK = { ...MK, cargado: true, propuestas: r.propuestas || [], ultima: r.ultima_pasada_at || null, resumen: r.resumen_ia || '',
-    ia: r.ia_usada === true, activo: r.activo !== false, error: '' };
+    ia: r.ia_usada === true, activo: r.activo !== false, error: '', descartes: r.descartes || { total: 0, items: [] } };
   pintaCuentaMarketing();
   pintaMarketing();
 }
@@ -12462,6 +13126,7 @@ function pintaMarketing(){
     + '<small class="mk-est">' + estado + '</small></div>'
     + '<button class="btn-linea" data-mkacc="analizar"' + (MK.activo ? '' : ' disabled') + '>Analizar ahora</button></div>'
     + (MK.resumen ? '<div class="mk-resumen"><b>Lo que ve la IA</b><p>' + esc(MK.resumen) + '</p></div>' : '')
+    + bloqueDescartes(MK.descartes)
     + (nuevas.length ? '<div class="mk-grid">' + nuevas.map(tarjetaMarketing).join('') + '</div>'
       : (MK.cargado && MK.activo ? vacioApple('<path d="M9.800 5c.6 4.200 1.800 5.400 6 6-4.200.6-5.400 1.800-6 6-.6-4.200-1.800-5.400-6-6 4.200-.6 5.400-1.800 6-6z"/>',
         'Nada que proponer por ahora', 'Cuando haya cotizaciones enfriadas, clientes dormidos o una fecha cerca, aparecerá aquí.') : ''))
@@ -12479,9 +13144,21 @@ async function decideMarketing(id, decision){
   return true;
 }
 
-// Preparar = dejar todo puesto y llevar a donde se simula o se confirma. No envia.
-function preparaPropuesta(p){
+// Descartar o mantener conversaciones sugeridas. Descartar pasa a desinteresado, y eso ya no se ve en las campañas.
+async function decideDescartes(ids, decision){
+  const r = await llama({ action: 'marketingDescartes', ids, decision });
+  if (!r.ok) { avisa('No se pudo guardar', r.error); return false; }
+  avisa(decision === 'descartar' ? 'Descartadas' : 'Se quedan como están', r.hechos + (r.hechos === 1 ? ' conversación' : ' conversaciones'));
+  await cargaMarketing({ silencioso: true });
+  if (typeof pintaChats === 'function') pintaChats();
+  return true;
+}
+
+// Preparar = dejar todo puesto y llevar a donde se simula o se confirma. No envia. `linea` = 'puente' prepara la
+// campaña para el segundo numero (texto libre, sin plantillas); la propuesta queda ligada para excluir a quien dijo que no.
+function preparaPropuesta(p, linea){
   const a = p.accion || {};
+  MK.preparada = a.tipo === 'campana' ? { id: p.id, titulo: p.titulo, linea: linea === 'puente' ? 'puente' : 'oficial' } : null;
   const texto = a.texto || p.texto || '';
   if (a.tipo === 'estado') {
     ST_AUDIENCIA_PENDIENTE = a.audiencia || '';
@@ -12497,16 +13174,17 @@ function preparaPropuesta(p){
   poner('bcEtapa', a.etapa || '');
   poner('bcCategoria', a.categoria || '');
   const modo = $('bcModo');
-  if (modo) { modo.value = a.modo === 'template' ? 'template' : 'freeform'; modo.onchange && modo.onchange(); }
-  if (a.modo !== 'template') poner('bcTexto', texto);
+  const libre = a.modo !== 'template' || linea === 'puente';
+  if (modo) { modo.value = libre ? 'freeform' : 'template'; modo.onchange && modo.onchange(); }
+  if (libre) poner('bcTexto', texto);
   const sug = $('bcSugerido');
   if (sug) {
     sug.hidden = false;
     sug.querySelector('.mk-sug-texto').textContent = texto;
-    sug.querySelector('.mk-sug-nota').hidden = a.modo !== 'template';
+    sug.querySelector('.mk-sug-nota').hidden = libre;
   }
   document.querySelector('#vista-campanas .prompt')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  avisa('Campaña preparada', 'Pulsa «Simular envío»: verás a quién le llegaría antes de que salga nada.');
+  avisa(linea === 'puente' ? 'Campaña del 5644 preparada' : 'Campaña preparada', 'Pulsa «Simular envío»: verás a quién le llegaría antes de que salga nada.');
 }
 
 function cableaMarketing(){
@@ -12516,6 +13194,12 @@ function cableaMarketing(){
   c.addEventListener('click', async ev => {
     const b = ev.target.closest('[data-mkacc]'); if (!b) return;
     const acc = b.dataset.mkacc, id = b.dataset.id;
+    if (acc === 'desc' || acc === 'mant') { b.disabled = true; await decideDescartes([b.dataset.ids], acc === 'desc' ? 'descartar' : 'mantener'); return; }
+    if (acc === 'descTodos') {
+      const n = MK.descartes.total;
+      if (!confirm('Vas a pasar ' + n + ' conversaciones a «desinteresado».\n\nSalen de las métricas y de toda campaña. No se borra nada y se pueden reabrir una a una.\n\n¿Descartarlas?')) return;
+      b.disabled = true; await decideDescartes((MK.descartes.items || []).map(i => i.id), 'descartar'); return;
+    }
     if (acc === 'ver') { MK.verDecididas = !MK.verDecididas; return pintaMarketing(); }
     if (acc === 'analizar') {
       b.disabled = true; b.textContent = 'Analizando…';
@@ -12529,6 +13213,17 @@ function cableaMarketing(){
     const p = MK.propuestas.find(x => x.id === id);
     if (!p) return;
     if (acc === 'preparar') { if (await decideMarketing(id, 'aceptar')) preparaPropuesta(p); return; }
+    if (acc === 'preparar5644') { if (await decideMarketing(id, 'aceptar')) preparaPropuesta(p, 'puente'); return; }
+    if (acc === 'meta') {
+      const a = p.accion || {};
+      b.disabled = true; b.textContent = 'Enviando…';
+      const r = await llama({ action: 'templates', operation: 'create', template_name: a.template_name, body_text: a.body_text,
+        category: a.category, footer_text: a.footer_text, language_code: a.language_code || 'es', examples: a.examples || [] });
+      if (!r.ok) { b.disabled = false; b.textContent = 'Enviar a Meta'; return avisa('Meta la rechazó', r.error); }
+      await decideMarketing(id, 'aceptar');
+      avisa('Enviada a Meta', r.aviso || 'Espera su aprobación antes de usarla.');
+      return;
+    }
     if (acc === 'descartar') { await decideMarketing(id, 'descartar'); return; }
     if (acc === 'reabrir') { await decideMarketing(id, 'reabrir'); }
   });
@@ -12965,6 +13660,7 @@ function cuerpoBc(dry){
   const modo = $('bcModo').value;
   const c = { action:'broadcast', send_mode:modo, purpose:$('bcProposito').value,
     filter:filtroBc(), dry };
+  if (MK.preparada) { c.propuesta_id = MK.preparada.id; if (MK.preparada.linea === 'puente') c.linea = 'puente'; }
   if (modo === 'freeform') c.text = $('bcTexto').value.trim();
   else {
     const v = $('bcTpl')._validas || [];
@@ -12992,6 +13688,8 @@ async function simulaBroadcast(){
     + '<div class="cuerpo">'
     +   '<div class="cambio"><div class="k">Revisados</div>' + Number(r.scanned || 0) + '</div>'
     +   '<div class="cambio"><div class="k">Excluidos por baja o permiso</div>' + Number(r.skippedOptOut || 0) + '</div>'
+    +   (MK.preparada ? '<div class="cambio"><div class="k">Propuesta «' + esc(MK.preparada.titulo) + '»' + (r.linea === 'puente' ? ' · segundo número (5644)' : '') + '</div>'
+        + Number(r.excluidosPorContexto || 0) + ' fuera por lo que dijeron en su conversación</div>' : '')
     +   (destinos.length
         ? '<div class="cambio"><div class="k">A quién le llega</div><div class="destinos">'
           + destinos.slice(0,60).map(t => '<span>' + esc(t.name || t.phone) + ' · +' + esc(t.phone) + '</span>').join('')
@@ -13001,7 +13699,7 @@ async function simulaBroadcast(){
           + 'quienes escribieron en las últimas 24 horas.</p>')
     + '</div>'
     + (Number(r.found || 0) > 0
-      ? '<div class="patas"><button class="btn-solido" id="bcEnviar">Enviar a ' + Number(r.found) + '</button>'
+      ? '<div class="patas">' + (r.linea === 'puente' ? '' : '<button class="btn-solido" id="bcEnviar">Enviar a ' + Number(r.found) + '</button>')
         // El segundo numero --el puente de WhatsApp Web-- no pasa por la API oficial, asi
         // que no le aplican ni la ventana de 24 h ni las plantillas: puede mandar texto
         // libre. Lo que si le aplica, y con mas motivo, es el anti-baneo, porque ahi el
@@ -13012,8 +13710,8 @@ async function simulaBroadcast(){
       : '')
     + '</div>';
   if (Number(r.found || 0) > 0) {
-    $('bcCancelar').onclick = () => { AUDIENCIA = null; $('bcSalida').innerHTML = ''; };
-    $('bcEnviar').onclick = enviaBroadcast;
+    $('bcCancelar').onclick = () => { AUDIENCIA = null; MK.preparada = null; $('bcSalida').innerHTML = ''; };
+    if ($('bcEnviar')) $('bcEnviar').onclick = enviaBroadcast;
     $('bcPuente').onclick = enviaPorPuente;
   }
 }
@@ -13056,7 +13754,7 @@ async function enviaPorPuente(){
     template: texto, targets: destinos, purpose: $('bcProposito').value });
   b.disabled = false; b.textContent = 'Enviar por el 2º número';
   if (!r.ok) return avisa('No se pudo encolar', r.error);
-  AUDIENCIA = null; $('bcSalida').innerHTML = '';
+  AUDIENCIA = null; MK.preparada = null; $('bcSalida').innerHTML = '';
   avisa('Campaña encolada', (r.elegibles ?? entran) + ' mensaje(s) salen por el segundo número, '
     + 'repartidos en el tiempo. No hace falta dejar el panel abierto.');
 }
@@ -13149,7 +13847,7 @@ async function enviaBroadcast(){
     r.errors.unshift({ error: corte || ('Se detuvo a mitad: ' + errorTanda + '. Ya salieron ' + r.sent
       + '; no vuelvas a enviar a todos o los repetirás.') });
   }
-  AUDIENCIA = null;
+  AUDIENCIA = null; MK.preparada = null;
   $('bcSalida').innerHTML = '<div class="propuesta"><div class="tapa"><b>Envío terminado</b></div>'
     + '<div class="cuerpo">'
     +   '<div class="cambio"><div class="k">Enviados</div>' + Number(r.sent || 0) + '</div>'
