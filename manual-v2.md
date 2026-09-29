@@ -1,6 +1,6 @@
 # CRM D' Carela — manual de uso
 
-Versión v134 (28/09/2026). Lo nuevo de esta versión: **Hoy**, **Funnel en embudo**, **Configuración en secciones**, el **agente de marketing**, los **leads al día** y el asistente de WhatsApp con el CRM.
+Versión v136 (29/09/2026). Lo nuevo de esta versión: **Hoy**, **Funnel en embudo**, **Configuración en secciones**, el **agente de marketing**, los **leads al día** y el asistente de WhatsApp con el CRM. **Hoy** ya no lista lo resuelto (un «ok» o «perfecto» tras 2 días, lo que cerramos nosotros con «de nada»); y todas las confirmaciones salen dentro de la página.
 
 Central: `https://crm.dcarelacompufoto.com/` · Fotos: `https://fotos.dcarelacompufoto.com/`.
 La página principal y `/v2.html` muestran ahora el mismo panel. El anterior no es un
