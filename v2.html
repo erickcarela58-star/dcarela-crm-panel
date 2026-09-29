@@ -3209,7 +3209,7 @@ function stFilaMia(){
 // llegar al final de la lista salen otros 60 (o con «Mostrar más»).
 const ST_TANDA = 60;
 // Lo que se pide por adelantado de la lista: el primer estado sin ver de los primeros contactos.
-const ST_ADELANTO_LISTA = 4;
+const ST_ADELANTO_LISTA = 10;
 
 function pintaEstados(){
   const cont = $('stScroll');
@@ -7279,15 +7279,18 @@ function cableaBajoDemanda(){
 // Ahora el panel lo pide solo, en cuanto el mensaje entra en pantalla, y sustituye la miniatura
 // por la foto nitida. Lo hace con limites, porque cada archivo es una peticion al telefono del
 // negocio desde un numero personal vinculado:
-//   - solo mensajes de las ultimas 12 horas (la copia temporal dura 6; pasado eso pedirlo es
-//     pedirle al telefono que reenvie, que esta limitado a 30 por hora);
+//   - fotos y stickers de los ultimos 7 dias; voz, video y documentos de las ultimas 12 horas (la copia temporal dura 6;
+//     si el CDN ya no lo tiene, el puente NO le pide reenvio al telefono: falla callado y queda la miniatura);
 //   - solo archivos razonables (fotos hasta 6 MB, notas de voz y documentos hasta 2 MB);
 //   - dos a la vez, y como mucho 40 cada 10 minutos: de los 60 que da el servidor, el resto se
 //     queda para quien pulse Ver;
 //   - si el servidor dice que ya pidieron demasiados, se para 10 minutos sin avisar a nadie.
 // Lo que no se pida solo sigue como antes: se pide al pulsar Ver.
 // ---- Medios automaticos: piezas puras
+// Fotos y stickers mas atras: la miniatura que manda WhatsApp mide 31-100 px y se ve borrosa; el archivo real baja del CDN en 1-3 s
+// (sin molestar al telefono) mientras la referencia siga viva. Voz, video y documentos, que pesan, siguen en 12 h.
 const AUTO_EDAD_MAX_MS = 12 * 3600_000;
+const AUTO_EDAD_IMAGEN_MS = 7 * 24 * 3600_000;
 const AUTO_TOPE_BYTES = {
   image: 6 * 1048576, sticker: 1048576, video: 6 * 1048576, audio: 2 * 1048576, document: 2 * 1048576,
 };
@@ -7310,7 +7313,8 @@ function elegibleParaAuto(m, ahora = Date.now()){
   if (!tipo) return false;
   const creado = Date.parse(String(m.created_at || ''));
   // Sin fecha legible no se adivina la edad: se deja para cuando alguien pulse Ver.
-  if (!Number.isFinite(creado) || ahora - creado > AUTO_EDAD_MAX_MS) return false;
+  const limite = (tipo === 'image' || tipo === 'sticker') ? AUTO_EDAD_IMAGEN_MS : AUTO_EDAD_MAX_MS;
+  if (!Number.isFinite(creado) || ahora - creado > limite) return false;
   // Sin peso conocido pasa (la miniatura de un video puede no traerlo); con peso, dentro del tope.
   return !((Number(m.media_size) || 0) > AUTO_TOPE_BYTES[tipo]);
 }
@@ -11188,8 +11192,10 @@ async function pintaConfig(){
         'El estado de cada lead se va corrigiendo solo, de 8 a 20 h cada 3 horas, para que no figure como pendiente lo que ya se atendió ni se le escriba a quien no toca. '
         + '<b>Nunca envía nada a un cliente.</b> Quita el «esperando a una persona» y el «sin leer» de lo que ya se contestó, pasa a cliente a quien compró en caja, '
         + 'a reservado a quien tiene sesión, cierra por silencio (14 días sin contestar; 30 si esperaba el abono) y lo reabre si vuelve a escribir, y da de baja a quien dijo «no me interesa» o «dejen de escribirme». '
+        + 'También descarta solo a los proveedores y vendedores que aparecían como clientes (por lo que dice la conversación, con varias pruebas a la vez y sin tocar a nadie que haya comprado). '
         + 'Cada ficha guarda qué regla la cambió.',
         interruptorCfg('leads_al_dia', 'Mantener los leads al día automáticamente', 'Lo del cierre por silencio se apaga aparte, en «Auto-cierre».', true)
+        + interruptorCfg('descarte_por_contexto', 'Descartar solo a los que no son clientes', 'Proveedores y vendedores (los que ofrecen marcos, papel o insumos, o a quienes les pedimos precios) se ignoran por lo que dice la conversación. No se borra nada y se deshace desde su ficha; si hay una compra en caja o una sesión agendada, solo se propone.', true)
         + '<div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:10px">'
         + (['admin', 'supervisor'].includes(ROL_ACTUAL) ? '<button class="btn-linea" id="cfgLeadsVer">Ver qué cambiaría</button><button class="btn-linea" id="cfgLeadsYa">Ponerlos al día ahora</button>' : '')
         + '</div><p class="cfgnota" id="cfgLeadsSalida" style="margin-top:9px"></p>')
@@ -11407,9 +11413,12 @@ async function pintaConfig(){
   // Leads al dia: ver lo que cambiaria (no toca nada) o ponerlos al dia ahora.
   const LEADS_REGLAS = { persona_atendida: 'dejan de «esperar a una persona» (ya se les contestó)', sin_leer_contestado: 'chats se marcan como leídos (ya contestados)',
     cliente_por_compra: 'pasan a cliente (compraron en caja)', reservado_por_sesion: 'pasan a reservado (tienen sesión)',
-    cierre_por_silencio: 'se cierran por silencio', rechazo: 'pasan a desinteresado (pidieron que no les escribieran)', reabrir: 'se reabren (volvieron a escribir)' };
-  const leadsTexto = r => !r.total ? 'Ya están al día: no hay nada que corregir.'
-    : Object.entries(r.por_regla).map(([k, n]) => n + ' ' + (LEADS_REGLAS[k] || k)).join(' · ') + (r.dry ? '' : '. Hecho: ' + r.aplicados + ' fichas.');
+    cierre_por_silencio: 'se cierran por silencio', rechazo: 'pasan a desinteresado (pidieron que no les escribieran)', reabrir: 'se reabren (volvieron a escribir)',
+    no_cliente: 'se descartan por no ser clientes (proveedores o vendedores)' };
+  const nombresRol = (lista, t) => (lista && lista.length ? ' ' + t + ': ' + lista.slice(0, 8).map(x => x.nombre).join(', ') + (lista.length > 8 ? '…' : '') + '.' : '');
+  const leadsTexto = r => (!r.total ? 'Ya están al día: no hay nada que corregir.'
+    : Object.entries(r.por_regla).map(([k, n]) => n + ' ' + (LEADS_REGLAS[k] || k)).join(' · ') + (r.dry ? '.' : '. Hecho: ' + r.aplicados + ' fichas.'))
+    + nombresRol(r.roles && r.roles.descartados, r.dry ? 'Descartaría' : 'Descartados') + nombresRol(r.roles && r.roles.propuestos, 'Dudosos (quedan propuestos en su ficha)');
   for (const [id, op] of [['cfgLeadsVer', 'preview'], ['cfgLeadsYa', 'apply']]) {
     const b = $(id); if (!b) continue;
     b.onclick = async () => {
@@ -14003,7 +14012,8 @@ async function corridaLote(ids, hacer, verbo){
 // 'analyze') propone resumen, etiquetas, categoria, etapa e ignorar, y lo que se aplica lo marca
 // una persona.
 const FUENTE_IGNORAR = { manual:'a mano', lote:'en lote', lista:'por la lista de números',
-  nombre_exacto:'por nombre confirmado', propuesta_nombre:'propuesta por nombre', propuesta_ia:'propuesta del análisis' };
+  nombre_exacto:'por nombre confirmado', propuesta_nombre:'propuesta por nombre', propuesta_ia:'propuesta del análisis',
+  contexto:'automático, por lo que dice la conversación' };
 const NOMBRE_CAMPO_AN = { resumen:'resumen', etiquetas:'etiquetas', categoria:'categoría', etapa:'etapa', ignorar:'ignorar' };
 const TOPE_ANALISIS_LOTE = 20;
 
@@ -14033,7 +14043,7 @@ function grupoIgnorarFicha(c){
   const s = c.ignore_suggestion;
   const propuesta = s && s.status === 'pendiente'
     ? '<div class="aviso" style="margin-bottom:10px"><b>Propuesta: ignorar como ' + esc(TIPOS_IGNORAR[s.kind] || 'otro') + '</b> · '
-      + esc(s.via === 'ia' ? 'del análisis' : 'por nombre') + (s.confianza ? ' · confianza ' + esc(s.confianza) : '')
+      + esc(s.via === 'ia' ? 'del análisis' : s.via === 'contexto' ? 'por el contexto de la conversación' : 'por nombre') + (s.confianza ? ' · confianza ' + esc(s.confianza) : '')
       + (s.motivo ? '<br>' + esc(s.motivo) : '')
       + (s.con_senales_cliente ? '<br><b style="color:var(--bad)">Tiene señales de cliente: revísala antes.</b>' : '')
       + '<div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:8px"><button class="btn-linea" id="ignConfirmar">Ignorar</button>'
