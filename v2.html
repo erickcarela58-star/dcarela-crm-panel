@@ -10900,6 +10900,7 @@ const CAT_DE_TARJETA = {
   'Tu sesión': 'cuenta', 'Usuarios y permisos del panel': 'cuenta', 'Fotógrafos y colaboradores': 'cuenta',
   'Últimos movimientos': 'cuenta',
   'Instagram y Messenger': 'mensajes', 'Cómo te ve el cliente': 'mensajes', 'Límites de seguridad del 2.º número': 'mensajes',
+  'Número del administrador': 'mensajes',
   'Mensajes por defecto': 'mensajes', 'Avisos de atención humana': 'mensajes', 'Resumen diario del CRM': 'mensajes', 'Bot de WhatsApp': 'mensajes',
   'Encuesta de satisfacción': 'mensajes',
   'Permiso de marketing': 'clientes', 'Contactos ignorados': 'clientes', 'Baja de una lista entera': 'clientes',
@@ -10920,7 +10921,7 @@ const SECCIONES_CFG = {
     { id: 'registro', nombre: 'Registro', nota: 'Quién hizo qué y cuándo.', tarjetas: ['Últimos movimientos'] },
   ],
   mensajes: [
-    { id: 'lineas', nombre: 'Tus líneas de WhatsApp', nota: 'El bot, las redes y cómo te ve el cliente.', tarjetas: ['Bot de WhatsApp', 'Instagram y Messenger', 'Cómo te ve el cliente', 'Límites de seguridad del 2.º número'] },
+    { id: 'lineas', nombre: 'Tus líneas de WhatsApp', nota: 'El bot, las redes y cómo te ve el cliente.', tarjetas: ['Bot de WhatsApp', 'Número del administrador', 'Instagram y Messenger', 'Cómo te ve el cliente', 'Límites de seguridad del 2.º número'] },
     { id: 'textos', nombre: 'Lo que se le escribe al cliente', nota: 'Atajos y encuesta.', tarjetas: ['Mensajes por defecto', 'Encuesta de satisfacción'] },
     { id: 'avisos', nombre: 'Avisos para ti', nota: 'Lo que te llega por WhatsApp para que no se te pase nada.', tarjetas: ['Resumen diario del CRM', 'Avisos de atención humana'] },
   ],
@@ -11353,6 +11354,7 @@ async function pintaConfig(){
     const rl = await llama({ action:'bridgeLimits', operation:'get' });
     LIMITES = rl.ok ? rl.limites : null;
   }
+  const adminNumber = esAdmin ? await llama({ action:'adminNumber', operation:'get' }) : null;
 
   const dato = (k,v) => '<div class="dato"><div class="k">' + esc(k) + '</div><div class="v">'
     + esc(String(v ?? '—')) + '</div></div>';
@@ -11382,6 +11384,18 @@ async function pintaConfig(){
             + '<div class="campo"><label>Contraseña temporal</label><input id="uClave" type="text"></div></div>'
             + '<button class="btn-solido" id="uAdd">Crear cuenta</button>'
           : '<p class="cfgnota">Tu rol no puede gestionar cuentas. Eso lo lleva un administrador.</p>'))
+
+    + (esAdmin ? tarjetaCfg('Número del administrador',
+        'Recibe cortes de caja, alertas internas, recordatorios y respuestas del asistente personal. '
+        + 'El cambio se aplica en el servidor, redirige los avisos pendientes y queda auditado.',
+        '<div class="campo"><label>Número con código de país</label>'
+        + '<input id="cfgAdminNumero" type="tel" inputmode="tel" autocomplete="tel" placeholder="809-478-5620" value="'
+        + esc(adminNumber?.number?.display || adminNumber?.number?.e164 || '') + '"></div>'
+        + '<button class="btn-solido" id="cfgAdminGuarda" style="margin-top:9px">Guardar número</button>'
+        + '<p class="cfgnota" id="cfgAdminEstado">Destino activo: '
+        + esc(adminNumber?.number?.display || adminNumber?.number?.e164 || 'no disponible') + '.</p>'
+        + '<p class="cfgnota">Después de cambiarlo, escribe una vez al WhatsApp oficial 849-524-5620 para abrir la ventana de respuestas libres. Los avisos urgentes pueden llegar por plantilla.</p>',
+        'numero-administrador') : '')
 
     + tarjetaCfg('Auto-cierre a los 14 días',
         'Una conversación sin respuesta se cierra sola. Se cierra como <b>perdido</b>, nunca como '
@@ -11921,6 +11935,30 @@ async function pintaConfig(){
     const ok = await guardaAjuste('handoff_notify_phone', tel);
     ga.disabled = false;
     if (ok) avisa('Guardado', tel ? 'Los avisos irán al ' + telefonoLegible(tel) + '.' : 'Vuelve al teléfono por defecto.');
+  };
+  const adminSave = $('cfgAdminGuarda');
+  if (adminSave) adminSave.onclick = async () => {
+    let tel = soloDigitos($('cfgAdminNumero')?.value);
+    if (tel.length === 10) tel = '1' + tel;
+    if (!/^1(?:809|829|849)\d{7}$/.test(tel)) {
+      return avisa('Número no válido', 'Escribe un celular dominicano 809, 829 o 849.');
+    }
+    adminSave.disabled = true;
+    const estado = $('cfgAdminEstado');
+    if (estado) estado.textContent = 'Aplicando el cambio en avisos y asistente…';
+    const r = await llama({ action:'adminNumber', operation:'save', phone:tel });
+    adminSave.disabled = false;
+    if (!r.ok) {
+      if (estado) estado.textContent = r.error || 'No se pudo guardar.';
+      return avisa('No se pudo guardar', r.error || 'Inténtalo de nuevo.');
+    }
+    if ($('cfgAdminNumero')) $('cfgAdminNumero').value = r.number?.display || telefonoLegible(tel);
+    if (estado) estado.textContent = r.changed
+      ? '✓ Actualizado. ' + Number(r.pending_retargeted || 0) + ' aviso(s) pendiente(s) redirigidos.'
+      : '✓ Ese número ya era el destino activo.';
+    avisa('Número del administrador actualizado', r.changed
+      ? 'Escribe una vez al 849-524-5620 para abrir la conversación libre.'
+      : 'No había cambios pendientes.');
   };
   const cr = $('cfgReglas2'); if (cr) cr.onclick = abreReglas;
   const ic = $('cfgIrCanales'); if (ic) ic.onclick = () => ve('canales');
