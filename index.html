@@ -2555,6 +2555,7 @@ const ULTIMA_IMPORTACION = {};
 let CONVS = [], CONVS_TODAS = [], CONVS_OCULTAS = [], CONVS_IGNORADAS = [], MSGS = [], sel = null;
 let paraConvs = null, sondeoConvs = null, reintentoConvs = null;
 let paraMsgs = null, sondeoMsgs = null, reintentoMsgs = null, escuchaMsgId = '';
+let convsDesdeServidor = false, msgsDesdeServidor = false;
 // Los mismos tipos que firebase-functions/src/ignore-core.js (TIPOS): solo dicen POR QUE se ignora.
 const TIPOS_IGNORAR = { propio:'número propio', linea_negocio:'línea del negocio', familia:'familia',
   fotografo:'fotógrafo', delivery:'delivery', personal:'personal', proveedor:'proveedor', otro:'otro' };
@@ -2666,7 +2667,24 @@ function hora(v){
   return d.toLocaleDateString('es-DO', { day:'numeric', month:'short' });
 }
 
+function actualizaEstadoSincronizacion(){
+  if (!convsDesdeServidor) {
+    marcaEstado(false, 'Conversaciones en caché · esperando conexión con el servidor');
+    return;
+  }
+  if (escuchaMsgId && !msgsDesdeServidor) {
+    marcaEstado(false, 'Mensajes en caché · esperando conexión con el servidor');
+    return;
+  }
+  const respaldo = [];
+  if (sondeoConvs) respaldo.push('conversaciones cada 8 s');
+  if (sondeoMsgs) respaldo.push('mensajes cada 5 s');
+  marcaEstado(true, respaldo.length
+    ? 'Datos actualizados · respaldo ' + respaldo.join(' y ')
+    : 'Datos sincronizados · en vivo');
+}
 function aplicaConversaciones(s, modo = 'en vivo'){
+    convsDesdeServidor = s?.metadata?.fromCache !== true;
     CONVS_TODAS = s.docs.map(d => ({ ...d.data(), _id:d.id })).filter(perteneceAlCanal)
       .sort((a,b) => String(b.last_message_at||'').localeCompare(String(a.last_message_at||'')));
     // Un unico punto donde se separa lo vivo de lo oculto. Asi cada vista y cada contador cuenta
@@ -2676,7 +2694,7 @@ function aplicaConversaciones(s, modo = 'en vivo'){
     // puente, el nombre corregido o el paso a atencion humana no se veian hasta cambiar de chat.
     refrescaSeleccion();
     abreChatDeLaUrl();
-    marcaEstado(true, 'Datos sincronizados · ' + modo);
+    actualizaEstadoSincronizacion();
     if (vistaActual === 'conversations') pintaChats();
     if (vistaActual === 'funnel') { pintaKanban(); pintaMovilizacion(); }
     if (vistaActual === 'dashboard') pintaDashboard();
@@ -2695,6 +2713,7 @@ async function sondeaConversaciones(){
     const q = query(collection(db,'crm_conversations'), where('business_id','==',NEGOCIO));
     aplicaConversaciones(await getDocs(q), 'respaldo cada 8 s');
   } catch (error) {
+    convsDesdeServidor = false;
     marcaEstado(false, 'Sincronización interrumpida: ' + (error?.code || 'sin red'));
   }
 }
@@ -2711,11 +2730,15 @@ function activaRespaldoConvs(){
 function escuchaConversaciones(){
   if (paraConvs) { paraConvs(); paraConvs = null; }
   const q = query(collection(db,'crm_conversations'), where('business_id','==',NEGOCIO));
-  paraConvs = onSnapshot(q, s => {
-    detieneRespaldoConvs();
-    aplicaConversaciones(s, 'en vivo');
+  // El primer snapshot puede venir de IndexedDB. No lo confundimos con una conexión viva:
+  // mientras siga siendo local, dejamos activo el sondeo y esperamos el cambio de metadata.
+  paraConvs = onSnapshot(q, { includeMetadataChanges: true }, s => {
+    if (s?.metadata?.fromCache === true) activaRespaldoConvs();
+    else detieneRespaldoConvs();
+    aplicaConversaciones(s, s?.metadata?.fromCache === true ? 'copia local' : 'en vivo');
   }, err => {
     paraConvs = null;
+    convsDesdeServidor = false;
     marcaEstado(false, 'En vivo interrumpido: ' + (err?.code || 'error') + ' · usando respaldo');
     activaRespaldoConvs();
   });
@@ -2726,8 +2749,10 @@ function detieneRespaldoMsgs(){
 }
 function aplicaMensajes(s, idConv){
   if (!sel || (sel.id !== idConv && sel._id !== idConv)) return;
+  msgsDesdeServidor = s?.metadata?.fromCache !== true;
   MSGS = s.docs.map(d => ({ ...d.data(), _id:d.id }))
     .sort((a,b) => instanteMsg(a) - instanteMsg(b));
+  actualizaEstadoSincronizacion();
   pintaMensajes();
 }
 async function sondeaMensajes(idConv){
@@ -2742,6 +2767,8 @@ async function sondeaMensajes(idConv){
     }
     aplicaMensajes(s, idConv);
   } catch (error) {
+    msgsDesdeServidor = false;
+    actualizaEstadoSincronizacion();
     const cont = $('mensajes');
     if (cont && !MSGS.length) cont.innerHTML = '<div style="margin:auto;max-width:340px;text-align:center;color:var(--mut);font-size:13px">'
       + 'Reconectando mensajes…<br><b>' + esc(error?.code || 'sin red') + '</b></div>';
@@ -2763,11 +2790,14 @@ function abreEscuchaMensajes(idConv, esRespaldo){
   const q = esRespaldo
     ? query(collection(db,'crm_messages'), ...base, limit(400))
     : query(collection(db,'crm_messages'), ...base, orderBy('created_at','desc'), limit(400));
-  paraMsgs = onSnapshot(q, s => {
-    detieneRespaldoMsgs();
+  paraMsgs = onSnapshot(q, { includeMetadataChanges: true }, s => {
+    if (s?.metadata?.fromCache === true) activaRespaldoMsgs(idConv);
+    else detieneRespaldoMsgs();
     aplicaMensajes(s, idConv);
   }, err => {
     paraMsgs = null;
+    msgsDesdeServidor = false;
+    actualizaEstadoSincronizacion();
     if (!esRespaldo && err?.code === 'failed-precondition' && escuchaMsgId === idConv) {
       abreEscuchaMensajes(idConv, true);
       return;
@@ -2780,6 +2810,8 @@ function escuchaMensajes(idConv){
   if (paraMsgs) { paraMsgs(); paraMsgs = null; }
   detieneRespaldoMsgs();
   escuchaMsgId = idConv;
+  msgsDesdeServidor = false;
+  actualizaEstadoSincronizacion();
   MSGS = [];
   // Los globos de "enviando" son de la conversacion que se deja: al cambiar de chat ya no hay
   // MSGS con que confirmarlos, y arrastrarlos seria enseñar un reloj que no se apaga nunca.
