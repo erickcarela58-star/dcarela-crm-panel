@@ -1252,6 +1252,15 @@ a.ayuda{color:var(--enlace)}
 .cb-conoc small{opacity:.7}
 .cfgnota{margin:0 0 12px;font-size:12px;line-height:1.5;color:var(--mut)}
 .cfgc .dato{margin-bottom:6px}
+.pf-zona{margin:10px 0;padding:26px 14px;border:1.5px dashed var(--line2);border-radius:var(--r2);text-align:center;font-size:13px;color:var(--mut);cursor:pointer}
+.pf-zona.sobre,.pf-zona:focus-visible{border-color:var(--ink);background:var(--hover)}
+.pf-botones{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:6px}
+.pf-miniaturas{display:grid;grid-template-columns:repeat(auto-fill,minmax(128px,1fr));gap:10px;margin-top:8px}
+.pf-mini{margin:0;border:1px solid var(--line);border-radius:var(--r);overflow:hidden;background:var(--panel)}
+.pf-mini img{display:block;width:100%;aspect-ratio:3/4;object-fit:cover;background:var(--hover)}
+.pf-mini.oculta img{opacity:.35;filter:grayscale(1)}
+.pf-mini figcaption{display:flex;flex-direction:column;gap:4px;padding:6px;font-size:11.5px}
+.pf-mini figcaption .btn-linea{padding:4px 8px;font-size:11px}
 /* El interruptor lleva su explicacion al lado: uno suelto no dice que pasa al
    encenderlo, y estos cambian lo que se le manda a clientes reales. */
 .cfgsw{display:flex;align-items:flex-start;gap:10px;cursor:pointer;padding:8px 0}
@@ -10941,7 +10950,7 @@ const CAT_DE_TARJETA = {
   'Seguimientos automáticos': 'auto', 'Análisis de conversaciones con IA': 'auto', 'Asistente IA': 'auto',
   'Agente de marketing': 'auto', 'Clientes de otros servicios': 'auto',
   'Agenda en Google Calendar': 'agenda', 'Recordatorios del iPhone': 'agenda', 'Tu Google Calendar dentro del CRM': 'agenda',
-  'Catálogo público': 'agenda', 'Datos del negocio': 'agenda',
+  'Catálogo público': 'agenda', 'Datos del negocio': 'agenda', 'Portafolio de la web': 'agenda',
 };
 function categoriaDeCfg(titulo){ return CAT_DE_TARJETA[titulo] || 'otros'; }
 // Dentro de cada categoria, las tarjetas van en SECCIONES con su titulo y una linea que dice para que sirven, y en el orden
@@ -10969,7 +10978,7 @@ const SECCIONES_CFG = {
   ],
   agenda: [
     { id: 'calendarios', nombre: 'Calendarios', nota: 'Google y el iPhone, en las dos direcciones.', tarjetas: ['Agenda en Google Calendar', 'Tu Google Calendar dentro del CRM', 'Recordatorios del iPhone'] },
-    { id: 'negocio', nombre: 'Tu negocio', nota: 'Los datos y el catálogo que usa el CRM.', tarjetas: ['Datos del negocio', 'Catálogo público'] },
+    { id: 'negocio', nombre: 'Tu negocio', nota: 'Los datos y el catálogo que usa el CRM.', tarjetas: ['Datos del negocio', 'Catálogo público', 'Portafolio de la web'] },
   ],
 };
 // Donde va una tarjeta: su categoria, su seccion y su lugar dentro de ella.
@@ -11379,6 +11388,7 @@ async function pintaConfig(){
   await cargaGoogleAgenda();
   const quien = await llama({ action:'whoami' });
   const esAdmin = quien.ok && quien.rol_efectivo === 'admin';
+  const puedePortafolio = quien.ok && ['admin','supervisor'].includes(quien.rol_efectivo);
   const cerebro = ['admin','supervisor'].includes(ROL_ACTUAL) ? await llama({ action:'brainStatus' }) : null;
   // Solo se piden si quien mira puede cambiarlos: al resto el servidor le responde 403 y
   // pintar un error donde no hay ningun problema confunde mas que no ensenar la tarjeta.
@@ -11552,6 +11562,22 @@ async function pintaConfig(){
         'De aquí salen los combos y los precios que se le mandan al cliente. Se lee de la web, '
         + 'así que el precio que envías es siempre el que ve él.',
         dato('Catálogo', CFG.publicCatalogUrl) + dato('Bodas', CFG.publicWeddingUrl))
+
+    + (puedePortafolio ? tarjetaCfg('Portafolio de la web',
+        'Sube aquí las fotos que quieres ver en dcarelacompufoto.com. Elige la categoría y arrastra fotos o una carpeta entera: '
+        + 'se reducen y se convierten a WebP en tu navegador y salen en las galerías de la web en un par de minutos. '
+        + 'Ocultar una foto la quita de la web sin borrarla.',
+        '<div class="par"><div class="campo"><label>Categoría</label><select id="pfCategoria">'
+        + '<option value="xv">XV Años</option><option value="cumpleanos">Cumpleaños</option><option value="infantil">Infantiles</option>'
+        + '<option value="graduacion">Graduaciones</option><option value="embarazadas">Embarazadas</option><option value="boda">Bodas</option></select></div></div>'
+        + '<div id="pfZona" class="pf-zona" tabindex="0" role="button" aria-label="Soltar fotos o carpeta aquí">Arrastra aquí tus fotos o una carpeta, o usa los botones.</div>'
+        + '<div class="pf-botones"><button class="btn-solido" id="pfElegir">Elegir fotos</button>'
+        + '<button class="btn-linea" id="pfCarpeta">Elegir carpeta</button></div>'
+        + '<input type="file" id="pfArchivos" accept="image/*" multiple hidden>'
+        + '<input type="file" id="pfDirectorio" webkitdirectory multiple hidden>'
+        + '<p class="cfgnota" id="pfEstado" aria-live="polite"></p>'
+        + '<div id="pfGaleria" class="pf-galeria"><p class="cfgnota">Cargando…</p></div>',
+        'portafolio-web') : '')
 
     + tarjetaCfg('Datos del negocio', '',
         dato('Marca', CFG.brandName)
@@ -11992,12 +12018,98 @@ async function pintaConfig(){
       ? 'Escribe una vez al 849-524-5620 para abrir la conversación libre.'
       : 'No había cambios pendientes.');
   };
+  if ($('pfZona')) cableaPortafolio();
   const cr = $('cfgReglas2'); if (cr) cr.onclick = abreReglas;
   const ic = $('cfgIrCanales'); if (ic) ic.onclick = () => ve('canales');
   cableaIgnoradosCfg();
   cableaAnalisisCfg();
   if (esAdmin) cableaUsuarios();
   pintaUsuarios(esAdmin);
+}
+
+// ---- Portafolio de la web: subir fotos (o una carpeta) desde el CRM. El servidor valida y guarda (portafolio-store.js); la web las pide a crmPortafolio. ----
+const PORTAFOLIO_URL = 'https://crmportafolio-o2uqjp6fra-uc.a.run.app';
+const PF_MAX_LADO = 1800;
+function pfLeeBase64(blob){
+  return new Promise((ok, mal) => {
+    const r = new FileReader();
+    r.onload = () => ok(String(r.result).split(',')[1] || '');
+    r.onerror = () => mal(r.error || new Error('no se pudo leer la foto'));
+    r.readAsDataURL(blob);
+  });
+}
+// Reduce a 1800 px y convierte a WebP en el navegador: una foto de 8 MB del celular sube como ~300 KB. Si el navegador no sabe WebP, JPEG.
+async function pfPreparaFoto(archivo){
+  const bmp = await createImageBitmap(archivo, { imageOrientation:'from-image' });
+  const k = Math.min(1, PF_MAX_LADO / Math.max(bmp.width, bmp.height));
+  const w = Math.max(16, Math.round(bmp.width * k)), h = Math.max(16, Math.round(bmp.height * k));
+  const lienzo = document.createElement('canvas'); lienzo.width = w; lienzo.height = h;
+  lienzo.getContext('2d').drawImage(bmp, 0, 0, w, h);
+  if (bmp.close) bmp.close();
+  let blob = await new Promise(r => lienzo.toBlob(r, 'image/webp', 0.84));
+  if (!blob || blob.type !== 'image/webp') blob = await new Promise(r => lienzo.toBlob(r, 'image/jpeg', 0.86));
+  if (!blob) throw new Error('no se pudo convertir');
+  return { base64: await pfLeeBase64(blob), width: w, height: h };
+}
+async function pfPintaGaleria(){
+  const g = $('pfGaleria'); if (!g) return;
+  const r = await llama({ action:'portfolio', operation:'list' });
+  if (!r.ok) { g.innerHTML = '<p class="cfgnota">' + esc(r.error || 'No se pudo leer el portafolio.') + '</p>'; return; }
+  const nombres = r.categorias || {};
+  const resumen = Object.keys(nombres).map(c => esc(nombres[c]) + ': <b>' + Number((r.conteo || {})[c] || 0) + '</b>').join(' · ');
+  g.innerHTML = '<p class="cfgnota">Subidas desde el CRM — ' + resumen + '</p>'
+    + (r.items.length ? '<div class="pf-miniaturas">' + r.items.map(f =>
+      '<figure class="pf-mini' + (f.estado === 'oculta' ? ' oculta' : '') + '" data-id="' + esc(f.id) + '">'
+      + '<img loading="lazy" alt="' + esc(nombres[f.categoria] || f.categoria) + '" src="' + PORTAFOLIO_URL + '?img=' + encodeURIComponent(f.id) + '">'
+      + '<figcaption><span>' + esc(nombres[f.categoria] || f.categoria) + (f.estado === 'oculta' ? ' · oculta' : '') + '</span>'
+      + '<button class="btn-linea" data-pf-ver="' + esc(f.id) + '" data-estado="' + (f.estado === 'oculta' ? 'publicada' : 'oculta') + '">' + (f.estado === 'oculta' ? 'Mostrar' : 'Ocultar') + '</button>'
+      + (ROL_ACTUAL === 'admin' ? '<button class="btn-linea" data-pf-quita="' + esc(f.id) + '">Quitar</button>' : '') + '</figcaption></figure>').join('') + '</div>'
+      : '<p class="cfgnota">Aún no hay fotos subidas desde aquí. Las que ya están en la web siguen igual.</p>');
+  g.querySelectorAll('[data-pf-ver]').forEach(b => b.onclick = async () => {
+    b.disabled = true;
+    const x = await llama({ action:'portfolio', operation:'visibility', id:b.dataset.pfVer, estado:b.dataset.estado });
+    if (!x.ok) { b.disabled = false; return avisa('No se pudo cambiar', x.error || 'Inténtalo de nuevo.'); }
+    pfPintaGaleria();
+  });
+  g.querySelectorAll('[data-pf-quita]').forEach(b => b.onclick = async () => {
+    if (!await confirmaAqui('¿Quitar esta foto del portafolio para siempre? Se borra también de la nube.', { si:'Quitar', no:'Cancelar' })) return;
+    b.disabled = true;
+    const x = await llama({ action:'portfolio', operation:'remove', id:b.dataset.pfQuita });
+    if (!x.ok) { b.disabled = false; return avisa('No se pudo quitar', x.error || 'Inténtalo de nuevo.'); }
+    pfPintaGaleria();
+  });
+}
+async function pfSube(archivos){
+  const estado = $('pfEstado'), cat = $('pfCategoria')?.value || 'xv';
+  const fotos = [...archivos].filter(f => /^image\//.test(f.type) || /\.(jpe?g|png|webp|heic)$/i.test(f.name || ''));
+  if (!fotos.length) { if (estado) estado.textContent = 'No hay fotos en lo que elegiste.'; return; }
+  let hechas = 0, repetidas = 0, falladas = [];
+  for (const f of fotos) {
+    if (estado) estado.textContent = 'Subiendo ' + (hechas + repetidas + falladas.length + 1) + ' de ' + fotos.length + '… (' + (f.name || 'foto') + ')';
+    try {
+      const p = await pfPreparaFoto(f);
+      const r = await llama({ action:'portfolio', operation:'upload', categoria:cat, nombre:f.name || '', base64:p.base64, width:p.width, height:p.height });
+      if (!r.ok) throw new Error(r.error || 'el servidor la rechazó');
+      if (r.duplicada) repetidas++; else hechas++;
+    } catch (e) { falladas.push((f.name || 'foto') + ' (' + (e.message || e) + ')'); }
+  }
+  if (estado) estado.textContent = '✓ ' + hechas + ' subida(s)' + (repetidas ? ', ' + repetidas + ' ya estaba(n)' : '')
+    + (falladas.length ? '. No se pudieron subir: ' + falladas.slice(0, 4).join('; ') + (falladas.length > 4 ? '…' : '') : '. Salen en la web en un par de minutos.');
+  pfPintaGaleria();
+}
+function cableaPortafolio(){
+  const zona = $('pfZona'), arch = $('pfArchivos'), dir = $('pfDirectorio');
+  if (!zona || !arch || !dir) return;
+  $('pfElegir').onclick = () => arch.click();
+  $('pfCarpeta').onclick = () => dir.click();
+  zona.onclick = () => arch.click();
+  zona.onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); arch.click(); } };
+  arch.onchange = () => { const f = [...arch.files]; arch.value = ''; pfSube(f); };
+  dir.onchange = () => { const f = [...dir.files]; dir.value = ''; pfSube(f); };
+  zona.ondragover = e => { e.preventDefault(); zona.classList.add('sobre'); };
+  zona.ondragleave = () => zona.classList.remove('sobre');
+  zona.ondrop = e => { e.preventDefault(); zona.classList.remove('sobre'); const f = [...(e.dataTransfer?.files || [])]; if (f.length) pfSube(f); };
+  pfPintaGaleria();
 }
 
 async function pintaUsuarios(esAdmin){
