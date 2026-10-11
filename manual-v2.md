@@ -194,7 +194,7 @@ El segundo número queda fuera. Los dormidos no cuentan en las métricas del Das
 |---|---|
 | **Dashboard** | Lo que hay ahora. Las cifras son botones: llevan a verlas con el filtro puesto. El embudo dice **dónde** se pierde la gente. |
 | **Hoy** | La cola de trabajo: sin responder, se enfrían, seguimientos y sesiones. Ver arriba. |
-| **Funnel** | Vista de **embudo**: cada etapa con su cifra y, debajo, la gente de la etapa elegida con **Mover a…** (o arrastrando sobre la etapa). El interruptor **Tablero** devuelve las columnas. Buscador, filtros y reorganizar. Abajo, **leads parados**. |
+| **Funnel** | Vista de **embudo**: cada etapa con su cifra y, debajo, la gente de la etapa elegida con **Mover de etapa** (o arrastrando sobre la etapa). El interruptor **Tablero** devuelve las columnas. Buscador, filtros y reorganizar. Abajo, **leads parados**. |
 | **Agenda** | Calendario mensual y `＋ Agendar`. Confirmada reserva el hueco; tentativa no. |
 | **Plantillas** | Sincroniza con Meta y crea las tuyas. **Meta las revisa antes de poder usarse** — no cuentes con una nueva para hoy. |
 | **Recordatorios** | Seguimientos con fecha. Los vencidos primero. |
