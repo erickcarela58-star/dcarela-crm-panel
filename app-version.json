@@ -1,7 +1,7 @@
 {
-  "version": "2026-10-11-atendido-v143",
+  "version": "2026-10-11-menu-plegable-v144",
   "channel": "crm",
-  "released_at": "2026-10-11T16:22:09.461Z",
-  "summary": "Chat: botón «Atendido» junto a «Humano atiende». Un toque y ese chat deja de salir como «Sin responder» o «Se enfrían» (si el cliente vuelve a escribir, reaparece solo) y baja el aviso de atención humana. Documentos por el número oficial: ya se pueden enviar de hasta 22 MB (antes 15).",
+  "released_at": "2026-10-11T16:57:35.936Z",
+  "summary": "Menú lateral plegable a solo íconos (botón « arriba a la izquierda; recuerda tu elección), «Salir» más pequeño, lista de conversaciones más ancha, cabecera del chat que ya no se aprieta, menú ⋯ y menú de mensajes que no quedan tapados, «Mover a…» ahora dice «Mover de etapa», y «Avisos de atención humana» pasa a «Avisos al supervisor».",
   "requiere_puente": "2026-09-28-lectura-v34"
 }
