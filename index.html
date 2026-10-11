@@ -4966,6 +4966,7 @@ function abre(c){
     + (c.human_handoff_notification_status ? '<span class="etiqueta" data-aviso-handoff="1" title="Aviso interno al teléfono de avisos (Configuración), por la línea de WhatsApp Web conectada. Enviado no significa leído.">'
       + esc(({pending:'Aviso pendiente',sent:'Aviso enviado',failed:'Aviso fallido',skipped:'Aviso no enviado'})[c.human_handoff_notification_status] || 'Aviso pendiente') + '</span>' : '')
     + '<button class="modo" id="btnModo"></button>'
+    + '<button class="modo" id="btnAtendido" title="Ya lo atendiste: se quita de «Sin responder» y de «Se enfrían», se baja el aviso de atención humana y la satisfacción lo cuenta como cliente atendido.">Atendido</button>'
     + '<button class="adj" id="verFicha" title="Ficha del lead" aria-label="Ficha del lead">'
     +   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="8.600"/><path d="M12 11v5.200"/><circle cx="12" cy="7.800" r=".7" fill="currentColor" stroke="none"/></svg></button>'
     // Agendar es lo que mas se hace desde un chat y estaba escondido dentro del menu de los
@@ -5241,6 +5242,24 @@ function cableaChat(c){
     sel.mode = newMode; pintaModoChat();
     avisa(newMode === 'human' ? 'La atiendes tú' : 'Vuelve al bot',
       'El cambio se aplicará únicamente a esta conversación.');
+  };
+  // «Atendido»: el dueño ya contestó o resolvió el asunto por otra vía. Se marca POR mensaje
+  // (cola_omitida_at = el último), igual que «No requiere respuesta» en Hoy: si el cliente vuelve
+  // a escribir, reaparece sola. No toca el modo (bot/humano) ni envía nada.
+  const atendido = $('btnAtendido');
+  if (atendido) atendido.onclick = async () => {
+    if (!sel) return;
+    const ahora = new Date().toISOString();
+    const campos = { cola_omitida_at: String(sel.last_message_at || ahora), atendido_at: ahora };
+    if (sel.human_handoff_required) campos.human_handoff_required = false;
+    atendido.disabled = true;
+    const r = await llama({ action:'updateLead', conversation_id: sel.id || sel._id, fields: campos });
+    atendido.disabled = false;
+    if (!r.ok) return avisa('No se pudo marcar', r.error);
+    Object.assign(sel, campos);
+    pintaModoChat(); pintaCuentas();
+    if (typeof pintaHoy === 'function' && document.getElementById('hoyCont')) pintaHoy();
+    avisa('Atendido', 'Ya no sale como pendiente. Si el cliente vuelve a escribir, reaparece sola.');
   };
   const mas = $('mas');
   mas.querySelector('button').onclick = ev => { ev.stopPropagation(); mas.classList.toggle('on'); };
@@ -5519,6 +5538,9 @@ let modoHd = true;
 //    si manda el tope del servidor (TOPE_MEDIO_PUENTE, 8 MB).
 function LIMITE_MB(porPuente, tipo){
   if (porPuente) return tipo === 'document' ? 8 : 60;
+  // Un documento por Meta pesa hasta 22 MB: el cuerpo de la funcion admite 32 MB y base64 lo
+  // infla un tercio. Las fotos siguen en 15/12 porque Meta las acepta de 5 MB y se comprimen antes.
+  if (tipo === 'document') return 22;
   return modoHd ? 15 : 12;
 }
 
