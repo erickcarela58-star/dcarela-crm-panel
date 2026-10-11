@@ -1,7 +1,7 @@
 {
-  "version": "2026-10-11-clientes-caja-v145",
+  "version": "2026-10-11-limpieza-ahora-v146",
   "channel": "crm",
-  "released_at": "2026-10-11T17:16:48.578Z",
-  "summary": "Clientes de caja rehecho: busca, filtra (deben / al día / con compras), ve qué compró cada uno y cuánto debe, imprime su estado de cuenta y cobra con respeto (mensaje personalizado con dos botones, de a uno y con tu confirmación). Ficha del lead modular: arrastra o reordena los bloques y oculta lo que no uses (Análisis con IA, Historial y Selección visual arrancan ocultos). Botón «?» en cada pantalla con su ayuda. Estados: varias fotos de distintas carpetas, y Reenviar ofrece «Subir a mi estado» primero. Tareas muestra solo lo de colaboradores. Etiquetas de la barra siguen el embudo. Avisos: pide el permiso solo y muestra siempre la burbuja dentro del CRM. Satisfacción automática (se manda unas horas después de «Atendido», solo a buen consumo). Marketing: sin vestuario fuera de XV y cada persona por un solo número.",
+  "released_at": "2026-10-11T17:37:23.799Z",
+  "summary": "Limpieza: botón «Enviar ahora» (ves a quién le llega, con su conversación, eliges plantilla para quien lleva más de 24 h sin escribir, sale de a uno y con pausa). Campañas: «A quién le llega» es un acordeón y cada contacto abre su conversación antes de que des el OK.",
   "requiere_puente": "2026-09-28-lectura-v34"
 }
