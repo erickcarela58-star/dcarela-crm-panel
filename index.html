@@ -2168,6 +2168,64 @@ input[type="checkbox"],input[type="radio"]{accent-color:var(--accent)}
   #app.lateral-min .pie #btnSalir svg{width:17px;height:17px}
 }
 @media(max-width:760px){.marca .plega{display:none}}
+/* Estados: varias fotos */
+.st-miniaturas{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;max-height:46vh;overflow:auto;padding:6px}
+.st-miniaturas figure{position:relative;margin:0}
+.st-miniaturas img{width:96px;height:96px;object-fit:cover;border-radius:10px;display:block}
+.st-miniaturas .st-ctl{position:absolute;top:3px;right:3px;width:22px;height:22px;font-size:14px;line-height:20px;padding:0;border-radius:50%;background:rgba(0,0,0,.6);color:#fff}
+.st-mas{text-align:center;margin:8px 0}
+/* Clientes de caja */
+.cc-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin:6px 0 14px;max-width:900px}
+.cc-kpi{padding:12px 14px;border-radius:14px;background:var(--panel);box-shadow:0 0 0 .5px var(--line)}
+.cc-kpi b{display:block;font-size:22px}
+.cc-kpi span{font-size:12px;color:var(--mut)}
+.cc-kpi.malo b{color:var(--bad)}
+.cc-barra{display:flex;gap:10px;flex-wrap:wrap;align-items:center;max-width:900px}
+.cc-barra input{flex:1 1 240px;min-width:0}
+.cc-tabla{max-width:1000px}
+.cc-fila{display:grid;grid-template-columns:minmax(0,2.3fr) .6fr 1fr 1fr 1fr auto;gap:10px;align-items:center;padding:10px 12px;border-bottom:1px solid var(--line);font-size:13px}
+.cc-fila.cc-cab{font-size:11.5px;font-weight:650;color:var(--mut);border-bottom:1px solid var(--line2)}
+.cc-fila.on{background:var(--hover);border-radius:12px}
+.cc-nom b{display:block;font-size:14px}.cc-nom small{color:var(--mut)}
+.cc-debe{color:var(--bad);font-weight:700}
+.cc-acc{display:flex;gap:6px;justify-content:flex-end}
+.cc-detalle{grid-column:1/-1;padding:10px 4px 6px}
+.cc-resumen{display:flex;gap:18px;flex-wrap:wrap;font-size:13px;margin-bottom:8px}
+.cc-compras{border-top:1px solid var(--line);margin:6px 0}
+.cc-compra{display:grid;grid-template-columns:90px minmax(0,1fr) auto;gap:10px;padding:6px 0;border-bottom:1px solid var(--line);font-size:12.5px}
+.cc-botones{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:8px}
+.cc-cobro-lista{max-height:260px;overflow:auto;border-radius:12px;background:var(--hover);padding:6px 10px}
+.cc-cobro-fila{display:flex;gap:10px;align-items:flex-start;padding:6px 0;font-size:13px;cursor:pointer}
+.cc-cobro-fila small{display:block;color:var(--mut)}
+@media(max-width:760px){.cc-fila{grid-template-columns:1fr auto}.cc-fila.cc-cab{display:none}.cc-fila>span:nth-child(n+2):not(.cc-acc){display:none}.cc-acc{grid-column:1/-1;justify-content:flex-start}}
+/* Ayuda «?» de cada pantalla */
+.ayuda-btn{flex:0 0 auto;width:26px;height:26px;border-radius:50%;border:0;background:var(--hover);color:var(--mut);font-weight:700;font-size:13px;cursor:pointer;transition:background .15s,color .15s}
+.ayuda-btn:hover,.ayuda-btn[aria-expanded="true"]{background:var(--ink,#2c6bed);color:var(--on-ink,#fff)}
+.ayuda-pop{position:fixed;top:56px;left:min(300px,40vw);z-index:90;width:min(360px,calc(100vw - 24px));border-radius:16px;overflow:hidden;background:var(--vidrio-fuerte,var(--panel));
+  box-shadow:var(--sombra),0 0 0 .5px var(--line);-webkit-backdrop-filter:blur(30px);backdrop-filter:blur(30px)}
+.ayuda-pop[hidden]{display:none}
+.ayuda-video{display:block;width:100%;max-height:200px;background:#000;object-fit:cover}
+.ayuda-video[hidden]{display:none}
+.ayuda-cuerpo{padding:14px 16px 14px}
+.ayuda-cuerpo b{font-size:14px}
+.ayuda-cuerpo p{margin:6px 0 8px;font-size:13px;line-height:1.5;color:var(--fg)}
+.ayuda-mas{border:0;background:transparent;color:var(--ink,#2c6bed);font-weight:650;font-size:12.5px;cursor:pointer;padding:2px 0}
+.ayuda-detalle{margin-top:8px;border-top:1px solid var(--line);padding-top:8px}
+.ayuda-sub{font-size:11.5px;font-weight:650;color:var(--mut);margin-bottom:4px}
+.ayuda-detalle ul{margin:0 0 6px;padding-left:18px;font-size:12.5px;line-height:1.5}
+.ayuda-nota{font-size:12px;color:var(--mut);margin:4px 0 0}
+@media(max-width:760px){.ayuda-pop{left:12px;top:60px}}
+/* Ficha del lead modular: asa de arrastre, panel «Personalizar» y bloques ocultos de verdad. */
+#ficha details.grupo[hidden]{display:none}
+#ficha .asa{cursor:grab;color:var(--mut);margin-right:6px;font-size:13px;opacity:.55;user-select:none}
+#ficha .asa:hover{opacity:1}
+#ficha details.grupo.arrastrando{opacity:.45}
+.ficha-pers{margin:14px 0 6px}
+.ficha-pers-lista{margin-top:8px;padding:10px;border-radius:12px;background:var(--hover)}
+.ficha-pers-fila{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:4px 0;font-size:13px}
+.ficha-pers-fila label{display:flex;align-items:center;gap:7px;cursor:pointer}
+.ficha-pers-fila button{width:26px;height:24px;border:0;border-radius:7px;background:transparent;color:var(--mut);cursor:pointer}
+.ficha-pers-fila button:hover{background:var(--panel);color:var(--fg)}
 /* La lista de conversaciones es lo que mas se mira: gana ancho cuando la pantalla lo permite (era un tope de 330 px). */
 @media(min-width:1000px){.lista{width:clamp(340px,29vw,470px)}}
 /* Cabecera del chat: el nombre y el telefono no se parten en tres lineas ni los botones se montan encima; lo que sobra se corta con «…». */
@@ -2235,6 +2293,8 @@ input[type="checkbox"],input[type="radio"]{accent-color:var(--accent)}
       <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
     </button>
     <div class="titulo" id="tituloVista"></div>
+    <button type="button" class="ayuda-btn" id="btnAyuda" aria-label="Ayuda de esta pantalla" aria-expanded="false" title="¿Para qué sirve esta pantalla?">?</button>
+    <div class="ayuda-pop" id="ayudaPop" role="dialog" aria-label="Ayuda" hidden></div>
     <div class="der">
       <span class="quien" id="quien"></span>
       <button class="btn-linea" id="btnAvisos" hidden>Activar avisos</button>
@@ -2502,6 +2562,16 @@ const btnAvisos = $('btnAvisos');
 if (btnAvisos && typeof Notification !== 'undefined') {
   const pinta = () => { btnAvisos.hidden = Notification.permission !== 'default'; };
   pinta();
+  // El permiso se pide SOLO, en el primer clic de cada sesion (el navegador exige un gesto del usuario): antes habia que adivinar que existia el
+  // boton «Activar avisos» y nunca salia la burbuja. Si el navegador lo tiene bloqueado, se explica como desbloquearlo en vez de callar.
+  if (Notification.permission === 'default') {
+    document.addEventListener('click', () => {
+      if (Notification.permission !== 'default') return;
+      try { Notification.requestPermission().then(pinta).catch(() => {}); } catch (e) { /* navegador sin permiso programable */ }
+    }, { once: true });
+  } else if (Notification.permission === 'denied') {
+    setTimeout(() => avisa('Los avisos están bloqueados en este navegador', 'Pulsa el candado de la barra de direcciones → Notificaciones → Permitir, y recarga. Mientras tanto verás la burbuja dentro del CRM.'), 4000);
+  }
   btnAvisos.onclick = async () => {
     try {
       const r = await Notification.requestPermission();
@@ -3114,9 +3184,17 @@ function avisaMensajesNuevos(){
   }
   primerVistazo = false;
   if (!nuevos.length) return;
-  if (typeof Notification === 'undefined' || Notification.permission !== 'granted') return;
   // Del chat que se esta mirando no se avisa: ya se ve.
   const idSel = sel ? (sel.id || sel._id) : null;
+  // La burbuja DENTRO del CRM sale siempre (con o sin permiso del navegador), salvo del chat que ya se esta viendo: con la pestaña a la vista es la
+  // unica señal que hay, y sin permiso era la unica posible.
+  if (!document.hidden) {
+    for (const c of nuevos.slice(0, 2)) {
+      if ((c.id || c._id) === idSel && vistaActual === 'conversations') continue;
+      avisa('Mensaje nuevo · ' + nombreDe(c), String(c.last_inbound_preview || c.last_message_preview || '').slice(0, 100));
+    }
+  }
+  if (typeof Notification === 'undefined' || Notification.permission !== 'granted') return;
   for (const c of nuevos.slice(0, 3)) {
     if (!document.hidden && (c.id || c._id) === idSel) continue;
     try {
@@ -3161,6 +3239,7 @@ function monta(id){
   if (id === 'hoy') return montaHoy();
   if (id === 'dashboard') return montaDashboard();
   if (id === 'informes') return montaInformes();
+  if (id === 'poscustomers') return montaClientesCaja();
   if (TABLERO[id]) return montaTablero(id);
   if (id === 'agenda') return montaAgenda();
   if (id === 'reminders') return montaRecordatorios();
@@ -3956,7 +4035,7 @@ async function stResponde(){
 // ---- El compositor ----
 // Texto sobre un color o foto con comentario, como en WhatsApp Web. Lo único que se añade es
 // a quién: el CRM publica a una lista, y la cifra sale en la confirmación.
-async function stCompositor(tipo){
+async function stCompositor(tipo, opciones = {}){
   $('stComp')?.remove();
   const d = document.createElement('div');
   d.className = 'st-comp'; d.id = 'stComp';
@@ -3974,8 +4053,8 @@ async function stCompositor(tipo){
   d.innerHTML = '<button class="st-ctl st-x" data-stc="cerrar" aria-label="Cerrar">' + ST_ICO.cerrar + '</button>'
     + (tipo === 'texto'
       ? '<div class="st-comp-txt"><textarea id="stcTexto" maxlength="700" placeholder="Escribe un estado"></textarea></div>'
-      : '<div class="st-comp-foto"><input type="file" id="stcArchivo" accept="image/*" hidden>'
-        + '<div class="st-comp-foto" id="stcPrevia"><button class="btn-linea" data-stc="elegir">Elegir foto</button></div></div>')
+      : '<div class="st-comp-foto"><input type="file" id="stcArchivo" accept="image/*" multiple hidden>'
+        + '<div class="st-comp-foto" id="stcPrevia"><button class="btn-linea" data-stc="elegir">Elegir fotos</button></div></div>')
     + barra;
   document.body.appendChild(d);
   stcPinta();
@@ -3987,6 +4066,12 @@ async function stCompositor(tipo){
     if (q === 'fuente') { ST.comp.fuente = (ST.comp.fuente + 1) % ST_FUENTES.length; return stcPinta(); }
     if (q === 'color') { ST.comp.color = (ST.comp.color + 1) % ST_PALETA.length; return stcPinta(); }
     if (q === 'elegir') return $('stcArchivo').click();
+    if (q === 'quitar') {
+      const i = Number(b.dataset.i);
+      const f = ST.comp.fotos[i]; if (f) URL.revokeObjectURL(f.url);
+      ST.comp.fotos.splice(i, 1);
+      return stcPintaFotos();
+    }
     if (q === 'enviar') return stcPublica();
   });
   document.addEventListener('keydown', stcTeclas);
@@ -3999,17 +4084,24 @@ async function stCompositor(tipo){
     setTimeout(() => area.focus(), 50);
   }
   else {
+    // Varias fotos y de CUALQUIER carpeta: cada vez que se elige se SUMAN a las que ya estaban (antes solo dejaba elegir una, una vez). El input se
+    // vacia al terminar para poder volver a elegir la misma foto o abrir otra carpeta; el input se queda fuera de lo que se repinta (un id repetido
+    // hace que getElementById devuelva el que no es). Tope de 10 por tanda: WhatsApp no es un album.
+    ST.comp.fotos = [];
     $('stcArchivo').onchange = () => {
-      const f = ($('stcArchivo').files || [])[0];
-      if (!f) return;
-      ST.comp.foto = { blob: f, url: URL.createObjectURL(f) };
-      // El input del archivo se queda fuera de lo que se repinta: un id repetido en la pagina
-      // hace que getElementById devuelva el que no es.
-      $('stcPrevia').innerHTML = '<img src="' + ST.comp.foto.url + '" alt="">'
-        + '<input type="text" id="stcPie" maxlength="700" placeholder="Añade un comentario…">';
-      $('stcPie').focus();
+      const nuevos = [...($('stcArchivo').files || [])].filter(f => /^image\//.test(f.type));
+      for (const f of nuevos) {
+        if (ST.comp.fotos.length >= 10) { avisa('Máximo 10 fotos por tanda', 'Publica estas y sigue con las demás.'); break; }
+        ST.comp.fotos.push({ blob: f, url: URL.createObjectURL(f) });
+      }
+      $('stcArchivo').value = '';
+      stcPintaFotos();
     };
-    $('stcArchivo').click();
+    // Venido de «Reenviar → Subir a estado»: las fotos ya vienen puestas y no se abre el selector de archivos.
+    if (opciones.blobs && opciones.blobs.length) {
+      opciones.blobs.slice(0, 10).forEach(b => ST.comp.fotos.push({ blob: b, url: URL.createObjectURL(b) }));
+      stcPintaFotos();
+    } else $('stcArchivo').click();
   }
   // La cifra de cada opción, como en la tarjeta de Difusión.
   const [r, rFoto] = await Promise.all([
@@ -4049,13 +4141,22 @@ async function stCompositor(tipo){
   }
 }
 
+function stcPintaFotos(){
+  const c = ST.comp; if (!c || c.tipo !== 'foto') return;
+  const pie = $('stcPie')?.value || '';
+  if (!c.fotos.length) { $('stcPrevia').innerHTML = '<button class="btn-linea" data-stc="elegir">Elegir fotos</button>'; return; }
+  $('stcPrevia').innerHTML = '<div class="st-miniaturas">' + c.fotos.map((f, i) => '<figure><img src="' + f.url + '" alt=""><button class="st-ctl" data-stc="quitar" data-i="' + i + '" aria-label="Quitar esta foto">×</button></figure>').join('') + '</div>'
+    + '<div class="st-mas"><button class="btn-linea" data-stc="elegir">＋ Añadir más fotos (' + c.fotos.length + ' de 10)</button></div>'
+    + '<input type="text" id="stcPie" maxlength="700" placeholder="Añade un comentario (va en cada foto)…" value="' + esc(pie) + '">';
+}
+
 function stcTeclas(ev){
   if (ev.key === 'Escape' && $('stComp')) { ev.preventDefault(); stcCierra(); }
 }
 
 function stcCierra(){
   $('stComp')?.remove();
-  if (ST.comp?.foto?.url) URL.revokeObjectURL(ST.comp.foto.url);
+  (ST.comp?.fotos || []).forEach(f => URL.revokeObjectURL(f.url));
   ST.comp = null;
   document.removeEventListener('keydown', stcTeclas);
 }
@@ -4073,7 +4174,7 @@ async function stcPublica(){
   if (!c) return;
   const texto = c.tipo === 'texto' ? ($('stcTexto')?.value || '').trim() : ($('stcPie')?.value || '').trim();
   if (c.tipo === 'texto' && !texto) return avisa('Falta el estado', 'Escribe algo.');
-  if (c.tipo === 'foto' && !c.foto) return avisa('Falta la foto', 'Elige una foto.');
+  if (c.tipo === 'foto' && !(c.fotos && c.fotos.length)) return avisa('Faltan las fotos', 'Elige al menos una foto.');
   const quien = $('stcQuien').value;
   const d = c.conteo || (await llama({ action:'statusAudience', dias: 180 })).data || {};
   if (!d.listo) return avisa('No se puede publicar', d.motivo || 'la línea no está lista');
@@ -4099,32 +4200,44 @@ async function stcPublica(){
   }
   if (!total) return avisa('No hay a quién publicárselo', 'Esa opción no alcanza a nadie.');
   // La misma pregunta que en Difusión, con la cifra dentro.
+  const nFotos = c.tipo === 'foto' ? c.fotos.length : 1;
   if (!await confirmaAqui('Se va a publicar en Estados para ' + total + ' contacto(s): '
-    + nombreQuien + '.' + '\n\n'
+    + nombreQuien + (nFotos > 1 ? ' (' + nFotos + ' fotos, una tras otra)' : '') + '.' + '\n\n'
     + 'Dura 24 horas y no se le puede quitar a quien ya lo haya visto.'
     + '\n\n' + '¿Publicar?')) return;
   const boton = $('stcEnviar');
   boton.disabled = true;
-  const cuerpo = { action:'statusPost', text: texto, dias: 180, ...cuerpoAudiencia };
-  if (c.tipo === 'texto') { cuerpo.color = ST_PALETA[c.color]; cuerpo.font = c.fuente; }
+  // Una publicacion por foto, en orden, todas en HD (la foto entera, hasta 4096 px y 7,5 MB).
+  const cuerpos = [];
+  if (c.tipo === 'texto') cuerpos.push({ action:'statusPost', text: texto, dias: 180, ...cuerpoAudiencia, color: ST_PALETA[c.color], font: c.fuente });
   else {
     try {
-      // HD siempre: la foto entera, hasta 4096 px y 7,5 MB.
-      const hd = await comprimeHdPuente(c.foto.blob);
-      cuerpo.media_b64 = await leeBase64(hd);
-      cuerpo.media_mime = hd.type || c.foto.blob.type || 'image/jpeg';
-      const mini = await miniaturaParaEnviar(c.foto.blob);
-      if (mini) cuerpo.media_thumb_b64 = mini;
+      for (const f of c.fotos) {
+        const hd = await comprimeHdPuente(f.blob);
+        const cuerpo = { action:'statusPost', text: texto, dias: 180, ...cuerpoAudiencia };
+        cuerpo.media_b64 = await leeBase64(hd);
+        cuerpo.media_mime = hd.type || f.blob.type || 'image/jpeg';
+        const mini = await miniaturaParaEnviar(f.blob);
+        if (mini) cuerpo.media_thumb_b64 = mini;
+        cuerpos.push(cuerpo);
+      }
     } catch (e) {
       boton.disabled = false;
       return avisa('No se pudo leer la foto', String(e && e.message || e));
     }
   }
-  const r = await llama(cuerpo);
+  let r = { ok: true }, hechas = 0;
+  for (let i = 0; i < cuerpos.length; i++) {
+    boton.title = 'Publicando ' + (i + 1) + ' de ' + cuerpos.length;
+    r = await llama(cuerpos[i]);
+    if (!r.ok) break;
+    hechas++;
+    if (i < cuerpos.length - 1) await new Promise(rs => setTimeout(rs, 1500));
+  }
   boton.disabled = false;
-  if (!r.ok) return avisa('No se pudo publicar', r.error);
+  if (!r.ok) return avisa(hechas ? 'Se publicaron ' + hechas + ' de ' + cuerpos.length : 'No se pudo publicar', r.error);
   stcCierra();
-  avisa('Estado en camino', 'Sale para ' + (r.data?.total || total) + ' contacto(s). Aparece en «Mi estado» en cuanto se publique.');
+  avisa(hechas > 1 ? hechas + ' estados en camino' : 'Estado en camino', 'Sale para ' + (r.data?.total || total) + ' contacto(s). Aparece en «Mi estado» en cuanto se publique.');
   setTimeout(stCargaMios, 4000);
   setTimeout(stCargaMios, 12000);
 }
@@ -7025,6 +7138,7 @@ function abreReenviar(ids){
     return avisa('Nada que reenviar', 'Ninguno de esos mensajes tiene texto ni archivo.');
   const conArchivo = validos.some(m => TIPOS_CON_ARCHIVO.includes(String(m.msg_type || '').toLowerCase()));
   const destinos = new Set();
+  const imagenesParaEstado = validos.filter(m => String(m.msg_type || '').toLowerCase() === 'image');
   const titulo = validos.length > 1 ? 'Reenviar ' + validos.length + ' mensajes a…' : 'Reenviar a…';
   abreModal('<div class="mtapa"><b>' + esc(titulo) + '</b><button class="cerrarm" data-cerrar>×</button></div>'
     + '<div class="mcuerpo">'
@@ -7032,6 +7146,9 @@ function abreReenviar(ids){
     // falta una dirección pública del archivo, y los archivos ya no se guardan en la nube.
     + (conArchivo ? '<p class="aviso">' + (validos.length > 1 ? 'Los archivos se reenvían tal cual. ' : 'Se reenvía el archivo. ')
         + 'Solo aparecen los chats de la línea de WhatsApp Web.</p>' : '')
+    // Como en WhatsApp: lo primero que ofrece «Reenviar» es subirlo a TU ESTADO (si hay fotos), luego los frecuentes y luego el resto.
+    + (imagenesParaEstado.length ? '<div class="fwd-grupo">Estado</div><button class="tpl" data-dest="__estado"><span class="tplcheck" style="border-radius:50%"></span><b>Subir a mi estado</b>'
+        + '<span class="tplmeta">' + imagenesParaEstado.length + (imagenesParaEstado.length === 1 ? ' foto' : ' fotos') + ' · eliges a quién le llega</span></button>' : '')
     + '<div class="campo"><input id="fwdBusca" placeholder="Buscar conversación…"></div>'
     + '<div id="fwdLista"></div></div>'
     + '<div class="mpatas"><button class="fwd-enviar btn-solido" id="fwdEnviar" disabled>Enviar</button></div>');
@@ -7058,6 +7175,23 @@ function abreReenviar(ids){
   };
   pinta();
   $('fwdBusca').oninput = pinta;
+  const botonEstado = document.querySelector('#modal [data-dest="__estado"]');
+  if (botonEstado) botonEstado.onclick = async () => {
+    botonEstado.disabled = true;
+    try {
+      const blobs = [];
+      for (const m of imagenesParaEstado) {
+        const a = adjuntoDe(m);
+        const src = a.url || (m.media_id ? await urlDeMedio(m.media_id, null, m.id) : '');
+        if (!src) continue;
+        blobs.push(await (await fetch(src)).blob());
+      }
+      if (!blobs.length) { botonEstado.disabled = false; return avisa('No pude leer la foto', 'Ábrela en el chat y vuelve a intentarlo.'); }
+      cierraModal(); saleSeleccion();
+      ve('estados');
+      stCompositor('foto', { blobs });
+    } catch (e) { botonEstado.disabled = false; avisa('No se pudo subir a estado', String(e && e.message || e)); }
+  };
   $('fwdLista').onclick = ev => {
     const b = ev.target.closest('[data-dest]'); if (!b) return;
     const id = b.dataset.dest;
@@ -8302,10 +8436,7 @@ function pintaFicha(c){
     '<div class="cabeza"><b>Ficha del lead</b>'
     + '<button id="cerrarFicha" style="color:var(--mut);font-size:17px">×</button></div>'
     + '<div class="cuerpo">'
-    + '<div class="seccion">Acciones</div>'
-    + '<p class="aviso">Las herramientas operativas viven en Planificación. Escribe ahí lo que necesitas, '
-    +   'revisa lo que propone y apruébalo antes de que cambie una ficha o prepare un mensaje.</p>'
-    + '<button class="btn-solido" style="width:100%;margin-bottom:16px" id="irAlPlan">Abrir Planificación</button>'
+    + '<button class="btn-linea" style="width:100%;margin-bottom:12px" id="irAlPlan" title="Las herramientas operativas viven en Planificación: escribe ahí lo que necesitas y aprueba lo que propone.">Abrir Planificación</button>'
 
     + grupoAnalisisFicha(c)
 
@@ -8416,6 +8547,7 @@ function pintaFicha(c){
   cableaAnalisisFicha(c);
   cableaCajaFicha(c);
   cableaIgnorarFicha(c);
+  personalizaFicha();
   $('cerrarFicha').onclick = () => { $('ficha').classList.remove('on'); $('ficha').style.display = 'none'; };
   const ver = $('verFicha');
   if (ver) ver.onclick = () => {
@@ -9065,6 +9197,200 @@ async function abreFichaProspecto(id, fila){
   };
 }
 
+/* ---- Clientes de caja (rehecho 11/10/2026) ---------------------------------------------------------------------------------------------
+   Antes era una lista generica sin filtros. Ahora: buscar, filtrar (deben / al dia / con compras), ver que compro cada uno y cuanto debe, imprimir
+   su estado de cuenta, y COBRAR sin invadir: un mensaje personalizado (nombre, monto, articulo y fecha) con dos botones para contestar de un toque.
+   Nada sale sin que el dueño vea a quien le llega y lo confirme; los envios van de a uno, con pausa. */
+const CC = { filas: [], filtro: 'todos', orden: 'deuda', q: '', limite: 60, abierto: null, detalle: {} };
+function convPorTelefono(tel){
+  const d = soloDigitos(tel).slice(-10);
+  if (d.length < 10) return null;
+  const lista = CONVS.filter(c => soloDigitos(c.wa_phone).slice(-10) === d);   // CONVS ya excluye ignoradas y lineas ocultas
+  lista.sort((a, b) => String(b.last_customer_reply_at || b.last_message_at || '').localeCompare(String(a.last_customer_reply_at || a.last_message_at || '')));
+  return lista[0] || null;
+}
+const ccDebe = r => Number(r.balance_centavos || 0) > 0;
+function ccFiltradas(){
+  const q = CC.q.trim().toLowerCase();
+  let f = CC.filas.filter(r => r.active !== false);
+  if (CC.filtro === 'deben') f = f.filter(ccDebe);
+  else if (CC.filtro === 'aldia') f = f.filter(r => !ccDebe(r) && Number(r.sale_count || 0) > 0);
+  else if (CC.filtro === 'compras') f = f.filter(r => Number(r.sale_count || 0) > 0);
+  else if (CC.filtro === 'sin') f = f.filter(r => !Number(r.sale_count || 0));
+  if (q) f = f.filter(r => (String(r.name || '') + ' ' + String(r.phone || '') + ' ' + String(r.folio || '')).toLowerCase().includes(q) || soloDigitos(r.phone).includes(soloDigitos(q) || '§'));
+  const por = {
+    deuda: (a, b) => Number(b.balance_centavos || 0) - Number(a.balance_centavos || 0),
+    gastado: (a, b) => Number(b.total_spent_centavos || 0) - Number(a.total_spent_centavos || 0),
+    reciente: (a, b) => String(b.last_sale_at || '').localeCompare(String(a.last_sale_at || '')),
+    nombre: (a, b) => String(a.name || '').localeCompare(String(b.name || ''), 'es'),
+  }[CC.orden];
+  return f.sort(por);
+}
+function pintaClientesCaja(){
+  const todas = CC.filas.filter(r => r.active !== false);
+  const deben = todas.filter(ccDebe);
+  const deuda = deben.reduce((s, r) => s + Number(r.balance_centavos || 0), 0);
+  $('ccKpis').innerHTML = '<div class="cc-kpi"><b>' + todas.length + '</b><span>clientes</span></div>'
+    + '<div class="cc-kpi"><b>' + todas.filter(r => Number(r.sale_count || 0) > 0).length + '</b><span>con compras</span></div>'
+    + '<div class="cc-kpi malo"><b>' + deben.length + '</b><span>deben</span></div>'
+    + '<div class="cc-kpi malo"><b>' + esc(pesos(deuda)) + '</b><span>por cobrar</span></div>';
+  const chips = [['todos', 'Todos', todas.length], ['deben', 'Deben', deben.length], ['aldia', 'Al día', todas.filter(r => !ccDebe(r) && Number(r.sale_count || 0) > 0).length],
+    ['compras', 'Con compras', todas.filter(r => Number(r.sale_count || 0) > 0).length], ['sin', 'Sin compras', todas.filter(r => !Number(r.sale_count || 0)).length]];
+  $('ccChips').innerHTML = chips.map(([k, t, n]) => '<button class="filtro' + (CC.filtro === k ? ' on' : '') + '" data-ccf="' + k + '">' + t + ' <i>' + n + '</i></button>').join('');
+  const lista = ccFiltradas();
+  const vistas = lista.slice(0, CC.limite);
+  $('ccLista').innerHTML = !lista.length ? '<p class="bajada">Ningún cliente coincide con esto.</p>'
+    : '<div class="cc-tabla">' + '<div class="cc-fila cc-cab"><span>Cliente</span><span>Compras</span><span>Gastado</span><span>Debe</span><span>Última</span><span></span></div>'
+      + vistas.map(r => {
+        const id = String(r.customer_id);
+        const abierto = CC.abierto === id;
+        return '<div class="cc-fila' + (abierto ? ' on' : '') + '" data-ccid="' + esc(id) + '">'
+          + '<span class="cc-nom"><b>' + esc(r.name || '—') + '</b><small>' + esc(telefonoLegible(r.phone) || 'sin teléfono') + (r.folio ? ' · folio ' + esc(r.folio) : '') + '</small></span>'
+          + '<span>' + Number(r.sale_count || 0) + '</span><span>' + esc(pesos(r.total_spent_centavos)) + '</span>'
+          + '<span class="' + (ccDebe(r) ? 'cc-debe' : '') + '">' + (ccDebe(r) ? esc(pesos(r.balance_centavos)) : '—') + '</span>'
+          + '<span>' + esc(String(r.last_sale_at || '').slice(0, 10) || '—') + '</span>'
+          + '<span class="cc-acc"><button class="btn-linea" data-ccver="' + esc(id) + '">' + (abierto ? 'Cerrar' : 'Ver') + '</button>'
+          + (ccDebe(r) ? '<button class="btn-linea" data-cccobrar="' + esc(id) + '">Cobrar</button>' : '') + '</span>'
+          + (abierto ? '<div class="cc-detalle" id="ccDet-' + esc(id) + '">' + ccDetalleHtml(id) + '</div>' : '')
+          + '</div>';
+      }).join('')
+      + (lista.length > vistas.length ? '<button class="btn-linea" id="ccMas" style="margin:10px 0">Ver ' + Math.min(60, lista.length - vistas.length) + ' más (' + (lista.length - vistas.length) + ' sin mostrar)</button>' : '')
+      + '</div>';
+}
+function ccDetalleHtml(id){
+  const d = CC.detalle[id];
+  if (!d) return '<p class="bajada"><span class="cargando"></span> Leyendo sus compras…</p>';
+  if (d.error) return '<p class="aviso">No se pudo leer: ' + esc(d.error) + '</p>';
+  const conv = convPorTelefono(d.telefono);
+  return '<div class="cc-resumen"><span>Debe <b class="' + (d.balance_centavos > 0 ? 'cc-debe' : '') + '">' + esc(pesos(d.balance_centavos)) + '</b></span>'
+    + '<span>Crédito <b>' + esc(d.credit_days ? d.credit_days + ' días' : 'sin crédito') + '</b></span>'
+    + '<span>Compras mostradas <b>' + d.compras.length + '</b> · ' + esc(pesos(d.total_centavos)) + '</span></div>'
+    + (d.compras.length ? '<div class="cc-compras">' + d.compras.map(c => '<div class="cc-compra"><span>' + esc(String(c.cuando || '').slice(0, 10) || '—') + '</span>'
+        + '<span>' + esc(c.articulos.slice(0, 6).join(', ') || 'Venta sin detalle') + (c.articulos.length > 6 ? ' +' + (c.articulos.length - 6) : '') + '</span><b>' + esc(pesos(c.total_centavos)) + '</b></div>').join('') + '</div>'
+      : '<p class="bajada">Todavía no hay compras a su nombre en la caja.</p>')
+    + '<div class="cc-botones"><button class="btn-linea" data-ccprint="' + esc(id) + '">Imprimir estado de cuenta</button>'
+    + (conv ? '<button class="btn-linea" data-ccchat="' + esc(conv.id || conv._id) + '">Abrir su chat</button>' : '<small>Sin chat en el CRM</small>')
+    + (d.balance_centavos > 0 ? '<button class="btn-solido" data-cccobrar="' + esc(id) + '">Cobrar con respeto</button>' : '') + '</div>';
+}
+async function ccCargaDetalle(id){
+  if (CC.detalle[id]) return;
+  const r = await llama({ action: 'posClienteDetalle', customer_id: id });
+  CC.detalle[id] = r.ok ? r : { error: r.error || 'error' };
+}
+function ccImprime(id){
+  const d = CC.detalle[id]; if (!d || d.error) return avisa('Abre primero su detalle');
+  const w = window.open('', '_blank'); if (!w) return avisa('El navegador bloqueó la ventana', 'Permite ventanas emergentes para imprimir.');
+  const fecha = new Date().toLocaleDateString('es-DO', { day: 'numeric', month: 'long', year: 'numeric' });
+  w.document.write('<!doctype html><meta charset="utf-8"><title>Estado de cuenta</title><style>body{font:14px system-ui,Segoe UI,Arial;margin:32px;color:#111}h1{font-size:20px;margin:0}h2{font-size:15px;margin:22px 0 8px}'
+    + 'table{width:100%;border-collapse:collapse}td,th{padding:7px 8px;border-bottom:1px solid #ddd;text-align:left;vertical-align:top}th{font-size:12px;color:#555}td.n,th.n{text-align:right}.tot{font-weight:700;font-size:16px}.pie{margin-top:28px;color:#666;font-size:12px}</style>'
+    + '<h1>D’ Carela Compufoto</h1><div>Estado de cuenta · ' + esc(fecha) + '</div>'
+    + '<h2>' + esc(d.nombre) + (d.telefono ? ' · ' + esc(d.telefono) : '') + (d.folio ? ' · folio ' + esc(d.folio) : '') + '</h2>'
+    + '<table><tr><th>Fecha</th><th>Detalle</th><th class="n">Total</th></tr>'
+    + d.compras.map(c => '<tr><td>' + esc(String(c.cuando || '').slice(0, 10)) + '</td><td>' + esc(c.articulos.join(', ') || 'Venta') + '</td><td class="n">' + esc(pesos(c.total_centavos)) + '</td></tr>').join('')
+    + '<tr><td></td><td class="tot">Total de compras</td><td class="n tot">' + esc(pesos(d.total_centavos)) + '</td></tr>'
+    + '<tr><td></td><td class="tot">Saldo pendiente</td><td class="n tot">' + esc(pesos(d.balance_centavos)) + '</td></tr></table>'
+    + '<div class="pie">Gracias por preferirnos. Puedes pasar a pagar y retirar tu trabajo cuando gustes.</div><script>window.onload=()=>setTimeout(()=>print(),300)<\/script>');
+  w.document.close();
+}
+// ---- Cobro respetuoso ------------------------------------------------------------------------------------------------------------------
+const COBRO_TEXTO = 'Hola {nombre} 👋, te escribimos de D\' Carela Compufoto. Tienes un saldo pendiente de {monto}{articulo}. Puedes pasar a pagarlo y retirar tu trabajo cuando te quede bien. ¿Cómo prefieres?';
+function ccMensajeDe(r, d){
+  const ult = d && d.compras && d.compras[0];
+  const art = ult && ult.articulos && ult.articulos[0] ? ' por ' + ult.articulos[0] + (ult.cuando ? ' del ' + String(ult.cuando).slice(0, 10) : '') : '';
+  const nombre = String(r.name || '').split(/\s+/)[0] || '';
+  return COBRO_TEXTO.replace('{nombre}', nombre).replace('{monto}', pesos(r.balance_centavos)).replace('{articulo}', art);
+}
+async function ccAbreCobro(idsIniciales){
+  const deudores = CC.filas.filter(r => r.active !== false && ccDebe(r));
+  const marcados = new Set(idsIniciales && idsIniciales.length ? idsIniciales : deudores.slice(0, 0).map(r => String(r.customer_id)));
+  const fila = (r) => {
+    const conv = convPorTelefono(r.phone);
+    const oficial = conv && conv.source !== 'whatsapp_qr';
+    const enVentana = conv && Date.now() - (Date.parse(conv.last_customer_reply_at || conv.last_message_at || '') || 0) < 23 * 3600000;
+    const estado = !conv ? 'sin chat' : oficial ? (enVentana ? 'oficial · con botones' : 'oficial · fuera de 24 h (pide plantilla)') : '5644 · opciones en el texto';
+    return '<label class="cc-cobro-fila"><input type="checkbox" data-ccsel="' + esc(String(r.customer_id)) + '"' + (marcados.has(String(r.customer_id)) ? ' checked' : '') + (conv ? '' : ' disabled') + '>'
+      + '<span><b>' + esc(r.name) + '</b> · ' + esc(pesos(r.balance_centavos)) + '<small>' + esc(estado) + '</small></span></label>';
+  };
+  const m = abreModal('<h2 style="margin:0 0 6px">Cobrar con respeto</h2>'
+    + '<p class="bajada" style="margin:0 0 10px">Cada mensaje sale <b>personalizado</b> (nombre, monto y artículo) y de a uno, con pausa. El cliente contesta con un toque: <b>«Pasaré hoy»</b> o <b>«Prefiero otro día»</b>. Por el número oficial fuera de 24 h hace falta una plantilla aprobada.</p>'
+    + '<div class="cc-cobro-lista">' + (deudores.length ? deudores.map(fila).join('') : '<p class="bajada">Nadie debe.</p>') + '</div>'
+    + '<label class="campo" style="margin-top:10px"><label>Mensaje base (se personaliza por cliente)</label><textarea id="ccTexto" rows="4">' + esc(COBRO_TEXTO) + '</textarea></label>'
+    + '<p class="aviso" id="ccResumen" style="margin:8px 0">Marca a quién enviarle.</p>'
+    + '<div class="cc-botones"><button class="btn-solido" id="ccEnviar">Enviar a los marcados</button><button class="btn-linea" id="ccPlantilla" title="Pide a Meta una plantilla de cobro con dos botones, para escribir fuera de las 24 h">Pedir plantilla de cobro a Meta</button><button class="btn-linea" data-cerrar>Cancelar</button></div>');
+  const cuenta = () => { const n = m.querySelectorAll('[data-ccsel]:checked').length; $('ccResumen').textContent = n ? 'Se enviará a ' + n + ' cliente(s), uno cada pocos segundos.' : 'Marca a quién enviarle.'; };
+  m.querySelectorAll('[data-ccsel]').forEach(i => i.onchange = cuenta); cuenta();
+  $('ccPlantilla').onclick = async () => {
+    if (!await confirmaAqui('Se pide a Meta la plantilla «dcarela_cobro_pendiente_v1» (utilidad) con dos botones: «Pasaré hoy» y «Prefiero otro día».\n\nMeta la revisa en minutos u horas. ¿Pedirla?')) return;
+    const r = await llama({ action: 'templates', operation: 'create', template_name: 'dcarela_cobro_pendiente_v1', category: 'UTILITY', language_code: 'es',
+      body_text: 'Hola {{1}}, en D\' Carela Compufoto tienes un saldo pendiente de {{2}} por {{3}}. Puedes pasar a pagarlo y retirar tu trabajo cuando te quede bien. ¿Cómo prefieres?',
+      examples: ['María', 'RD$1,500', 'un cuadro 11x14'], buttons: ['Pasaré hoy', 'Prefiero otro día'] });
+    if (!r.ok) return avisa('No se pudo pedir la plantilla', r.error);
+    avisa('Plantilla pedida a Meta', r.aviso || 'Sincroniza Plantillas en un rato para ver si la aprobó.');
+  };
+  $('ccEnviar').onclick = async () => {
+    const ids = [...m.querySelectorAll('[data-ccsel]:checked')].map(i => i.dataset.ccsel);
+    if (!ids.length) return avisa('Marca al menos un cliente');
+    if (!await confirmaAqui('Se enviará el cobro a ' + ids.length + ' cliente(s), de a uno y con pausa.\n\nNada sale hasta que confirmes. ¿Enviar?')) return;
+    const base = $('ccTexto').value.trim();
+    const b = $('ccEnviar'); b.disabled = true;
+    let ok = 0; const fallos = [];
+    for (let i = 0; i < ids.length; i++) {
+      const r = CC.filas.find(x => String(x.customer_id) === ids[i]); const conv = r && convPorTelefono(r.phone);
+      b.textContent = 'Enviando ' + (i + 1) + ' de ' + ids.length + '…';
+      if (!r || !conv) { fallos.push((r && r.name) + ': sin chat'); continue; }
+      await ccCargaDetalle(ids[i]);
+      const texto = personalizaCobro(base, r, CC.detalle[ids[i]]);
+      const oficial = conv.source !== 'whatsapp_qr';
+      const cuerpo = oficial
+        ? { action: 'send', conversation_id: conv.id || conv._id, body: texto, botones: [{ id: 'cobro_pasare', titulo: 'Pasaré hoy' }, { id: 'cobro_otro_dia', titulo: 'Otro día' }] }
+        : { action: 'bridgeQueue', conversation_id: conv.id || conv._id, body: texto + '\n\nResponde 1 si pasas hoy, o 2 si prefieres otro día.' };
+      const res = await llama(cuerpo);
+      if (res.ok) ok++; else fallos.push(r.name + ': ' + (res.error || 'error'));
+      if (i < ids.length - 1) await new Promise(rs => setTimeout(rs, 3500));
+    }
+    b.disabled = false; b.textContent = 'Enviar a los marcados';
+    cierraModal();
+    avisa('Cobro enviado a ' + ok + ' de ' + ids.length, fallos.length ? fallos.slice(0, 3).join(' · ') : 'Ya les llegó con sus dos botones.');
+  };
+}
+const personalizaCobro = (base, r, d) => {
+  const ult = d && d.compras && d.compras[0];
+  const art = ult && ult.articulos && ult.articulos[0] ? ' por ' + ult.articulos[0] + (ult.cuando ? ' del ' + String(ult.cuando).slice(0, 10) : '') : '';
+  return base.split('{nombre}').join(String(r.name || '').split(/\s+/)[0] || '').split('{monto}').join(pesos(r.balance_centavos)).split('{articulo}').join(art);
+};
+async function cargaClientesCaja(){
+  $('ccLista').innerHTML = '<p class="bajada"><span class="cargando"></span> Leyendo los clientes de la caja…</p>';
+  const r = await llama({ action: 'posCustomers' });
+  if (!r.ok) { $('ccLista').innerHTML = '<p class="aviso">No se pudieron leer los clientes: ' + esc(r.error || 'error') + '</p>'; return; }
+  CC.filas = Array.isArray(r.data) ? r.data : [];
+  pintaClientesCaja();
+}
+function montaClientesCaja(){
+  if (!montadas.has('poscustomers')) {
+    montadas.add('poscustomers');
+    hueco('poscustomers', '<div class="hoja"><h1>Clientes de caja</h1>'
+      + '<p class="bajada">Quién te ha comprado, qué se llevó y cuánto debe. Busca, filtra, imprime su estado de cuenta o cóbrale sin incomodarlo. Se llena sola desde la caja.</p>'
+      + '<div class="cc-kpis" id="ccKpis"></div>'
+      + '<div class="cc-barra"><input id="ccBusca" type="search" placeholder="Buscar por nombre, teléfono o folio…" autocomplete="off">'
+      + '<select id="ccOrden"><option value="deuda">Los que más deben</option><option value="gastado">Los que más gastaron</option><option value="reciente">Compra más reciente</option><option value="nombre">Nombre (A–Z)</option></select>'
+      + '<button class="btn-solido" id="ccCobrar">Cobrar a los que deben</button></div>'
+      + '<div class="filtros" id="ccChips" style="padding:8px 0"></div><div id="ccLista"></div></div>');
+    $('ccBusca').oninput = () => { CC.q = $('ccBusca').value; CC.limite = 60; pintaClientesCaja(); };
+    $('ccOrden').onchange = () => { CC.orden = $('ccOrden').value; pintaClientesCaja(); };
+    $('ccCobrar').onclick = () => ccAbreCobro([]);
+    $('vista-poscustomers').addEventListener('click', async ev => {
+      const f = ev.target.closest('[data-ccf]'); if (f) { CC.filtro = f.dataset.ccf; CC.limite = 60; return pintaClientesCaja(); }
+      if (ev.target.closest('#ccMas')) { CC.limite += 60; return pintaClientesCaja(); }
+      const ver = ev.target.closest('[data-ccver]');
+      if (ver) { const id = ver.dataset.ccver; CC.abierto = CC.abierto === id ? null : id; pintaClientesCaja(); if (CC.abierto) { await ccCargaDetalle(id); if (CC.abierto === id) pintaClientesCaja(); } return; }
+      const cobrar = ev.target.closest('[data-cccobrar]'); if (cobrar) return ccAbreCobro([cobrar.dataset.cccobrar]);
+      const pr = ev.target.closest('[data-ccprint]'); if (pr) return ccImprime(pr.dataset.ccprint);
+      const chat = ev.target.closest('[data-ccchat]'); if (chat) { const c = buscaConv(chat.dataset.ccchat); if (c) { ve('conversations'); abre(c); } }
+    });
+  }
+  cargaClientesCaja();
+}
+
 async function montaTablero(id){
   const d = TABLERO[id];
   if (!montadas.has(id)) {
@@ -9319,7 +9645,10 @@ function montaRecordatorios(){
       + '<div class="filtros" style="padding:6px 0 0"><button class="btn-linea" id="tarVerHechas">Ver las completadas</button></div>'
       + '<div id="tarLista"></div>'
       + '<details class="grupo" id="tarEquipo" style="margin-top:18px"><summary>Equipo y horarios (a quién se le avisa y cuándo)</summary><div class="dentro" id="tarEquipoCont"></div></details>'
-      + '<h2 style="margin:30px 0 4px;font-size:16px">Seguimientos de clientes</h2>'
+      // Lo de arriba es SOLO de colaboradores (edicion, buscar algo...). Los seguimientos de clientes y los recordatorios del iPhone del dueño van
+      // plegados aqui abajo: siguen existiendo, pero no mezclados con el trabajo del equipo (orden del 11/10/2026).
+      + '<details class="grupo" id="tarOtros" style="margin-top:26px"><summary>Otros: seguimientos de clientes y mis recordatorios del iPhone (no son de colaboradores)</summary><div class="dentro">'
+      + '<h2 style="margin:10px 0 4px;font-size:16px">Seguimientos de clientes</h2>'
       + '<p class="bajada">Seguimientos con fecha puesta. Los vencidos van primero: son los que '
       +   'ya deberían haberse hecho.</p>'
       // Esta vista solo ENSEÑABA la lista. Sin este boton, promover v2 al panel de
@@ -9346,7 +9675,7 @@ function montaRecordatorios(){
       +   '<button class="btn-linea" id="recIphoneActualiza">Actualizar</button>'
       +   '<button class="btn-linea" id="recIphoneComo">Conectar el iPhone</button>'
       + '</div>'
-      + '<div id="recIphone"></div></div>');
+      + '<div id="recIphone"></div></div></details></div>');
     $('recProcesar').onclick = procesaRecordatorios;
     montaTareasEquipo();
     $('recIphoneActualiza').onclick = async (ev) => {
@@ -11027,7 +11356,7 @@ const CAT_DE_TARJETA = {
   'Instagram y Messenger': 'mensajes', 'Cómo te ve el cliente': 'mensajes', 'Límites de seguridad del 2.º número': 'mensajes',
   'Número del administrador': 'mensajes',
   'Mensajes por defecto': 'mensajes', 'Avisos al supervisor': 'mensajes', 'Resumen diario del CRM': 'mensajes', 'Bot de WhatsApp': 'mensajes',
-  'Encuesta de satisfacción': 'mensajes',
+  'Encuesta de satisfacción': 'mensajes', 'Satisfacción automática': 'clientes',
   'Permiso de marketing': 'clientes', 'Contactos ignorados': 'clientes', 'Baja de una lista entera': 'clientes',
   'Guardar contactos solo': 'clientes', 'Clientes de caja en el chat': 'clientes', 'Etiquetas del buscador': 'clientes',
   'Auto-cierre a los 14 días': 'auto', 'Leads al día': 'auto', 'Cerebro local': 'auto', 'Etiquetas y contexto automáticos': 'auto',
@@ -11051,7 +11380,7 @@ const SECCIONES_CFG = {
     { id: 'avisos', nombre: 'Avisos para ti', nota: 'Lo que te llega por WhatsApp para que no se te pase nada.', tarjetas: ['Resumen diario del CRM', 'Avisos al supervisor'] },
   ],
   clientes: [
-    { id: 'permisos', nombre: 'Permisos y bajas', nota: 'A quién sí y a quién no se le escribe de marketing.', tarjetas: ['Permiso de marketing', 'Baja de una lista entera'] },
+    { id: 'permisos', nombre: 'Permisos y bajas', nota: 'A quién sí y a quién no se le escribe de marketing.', tarjetas: ['Permiso de marketing', 'Baja de una lista entera', 'Satisfacción automática'] },
     { id: 'contactos', nombre: 'Contactos', nota: 'Qué se guarda, a quién se oculta y cómo se cruza con la caja.', tarjetas: ['Contactos ignorados', 'Guardar contactos solo', 'Clientes de caja en el chat'] },
     { id: 'busqueda', nombre: 'Buscador', nota: 'Qué etiquetas salen en la barra de Conversaciones.', tarjetas: ['Etiquetas del buscador'] },
   ],
@@ -11767,6 +12096,12 @@ async function pintaConfig(){
         'Cada mañana a las 8:45 te llega por WhatsApp lo que toca atender: chats sin responder, cotizaciones que se enfrían, seguimientos y sesiones de hoy y mañana. '
         + 'Un día tranquilo no manda nada. <b>Nunca le escribe a un cliente</b>: es un aviso para ti.',
         interruptorCfg('resumen_crm_diario', 'Mandarme «Tu día en el CRM» cada mañana', 'Solo si hay algo que atender. Lo mismo, cuando quieras, escribiendo «mi día».', true))
+
+    + tarjetaCfg('Satisfacción automática',
+        'Unas horas después de que marcas un chat como <b>«Atendido»</b>, el CRM le manda al cliente la encuesta de satisfacción. Solo en horario laboral (9 a. m. a 6 p. m.), '
+        + 'al azar a la mitad de los elegibles (máximo 4 al día) y <b>solo a clientes de buen consumo</b>: una sesión o RD$1,500 o más en caja. '
+        + 'Quien se hizo una foto 2×2 o una copia no la recibe, ni quien volvió a escribir después de atenderlo.',
+        interruptorCfg('satisfaccion_auto', 'Mandar la encuesta automáticamente', 'Apágalo para pedirla tú a mano desde el chat.', true))
 
     + tarjetaCfg('Avisos al supervisor',
         'El CRM le escribe a este teléfono cuando algo necesita tu mirada: <b>mala atención al cliente</b>, <b>temas delicados o polémicos</b>, '
@@ -14559,6 +14894,98 @@ function fechaCorta(v){
   return Number.isFinite(t) ? new Date(t).toLocaleDateString('es-DO', { day:'numeric', month:'short', year:'numeric' }) : '';
 }
 
+// ---- Ficha del lead modular (11/10/2026) --------------------------------------------------------------------------------------------
+// Cada bloque de la ficha es un MODULO: se puede ocultar, reordenar (arrastrando el asa ⠿ o con ▲ ▼) y plegar. «Análisis con IA», «Historial y
+// archivos» y «Selección visual» arrancan ocultos para compactarla; siguen existiendo y se vuelven a mostrar en «Personalizar». La eleccion se
+// guarda en este navegador (localStorage); sin almacenamiento, la ficha se ve con los valores de fabrica.
+const MODULOS_FICHA = [
+  ['analisis', 'Análisis con IA', /^an[aá]lisis con ia/i], ['caja', 'Cliente de caja', /^cliente de caja/i], ['datos', 'Datos del lead', /^datos del lead/i],
+  ['etiquetas', 'Etiquetas', /^etiquetas/i], ['notas', 'Notas internas', /^notas internas/i], ['historial', 'Historial y archivos', /^historial y archivos/i],
+  ['resumen', 'Resumen y próximo paso', /^resumen y pr[oó]ximo paso/i], ['trato', 'Datos del trato', /^datos del trato/i],
+  ['seleccion', 'Selección visual', /^selecci[oó]n visual/i], ['automatizacion', 'Automatización', /^automatizaci[oó]n/i], ['ignorar', 'Ignorar en el CRM', /^ignorar|^ignorada/i],
+];
+const FICHA_OCULTOS_DE_FABRICA = ['analisis', 'historial', 'seleccion'];
+function fichaConfig(){
+  let g = null;
+  try { g = JSON.parse(localStorage.getItem('crm_ficha_modulos') || 'null'); } catch (e) { g = null; }
+  return { orden: Array.isArray(g && g.orden) ? g.orden : [], ocultos: Array.isArray(g && g.ocultos) ? g.ocultos : FICHA_OCULTOS_DE_FABRICA.slice() };
+}
+function guardaFichaConfig(cfg){ try { localStorage.setItem('crm_ficha_modulos', JSON.stringify(cfg)); } catch (e) { /* sin almacenamiento */ } }
+function personalizaFicha(){
+  const cuerpo = document.querySelector('#ficha .cuerpo'); if (!cuerpo) return;
+  const mods = new Map();
+  [...cuerpo.children].filter(n => n.tagName === 'DETAILS' && n.classList.contains('grupo')).forEach(d => {
+    const t = (d.querySelector('summary')?.textContent || '').trim();
+    const m = MODULOS_FICHA.find(x => x[2].test(t));
+    if (!m) return;
+    d.dataset.modulo = m[0];
+    if (!d.querySelector('.asa')) {
+      const sm = d.querySelector('summary');
+      const asa = document.createElement('span'); asa.className = 'asa'; asa.textContent = '⠿'; asa.title = 'Arrastra para mover este bloque'; asa.draggable = true;
+      sm.prepend(asa);
+      asa.addEventListener('click', ev => { ev.preventDefault(); ev.stopPropagation(); });
+      asa.addEventListener('dragstart', ev => { ev.dataTransfer.setData('text/plain', m[0]); ev.dataTransfer.effectAllowed = 'move'; d.classList.add('arrastrando'); });
+      asa.addEventListener('dragend', () => d.classList.remove('arrastrando'));
+    }
+    mods.set(m[0], d);
+  });
+  const aplica = () => {
+    const cfg = fichaConfig();
+    const orden = [...cfg.orden.filter(id => mods.has(id)), ...[...mods.keys()].filter(id => !cfg.orden.includes(id))];
+    // Los modulos se colocan antes del primer nodo que NO es modulo de la cola (nada: van al final, antes del bloque de configuracion).
+    const ancla = document.getElementById('fichaPers');
+    orden.forEach(id => { const d = mods.get(id); cuerpo.appendChild(d); d.hidden = cfg.ocultos.includes(id); });
+    if (ancla) cuerpo.appendChild(ancla);
+  };
+  // Panel «Personalizar»
+  let pers = document.getElementById('fichaPers');
+  if (!pers) {
+    pers = document.createElement('div'); pers.id = 'fichaPers'; pers.className = 'ficha-pers';
+    pers.innerHTML = '<button type="button" class="btn-linea" id="fichaPersAbre">Personalizar la ficha</button><div class="ficha-pers-lista" id="fichaPersLista" hidden></div>';
+    cuerpo.appendChild(pers);
+  }
+  const lista = pers.querySelector('#fichaPersLista');
+  const pinta = () => {
+    const cfg = fichaConfig();
+    const orden = [...cfg.orden.filter(id => mods.has(id)), ...[...mods.keys()].filter(id => !cfg.orden.includes(id))];
+    lista.innerHTML = '<p class="aviso" style="margin:0 0 6px">Marca lo que quieres ver y mueve los bloques con ▲ ▼ (o arrastrando el asa ⠿ en la ficha).</p>'
+      + orden.map(id => { const nombre = MODULOS_FICHA.find(x => x[0] === id)[1];
+        return '<div class="ficha-pers-fila" data-id="' + id + '"><label><input type="checkbox" ' + (cfg.ocultos.includes(id) ? '' : 'checked') + '> ' + esc(nombre) + '</label>'
+          + '<span><button type="button" data-mueve="-1" aria-label="Subir">▲</button><button type="button" data-mueve="1" aria-label="Bajar">▼</button></span></div>'; }).join('')
+      + '<button type="button" class="btn-linea" id="fichaPersReset" style="margin-top:6px">Restablecer</button>';
+  };
+  pers.querySelector('#fichaPersAbre').onclick = () => { lista.hidden = !lista.hidden; if (!lista.hidden) pinta(); };
+  lista.onclick = ev => {
+    const fila = ev.target.closest('.ficha-pers-fila');
+    if (ev.target.id === 'fichaPersReset') { try { localStorage.removeItem('crm_ficha_modulos'); } catch (e) { /* nada */ } aplica(); pinta(); return; }
+    const mueve = ev.target.closest('[data-mueve]');
+    if (fila && mueve) {
+      const cfg = fichaConfig();
+      const orden = [...cfg.orden.filter(id => mods.has(id)), ...[...mods.keys()].filter(id => !cfg.orden.includes(id))];
+      const i = orden.indexOf(fila.dataset.id), j = i + Number(mueve.dataset.mueve);
+      if (j >= 0 && j < orden.length) { [orden[i], orden[j]] = [orden[j], orden[i]]; guardaFichaConfig({ orden, ocultos: cfg.ocultos }); aplica(); pinta(); }
+    }
+  };
+  lista.onchange = ev => {
+    const fila = ev.target.closest('.ficha-pers-fila'); if (!fila || ev.target.type !== 'checkbox') return;
+    const cfg = fichaConfig();
+    const ocultos = new Set(cfg.ocultos); if (ev.target.checked) ocultos.delete(fila.dataset.id); else ocultos.add(fila.dataset.id);
+    guardaFichaConfig({ orden: cfg.orden, ocultos: [...ocultos] }); aplica();
+  };
+  // Arrastrar y soltar entre bloques
+  cuerpo.ondragover = ev => { if (ev.dataTransfer && ev.target.closest('details[data-modulo]')) { ev.preventDefault(); ev.dataTransfer.dropEffect = 'move'; } };
+  cuerpo.ondrop = ev => {
+    const objetivo = ev.target.closest('details[data-modulo]'); const id = ev.dataTransfer && ev.dataTransfer.getData('text/plain');
+    if (!objetivo || !id || !mods.has(id) || objetivo.dataset.modulo === id) return;
+    ev.preventDefault();
+    const cfg = fichaConfig();
+    const orden = [...cfg.orden.filter(x => mods.has(x)), ...[...mods.keys()].filter(x => !cfg.orden.includes(x))].filter(x => x !== id);
+    orden.splice(orden.indexOf(objetivo.dataset.modulo), 0, id);
+    guardaFichaConfig({ orden, ocultos: cfg.ocultos }); aplica();
+  };
+  aplica();
+}
+
 function grupoIgnorarFicha(c){
   if (ignorada(c)) {
     return '<details class="grupo" open><summary>Ignorada en el CRM</summary><div class="dentro">'
@@ -15504,9 +15931,12 @@ function etiquetasElegidas(){
 // primero y quitar una etiqueta en modo automatico reventaba. Una sola fuente para los dos.
 function etiquetasEnLaBarra(){
   const elegidas = etiquetasElegidas();
-  return elegidas.length
-    ? elegidas
-    : etiquetasContadas().filter(([, n]) => n >= 2).slice(0, 8).map(([e]) => e);
+  if (elegidas.length) return elegidas;
+  // Automatico = las ETAPAS DEL EMBUDO de ventas (nuevo, interesado, cotizando…) y «requiere_humano», en el orden del embudo. Las demas etiquetas
+  // (xv, proveedor, pedido_marcos…) siguen existiendo y se eligen con el boton + o en Configuracion (orden del dueño: etiquetas ligadas al Funnel).
+  const clave = ['nuevo', 'interesado', 'cotizando', 'pendiente_reserva', 'reservado', 'cliente', 'perdido', 'requiere_humano'];
+  const hay = new Map(etiquetasContadas());
+  return clave.filter(e => hay.has(e));
 }
 
 // El recuadro del boton +. Elegir que etiquetas se ven estaba solo en Configuracion, a cuatro
@@ -16838,6 +17268,61 @@ $('formAcceso').addEventListener('submit', async ev => {
   finally { $('btnEntrar').disabled = false; }
 });
 $('btnSalir').onclick = () => signOut(auth);
+
+// ---- Ayuda «?» en cada pantalla (11/10/2026) ------------------------------------------------------------------------------------------
+// Un boton «?» junto al titulo. Al dejar el cursor quieto (o al pulsarlo) abre una ventanita estilo Photoshop con: para que sirve, lo que se puede
+// hacer y un «Ver más». Si existe ayudas/<pantalla>.mp4 (video corto SIN audio de la accion en tiempo real) se reproduce arriba; si no existe, no
+// se enseña nada vacio. Los videos se graban al final con la pantalla preparada por el dueño.
+const AYUDAS = {
+  planning: ['Planificación', 'Habla con el asistente del CRM como en un chat: te prepara mensajes, propone cambios en las fichas y analiza conversaciones. Tú apruebas antes de que cambie nada.', ['Pedirle «qué hago hoy» o «prepárame un seguimiento para María»', 'Aprobar o descartar lo que propone', 'Usar los asistentes guiados para tareas repetidas'], 'Nada se envía ni se cambia sin que pulses Aprobar. Si no sabes qué pedir, empieza con «ayuda crm».'],
+  conversations: ['Conversaciones', 'Todos los chats de tus números y redes en un solo sitio. Atiendes, respondes, adjuntas fotos y archivos y marcas cuándo ya atendiste.', ['Responder, adjuntar fotos o documentos y grabar notas de voz', '«Humano atiende / Bot atiende» decide quién contesta ese chat', '«Atendido» quita el chat de los pendientes', 'La ficha (ⓘ) guarda etiquetas, notas y datos del lead'], 'Filtra por Sin leer, Humano, Bot, canal o etiqueta. Los chats ignorados están en el filtro «Ignorados» y se les puede escribir a mano.'],
+  estados: ['Estados', 'Ve los estados de tus contactos y publica los tuyos como en WhatsApp Web, en la mejor calidad posible.', ['Ver quién vio tus estados', 'Publicar fotos, videos o texto', 'Elegir a quién le llega (todos, clientes, dormidos…)'], 'Antes de publicar te dice cuántas personas lo verán.'],
+  hoy: ['Hoy', 'La lista de lo que toca atender, por orden de importancia: chats sin responder, cotizaciones que se enfrían, seguimientos y sesiones.', ['Abrir un chat pendiente con un toque', '«No requiere respuesta» lo saca de la lista', '«Marcar viejos como atendidos» limpia los de más de 3 días'], 'Abrir esta pantalla no envía nada.'],
+  agenda: ['Agenda', 'Tus sesiones, recordatorios y citas en un calendario. Crea citas y abre la conversación del cliente.', ['Crear una cita', 'Filtrar y navegar por semanas y meses', 'Exportar a Recordatorios de Apple'], 'Las citas que llegan por la web aparecen aquí con el combo y la sucursal.'],
+  dashboard: ['Dashboard', 'Resumen de cómo va el negocio: conversaciones, embudo de ventas, ventas de la caja y rendimiento.', ['Ver el embudo y las cifras del día', 'Entrar a cada tarjeta para ver el detalle'], 'Las cifras salen de tus propios datos; los chats ignorados no cuentan.'],
+  funnel: ['Funnel · Kanban', 'Las etapas por las que pasa un cliente, de «Nuevo» a «Cliente». Cambiar la etapa cambia lo que el sistema le mandará después.', ['Elegir una etapa para ver a su gente', '«Mover de etapa» o arrastrar a otra etapa', 'Cambiar entre Embudo y Tablero'], 'Nada se mueve solo sin avisarte.'],
+  prospecting: ['Prospección', 'Busca negocios y posibles clientes y los importa como contactos para escribirles.', ['Buscar por zona y tipo de negocio', 'Importar los que te sirvan'], 'Solo se importan contactos; no se envía nada al importar.'],
+  poscustomers: ['Clientes de caja', 'Tus clientes de la caja: qué compraron, cuánto deben y cuándo. Para cobrar con respeto y vender más.', ['Buscar un cliente y ver su historial', 'Filtrar por «pagaron» o «deben»', 'Preparar un mensaje de cobro con botones para que responda fácil'], 'Los cobros salen por plantilla aprobada y nunca de forma invasiva.'],
+  satisfaccion: ['Satisfacción', 'Pregunta a clientes que ya fueron atendidos cómo les fue, para mejorar y pedir reseñas.', ['Ver las respuestas y la nota del servicio y del colaborador'], 'Se envía unas horas después de atender, en horario laboral, y solo a clientes de buen consumo.'],
+  limpieza: ['Limpieza', 'Ordena el histórico: encuentra contactos sin interés para no seguir escribiéndoles.', ['Buscar candidatos', 'Programar UN acercamiento antes de darlos por desinteresados', 'Marcar como desinteresados'], 'Quien no contesta tras dos seguimientos pasa a desinteresado.'],
+  anuncios: ['Anuncios', 'Resultados de tus anuncios de Meta (alcance, mensajes, gasto) en un panel.', ['Ver métricas por campaña'], 'Solo lectura: no crea ni cambia anuncios.'],
+  campanas: ['Campañas', 'Envía un mensaje a un grupo de contactos con el ritmo antibloqueo que protege tu número.', ['Simular primero: ves a quién le llegaría', 'Elegir plantilla o texto libre según el número', 'Revisar la lista de destinatarios y abrir su conversación'], 'Cada mensaje va personalizado y cada plantilla de marketing lleva salida de baja.'],
+  plantillas: ['Plantillas', 'Mensajes aprobados por Meta para escribir fuera de las 24 horas, con botones para que el cliente responda rápido.', ['Ver las aprobadas', 'Crear una nueva (Meta la revisa)'], 'Toda plantilla debe llevar botones, incluida la opción de no querer el servicio.'],
+  reminders: ['Tareas', 'Tareas y recordatorios para tu equipo. Cada colaborador los recibe en su WhatsApp dentro de su horario.', ['Asignar una tarea a un colaborador', 'Ver pendientes y completadas', 'Los seguimientos de clientes y tus recordatorios del iPhone están plegados abajo'], 'Los colaboradores contestan LISTO, MAÑANA, EN PROCESO o AYUDA.'],
+  canales: ['Canales', 'Conecta y administra tus números y redes: WhatsApp oficial, WhatsApp Web, Instagram y Messenger.', ['Ver si cada canal está conectado', 'Encender o apagar el bot en UN canal'], 'Apagar el bot de un canal no afecta a los demás.'],
+  config: ['Configuración', 'Los ajustes del CRM en secciones, cada una con su explicación.', ['Avisos al supervisor y resumen diario', 'Contactos ignorados', 'Portafolio de la web', 'Número del administrador'], 'Si dudas de un ajuste, lee su explicación antes de cambiarlo.'],
+};
+(function(){
+  const btn = $('btnAyuda'), pop = $('ayudaPop');
+  if (!btn || !pop) return;
+  let temporizador = null;
+  const cierra = () => { pop.hidden = true; btn.setAttribute('aria-expanded', 'false'); const v = pop.querySelector('video'); if (v) v.pause(); };
+  const abre = () => {
+    const a = AYUDAS[vistaActual];
+    if (!a) return;
+    pop.innerHTML = '<video class="ayuda-video" muted loop playsinline preload="none" hidden></video>'
+      + '<div class="ayuda-cuerpo"><b>' + esc(a[0]) + '</b><p>' + esc(a[1]) + '</p>'
+      + '<button type="button" class="ayuda-mas" id="ayudaMas">Ver más</button>'
+      + '<div class="ayuda-detalle" id="ayudaDetalle" hidden><div class="ayuda-sub">Qué puedes hacer</div><ul>' + a[2].map(x => '<li>' + esc(x) + '</li>').join('') + '</ul><p class="ayuda-nota">' + esc(a[3]) + '</p></div></div>';
+    const v = pop.querySelector('video');
+    v.onloadeddata = () => { v.hidden = false; v.play().catch(() => {}); };
+    v.onerror = () => { v.hidden = true; };
+    v.src = 'ayudas/' + vistaActual + '.mp4';
+    pop.querySelector('#ayudaMas').onclick = ev => { const d = pop.querySelector('#ayudaDetalle'); d.hidden = !d.hidden; ev.currentTarget.textContent = d.hidden ? 'Ver más' : 'Ver menos'; };
+    pop.hidden = false; btn.setAttribute('aria-expanded', 'true');
+    // Debajo del boton, sin salirse de la pantalla.
+    const r = btn.getBoundingClientRect();
+    pop.style.top = (r.bottom + 8) + 'px';
+    pop.style.left = Math.max(12, Math.min(r.left - 8, window.innerWidth - pop.offsetWidth - 12)) + 'px';
+  };
+  btn.addEventListener('click', ev => { ev.stopPropagation(); pop.hidden ? abre() : cierra(); });
+  // Como en Photoshop: al dejar el cursor quieto sobre el boton, aparece solo.
+  btn.addEventListener('mouseenter', () => { clearTimeout(temporizador); temporizador = setTimeout(() => { if (pop.hidden) abre(); }, 550); });
+  btn.addEventListener('mouseleave', () => clearTimeout(temporizador));
+  document.addEventListener('click', ev => { if (!pop.hidden && !pop.contains(ev.target) && ev.target !== btn) cierra(); });
+  document.addEventListener('keydown', ev => { if (ev.key === 'Escape' && !pop.hidden) cierra(); });
+  window.addEventListener('hashchange', cierra);
+})();
 
 // Menu lateral plegable: solo iconos. Recuerda la eleccion en este navegador; sin almacenamiento arranca desplegado.
 (function(){
