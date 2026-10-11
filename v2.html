@@ -2134,6 +2134,51 @@ input[type="checkbox"],input[type="radio"]{accent-color:var(--accent)}
 .tar-dias{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0}
 .tar-dias label{flex-direction:row;align-items:center;gap:4px;font-size:12px;color:var(--fg);font-weight:500}
 @media (max-width:720px){.tar-form .btn-solido{flex:1 1 100%}.tar-fila{grid-template-columns:1fr}.tar-acc{justify-content:flex-start}}
+/* ---- Menu lateral plegable (11/10/2026) ----------------------------------------------------------------------------------------
+   El dueño pidio poder esconder la barra izquierda y que queden solo los iconos, y que «Salir» ocupe menos. El estado se recuerda en este
+   navegador. Solo en escritorio: en el movil el menu ya es un cajon. Cada icono lleva su nombre como tooltip (title). */
+.marca .plega{margin-left:auto;flex:0 0 auto;width:28px;height:28px;display:grid;place-items:center;border:0;border-radius:9px;
+  background:transparent;color:var(--mut);cursor:pointer;transition:background .15s,color .15s}
+.marca .plega:hover{background:var(--hover);color:var(--fg)}
+.marca .plega svg{width:16px;height:16px;transition:transform .25s}
+.lateral{transition:width .22s var(--curva)}
+/* «Salir»: una pastilla, no una barra de lado a lado. */
+.pie #btnSalir{width:auto;padding:6px 12px;font-size:12px;font-weight:600;gap:6px;border-radius:999px}
+.pie .pie-fila{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.pie .pie-fila .estado{margin:0;min-width:0}
+@media(min-width:761px){
+  #app.lateral-min .lateral{width:72px}
+  #app.lateral-min .marca{flex-direction:column;align-items:center;gap:8px;padding:14px 0 8px}
+  #app.lateral-min .marca>div:not(.sigla){display:none}
+  #app.lateral-min .marca .plega{margin:0}
+  #app.lateral-min .marca .plega svg{transform:rotate(180deg)}
+  #app.lateral-min .nav{padding:4px 10px 10px}
+  #app.lateral-min .nav a{justify-content:center;padding:5px 0;position:relative}
+  #app.lateral-min .nav a>span:not(.cuenta){display:none}
+  #app.lateral-min .nav a .cuenta{position:absolute;top:-1px;right:4px;min-width:15px;padding:0 4px;font-size:9.5px;line-height:15px;text-align:center}
+  #app.lateral-min .nav .rotulo{font-size:0;height:1px;padding:0;margin:8px 12px 6px;background:var(--line)}
+  #app.lateral-min .nav .nav-fila{position:relative}
+  #app.lateral-min .nav .nav-flecha,#app.lateral-min .nav .accesos{display:none}
+  #app.lateral-min .pie{padding:10px 0 14px;display:flex;flex-direction:column;align-items:center;gap:10px}
+  #app.lateral-min .pie .estado{margin:0}
+  #app.lateral-min .pie .pie-fila{flex-direction:column;gap:10px}
+  #app.lateral-min .pie .estado>span:not(.punto){display:none}
+  #app.lateral-min .pie .version{display:none}
+  #app.lateral-min .pie #btnSalir{width:38px;height:38px;padding:0;font-size:0;gap:0;justify-content:center;border-radius:12px}
+  #app.lateral-min .pie #btnSalir svg{width:17px;height:17px}
+}
+@media(max-width:760px){.marca .plega{display:none}}
+/* La lista de conversaciones es lo que mas se mira: gana ancho cuando la pantalla lo permite (era un tope de 330 px). */
+@media(min-width:1000px){.lista{width:clamp(340px,29vw,470px)}}
+/* Cabecera del chat: el nombre y el telefono no se parten en tres lineas ni los botones se montan encima; lo que sobra se corta con «…». */
+.cabecera{position:relative;z-index:30}
+.cabecera .quien-chat b,.cabecera .quien-chat span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cabecera .modo,.cabecera .adj,.cabecera .mas{flex:0 0 auto;white-space:nowrap}
+.cabecera .modo{padding:7px 11px}
+/* El menu de un mensaje que esta pegado a la barra de escribir se abre HACIA ARRIBA (antes quedaba tapado por el compositor). */
+.gmenu.arriba{top:auto;bottom:20px}
+/* «Mover de etapa» se lee entero (antes decia «Mover a…» y parecia cortado): sin partirse en dos lineas. */
+.fe-mover{white-space:nowrap;flex:0 0 auto}
 @media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
 </head>
@@ -2164,15 +2209,20 @@ input[type="checkbox"],input[type="radio"]{accent-color:var(--accent)}
     <div class="marca">
       <div class="sigla" id="sigla">DC</div>
       <div><b id="marca">CRM</b><span id="submarca"></span></div>
+      <button type="button" class="plega" id="btnPlega" aria-label="Plegar el menú" aria-pressed="false" title="Plegar el menú: solo los íconos">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 17l-5-5 5-5M18 17l-5-5 5-5"/></svg>
+      </button>
     </div>
     <nav class="nav" id="nav"></nav>
     <div class="pie">
-      <div class="estado"><span class="punto" id="punto"></span><span id="estadoTexto">Conectando…</span></div>
+      <div class="pie-fila">
+        <div class="estado"><span class="punto" id="punto"></span><span id="estadoTexto">Conectando…</span></div>
+        <button id="btnSalir" title="Cerrar sesión" aria-label="Salir">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 17l5-5-5-5M21 12H9M13 21H5a2 2 0 01-2-2V5a2 2 0 012-2h8"/></svg>
+          Salir
+        </button>
+      </div>
       <button class="version" id="version" hidden></button>
-      <button id="btnSalir">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 17l5-5-5-5M21 12H9M13 21H5a2 2 0 01-2-2V5a2 2 0 012-2h8"/></svg>
-        Salir
-      </button>
     </div>
   </aside>
 
@@ -2398,7 +2448,7 @@ function pintaMenu(){
   // aparece en el menu. Es supervision interna: quien atiende no tiene por que verla, y lo que de
   // verdad importa le llega al dueno por WhatsApp (owner-vigilancia.js).
   const disponibles = VISTAS.filter(v => !v.oculta && (!v.restringida || ['admin','supervisor'].includes(ROL_ACTUAL)));
-  const enlace = v => '<a href="#' + v.id + '" data-vista="' + v.id + '">' + v.icono
+  const enlace = v => '<a href="#' + v.id + '" data-vista="' + v.id + '" title="' + esc(v.nombre) + '">' + v.icono
     + '<span>' + esc(v.nombre) + '</span><span class="cuenta" data-cuenta="' + v.id + '" hidden></span></a>';
   // Sin data-vista: el enrutador solo intercepta a[data-vista] (mas abajo), asi que estos abren
   // en pestana nueva sin pasar por ve() y nunca se quedan marcados como la vista actual. El
@@ -6769,6 +6819,18 @@ document.addEventListener('click', async ev => {
     + (puedeRetirar ? '<button data-op="retirar" class="peligro">Eliminar para todos</button>' : '')
     + '<button data-op="borrar" class="peligro">Eliminar</button>');
   globo.appendChild(menu);
+  // Si el mensaje esta pegado a la barra de escribir, el menu se abre hacia arriba; si arriba tampoco cabe, se desplaza el hilo lo justo.
+  const contMsgs = menu.closest('.mensajes');
+  if (contMsgs) {
+    const c = contMsgs.getBoundingClientRect();
+    if (menu.getBoundingClientRect().bottom > c.bottom - 6) {
+      menu.classList.add('arriba');
+      if (menu.getBoundingClientRect().top < c.top + 6) {
+        menu.classList.remove('arriba');
+        contMsgs.scrollTop += Math.ceil(menu.getBoundingClientRect().bottom - c.bottom + 10);
+      }
+    }
+  }
   menu.onclick = async e2 => {
     e2.stopPropagation();
     const op = e2.target.closest('[data-op]')?.dataset.op;
@@ -10964,7 +11026,7 @@ const CAT_DE_TARJETA = {
   'Últimos movimientos': 'cuenta',
   'Instagram y Messenger': 'mensajes', 'Cómo te ve el cliente': 'mensajes', 'Límites de seguridad del 2.º número': 'mensajes',
   'Número del administrador': 'mensajes',
-  'Mensajes por defecto': 'mensajes', 'Avisos de atención humana': 'mensajes', 'Resumen diario del CRM': 'mensajes', 'Bot de WhatsApp': 'mensajes',
+  'Mensajes por defecto': 'mensajes', 'Avisos al supervisor': 'mensajes', 'Resumen diario del CRM': 'mensajes', 'Bot de WhatsApp': 'mensajes',
   'Encuesta de satisfacción': 'mensajes',
   'Permiso de marketing': 'clientes', 'Contactos ignorados': 'clientes', 'Baja de una lista entera': 'clientes',
   'Guardar contactos solo': 'clientes', 'Clientes de caja en el chat': 'clientes', 'Etiquetas del buscador': 'clientes',
@@ -10986,7 +11048,7 @@ const SECCIONES_CFG = {
   mensajes: [
     { id: 'lineas', nombre: 'Tus líneas de WhatsApp', nota: 'El bot, las redes y cómo te ve el cliente.', tarjetas: ['Bot de WhatsApp', 'Número del administrador', 'Instagram y Messenger', 'Cómo te ve el cliente', 'Límites de seguridad del 2.º número'] },
     { id: 'textos', nombre: 'Lo que se le escribe al cliente', nota: 'Atajos y encuesta.', tarjetas: ['Mensajes por defecto', 'Encuesta de satisfacción'] },
-    { id: 'avisos', nombre: 'Avisos para ti', nota: 'Lo que te llega por WhatsApp para que no se te pase nada.', tarjetas: ['Resumen diario del CRM', 'Avisos de atención humana'] },
+    { id: 'avisos', nombre: 'Avisos para ti', nota: 'Lo que te llega por WhatsApp para que no se te pase nada.', tarjetas: ['Resumen diario del CRM', 'Avisos al supervisor'] },
   ],
   clientes: [
     { id: 'permisos', nombre: 'Permisos y bajas', nota: 'A quién sí y a quién no se le escribe de marketing.', tarjetas: ['Permiso de marketing', 'Baja de una lista entera'] },
@@ -11706,9 +11768,11 @@ async function pintaConfig(){
         + 'Un día tranquilo no manda nada. <b>Nunca le escribe a un cliente</b>: es un aviso para ti.',
         interruptorCfg('resumen_crm_diario', 'Mandarme «Tu día en el CRM» cada mañana', 'Solo si hay algo que atender. Lo mismo, cuando quieras, escribiendo «mi día».', true))
 
-    + tarjetaCfg('Avisos de atención humana',
-        'Cuando un chat necesita a una persona, el CRM manda un aviso interno a este teléfono por la '
-        + 'línea de WhatsApp Web que esté conectada. Si el teléfono es la propia línea no se envía '
+    + tarjetaCfg('Avisos al supervisor',
+        'El CRM le escribe a este teléfono cuando algo necesita tu mirada: <b>mala atención al cliente</b>, <b>temas delicados o polémicos</b>, '
+        + '<b>conversaciones extrañas</b> y chats que piden a una persona. Cada aviso dice <b>qué colaborador</b> atendió, <b>qué cliente</b> y su número, '
+        + 'y la <b>fecha y la hora</b>. Solo de 7 a. m. a 10 p. m., sin repetir el mismo aviso y con un tope diario; nunca le escribe a un cliente ni a un colaborador. '
+        + 'Los avisos de «pide una persona» salen por la línea de WhatsApp Web conectada: si el teléfono es esa misma línea no se envían '
         + '(sería escribirse a sí mismo) y queda solo la marca «Aviso no enviado» en la ficha.',
         '<div class="campo"><label>Teléfono que recibe los avisos</label>'
         + '<input id="cfgAvisoTel" inputmode="numeric" value="' + esc(AJUSTES.handoff_notify_phone || '')
@@ -12402,7 +12466,7 @@ function montaFunnel(){
   if (!montadas.has('funnel')) {
     montadas.add('funnel');
     hueco('funnel', '<div class="hoja"><h1>Funnel</h1>'
-      + '<p class="bajada">Elige una etapa para ver a su gente. Para cambiarle la etapa a alguien, arrástralo o usa «Mover a…».</p>'
+      + '<p class="bajada">Elige una etapa para ver a su gente. Para cambiarle la etapa a alguien, arrástralo o usa «Mover de etapa».</p>'
       + '<div class="fun-barra">'
       +   '<div class="fun-sw" id="funSw" role="tablist"><button data-fvista="embudo">Embudo</button><button data-fvista="tablero">Tablero</button></div>'
       +   '<input type="search" class="fun-buscar" id="funBusca" placeholder="Buscar en el funnel…" autocomplete="off">'
@@ -12531,7 +12595,7 @@ function pintaEmbudo(filtradas, hayFiltro){
     +   '<small>' + esc(c.last_message_preview || 'Sin mensajes') + '</small></span>'
     + (c.interested_category ? '<em class="fe-cat">' + esc(c.interested_category) + '</em>' : '<em class="fe-cat vacia"></em>')
     + '<i class="fe-hora">' + esc(hora(c.last_message_at)) + '</i>'
-    + '<button class="btn-linea fe-mover" id="fm-' + esc(c._id) + '" data-fmover="' + esc(c._id) + '" data-menu-flotante>Mover a…</button></div>';
+    + '<button class="btn-linea fe-mover" id="fm-' + esc(c._id) + '" data-fmover="' + esc(c._id) + '" data-menu-flotante>Mover de etapa ▾</button></div>';
   const filas = ordenaFunnel(filtradas.filter(c => (c.lifecycle_stage || 'nuevo') === sel), FUN.orden, nombreDe);
   const tope = FUN_LIMITE[sel] || FUN_TANDA;
   const r = resumen.find(x => x.e === sel) || { n: 0, todas: 0 };
@@ -16774,6 +16838,26 @@ $('formAcceso').addEventListener('submit', async ev => {
   finally { $('btnEntrar').disabled = false; }
 });
 $('btnSalir').onclick = () => signOut(auth);
+
+// Menu lateral plegable: solo iconos. Recuerda la eleccion en este navegador; sin almacenamiento arranca desplegado.
+(function(){
+  const app = $('app'), b = $('btnPlega');
+  if (!app || !b) return;
+  const aplica = (min) => {
+    app.classList.toggle('lateral-min', min);
+    b.setAttribute('aria-pressed', min ? 'true' : 'false');
+    const t = min ? 'Desplegar el menú' : 'Plegar el menú: solo los íconos';
+    b.title = t; b.setAttribute('aria-label', t);
+  };
+  let min = false;
+  try { min = localStorage.getItem('crm_menu_min') === '1'; } catch (e) { /* sin almacenamiento: desplegado */ }
+  aplica(min);
+  b.onclick = () => {
+    min = !app.classList.contains('lateral-min');
+    aplica(min);
+    try { localStorage.setItem('crm_menu_min', min ? '1' : '0'); } catch (e) { /* nada que guardar */ }
+  };
+})();
 
 onAuthStateChanged(auth, async u => {
   if (!u) {
