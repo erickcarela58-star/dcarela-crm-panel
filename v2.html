@@ -793,6 +793,18 @@ a.ayuda{color:var(--enlace)}
 .pieza .pnom i{display:block;font-style:normal;font-size:10.5px;color:var(--meta)}
 .pieza button{color:var(--mut);font-size:15px;line-height:1;flex:0 0 auto}
 .pieza button:hover{color:var(--bad)}
+/* Estado de cada archivo mientras sale: en espera, enviando (barra que corre) o con su error a la vista. */
+.pieza{position:relative}
+.pieza .pvid{position:relative;display:inline-flex;flex:0 0 auto}
+.pieza .pvid::after{content:"";position:absolute;left:50%;top:50%;width:0;height:0;margin:-6px 0 0 -4px;
+  border-left:10px solid #fff;border-top:6px solid transparent;border-bottom:6px solid transparent;filter:drop-shadow(0 0 2px rgba(0,0,0,.7))}
+.pieza.enviando{opacity:.75}
+.pieza.enviando::after{content:"";position:absolute;left:6px;right:6px;bottom:2px;height:2px;border-radius:2px;
+  background:linear-gradient(90deg,transparent,var(--ok),transparent);background-size:60% 100%;background-repeat:no-repeat;animation:corre 1s linear infinite}
+@keyframes corre{from{background-position:-60% 0}to{background-position:160% 0}}
+.pieza.error{border-color:var(--bad)}
+.pieza .pnom i.malo{color:var(--bad);white-space:normal}
+@media (prefers-reduced-motion:reduce){.pieza.enviando::after{animation:none;background:var(--ok);background-size:100% 100%}}
 /* `display:flex` le gana al atributo hidden (que solo trae display:none de la hoja
    del navegador), asi que la barra de grabacion se veia SIEMPRE: parecia que el panel
    estaba grabando sin parar. La regla de [hidden] va explicita y despues. */
@@ -5494,7 +5506,7 @@ function abre(c){
     +   '<div class="adjuntos">'
     +     '<button class="adj" id="adjEmoji" title="Emojis" aria-label="Emojis">'
     +       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="8.600"/><path d="M8.600 14.200a4.200 4.200 0 006.800 0"/><circle cx="9.200" cy="9.800" r=".9" fill="currentColor" stroke="none"/><circle cx="14.800" cy="9.800" r=".9" fill="currentColor" stroke="none"/></svg></button>'
-    +     '<button class="adj" id="adjImg" title="Enviar imágenes" aria-label="Enviar imágenes">'
+    +     '<button class="adj" id="adjImg" title="Enviar fotos o videos" aria-label="Enviar fotos o videos">'
     +       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3.500" y="4.500" width="17" height="15" rx="3.200"/><circle cx="9" cy="10" r="1.700"/><path d="M4 17.500l4.500-4.200 3.500 3.200 3-2.800 5 4.300"/></svg></button>'
     +     '<button class="adj hd' + (modoHd ? ' on' : '') + '" id="adjHd" title="HD: envía la imagen sin comprimir" aria-pressed="' + (modoHd ? 'true' : 'false') + '">HD</button>'
     +     '<button class="adj" id="adjDoc" title="Enviar documento" aria-label="Enviar documento">'
@@ -5512,7 +5524,7 @@ function abre(c){
         : '')
     +     '<button class="adj" id="adjMic" title="Grabar audio" aria-label="Grabar audio">'
     +       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="9" y="3" width="6" height="11.500" rx="3"/><path d="M5.500 11.500a6.500 6.500 0 0013 0M12 18v3"/></svg></button>'
-    +     '<input type="file" id="fImg" accept="image/*" multiple hidden>'
+    +     '<input type="file" id="fImg" accept="image/*,video/*" multiple hidden>'
     +     '<input type="file" id="fSticker" accept="image/webp,.webp" multiple hidden>'
     +     '<input type="file" id="fGif" accept="video/mp4,video/webm" multiple hidden>'
     +     '<input type="file" id="fDoc" multiple hidden>'
@@ -5883,6 +5895,10 @@ function cableaChat(c){
       return avisa('Sin conexión', 'El mensaje quedó pendiente y saldrá solo cuando vuelva internet.');
     }
     env.disabled = true;
+    // Si todavia se estan preparando (comprimiendo, leyendo), se espera: enviar a medias mandaba el archivo vacio.
+    if (COLA.length) { await recalculaCola(); if (!COLA.length) { env.disabled = false; return; } }
+    COLA.forEach(a => { a.estado = 'espera'; a.error = ''; });
+    pintaCola();
     let fallo = null;
     // Los nombres de estas claves NO son opcionales: uploadMetaMedia lee media_b64 y
     // media_filename (firebase-functions/src/index.js:179-183). Con media_base64 la
@@ -5899,12 +5915,11 @@ function cableaChat(c){
     // Van por la misma cola, uno por mensaje, con el texto como pie del ultimo que lo admite.
     const porPuente = canalDe(sel) === 'whatsapp_qr';
     if (porPuente) {
-      const pieEnQr = COLA.map(a => a.tipo).lastIndexOf('image') >= 0
-        ? COLA.map(a => a.tipo).lastIndexOf('image')
-        : COLA.map(a => a.tipo).lastIndexOf('document');
+      const pieEnQr = indiceConPie(COLA);
       let salieronQr = 0, falloQr = null;
       for (let i = 0; i < COLA.length && !falloQr; i++) {
         const a = COLA[i];
+        a.estado = 'enviando'; pintaCola();
         const adj = await cuerpoDeAdjunto(a);
         const r = !adj.ok ? { ok:false, error: adj.error } : await llama({
           action:'bridgeQueue', conversation_id: conv,
@@ -5918,11 +5933,12 @@ function cableaChat(c){
           salieronQr++;
           // El servidor ya lo acepto: el globo se pinta AHORA, con reloj, en vez de esperar
           // a que el puente lo mande y lo guarde.
-          apuntaEnviando({ conv, tipo: a.tipo, body: (t && i === pieEnQr) ? t : '', mime: a.mime, datos: a.datos });
-        } else falloQr = r;
+          apuntaEnviando({ conv, tipo: a.tipo, body: (t && i === pieEnQr) ? t : '', mime: a.mime, datos: (a.tipo === 'image' || a.tipo === 'sticker') ? a.datos : '' });
+        } else { falloQr = r; marcaFalloArchivo(a, r); }
       }
       // Los que ya salieron se quitan, igual que en el oficial: reintentar no los repite.
       COLA.splice(0, salieronQr);
+      sueltaCola();
       pintaCola();
       if (!falloQr && t && pieEnQr < 0) {
         const r = await llama({ action:'bridgeQueue', conversation_id: conv, body: t });
@@ -5930,7 +5946,7 @@ function cableaChat(c){
       }
       env.disabled = false;
       // Con el codigo: el servidor dice si es otra linea, la PC, la pausa o el modo seguro.
-      if (falloQr) return avisa('No se pudo enviar', traduceErrorMeta(falloQr.error, falloQr.code));
+      if (falloQr) return avisa('No se pudo enviar', traduceErrorMeta(textoErrorEnvio(falloQr), falloQr.code));
       caja.value = ''; caja.style.height = 'auto';
       // El mensaje ya salio: dejar el «escribiendo…» encendido despues de enviarlo es
       // justo lo que hace que el cliente se quede esperando otra cosa.
@@ -5965,14 +5981,14 @@ function cableaChat(c){
     // En Instagram y Messenger el archivo y el texto no pueden ir juntos: Meta no los admite en
     // el mismo mensaje. Con -1 todos los adjuntos salen sin pie ni botones, y el texto va
     // despues, aparte, por sendText.
-    const ultimoConPie = claveRed ? -1 : (COLA.map(a => a.tipo).lastIndexOf('image') >= 0
-      ? COLA.map(a => a.tipo).lastIndexOf('image')
-      : COLA.map(a => a.tipo).lastIndexOf('document'));
+    const ultimoConPie = claveRed ? -1 : indiceConPie(COLA);
     // Los que ya salieron se quitan de la cola SOBRE LA MARCHA. Si el tercero falla y
     // se reintenta sin esto, los dos primeros se le mandan al cliente otra vez.
     let enviados = 0;
+    let falloCodigo = null;
     for (let i = 0; i < COLA.length && !fallo; i++) {
       const a = COLA[i];
+      a.estado = 'enviando'; pintaCola();
       const adj = await cuerpoDeAdjunto(a);
       const r = !adj.ok ? { ok:false, error: adj.error } : await llama({
         action:'send', conversation_id: conv,
@@ -5982,9 +5998,10 @@ function cableaChat(c){
         // decir y Meta rechazaria el mensaje entero. En ese caso se manda sin botones.
         ...(a.botones && t && i === ultimoConPie ? { botones: a.botones } : {}),
       });
-      if (r.ok) enviados++; else fallo = r.error;
+      if (r.ok) enviados++; else { fallo = textoErrorEnvio(r); falloCodigo = r.code; marcaFalloArchivo(a, r); }
     }
     COLA.splice(0, enviados);
+    sueltaCola();
     pintaCola();
     const textoYaFue = t && ultimoConPie >= 0 && !fallo;
     if (!fallo && texto && !textoYaFue) {
@@ -6006,7 +6023,7 @@ function cableaChat(c){
     // Los errores de Instagram y Messenger ya vienen explicados por el servidor, en español.
     // traduceErrorMeta convierte cualquier texto con "24" en el consejo de las plantillas de
     // WhatsApp, que en esas redes no existen.
-    if (fallo) return avisa('No se pudo enviar', claveRed ? fallo : traduceErrorMeta(fallo));
+    if (fallo) return avisa('No se pudo enviar', claveRed ? fallo : traduceErrorMeta(fallo, falloCodigo));
     caja.value = ''; caja.style.height = 'auto';
   };
 }
@@ -6014,8 +6031,27 @@ function cableaChat(c){
 // "Meta rechazo el envio" no le dice a nadie que hacer. Los motivos que de verdad se
 // repiten se explican, y con la salida: casi siempre es la ventana de 24 h cerrada,
 // que se resuelve con una plantilla.
+// El pie de foto (y los botones) viaja con el ultimo archivo que lo admite: foto o video primero, y si no hay, un documento.
+// El audio y el sticker no admiten pie.
+function indiceConPie(cola){
+  const tipos = cola.map(a => a.tipo);
+  const visual = Math.max(tipos.lastIndexOf('image'), tipos.lastIndexOf('video'));
+  return visual >= 0 ? visual : tipos.lastIndexOf('document');
+}
+// Lo que el servidor contesta cuando un envio falla: el texto mas el codigo de Meta, que antes se perdia (por eso el aviso de
+// «pasaron 24 h» o «formato no admitido» nunca aparecia por el numero oficial).
+function textoErrorEnvio(r){ return String(r?.error || '') + (r?.provider_code ? ' [' + r.provider_code + ']' : ''); }
+// Un archivo que no salio se queda en la cola con su motivo a la vista; los demas vuelven a su estado normal.
+function marcaFalloArchivo(a, r){ a.estado = 'error'; a.error = traduceErrorMeta(textoErrorEnvio(r), r?.code).slice(0, 160); }
+function sueltaCola(){ COLA.forEach(x => { if (x.estado !== 'error') x.estado = ''; }); }
 function traduceErrorMeta(e, codigo){
   const t = String(e || '');
+  // El servidor ya explica por que no admite un archivo (formato, peso): se muestra tal cual.
+  if (String(codigo || '') === 'archivo_no_admitido') return t;
+  // Meta devolvio un motivo al subir el archivo ("Meta rechazo el archivo: ..."): se conserva y se dice que revisar.
+  if (/rechazo el archivo|131053|131052/i.test(t)) return 'WhatsApp no aceptó el archivo. '
+    + t.replace(/^Meta rechazo el archivo:?\s*/i, '').replace(/\s*\[\d+\]\s*$/, '').trim()
+    + ' Revisa que sea PDF, Word, Excel o PowerPoint; foto JPG o PNG; o video MP4 de hasta 16 MB.';
   // Los rechazos del puente van PRIMERO y por codigo. Antes caian en /pausado|modo seguro/ y todos
   // decian "pulsa Reanudar", tambien con la ficha de otra linea o con la PC apagada. Y el filtro
   // de las 24 h de abajo se come cualquier texto con un "24" (el 849-524-5620, por ejemplo).
@@ -6084,6 +6120,7 @@ function LIMITE_MB(porPuente, tipo){
   // tope es de Meta, no nuestro: 100 MB. Las fotos siguen en 15/12 porque Meta las acepta de 5 MB y se comprimen antes.
   if (porPuente) return tipo === 'document' ? 380 : 60;
   if (tipo === 'document') return 100;
+  if (tipo === 'video') return 16;      // el tope de Meta para un video que se reproduce en el chat; mas grande sale como documento
   return modoHd ? 15 : 12;
 }
 // Desde este peso un documento no viaja en un solo POST con base64: se parte (ver subeEnTrozos). Igual que
@@ -6138,13 +6175,72 @@ function problemaAdjuntoRed(red, a){
 // Comprime cada imagen de la cola con el modo ACTUAL y actualiza su peso. Se llama al
 // adjuntar y cada vez que se pulsa HD, para que el tamaño que se ve sea el que va a
 // salir de verdad y no el del original.
-async function recalculaCola(){
-  for (const a of COLA) {
+// Una sola preparacion a la vez. Adjuntar fotos, videos y documentos juntos lanzaba varias vueltas sobre la MISMA cola y cada
+// foto se comprimia dos veces (lo mas lento del envio); ademas, enviar mientras se preparaba mandaba el archivo vacio.
+let PREPARANDO = Promise.resolve();
+function recalculaCola(){
+  PREPARANDO = PREPARANDO.then(recalculaColaAhora, recalculaColaAhora);
+  return PREPARANDO;
+}
+// La imagen que se ve en la cola es chica (200 px): antes se pintaba el base64 ENTERO de cada foto (hasta 7,5 MB) en el DOM
+// y se repintaba con cada cambio de la cola. Devuelve la vista de la cola y la miniatura que viaja con el mensaje (96 px).
+async function vistasDe(blob){
+  try {
+    const img = await cargaImagen(blob);
+    const [grande, mini] = [await aJpeg(img, 200, 0.7), await aJpeg(img, 96, 0.5)];
+    const vista = grande ? 'data:image/jpeg;base64,' + await leeBase64(grande) : '';
+    const uri = mini ? 'data:image/jpeg;base64,' + await leeBase64(mini) : '';
+    return { vista, thumb: uri.length <= 12 * 1024 ? uri : '' };
+  } catch (e) { return { vista:'', thumb:'' }; }
+}
+// Un fotograma del video (en medio de su primer segundo), para verlo en la cola y como miniatura del mensaje.
+function fotogramaDeVideo(file){
+  return new Promise(res => {
+    const v = document.createElement('video');
+    const url = URL.createObjectURL(file);
+    let listo = false;
+    const fin = r => { if (listo) return; listo = true; clearTimeout(t); URL.revokeObjectURL(url); v.removeAttribute('src'); try { v.load(); } catch (e) { /* nada */ } res(r); };
+    const t = setTimeout(() => fin(null), 6000);
+    v.muted = true; v.preload = 'auto'; v.playsInline = true;
+    v.onloadeddata = () => { try { v.currentTime = Math.min(0.5, (v.duration || 1) / 2); } catch (e) { fin(null); } };
+    v.onseeked = () => {
+      try {
+        const lado = 320, r = Math.min(1, lado / Math.max(v.videoWidth || 1, v.videoHeight || 1));
+        const cv = document.createElement('canvas');
+        cv.width = Math.max(1, Math.round((v.videoWidth || 1) * r)); cv.height = Math.max(1, Math.round((v.videoHeight || 1) * r));
+        cv.getContext('2d').drawImage(v, 0, 0, cv.width, cv.height);
+        cv.toBlob(b => fin(b), 'image/jpeg', 0.7);
+      } catch (e) { fin(null); }
+    };
+    v.onerror = () => fin(null);
+    v.src = url;
+  });
+}
+async function vistaDeVideo(a){
+  if (a.vista || a.sinVista || !a.archivo || !/^video\//.test(String(a.mime || ''))) return;
+  a.sinVista = true;
+  const b = await fotogramaDeVideo(a.archivo);
+  if (!b) return;
+  const r = await vistasDe(b);
+  a.vista = r.vista;
+  if (a.tipo === 'video' && r.thumb) a.thumb = r.thumb;
+}
+async function recalculaColaAhora(){
+  for (const a of [...COLA]) {
     if (a.tipo !== 'image' || !a.archivo) {
-      // Un documento grande NO se convierte a base64 aqui: no cabe en un solo envio y leerlo entero en memoria no sirve
+      // Un documento (o video) grande NO se convierte a base64 aqui: no cabe en un solo envio y leerlo entero en memoria no sirve
       // de nada. Se queda como archivo y se sube por trozos al enviar (subeEnTrozos).
-      if (a.tipo === 'document' && a.archivo && a.archivo.size > UMBRAL_TROZOS) { a.grande = true; a.kb = Math.round(a.archivo.size/1024); continue; }
-      if (!a.datos && a.archivo) { a.datos = await leeBase64(a.archivo); a.kb = Math.round(a.archivo.size/1024); }
+      if ((a.tipo === 'document' || a.tipo === 'video') && a.archivo && a.archivo.size > UMBRAL_TROZOS) { a.grande = true; a.kb = Math.round(a.archivo.size/1024); await vistaDeVideo(a); continue; }
+      if (!a.datos && a.archivo) {
+        try { a.datos = await leeBase64(a.archivo); a.kb = Math.round(a.archivo.size/1024); }
+        catch (e) {
+          // Sin datos el envio saldria vacio y el panel diria «enviado»: el archivo se quita y se dice cual fue.
+          const i = COLA.indexOf(a); if (i >= 0) COLA.splice(i, 1);
+          avisa('No se pudo leer ' + (a.nombre || 'el archivo'), 'Puede que se haya movido o borrado mientras se adjuntaba. Vuelve a elegirlo.');
+          continue;
+        }
+      }
+      await vistaDeVideo(a);
       continue;
     }
     if (a.hd === modoHd && a.datos) continue;      // ya esta en el modo pedido
@@ -6168,7 +6264,8 @@ async function recalculaCola(){
     // borra en cuanto el cliente lo recibe --no se guarda nada en la nube-- asi que sin esta
     // miniatura el hilo ensenaria una tarjeta sin imagen de lo que uno mismo acaba de mandar.
     // Baileys genera la suya al enviar si la PC tiene sharp; esta es el respaldo.
-    a.thumb = await miniaturaParaEnviar(blob);
+    const vistas = await vistasDe(blob);
+    a.thumb = vistas.thumb; a.vista = vistas.vista;
     a.hd = modoHd;
   }
   pintaCola();
@@ -6200,16 +6297,23 @@ function pintaCola(){
       image: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>',
       document: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/></svg>',
     };
-    const previa = (a.tipo === 'image' || a.tipo === 'sticker') && a.datos
-      ? '<img src="data:' + esc(a.mime || 'image/jpeg') + ';base64,' + a.datos + '" alt="">'
-      : '<span class="ico">' + (ICONO[a.tipo] || ICONO.document) + '</span>';
+    // La vista es una miniatura de 200 px (vistasDe), no el archivo. Los que vienen de otro lado (combos, vestidos) ya son chicos
+    // y traen su base64: esos se siguen pintando como siempre.
+    let previa;
+    if (a.vista) previa = '<span class="pvid"' + (a.tipo === 'video' || /^video\//.test(a.mime || '') ? '' : ' style="display:contents"') + '><img src="' + esc(a.vista) + '" alt=""></span>';
+    else if ((a.tipo === 'image' || a.tipo === 'sticker') && a.datos) previa = '<img src="data:' + esc(a.mime || 'image/jpeg') + ';base64,' + a.datos + '" alt="">';
+    else previa = '<span class="ico">' + (ICONO[a.tipo] || ICONO.document) + '</span>';
     const peso = a.kb || (a.datos ? Math.round(a.datos.length * 0.75 / 1024) : 0);
-    const marca = a.tipo === 'image' ? (a.hd ? ' · HD' : '') : '';
+    const marca = a.tipo === 'image' ? (a.hd ? ' · HD' : '') : (a.comoArchivo ? ' · como archivo' : '');
     // De 1 MB en adelante se dice en MB: «152340 KB» no se lee. Mientras sube por trozos se ve el avance.
     const pesoTxt = peso >= 1024 ? (peso / 1024).toFixed(peso >= 10240 ? 0 : 1) + ' MB' : peso + ' KB';
-    return '<span class="pieza">' + previa
-      + '<span class="pnom">' + esc(a.nombre)
-      +   (a.subida ? '<i>' + esc(a.subida) + '</i>' : (peso ? '<i>' + pesoTxt + marca + '</i>' : '')) + '</span>'
+    const sub = a.error ? '<i class="malo">' + esc(a.error) + '</i>'
+      : a.subida ? '<i>' + esc(a.subida) + '</i>'
+      : a.estado === 'enviando' ? '<i>Enviando…</i>'
+      : a.estado === 'espera' ? '<i>En espera</i>'
+      : (peso ? '<i>' + pesoTxt + marca + '</i>' : '');
+    return '<span class="pieza' + (a.estado === 'enviando' ? ' enviando' : '') + (a.error ? ' error' : '') + '">' + previa
+      + '<span class="pnom">' + esc(a.nombre) + sub + '</span>'
       + '<button data-quita="' + i + '" aria-label="Quitar">×</button></span>';
   }).join('');
 }
@@ -6258,9 +6362,12 @@ const TOPE_FIABLE = 4.8 * 1024 * 1024;
 function cargaImagen(file){
   return new Promise((res, rej) => {
     const i = new Image();
-    i.onload = () => res(i);
-    i.onerror = () => rej(new Error('no se pudo abrir la imagen'));
-    i.src = URL.createObjectURL(file);
+    const url = URL.createObjectURL(file);
+    // Se suelta el enlace en cuanto la imagen cargo (o fallo): antes cada foto adjuntada dejaba el archivo entero en memoria
+    // hasta cerrar la pestaña. La imagen ya decodificada sigue sirviendo para dibujarla en un canvas.
+    i.onload = () => { URL.revokeObjectURL(url); res(i); };
+    i.onerror = () => { URL.revokeObjectURL(url); rej(new Error('no se pudo abrir la imagen')); };
+    i.src = url;
   });
 }
 async function aJpeg(img, lado, calidad){
@@ -6290,11 +6397,14 @@ async function comprimeHd(file, tope = TOPE_FIABLE, ladoMax = 2560){
     }
     const img = await cargaImagen(file);
     const mayor = Math.max(img.width, img.height);
-    const lados = [Math.min(mayor, ladoMax), 3600, 3200, 2800, 2560, 2400, 2200, 2000, 1800, 1600]
-      .filter((lado, i, todos) => lado <= Math.min(mayor, ladoMax) && todos.indexOf(lado) === i);
-    for (const lado of lados) {
+    // Antes se probaban hasta diez tamaños uno tras otro, cada uno una codificacion completa (con 4096 px, segundos). Ahora
+    // el siguiente intento se calcula con lo que pesó el anterior (el peso baja con el area, o sea con el lado al cuadrado).
+    let lado = Math.min(mayor, ladoMax);
+    for (let intento = 0; intento < 5 && lado >= 1600; intento++) {
       const b = await aJpeg(img, lado, 0.92);
       if (b && b.size <= tope) return b;
+      if (!b) break;
+      lado = Math.floor(lado * Math.min(0.9, Math.sqrt(tope / b.size) * 0.97));
     }
     return (await aJpeg(img, 1600, 0.85)) || file;
   } catch (e) { return file; }
@@ -6309,29 +6419,70 @@ async function comprimeNormal(file){
   catch (e) { return file; }
 }
 
+// Windows y algunos navegadores no traen el tipo de los archivos que no tienen programa asociado: llegaban como
+// application/octet-stream y Meta los rechazaba. Se completa por la extension.
+const MIME_POR_EXT = {
+  pdf:'application/pdf', doc:'application/msword', docx:'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  xls:'application/vnd.ms-excel', xlsx:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  ppt:'application/vnd.ms-powerpoint', pptx:'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+  txt:'text/plain', csv:'text/csv', zip:'application/zip', rtf:'application/rtf',
+  jpg:'image/jpeg', jpeg:'image/jpeg', png:'image/png', gif:'image/gif', webp:'image/webp', heic:'image/heic', heif:'image/heif',
+  mp4:'video/mp4', m4v:'video/mp4', mov:'video/quicktime', webm:'video/webm', avi:'video/x-msvideo', '3gp':'video/3gpp',
+  mp3:'audio/mpeg', m4a:'audio/mp4', aac:'audio/aac', wav:'audio/wav', ogg:'audio/ogg', opus:'audio/ogg',
+};
+function mimeDeArchivo(f){
+  const t = String(f?.type || '').split(';')[0].trim().toLowerCase();
+  if (t && t !== 'application/octet-stream') return t;
+  return MIME_POR_EXT[String(f?.name || '').split('.').pop().toLowerCase()] || t || 'application/octet-stream';
+}
+// Por el API oficial solo se reproduce dentro del chat un MP4 o 3GP de hasta 16 MB; cualquier otro video llega como archivo.
+const videoReproducibleMeta = (mime, bytes) => /^video\/(mp4|3gpp)$/.test(mime) && bytes <= 16 * 1024 * 1024;
 async function encola(files, tipo){
-  let fuera = 0;
+  const omitidos = [];
+  let comoArchivo = 0;
   const porPuente = canalDe(sel) === 'whatsapp_qr';
-  const tope = LIMITE_MB(porPuente, tipo);
   for (const f of files) {
-    // HEIC no lo acepta WhatsApp por esta via y se rechaza aqui, no a mitad del envio.
-    if (tipo === 'image' && /heic|heif/i.test(f.type + f.name)) { fuera++; continue; }
-    if (f.size > tope * 1024 * 1024) { fuera++; continue; }
+    const mime = mimeDeArchivo(f);
+    // Un video por el API oficial que no se reproduciria (MOV de iPhone, mas de 16 MB) sale como documento, no se pierde.
+    const tipoF = tipo === 'video' && !porPuente && !videoReproducibleMeta(mime, f.size) ? 'document' : tipo;
+    if (tipoF !== tipo) comoArchivo++;
+    const tope = LIMITE_MB(porPuente, tipoF);
+    // HEIC (fotos de iPhone): Safari y Edge con la extension de video HEVC la abren y se convierte a JPEG al enviar; Chrome no.
+    // Se prueba AQUI y, si no abre, se dice cual archivo fue y como arreglarlo, en vez de «se omitieron 3 archivos».
+    if (tipoF === 'image' && /heic|heif/i.test(mime + f.name)) {
+      try { await cargaImagen(f); }
+      catch (e) { omitidos.push(f.name + ' es HEIC (iPhone) y este navegador no lo abre: en el iPhone elige Ajustes › Cámara › Formatos › «Más compatible», o compártela como JPG'); continue; }
+    }
+    if (f.size > tope * 1024 * 1024) { omitidos.push(f.name + ' pesa más de ' + tope + ' MB'); continue; }
     // Se guarda el ORIGINAL. La compresion se decide al enviar, no al adjuntar: antes,
     // adjuntar y despues pulsar HD no servia de nada porque la foto ya venia comprimida
     // en calidad normal, y no habia forma de darse cuenta.
-    COLA.push({ tipo, nombre: f.name, mime: f.type || 'application/octet-stream', archivo: f });
+    const archivo = f.type === mime ? f : new File([f], f.name, { type: mime });
+    COLA.push({ tipo: tipoF, nombre: f.name, mime, archivo, ...(tipoF !== tipo ? { comoArchivo: true } : {}) });
   }
-  await recalculaCola();
-  if (fuera) avisa(fuera + (fuera === 1 ? ' archivo se omitió' : ' archivos se omitieron'),
-    'HEIC o mayor de ' + tope + ' MB.');
   pintaCola();
+  await recalculaCola();
+  if (omitidos.length) avisa(omitidos.length === 1 ? 'Un archivo se omitió' : omitidos.length + ' archivos se omitieron',
+    omitidos.slice(0, 3).join(' · ') + (omitidos.length > 3 ? ' · …' : ''));
+  if (comoArchivo) avisa(comoArchivo === 1 ? 'Ese video saldrá como archivo' : comoArchivo + ' videos saldrán como archivo',
+    'WhatsApp oficial solo reproduce MP4 o 3GP de hasta 16 MB; el resto llega como documento (hasta 100 MB). Por WhatsApp Web sí se reproducen.');
+  pintaCola();
+}
+// Lo que se elige con «fotos o videos», se pega o se suelta: cada cosa por su camino. Devuelve si habia algo que adjuntar.
+function encolaMezcla(lista){
+  const tipoDe = f => mimeDeArchivo(f).split('/')[0];
+  const fotos = lista.filter(f => tipoDe(f) === 'image'), videos = lista.filter(f => tipoDe(f) === 'video');
+  const otros = lista.filter(f => !fotos.includes(f) && !videos.includes(f));
+  if (fotos.length) encola(fotos, 'image');
+  if (videos.length) encola(videos, 'video');
+  if (otros.length) encola(otros, 'document');
+  return lista.length > 0;
 }
 function cableaAdjuntos(){
   COLA.length = 0; pintaCola();
   $('adjImg').onclick = () => $('fImg').click();
   $('adjDoc').onclick = () => $('fDoc').click();
-  $('fImg').onchange = e => { const f = [...e.target.files]; e.target.value = ''; encola(f, 'image'); };
+  $('fImg').onchange = e => { const f = [...e.target.files]; e.target.value = ''; encolaMezcla(f); };
   $('fDoc').onchange = e => { const f = [...e.target.files]; e.target.value = ''; encola(f, 'document'); };
   // Sticker (.webp, hasta 1 MB) y GIF (un video MP4 corto: WhatsApp solo repite solo los que son MP4). Ambos solo por la linea de WhatsApp Web.
   if ($('fSticker')) $('fSticker').onchange = async e => {
@@ -6350,10 +6501,7 @@ function cableaAdjuntos(){
   // addEventListener: esta funcion se repite al abrir cada chat y no puede acumular manejadores.
   const adjuntaSueltos = (lista) => {
     if ($('adjImg')?.disabled) return false;       // el chat esta bloqueado (linea caida, fuera de ventana…)
-    const fotos = lista.filter(f => /^image\//.test(f.type)), otros = lista.filter(f => !/^image\//.test(f.type));
-    if (fotos.length) encola(fotos, 'image');
-    if (otros.length) encola(otros, 'document');
-    return fotos.length + otros.length > 0;
+    return encolaMezcla(lista);
   };
   if ($('texto')) $('texto').onpaste = ev => {
     const archivos = [...(ev.clipboardData?.files || [])];
@@ -6386,6 +6534,9 @@ function cableaAdjuntos(){
   };
   $('cola').onclick = ev => {
     const b = ev.target.closest('[data-quita]'); if (!b) return;
+    // Mientras un archivo sale (o espera su turno) no se quita: el envio recorre la cola por posicion y se saltaria otro.
+    const a = COLA[Number(b.dataset.quita)];
+    if (a && (a.estado === 'enviando' || a.estado === 'espera')) return avisa('Ese archivo está saliendo', 'Espera a que termine el envío.');
     COLA.splice(Number(b.dataset.quita), 1); pintaCola();
   };
   cableaMicrofono();
