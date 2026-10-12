@@ -1720,6 +1720,17 @@ input[type="checkbox"],input[type="radio"]{accent-color:var(--accent)}
 .lp-card{background:var(--panel);border-radius:var(--r3);box-shadow:var(--sombra-suave);padding:20px 22px 12px;min-width:0}
 .lp-cab{display:flex;align-items:center;justify-content:space-between;gap:10px}
 .lp-cab b{font-size:16px;font-weight:650;letter-spacing:-.02em}
+.lp-acciones{display:flex;align-items:center;gap:8px;flex:0 0 auto}
+.lp-masivo{padding:4px 12px;font-size:12px}
+.mm-fila{border:1px solid var(--line);border-radius:12px;margin:0 0 8px;background:var(--bg)}
+.mm-fila>summary{display:flex;align-items:center;gap:10px;padding:10px 12px;cursor:pointer;list-style:none}
+.mm-fila>summary::-webkit-details-marker{display:none}
+.mm-fila .mm-quien{flex:1 1 auto;min-width:0}
+.mm-fila .mm-quien small{display:block;color:var(--mut);font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mm-cuerpo{padding:0 12px 12px}
+.mm-dijo{margin:0 0 8px;padding:8px 10px;border-radius:10px;background:var(--accent-suave);font-size:13px}
+.mm-cuerpo textarea{width:100%;min-height:150px;resize:vertical}
+.mm-fila.mm-no{opacity:.6}
 .lp-num{font-size:12px;font-weight:650;padding:3px 10px;border-radius:999px;background:var(--accent-suave);color:var(--accent);flex:0 0 auto}
 .lp-porque{margin:6px 0 10px;font-size:13px;line-height:1.5;color:var(--mut)}
 .lp-fila{display:flex;align-items:center;gap:10px;padding:10px 0;box-shadow:inset 0 .5px 0 var(--line)}
@@ -12973,6 +12984,7 @@ function montaFunnel(){
       +   '<input type="search" class="fun-buscar" id="funBusca" placeholder="Buscar en el funnel…" autocomplete="off">'
       +   '<button class="btn-linea btn-filtro" id="funFiltro" data-menu-flotante title="Filtrar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6.500h16M7 12h10M10.500 17.500h3"/></svg><span>Filtros</span></button>'
       +   '<button class="btn-linea btn-filtro" id="funReorg" data-menu-flotante title="Ordenar, tamaño de las tarjetas y etapas visibles"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4v16M7 20l-3-3M7 20l3-3M17 20V4M17 4l-3 3M17 4l3 3"/></svg><span>Reorganizar</span></button>'
+      +   '<button class="btn-linea btn-filtro" id="funMasivo" data-menu-flotante title="Revisar cada conversación y escribirles a varias personas de una etapa o de los leads parados"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6.500h16v9H9.500L5.500 19v-3.500H4z"/></svg><span>Escribir a varios</span></button>'
       + '</div>'
       + '<div class="fun-fichas" id="funFichas"></div>'
       + '<div class="fun-embudo" id="funEmbudo"></div>'
@@ -12982,6 +12994,13 @@ function montaFunnel(){
       +   'cambiar de etapa cambia lo que el sistema le mandará después.</p>'
       + '<div id="movil"></div></div>');
     $('funBusca').addEventListener('input', () => { FUN.q = $('funBusca').value; pintaKanban(); });
+    $('funMasivo').onclick = () => menuFlotante($('funMasivo'), [
+      { rotulo: 'Leads parados' },
+      ...leadsParados().map(g => ({ id: 'regla:' + g.regla.id, texto: g.regla.titulo, nota: g.filas.length + '' })),
+      { sep: true }, { rotulo: 'Una etapa completa' },
+      ...ETAPAS.filter(e => !['cliente', 'desinteresado', 'perdido'].includes(e))
+        .map(e => ({ id: 'etapa:' + e, texto: e.replace(/_/g, ' '), nota: CONVS.filter(c => (c.lifecycle_stage || 'nuevo') === e).length + '' })),
+    ], { alElegir: id => abreMensajesMasivos(id) });
     $('funFichas').addEventListener('click', ev => {
       const b = ev.target.closest('[data-quita]'); if (!b) return;
       const k = b.dataset.quita;
@@ -13612,7 +13631,8 @@ function pintaMovilizacion(){
     const abierta = LP_ABIERTAS.has(g.regla.id);
     const tope = abierta ? 25 : 6;
     return '<section class="lp-card"><div class="lp-cab"><b>' + esc(g.regla.titulo) + '</b>'
-      + '<span class="lp-num">' + g.filas.length + '</span></div>'
+      + '<span class="lp-acciones"><button class="btn-linea lp-masivo" data-mm="regla:' + esc(g.regla.id) + '" title="Revisar cada conversación y escribirles uno por uno">Escribirles</button>'
+      + '<span class="lp-num">' + g.filas.length + '</span></span></div>'
       + '<p class="lp-porque">' + esc(g.regla.porque) + '</p>'
       + g.filas.slice(0, tope).map(c => filaLead(c, g)).join('')
       + (g.filas.length > 6
@@ -13622,6 +13642,8 @@ function pintaMovilizacion(){
   }).join('') + '</div>';
 
   cont.onclick = async ev => {
+    const masivo = ev.target.closest('[data-mm]');
+    if (masivo) return abreMensajesMasivos(masivo.dataset.mm);
     const mas = ev.target.closest('[data-lpmas]');
     if (mas) {
       const id = mas.dataset.lpmas;
@@ -13659,6 +13681,173 @@ function pintaMovilizacion(){
     // Antes caia en Planificacion a secas y valia porque `sel` apuntaba a el; el contacto
     // ahora lo define el hilo.
     setTimeout(() => preguntaAlAsistente(c, r.prompt), 250);
+  };
+}
+
+/* ---- Mensajes masivos desde el Funnel (K13) ------------------------------ */
+// 12/10/2026: «desde el funnel-kanban se debe agregar la opcion de mensajes masivos a los leads parados y demas, entendiendo la etapa en la que esta y
+// revisando cada conversacion antes de enviarle el mensaje, la cual debe ser variable segun el caso… que la persona se sienta elegida y especial y que un
+// humano real le esta hablando, mensajes muy cortos, sin un lexico exagerado».
+// Nada sale solo: el dueño ve a cada persona con lo ultimo que se hablo, edita su mensaje, marca a quien si, y sale de a uno con pausa. Los mensajes
+// salen como burbujas cortas (saludo, motivo, cierre) y el motivo depende de la regla o de la etapa. No se le escribe a quien pidio no recibir
+// mensajes, a quien ya recibio uno en la ultima semana, ni a quien acaba de escribir (a ese se le contesta en su chat).
+const MM_TOPE = 25, MM_DIAS_ENTRE = 7, MM_PAUSA_PERSONAS = 4000, MM_PAUSA_BURBUJAS = 1800;
+
+function mmElige(c, opciones){
+  const s = String((c && (c._id || c.id || c.wa_phone)) || ''); let h = 7;
+  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0;
+  return opciones[h % opciones.length];
+}
+function mmFecha(v){
+  const d = new Date(v); return v && !Number.isNaN(d.getTime()) ? d.toLocaleDateString('es-DO', { day:'numeric', month:'long' }) : '';
+}
+// Lo que sigue a «vi que…»: depende del grupo que se esta trabajando y, si no hay uno, de la etapa del contacto.
+function mmMotivo(c, clave){
+  const combo = String(c.selected_combo_name || '').trim();
+  const fecha = mmFecha(c.scheduled_at || c.tentative_date);
+  const motivos = {
+    sin_categoria: ['todavía no me has contado qué tipo de sesión te gustaría.', 'aún no sé qué tipo de sesión tienes en mente.'],
+    cotiza_sin_fecha: [combo ? 'te interesó ' + combo + ', pero aún no tenemos una fecha para tu sesión.' : 'ya viste los precios, pero aún no tenemos una fecha para tu sesión.',
+      'quedó pendiente escoger una fecha para tu sesión.'],
+    fecha_sin_reserva: [fecha ? 'tienes pensada la fecha del ' + fecha + ', pero la reserva todavía no está confirmada.' : 'tienes una fecha pensada, pero la reserva todavía no está confirmada.',
+      'tu fecha ya está pensada y solo falta confirmar la reserva.'],
+    nos_toca: ['me escribiste y no te respondí a tiempo. Disculpa la demora.', 'tu mensaje se quedó sin respuesta de mi parte. Disculpa la demora.'],
+    reservado_sin_agenda: ['ya tienes tu reserva, pero nos falta cerrar el día y la hora de tu sesión.', 'tu reserva está lista y solo falta definir el día y la hora.'],
+    nuevo: ['nos escribiste y no alcanzamos a conversar con calma.', 'tu mensaje llegó, pero no pudimos hablar con calma.'],
+    interesado: ['te interesó una sesión y quedó pendiente avanzar.', 'quedaste interesado en una sesión y no seguimos la conversación.'],
+    cotizando: ['ya tienes la cotización y quizás te quedó alguna duda.', 'te pasé la cotización y no supe si te quedó alguna duda.'],
+    pendiente_reserva: [fecha ? 'falta confirmar tu reserva para el ' + fecha + '.' : 'falta confirmar tu reserva.', 'tu reserva sigue pendiente de confirmar.'],
+    reservado: ['tu reserva está lista y quería confirmar los detalles contigo.', 'ya tienes tu reserva y quería asegurarme de que todo esté claro.'],
+  };
+  const lista = motivos[clave] || motivos[c.lifecycle_stage] || ['quedó algo pendiente en tu conversación.', 'se quedó algo pendiente entre nosotros.'];
+  return mmElige(c, lista);
+}
+// Tres burbujas cortas, como las escribiria una persona: quien soy, por que le escribo, y que estoy a la orden.
+function mmPartes(c, clave){
+  const nombre = String(nombreReal(c) || '').trim().split(/\s+/)[0] || '';
+  const intro = mmElige(c, ['Revisando tu conversación vi que ', 'Estuve repasando tu chat y vi que ']);
+  const cierre = mmElige(c, ['Quiero que sepas que estoy aquí para cualquier duda o inquietud.', 'Cualquier duda o inquietud que tengas, aquí estoy para ayudarte.', 'Estoy aquí para lo que necesites, sin compromiso.']);
+  return [
+    (nombre ? 'Hola ' + nombre + '!' : 'Hola!') + " Soy Erick Gabriel, fotógrafo de D' Carela Compufoto.",
+    intro + mmMotivo(c, clave),
+    cierre,
+  ];
+}
+// Motivo por el que NO se le escribe a alguien desde aqui ('' si se puede).
+function mmBloqueo(c){
+  if (c.proactive_blocked_at) return 'pidió no recibir mensajes';
+  const ultimo = Math.max(Date.parse(c.masivo_funnel_at || '') || 0, Date.parse(c.limpieza_acercamiento_at || '') || 0);
+  if (ultimo && Date.now() - ultimo < MM_DIAS_ENTRE * 86400000) return 'ya se le escribió hace ' + Math.max(1, Math.floor((Date.now() - ultimo) / 86400000)) + ' día(s)';
+  if (Date.now() - (Date.parse(c.last_customer_reply_at || '') || 0) < 2 * 3600000) return 'escribió hace poco: respóndele en su chat';
+  return '';
+}
+
+async function abreMensajesMasivos(origen){
+  const [tipo, clave] = String(origen).split(':');
+  let lista, titulo;
+  if (tipo === 'regla') {
+    const g = leadsParados().find(x => x.regla.id === clave);
+    if (!g) return avisa('Ya no hay nadie en este grupo');
+    lista = g.filas; titulo = g.regla.titulo;
+  } else {
+    lista = CONVS.filter(c => (c.lifecycle_stage || 'nuevo') === clave); titulo = 'Etapa «' + String(clave).replace(/_/g, ' ') + '»';
+  }
+  lista = [...lista].sort((a, b) => llevaDormido(a) - llevaDormido(b));
+  const bloqueadas = lista.map(c => ({ c, motivo: mmBloqueo(c) }));
+  const tanda = bloqueadas.filter(x => !x.motivo).map(x => x.c).slice(0, MM_TOPE);
+  const sinEnviar = bloqueadas.filter(x => x.motivo);
+  const quedan = bloqueadas.filter(x => !x.motivo).length - tanda.length;
+  if (!tanda.length) return avisa('Nadie para escribirle ahora', sinEnviar.length ? sinEnviar.length + ' ya recibieron un mensaje reciente, escribieron hace poco o no quieren mensajes.' : 'La lista está vacía.');
+  const tpls = ((await cargaPlantillas()) || []).filter(t => /approved/i.test(String(t.meta_status || t.status || '')) && t.active !== false);
+  const variablesDe = (t, c) => (Array.isArray(t.parameter_keys) ? t.parameter_keys : []).map(k => {
+    const mapa = { nombre: nombreReal(c), cliente: nombreReal(c), combo: c.selected_combo_name || '', categoria: c.interested_category || '', interes: c.interested_category || c.selected_combo_name || '' };
+    return String(mapa[String(k).toLowerCase()] || '').split(/\s+/)[0] || 'cliente';
+  });
+  const plantillaElegida = () => tpls.find(t => t.template_name === $('mmPlantilla').value) || null;
+  // Por el 5644 y las redes no hay ventana de 24 h; por el oficial solo se escribe libre a quien escribio en las ultimas 23 h, a los demas va una plantilla aprobada.
+  const via = c => {
+    if (canalDe(c) === 'whatsapp_qr' || redSocial(c)) return { ok: true, modo: 'texto', via: canalDe(c) === 'whatsapp_qr' ? 'por el 5644' : 'por su red' };
+    if (Date.now() - (Date.parse(c.last_customer_reply_at || c.last_message_at || '') || 0) < 23 * 3600000) return { ok: true, modo: 'texto', via: 'texto libre · dentro de 24 h' };
+    const t = plantillaElegida();
+    return t ? { ok: true, modo: 'plantilla', t, via: 'plantilla «' + (t.display_name || t.template_name) + '» (el texto de abajo no se usa)' } : { ok: false, via: 'fuera de 24 h: elige una plantilla arriba' };
+  };
+  const filas = tanda.map(c => {
+    const id = esc(c.id || c._id);
+    return '<details class="mm-fila" data-mmfila="' + id + '"><summary><input type="checkbox" data-mmsel="' + id + '" checked>'
+      + '<span class="mm-quien"><b>' + esc(nombreDe(c)) + '</b><small>' + esc((c.lifecycle_stage || 'nuevo').replace(/_/g, ' ')) + ' · ' + llevaDormido(c) + ' días'
+      + (c.interested_category ? ' · ' + esc(c.interested_category) : '') + ' · <span data-mmvia="' + id + '"></span></small></span></summary>'
+      + '<div class="mm-cuerpo"><p class="mm-dijo"><b>Lo último de la conversación:</b> ' + esc(c.last_message_preview || 'sin texto') + ' · <a href="#" data-mmabre="' + id + '">abrir el chat</a></p>'
+      + '<textarea data-mmtxt="' + id + '" aria-label="Mensaje para ' + esc(nombreDe(c)) + '">' + esc(mmPartes(c, clave).join('\n\n')) + '</textarea>'
+      + '<small class="nota">Cada párrafo sale como un mensaje corto aparte.</small></div></details>';
+  }).join('');
+  const m = abreModal('<div class="mtapa"><b>Escribirles · ' + esc(titulo) + '</b><button class="cerrarm" data-cerrar>×</button></div>'
+    + '<div class="mcuerpo"><p class="bajada" style="margin:0 0 10px">Revisa a cada persona: abre su fila para ver lo último que se habló y ajustar su mensaje. Sale de a uno, con pausa, y máximo ' + MM_TOPE + ' por tanda.</p>'
+    + '<div class="campo"><label>Plantilla aprobada (para quien escribió hace más de 24 h por el número oficial)</label><select id="mmPlantilla"><option value="">Sin plantilla: solo a quien se le puede escribir libre</option>'
+    + tpls.map(t => '<option value="' + esc(t.template_name) + '">' + esc(t.display_name || t.template_name) + '</option>').join('') + '</select></div>'
+    + filas
+    + '<p class="aviso" id="mmResumen" style="margin:8px 0"></p>'
+    + (quedan > 0 ? '<p class="nota">Quedan ' + quedan + ' más para la siguiente tanda.</p>' : '')
+    + (sinEnviar.length ? '<details class="grupo"><summary>No se les escribe (' + sinEnviar.length + ')</summary>' + sinEnviar.slice(0, 40).map(x => '<p class="nota" style="margin:4px 0"><b>'
+        + esc(nombreDe(x.c)) + '</b> · ' + esc(x.motivo) + '</p>').join('') + '</details>' : '')
+    + '<div class="cc-botones"><button class="btn-solido" id="mmEnviar">Enviar a los marcados</button><button class="btn-linea" id="mmParar" hidden>Detener</button><button class="btn-linea" data-cerrar>Cancelar</button></div></div>');
+  const marcados = () => [...m.querySelectorAll('[data-mmsel]:checked:not(:disabled)')].map(i => i.dataset.mmsel);
+  const refresca = () => {
+    tanda.forEach(c => {
+      const id = String(c.id || c._id), v = via(c);
+      const sel = m.querySelector('[data-mmsel="' + id + '"]'), et = m.querySelector('[data-mmvia="' + id + '"]');
+      if (et) et.textContent = v.via;
+      if (sel) { sel.disabled = !v.ok; if (!v.ok) sel.checked = false; }
+      m.querySelector('[data-mmfila="' + id + '"]')?.classList.toggle('mm-no', !v.ok);
+    });
+    const n = marcados().length;
+    $('mmResumen').textContent = n ? 'Se enviará a ' + n + ' persona(s).' : 'Marca a quién enviarle.';
+  };
+  m.addEventListener('change', ev => { if (ev.target.matches('[data-mmsel],#mmPlantilla')) refresca(); });
+  m.addEventListener('click', ev => {
+    const a = ev.target.closest('[data-mmabre]'); if (!a) return;
+    ev.preventDefault(); const c = buscaConv(a.dataset.mmabre); if (c) { cierraModal(); ve('conversations'); abre(c); }
+  });
+  refresca();
+  let parar = false;
+  $('mmParar').onclick = () => { parar = true; $('mmParar').disabled = true; };
+  $('mmEnviar').onclick = async () => {
+    const ids = marcados();
+    if (!ids.length) return avisa('Marca al menos una persona');
+    if (!await confirmaAqui('Se escribirá a ' + ids.length + ' persona(s), de a una y con pausa.\n\nCada una recibe el mensaje que ves en su fila. ¿Enviar?')) return;
+    const b = $('mmEnviar'); b.disabled = true; $('mmParar').hidden = false;
+    let ok = 0; const fallos = [];
+    for (let i = 0; i < ids.length && !parar; i++) {
+      const c = buscaConv(ids[i]); if (!c) continue;
+      const conv = c.id || c._id, v = via(c), porPuente = canalDe(c) === 'whatsapp_qr';
+      b.textContent = 'Enviando ' + (i + 1) + ' de ' + ids.length + '…';
+      let enviado = false, error = '';
+      if (v.modo === 'plantilla') {
+        const vars = variablesDe(v.t, c);
+        const r = await llama({ action: 'sendTemplate', conversation_id: conv, template_name: v.t.template_name, language_code: v.t.language_code || 'es', variables: vars,
+          text: v.t.preview_text ? rellenaPlantilla(v.t.preview_text, vars, false) : '' });
+        enviado = !!r.ok; error = r.error || '';
+      } else {
+        const partes = String(m.querySelector('[data-mmtxt="' + esc(conv) + '"]')?.value || '').split(/\n{2,}/).map(x => x.trim()).filter(Boolean).slice(0, 5);
+        for (let j = 0; j < partes.length; j++) {
+          const r = await llama(porPuente ? { action: 'bridgeQueue', conversation_id: conv, body: partes[j] } : { action: 'sendText', conversation_id: conv, body: partes[j] });
+          if (!r.ok) { error = r.error || 'error'; break; }
+          enviado = true;
+          if (porPuente) apuntaEnviando({ conv, tipo: 'text', body: partes[j] });
+          if (j < partes.length - 1) await new Promise(rs => setTimeout(rs, MM_PAUSA_BURBUJAS));
+        }
+      }
+      if (enviado) {
+        ok++;
+        const campos = { masivo_funnel_at: new Date().toISOString(), masivo_funnel_clave: clave };
+        llama({ action: 'updateLead', conversation_id: conv, fields: campos }).catch(() => {});
+        Object.assign(c, campos);
+      }
+      if (error) fallos.push(nombreDe(c) + ': ' + traduceErrorMeta(error));
+      if (i < ids.length - 1 && !parar) await new Promise(rs => setTimeout(rs, MM_PAUSA_PERSONAS));
+    }
+    cierraModal();
+    avisa('Escrito a ' + ok + ' de ' + ids.length + (parar ? ' (detenido)' : ''), fallos.length ? fallos.slice(0, 3).join(' · ') : 'Ya les llegó.');
+    pintaMovilizacion(); pintaChats();
   };
 }
 
