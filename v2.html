@@ -8521,7 +8521,9 @@ function citaDelMensaje(m){
   // El id del mensaje citado va en el atributo: pulsando la cita se salta al original, como en
   // WhatsApp. Si ese mensaje no esta cargado (el hilo trae los ultimos 400), no pasa nada.
   const destino = r?.wamid ? ' data-cita="' + esc(r.wamid) + '"' : '';
-  return '<div class="cita"' + destino + '><b>' + esc(mio ? 'Tú' : nombreDe(sel)) + '</b>'
+  // Una respuesta a un Estado lo dice: «Tu estado» (el cliente contesta al del dueño) o «Estado de <nombre>» (el dueño contesta al del cliente).
+  const rotulo = r?.estado ? (mio ? 'Tu estado' : 'Estado de ' + nombreDe(sel)) : (mio ? 'Tú' : nombreDe(sel));
+  return '<div class="cita"' + destino + '><b>' + esc(rotulo) + '</b>'
     + esc(String(texto).slice(0, 140)) + '</div>';
 }
 
