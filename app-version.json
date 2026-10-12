@@ -1,7 +1,7 @@
 {
-  "version": "2026-10-12-llamadas-y-reenviar-v170",
+  "version": "2026-10-12-agenda-combos-analisis-v171",
   "channel": "crm",
-  "released_at": "2026-10-12T19:21:17.220Z",
-  "summary": "Llamadas de WhatsApp por el número oficial (recibir y hacer, apagadas hasta activarlas en Canales) y «Reenviar» con todos los contactos",
+  "released_at": "2026-10-12T19:48:27.220Z",
+  "summary": "Agenda para cualquier persona (nueva o cliente de caja), selector de combo con acordeón, Personalizado y Cotizaciones; «Sin reserva» en vez de «sin fecha»; análisis y resúmenes que distinguen otros servicios",
   "requiere_puente": "2026-09-28-lectura-v34"
 }
