@@ -16320,9 +16320,11 @@ function abreCotizador(c){
     + '<div class="pdfs" style="margin:6px 0 10px"><button class="tplchip" id="cotLee">Leer lo que pidió el cliente</button>'
     +   '<button class="btn-solido" id="cotCalcula">Calcular</button></div>'
     + '<p class="aviso" id="cotAviso" hidden></p><div id="cotOpciones"></div>'
-    + '<div class="campo" id="cotMsgCampo" hidden><label>Mensaje para el cliente <span style="text-transform:none;letter-spacing:0">(puedes editarlo)</span></label>'
+    + '<div class="campo" id="cotMsgCampo" hidden><label>Cómo se la mandas</label>'
+    +   '<select id="cotFormato"><option value="imagen">Imagen tipo ticket (la opción elegida)</option><option value="texto">Mensaje de texto</option><option value="ambos">Imagen y mensaje de texto</option></select>'
+    +   '<div id="cotTextoBloque" hidden style="margin-top:8px"><label>Mensaje para el cliente <span style="text-transform:none;letter-spacing:0">(puedes editarlo)</span></label>'
     +   '<select id="cotModo"><option value="todas">Mandar todas las opciones</option><option value="una">Mandar solo la opción elegida</option></select>'
-    +   '<textarea id="cotTexto" rows="9" style="margin-top:8px"></textarea>'
+    +   '<textarea id="cotTexto" rows="9" style="margin-top:8px"></textarea></div>'
     +   (ventanaAbierta ? '' : '<p class="aviso">Pasaron más de 24 h desde su último mensaje: por el número oficial no le llega texto libre. Copia el mensaje o usa una plantilla.</p>')
     + '</div></div>'
     + '<div class="mpatas"><button class="btn-linea" data-cerrar>Cerrar</button>'
@@ -16373,6 +16375,11 @@ function abreCotizador(c){
     if ($('cotModo').value === 'una') $('cotTexto').value = textoActual();
   };
   $('cotModo').onchange = () => { $('cotTexto').value = textoActual(); };
+  // El texto solo se enseña si algo de texto va a salir: con «Imagen» sola, el ticket ya lleva todo.
+  const formatoActual = () => $('cotFormato').value;
+  const muestraTexto = () => { $('cotTextoBloque').hidden = formatoActual() === 'imagen'; };
+  $('cotFormato').onchange = muestraTexto;
+  muestraTexto();
   const calcula = async (cuerpo, boton) => {
     boton.disabled = true;
     const r = await llama({ action:'cotizar', conversation_id: c.id || c._id, ...cuerpo });
@@ -16396,17 +16403,32 @@ function abreCotizador(c){
     else if (r) avisa('No entendí qué pide', 'Llena las piezas a mano.');
   };
   $('cotEnviar').onclick = async ev => {
+    const formato = formatoActual();
     const texto = $('cotTexto').value.trim();
-    if (!texto || !ultimo) return;
+    if (!ultimo || (formato !== 'imagen' && !texto)) return;
     if (!ventanaAbierta) return avisa('No se le puede escribir ahora', 'Pasaron más de 24 h desde su último mensaje. Copia el mensaje o usa una plantilla.');
     const boton = ev.currentTarget; boton.disabled = true;
     const conv = c.id || c._id;
     const porPuente = canalDe(c) === 'whatsapp_qr';
-    const env = await llama(porPuente ? { action:'bridgeQueue', conversation_id: conv, body: texto } : { action:'sendText', conversation_id: conv, body: texto });
-    if (!env.ok) { boton.disabled = false; return avisa('No se pudo enviar', traduceErrorMeta(env.error, env.code)); }
-    if (porPuente) apuntaEnviando({ conv, tipo:'text', body: texto });
+    const manda = cuerpo => llama(porPuente ? { action:'bridgeQueue', conversation_id: conv, ...cuerpo }
+      : { action: cuerpo.media_b64 ? 'send' : 'sendText', conversation_id: conv, ...cuerpo });
+    // 1) El ticket (imagen): lo dibuja el servidor con la opcion elegida; el pie lleva el folio.
+    if (formato !== 'texto') {
+      const img = await llama({ action:'cotizacionImagen', conversation_id: conv, pedido: ultimo.pedido, opcion: elegida });
+      if (!img.ok) { boton.disabled = false; return avisa('No se pudo armar la imagen', img.error); }
+      const pie = 'Aquí está tu cotización (' + img.folio + '). ¿Te la reservo con tu fecha?';
+      const r1 = await manda({ media_kind:'image', media_b64: img.png_b64, media_mime: img.mime, media_filename: 'cotizacion-' + img.folio + '.png', body: pie });
+      if (!r1.ok) { boton.disabled = false; return avisa('No se pudo enviar', traduceErrorMeta(r1.error, r1.code)); }
+      if (porPuente) apuntaEnviando({ conv, tipo:'image', body: pie, mime: img.mime, datos: img.png_b64 });
+    }
+    // 2) El mensaje de texto (si se pidio texto o ambos)
+    if (formato !== 'imagen') {
+      const env = await manda({ body: texto });
+      if (!env.ok) { boton.disabled = false; return avisa(formato === 'ambos' ? 'La imagen salió, pero el texto no' : 'No se pudo enviar', traduceErrorMeta(env.error, env.code)); }
+      if (porPuente) apuntaEnviando({ conv, tipo:'text', body: texto });
+    }
     // Registrar despues de enviar: si el registro falla, el cliente ya la recibio y se dice aparte.
-    const g = await llama({ action:'cotizacionGuarda', conversation_id: conv, pedido: ultimo.pedido, opcion: elegida, texto });
+    const g = await llama({ action:'cotizacionGuarda', conversation_id: conv, pedido: ultimo.pedido, opcion: elegida, formato, texto: formato === 'imagen' ? '' : texto });
     cierraModal();
     if (g.ok) { if (g.etapa) c.lifecycle_stage = g.etapa; avisa('Cotización enviada', nombreDe(c) + ' · RD$' + Math.round(g.total).toLocaleString('en-US')); }
     else avisa('Se envió, pero no quedó registrada', g.error);
