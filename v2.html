@@ -1812,6 +1812,11 @@ input[type="checkbox"],input[type="radio"]{accent-color:var(--accent)}
 .cabecera .modo{border:0;border-radius:999px;background:var(--hover);padding:7px 14px;font-weight:600;font-size:12.5px}
 .cabecera .modo:hover{background:rgba(120,120,128,.2)}
 .cabecera .modo.atendido,.cabecera .modo.atendido:hover{background:var(--ok);color:#fff}
+.cotop{display:block;border:1px solid var(--line2);border-radius:12px;padding:10px 12px;margin:8px 0;cursor:pointer}
+.cotop.on{border-color:var(--ink);box-shadow:0 0 0 1px var(--ink)}
+.cotop input{width:auto;margin-right:8px}
+.cotop small{display:block;color:var(--mut);font-size:11.5px;margin-top:3px}
+.cot3{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
 .mas>button{color:var(--mut)}
 
 /* Todos los iconos con el mismo trazo. */
@@ -5186,6 +5191,9 @@ function abre(c){
     +       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M13.300 2.800L5 13.200h6l-.9 8 8.900-10.800h-6z"/></svg></button>'
     +     '<button class="adj" id="adjCombo" title="Combos por categoría" aria-label="Combos">'
     +       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3.500l8.500 4.300-8.500 4.300-8.500-4.300z"/><path d="M3.500 12l8.500 4.300 8.500-4.300"/><path d="M3.500 16.200L12 20.500l8.500-4.300"/></svg></button>'
+    // «Cotizar»: una cotizacion a la medida (combo mas parecido, fotos digitales a 500/250, ajustada a un presupuesto) lista para mandar.
+    +     '<button class="adj" id="adjCotiza" title="Cotizar a la medida" aria-label="Cotizar">'
+    +       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="5" y="3" width="14" height="18" rx="2.600"/><path d="M8.500 7.500h7M8.500 11.500h2M13 11.500h2.500M8.500 15h2M13 15h2.500"/></svg></button>'
     +     (esOficial(c)
         ? '<button class="adj" id="adjTpl" title="Plantillas de WhatsApp" aria-label="Plantillas">'
           + '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M7 3h6.600L19 8.400V18a3 3 0 01-3 3H7a3 3 0 01-3-3V6a3 3 0 013-3z"/><path d="M13.400 3.200V8.600H19"/><path d="M8 13h7M8 16.500h4.600"/></svg></button>'
@@ -5374,7 +5382,7 @@ function pintaAvisoLinea(){
   // que mirar, y avisoLineaQr diria que todo esta bien.
   const red = avisoRedOculta(sel);
   const av = red.bloquea ? red : avisoLineaQr(sel, LINEA_QR);
-  for (const id of ['texto', 'btnEnviar', 'adjImg', 'adjHd', 'adjDoc', 'adjRapida', 'adjCombo', 'adjTpl', 'adjMic']) {
+  for (const id of ['texto', 'btnEnviar', 'adjImg', 'adjHd', 'adjDoc', 'adjRapida', 'adjCombo', 'adjCotiza', 'adjTpl', 'adjMic']) {
     const e = $(id); if (e) e.disabled = av.bloquea;
   }
   if (!av.bloquea) { caja.hidden = true; caja.innerHTML = ''; return; }
@@ -6014,6 +6022,7 @@ function cableaAdjuntos(){
   // Solo existe en el chat del numero oficial (ver esOficial).
   if ($('adjTpl')) $('adjTpl').onclick = abrePlantillas;
   $('adjCombo').onclick = abreCombos;
+  $('adjCotiza').onclick = () => abreCotizador(sel);
   $('adjRapida').onclick = abreRapidas;
   $('adjEmoji').onclick = abreEmojis;
 }
@@ -16193,6 +16202,136 @@ function abreRecordatorio(c){
     cierraModal();
     avisa('Recordatorio guardado', new Date(cuando).toLocaleString('es-DO', { dateStyle:'medium', timeStyle:'short' }));
     if (vistaActual === 'reminders') pintaRecordatorios();
+  };
+}
+
+/* ---- Cotizar ------------------------------------------------------------- */
+// Cotizacion a la medida desde el chat. El calculo lo hace el SERVIDOR (cotizador-core.js: combo mas parecido, fotos digitales a 500 la primera
+// y 250 las demas, piezas impresas que se quitan para compensar, ajuste a un presupuesto): aqui solo se pide lo que quiere el cliente, se ven las
+// opciones, se edita el mensaje y se manda por el canal del chat. Despues queda registrada en crm_quotes (lo que luego puede leer la Caja).
+// Un descuento NO se calcula aqui ni en el servidor: lo decide el administrador.
+const COT_TAMS_IMPRESA = ['cualquiera', '2x3', '4x6', '5x7', '6x8', '8x11'];
+const COT_TAMS_CUADRO = ['', '6x8', '8x11', '11x14', '13x19', '16x20', '17x22'];
+const COT_CATS = [['', 'Elige…'], ['xv', 'XV años'], ['cumpleanos', 'Cumpleaños'], ['infantil', 'Infantil'], ['graduacion', 'Graduación'], ['embarazadas', 'Embarazadas']];
+function categoriaParaCotizar(c){
+  const t = String(c?.interested_category || '').toLowerCase();
+  if (/xv|quince/.test(t)) return 'xv';
+  if (/cumple/.test(t)) return 'cumpleanos';
+  if (/infant|bebe|beb[eé]|ni[nñ]/.test(t)) return 'infantil';
+  if (/gradua/.test(t)) return 'graduacion';
+  if (/embaraz|matern/.test(t)) return 'embarazadas';
+  return '';
+}
+function abreCotizador(c){
+  if (!c) return avisa('Abre una conversación primero');
+  const op = (lista, sel0) => lista.map(x => { const [v, t] = Array.isArray(x) ? x : [x, x || 'Cualquiera'];
+    return '<option value="' + esc(v) + '"' + (v === sel0 ? ' selected' : '') + '>' + esc(t) + '</option>'; }).join('');
+  const ventanaAbierta = canalDe(c) === 'whatsapp_qr' || !!redSocial(c)
+    || (Date.now() - Date.parse(c.last_customer_reply_at || '')) < 24 * 3600000;
+  abreModal('<div class="mtapa"><b>Cotizar · ' + esc(nombreDe(c)) + '</b><button class="cerrarm" data-cerrar>×</button></div>'
+    + '<div class="mcuerpo">'
+    + '<div class="par"><div class="campo"><label>Tipo de sesión</label><select id="cotCat">' + op(COT_CATS, categoriaParaCotizar(c)) + '</select></div>'
+    +   '<div class="campo"><label>Presupuesto del cliente (opcional)</label><input type="number" min="0" id="cotPres" placeholder="RD$"></div></div>'
+    + '<div class="par"><div class="campo"><label>Fotos digitales</label><input type="number" min="0" id="cotDig" value="0"></div>'
+    +   '<div class="campo"><label>Fotos impresas</label><div style="display:flex;gap:6px"><input type="number" min="0" id="cotImp" value="0" style="width:70px">'
+    +   '<select id="cotImpTam">' + op(COT_TAMS_IMPRESA, 'cualquiera') + '</select></div></div></div>'
+    + '<div class="par"><div class="campo"><label>Cuadros</label><div style="display:flex;gap:6px"><input type="number" min="0" id="cotCua" value="0" style="width:70px">'
+    +   '<select id="cotCuaTam">' + op(COT_TAMS_CUADRO, '') + '</select></div></div>'
+    +   '<div class="campo"><label>Llaveros · tazas · fondos digitales</label><div class="cot3"><input type="number" min="0" id="cotLla" value="0" title="Llaveros">'
+    +   '<input type="number" min="0" id="cotTaz" value="0" title="Tazas"><input type="number" min="0" id="cotFon" value="0" title="Fondos digitales"></div></div></div>'
+    + '<div class="pdfs" style="margin:6px 0 10px"><button class="tplchip" id="cotLee">Leer lo que pidió el cliente</button>'
+    +   '<button class="btn-solido" id="cotCalcula">Calcular</button></div>'
+    + '<p class="aviso" id="cotAviso" hidden></p><div id="cotOpciones"></div>'
+    + '<div class="campo" id="cotMsgCampo" hidden><label>Mensaje para el cliente <span style="text-transform:none;letter-spacing:0">(puedes editarlo)</span></label>'
+    +   '<select id="cotModo"><option value="todas">Mandar todas las opciones</option><option value="una">Mandar solo la opción elegida</option></select>'
+    +   '<textarea id="cotTexto" rows="9" style="margin-top:8px"></textarea>'
+    +   (ventanaAbierta ? '' : '<p class="aviso">Pasaron más de 24 h desde su último mensaje: por el número oficial no le llega texto libre. Copia el mensaje o usa una plantilla.</p>')
+    + '</div></div>'
+    + '<div class="mpatas"><button class="btn-linea" data-cerrar>Cerrar</button>'
+    +   '<button class="btn-solido" id="cotEnviar" disabled>Enviar cotización</button></div>');
+  $('modal').querySelectorAll('[data-cerrar]').forEach(b => { b.onclick = cierraModal; });
+  const n = id => Math.max(0, Math.floor(Number($(id).value) || 0));
+  let ultimo = null; let elegida = 0;
+  const pedidoDelForm = () => {
+    const imp = n('cotImp'); const cua = n('cotCua');
+    return { categoria: $('cotCat').value || null, digitales: n('cotDig'),
+      impresas: imp ? { [$('cotImpTam').value || 'cualquiera']: imp } : {},
+      cuadros: Array.from({ length: cua }, () => $('cotCuaTam').value || null),
+      llaveros: n('cotLla'), tazas: n('cotTaz'), fondos: n('cotFon'), presupuesto: n('cotPres') || null };
+  };
+  const llenaForm = p => {
+    if (!p) return;
+    if (p.categoria) $('cotCat').value = p.categoria;
+    $('cotDig').value = p.digitales || 0;
+    const impTam = Object.keys(p.impresas || {})[0];
+    $('cotImp').value = Object.values(p.impresas || {}).reduce((s, x) => s + x, 0);
+    if (impTam) $('cotImpTam').value = COT_TAMS_IMPRESA.includes(impTam) ? impTam : 'cualquiera';
+    $('cotCua').value = (p.cuadros || []).length;
+    const cuaTam = (p.cuadros || []).find(Boolean);
+    if (cuaTam && COT_TAMS_CUADRO.includes(cuaTam)) $('cotCuaTam').value = cuaTam;
+    $('cotLla').value = p.llaveros || 0; $('cotTaz').value = p.tazas || 0; $('cotFon').value = p.fondos || 0;
+    if (p.presupuesto) $('cotPres').value = p.presupuesto;
+  };
+  const textoActual = () => ($('cotModo').value === 'una' && ultimo?.textos?.[elegida]) ? ultimo.textos[elegida] : (ultimo?.texto || '');
+  const pinta = r => {
+    ultimo = r; elegida = 0;
+    const aviso = $('cotAviso');
+    aviso.hidden = !r.aviso; aviso.textContent = r.aviso || '';
+    const ops = r.opciones || [];
+    $('cotOpciones').innerHTML = ops.map((o, i) => '<label class="cotop' + (i === 0 ? ' on' : '') + '"><input type="radio" name="cotOp" value="' + i + '"' + (i === 0 ? ' checked' : '') + '>'
+      + '<b>' + esc(o.titulo) + '</b> — <b>RD$' + Math.round(o.total).toLocaleString('en-US') + '</b>'
+      + '<small>' + esc((o.lineas || []).join(' · ')) + '</small>'
+      + ((o.agrega || []).length ? '<small>+ ' + esc(o.agrega.join(' · ')) + '</small>' : '')
+      + ((o.quita || []).length ? '<small>− ' + esc(o.quita.join(' · ')) + '</small>' : '')
+      + (o.nota ? '<small>' + esc(o.nota) + '</small>' : '') + '</label>').join('');
+    $('cotMsgCampo').hidden = !ops.length;
+    $('cotTexto').value = ops.length ? textoActual() : '';
+    $('cotEnviar').disabled = !ops.length;
+  };
+  $('cotOpciones').onchange = ev => {
+    const r = ev.target.closest('input[name="cotOp"]'); if (!r) return;
+    elegida = Number(r.value);
+    $('cotOpciones').querySelectorAll('.cotop').forEach((l, i) => l.classList.toggle('on', i === elegida));
+    if ($('cotModo').value === 'una') $('cotTexto').value = textoActual();
+  };
+  $('cotModo').onchange = () => { $('cotTexto').value = textoActual(); };
+  const calcula = async (cuerpo, boton) => {
+    boton.disabled = true;
+    const r = await llama({ action:'cotizar', conversation_id: c.id || c._id, ...cuerpo });
+    boton.disabled = false;
+    if (!r.ok) return avisa('No se pudo cotizar', r.error);
+    pinta(r);
+    return r;
+  };
+  $('cotCalcula').onclick = ev => {
+    const p = pedidoDelForm();
+    if (!p.categoria) return avisa('Falta el tipo de sesión', 'Elige XV, cumpleaños, infantil, graduación o embarazadas.');
+    if (!p.digitales && !Object.keys(p.impresas).length && !p.cuadros.length && !p.llaveros && !p.tazas && !p.fondos) return avisa('Falta lo que pide', 'Escribe cuántas fotos, cuadros o piezas quiere.');
+    return calcula({ pedido: p }, ev.currentTarget);
+  };
+  // «Leer lo que pidio»: el servidor entiende las ultimas frases del cliente («3 fotos y un cuadro, tengo 5 mil») y llena el formulario.
+  $('cotLee').onclick = async ev => {
+    const texto = MSGS.filter(m => m.direction === 'in' && m.body).slice(-6).map(m => m.body).join('. ');
+    if (!texto.trim()) return avisa('Todavía no hay mensajes del cliente');
+    const r = await calcula({ text: texto }, ev.currentTarget);
+    if (r && r.pedido) llenaForm(r.pedido);
+    else if (r) avisa('No entendí qué pide', 'Llena las piezas a mano.');
+  };
+  $('cotEnviar').onclick = async ev => {
+    const texto = $('cotTexto').value.trim();
+    if (!texto || !ultimo) return;
+    if (!ventanaAbierta) return avisa('No se le puede escribir ahora', 'Pasaron más de 24 h desde su último mensaje. Copia el mensaje o usa una plantilla.');
+    const boton = ev.currentTarget; boton.disabled = true;
+    const conv = c.id || c._id;
+    const porPuente = canalDe(c) === 'whatsapp_qr';
+    const env = await llama(porPuente ? { action:'bridgeQueue', conversation_id: conv, body: texto } : { action:'sendText', conversation_id: conv, body: texto });
+    if (!env.ok) { boton.disabled = false; return avisa('No se pudo enviar', traduceErrorMeta(env.error, env.code)); }
+    if (porPuente) apuntaEnviando({ conv, tipo:'text', body: texto });
+    // Registrar despues de enviar: si el registro falla, el cliente ya la recibio y se dice aparte.
+    const g = await llama({ action:'cotizacionGuarda', conversation_id: conv, pedido: ultimo.pedido, opcion: elegida, texto });
+    cierraModal();
+    if (g.ok) { if (g.etapa) c.lifecycle_stage = g.etapa; avisa('Cotización enviada', nombreDe(c) + ' · RD$' + Math.round(g.total).toLocaleString('en-US')); }
+    else avisa('Se envió, pero no quedó registrada', g.error);
   };
 }
 
