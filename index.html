@@ -2003,6 +2003,22 @@ input[type="checkbox"],input[type="radio"]{accent-color:var(--accent)}
 .chip-tema.on,:root[data-tema="oscuro"] .chip-tema.on{background:var(--accent-suave);color:var(--accent-fuerte);box-shadow:inset 0 0 0 .5px var(--accent)}
 .hoja .filtros,.agtog{background:var(--segmento);box-shadow:inset 0 0 0 .5px var(--line)}
 .hoja .filtros .filtro.on,.agtog button.on{background:var(--vidrio-fuerte)}
+/* Campos sueltos de las hojas (Tareas, Clientes de caja, equipo...) y de los cuadros: antes salian con el borde y la flecha del navegador, distintos al resto del CRM (12/10).
+   Una sola regla para todos, de baja prioridad (:where) para no pisar a los que ya tienen su propio estilo. */
+:where(.hoja,.caja) :where(input:not([type=checkbox],[type=radio],[type=range],[type=file],[type=color],[type=hidden],[type=submit],[type=button],[type=image]),select,textarea){
+  font:inherit;font-size:14px;color:var(--fg);background-color:var(--campo);border:0;border-radius:11px;padding:0 13px;min-height:38px;box-sizing:border-box;outline:0;
+  box-shadow:inset 0 0 0 .5px var(--line),inset 0 1px 2px rgba(20,30,60,.04);transition:box-shadow .15s var(--curva),background-color .15s var(--curva)}
+:where(.hoja,.caja) textarea{padding:10px 13px;min-height:72px;line-height:1.45;resize:vertical}
+:where(.hoja,.caja) :where(input,select,textarea):hover{background-color:var(--hover)}
+:where(.hoja,.caja) :where(input,select,textarea):focus{background-color:var(--panel);box-shadow:0 0 0 1.5px var(--accent),var(--foco)}
+:where(.hoja,.caja) :where(input,select,textarea):disabled{opacity:.55;cursor:not-allowed}
+.hoja select,.caja select,.hoja select:hover,.caja select:hover,.hoja select:focus,.caja select:focus{-webkit-appearance:none;appearance:none;padding-right:36px;cursor:pointer;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5l5 5 5-5' fill='none' stroke='%238a8a93' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 13px center}
+.hoja input[type=date]::-webkit-calendar-picker-indicator,.hoja input[type=time]::-webkit-calendar-picker-indicator,.caja input[type=date]::-webkit-calendar-picker-indicator,.caja input[type=time]::-webkit-calendar-picker-indicator{opacity:.55;cursor:pointer;border-radius:6px;padding:2px}
+.hoja input[type=date]::-webkit-calendar-picker-indicator:hover,.hoja input[type=time]::-webkit-calendar-picker-indicator:hover{opacity:.9;background:var(--hover)}
+.tar-form .btn-solido{min-height:38px;padding:0 22px}
+.cc-barra input[type=search]{-webkit-appearance:none;appearance:none}
 /* Una fila de botones suelta no es un selector segmentado: sin caja gris detras (Recordatorios). */
 .hoja .filtros:not(:has(> .filtro)){background:transparent;box-shadow:none;border-radius:0;padding:0;gap:8px;flex-wrap:wrap}
 
@@ -2317,26 +2333,27 @@ input[type="checkbox"],input[type="radio"]{accent-color:var(--accent)}
 /* Ayuda «?» de cada pantalla */
 .ayuda-btn{flex:0 0 auto;width:26px;height:26px;border-radius:50%;border:0;background:var(--hover);color:var(--mut);font-weight:700;font-size:13px;cursor:pointer;transition:background .15s,color .15s}
 .ayuda-btn:hover,.ayuda-btn[aria-expanded="true"]{background:var(--ink,#2c6bed);color:var(--on-ink,#fff)}
-/* Tarjeta de ayuda al estilo de las herramientas de Photoshop (12/10): oscura, con el video arriba y debajo el nombre, una definicion corta, «Mas informacion»
-   y «Ver video rapido». Sale al dejar el cursor quieto sobre una opcion del menu (junto a ella) o sobre el «?» (debajo). */
-.ayuda-pop{position:fixed;top:56px;left:300px;z-index:95;width:min(380px,calc(100vw - 24px));border-radius:14px;overflow:hidden;background:#2d2d30;color:#e9e9ec;
-  box-shadow:0 20px 56px rgba(0,0,0,.5),0 0 0 .5px rgba(255,255,255,.1)}
+/* Tarjeta de ayuda al estilo de las herramientas de Photoshop (12/10): con el video arriba y debajo el nombre, una definicion corta, «Mas informacion»
+   y «Ver video rapido». Sigue el tema del CRM: clara en modo claro, oscura en modo oscuro (todo sale de las variables del tema). */
+.ayuda-pop{position:fixed;top:56px;left:300px;z-index:95;width:min(440px,calc(100vw - 24px));border-radius:14px;overflow:hidden;background:var(--panel);color:var(--fg);
+  box-shadow:0 20px 56px rgba(20,30,60,.22),0 0 0 .5px var(--line2,var(--line))}
+:root[data-tema="oscuro"] .ayuda-pop{box-shadow:0 20px 56px rgba(0,0,0,.55),0 0 0 .5px rgba(255,255,255,.12)}
 .ayuda-pop[hidden]{display:none}
-.tip-video{display:block;width:100%;aspect-ratio:16/9;background:#1a1a1c;object-fit:cover}
+.tip-video{display:block;width:100%;aspect-ratio:16/9;background:var(--hover);object-fit:cover}
 .tip-video[hidden]{display:none}
 .tip-cuerpo{padding:16px 20px 20px}
 .tip-tit{display:flex;align-items:center;gap:10px}
-.tip-tit b{font-size:18px;font-weight:700;letter-spacing:-.01em;color:#fff}
-.tip-tit kbd{font:600 12px system-ui,sans-serif;padding:1px 8px;border:1px solid #707076;border-radius:5px;color:#c8c8cd;background:transparent}
-.tip-desc{margin:14px 0 4px;font-size:14px;line-height:1.5;color:#e2e2e6}
-.tip-mas{display:inline-block;border:0;background:transparent;color:#fff;text-decoration:underline;font-size:14px;padding:2px 0;cursor:pointer}
-.tip-ver{display:block;margin:16px auto 0;padding:8px 20px;border:1.5px solid #ececef;border-radius:999px;background:transparent;color:#fff;font-weight:650;font-size:14px;cursor:pointer}
-.tip-ver:hover{background:rgba(255,255,255,.12)}
+.tip-tit b{font-size:18px;font-weight:700;letter-spacing:-.01em;color:var(--fg)}
+.tip-tit kbd{font:600 12px system-ui,sans-serif;padding:1px 8px;border:1px solid var(--line2,var(--line));border-radius:5px;color:var(--mut);background:transparent}
+.tip-desc{margin:14px 0 4px;font-size:14px;line-height:1.5;color:var(--fg)}
+.tip-mas{display:inline-block;border:0;background:transparent;color:var(--accent-fuerte,var(--accent));text-decoration:underline;font-size:14px;padding:2px 0;cursor:pointer}
+.tip-ver{display:block;margin:16px auto 0;padding:8px 20px;border:1.5px solid var(--accent);border-radius:999px;background:transparent;color:var(--accent-fuerte,var(--accent));font-weight:650;font-size:14px;cursor:pointer}
+.tip-ver:hover{background:var(--accent-suave,var(--hover))}
 .tip-ver[hidden]{display:none}
-.ayuda-detalle{margin-top:10px;border-top:1px solid rgba(255,255,255,.14);padding-top:10px}
-.ayuda-sub{font-size:12px;font-weight:650;color:#a9a9b0;margin-bottom:4px}
-.ayuda-detalle ul{margin:0 0 6px;padding-left:18px;font-size:13px;line-height:1.5;color:#e2e2e6}
-.ayuda-nota{font-size:12.5px;color:#a9a9b0;margin:6px 0 0}
+.ayuda-detalle{margin-top:10px;border-top:1px solid var(--line);padding-top:10px}
+.ayuda-sub{font-size:12px;font-weight:650;color:var(--mut);margin-bottom:4px}
+.ayuda-detalle ul{margin:0 0 6px;padding-left:18px;font-size:13px;line-height:1.5;color:var(--fg)}
+.ayuda-nota{font-size:12.5px;color:var(--mut);margin:6px 0 0}
 .mod-video{display:block;width:100%;border-radius:12px;background:#000}
 @media(max-width:760px){.ayuda-pop{left:12px;top:60px}}
 /* Ficha del lead modular: asa de arrastre, panel «Personalizar» y bloques ocultos de verdad. */
