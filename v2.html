@@ -196,7 +196,8 @@ body.menu-abierto .velo{display:block}
 
 /* --- Agenda mensual ------------------------------------------------------- */
 .agbarra{display:flex;align-items:center;gap:8px;margin:0 0 14px;flex-wrap:wrap}
-.agbarra strong{min-width:180px;text-align:center;text-transform:capitalize;font-size:15px}
+.agbarra strong{min-width:180px;text-align:center;font-size:15px;display:block}
+.agbarra strong::first-letter{text-transform:uppercase}
 .agbarra .ag-suscribe{margin-left:auto}
 /* Aqui vivia un calendario anterior, y sus restos seguian pesando sobre el de ahora:
    .agscroll no aparece ni una vez en el marcado --era el contenedor con scroll lateral que
@@ -1200,7 +1201,8 @@ a.ayuda{color:var(--enlace)}
 .agtog button.on{background:var(--ink);color:var(--on-ink)}
 .agfil{display:flex;gap:6px}
 .agnav{display:flex;align-items:center;gap:10px;margin-bottom:12px}
-.agnav b{flex:1;font-size:14px;text-transform:capitalize}
+.agnav b{flex:1;font-size:14px}
+.agnav b::first-letter{text-transform:uppercase}   /* «Octubre de 2026», no «Octubre De 2026» */
 .agnav .btn-linea{padding:6px 12px}
 .agsem{display:grid;grid-template-columns:repeat(7,1fr);gap:5px;max-width:820px;margin-bottom:5px}
 .agsem span{text-align:center;font-size:9.5px;font-weight:800;letter-spacing:.6px;
@@ -1225,8 +1227,7 @@ a.ayuda{color:var(--enlace)}
 .agpanel{margin-top:18px;max-width:820px}
 .agdia{margin-bottom:18px;max-width:820px}
 .agdcab{display:flex;justify-content:space-between;align-items:baseline;padding:0 0 7px;
-  border-bottom:1px solid var(--line);margin-bottom:7px;font-size:12.5px;font-weight:650;
-  text-transform:capitalize}
+  border-bottom:1px solid var(--line);margin-bottom:7px;font-size:12.5px;font-weight:650}
 .agdcab b{font-size:11px;color:var(--mut)}
 .agcita{display:flex;align-items:center;gap:12px;width:100%;padding:9px 11px;margin-bottom:5px;
   border:1px solid var(--line);border-radius:var(--r);background:var(--panel);cursor:pointer;text-align:left}
@@ -1242,7 +1243,7 @@ a.ayuda{color:var(--enlace)}
 .agn small{display:block;font-size:11px;color:var(--mut);margin-top:1px}
 
 /* --- Configuración ----------------------------------------------------------- */
-.cfggrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(330px,1fr));gap:14px;
+.cfggrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(330px,100%),1fr));gap:14px;
   max-width:1180px;align-items:start}
 .cfgc{padding:16px 18px 18px;border:1px solid var(--line);border-radius:var(--r2);background:var(--panel)}
 .cfgc h3{margin:0 0 6px;font-size:13.5px;font-weight:650}
@@ -1312,7 +1313,7 @@ a.ayuda{color:var(--enlace)}
 .cifra.bien b{color:var(--ok)}
 
 /* --- Graficas --------------------------------------------------------------- */
-.tablero{display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:14px;
+.tablero{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(340px,100%),1fr));gap:14px;
   max-width:1180px;margin-top:22px}
 .pgraf{padding:16px 18px 18px;border:1px solid var(--line);border-radius:var(--r2);background:var(--panel)}
 .pgcab{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-bottom:14px}
@@ -1334,7 +1335,8 @@ a.ayuda{color:var(--enlace)}
 .leyenda b{color:var(--fg)}
 .embudo{display:flex;flex-direction:column;gap:9px}
 .epaso{display:grid;grid-template-columns:118px minmax(0,1fr) 74px;gap:10px;align-items:center;font-size:12.5px}
-.epaso .en{color:var(--mut);text-transform:capitalize}
+.epaso .en{color:var(--mut)}
+.epaso .en::first-letter{text-transform:uppercase}
 .epaso .eb{height:20px;border-radius:5px;background:var(--hover);overflow:hidden}
 .epaso .eb i{display:block;height:100%;background:var(--ink);opacity:.85}
 .epaso .ev{text-align:right;font-weight:650}
@@ -1344,7 +1346,8 @@ a.ayuda{color:var(--enlace)}
 .cifra i{display:block;font-style:normal;font-size:10.5px;color:var(--meta);margin-top:2px}
 .barras{display:flex;flex-direction:column;gap:7px;max-width:560px}
 .barra{display:grid;grid-template-columns:132px minmax(0,1fr) 34px;gap:10px;align-items:center;font-size:12.5px}
-.barra .be{color:var(--mut);text-transform:capitalize}
+.barra .be{color:var(--mut)}
+.barra .be::first-letter{text-transform:uppercase}
 .barra .bp{height:8px;border-radius:4px;background:var(--hover);overflow:hidden}
 .barra .bp i{display:block;height:100%;background:var(--ink);border-radius:4px}
 .barra .bn{text-align:right;font-weight:650}
@@ -1424,9 +1427,11 @@ a.ayuda{color:var(--enlace)}
      grid la segunda fila esta declarada, no deducida. */
   /* Dos filas, asi que la barra mide mas: se dice aqui para que la ficha la siga. */
   :root{--alto-barra:90px}
-  header.barra{display:grid;grid-template-columns:auto minmax(0,1fr);align-items:center;
+  header.barra{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;
     height:var(--alto-barra);padding:8px 10px;row-gap:8px;column-gap:8px}
-  header.barra .der{grid-column:1/-1;justify-content:flex-end;margin-left:0}
+  /* El «?» de ayuda va en la primera fila, a la derecha del titulo: sin esto caia a una fila propia y empujaba los botones fuera de la barra. */
+  header.barra .ayuda-btn{grid-column:3;grid-row:1}
+  header.barra .der{grid-column:1/-1;grid-row:2;justify-content:flex-end;margin-left:0;flex-wrap:nowrap;gap:6px}
 }
 .calidad-resumen{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin:18px 0}
 .calidad-kpi{background:var(--panel);border:1px solid var(--line2);border-radius:14px;padding:14px}
@@ -1659,7 +1664,7 @@ input[type="checkbox"],input[type="radio"]{accent-color:var(--accent)}
 .hoja>.seccion{font-size:20px;font-weight:700;letter-spacing:-.025em;color:var(--fg);margin:36px 0 6px}
 
 /* --- Tarjetas: superficies blancas de esquinas continuas --------------------------------- */
-.cfggrid{grid-template-columns:repeat(auto-fill,minmax(360px,1fr));gap:20px;max-width:1240px}
+.cfggrid{grid-template-columns:repeat(auto-fill,minmax(min(360px,100%),1fr));gap:20px;max-width:1240px}
 .cfgc{padding:22px 24px 24px;border:0;border-radius:var(--r3);box-shadow:var(--sombra-suave)}
 .cfgc h3{font-size:17px;font-weight:650;letter-spacing:-.022em;margin-bottom:8px}
 .cfgnota{font-size:13px;line-height:1.55}
@@ -1687,7 +1692,7 @@ input[type="checkbox"],input[type="radio"]{accent-color:var(--accent)}
 .cifra b{font-size:34px;font-weight:700;letter-spacing:-.04em}
 .cifra span{font-size:13px}
 .cifra i{font-size:11.5px}
-.tablero{grid-template-columns:repeat(auto-fill,minmax(360px,1fr));gap:20px;max-width:1240px}
+.tablero{grid-template-columns:repeat(auto-fill,minmax(min(360px,100%),1fr));gap:20px;max-width:1240px}
 .pgraf{padding:20px 22px 22px;border:0;border-radius:var(--r3);box-shadow:var(--sombra-suave)}
 .pgcab b{font-size:16px;font-weight:650;letter-spacing:-.02em}
 .pgcab span{font-size:12px}
@@ -1726,7 +1731,7 @@ input[type="checkbox"],input[type="radio"]{accent-color:var(--accent)}
 .ktarjeta i{font-size:11.5px;margin-top:5px}
 .kmas{font-size:12.5px;padding:9px}
 /* Leads parados: una rejilla de tarjetas de la misma medida, no una fila por cada regla. */
-.lp-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(380px,1fr));gap:20px;max-width:1240px;align-items:start}
+.lp-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(380px,100%),1fr));gap:20px;max-width:1240px;align-items:start}
 .lp-card{background:var(--panel);border-radius:var(--r3);box-shadow:var(--sombra-suave);padding:20px 22px 12px;min-width:0}
 .lp-cab{display:flex;align-items:center;justify-content:space-between;gap:10px}
 .lp-cab b{font-size:16px;font-weight:650;letter-spacing:-.02em}
@@ -2078,7 +2083,7 @@ input[type="checkbox"],input[type="radio"]{accent-color:var(--accent)}
 .mk-resumen{margin:0 0 18px;padding:14px 18px;border-radius:16px;background:var(--accent-suave)}
 .mk-resumen b{font-size:12px;font-weight:650;color:var(--accent-fuerte)}
 .mk-resumen p{margin:4px 0 0;font-size:13.5px;line-height:1.5}
-.mk-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(360px,1fr));gap:18px;align-items:start;margin:0 0 14px}
+.mk-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(360px,100%),1fr));gap:18px;align-items:start;margin:0 0 14px}
 .mk-card{padding:20px 22px 18px;border-radius:var(--r3);min-width:0}
 .mk-card.decidida{opacity:.72}
 .mk-cab{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:0 0 10px}
@@ -2702,7 +2707,11 @@ if (btnAvisos && typeof Notification !== 'undefined') {
       try { Notification.requestPermission().then(pinta).catch(() => {}); } catch (e) { /* navegador sin permiso programable */ }
     }, { once: true });
   } else if (Notification.permission === 'denied') {
-    setTimeout(() => avisa('Los avisos están bloqueados en este navegador', 'Pulsa el candado de la barra de direcciones → Notificaciones → Permitir, y recarga. Mientras tanto verás la burbuja dentro del CRM.'), 4000);
+    // Una vez al dia, no en cada carga: durante una demostracion un aviso que sale al recargar estorba.
+    let hoyAviso = ''; try { hoyAviso = localStorage.getItem('dcarela-aviso-bloqueo') || ''; } catch (e) { /* sin almacenamiento */ }
+    const diaAviso = new Date().toISOString().slice(0, 10);
+    if (hoyAviso !== diaAviso) { try { localStorage.setItem('dcarela-aviso-bloqueo', diaAviso); } catch (e) { /* sin almacenamiento */ }
+    setTimeout(() => avisa('Los avisos están bloqueados en este navegador', 'Pulsa el candado de la barra de direcciones → Notificaciones → Permitir, y recarga. Mientras tanto verás la burbuja dentro del CRM.'), 4000); }
   }
   btnAvisos.onclick = async () => {
     try {
@@ -5515,6 +5524,11 @@ function pintaModoChat(){
     at.classList.toggle('atendido', atendido);
     at.textContent = atendido ? '✓ Atendido' : 'Atendido';
     at.setAttribute('aria-pressed', atendido ? 'true' : 'false');
+    // Si lo paso solo el sistema (archivos para imprimir, un «gracias»), el boton lo dice al pasar el cursor.
+    const auto = sel.atendido_auto && Date.parse(sel.atendido_auto.at || '') >= marcado - 1000;
+    const MOTIVOS_AUTO = { solo_archivos: 'solo mandó archivos para imprimir', cortesia: 'solo agradeció o reaccionó' };
+    at.title = atendido && auto ? 'Atendido automáticamente: ' + (MOTIVOS_AUTO[sel.atendido_auto.motivo] || 'no esperaba respuesta') + '. Si vuelve a escribir, reaparece solo.'
+      : 'Ya lo atendiste: se quita de «Sin responder» y de «Se enfrían», se baja el aviso de atención humana y la satisfacción lo cuenta como cliente atendido.';
   }
 }
 
@@ -12035,7 +12049,7 @@ const CAT_DE_TARJETA = {
   'Instagram y Messenger': 'mensajes', 'Cómo te ve el cliente': 'mensajes', 'Límites de seguridad del 2.º número': 'mensajes',
   'Número del administrador': 'mensajes',
   'Mensajes por defecto': 'mensajes', 'Avisos al supervisor': 'mensajes', 'Resumen diario del CRM': 'mensajes', 'Bot de WhatsApp': 'mensajes',
-  'Encuesta de satisfacción': 'mensajes', 'Satisfacción automática': 'clientes',
+  'Encuesta de satisfacción': 'mensajes', 'Satisfacción automática': 'clientes', 'Atendido automático': 'clientes', 'Orden de las etiquetas': 'clientes',
   'Permiso de marketing': 'clientes', 'Contactos ignorados': 'clientes', 'Baja de una lista entera': 'clientes',
   'Guardar contactos solo': 'clientes', 'Clientes de caja en el chat': 'clientes', 'Etiquetas del buscador': 'clientes',
   'Auto-cierre a los 14 días': 'auto', 'Leads al día': 'auto', 'Cerebro local': 'auto', 'Etiquetas y contexto automáticos': 'auto',
@@ -12059,9 +12073,9 @@ const SECCIONES_CFG = {
     { id: 'avisos', nombre: 'Avisos para ti', nota: 'Lo que te llega por WhatsApp para que no se te pase nada.', tarjetas: ['Resumen diario del CRM', 'Avisos al supervisor'] },
   ],
   clientes: [
-    { id: 'permisos', nombre: 'Permisos y bajas', nota: 'A quién sí y a quién no se le escribe de marketing.', tarjetas: ['Permiso de marketing', 'Baja de una lista entera', 'Satisfacción automática'] },
+    { id: 'permisos', nombre: 'Permisos y bajas', nota: 'A quién sí y a quién no se le escribe de marketing.', tarjetas: ['Permiso de marketing', 'Baja de una lista entera', 'Atendido automático', 'Satisfacción automática'] },
     { id: 'contactos', nombre: 'Contactos', nota: 'Qué se guarda, a quién se oculta y cómo se cruza con la caja.', tarjetas: ['Contactos ignorados', 'Guardar contactos solo', 'Clientes de caja en el chat'] },
-    { id: 'busqueda', nombre: 'Buscador', nota: 'Qué etiquetas salen en la barra de Conversaciones.', tarjetas: ['Etiquetas del buscador'] },
+    { id: 'busqueda', nombre: 'Buscador', nota: 'Qué etiquetas salen en la barra de Conversaciones.', tarjetas: ['Etiquetas del buscador', 'Orden de las etiquetas'] },
   ],
   auto: [
     { id: 'asistentes', nombre: 'Asistentes e inteligencia', nota: 'Lo que lee y clasifica tus conversaciones. No le escribe a nadie.', tarjetas: ['Asistente IA', 'Cerebro local', 'Análisis de conversaciones con IA', 'Etiquetas y contexto automáticos'] },
@@ -12775,6 +12789,16 @@ async function pintaConfig(){
         'Cada mañana a las 8:45 te llega por WhatsApp lo que toca atender: chats sin responder, cotizaciones que se enfrían, seguimientos y sesiones de hoy y mañana. '
         + 'Un día tranquilo no manda nada. <b>Nunca le escribe a un cliente</b>: es un aviso para ti.',
         interruptorCfg('resumen_crm_diario', 'Mandarme «Tu día en el CRM» cada mañana', 'Solo si hay algo que atender. Lo mismo, cuando quieras, escribiendo «mi día».', true))
+
+    + tarjetaCfg('Orden de las etiquetas',
+        'Cada madrugada el CRM <b>funde las etiquetas repetidas</b> («xv», «XV» y «xv años» pasan a ser una; todas las de precio, una) y <b>quita las que solo repiten la etapa</b> del embudo (nuevo, cliente, perdido…). '
+        + 'Las que usa el sistema (requiere_humano, permiso_marketing, proveedor…) y las tuyas escritas a mano no se tocan. Las técnicas se guardan pero no se enseñan.',
+        interruptorCfg('etiquetas_orden_auto', 'Ordenar las etiquetas automáticamente', 'Una vez cada noche. Apágalo si prefieres controlarlas tú.', true))
+
+    + tarjetaCfg('Atendido automático',
+        'El CRM pasa solo a <b>«Atendido»</b> a quien <b>solo mandó fotos o documentos para imprimir</b> (o nada) y a quien <b>solo agradeció o reaccionó</b> (👍, «gracias», «ok» ya viejo), para no volver a escribirles ni listarlos como pendientes. '
+        + 'Nunca toca un chat con cotización o abono pendiente, una foto de sesión o maquillaje, un audio, una pregunta ni un chat que pide a una persona. <b>No envía nada.</b> Si el cliente vuelve a escribir, reaparece solo en «Sin responder».',
+        interruptorCfg('atendido_auto', 'Pasar a «Atendido» automáticamente', 'Cada 20 minutos. Apágalo para marcar siempre a mano.', true))
 
     + tarjetaCfg('Satisfacción automática',
         'Unas horas después de que marcas un chat como <b>«Atendido»</b>, el CRM le manda al cliente la encuesta de satisfacción. Solo en horario laboral (9 a. m. a 6 p. m.), '
@@ -13881,7 +13905,9 @@ function grafArea(puntos, etiquetas, an = 640, al = 170){
       + '<text x="' + (pad.i-7) + '" y="' + (y(v)+3.5) + '" class="gnum" text-anchor="end">' + v + '</text>';
   }).join('');
   const paso = Math.max(1, Math.ceil(puntos.length / Math.max(2, Math.floor(an / 64))));   // las etiquetas que caben, no una cada tres
-  const marcas = puntos.map((v,i) => (i % paso === 0 || i === puntos.length-1)
+  // La ultima etiqueta solo si queda lejos de la anterior; forzarla siempre la montaba sobre la de al lado («11/10» y «12/10»).
+  const ultimaCabe = ((puntos.length - 1) % paso) >= paso * 0.75;
+  const marcas = puntos.map((v,i) => (i % paso === 0 || (i === puntos.length-1 && ultimaCabe))
     ? '<text x="' + x(i) + '" y="' + (al-7) + '" class="gnum" text-anchor="middle">' + esc(etiquetas[i]) + '</text>' : '').join('');
   const picos = puntos.map((v,i) => '<circle cx="' + x(i) + '" cy="' + y(v) + '" r="2.5" class="gpunto">'
     + '<title>' + esc(etiquetas[i]) + ': ' + v + '</title></circle>').join('');
@@ -14520,7 +14546,11 @@ async function pintaAnuncios(){
 
   const r = await llama({ action:'adsMetricas', rango: ADS_RANGO });
   if (!r.ok) {
-    cont.innerHTML = '<p class="bajada">' + esc(r.error || 'No se pudo consultar.') + '</p>';
+    // Un error de configuracion («falta META_AD_ACCOUNT_ID…») no se le ensena tal cual a nadie: se explica y se dice que hacer.
+    const tecnico = /falta|META_|token|configuraci/i.test(String(r.error || ''));
+    cont.innerHTML = tecnico
+      ? vacioApple('<path d="M4.500 19.500V10M10 19.500V5M15.500 19.500v-7M21 19.500H3"/>', 'Anuncios todavía sin conectar', 'La cuenta de anuncios de Meta aún no está enlazada con el CRM. Cuando se enlace, aquí verás lo que gastas y cuántas conversaciones te trae cada campaña.')
+      : '<p class="bajada">' + esc(r.error || 'No se pudo consultar.') + '</p>';
     return;
   }
   const filas = r.campanas || [];
@@ -17307,6 +17337,16 @@ function etiquetasDe(c){
   if (typeof v === 'string' && v.trim()) return v.split(',').map(s => s.trim()).filter(Boolean);
   return [];
 }
+// Etiquetas que NO se ensenan (12/10): las tecnicas del sistema y las que repiten la etapa del embudo. Siguen guardadas en la ficha (el codigo del servidor
+// las lee) pero no estorban a quien etiqueta o filtra. La misma lista vive en firebase-functions/src/etiquetas-core.js (una prueba comprueba que coinciden).
+const ETQ_OCULTAS = new Set(['sync_reglas', 'sync_ia', 'bot_activo', 'auto_template', 'followup', 'seguimiento_enviado', 'seguimiento', 'seguimiento_automatico',
+  'seguimiento_bot', 'sin_fecha', 'fecha_tentativa', 'primer_contacto', 'imagen', 'audio', 'informacion_general', 'combos_enviados', 'catalogo_enviado',
+  'nuevo', 'interesado', 'cotizando', 'pendiente_reserva', 'reservado', 'cliente', 'perdido', 'cerrado', 'abierto', 'esperando_cliente', 'desinteresado', 'null', 'undefined']);
+const claveEtq = e => String(e || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim().replace(/[\s/-]+/g, '_');
+function etiquetasVisiblesDe(c){
+  const vistas = new Set();
+  return etiquetasDe(c).filter(e => { const k = claveEtq(e); if (ETQ_OCULTAS.has(k) || vistas.has(k)) return false; vistas.add(k); return true; });
+}
 // Por USO, no por alfabeto. El orden alfabetico hacia inservibles las sugerencias de la
 // ficha: solo caben ocho, y siempre salian las mismas ocho del principio del abecedario
 // --24_septiembre, 8_anos, abierto, agosto-- mientras las que el equipo escribe de verdad
@@ -17317,7 +17357,7 @@ function etiquetasContadas(){
   // CONVS ya son solo las visibles (recalculaVisibles): una etiqueta que contara las de una linea
   // oculta diria 2 en el filtro y abriria 1.
   CONVS
-    .forEach(c => etiquetasDe(c).forEach(e => cuenta.set(e, (cuenta.get(e) || 0) + 1)));
+    .forEach(c => etiquetasVisiblesDe(c).forEach(e => cuenta.set(e, (cuenta.get(e) || 0) + 1)));
   return [...cuenta.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
 }
 function etiquetasEnUso(){
@@ -17513,7 +17553,7 @@ async function cableaNotas(c){
 function cableaEtiquetas(c){
   const caja = $('etiquetas'); if (!caja) return;
   const pinta = () => {
-    const mias = etiquetasDe(c);
+    const mias = etiquetasVisiblesDe(c);
     const sugeridas = etiquetasEnUso().filter(e => !mias.includes(e)).slice(0, 8);
     caja.innerHTML = mias.map(e => '<span class="etq puesta">' + esc(e)
         + '<button data-quita-etq="' + esc(e) + '" aria-label="Quitar">×</button></span>').join('')
@@ -17522,8 +17562,10 @@ function cableaEtiquetas(c){
   };
   pinta();
 
-  const guarda = async lista => {
+  // Lo que se ve es una parte de lo guardado: las tecnicas y las de etapa se conservan al guardar, para no borrar lo que el servidor usa.
+  const guarda = async visibles => {
     const antes = etiquetasDe(c);
+    const lista = [...visibles, ...antes.filter(e => ETQ_OCULTAS.has(claveEtq(e)))];
     c.labels = lista;
     pinta();
     const r = await llama({ action:'updateLead', conversation_id: c.id || c._id, fields:{ labels: lista } });
@@ -17533,18 +17575,18 @@ function cableaEtiquetas(c){
 
   caja.onclick = ev => {
     const quita = ev.target.closest('[data-quita-etq]');
-    if (quita) return guarda(etiquetasDe(c).filter(e => e !== quita.dataset.quitaEtq));
+    if (quita) return guarda(etiquetasVisiblesDe(c).filter(e => e !== quita.dataset.quitaEtq));
     const pon = ev.target.closest('[data-pon-etq]');
-    if (pon) return guarda([...etiquetasDe(c), pon.dataset.ponEtq]);
+    if (pon) return guarda([...etiquetasVisiblesDe(c), pon.dataset.ponEtq]);
   };
   $('etqNueva').onkeydown = ev => {
     if (ev.key !== 'Enter') return;
     ev.preventDefault();
     const e = ev.target.value.trim().toLowerCase();
     if (!e) return;
-    if (etiquetasDe(c).includes(e)) { ev.target.value = ''; return; }
+    if (etiquetasVisiblesDe(c).includes(e)) { ev.target.value = ''; return; }
     ev.target.value = '';
-    guarda([...etiquetasDe(c), e]);
+    guarda([...etiquetasVisiblesDe(c), e]);
   };
 }
 
