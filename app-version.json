@@ -1,7 +1,7 @@
 {
-  "version": "2026-10-12-cotizacion-ticket-v151",
+  "version": "2026-10-12-cotizador-completo-v152",
   "channel": "crm",
-  "released_at": "2026-10-12T02:19:14.067Z",
-  "summary": "Cotizar ahora manda la cotización como imagen tipo ticket (marca, piezas, lo que se agregó o quitó y el total grande, con folio) o como texto, o las dos. Todo queda registrado con su folio para que la Caja la pueda leer.",
+  "released_at": "2026-10-12T02:33:31.100Z",
+  "summary": "Las conversaciones ancladas y las ignoradas (tu esposa, familia, tus números) ya se ven en Todos: ignorar solo detiene la automatización. El cotizador trae TODOS los tamaños de cuadros e impresas, permite varias filas de tamaño y arma presupuestos: te dice qué cabe, qué se pasa por cuánto y qué ajustar.",
   "requiere_puente": "2026-09-28-lectura-v34"
 }
