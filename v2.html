@@ -1744,6 +1744,13 @@ input[type="checkbox"],input[type="radio"]{accent-color:var(--accent)}
 .tpl.fwd-fila .fwd-quien{flex:1 1 auto;min-width:0}
 .tpl.fwd-fila .fwd-quien b{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .tpl.fwd-fila .tplcheck{float:none;flex:0 0 auto}
+.enlacemsg{color:var(--enlace);text-decoration:underline;word-break:break-all}
+.enlace-card{display:block;margin-top:6px;padding:8px 10px;border-radius:10px;background:rgba(0,0,0,.05);border-left:3px solid var(--accent);color:inherit;text-decoration:none}
+.enlace-card b{display:block;font-size:13px}
+.enlace-card span{display:block;font-size:12px;color:var(--mut);margin-top:2px}
+.enlace-card i{display:block;font-style:normal;font-size:11px;color:var(--mut);margin-top:3px}
+.sinred{position:fixed;left:50%;bottom:16px;transform:translateX(-50%);z-index:90;max-width:min(560px,calc(100vw - 32px));padding:10px 16px;border-radius:999px;background:#3a3a3c;color:#fff;font-size:13px;box-shadow:var(--sombra)}
+.sinred.enviando{background:var(--accent)}
 .barra-busca{display:flex;align-items:center;gap:8px;padding:8px 14px;border-bottom:1px solid var(--line);background:var(--panel)}
 .barra-busca[hidden],.barra-fijado[hidden]{display:none}
 .barra-busca input{flex:1 1 auto;min-width:0}
@@ -4819,13 +4826,32 @@ function telefonoParaChat(entrada){
 // solo toca dígitos, espacios, puntos, guiones, paréntesis y el +, que esc() no cambia.
 // El primer grupo hace de "lookbehind": que el número no sea la cola de uno más largo.
 const RE_TEL_TEXTO = /(^|[^\d+])((?:\+?1[\s.-]?)?\(?(?:809|829|849)\)?[\s.-]?\d{3}[\s.-]?\d{4})(?!\d)/g;
+// Las direcciones web de un mensaje tambien se pulsan (se abren en otra pestaña). Se escapan con un marcador ANTES de buscar telefonos: los digitos de
+// una direccion (wa.me/18095551234) no son un telefono suelto. Solo http y https: el texto ya viene escapado, asi que no puede cerrar el atributo.
+const RE_URL_TEXTO = /https?:\/\/[^\s<>"']+/gi;
 function conTelefonos(html){
-  const conLinks = String(html || '').replace(RE_TEL_TEXTO, (todo, antes, num) => {
+  const enlaces = [];
+  const sinUrl = String(html || '').replace(RE_URL_TEXTO, u => {
+    const limpia = u.replace(/(?:&quot;|&#39;|&gt;|&lt;|[)\].,;:!?])+$/, '');
+    enlaces.push('<a href="' + limpia + '" class="enlacemsg" target="_blank" rel="noopener noreferrer nofollow">' + limpia + '</a>');
+    return '\u0001E' + (enlaces.length - 1) + '\u0002' + u.slice(limpia.length);
+  });
+  const conLinks = sinUrl.replace(RE_TEL_TEXTO, (todo, antes, num) => {
     const tel = telefonoParaChat(num);
     return tel ? antes + '<a href="#" class="telmsg" data-tel="' + tel + '" title="Abrir un chat con este número">' + num + '</a>' : todo;
   });
   // Los emojis se pintan con los de Apple cuando la hoja ya esta cargada (ver «Emojis estilo Apple»).
-  return typeof emojisApple === 'function' ? emojisApple(conLinks) : conLinks;
+  const listo = typeof emojisApple === 'function' ? emojisApple(conLinks) : conLinks;
+  return listo.replace(/\u0001E(\d+)\u0002/g, (m, i) => enlaces[Number(i)] || m);
+}
+// La vista previa que trae un enlace (titulo y descripcion): la guarda el puente en metadata.enlace, tanto de lo que llega como de lo que sale.
+function tarjetaEnlace(m){
+  const e = m && m.metadata && m.metadata.enlace;
+  if (!e || !/^https?:\/\//i.test(String(e.url || ''))) return '';
+  let host = '';
+  try { host = new URL(e.url).hostname.replace(/^www\./, ''); } catch (x) { return ''; }
+  return '<a class="enlace-card" href="' + esc(e.url) + '" target="_blank" rel="noopener noreferrer nofollow"><b>' + esc(e.title || host) + '</b>'
+    + (e.description ? '<span>' + esc(e.description) + '</span>' : '') + '<i>' + esc(host) + '</i></a>';
 }
 // ---- Buscar un contacto: fin de las piezas puras
 
@@ -5279,7 +5305,10 @@ function abre(c){
     +   '<button data-mas="nolei">Marcar como no leído</button>'
     +   '<button data-mas="encuesta">Enviar encuesta</button>'
     +   (canalDe(c) === 'whatsapp_qr'
-          ? '<button data-mas="ubicacion">Enviar ubicación…</button><button data-mas="tarjeta">Enviar contacto…</button>' : '')
+          ? '<button data-mas="ubicacion">Enviar ubicación…</button><button data-mas="tarjeta">Enviar contacto…</button>'
+            + '<button data-mas="temporales">Mensajes temporales…</button>'
+            + '<button data-mas="sticker">Enviar sticker (.webp)…</button><button data-mas="gif">Enviar GIF (video MP4)…</button>' : '')
+    +   '<button data-mas="camara">Tomar foto con la cámara…</button>'
     +   '<button data-mas="asistente">Preguntar al asistente</button>'
     +   '<button data-mas="cerrar">Cerrar conversación</button></div></div>'
     + '</div>'
@@ -5319,6 +5348,8 @@ function abre(c){
     +     '<button class="adj" id="adjMic" title="Grabar audio" aria-label="Grabar audio">'
     +       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="9" y="3" width="6" height="11.500" rx="3"/><path d="M5.500 11.500a6.500 6.500 0 0013 0M12 18v3"/></svg></button>'
     +     '<input type="file" id="fImg" accept="image/*" multiple hidden>'
+    +     '<input type="file" id="fSticker" accept="image/webp,.webp" multiple hidden>'
+    +     '<input type="file" id="fGif" accept="video/mp4,video/webm" multiple hidden>'
     +     '<input type="file" id="fDoc" multiple hidden>'
     +   '</div>'
     +   '<div class="emoji-pop" id="emojiPop"></div>'
@@ -5597,6 +5628,10 @@ function cableaChat(c){
     if (b.dataset.mas === 'tarjeta') return abreEnviarContacto(sel);
     if (b.dataset.mas === 'silenciar') return abreSilencio(sel);
     if (b.dataset.mas === 'buscar') return abreBuscaChat();
+    if (b.dataset.mas === 'sticker') return $('fSticker').click();
+    if (b.dataset.mas === 'gif') return $('fGif').click();
+    if (b.dataset.mas === 'camara') return abreCamara();
+    if (b.dataset.mas === 'temporales') return abreTemporales(sel);
     if (b.dataset.mas === 'nolei') return marcaNoLeido(sel);
     if (b.dataset.mas === 'anclar') return marcaChat(sel, { pin: !anclado(sel) },
       anclado(sel) ? 'Chat desanclado' : 'Chat anclado arriba');
@@ -5670,6 +5705,13 @@ function cableaChat(c){
         return;
       }
     }
+    // Sin internet: el texto queda pendiente y sale solo al volver (no se pierde ni se duplica). Un archivo necesita la red.
+    if (navigator.onLine === false) {
+      if (COLA.length) return avisa('Sin conexión', 'Los archivos necesitan internet para subirse. El texto sí puede quedar pendiente: quita los archivos o espera a que vuelva la conexión.');
+      encolaSinConexion(sel.id || sel._id, t);
+      caja.value = ''; caja.style.height = 'auto'; apagaEscribiendo(); cancelaCita();
+      return avisa('Sin conexión', 'El mensaje quedó pendiente y saldrá solo cuando vuelva internet.');
+    }
     env.disabled = true;
     let fallo = null;
     // Los nombres de estas claves NO son opcionales: uploadMetaMedia lee media_b64 y
@@ -5696,7 +5738,7 @@ function cableaChat(c){
         const adj = await cuerpoDeAdjunto(a);
         const r = !adj.ok ? { ok:false, error: adj.error } : await llama({
           action:'bridgeQueue', conversation_id: conv,
-          media_kind: a.tipo, ...adj.cuerpo, media_filename: a.nombre, media_mime: a.mime,
+          media_kind: a.tipo, ...adj.cuerpo, media_filename: a.nombre, media_mime: a.mime, ...(a.gif ? { gif: true } : {}),
           // Se manda la vista previa junto al archivo: el archivo se borra al enviarse y esto
           // es lo que deja el mensaje visible en el hilo. Ver miniaturaParaEnviar.
           ...(a.thumb ? { media_thumb_b64: a.thumb } : {}),
@@ -5988,7 +6030,7 @@ function pintaCola(){
       image: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>',
       document: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/></svg>',
     };
-    const previa = a.tipo === 'image' && a.datos
+    const previa = (a.tipo === 'image' || a.tipo === 'sticker') && a.datos
       ? '<img src="data:' + esc(a.mime || 'image/jpeg') + ';base64,' + a.datos + '" alt="">'
       : '<span class="ico">' + (ICONO[a.tipo] || ICONO.document) + '</span>';
     const peso = a.kb || (a.datos ? Math.round(a.datos.length * 0.75 / 1024) : 0);
@@ -6121,6 +6163,19 @@ function cableaAdjuntos(){
   $('adjDoc').onclick = () => $('fDoc').click();
   $('fImg').onchange = e => { const f = [...e.target.files]; e.target.value = ''; encola(f, 'image'); };
   $('fDoc').onchange = e => { const f = [...e.target.files]; e.target.value = ''; encola(f, 'document'); };
+  // Sticker (.webp, hasta 1 MB) y GIF (un video MP4 corto: WhatsApp solo repite solo los que son MP4). Ambos solo por la linea de WhatsApp Web.
+  if ($('fSticker')) $('fSticker').onchange = async e => {
+    const f = [...e.target.files]; e.target.value = '';
+    const buenos = f.filter(x => /^image\/webp$/i.test(x.type) && x.size <= 1024 * 1024);
+    if (buenos.length !== f.length) avisa('Sticker no válido', 'Tiene que ser un archivo .webp de hasta 1 MB.');
+    if (buenos.length) await encola(buenos, 'sticker');
+  };
+  if ($('fGif')) $('fGif').onchange = async e => {
+    const f = [...e.target.files]; e.target.value = '';
+    const antes = COLA.length;
+    await encola(f, 'video');
+    COLA.slice(antes).forEach(a => { a.gif = true; });
+  };
   // Pegar (Ctrl+V) y soltar archivos en el chat, como en WhatsApp Web: las imagenes entran como fotos y lo demas como documento. Con `on...` y no con
   // addEventListener: esta funcion se repite al abrir cada chat y no puede acumular manejadores.
   const adjuntaSueltos = (lista) => {
@@ -6170,6 +6225,105 @@ function cableaAdjuntos(){
   $('adjCotiza').onclick = () => abreCotizador(sel);
   $('adjRapida').onclick = abreRapidas;
   $('adjEmoji').onclick = abreEmojis;
+}
+
+/* ---- Mensajes temporales: el mismo ajuste que WhatsApp tiene por chat (K19) ---- */
+const TEMPORALES = [[0, 'Desactivados'], [86400, '24 horas'], [604800, '7 días'], [7776000, '90 días']];
+function abreTemporales(c){
+  if (!c || canalDe(c) !== 'whatsapp_qr') return;
+  const actual = Number(c.ephemeral_seconds || 0);
+  abreModal('<div class="mtapa"><b>Mensajes temporales</b><button class="cerrarm" data-cerrar>×</button></div><div class="mcuerpo">'
+    + '<p class="bajada">Los mensajes nuevos de este chat desaparecen solos pasado ese tiempo, en el WhatsApp de los dos. No borra lo que ya está.</p>'
+    + TEMPORALES.map(([seg, texto]) => '<button class="tpl' + (seg === actual ? ' marcado' : '') + '" data-temp="' + seg + '"><span class="tplcheck"></span><b>' + esc(texto) + '</b></button>').join('')
+    + '</div>');
+  $('modal').querySelector('.mcuerpo').onclick = async ev => {
+    const b = ev.target.closest('[data-temp]'); if (!b) return;
+    const seg = Number(b.dataset.temp);
+    const r = await llama({ action: 'bridgeQueue', conversation_id: c.id || c._id, ephemeral_seconds: seg });
+    cierraModal();
+    if (!r.ok) return avisa('No se pudo cambiar', r.error);
+    c.ephemeral_seconds = seg;
+    avisa(seg ? 'Mensajes temporales: ' + (TEMPORALES.find(t => t[0] === seg) || [0, ''])[1] : 'Mensajes temporales desactivados', 'Se aplica en cuanto el puente lo envíe.');
+  };
+}
+
+/* ---- Sin conexión: lo que se escribe sin internet queda pendiente y sale solo, una vez (K19) ---- */
+// Solo se encola cuando el navegador DICE que no hay red (navigator.onLine === false): en ese caso la peticion nunca salio, asi que al volver no
+// puede duplicarse. Es solo texto: un archivo necesita la red para subirse. Los pendientes se guardan en este navegador y sobreviven a recargar.
+const PENDIENTES_CLAVE = 'dcarela-pendientes-v1';
+let PENDIENTES = [];
+let VACIANDO_PENDIENTES = false;
+function leePendientes(){
+  try { const v = JSON.parse(localStorage.getItem(PENDIENTES_CLAVE) || '[]'); return Array.isArray(v) ? v.filter(p => p && p.conv && p.texto) : []; }
+  catch (e) { return []; }
+}
+function guardaPendientes(){ try { localStorage.setItem(PENDIENTES_CLAVE, JSON.stringify(PENDIENTES)); } catch (e) { /* sin almacenamiento: quedan en memoria */ } }
+PENDIENTES = leePendientes();
+function encolaSinConexion(conv, texto){
+  PENDIENTES.push({ id: 'p' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6), conv: String(conv), texto: String(texto), en: new Date().toISOString() });
+  guardaPendientes(); pintaBannerRed(); if (typeof pintaMensajes === 'function' && sel) pintaMensajes();
+}
+// Globos de los pendientes de ESTE chat, con el reloj de «saliendo»: se mezclan con el hilo hasta que el mensaje real aparece.
+function globosPendientes(conv){
+  return PENDIENTES.filter(p => p.conv === String(conv)).map(p => ({ id: p.id, _id: p.id, direction: 'out', sender: 'agent', msg_type: 'text', body: p.texto, created_at: p.en, delivery_status: 'enviando', pendiente_red: true }));
+}
+function pintaBannerRed(){
+  let b = document.getElementById('bannerSinRed');
+  const sinRed = typeof navigator !== 'undefined' && navigator.onLine === false;
+  if (!sinRed && !PENDIENTES.length) { if (b) b.remove(); return; }
+  if (!b) { b = document.createElement('div'); b.id = 'bannerSinRed'; b.setAttribute('role', 'status'); document.body.appendChild(b); }
+  b.className = sinRed ? 'sinred' : 'sinred enviando';
+  b.textContent = sinRed
+    ? 'Sin conexión' + (PENDIENTES.length ? ' · ' + PENDIENTES.length + ' mensaje(s) pendientes: saldrán solos cuando vuelva internet.' : ' · Puedes seguir escribiendo; el texto queda pendiente.')
+    : 'Enviando ' + PENDIENTES.length + ' mensaje(s) pendientes…';
+}
+async function vaciaPendientes(){
+  if (VACIANDO_PENDIENTES || !PENDIENTES.length || navigator.onLine === false || !auth.currentUser) return;
+  VACIANDO_PENDIENTES = true; pintaBannerRed();
+  try {
+    while (PENDIENTES.length) {
+      const p = PENDIENTES[0];
+      const c = buscaConv(p.conv);
+      if (!c) { PENDIENTES.shift(); guardaPendientes(); continue; }
+      const porPuente = canalDe(c) === 'whatsapp_qr';
+      const r = await llama(porPuente ? { action: 'bridgeQueue', conversation_id: p.conv, body: p.texto } : { action: 'sendText', conversation_id: p.conv, body: p.texto });
+      if (!r.ok && r.red) { setTimeout(vaciaPendientes, 15000); break; }      // sigue sin red de verdad: se reintenta luego
+      PENDIENTES.shift(); guardaPendientes();
+      if (r.ok) { if (porPuente) apuntaEnviando({ conv: p.conv, tipo: 'text', body: p.texto }); }
+      else avisa('Un mensaje pendiente no salió', nombreDe(c) + ': ' + traduceErrorMeta(r.error, r.code));
+    }
+  } finally {
+    VACIANDO_PENDIENTES = false; pintaBannerRed();
+    if (typeof pintaMensajes === 'function' && sel) pintaMensajes();
+  }
+}
+window.addEventListener('offline', pintaBannerRed);
+window.addEventListener('online', () => { pintaBannerRed(); setTimeout(vaciaPendientes, 1200); });
+setTimeout(() => { pintaBannerRed(); vaciaPendientes(); }, 4000);
+
+/* ---- Cámara del equipo: tomar una foto y ponerla en la cola de adjuntos (K19) ---- */
+async function abreCamara(){
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) return avisa('Este navegador no tiene cámara disponible');
+  let flujo;
+  try { flujo = await navigator.mediaDevices.getUserMedia({ video: { width: { ideal: 1920 } }, audio: false }); }
+  catch (e) { return avisa('No se pudo abrir la cámara', 'Da permiso de cámara a este sitio en el navegador y vuelve a intentarlo.'); }
+  abreModal('<div class="mtapa"><b>Tomar foto</b><button class="cerrarm" data-cerrar>×</button></div><div class="mcuerpo">'
+    + '<video id="camVideo" autoplay playsinline muted style="width:100%;border-radius:12px;background:#000"></video></div>'
+    + '<div class="mpatas"><button class="btn-solido" id="camTomar">Tomar foto</button></div>');
+  const video = $('camVideo'); video.srcObject = flujo;
+  const parar = () => { flujo.getTracks().forEach(t => t.stop()); clearInterval(vigila); };
+  // Si el modal se cierra por cualquier camino, la camara se apaga: el piloto encendido sin motivo asusta.
+  const vigila = setInterval(() => { if (!document.body.contains(video)) parar(); }, 500);
+  $('camTomar').onclick = () => {
+    if (!video.videoWidth) return avisa('La cámara todavía no está lista');
+    const cv = document.createElement('canvas'); cv.width = video.videoWidth; cv.height = video.videoHeight;
+    cv.getContext('2d').drawImage(video, 0, 0);
+    cv.toBlob(blob => {
+      parar(); cierraModal();
+      if (!blob) return avisa('No se pudo tomar la foto');
+      encola([new File([blob], 'foto-camara.jpg', { type: 'image/jpeg' })], 'image');
+    }, 'image/jpeg', 0.92);
+  };
 }
 
 /* ---- Selector de emojis ---------------------------------------------------
@@ -8521,7 +8675,7 @@ function cuerpoMensaje(m){
   }
 
   // Los números que manda el cliente se pueden pulsar para abrir un chat con ellos.
-  return conTelefonos(esc(m.body || ''));
+  return conTelefonos(esc(m.body || '')) + tarjetaEnlace(m);
 }
 
 /* ---- Lo que acaba de salir, antes de que exista el globo de verdad ------- */
@@ -8598,7 +8752,7 @@ function pintaMensajes(){
   // Un mensaje eliminado NO desaparece del hilo: se queda, marcado, con quien lo elimino y por
   // que (ver infoEliminado). Antes se filtraba y quien borraba algo no dejaba rastro. La marca
   // vive DENTRO de metadata, no en el primer nivel.
-  const html = MSGS.concat(globosEnviando(sel && (sel.id || sel._id)))
+  const html = MSGS.concat(globosEnviando(sel && (sel.id || sel._id)), globosPendientes(sel && (sel.id || sel._id)))
     .sort((a, b) => instanteMsg(a) - instanteMsg(b))
     .map(m => {
     const t = instanteMsg(m);
