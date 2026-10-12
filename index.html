@@ -1739,6 +1739,7 @@ input[type="checkbox"],input[type="radio"]{accent-color:var(--accent)}
 .mm-dijo{margin:0 0 8px;padding:8px 10px;border-radius:10px;background:var(--accent-suave);font-size:13px}
 .mm-cuerpo textarea{width:100%;min-height:150px;resize:vertical}
 .mm-fila.mm-no{opacity:.6}
+.conversacion.suelta{outline:2px dashed var(--accent);outline-offset:-8px;background:var(--accent-suave)}
 .lp-num{font-size:12px;font-weight:650;padding:3px 10px;border-radius:999px;background:var(--accent-suave);color:var(--accent);flex:0 0 auto}
 .lp-porque{margin:6px 0 10px;font-size:13px;line-height:1.5;color:var(--mut)}
 .lp-fila{display:flex;align-items:center;gap:10px;padding:10px 0;box-shadow:inset 0 .5px 0 var(--line)}
@@ -6090,6 +6091,30 @@ function cableaAdjuntos(){
   $('adjDoc').onclick = () => $('fDoc').click();
   $('fImg').onchange = e => { const f = [...e.target.files]; e.target.value = ''; encola(f, 'image'); };
   $('fDoc').onchange = e => { const f = [...e.target.files]; e.target.value = ''; encola(f, 'document'); };
+  // Pegar (Ctrl+V) y soltar archivos en el chat, como en WhatsApp Web: las imagenes entran como fotos y lo demas como documento. Con `on...` y no con
+  // addEventListener: esta funcion se repite al abrir cada chat y no puede acumular manejadores.
+  const adjuntaSueltos = (lista) => {
+    if ($('adjImg')?.disabled) return false;       // el chat esta bloqueado (linea caida, fuera de ventana…)
+    const fotos = lista.filter(f => /^image\//.test(f.type)), otros = lista.filter(f => !/^image\//.test(f.type));
+    if (fotos.length) encola(fotos, 'image');
+    if (otros.length) encola(otros, 'document');
+    return fotos.length + otros.length > 0;
+  };
+  if ($('texto')) $('texto').onpaste = ev => {
+    const archivos = [...(ev.clipboardData?.files || [])];
+    if (archivos.length && adjuntaSueltos(archivos)) ev.preventDefault();   // texto pegado: sigue su camino normal
+  };
+  const zonaChat = $('conversacion');
+  if (zonaChat) {
+    const hayArchivos = ev => [...(ev.dataTransfer?.types || [])].includes('Files');
+    zonaChat.ondragover = ev => { if (!hayArchivos(ev)) return; ev.preventDefault(); zonaChat.classList.add('suelta'); };
+    zonaChat.ondragleave = ev => { if (!zonaChat.contains(ev.relatedTarget)) zonaChat.classList.remove('suelta'); };
+    zonaChat.ondrop = ev => {
+      if (!hayArchivos(ev)) return;
+      ev.preventDefault(); zonaChat.classList.remove('suelta');
+      if (!adjuntaSueltos([...(ev.dataTransfer.files || [])])) avisa('No se puede adjuntar ahora', 'El chat está bloqueado para escribir.');
+    };
+  }
   $('adjHd').onclick = async () => {
     modoHd = !modoHd;
     $('adjHd').setAttribute('aria-pressed', modoHd ? 'true' : 'false');
@@ -10806,6 +10831,28 @@ function canalDe(c){
 }
 
 let bridgeControlState = {};
+// «Existen mensajes que no se ven en el CRM»: el puente cuenta lo que le entra y lo que descarta (entrada_stats, en el latido) y aqui se dice con palabras.
+const MOTIVOS_DESCARTE = {
+  identity_unresolved: 'chats sin número identificable (esperan el mapa de WhatsApp)',
+  not_customer_chat: 'grupos y chats que no son de clientes',
+  unsupported_content: 'tipos de mensaje que el CRM no entiende',
+  storage_failed: 'no se pudieron guardar',
+  exception: 'fallaron por un error inesperado',
+  conversation_unavailable: 'sin conversación donde guardarlos',
+  missing_content_or_id: 'llegaron vacíos',
+};
+function textoEntradaPuente(e, plataforma){
+  if (!e || typeof e !== 'object') return '';
+  const desde = Date.parse(String(e.desde || ''));
+  const cuando = Number.isFinite(desde) ? new Date(desde).toLocaleString('es-DO', { day:'numeric', month:'short', hour:'numeric', minute:'2-digit' }) : 'el último reinicio';
+  const partes = ['Desde ' + cuando + ' el puente guardó ' + Number(e.importados || 0) + ' mensajes nuevos'
+    + (Number(e.duplicados) ? ' (' + Number(e.duplicados) + ' ya estaban)' : '') + '.'];
+  const desc = Object.entries(e.descartados || {}).filter(([, n]) => Number(n) > 0);
+  if (desc.length) partes.push('No guardó: ' + desc.map(([k, n]) => n + ' ' + (MOTIVOS_DESCARTE[k] || k)).join('; ') + '.');
+  if (Number(e.lid_en_cola) > 0) partes.push(e.lid_en_cola + ' mensaje(s) esperan identificar a quién pertenecen y entrarán solos.');
+  if (plataforma === 'legacy_web') partes.push('Esta vinculación es de tipo navegador: WhatsApp no entrega los mensajes anteriores a ella. Para recuperarlos, usa «Reconstruir vínculo».');
+  return partes.join(' ');
+}
 
 function bridgeStatusLabel(status){
   return ({
@@ -10866,6 +10913,7 @@ function bridgeControlsHtml(p){
     +   '<button class="btn-linea danger" id="bridgeCancelPair">Cancelar</button>'
     + '</div>'
     + '<p class="bridge-meta" id="bridgeHistoryState"></p>'
+    + '<p class="bridge-meta" id="bridgeEntradaState"></p>'
     + '<p class="bridge-meta" id="bridgeRebuildState"></p>'
     + '<p class="bridge-meta mal" id="bridgeError"></p>'
     + '</div>';
@@ -10940,6 +10988,7 @@ function renderBridgeControlState(state, explicitError = ''){
             + (imported ? ' Se guardaron ' + imported + ' antes de cortarse.' : '')
           : 'Historial: ' + historyStatus + '.';
   }
+  if ($('bridgeEntradaState')) $('bridgeEntradaState').textContent = textoEntradaPuente(bridgeControlState.entrada_stats, bridgeControlState.link_platform);
   // Todo lo de este canal --cerrar sesion, generar codigo, sincronizar-- lo ejecuta el
   // programa del puente en la PC. El panel solo deja el encargo escrito y espera. Si ese
   // programa no esta corriendo, no pasa nada de nada: los botones se quedan mudos y no habia
