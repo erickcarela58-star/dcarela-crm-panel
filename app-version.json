@@ -1,7 +1,7 @@
 {
-  "version": "2026-10-11-limpieza-ahora-v146",
+  "version": "2026-10-11-documentos-grandes-reserva-v147",
   "channel": "crm",
-  "released_at": "2026-10-11T17:37:23.799Z",
-  "summary": "Limpieza: botón «Enviar ahora» (ves a quién le llega, con su conversación, eliges plantilla para quien lleva más de 24 h sin escribir, sale de a uno y con pausa). Campañas: «A quién le llega» es un acordeón y cada contacto abre su conversación antes de que des el OK.",
+  "released_at": "2026-10-12T01:40:05.413Z",
+  "summary": "Documentos sin tope de 22 MB (se suben por trozos: hasta 100 MB por el número oficial, el máximo de Meta, y hasta 380 MB por WhatsApp Web con el puente nuevo). El botón del calendario de cada chat trae un interruptor «Es una reservación»: agenda una sesión del contacto (confirmada o tentativa) que sale en su ficha y en la Agenda, y avisa si choca con otra cita. Dashboard: «Lo que toca hoy», período a elegir, contactos nuevos, qué piden y cuándo escriben.",
   "requiere_puente": "2026-09-28-lectura-v34"
 }
