@@ -1,7 +1,7 @@
 {
-  "version": "2026-10-12-sin-whatsapp-web-v159",
+  "version": "2026-10-12-dashboard-modular-v160",
   "channel": "crm",
-  "released_at": "2026-10-12T04:29:50.645Z",
-  "summary": "Enlaces pulsables y con vista previa; stickers, GIF y cámara; mensajes temporales; lo que escribes sin internet queda pendiente y sale solo al volver. Algunas necesitan reiniciar el puente de la PC.",
+  "released_at": "2026-10-12T04:42:34.662Z",
+  "summary": "Dashboard modular: cada recuadro se mueve, cambia de tamaño y se abre en grande; Actividad ocupa la fila completa y se ve nítida. «Atendido» también en la selección de varios chats.",
   "requiere_puente": "2026-09-28-lectura-v34"
 }
