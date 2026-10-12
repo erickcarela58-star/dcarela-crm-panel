@@ -1,7 +1,7 @@
 {
-  "version": "2026-10-12-pegar-soltar-entrada-v157",
+  "version": "2026-10-12-sin-whatsapp-web-v158",
   "channel": "crm",
-  "released_at": "2026-10-12T04:06:32.304Z",
-  "summary": "Pegar imágenes con Ctrl+V y soltar archivos sobre el chat. En Canales, el puente ahora dice cuántos mensajes guardó, cuáles descartó y por qué, y avisa cuando la vinculación es de tipo navegador y por eso faltan mensajes anteriores.",
+  "released_at": "2026-10-12T04:19:03.157Z",
+  "summary": "Reenviar con foto y nombre; Nuevo chat (botón y Alt+N); marcar como no leído; buscar dentro del chat (Ctrl+F); fijar mensajes; Info del mensaje; atajos de teclado (Ctrl+K, Alt+↑/↓).",
   "requiere_puente": "2026-09-28-lectura-v34"
 }
