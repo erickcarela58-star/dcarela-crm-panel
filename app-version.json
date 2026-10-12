@@ -1,7 +1,7 @@
 {
-  "version": "2026-10-12-videos-nitidos-v165",
+  "version": "2026-10-12-tareas-avanzadas-v166",
   "channel": "crm",
-  "released_at": "2026-10-12T05:54:17.083Z",
-  "summary": "Videos de ayuda nítidos con subtítulos estilo Apple (sin recuadro, con sombra y animación), tarjeta de ayuda que sigue el modo claro u oscuro y campos de Tareas y Clientes de caja con el estilo del CRM.",
+  "released_at": "2026-10-12T09:21:36.785Z",
+  "summary": "Tareas más completas: hora en AM/PM con atajos, notas, categoría, repetición, aviso previo y botón Editar; las tareas que te pones tú ya aparecen en la lista; los recordatorios llegan con botones Listo, Mañana y En proceso.",
   "requiere_puente": "2026-09-28-lectura-v34"
 }
