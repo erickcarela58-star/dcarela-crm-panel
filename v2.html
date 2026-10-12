@@ -1812,6 +1812,12 @@ input[type="checkbox"],input[type="radio"]{accent-color:var(--accent)}
 .cabecera .modo{border:0;border-radius:999px;background:var(--hover);padding:7px 14px;font-weight:600;font-size:12.5px}
 .cabecera .modo:hover{background:rgba(120,120,128,.2)}
 .cabecera .modo.atendido,.cabecera .modo.atendido:hover{background:var(--ok);color:#fff}
+:root{--emoji-sprite:none;--emoji-cols:48;--emoji-filas:40}
+.emj{display:inline-block;width:1.3em;height:1.3em;vertical-align:-.3em;overflow:hidden;white-space:nowrap;color:transparent;font-size:inherit;
+  background-image:var(--emoji-sprite);background-repeat:no-repeat;
+  background-size:calc(var(--emoji-cols) * 1.3em) calc(var(--emoji-filas) * 1.3em);
+  background-position:calc(var(--x) * -1.3em) calc(var(--y) * -1.3em)}
+.emoji-grid .emj{width:1.4em;height:1.4em;background-size:calc(var(--emoji-cols) * 1.4em) calc(var(--emoji-filas) * 1.4em);background-position:calc(var(--x) * -1.4em) calc(var(--y) * -1.4em)}
 .cotop{display:block;border:1px solid var(--line2);border-radius:12px;padding:10px 12px;margin:8px 0;cursor:pointer}
 .cotop.on{border-color:var(--ink);box-shadow:0 0 0 1px var(--ink)}
 .cotop input{width:auto;margin-right:8px}
@@ -4716,10 +4722,12 @@ function telefonoParaChat(entrada){
 // El primer grupo hace de "lookbehind": que el número no sea la cola de uno más largo.
 const RE_TEL_TEXTO = /(^|[^\d+])((?:\+?1[\s.-]?)?\(?(?:809|829|849)\)?[\s.-]?\d{3}[\s.-]?\d{4})(?!\d)/g;
 function conTelefonos(html){
-  return String(html || '').replace(RE_TEL_TEXTO, (todo, antes, num) => {
+  const conLinks = String(html || '').replace(RE_TEL_TEXTO, (todo, antes, num) => {
     const tel = telefonoParaChat(num);
     return tel ? antes + '<a href="#" class="telmsg" data-tel="' + tel + '" title="Abrir un chat con este número">' + num + '</a>' : todo;
   });
+  // Los emojis se pintan con los de Apple cuando la hoja ya esta cargada (ver «Emojis estilo Apple»).
+  return typeof emojisApple === 'function' ? emojisApple(conLinks) : conLinks;
 }
 // ---- Buscar un contacto: fin de las piezas puras
 
@@ -6039,6 +6047,76 @@ const EMOJIS = [
   ['Fotografía', ['📷','📸','🖼️','💍','👰','🤵','🎓','👶','👧','🧒']],
   ['Objetos', ['📅','⏰','📍','📱','✅','❌','⚠️','💰','💵','📦','✍️','🖊️']],
 ];
+/* ---- Emojis estilo Apple ---------------------------------------------------
+   Pedido del dueño (12/10): que el CRM tenga los emojis como los de iPhone. Windows dibuja otros, asi que se pintan con una hoja de imagenes (sprite)
+   de los emojis de Apple. Esas imagenes son de Apple y el repo del panel es PUBLICO: por eso NO estan en el panel sino en el servidor, y la hoja se
+   pide por la funcion (accion emojiSprite, solo con sesion) y se guarda en el navegador (IndexedDB) por version: se baja una vez.
+   Mientras no esta cargada --o si falla-- se ve el emoji del sistema, nada se rompe. El texto de debajo sigue siendo el emoji real: se puede
+   seleccionar, copiar y buscar; la imagen solo lo pinta. */
+const EMOJI_APPLE = { estado: 'sin', map: null };
+const RE_EMOJI = /(?:\p{Regional_Indicator}{2}|[#*0-9]️?⃣|\p{Extended_Pictographic}(?:️|\p{Emoji_Modifier})?(?:‍\p{Extended_Pictographic}(?:️|\p{Emoji_Modifier})?)*)/gu;
+function idbEmoji(modo, valor){
+  return new Promise(res => {
+    try {
+      const rq = indexedDB.open('dcarela-panel', 1);
+      rq.onupgradeneeded = () => rq.result.createObjectStore('kv');
+      rq.onerror = () => res(null);
+      rq.onsuccess = () => {
+        try {
+          const tx = rq.result.transaction('kv', modo === 'set' ? 'readwrite' : 'readonly');
+          const st = tx.objectStore('kv');
+          if (modo === 'set') { st.put(valor, 'emoji-apple'); tx.oncomplete = () => res(true); tx.onerror = () => res(null); }
+          else { const g = st.get('emoji-apple'); g.onsuccess = () => res(g.result || null); g.onerror = () => res(null); }
+        } catch (e) { res(null); }
+      };
+    } catch (e) { res(null); }
+  });
+}
+function activaEmojisApple(blob, meta){
+  EMOJI_APPLE.map = meta.map;
+  const r = document.documentElement.style;
+  r.setProperty('--emoji-sprite', 'url(' + URL.createObjectURL(blob) + ')');
+  r.setProperty('--emoji-cols', String(meta.cols));
+  r.setProperty('--emoji-filas', String(Math.ceil(meta.n / meta.cols)));
+  EMOJI_APPLE.estado = 'listo';
+  // Lo que ya estaba pintado con el emoji del sistema se repinta con la hoja.
+  try { if (sel && typeof pintaMensajes === 'function') pintaMensajes(); } catch (e) { /* nada */ }
+  const pop = document.getElementById('emojiPop');
+  if (pop && pop.classList.contains('on')) { pop.classList.remove('on'); abreEmojis(); }
+}
+async function iniciaEmojisApple(){
+  if (EMOJI_APPLE.estado !== 'sin') return;
+  EMOJI_APPLE.estado = 'cargando';
+  try {
+    let guardado = await idbEmoji('get');
+    if (!guardado || guardado.version !== 'apple-16.0.0') {
+      const r = await llama({ action:'emojiSprite' });
+      if (!r.ok || !r.png_b64) throw new Error(r.error || 'sin hoja');
+      const bin = atob(r.png_b64); const bytes = new Uint8Array(bin.length);
+      for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+      guardado = { version: r.version, blob: new Blob([bytes], { type:'image/png' }), meta: { cols: r.cols, n: r.n, map: r.map } };
+      idbEmoji('set', guardado);
+    }
+    activaEmojisApple(guardado.blob, guardado.meta);
+  } catch (e) {
+    EMOJI_APPLE.estado = 'fallo';   // se queda el emoji del sistema; no se reintenta en cada mensaje
+  }
+}
+function indiceEmojiApple(e){
+  const code = [...e].map(c => c.codePointAt(0).toString(16).toUpperCase().padStart(4, '0')).join('-');
+  const m = EMOJI_APPLE.map;
+  return m[code] ?? m[code.replace(/-FE0F/g, '')] ?? m[code + '-FE0F'] ?? null;
+}
+// Recibe HTML YA escapado (esc) y devuelve el mismo HTML con cada emoji envuelto en su imagen de Apple.
+function emojisApple(html){
+  if (EMOJI_APPLE.estado === 'sin') iniciaEmojisApple();
+  if (EMOJI_APPLE.estado !== 'listo') return html;
+  const cols = Number(getComputedStyle(document.documentElement).getPropertyValue('--emoji-cols')) || 48;
+  return String(html || '').replace(RE_EMOJI, e => {
+    const i = indiceEmojiApple(e);
+    return i == null ? e : '<span class="emj" role="img" aria-label="' + e + '" style="--x:' + (i % cols) + ';--y:' + Math.floor(i / cols) + '">' + e + '</span>';
+  });
+}
 // Insertar EN EL CURSOR, no al final: es lo que hace WhatsApp Web, y lo que se
 // esperaria si a uno se le ocurre poner un emoji a mitad de frase.
 function insertaEnCaja(texto){
@@ -6057,7 +6135,7 @@ function abreEmojis(){
   if (pop.classList.contains('on')) return cierraEmojis();
   pop.innerHTML = EMOJIS.map(([grupo, lista]) =>
     '<div class="emoji-grupo">' + esc(grupo) + '</div><div class="emoji-grid">'
-    + lista.map(e => '<button type="button">' + e + '</button>').join('') + '</div>'
+    + lista.map(e => '<button type="button">' + emojisApple(e) + '</button>').join('') + '</div>'
   ).join('');
   pop.onclick = ev => {
     const b = ev.target.closest('button'); if (!b) return;
