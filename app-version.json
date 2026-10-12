@@ -1,7 +1,7 @@
 {
-  "version": "2026-10-12-gif-no-leido-v176",
+  "version": "2026-10-12-boton-llamar-v177",
   "channel": "crm",
-  "released_at": "2026-10-12T21:54:04.064Z",
-  "summary": "Archivos: GIF animado se convierte a MP4; marcar como no leido tambien en el telefono del 5644.",
+  "released_at": "2026-10-12T22:58:42.530Z",
+  "summary": "El boton de llamar esta en todos los chats: oficial por WhatsApp, 5644 abre el marcador.",
   "requiere_puente": "2026-09-28-lectura-v34"
 }
