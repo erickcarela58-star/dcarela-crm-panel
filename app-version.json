@@ -1,7 +1,7 @@
 {
-  "version": "2026-10-12-agenda-atendido-v148",
+  "version": "2026-10-12-cotizar-v149",
   "channel": "crm",
-  "released_at": "2026-10-12T01:46:25.698Z",
-  "summary": "El calendario de cada chat abre dos opciones: Recordatorio y Agenda (agendar la sesión del cliente al instante). Al agendar se le avisa al cliente por el mismo chat con un mensaje editable (si no está fuera de la ventana de 24 h del número oficial). El botón Atendido se pone verde al pulsarlo y vuelve a gris si el cliente escribe otra vez.",
+  "released_at": "2026-10-12T02:03:37.842Z",
+  "summary": "Botón «Cotizar» en el chat: arma una cotización a la medida (combo más parecido, fotos digitales a 500 la primera y 250 las demás, piezas impresas que se quitan para compensar, ajuste a un presupuesto), te deja editar el mensaje, lo manda por el mismo chat y la registra. El bot vendedor usa esas mismas cifras y, si un cliente pide descuento, te avisa a ti (el bot nunca lo da).",
   "requiere_puente": "2026-09-28-lectura-v34"
 }
