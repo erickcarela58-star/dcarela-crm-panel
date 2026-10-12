@@ -1,7 +1,7 @@
 {
-  "version": "2026-10-12-envio-archivos-v172",
+  "version": "2026-10-12-ia-proveedores-v173",
   "channel": "crm",
-  "released_at": "2026-10-12T20:15:46.206Z",
-  "summary": "Enviar archivos: fotos y videos desde el mismo selector (los videos se reproducen), HEIC explicado, tipo por extension, cola con miniaturas y estado por archivo, errores de Meta con motivo.",
+  "released_at": "2026-10-12T20:31:52.551Z",
+  "summary": "Conexiones y API: varios proveedores de IA (Gemini, OpenAI, Anthropic, DeepSeek, OpenRouter), orden y respaldo automatico.",
   "requiere_puente": "2026-09-28-lectura-v34"
 }
