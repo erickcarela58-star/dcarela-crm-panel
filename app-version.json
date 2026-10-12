@@ -1,7 +1,7 @@
 {
-  "version": "2026-10-12-agenda-combos-analisis-v171",
+  "version": "2026-10-12-envio-archivos-v172",
   "channel": "crm",
-  "released_at": "2026-10-12T19:48:27.220Z",
-  "summary": "Agenda para cualquier persona (nueva o cliente de caja), selector de combo con acordeón, Personalizado y Cotizaciones; «Sin reserva» en vez de «sin fecha»; análisis y resúmenes que distinguen otros servicios",
+  "released_at": "2026-10-12T20:15:46.206Z",
+  "summary": "Enviar archivos: fotos y videos desde el mismo selector (los videos se reproducen), HEIC explicado, tipo por extension, cola con miniaturas y estado por archivo, errores de Meta con motivo.",
   "requiere_puente": "2026-09-28-lectura-v34"
 }
