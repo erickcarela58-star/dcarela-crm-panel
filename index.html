@@ -1153,6 +1153,17 @@ a.ayuda{color:var(--enlace)}
 .fwd-grupo:first-child{margin-top:0}
 .fwd-letra{font-size:12px;font-weight:700;color:var(--enlace);padding:8px 4px 2px}
 .fwd-mas{justify-content:center;text-align:center;margin-top:6px}
+/* Selector de combo (Agenda y reservación): acordeón de combos + Personalizado + Cotizaciones. */
+.cp-botones{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.cp-panel{margin-top:8px;max-height:280px;overflow:auto;border:1px solid var(--line);border-radius:12px;padding:6px 8px}
+.cp-grupo{border-bottom:1px solid var(--line)}
+.cp-grupo:last-child{border-bottom:0}
+.cp-grupo>summary{cursor:pointer;font-weight:700;font-size:13px;padding:8px 4px;list-style:none;display:flex;justify-content:space-between}
+.cp-grupo>summary::-webkit-details-marker{display:none}
+.cp-grupo>summary::after{content:"▾";opacity:.6;transition:transform .18s}
+.cp-grupo[open]>summary::after{transform:rotate(180deg)}
+.cp-grupo>summary small{font-weight:400;color:var(--mut);margin-left:6px}
+.cp-pers{padding:4px}
 .ll-devuelve{margin-left:auto;font-size:12px;font-weight:600;color:var(--enlace);text-decoration:none;white-space:nowrap}
 .ll-devuelve:hover{text-decoration:underline}
 /* Tarjeta de llamada: abajo a la derecha, sobre todo lo demás. Verde = contestar, rojo = colgar/rechazar. */
@@ -9244,7 +9255,18 @@ const ETAPAS = ['nuevo','interesado','cotizando','pendiente_reserva','reservado'
   'cliente','desinteresado','perdido'];
 const ESTADOS = ['abierto','en_revision','esperando_cliente','requiere_humano',
   'desinteresado','cerrado'];
-const RESERVA = ['sin_fecha','fecha_tentativa','reservado','confirmado','cancelado'];
+const RESERVA = ['ninguna','sin_fecha','fecha_tentativa','reservado','confirmado','cancelado'];
+const RESERVA_PARES = [['ninguna','Sin reserva'],['sin_fecha','Quiere reservar · sin fecha'],['fecha_tentativa','Fecha tentativa'],['reservado','Reservado'],['confirmado','Confirmado'],['cancelado','Cancelado']];
+// «sin_fecha» es el valor por defecto de TODA ficha nueva, no una reserva: leído tal cual decía «reservó, sin fecha» (caso «Bivii» 12/10, que preguntaba por un cuadro). Solo vale con una pista
+// real de que quiere reservar; si no, «Sin reserva». Igual que firebase-functions/src/reserva-core.js (lo que ve la IA).
+function reservaEfectiva(c){
+  const r = String(c?.reservation_status || '');
+  if (r && r !== 'sin_fecha') return r;
+  const etiquetas = (Array.isArray(c?.labels) ? c.labels : String(c?.labels || '').split(',')).map(e => String(e).trim().toLowerCase());
+  const pista = ['pendiente_reserva','reservado','agendado','confirmado'].includes(String(c?.lifecycle_stage || '')) || c?.tentative_date || c?.scheduled_at || c?.selected_combo_name || c?.web_reserva_at
+    || etiquetas.some(e => /^(?:reserva\w*|reservo|reserv\w+_web|pidio_reserva|quiere_reservar|pendiente_reserva|agendad\w+)$/.test(e));
+  return pista ? 'sin_fecha' : 'ninguna';
+}
 const CATEGORIAS = ['XV','Infantil','Graduación','Cumpleaños','Embarazadas','Boda','Sesiones/Retratos','Maquillaje'];
 const PRIORIDADES = ['urgente','alta','media','baja'];
 const MAQUILLAJE = [
@@ -9299,7 +9321,7 @@ function pintaFicha(c){
     +   '</div>'
     +   '<div class="par">'
     +     '<div class="campo"><label>Estado</label><select data-c="lead_status">' + opciones(ESTADOS, c.lead_status || 'abierto') + '</select></div>'
-    +     '<div class="campo"><label>Reserva</label><select data-c="reservation_status">' + opciones(RESERVA, c.reservation_status || 'sin_fecha') + '</select></div>'
+    +     '<div class="campo"><label>Reserva</label><select data-c="reservation_status">' + opcionesPares(RESERVA_PARES, reservaEfectiva(c)) + '</select></div>'
     +   '</div>'
     +   '<div class="dato"><div class="k">Canal</div><div class="v">' + esc(c.channel || 'whatsapp') + '</div></div>'
     +   '<div class="dato"><div class="k">Último intent</div><div class="v">' + esc(c.last_intent || 'pendiente') + '</div></div>'
@@ -11431,8 +11453,98 @@ function pintaAgendaCalendario(todas){
         : '<p class="bajada" style="margin-top:14px">Pulsa un día para ver sus sesiones.</p>');
 }
 
-// Agendar. Busca el contacto entre los que ya existen en vez de crear uno nuevo: agendar
-// a alguien que ya escribio y crearle una ficha aparte parte su historial en dos.
+/* ---- Selector de combo: acordeón con todos los combos, «Personalizado» y «Cotizaciones» ----------------
+   12/10/2026: «en el apartado del combo, no pone el acordeón con todos los combos disponibles, con un botón de personalizado o cotizaciones, para que si hay un precio o cotización
+   que no está registrada, pueda quedar bien». El campo sigue siendo un texto libre (se puede escribir el que sea); los botones lo rellenan y guardan el precio (selected_combo_price).
+   Los combos salen de la web (cargaCombos), igual que lo que se le manda al cliente. Lo usan «Agendar sesión» (prefijo ag) y la reservación del recordatorio (prefijo rec). */
+// «RD$35.350» (la web pone el punto de miles), «RD$1,250.50», «850»: el último separador es el decimal solo si le siguen 1 o 2 cifras; si son 3, es de miles.
+function montoDeTexto(t){
+  const s = String(t || '').replace(/[^\d.,]/g, '');
+  if (!s) return 0;
+  const u = Math.max(s.lastIndexOf('.'), s.lastIndexOf(','));
+  const decimal = u >= 0 && s.length - u - 1 <= 2;
+  const n = Number(s.slice(0, decimal ? u : s.length).replace(/[.,]/g, '') + (decimal ? '.' + s.slice(u + 1) : ''));
+  return Number.isFinite(n) && n > 0 ? n : 0;
+}
+function comboPickerHtml(p, valor){
+  return '<div class="campo"><label>Combo</label><input id="' + p + 'Combo" value="' + esc(valor || '') + '" placeholder="Elige uno o escribe el tuyo">'
+    + '<div class="cp-botones"><button type="button" class="btn-linea" data-cp="lista">Combos disponibles ▾</button>'
+    + '<button type="button" class="btn-linea" data-cp="personalizado">Personalizado</button>'
+    + '<button type="button" class="btn-linea" data-cp="cotizaciones">Cotizaciones</button></div>'
+    + '<div class="cp-panel" id="' + p + 'ComboPanel" hidden></div><input type="hidden" id="' + p + 'ComboPrecio"></div>';
+}
+function montaComboPicker(p, { conv, categoria }){
+  const inp = $(p + 'Combo'), panel = $(p + 'ComboPanel'), precio = $(p + 'ComboPrecio');
+  if (!inp || !panel) return;
+  const dinero = n => 'RD$' + Number(n).toLocaleString('es-DO', { maximumFractionDigits:2 });
+  const pon = (nombre, pr, cat) => {
+    inp.value = nombre; precio.value = pr ? String(pr) : '';
+    if (cat && categoria) categoria(cat);
+    panel.hidden = true;
+    avisa('Combo elegido', nombre + (pr ? ' · ' + dinero(pr) : ''));
+  };
+  // Si se corrige el nombre a mano, el precio del combo anterior ya no vale.
+  inp.addEventListener('input', () => { precio.value = ''; });
+  const abre = html => { panel.innerHTML = html; panel.hidden = false; };
+  const alterna = clave => { const ya = panel.dataset.cp === clave && !panel.hidden; panel.dataset.cp = clave; if (ya) { panel.hidden = true; return false; } return true; };
+  const lista = async () => {
+    abre('<p class="cfgnota"><span class="cargando"></span> Leyendo los combos de la web…</p>');
+    let combos;
+    try { combos = await cargaCombos(); } catch (e) { return abre('<p class="cfgnota">No se pudo leer el catálogo de la web (' + esc(e?.message || 'sin red') + '). Usa «Personalizado» para anotar el combo y su precio.</p>'); }
+    if (!combos.length) return abre('<p class="cfgnota">El catálogo de la web no trajo combos. Usa «Personalizado».</p>');
+    const cats = [...new Set(combos.map(x => x.catLabel))];
+    const abierta = String($(p === 'ag' ? 'agCat' : 'recCat')?.value || '').toLowerCase();
+    abre(cats.map(cat => {
+      const delGrupo = combos.filter(x => x.catLabel === cat);
+      return '<details class="cp-grupo"' + (abierta && sinTildes(cat).includes(sinTildes(abierta)) ? ' open' : '') + '><summary>' + esc(cat) + ' <small>· ' + delGrupo.length + '</small></summary>'
+        + delGrupo.map(x => '<button type="button" class="tpl" data-combo="' + combos.indexOf(x) + '"><b>' + esc(x.nombre) + '</b><span class="tplmeta">' + esc(x.precio || 'sin precio') + '</span></button>').join('') + '</details>';
+    }).join(''));
+    panel.onclick = ev => {
+      const b = ev.target.closest('[data-combo]'); if (!b) return;
+      const x = combos[Number(b.dataset.combo)];
+      pon(x.nombre, montoDeTexto(x.precio), x.catLabel);
+    };
+  };
+  const personalizado = () => {
+    abre('<div class="cp-pers"><div class="campo"><label>Nombre del combo o servicio</label><input id="' + p + 'PersNombre" value="' + esc(inp.value) + '" placeholder="Ej. Sesión 15 fotos + 2 cuadros"></div>'
+      + '<div class="par"><div class="campo"><label>Precio (RD$)</label><input id="' + p + 'PersPrecio" type="number" min="0" step="50" inputmode="decimal" placeholder="0"></div>'
+      + '<div class="campo"><label>Qué incluye (opcional)</label><input id="' + p + 'PersNota" placeholder="Ej. 2 cambios de ropa"></div></div>'
+      + '<button type="button" class="btn-solido" data-cp-usar="1">Usar este combo</button></div>');
+    $(p + 'PersNombre').focus();
+    panel.onclick = ev => {
+      if (!ev.target.closest('[data-cp-usar]')) return;
+      const nombre = $(p + 'PersNombre').value.trim();
+      if (nombre.length < 2) return avisa('Escribe el nombre del combo');
+      const pr = Number($(p + 'PersPrecio').value);
+      const nota = $(p + 'PersNota').value.trim();
+      pon(nombre + (nota ? ' · ' + nota : ''), Number.isFinite(pr) && pr > 0 ? pr : 0);
+    };
+  };
+  const cotizaciones = async () => {
+    const c = conv();
+    if (!c) return abre('<p class="cfgnota">Elige primero a la persona para ver sus cotizaciones.</p>');
+    abre('<p class="cfgnota"><span class="cargando"></span> Buscando sus cotizaciones…</p>');
+    const r = await llama({ action:'cotizacionesDe', conversation_id:c.id || c._id });
+    if (!r.ok) return abre('<p class="cfgnota">' + esc(r.error || 'No se pudieron leer las cotizaciones.') + '</p>');
+    if (!r.cotizaciones.length) return abre('<p class="cfgnota">Esta persona no tiene cotizaciones guardadas. Usa «Personalizado» para anotar el precio, o cotiza desde su chat (botón «Cotizar»).</p>');
+    abre(r.cotizaciones.map((q, i) => '<button type="button" class="tpl" data-cot="' + i + '"><b>' + esc(q.folio || 'Cotización') + ' · ' + esc(dinero(q.total)) + '</b>'
+      + '<span class="tplmeta">' + esc(q.que || q.categoria || '') + (q.creada ? ' · ' + esc(new Date(q.creada).toLocaleDateString('es-DO', { day:'numeric', month:'short' })) : '') + '</span></button>').join(''));
+    panel.onclick = ev => {
+      const b = ev.target.closest('[data-cot]'); if (!b) return;
+      const q = r.cotizaciones[Number(b.dataset.cot)];
+      pon(q.nombre, q.total, q.categoria && CATEGORIAS.includes(q.categoria) ? q.categoria : '');
+    };
+  };
+  const cont = inp.closest('.campo');
+  cont.querySelectorAll('[data-cp]').forEach(b => b.onclick = () => {
+    if (!alterna(b.dataset.cp)) return;
+    if (b.dataset.cp === 'lista') void lista();
+    else if (b.dataset.cp === 'personalizado') personalizado();
+    else void cotizaciones();
+  });
+}
+
+// Agendar. Cualquier persona: un contacto que ya escribió (se usa su ficha: crearle otra partiría su historial en dos), un cliente de la caja sin chat o una persona nueva.
 function abreAgendar(c){
   const iso = d => new Date(d.getTime() - d.getTimezoneOffset()*60000).toISOString().slice(0,16);
   const cuando = new Date(); cuando.setDate(cuando.getDate() + 1); cuando.setHours(10,0,0,0);
@@ -11445,7 +11557,7 @@ function abreAgendar(c){
     +   '<div class="campo"><label>Cuándo</label><input type="datetime-local" id="agCuando" value="' + iso(cuando) + '"></div>'
     +   '<div class="campo"><label>Categoría</label><input id="agCat" value="' + esc(c?.interested_category || '') + '" placeholder="xv, boda…"></div>'
     + '</div>'
-    + '<div class="campo"><label>Combo</label><input id="agCombo" value="' + esc(c?.selected_combo_name || '') + '"></div>'
+    + comboPickerHtml('ag', c?.selected_combo_name)
     + '<label class="cfgsw"><input type="checkbox" id="agFirme" checked><span><b>Confirmada</b>'
     +   '<i>Sin marcar queda como fecha tentativa, que no bloquea el hueco.</i></span></label>'
     + '</div>'
@@ -11454,23 +11566,58 @@ function abreAgendar(c){
   $('modal').querySelectorAll('[data-cerrar]').forEach(b => { b.onclick = cierraModal; });
 
   let elegido = c;
+  montaComboPicker('ag', { conv: () => elegido, categoria: v => { $('agCat').value = v; } });
   if (!c) {
+    // Se agenda a CUALQUIER persona (12/10/2026: «en la agenda solo se limita a contactos»): un contacto que ya escribió, un cliente de la caja sin chat o una persona nueva
+    // (nombre y, si se quiere, teléfono). A las dos últimas se les crea una ficha mínima para guardar la reserva; si el teléfono ya tiene ficha, se usa esa.
+    const elige = (conv) => {
+      elegido = conv;
+      $('agBusca').value = nombreDe(conv);
+      $('agRes').innerHTML = '<p class="cfgnota">Elegido: <b>' + esc(nombreDe(conv)) + '</b></p>';
+      if (conv.interested_category) $('agCat').value = conv.interested_category;
+    };
+    const creaYElige = async (nombre, tel) => {
+      const r = await llama({ action:'agendaNuevoContacto', name:nombre, phone:tel || '' });
+      if (!r.ok) return avisa('No se pudo crear la persona', r.error);
+      const conv = buscaConv(r.conversation_id) || await esperaConversacion(r.conversation_id, 6000)
+        || { id:r.conversation_id, _id:r.conversation_id, contact_name:r.nombre || nombre, customer_name:r.nombre || nombre, wa_phone:soloDigitos(tel || ''), lifecycle_stage:'nuevo' };
+      elige(conv);
+      avisa(r.existente ? 'Ya existía: se usó su ficha' : 'Persona nueva creada', nombreDe(conv));
+    };
     const pinta = () => {
       const q = ($('agBusca').value || '').trim();
-      $('agRes').innerHTML = !q ? '' : CONVS
-        .filter(x => coincideContacto(x, q))
-        .slice(0, 6)
+      if (!q) { $('agRes').innerHTML = ''; return; }
+      const conChat = new Set(CONVS_TODAS.map(x => soloDigitos(x.wa_phone)).filter(Boolean));
+      clientesDeCaja();
+      const caja = q.length >= 2 ? (CLIENTES_CAJA.filas || []).map(r => ({ nombre:String(r.name || ''), tel:telefonoParaChat(r.phone) }))
+        .filter(r => r.tel && !conChat.has(r.tel)).filter(r => coincideContacto({ pos_client_nombre:r.nombre, wa_phone:r.tel }, q)).slice(0, 4) : [];
+      $('agRes').innerHTML = CONVS.filter(x => coincideContacto(x, q)).slice(0, 6)
         .map(x => '<button class="tpl" data-ag="' + esc(x._id) + '"><b>' + esc(nombreDe(x)) + '</b>'
           + '<span class="tplmeta">+' + esc(x.wa_phone||'') + '</span></button>').join('')
-        || '<p class="cfgnota">Sin resultados. Solo se agenda a contactos que ya escribieron.</p>';
+        + caja.map(r => '<button class="tpl" data-ag-caja="' + esc(r.tel) + '" data-nombre="' + esc(r.nombre) + '"><b>' + esc(r.nombre || telefonoLegible(r.tel)) + '</b>'
+          + '<span class="tplmeta">Cliente de la caja sin chat · ' + esc(telefonoLegible(r.tel)) + '</span></button>').join('')
+        + '<button class="tpl" data-ag-nueva="1"><b>➕ Persona nueva: «' + esc(q) + '»</b><span class="tplmeta">No hace falta que haya escrito antes</span></button>';
     };
     $('agBusca').oninput = pinta;
-    $('agRes').onclick = ev => {
-      const b = ev.target.closest('[data-ag]'); if (!b) return;
-      elegido = buscaConv(b.dataset.ag);
-      $('agBusca').value = nombreDe(elegido);
-      $('agRes').innerHTML = '<p class="cfgnota">Elegido: <b>' + esc(nombreDe(elegido)) + '</b></p>';
-      if (elegido.interested_category) $('agCat').value = elegido.interested_category;
+    $('agRes').onclick = async ev => {
+      const b = ev.target.closest('[data-ag],[data-ag-caja],[data-ag-nueva],[data-ag-crear]'); if (!b) return;
+      if (b.dataset.ag) return elige(buscaConv(b.dataset.ag));
+      if (b.dataset.agCaja) { b.disabled = true; return creaYElige(b.dataset.nombre || '', b.dataset.agCaja); }
+      if (b.dataset.agNueva) {
+        const nombre = ($('agBusca').value || '').trim();
+        $('agRes').innerHTML = '<div class="par"><div class="campo"><label>Nombre</label><input id="agNomNuevo" value="' + esc(/^[\d\s+().-]+$/.test(nombre) ? '' : nombre) + '"></div>'
+          + '<div class="campo"><label>Teléfono (opcional)</label><input id="agTelNuevo" inputmode="tel" placeholder="809…" value="' + esc(/^[\d\s+().-]+$/.test(nombre) ? nombre : '') + '"></div></div>'
+          + '<button class="btn-solido" data-ag-crear="1" type="button">Usar esta persona</button>';
+        $('agNomNuevo').focus();
+        return;
+      }
+      if (b.dataset.agCrear) {
+        const nom = ($('agNomNuevo').value || '').trim();
+        if (nom.length < 2) return avisa('Escribe el nombre de la persona');
+        b.disabled = true;
+        await creaYElige(nom, ($('agTelNuevo').value || '').trim());
+        b.disabled = false;
+      }
     };
   }
 
@@ -11489,6 +11636,7 @@ function abreAgendar(c){
       campos.reservation_status = 'fecha_tentativa';
     }
     if ($('agCombo').value.trim()) campos.selected_combo_name = $('agCombo').value.trim();
+    if ($('agComboPrecio').value) campos.selected_combo_price = Number($('agComboPrecio').value);
     $('agGuardar').disabled = true;
     const r = await llama({ action:'updateLead', conversation_id: elegido.id || elegido._id, fields: campos });
     $('agGuardar').disabled = false;
@@ -17587,7 +17735,7 @@ function abreRecordatorio(c){
     +   '<p class="aviso" id="recChoque" hidden></p>'
     +   '<div class="par">'
     +     '<div class="campo"><label>Categoría</label><input id="recCat" value="' + esc(c.interested_category || '') + '" placeholder="xv, boda…"></div>'
-    +     '<div class="campo"><label>Combo</label><input id="recCombo" value="' + esc(c.selected_combo_name || '') + '"></div>'
+    +     comboPickerHtml('rec', c.selected_combo_name)
     +   '</div>'
     +   '<label class="cfgsw"><input type="checkbox" id="recFirme" checked><span><b>Confirmada</b>'
     +     '<i>Sin marcar queda como fecha tentativa, que no bloquea el hueco.</i></span></label>'
@@ -17677,6 +17825,7 @@ function abreRecordatorio(c){
     $('recGuardar').textContent = r ? 'Guardar reservación' : 'Guardar recordatorio';
     avisaChoque();
   };
+  montaComboPicker('rec', { conv: () => c, categoria: v => { $('recCat').value = v; } });
   $('recGuardar').onclick = async () => {
     const cuando = $('recCuando').value;
     if (!cuando) return avisa('Falta la fecha');
@@ -17695,6 +17844,7 @@ function abreRecordatorio(c){
           : { tentative_date: iso8601, scheduled_at: '' }),
       };
       if ($('recCombo').value.trim()) reserva.selected_combo_name = $('recCombo').value.trim();
+      if ($('recComboPrecio').value) reserva.selected_combo_price = Number($('recComboPrecio').value);
       $('recGuardar').disabled = true;
       const rr = await llama({ action:'updateLead', conversation_id: c.id || c._id, fields: reserva });
       $('recGuardar').disabled = false;
