@@ -2233,10 +2233,29 @@ input[type="checkbox"],input[type="radio"]{accent-color:var(--accent)}
 @media (max-width:720px){.mk-desc-cab{flex-direction:column;align-items:stretch}.mk-desc-fila{flex-direction:column;align-items:flex-start;gap:6px}.mk-desc-acc{width:100%}.mk-desc-fila span:first-child{width:100%}.mk-desc-fila em{white-space:normal}}
 .mk-acc{flex-wrap:wrap}
 /* Tareas del equipo */
-.tar-form{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;margin:6px 0 4px}
-.tar-form>label:nth-child(1){flex:3 1 100%}
-.tar-form>label:nth-child(2){flex:2 1 180px}
-.tar-form>label:nth-child(3),.tar-form>label:nth-child(4),.tar-form>label:nth-child(5){flex:1 1 120px}
+.tar-form{display:flex;flex-wrap:wrap;gap:14px 12px;align-items:flex-start;margin:6px 0 4px}
+.tar-form>.tar-c1{flex:1 1 100%}
+.tar-form>.tar-c{flex:1 1 210px;min-width:0}
+.tar-form>button[type=submit]{align-self:flex-end}
+.tar-et{display:block;font-size:11.5px;font-weight:600;color:var(--mut);margin-bottom:3px}
+/* Hora en tres piezas (hora · minutos · AM/PM): el selector nativo mostraba «02:10» y no se sabia si era de dia o de noche (12/10). */
+.tar-hora{display:flex;align-items:center;gap:6px}
+.tar-hora select{flex:1 1 0;min-width:0;padding-left:10px;padding-right:28px}
+.tar-hora b{color:var(--mut);font-weight:600}
+.tar-atajos{display:flex;gap:6px;flex-wrap:wrap;margin-top:7px}
+.tar-atajos button{border:0;border-radius:999px;padding:4px 11px;font-size:12px;font-weight:600;background:var(--hover);color:var(--fg);cursor:pointer;transition:background .15s,color .15s}
+.tar-atajos button:hover{background:var(--accent-suave);color:var(--accent-fuerte)}
+.tar-mas{flex:1 1 100%;margin:0}
+.tar-mas>summary{cursor:pointer;font-size:13px;font-weight:600;color:var(--accent-fuerte);list-style:none;padding:2px 0;width:max-content}
+.tar-mas>summary::-webkit-details-marker{display:none}
+.tar-mas>summary::before{content:'›';display:inline-block;margin-right:6px;transition:transform .2s}
+.tar-mas[open]>summary::before{transform:rotate(90deg)}
+.tar-mas-cuerpo{display:flex;flex-wrap:wrap;gap:12px;margin-top:10px}
+.tar-mas-cuerpo>.tar-c{flex:1 1 200px;min-width:0}
+.tar-mas-cuerpo>.tar-notas{flex:1 1 100%}
+.tar-chip{display:inline-block;margin-left:6px;padding:1px 8px;border-radius:999px;font-size:11px;font-weight:600;background:var(--hover);color:var(--mut);vertical-align:1px}
+.tar-nota{display:block;margin-top:3px;color:var(--mut);font-size:12px;white-space:pre-wrap}
+.tar-form textarea{width:100%;box-sizing:border-box}
 .tar-form input,.tar-form select,.tar-eq-form input{width:100%;box-sizing:border-box}
 .tar-form label{display:flex;flex-direction:column;gap:3px;font-size:11.5px;color:var(--mut);font-weight:600}
 .tar-sec{margin:18px 0 6px;font-size:12px;font-weight:700;letter-spacing:.02em;color:var(--mut);text-transform:uppercase}
@@ -10212,6 +10231,108 @@ const TAR = { tareas: [], personas: [], plantilla: null, hechas: false, cargado:
 const DIAS_TAR = [['1', 'L'], ['2', 'M'], ['3', 'X'], ['4', 'J'], ['5', 'V'], ['6', 'S'], ['0', 'D']];
 const hoyRD = () => new Date().toLocaleDateString('en-CA', { timeZone: 'America/Santo_Domingo' });
 const nombreDePersona = id => (TAR.personas.find(x => x.id === id) || {}).nombre || 'Sin asignar';
+// ---- Campos de una tarea (formulario de «Añadir» y cuadro de «Editar»): la hora en 12 h con atajos, fecha con atajos, repetir, aviso previo, categoria y notas.
+const MESES_C = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'], DIAS_C = ['dom', 'lun', 'mar', 'mié', 'jue', 'vie', 'sáb'];
+function fechaLinda(f){
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(String(f || ''))) return 'sin fecha';
+  const hoy = hoyRD(), dif = Math.round((Date.parse(f + 'T12:00:00Z') - Date.parse(hoy + 'T12:00:00Z')) / 86400000);
+  if (dif === 0) return 'Hoy'; if (dif === 1) return 'Mañana'; if (dif === -1) return 'Ayer';
+  const d = new Date(f + 'T12:00:00Z');
+  return DIAS_C[d.getUTCDay()] + ' ' + d.getUTCDate() + ' ' + MESES_C[d.getUTCMonth()] + (f.slice(0, 4) !== hoy.slice(0, 4) ? ' ' + f.slice(0, 4) : '');
+}
+function fechaAtajo(clave){
+  const d = new Date(hoyRD() + 'T12:00:00Z');
+  if (clave === 'lun') { do { d.setUTCDate(d.getUTCDate() + 1); } while (d.getUTCDay() !== 1); }
+  else d.setUTCDate(d.getUTCDate() + Number(clave));
+  return d.toISOString().slice(0, 10);
+}
+function horaEnUnaHora(){
+  const t = new Date(Date.now() - 4 * 3600000 + 3600000);                  // hora de La Romana (UTC-4, sin horario de verano)
+  let min = Math.ceil(t.getUTCMinutes() / 5) * 5, h = t.getUTCHours();
+  if (min === 60) { min = 0; h = (h + 1) % 24; }
+  return ((h % 12) || 12) + ':' + String(min).padStart(2, '0') + ' ' + (h < 12 ? 'AM' : 'PM');
+}
+function horaCampoHtml(id, obligatoria){
+  const hs = (obligatoria ? '' : '<option value="">--</option>') + Array.from({ length: 12 }, (_, i) => '<option>' + (i + 1) + '</option>').join('');
+  const ms = Array.from({ length: 12 }, (_, i) => '<option>' + String(i * 5).padStart(2, '0') + '</option>').join('');
+  return '<div class="tar-hora" id="' + id + '"><select data-h aria-label="Hora">' + hs + '</select><b>:</b><select data-m aria-label="Minutos">' + ms + '</select><select data-p aria-label="AM o PM"><option>AM</option><option>PM</option></select></div>';
+}
+function leeHoraCampo(id){
+  const c = $(id); if (!c) return '';
+  const h = c.querySelector('[data-h]').value; if (!h) return '';
+  return h + ':' + c.querySelector('[data-m]').value + ' ' + c.querySelector('[data-p]').value;
+}
+function ponHoraCampo(id, texto){
+  const c = $(id); if (!c) return;
+  const m = /^(\d{1,2}):(\d{2}) (AM|PM)$/.exec(horaVisibleTarea(texto)), selM = c.querySelector('[data-m]');
+  if (!m) { c.querySelector('[data-h]').value = c.querySelector('[data-h]').options[0].value; selM.value = '00'; c.querySelector('[data-p]').value = 'AM'; return; }
+  if (![...selM.options].some(o => o.value === m[2])) selM.add(new Option(m[2], m[2]));     // 2:04, 9:07...: la hora exacta que ya tenia la tarea se conserva
+  c.querySelector('[data-h]').value = String(Number(m[1])); selM.value = m[2]; c.querySelector('[data-p]').value = m[3];
+}
+const a24Tarea = t => { const m = /^(\d{1,2}):(\d{2}) (AM|PM)$/.exec(t || ''); if (!m) return ''; let h = Number(m[1]) % 12; if (m[3] === 'PM') h += 12; return String(h).padStart(2, '0') + ':' + m[2]; };
+function camposTareaHtml(p){
+  const opt = lista => lista.map(([v, t, sel]) => '<option value="' + v + '"' + (sel ? ' selected' : '') + '>' + t + '</option>').join('');
+  return '<label class="tar-c1">Tarea<input id="' + p + 'Titulo" maxlength="200" placeholder="Ej. Limpiar las vitrinas" required></label>'
+    + '<label class="tar-c">Para<select id="' + p + 'Persona"></select></label>'
+    + '<div class="tar-c"><span class="tar-et">Fecha</span><input type="date" id="' + p + 'Fecha">'
+    +   '<div class="tar-atajos" data-atajo-fecha="' + p + '"><button type="button" data-f="0">Hoy</button><button type="button" data-f="1">Mañana</button><button type="button" data-f="lun">Lunes</button><button type="button" data-f="7">En 1 semana</button></div></div>'
+    + '<div class="tar-c"><span class="tar-et">Hora</span>' + horaCampoHtml(p + 'Hora')
+    +   '<div class="tar-atajos" data-atajo-hora="' + p + '"><button type="button" data-h="+1">En 1 hora</button><button type="button" data-h="9:00 AM">9:00 AM</button><button type="button" data-h="12:00 PM">12:00 PM</button><button type="button" data-h="4:00 PM">4:00 PM</button><button type="button" data-h="">Sin hora</button></div></div>'
+    + '<label class="tar-c">Prioridad<select id="' + p + 'Prioridad">' + opt([['normal', 'Normal', 1], ['alta', 'Alta'], ['baja', 'Baja']]) + '</select></label>'
+    + '<details class="tar-mas"><summary>Más opciones: repetir, aviso previo, categoría y notas</summary><div class="tar-mas-cuerpo">'
+    +   '<label class="tar-c">Aviso antes (si hay hora)<select id="' + p + 'AvisoAntes">' + opt([['0', 'Al vencer'], ['15', '15 minutos'], ['30', '30 minutos'], ['60', '1 hora', 1], ['120', '2 horas'], ['360', '6 horas'], ['720', '12 horas']]) + '</select></label>'
+    +   '<label class="tar-c">Repetir<select id="' + p + 'Repite">' + opt([['none', 'No se repite', 1], ['diaria', 'Todos los días'], ['laborables', 'De lunes a sábado'], ['semanal', 'Cada semana'], ['mensual', 'Cada mes']]) + '</select></label>'
+    +   '<label class="tar-c">Categoría<select id="' + p + 'Categoria">' + opt([['', 'Sin categoría', 1], ['estudio', 'Estudio'], ['impresion', 'Impresión'], ['caja', 'Caja'], ['limpieza', 'Limpieza'], ['compras', 'Compras'], ['clientes', 'Clientes'], ['otro', 'Otro']]) + '</select></label>'
+    +   '<label class="tar-notas">Notas<textarea id="' + p + 'Notas" maxlength="1000" rows="2" placeholder="Detalles para quien la haga (opcional)"></textarea></label>'
+    + '</div></details>';
+}
+function leeCamposTarea(p){
+  const hora = leeHoraCampo(p + 'Hora'), repite = $(p + 'Repite').value;
+  let fecha = $(p + 'Fecha').value || null;
+  if ((hora || repite !== 'none') && !fecha) { fecha = hoyRD(); $(p + 'Fecha').value = fecha; }     // una hora o una repetición sin día: empieza hoy
+  return { titulo: $(p + 'Titulo').value, persona_id: $(p + 'Persona').value || null, fecha, hora: hora || null, prioridad: $(p + 'Prioridad').value,
+    aviso_antes_min: Number($(p + 'AvisoAntes').value), repite, categoria: $(p + 'Categoria').value, notas: $(p + 'Notas').value };
+}
+function ponCamposTarea(p, t){
+  t = t || {};
+  $(p + 'Titulo').value = t.titulo || ''; $(p + 'Persona').value = t.empleado_id || '';
+  $(p + 'Fecha').value = t.fecha_limite || ''; ponHoraCampo(p + 'Hora', t.hora_limite || '');
+  $(p + 'Prioridad').value = t.prioridad || 'normal';
+  const antes = t.aviso_antes_min !== null && t.aviso_antes_min !== undefined && t.aviso_antes_min !== '' && Number.isInteger(Number(t.aviso_antes_min)) ? String(t.aviso_antes_min) : '60', selA = $(p + 'AvisoAntes');
+  if (![...selA.options].some(o => o.value === antes)) selA.add(new Option(antes + ' minutos', antes));
+  selA.value = antes; $(p + 'Repite').value = t.repite || 'none'; $(p + 'Categoria').value = t.categoria || ''; $(p + 'Notas').value = t.notas || '';
+  const mas = $(p + 'Repite').closest('details'); if (mas) mas.open = !!(t.repite && t.repite !== 'none') || !!t.categoria || !!t.notas;
+}
+function cableaAtajosTarea(raiz){
+  raiz.addEventListener('click', ev => {
+    const b = ev.target.closest('.tar-atajos button'); if (!b) return;
+    const caja = b.parentElement, p = caja.dataset.atajoFecha || caja.dataset.atajoHora;
+    if (b.dataset.f !== undefined) { $(p + 'Fecha').value = fechaAtajo(b.dataset.f); return; }
+    const h = b.dataset.h === '+1' ? horaEnUnaHora() : b.dataset.h;
+    ponHoraCampo(p + 'Hora', h);
+    if (h && !$(p + 'Fecha').value) $(p + 'Fecha').value = hoyRD();
+  });
+}
+function horaVisibleTarea(texto){
+  if (!texto) return '';
+  const original = String(texto).trim(), m = original.match(/^(\d{1,2})(?::(\d{2}))?\s*(AM|PM)?$/i);
+  if (!m) return original;
+  let h = Number(m[1]); const min = Number(m[2] || 0), suf = (m[3] || '').toUpperCase();
+  if (min > 59 || (suf ? h < 1 || h > 12 : h > 23)) return original;
+  if (suf === 'PM' && h < 12) h += 12;
+  if (suf === 'AM' && h === 12) h = 0;
+  return ((h % 12) || 12) + ':' + String(min).padStart(2, '0') + ' ' + (h < 12 ? 'AM' : 'PM');
+}
+function sincronizaPersonasTarea(sel, personas){
+  if (!sel) return;
+  const lista = Array.isArray(personas) ? personas : [];
+  const firma = JSON.stringify(lista.map(x => [x.id, x.nombre, !!x.es_dueno]));
+  if (sel.dataset.firmaEquipo === firma) return;
+  const previo = sel.value;
+  sel.innerHTML = '<option value="">Sin asignar (solo anotar)</option>' + lista.map(x => '<option value="' + esc(x.id) + '">' + esc(x.nombre) + (x.es_dueno ? ' (yo)' : '') + '</option>').join('');
+  sel.dataset.firmaEquipo = firma;
+  sel.value = lista.some(x => x.id === previo) ? previo : '';
+}
 async function cargaTareasEquipo(){
   const r = await llama({ action: 'tareasLista', estados: TAR.hechas ? ['completada'] : ['pendiente'] });
   if (!r.ok) { const a = $('tarAviso'); if (a) a.innerHTML = '<p class="aviso">No se pudieron leer las tareas: ' + esc(r.error || 'error') + '</p>'; return; }
@@ -10221,8 +10342,7 @@ async function cargaTareasEquipo(){
 function estadoAvisoTarea(t){
   const n = t.notif || {}, hechos = (n.seguimientos || []).length;
   if (t.estado === 'completada') return 'completada';
-  const quien = t.asignado_telefono ? '' : ' · sin persona: no se avisa';
-  if (!t.asignado_telefono) return 'sin persona' + quien;
+  if (!t.asignado_telefono) return 'sin persona: solo anotada, no se avisa';
   if (n.escalada_at) return 'sin respuesta tras 2 preguntas; ya se te avisó';
   if (n.silenciada_hasta && Date.parse(n.silenciada_hasta) > Date.now()) return 'en proceso o con ayuda pedida';
   if (hechos) return 'preguntada ' + hechos + ' de 2 veces';
@@ -10232,10 +10352,7 @@ function estadoAvisoTarea(t){
 function pintaTareasEquipo(){
   const cont = $('tarLista'); if (!cont) return;
   const sel = $('tarPersona');
-  if (sel && !sel.dataset.listo || (sel && sel.options.length !== TAR.personas.length + 1)) {
-    sel.innerHTML = '<option value="">Sin asignar (solo anotar)</option>' + TAR.personas.map(x => '<option value="' + esc(x.id) + '">' + esc(x.nombre) + (x.es_dueno ? ' (yo)' : '') + '</option>').join('');
-    sel.dataset.listo = '1';
-  }
+  sincronizaPersonasTarea(sel, TAR.personas);
   const aviso = $('tarAviso');
   if (aviso) aviso.innerHTML = TAR.plantilla === false
     ? '<p class="aviso" style="margin:0 0 12px">La plantilla de Meta para avisar a tu equipo <b>fuera de las 24 horas</b> todavía no está aprobada. Hasta entonces solo recibe el aviso quien te haya escrito en las últimas 24 horas; el resto espera y se reintenta solo. '
@@ -10247,13 +10364,18 @@ function pintaTareasEquipo(){
     ['Próximas', '', TAR.tareas.filter(t => t.fecha_limite && t.fecha_limite > hoy)],
     ['Sin fecha', '', TAR.tareas.filter(t => !t.fecha_limite)],
   ];
+  const CATEG = { estudio: 'Estudio', impresion: 'Impresión', caja: 'Caja', limpieza: 'Limpieza', compras: 'Compras', clientes: 'Clientes', otro: 'Otro' };
+  const REPITE = { diaria: 'cada día', laborables: 'de lunes a sábado', semanal: 'cada semana', mensual: 'cada mes' };
   const fila = t => '<div class="tar-fila" data-tid="' + esc(t.id) + '"><div><b>' + esc(t.titulo) + '</b>'
-    + '<small>' + esc(nombreDePersona(t.empleado_id)) + (t.fecha_limite ? ' · ' + esc(t.fecha_limite) + (t.hora_limite ? ' ' + esc(t.hora_limite) : '') : ' · sin fecha')
+    + (CATEG[t.categoria] ? '<span class="tar-chip">' + esc(CATEG[t.categoria]) + '</span>' : '') + (REPITE[t.repite] ? '<span class="tar-chip">🔁 ' + esc(REPITE[t.repite]) + '</span>' : '')
+    + '<small>' + esc(nombreDePersona(t.empleado_id)) + (t.fecha_limite ? ' · ' + esc(fechaLinda(t.fecha_limite)) + (t.hora_limite ? ', ' + esc(horaVisibleTarea(t.hora_limite)) : '') : ' · sin fecha')
+    + (Number.isInteger(Number(t.aviso_antes_min)) && t.aviso_antes_min !== null && t.hora_limite ? ' · aviso ' + (Number(t.aviso_antes_min) === 0 ? 'al vencer' : Number(t.aviso_antes_min) + ' min antes') : '')
     + (t.prioridad === 'alta' ? ' · <b style="display:inline;color:var(--rojo,#b3312a)">alta</b>' : '')
-    + ' · ' + esc(estadoAvisoTarea(t)) + (t.asignada_por && t.asignada_por.nombre ? ' · puesta por ' + esc(t.asignada_por.nombre) : '') + '</small></div>'
+    + ' · ' + esc(estadoAvisoTarea(t)) + (t.asignada_por && t.asignada_por.nombre ? ' · puesta por ' + esc(t.asignada_por.nombre) : '') + '</small>'
+    + (t.notas ? '<span class="tar-nota">' + esc(t.notas) + '</span>' : '') + '</div>'
     + '<div class="tar-acc">' + (t.estado === 'completada'
       ? '<button class="btn-linea" data-tar="reabrir">Reabrir</button>'
-      : '<button class="btn-solido" data-tar="hecha">Hecha ✓</button><button class="btn-linea" data-tar="manana">Mañana</button>'
+      : '<button class="btn-solido" data-tar="hecha">Hecha ✓</button><button class="btn-linea" data-tar="manana">Mañana</button><button class="btn-linea" data-tar="editar">Editar</button>'
         + (t.asignado_telefono ? '<button class="btn-linea" data-tar="avisar" title="Volver a avisar a la persona (sale en su horario)">Avisar de nuevo</button>' : '')
         + '<button class="btn-linea" data-tar="cancelar">Quitar</button>') + '</div></div>';
   const cuerpo = grupos.filter(g => g[2].length).map(g => '<div class="tar-sec ' + g[1] + '">' + g[0] + ' · ' + g[2].length + '</div>' + g[2].map(fila).join('')).join('');
@@ -10271,12 +10393,13 @@ function pintaEquipoTareas(){
     + '<form id="tarEqForm" autocomplete="off"><input type="hidden" id="eqId"><div class="tar-eq-form">'
     + '<label>Nombre<input id="eqNombre" maxlength="60" placeholder="Ej. Ashley" required></label>'
     + '<label>WhatsApp (con código de país)<input id="eqTelefono" inputmode="tel" placeholder="1809…" required></label>'
-    + '<label>Desde<input type="time" id="eqDesde" value="08:00"></label><label>Hasta<input type="time" id="eqHasta" value="18:00"></label></div>'
+    + '<div><span class="tar-et">Desde</span>' + horaCampoHtml('eqDesde', true) + '</div><div><span class="tar-et">Hasta</span>' + horaCampoHtml('eqHasta', true) + '</div></div>'
     + '<div class="tar-dias">' + DIAS_TAR.map(d => '<label><input type="checkbox" data-dia="' + d[0] + '"' + ('123456'.includes(d[0]) ? ' checked' : '') + '>' + d[1] + '</label>').join('') + '</div>'
     + '<label class="cfgsw" style="margin:4px 0"><input type="checkbox" id="eqNotifica" checked><span><b>Avisarle sus tareas por WhatsApp</b><i>Si lo apagas, sus tareas se anotan pero no se le escribe.</i></span></label>'
     + '<div style="display:flex;gap:8px;margin-top:8px"><button class="btn-solido" type="submit" id="eqGuardar">Añadir al equipo</button><button class="btn-linea" type="button" id="eqLimpiar" hidden>Cancelar edición</button></div></form>';
-  const limpia = () => { $('eqId').value = ''; $('eqNombre').value = ''; $('eqTelefono').value = ''; $('eqDesde').value = '08:00'; $('eqHasta').value = '18:00'; $('eqNotifica').checked = true;
+  const limpia = () => { $('eqId').value = ''; $('eqNombre').value = ''; $('eqTelefono').value = ''; ponHoraCampo('eqDesde', '8:00 AM'); ponHoraCampo('eqHasta', '6:00 PM'); $('eqNotifica').checked = true;
     cont.querySelectorAll('[data-dia]').forEach(c => { c.checked = '123456'.includes(c.dataset.dia); }); $('eqGuardar').textContent = 'Añadir al equipo'; $('eqLimpiar').hidden = true; $('eqNombre').disabled = false; $('eqTelefono').disabled = false; };
+  ponHoraCampo('eqDesde', '8:00 AM'); ponHoraCampo('eqHasta', '6:00 PM');
   $('eqLimpiar').onclick = limpia;
   cont.querySelectorAll('[data-eq]').forEach(b => { b.onclick = async () => {
     const x = TAR.personas.find(y => y.id === b.dataset.id); if (!x) return;
@@ -10285,7 +10408,7 @@ function pintaEquipoTareas(){
       const r = await llama({ action: 'equipoQuita', id: x.id }); if (!r.ok) return avisa('No se pudo', r.error);
       await cargaTareasEquipo(); return;
     }
-    $('eqId').value = x.id; $('eqNombre').value = x.nombre; $('eqTelefono').value = x.telefono; $('eqDesde').value = x.horario.desde; $('eqHasta').value = x.horario.hasta; $('eqNotifica').checked = !!x.notificar;
+    $('eqId').value = x.id; $('eqNombre').value = x.nombre; $('eqTelefono').value = x.telefono; ponHoraCampo('eqDesde', x.horario.desde); ponHoraCampo('eqHasta', x.horario.hasta); $('eqNotifica').checked = !!x.notificar;
     cont.querySelectorAll('[data-dia]').forEach(c => { c.checked = x.horario.dias.includes(Number(c.dataset.dia)); });
     $('eqGuardar').textContent = 'Guardar cambios'; $('eqLimpiar').hidden = false; $('eqNombre').focus();
   }; });
@@ -10293,30 +10416,59 @@ function pintaEquipoTareas(){
     ev.preventDefault();
     const dias = [...cont.querySelectorAll('[data-dia]')].filter(c => c.checked).map(c => Number(c.dataset.dia));
     if (!dias.length) return avisa('Elige al menos un día');
-    const r = await llama({ action: 'equipoGuarda', id: $('eqId').value || undefined, nombre: $('eqNombre').value, telefono: $('eqTelefono').value, notificar_tareas: $('eqNotifica').checked, horario: { desde: $('eqDesde').value, hasta: $('eqHasta').value, dias } });
+    const r = await llama({ action: 'equipoGuarda', id: $('eqId').value || undefined, nombre: $('eqNombre').value, telefono: $('eqTelefono').value, notificar_tareas: $('eqNotifica').checked, horario: { desde: a24Tarea(leeHoraCampo('eqDesde')) || '08:00', hasta: a24Tarea(leeHoraCampo('eqHasta')) || '18:00', dias } });
     if (!r.ok) return avisa('No se pudo guardar', r.error);
     avisa('Guardado', 'Ya se le pueden poner tareas.');
     await cargaTareasEquipo();
   };
 }
+function abreEditaTarea(id){
+  const t = TAR.tareas.find(x => x.id === id); if (!t) return;
+  abreModal('<div class="mtapa"><b>Editar tarea</b><button class="cerrarm" data-cerrar>×</button></div><div class="mcuerpo">'
+    + '<form class="tar-form" id="tedForm" autocomplete="off">' + camposTareaHtml('ted')
+    + '<div style="flex:1 1 100%;display:flex;gap:8px;justify-content:flex-end"><button type="button" class="btn-linea" data-cerrar>Cancelar</button><button class="btn-solido" type="submit" id="tedGuardar">Guardar</button></div></form></div>').querySelector('.caja').classList.add('ancha');
+  sincronizaPersonasTarea($('tedPersona'), TAR.personas); ponCamposTarea('ted', t); cableaAtajosTarea($('tedForm'));
+  $('tedForm').onsubmit = async ev => {
+    ev.preventDefault();
+    const c = leeCamposTarea('ted'), g = $('tedGuardar'); g.disabled = true;
+    const r = await llama({ action: 'tareaEdita', id, campos: { titulo: c.titulo, persona_id: c.persona_id || '', fecha: c.fecha || '', hora: c.hora || '', prioridad: c.prioridad, aviso_antes_min: c.aviso_antes_min, repite: c.repite, categoria: c.categoria, notas: c.notas } });
+    g.disabled = false;
+    if (!r.ok) {
+      if (/persona ya no está en el equipo/i.test(String(r.error || ''))) { await cargaTareasEquipo(); sincronizaPersonasTarea($('tedPersona'), TAR.personas); return avisa('Equipo actualizado', 'La persona elegida ya no está en el equipo. Elige otra o deja la tarea sin asignar.'); }
+      return avisa('No se pudo guardar', r.error);
+    }
+    cierraModal(); avisa('Tarea guardada', c.persona_id ? 'Se le vuelve a avisar en su horario.' : 'Los cambios ya están.');
+    await cargaTareasEquipo();
+  };
+  setTimeout(() => { const i = $('tedTitulo'); if (i) i.focus(); }, 60);
+}
 function montaTareasEquipo(){
   const f = $('tarForm'); if (!f || f.dataset.listo) return;
   f.dataset.listo = '1';
   $('tarFecha').value = '';
+  cableaAtajosTarea(f);
   f.onsubmit = async ev => {
     ev.preventDefault();
     const b = $('tarAnadir'); b.disabled = true;
-    const r = await llama({ action: 'tareaCrear', titulo: $('tarTitulo').value, persona_id: $('tarPersona').value || null, fecha: $('tarFecha').value || null, hora: $('tarHora').value || null, prioridad: $('tarPrioridad').value });
+    const r = await llama({ action: 'tareaCrear', ...leeCamposTarea('tar') });
     b.disabled = false;
-    if (!r.ok) return avisa('No se pudo añadir', r.error);
-    $('tarTitulo').value = ''; $('tarFecha').value = ''; $('tarHora').value = '';
-    avisa('Tarea añadida', $('tarPersona').value ? 'Se le avisa en su horario.' : 'Queda anotada.');
+    if (!r.ok) {
+      if (/persona ya no está en el equipo/i.test(String(r.error || ''))) {
+        await cargaTareasEquipo();
+        return avisa('Equipo actualizado', 'La persona seleccionada ya no está disponible. La lista se recargó; elige otra persona o deja la tarea sin asignar.');
+      }
+      return avisa('No se pudo añadir', r.error);
+    }
+    const paraAlguien = !!$('tarPersona').value;
+    ponCamposTarea('tar', { empleado_id: $('tarPersona').value });                // limpia todo y deja a la misma persona (se suelen poner varias seguidas)
+    avisa('Tarea añadida', paraAlguien ? 'Se le avisa en su horario.' : 'Queda anotada.');
     await cargaTareasEquipo();
   };
   $('tarVerHechas').onclick = async () => { TAR.hechas = !TAR.hechas; await cargaTareasEquipo(); };
   $('tarLista').addEventListener('click', async ev => {
     const b = ev.target.closest('[data-tar]'); if (!b) return;
     const id = b.closest('[data-tid]').dataset.tid;
+    if (b.dataset.tar === 'editar') return abreEditaTarea(id);
     b.disabled = true;
     let r;
     if (b.dataset.tar === 'hecha') r = await llama({ action: 'tareaEstado', id, estado: 'completada' });
@@ -10339,12 +10491,7 @@ function montaRecordatorios(){
       + '<p class="bajada">Pon tareas o recordatorios para ti o para tu equipo. Cada quien los recibe en su WhatsApp <b>dentro de su horario</b>, y el sistema pregunta —sin insistir— si ya se cumplieron: '
       +   'un aviso al asignarla, uno el día que toca y como máximo dos preguntas de seguimiento. Tus colaboradores contestan por WhatsApp: <b>LISTO</b>, <b>MAÑANA</b>, <b>EN PROCESO</b> o <b>AYUDA</b>.</p>'
       + '<div id="tarAviso"></div>'
-      + '<form class="tar-form" id="tarForm" autocomplete="off">'
-      +   '<label>Tarea<input id="tarTitulo" maxlength="200" placeholder="Ej. Limpiar las vitrinas" required></label>'
-      +   '<label>Para<select id="tarPersona"></select></label>'
-      +   '<label>Fecha<input type="date" id="tarFecha"></label>'
-      +   '<label>Hora<input type="time" id="tarHora"></label>'
-      +   '<label>Prioridad<select id="tarPrioridad"><option value="normal">Normal</option><option value="alta">Alta</option><option value="baja">Baja</option></select></label>'
+      + '<form class="tar-form" id="tarForm" autocomplete="off">' + camposTareaHtml('tar')
       +   '<button class="btn-solido" id="tarAnadir" type="submit">Añadir</button>'
       + '</form>'
       + '<div class="filtros" style="padding:6px 0 0"><button class="btn-linea" id="tarVerHechas">Ver las completadas</button></div>'
@@ -15317,7 +15464,7 @@ function cableaMarketing(){
       const a = p.accion || {};
       b.disabled = true; b.textContent = 'Enviando…';
       const r = await llama({ action: 'templates', operation: 'create', template_name: a.template_name, body_text: a.body_text,
-        category: a.category, footer_text: a.footer_text, language_code: a.language_code || 'es', examples: a.examples || [] });
+        category: a.category, footer_text: a.footer_text, language_code: a.language_code || 'es', examples: a.examples || [], buttons: a.buttons });
       if (!r.ok) { b.disabled = false; b.textContent = 'Enviar a Meta'; return avisa('Meta la rechazó', r.error); }
       await decideMarketing(id, 'aceptar');
       avisa('Enviada a Meta', r.aviso || 'Espera su aprobación antes de usarla.');
