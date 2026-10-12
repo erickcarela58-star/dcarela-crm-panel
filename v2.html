@@ -2256,6 +2256,19 @@ input[type="checkbox"],input[type="radio"]{accent-color:var(--accent)}
 .tar-chip{display:inline-block;margin-left:6px;padding:1px 8px;border-radius:999px;font-size:11px;font-weight:600;background:var(--hover);color:var(--mut);vertical-align:1px}
 .tar-nota{display:block;margin-top:3px;color:var(--mut);font-size:12px;white-space:pre-wrap}
 .tar-form textarea{width:100%;box-sizing:border-box}
+/* Centro de conexiones (Canales): una fila por conexion con su estado, que pasa y una prueba en vivo. */
+.cx-res{display:flex;gap:8px;flex-wrap:wrap;margin:6px 0 14px}
+.cx-pill{display:inline-flex;align-items:center;gap:6px;padding:4px 11px;border-radius:999px;font-size:12px;font-weight:650;background:var(--hover);color:var(--fg)}
+.cx-pill i{width:8px;height:8px;border-radius:50%;background:var(--mut);display:inline-block}
+.cx-pill.ok i,.cx-punto.ok{background:#34c759}.cx-pill.aviso i,.cx-punto.aviso{background:#ff9f0a}.cx-pill.caida i,.cx-punto.caida{background:#ff453a}.cx-pill.sin_configurar i,.cx-punto.sin_configurar{background:#8e8e93}
+.cx-grupo{margin:16px 0 6px;font-size:11.5px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--mut)}
+.cx-fila{display:grid;grid-template-columns:14px minmax(0,1fr) auto;gap:4px 12px;align-items:center;padding:11px 14px;border-radius:14px;background:var(--panel);margin-bottom:8px;box-shadow:var(--sombra-suave,0 1px 2px rgba(0,0,0,.05))}
+.cx-punto{width:10px;height:10px;border-radius:50%;display:inline-block}
+.cx-fila b{font-size:14px}.cx-fila small{display:block;color:var(--mut);font-size:12.5px;line-height:1.4;margin-top:1px}
+.cx-fila .cx-res-prueba{grid-column:2/4;font-size:12.5px;margin-top:2px}
+.cx-api{margin-top:18px}.cx-api summary{cursor:pointer;font-weight:650}
+.cx-api code{font:12px ui-monospace,Menlo,Consolas,monospace;background:var(--hover);padding:1px 6px;border-radius:6px}
+.cx-api table{width:100%;border-collapse:collapse;margin-top:10px;font-size:12.5px}.cx-api td{padding:6px 8px;border-top:1px solid var(--line);vertical-align:top}.cx-api td:first-child{white-space:nowrap}
 .tar-form input,.tar-form select,.tar-eq-form input{width:100%;box-sizing:border-box}
 .tar-form label{display:flex;flex-direction:column;gap:3px;font-size:11.5px;color:var(--mut);font-weight:600}
 .tar-sec{margin:18px 0 6px;font-size:12px;font-weight:700;letter-spacing:.02em;color:var(--mut);text-transform:uppercase}
@@ -11743,9 +11756,45 @@ function montaCanales(){
     hueco('canales', '<div class="hoja"><h1>Canales</h1>'
       + '<p class="bajada">Por dónde te escriben los clientes. Si un canal no está en verde, '
       +   'lo que escribas por ahí no le llega a nadie aunque el panel diga que se envió.</p>'
-      + '<div id="canalesLista"></div></div>');
+      + '<div id="canalesLista"></div>'
+      + '<h2 style="margin:30px 0 4px;font-size:18px">Conexiones y API</h2>'
+      + '<p class="bajada">Todo lo que el CRM usa por detrás, en una sola lista: si está conectado, qué pasa si no, y una prueba en vivo de las que se pueden probar. '
+      +   'Abajo, la lista de acciones de la API del CRM para conectar otras herramientas.</p>'
+      + '<div id="conexionesCaja"></div></div>');
   }
   pintaCanales();
+  pintaConexiones();
+}
+const CX_ESTADO = { ok: 'Conectado', aviso: 'Revisar', caida: 'Caída', sin_configurar: 'Sin configurar' };
+async function pintaConexiones(){
+  const cont = $('conexionesCaja'); if (!cont) return;
+  cont.innerHTML = '<p class="bajada"><span class="cargando"></span> Comprobando conexiones…</p>';
+  const r = await llama({ action:'conexiones' });
+  if (!r.ok) { cont.innerHTML = '<p class="cfgnota">' + esc(/permiso/i.test(String(r.error || '')) ? 'Solo el administrador o el supervisor ven las conexiones.' : (r.error || 'No se pudieron leer las conexiones.')) + '</p>'; return; }
+  const x = r.resumen || {};
+  const grupos = [...new Set(r.items.map(i => i.grupo))];
+  cont.innerHTML = '<div class="cx-res">'
+    + [['ok', x.ok], ['aviso', x.aviso], ['caida', x.caida], ['sin_configurar', x.sin_configurar]].filter(a => a[1]).map(a => '<span class="cx-pill ' + a[0] + '"><i></i>' + a[1] + ' ' + (CX_ESTADO[a[0]] || a[0]).toLowerCase() + '</span>').join('')
+    + '<button class="btn-linea" id="cxOtra" style="margin-left:auto">Volver a comprobar</button></div>'
+    + grupos.map(g => '<div class="cx-grupo">' + esc(g) + '</div>' + r.items.filter(i => i.grupo === g).map(i =>
+        '<div class="cx-fila" data-cx="' + esc(i.id) + '"><span class="cx-punto ' + esc(i.estado) + '" title="' + esc(CX_ESTADO[i.estado] || i.estado) + '"></span>'
+        + '<div><b>' + esc(i.nombre) + '</b><small>' + esc(i.detalle) + '</small></div>'
+        + (i.probar ? '<button class="btn-linea" data-cx-probar="' + esc(i.id) + '">Probar</button>' : '<span></span>') + '</div>').join('')).join('')
+    + '<details class="cx-api"><summary>API del CRM (para conectar otras herramientas)</summary>'
+    + '<p class="cfgnota" style="margin:8px 0">Una sola puerta: <code>POST ' + esc(r.base) + '</code> con el cuerpo <code>{ "action": "…" }</code> y el token de sesión en <code>Authorization: Bearer …</code>. '
+    + 'Cada acción comprueba tu rol (administrador, supervisor o agente).</p>'
+    + '<table>' + (r.acciones || []).map(a => '<tr><td><code>' + esc(a.accion) + '</code></td><td>' + esc(a.descripcion) + '</td></tr>').join('') + '</table></details>';
+  $('cxOtra').onclick = pintaConexiones;
+  cont.querySelectorAll('[data-cx-probar]').forEach(b => b.onclick = async () => {
+    const fila = b.closest('.cx-fila'); b.disabled = true; b.textContent = 'Probando…';
+    const t = await llama({ action:'conexiones', operation:'probar', id:b.dataset.cxProbar });
+    b.disabled = false; b.textContent = 'Probar';
+    let m = fila.querySelector('.cx-res-prueba'); if (!m) { m = document.createElement('div'); m.className = 'cx-res-prueba'; fila.appendChild(m); }
+    if (!t.ok) { m.textContent = 'No se pudo probar: ' + (t.error || 'error'); return; }
+    m.textContent = (t.estado === 'ok' ? '✓ ' : '✗ ') + t.detalle;
+    m.style.color = t.estado === 'ok' ? 'var(--ok,#0a8f4d)' : 'var(--rojo,#b3312a)';
+    const punto = fila.querySelector('.cx-punto'); if (punto) punto.className = 'cx-punto ' + t.estado;
+  });
 }
 
 // Tarjeta unica de Instagram y Messenger mientras estan ocultos. Dice lo que hay GUARDADO --que no
