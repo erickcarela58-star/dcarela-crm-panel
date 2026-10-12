@@ -1,7 +1,7 @@
 {
-  "version": "2026-10-12-mensajes-funnel-v153",
+  "version": "2026-10-12-fluidez-v154",
   "channel": "crm",
-  "released_at": "2026-10-12T02:40:40.425Z",
-  "summary": "Funnel: botón «Escribir a varios» y «Escribirles» en cada grupo de leads parados. Revisas cada conversación, ajustas el mensaje (3 burbujas cortas, distinto según el caso) y sale de a uno con pausa.",
+  "released_at": "2026-10-12T02:45:31.594Z",
+  "summary": "Más fluidez: cada página entra por partes, las ventanas se asientan con suavidad, los paneles laterales se deslizan y los acordeones se abren y cierran animados. Se apaga solo si tu sistema pide reducir el movimiento.",
   "requiere_puente": "2026-09-28-lectura-v34"
 }
