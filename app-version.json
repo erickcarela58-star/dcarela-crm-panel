@@ -1,7 +1,7 @@
 {
-  "version": "2026-10-12-cotizar-v149",
+  "version": "2026-10-12-emojis-apple-v150",
   "channel": "crm",
-  "released_at": "2026-10-12T02:03:37.842Z",
-  "summary": "Botón «Cotizar» en el chat: arma una cotización a la medida (combo más parecido, fotos digitales a 500 la primera y 250 las demás, piezas impresas que se quitan para compensar, ajuste a un presupuesto), te deja editar el mensaje, lo manda por el mismo chat y la registra. El bot vendedor usa esas mismas cifras y, si un cliente pide descuento, te avisa a ti (el bot nunca lo da).",
+  "released_at": "2026-10-12T02:12:57.744Z",
+  "summary": "Los emojis del CRM se ven como los de iPhone (estilo Apple): en los mensajes y en el selector. La hoja de imágenes se pide al servidor solo con sesión iniciada y se guarda en el navegador (se baja una vez); no está en el repositorio público del panel.",
   "requiere_puente": "2026-09-28-lectura-v34"
 }
