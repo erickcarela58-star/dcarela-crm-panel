@@ -2320,7 +2320,8 @@ input[type="checkbox"],input[type="radio"]{accent-color:var(--accent)}
 .ayuda-pop{position:fixed;top:56px;left:min(300px,40vw);z-index:90;width:min(360px,calc(100vw - 24px));border-radius:16px;overflow:hidden;background:var(--vidrio-fuerte,var(--panel));
   box-shadow:var(--sombra),0 0 0 .5px var(--line);-webkit-backdrop-filter:blur(30px);backdrop-filter:blur(30px)}
 .ayuda-pop[hidden]{display:none}
-.ayuda-video{display:block;width:100%;max-height:200px;background:#000;object-fit:cover}
+.ayuda-video{display:block;width:100%;aspect-ratio:16/9;background:#000;object-fit:cover}
+.ayuda-pop.con-video{width:min(560px,calc(100vw - 24px))}
 .ayuda-video[hidden]{display:none}
 .ayuda-cuerpo{padding:14px 16px 14px}
 .ayuda-cuerpo b{font-size:14px}
@@ -2348,6 +2349,14 @@ input[type="checkbox"],input[type="radio"]{accent-color:var(--accent)}
 .cabecera{position:relative;z-index:30}
 .cabecera .quien-chat b,.cabecera .quien-chat span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .cabecera .modo,.cabecera .adj,.cabecera .mas{flex:0 0 auto;white-space:nowrap}
+/* Con la ficha abierta en una pantalla de ~1280 px el chat queda estrecho y los iconos de la cabecera se salian por encima de la ficha. Aqui la cabecera pasa a dos filas
+   (nombre e iconos arriba, «Humano atiende» y «Atendido» debajo) en vez de montarse. Con mas ancho cabe todo en una fila y no cambia nada. */
+@media(max-width:1599px){
+  .cabecera{flex-wrap:wrap;row-gap:6px;column-gap:4px;padding:8px 10px}
+  .cabecera .quien-chat{flex:1 1 96px;min-width:96px}
+  .cabecera .modo{order:5;padding:6px 11px;font-size:12px}
+  .cabecera .adj{width:34px;height:34px;padding:0}
+}
 .cabecera .modo{padding:7px 11px}
 /* El menu de un mensaje que esta pegado a la barra de escribir se abre HACIA ARRIBA (antes quedaba tapado por el compositor). */
 .gmenu.arriba{top:auto;bottom:20px}
@@ -3008,6 +3017,9 @@ function aplicaConversaciones(s, modo = 'en vivo'){
     if (vistaActual === 'hoy') pintaHoy();
     if (vistaActual === 'agenda') pintaAgenda();
     if (vistaActual === 'reminders') pintaRecordatorios();
+    // Limpieza abierta de golpe (recargar en #limpieza) se pintaba antes de que llegaran los chats y se quedaba en «Nada que limpiar». Se repinta solo si cambio
+    // cuantos hay, para no borrar el mensaje que se este escribiendo.
+    if (vistaActual === 'limpieza' && $('limpiezaCuerpo') && CONVS.filter(enElOlvido).length !== LIMPIEZA_N) pintaLimpieza();
     pintaCuentas();
     avisaMensajesNuevos();
 }
@@ -14836,9 +14848,11 @@ function montaLimpieza(){
   pintaLimpieza();
 }
 
+let LIMPIEZA_N = -1;
 function pintaLimpieza(){
   const cont = $('limpiezaCuerpo'); if (!cont) return;
   const olvidados = CONVS.filter(enElOlvido);
+  LIMPIEZA_N = olvidados.length;
   // Los que ya se cansaron de no recibir respuesta no merecen otro intento: la norma de
   // los dos seguimientos ya dijo que no.
   const aDescartar = olvidados.filter(c => Number(c.followup_attempts || 0) >= 2);
@@ -18745,17 +18759,23 @@ const AYUDAS = {
   const abre = () => {
     const a = AYUDAS[vistaActual];
     if (!a) return;
-    pop.innerHTML = '<video class="ayuda-video" muted loop playsinline preload="none" hidden></video>'
+    pop.innerHTML = '<video class="ayuda-video" muted loop playsinline preload="auto" hidden></video>'
       + '<div class="ayuda-cuerpo"><b>' + esc(a[0]) + '</b><p>' + esc(a[1]) + '</p>'
       + '<button type="button" class="ayuda-mas" id="ayudaMas">Ver más</button>'
       + '<div class="ayuda-detalle" id="ayudaDetalle" hidden><div class="ayuda-sub">Qué puedes hacer</div><ul>' + a[2].map(x => '<li>' + esc(x) + '</li>').join('') + '</ul><p class="ayuda-nota">' + esc(a[3]) + '</p></div></div>';
     const v = pop.querySelector('video');
-    v.onloadeddata = () => { v.hidden = false; v.play().catch(() => {}); };
-    v.onerror = () => { v.hidden = true; };
-    v.src = 'ayudas/' + vistaActual + '.mp4';
+    v.onloadeddata = () => { v.hidden = false; pop.classList.add('con-video'); v.play().catch(() => {}); reubica(); };
+    // WebM primero (es lo que graba scripts/graba-ayudas.cjs) y MP4 si existe; si no hay ninguno no se enseña nada vacio.
+    const base = 'ayudas/' + vistaActual;
+    v.innerHTML = '<source src="' + base + '.webm" type="video/webm"><source src="' + base + '.mp4" type="video/mp4">';
+    v.lastElementChild.onerror = () => { v.hidden = true; pop.classList.remove('con-video'); };
+    pop.classList.remove('con-video');
     pop.querySelector('#ayudaMas').onclick = ev => { const d = pop.querySelector('#ayudaDetalle'); d.hidden = !d.hidden; ev.currentTarget.textContent = d.hidden ? 'Ver más' : 'Ver menos'; };
     pop.hidden = false; btn.setAttribute('aria-expanded', 'true');
-    // Debajo del boton, sin salirse de la pantalla.
+    reubica();
+  };
+  // Debajo del boton, sin salirse de la pantalla (se repite cuando llega el video, porque la ventanita se ensancha).
+  const reubica = () => {
     const r = btn.getBoundingClientRect();
     pop.style.top = (r.bottom + 8) + 'px';
     pop.style.left = Math.max(12, Math.min(r.left - 8, window.innerWidth - pop.offsetWidth - 12)) + 'px';
