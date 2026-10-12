@@ -2317,20 +2317,27 @@ input[type="checkbox"],input[type="radio"]{accent-color:var(--accent)}
 /* Ayuda «?» de cada pantalla */
 .ayuda-btn{flex:0 0 auto;width:26px;height:26px;border-radius:50%;border:0;background:var(--hover);color:var(--mut);font-weight:700;font-size:13px;cursor:pointer;transition:background .15s,color .15s}
 .ayuda-btn:hover,.ayuda-btn[aria-expanded="true"]{background:var(--ink,#2c6bed);color:var(--on-ink,#fff)}
-.ayuda-pop{position:fixed;top:56px;left:min(300px,40vw);z-index:90;width:min(360px,calc(100vw - 24px));border-radius:16px;overflow:hidden;background:var(--vidrio-fuerte,var(--panel));
-  box-shadow:var(--sombra),0 0 0 .5px var(--line);-webkit-backdrop-filter:blur(30px);backdrop-filter:blur(30px)}
+/* Tarjeta de ayuda al estilo de las herramientas de Photoshop (12/10): oscura, con el video arriba y debajo el nombre, una definicion corta, «Mas informacion»
+   y «Ver video rapido». Sale al dejar el cursor quieto sobre una opcion del menu (junto a ella) o sobre el «?» (debajo). */
+.ayuda-pop{position:fixed;top:56px;left:300px;z-index:95;width:min(380px,calc(100vw - 24px));border-radius:14px;overflow:hidden;background:#2d2d30;color:#e9e9ec;
+  box-shadow:0 20px 56px rgba(0,0,0,.5),0 0 0 .5px rgba(255,255,255,.1)}
 .ayuda-pop[hidden]{display:none}
-.ayuda-video{display:block;width:100%;aspect-ratio:16/9;background:#000;object-fit:cover}
-.ayuda-pop.con-video{width:min(560px,calc(100vw - 24px))}
-.ayuda-video[hidden]{display:none}
-.ayuda-cuerpo{padding:14px 16px 14px}
-.ayuda-cuerpo b{font-size:14px}
-.ayuda-cuerpo p{margin:6px 0 8px;font-size:13px;line-height:1.5;color:var(--fg)}
-.ayuda-mas{border:0;background:transparent;color:var(--ink,#2c6bed);font-weight:650;font-size:12.5px;cursor:pointer;padding:2px 0}
-.ayuda-detalle{margin-top:8px;border-top:1px solid var(--line);padding-top:8px}
-.ayuda-sub{font-size:11.5px;font-weight:650;color:var(--mut);margin-bottom:4px}
-.ayuda-detalle ul{margin:0 0 6px;padding-left:18px;font-size:12.5px;line-height:1.5}
-.ayuda-nota{font-size:12px;color:var(--mut);margin:4px 0 0}
+.tip-video{display:block;width:100%;aspect-ratio:16/9;background:#1a1a1c;object-fit:cover}
+.tip-video[hidden]{display:none}
+.tip-cuerpo{padding:16px 20px 20px}
+.tip-tit{display:flex;align-items:center;gap:10px}
+.tip-tit b{font-size:18px;font-weight:700;letter-spacing:-.01em;color:#fff}
+.tip-tit kbd{font:600 12px system-ui,sans-serif;padding:1px 8px;border:1px solid #707076;border-radius:5px;color:#c8c8cd;background:transparent}
+.tip-desc{margin:14px 0 4px;font-size:14px;line-height:1.5;color:#e2e2e6}
+.tip-mas{display:inline-block;border:0;background:transparent;color:#fff;text-decoration:underline;font-size:14px;padding:2px 0;cursor:pointer}
+.tip-ver{display:block;margin:16px auto 0;padding:8px 20px;border:1.5px solid #ececef;border-radius:999px;background:transparent;color:#fff;font-weight:650;font-size:14px;cursor:pointer}
+.tip-ver:hover{background:rgba(255,255,255,.12)}
+.tip-ver[hidden]{display:none}
+.ayuda-detalle{margin-top:10px;border-top:1px solid rgba(255,255,255,.14);padding-top:10px}
+.ayuda-sub{font-size:12px;font-weight:650;color:#a9a9b0;margin-bottom:4px}
+.ayuda-detalle ul{margin:0 0 6px;padding-left:18px;font-size:13px;line-height:1.5;color:#e2e2e6}
+.ayuda-nota{font-size:12.5px;color:#a9a9b0;margin:6px 0 0}
+.mod-video{display:block;width:100%;border-radius:12px;background:#000}
 @media(max-width:760px){.ayuda-pop{left:12px;top:60px}}
 /* Ficha del lead modular: asa de arrastre, panel «Personalizar» y bloques ocultos de verdad. */
 #ficha details.grupo[hidden]{display:none}
@@ -18751,39 +18758,73 @@ const AYUDAS = {
   canales: ['Canales', 'Conecta y administra tus números y redes: WhatsApp oficial, WhatsApp Web, Instagram y Messenger.', ['Ver si cada canal está conectado', 'Encender o apagar el bot en UN canal'], 'Apagar el bot de un canal no afecta a los demás.'],
   config: ['Configuración', 'Los ajustes del CRM en secciones, cada una con su explicación.', ['Avisos al supervisor y resumen diario', 'Contactos ignorados', 'Portafolio de la web', 'Número del administrador'], 'Si dudas de un ajuste, lee su explicación antes de cambiarlo.'],
 };
+// Ayuda tipo Photoshop (12/10): al dejar el cursor quieto sobre una OPCION DEL MENU (o sobre el «?» de la pantalla) sale una tarjeta oscura con el video de la
+// accion arriba y debajo su nombre, una definicion corta, «Mas informacion» y «Ver video rapido» (el mismo video en grande). Si no hay video, no se enseña un hueco.
+function fuentesDeAyuda(id){ return '<source src="ayudas/' + id + '.webm" type="video/webm"><source src="ayudas/' + id + '.mp4" type="video/mp4">'; }
+function abreVideoAyuda(id){
+  const a = AYUDAS[id]; if (!a) return;
+  const m = abreModal('<div class="mtapa"><b>' + esc(a[0]) + '</b><span class="mod-nota">Así se usa, paso a paso</span><button class="cerrarm" data-cerrar>×</button></div>'
+    + '<div class="mcuerpo"><video class="mod-video" controls autoplay loop muted playsinline>' + fuentesDeAyuda(id) + '</video><p class="bajada" style="margin:12px 0 0">' + esc(a[1]) + '</p></div>');
+  const caja = m.querySelector('.caja'); if (caja) caja.classList.add('ancha');
+}
 (function(){
   const btn = $('btnAyuda'), pop = $('ayudaPop');
-  if (!btn || !pop) return;
-  let temporizador = null;
-  const cierra = () => { pop.hidden = true; btn.setAttribute('aria-expanded', 'false'); const v = pop.querySelector('video'); if (v) v.pause(); };
-  const abre = () => {
-    const a = AYUDAS[vistaActual];
-    if (!a) return;
-    pop.innerHTML = '<video class="ayuda-video" muted loop playsinline preload="auto" hidden></video>'
-      + '<div class="ayuda-cuerpo"><b>' + esc(a[0]) + '</b><p>' + esc(a[1]) + '</p>'
-      + '<button type="button" class="ayuda-mas" id="ayudaMas">Ver más</button>'
-      + '<div class="ayuda-detalle" id="ayudaDetalle" hidden><div class="ayuda-sub">Qué puedes hacer</div><ul>' + a[2].map(x => '<li>' + esc(x) + '</li>').join('') + '</ul><p class="ayuda-nota">' + esc(a[3]) + '</p></div></div>';
-    const v = pop.querySelector('video');
-    v.onloadeddata = () => { v.hidden = false; pop.classList.add('con-video'); v.play().catch(() => {}); reubica(); };
-    // WebM primero (es lo que graba scripts/graba-ayudas.cjs) y MP4 si existe; si no hay ninguno no se enseña nada vacio.
-    const base = 'ayudas/' + vistaActual;
-    v.innerHTML = '<source src="' + base + '.webm" type="video/webm"><source src="' + base + '.mp4" type="video/mp4">';
-    v.lastElementChild.onerror = () => { v.hidden = true; pop.classList.remove('con-video'); };
-    pop.classList.remove('con-video');
-    pop.querySelector('#ayudaMas').onclick = ev => { const d = pop.querySelector('#ayudaDetalle'); d.hidden = !d.hidden; ev.currentTarget.textContent = d.hidden ? 'Ver más' : 'Ver menos'; };
-    pop.hidden = false; btn.setAttribute('aria-expanded', 'true');
-    reubica();
+  if (!pop) return;
+  // Fuera de la barra: su desenfoque haria que `position:fixed` se midiera contra la barra y no contra la pantalla.
+  document.body.appendChild(pop);
+  const ATAJOS = { conversations: 'Ctrl K' };
+  let esperar = null, cerrar = null, fijada = false;
+  const cierra = () => { clearTimeout(esperar); clearTimeout(cerrar); fijada = false; pop.hidden = true; if (btn) btn.setAttribute('aria-expanded', 'false'); const v = pop.querySelector('video'); if (v) v.pause(); };
+  const posiciona = (ancla, lado) => {
+    const r = ancla.getBoundingClientRect(), w = pop.offsetWidth, h = pop.offsetHeight;
+    let left = lado === 'derecha' ? r.right + 10 : r.left - 8;
+    let top = lado === 'derecha' ? r.top - 8 : r.bottom + 8;
+    left = Math.max(12, Math.min(left, window.innerWidth - w - 12));
+    top = Math.max(12, Math.min(top, window.innerHeight - h - 12));
+    pop.style.left = left + 'px'; pop.style.top = top + 'px';
   };
-  // Debajo del boton, sin salirse de la pantalla (se repite cuando llega el video, porque la ventanita se ensancha).
-  const reubica = () => {
-    const r = btn.getBoundingClientRect();
-    pop.style.top = (r.bottom + 8) + 'px';
-    pop.style.left = Math.max(12, Math.min(r.left - 8, window.innerWidth - pop.offsetWidth - 12)) + 'px';
+  const abre = (id, ancla, lado, pegada) => {
+    const a = AYUDAS[id];
+    if (!a || !ancla) return;
+    clearTimeout(cerrar); fijada = !!pegada;
+    pop.innerHTML = '<video class="tip-video" muted loop playsinline preload="auto" hidden></video>'
+      + '<div class="tip-cuerpo"><div class="tip-tit"><b>' + esc(a[0]) + '</b>' + (ATAJOS[id] ? '<kbd>' + esc(ATAJOS[id]) + '</kbd>' : '') + '</div>'
+      + '<p class="tip-desc">' + esc(a[1]) + '</p>'
+      + '<button type="button" class="tip-mas" id="ayudaMas">Más información</button>'
+      + '<div class="ayuda-detalle" id="ayudaDetalle" hidden><div class="ayuda-sub">Qué puedes hacer</div><ul>' + a[2].map(x => '<li>' + esc(x) + '</li>').join('') + '</ul><p class="ayuda-nota">' + esc(a[3]) + '</p></div>'
+      + '<button type="button" class="tip-ver" id="ayudaVer" hidden>Ver vídeo rápido</button></div>';
+    const v = pop.querySelector('video'), ver = pop.querySelector('#ayudaVer');
+    v.innerHTML = fuentesDeAyuda(id);
+    v.onloadeddata = () => { v.hidden = false; ver.hidden = false; v.play().catch(() => {}); posiciona(ancla, lado); };
+    v.lastElementChild.onerror = () => { v.hidden = true; ver.hidden = true; };
+    pop.querySelector('#ayudaMas').onclick = ev => { const d = pop.querySelector('#ayudaDetalle'); d.hidden = !d.hidden; ev.currentTarget.textContent = d.hidden ? 'Más información' : 'Menos información'; posiciona(ancla, lado); };
+    ver.onclick = () => { cierra(); abreVideoAyuda(id); };
+    pop.hidden = false; if (btn) btn.setAttribute('aria-expanded', btn === ancla ? 'true' : 'false');
+    posiciona(ancla, lado);
   };
-  btn.addEventListener('click', ev => { ev.stopPropagation(); pop.hidden ? abre() : cierra(); });
-  // Como en Photoshop: al dejar el cursor quieto sobre el boton, aparece solo.
-  btn.addEventListener('mouseenter', () => { clearTimeout(temporizador); temporizador = setTimeout(() => { if (pop.hidden) abre(); }, 550); });
-  btn.addEventListener('mouseleave', () => clearTimeout(temporizador));
+  // El «?» de cada pantalla: clic o cursor quieto.
+  if (btn) {
+    btn.addEventListener('click', ev => { ev.stopPropagation(); if (!pop.hidden) cierra(); else abre(vistaActual, btn, 'abajo', true); });
+    btn.addEventListener('mouseenter', () => { clearTimeout(esperar); esperar = setTimeout(() => { if (pop.hidden) abre(vistaActual, btn, 'abajo', false); }, 550); });
+    btn.addEventListener('mouseleave', () => { clearTimeout(esperar); if (!fijada) { clearTimeout(cerrar); cerrar = setTimeout(() => { if (!pop.matches(':hover')) cierra(); }, 300); } });
+  }
+  // Las opciones del menu lateral, como las herramientas de Photoshop: cursor quieto y aparece junto a la opcion.
+  const nav = $('nav');
+  if (nav) {
+    nav.addEventListener('mouseover', ev => {
+      const a = ev.target.closest && ev.target.closest('a[data-vista]'); if (!a || !AYUDAS[a.dataset.vista] || window.innerWidth <= 760) return;
+      clearTimeout(esperar); clearTimeout(cerrar);
+      esperar = setTimeout(() => abre(a.dataset.vista, a, 'derecha', false), 600);
+    });
+    nav.addEventListener('mouseout', ev => {
+      const a = ev.target.closest && ev.target.closest('a[data-vista]'); if (!a) return;
+      clearTimeout(esperar);
+      if (!fijada) { clearTimeout(cerrar); cerrar = setTimeout(() => { if (!pop.matches(':hover')) cierra(); }, 300); }
+    });
+    nav.addEventListener('click', () => cierra());
+  }
+  pop.addEventListener('mouseenter', () => clearTimeout(cerrar));
+  pop.addEventListener('mouseleave', () => { if (!fijada) { clearTimeout(cerrar); cerrar = setTimeout(cierra, 250); } });
   document.addEventListener('click', ev => { if (!pop.hidden && !pop.contains(ev.target) && ev.target !== btn) cierra(); });
   document.addEventListener('keydown', ev => { if (ev.key === 'Escape' && !pop.hidden) cierra(); });
   window.addEventListener('hashchange', cierra);
