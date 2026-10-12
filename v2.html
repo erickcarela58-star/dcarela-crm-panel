@@ -2266,6 +2266,11 @@ input[type="checkbox"],input[type="radio"]{accent-color:var(--accent)}
 .cx-punto{width:10px;height:10px;border-radius:50%;display:inline-block}
 .cx-fila b{font-size:14px}.cx-fila small{display:block;color:var(--mut);font-size:12.5px;line-height:1.4;margin-top:1px}
 .cx-fila .cx-res-prueba{grid-column:2/4;font-size:12.5px;margin-top:2px}
+.cx-acc{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+.cx-origen{color:var(--accent-fuerte,var(--accent))!important;font-weight:600}
+.cx-clave{grid-column:2/4;margin-top:8px;padding:12px 14px;border-radius:12px;background:var(--hover)}
+.cx-clave label{display:block;font-size:12px;font-weight:600;color:var(--mut);margin-bottom:6px}.cx-clave input{width:100%}
+.cx-form-acc{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
 .cx-api{margin-top:18px}.cx-api summary{cursor:pointer;font-weight:650}
 .cx-api code{font:12px ui-monospace,Menlo,Consolas,monospace;background:var(--hover);padding:1px 6px;border-radius:6px}
 .cx-api table{width:100%;border-collapse:collapse;margin-top:10px;font-size:12.5px}.cx-api td{padding:6px 8px;border-top:1px solid var(--line);vertical-align:top}.cx-api td:first-child{white-space:nowrap}
@@ -11778,13 +11783,39 @@ async function pintaConexiones(){
     + '<button class="btn-linea" id="cxOtra" style="margin-left:auto">Volver a comprobar</button></div>'
     + grupos.map(g => '<div class="cx-grupo">' + esc(g) + '</div>' + r.items.filter(i => i.grupo === g).map(i =>
         '<div class="cx-fila" data-cx="' + esc(i.id) + '"><span class="cx-punto ' + esc(i.estado) + '" title="' + esc(CX_ESTADO[i.estado] || i.estado) + '"></span>'
-        + '<div><b>' + esc(i.nombre) + '</b><small>' + esc(i.detalle) + '</small></div>'
-        + (i.probar ? '<button class="btn-linea" data-cx-probar="' + esc(i.id) + '">Probar</button>' : '<span></span>') + '</div>').join('')).join('')
+        + '<div><b>' + esc(i.nombre) + '</b><small>' + esc(i.detalle) + '</small>'
+        + (i.configurable ? '<small class="cx-origen">' + (i.origen_clave === 'panel' ? '🔑 Clave puesta desde este panel' : i.origen_clave === 'servidor' ? '🔑 Clave del servidor (Firebase)' : '🔑 Falta la clave') + '</small>' : '') + '</div>'
+        + '<span class="cx-acc">' + (i.probar ? '<button class="btn-linea" data-cx-probar="' + esc(i.id) + '">Probar</button>' : '')
+        + (i.configurable && ROL_ACTUAL === 'admin' ? '<button class="btn-linea" data-cx-clave="' + esc(i.id) + '">' + (i.origen_clave ? 'Cambiar clave' : 'Poner clave') + '</button>' : '') + '</span>'
+        + (i.configurable && ROL_ACTUAL === 'admin' ? '<form class="cx-clave" data-cx-form="' + esc(i.id) + '" hidden autocomplete="off"><label>' + esc(i.etiqueta || i.nombre)
+          + '<input type="password" name="valor" autocomplete="off" spellcheck="false" placeholder="Pega aquí el valor" required></label><small>' + esc(i.ayuda || '') + '</small>'
+          + '<div class="cx-form-acc"><button class="btn-solido" type="submit">Probar y guardar</button><button class="btn-linea" type="button" data-cx-cancela>Cancelar</button>'
+          + (i.origen_clave === 'panel' ? '<button class="btn-linea" type="button" data-cx-quita="' + esc(i.id) + '">Quitar la del panel</button>' : '') + '</div></form>' : '') + '</div>').join('')).join('')
     + '<details class="cx-api"><summary>API del CRM (para conectar otras herramientas)</summary>'
     + '<p class="cfgnota" style="margin:8px 0">Una sola puerta: <code>POST ' + esc(r.base) + '</code> con el cuerpo <code>{ "action": "…" }</code> y el token de sesión en <code>Authorization: Bearer …</code>. '
     + 'Cada acción comprueba tu rol (administrador, supervisor o agente).</p>'
     + '<table>' + (r.acciones || []).map(a => '<tr><td><code>' + esc(a.accion) + '</code></td><td>' + esc(a.descripcion) + '</td></tr>').join('') + '</table></details>';
   $('cxOtra').onclick = pintaConexiones;
+  cont.querySelectorAll('[data-cx-clave]').forEach(b => b.onclick = () => {
+    const f = cont.querySelector('[data-cx-form="' + b.dataset.cxClave + '"]'); if (!f) return;
+    f.hidden = !f.hidden; if (!f.hidden) f.querySelector('input').focus();
+  });
+  cont.querySelectorAll('[data-cx-cancela]').forEach(b => b.onclick = () => { const f = b.closest('form'); f.reset(); f.hidden = true; });
+  cont.querySelectorAll('form[data-cx-form]').forEach(f => f.onsubmit = async ev => {
+    ev.preventDefault();
+    const boton = f.querySelector('button[type=submit]'); boton.disabled = true; boton.textContent = 'Probando…';
+    const r = await llama({ action:'conexiones', operation:'guardarClave', id:f.dataset.cxForm, valor:f.querySelector('input').value });
+    boton.disabled = false; boton.textContent = 'Probar y guardar';
+    if (!r.ok) return avisa('No se guardó', r.error || 'Inténtalo de nuevo.');
+    avisa('Clave guardada', r.detalle || 'Ya está en uso.');
+    pintaConexiones();
+  });
+  cont.querySelectorAll('[data-cx-quita]').forEach(b => b.onclick = async () => {
+    if (!await confirmaAqui('¿Quitar la clave puesta desde el panel? Vuelve a usarse la del servidor (si hay).', { si:'Quitar', no:'Cancelar' })) return;
+    const r = await llama({ action:'conexiones', operation:'quitarClave', id:b.dataset.cxQuita });
+    if (!r.ok) return avisa('No se pudo quitar', r.error || 'Inténtalo de nuevo.');
+    pintaConexiones();
+  });
   cont.querySelectorAll('[data-cx-probar]').forEach(b => b.onclick = async () => {
     const fila = b.closest('.cx-fila'); b.disabled = true; b.textContent = 'Probando…';
     const t = await llama({ action:'conexiones', operation:'probar', id:b.dataset.cxProbar });
