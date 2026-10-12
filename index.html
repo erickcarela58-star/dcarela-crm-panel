@@ -5481,8 +5481,8 @@ function abre(c){
     + (canalDe(c) === 'whatsapp_cloud' && c.wa_phone ? '<button class="adj" id="btnLlamar" title="Llamar por WhatsApp (número oficial)" aria-label="Llamar por WhatsApp">'
     +   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.9v3a2 2 0 01-2.2 2 19.8 19.8 0 01-8.6-3.1 19.5 19.5 0 01-6-6A19.8 19.8 0 012.1 4.2 2 2 0 014.1 2h3a2 2 0 012 1.7c.1 1 .3 1.9.6 2.8a2 2 0 01-.5 2.1L8.1 9.7a16 16 0 006 6l1.1-1.1a2 2 0 012.1-.5c.9.3 1.8.5 2.8.6a2 2 0 011.9 2.1z"/></svg></button>' : '')
     // El botón de llamar está en TODOS los chats con teléfono. Por el 5644 WhatsApp Web no deja llamar desde un panel: ese botón abre el marcador del equipo (tel:) con el número.
-    + (canalDe(c) !== 'whatsapp_cloud' && c.wa_phone && String(c.wa_phone).replace(/\D/g, '').length >= 8 ? '<a class="adj" id="btnLlamarTel" href="tel:+' + esc(String(c.wa_phone).replace(/\D/g, '')) + '" title="Llamar (abre el marcador de este equipo; WhatsApp Web no deja llamar desde un panel)" aria-label="Llamar">'
-    +   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.9v3a2 2 0 01-2.2 2 19.8 19.8 0 01-8.6-3.1 19.5 19.5 0 01-6-6A19.8 19.8 0 012.1 4.2 2 2 0 014.1 2h3a2 2 0 012 1.7c.1 1 .3 1.9.6 2.8a2 2 0 01-.5 2.1L8.1 9.7a16 16 0 006 6l1.1-1.1a2 2 0 012.1-.5c.9.3 1.8.5 2.8.6a2 2 0 011.9 2.1z"/></svg></a>' : '')
+    + (canalDe(c) !== 'whatsapp_cloud' && c.wa_phone && String(c.wa_phone).replace(/\D/g, '').length >= 8 ? '<button class="adj" id="btnLlamar5644" title="Llamar: enlace de llamada de WhatsApp o marcador del equipo" aria-label="Llamar">'
+    +   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.9v3a2 2 0 01-2.2 2 19.8 19.8 0 01-8.6-3.1 19.5 19.5 0 01-6-6A19.8 19.8 0 012.1 4.2 2 2 0 014.1 2h3a2 2 0 012 1.7c.1 1 .3 1.9.6 2.8a2 2 0 01-.5 2.1L8.1 9.7a16 16 0 006 6l1.1-1.1a2 2 0 012.1-.5c.9.3 1.8.5 2.8.6a2 2 0 011.9 2.1z"/></svg></button>' : '')
     // Agendar es lo que mas se hace desde un chat y estaba escondido dentro del menu de los
     // tres puntos, a dos clics. Arriba, al lado de la ficha, se pulsa sin buscarlo: es el mismo
     // cuadro de siempre, no una funcion nueva.
@@ -9369,6 +9369,7 @@ function cableaBuscaChat(){
   cierraBuscaChat();
   if (!$('busChat')) return;
   if ($('btnBuscaChat')) $('btnBuscaChat').onclick = abreBuscaChat;
+  if ($('btnLlamar5644')) $('btnLlamar5644').onclick = () => { const cc = buscaConv(sel?.id || sel?._id); if (cc) abreLlamar5644(cc); };
   if ($('btnLlamar')) $('btnLlamar').onclick = () => { const cc = buscaConv(sel?.id || sel?._id); if (cc) void llamaAlContacto(cc); };
   $('busChat').oninput = () => { BUSCA_CHAT.q = $('busChat').value; BUSCA_CHAT.i = Infinity; aplicaBusquedaChat(true); };
   $('busChat').onkeydown = ev => {
@@ -12398,6 +12399,25 @@ async function cuelgaLlamada(){
   if (!r.ok && !/ya no|ended|already/i.test(String(r.error || ''))) avisa('No se pudo cortar la llamada', r.error || '');
 }
 // Llamar al cliente del chat abierto (solo número oficial). Meta pide su permiso: si no lo hay, se ofrece mandárselo.
+// Llamar a alguien del WhatsApp Web (5644). WhatsApp Web no deja marcar desde un panel, pero SI crear un enlace de llamada (voz o video): el puente lo manda al chat,
+// el cliente lo toca para entrar y tú entras por el mismo enlace (se abre en WhatsApp de este equipo o del teléfono). También se puede marcar con el teléfono del equipo.
+function abreLlamar5644(c){
+  const id = c.id || c._id, tel = String(c.wa_phone || '').replace(/\D/g, '');
+  abreModal('<div class="mtapa"><b>Llamar a ' + esc(nombreDe(c)) + '</b><button class="cerrarm" data-cerrar>×</button></div><div class="mcuerpo">'
+    + '<p class="bajada">Este chat es del WhatsApp Web (5644) y WhatsApp no deja marcar desde un panel. Elige cómo llamar:</p>'
+    + '<button class="tpl" data-ll="voice"><b>Llamada de WhatsApp por enlace</b><span>Le mando un enlace al chat; cuando lo toque, entra a la llamada y tú entras por el mismo enlace.</span></button>'
+    + '<button class="tpl" data-ll="video"><b>Videollamada por enlace</b><span>Igual, con video.</span></button>'
+    + (tel ? '<a class="tpl" href="tel:+' + esc(tel) + '" style="text-decoration:none;display:block"><b>Marcar con el teléfono de este equipo</b><span>Abre el marcador (sirve en el celular o con un programa de llamadas en la PC).</span></a>' : '')
+    + '<p class="nota">Si quieres llamadas directas desde el CRM, el cliente tiene que escribir al número oficial: ahí sí se llama por WhatsApp con su permiso.</p></div>');
+  $('modal').querySelector('.mcuerpo').onclick = async ev => {
+    const b = ev.target.closest('[data-ll]'); if (!b) return;
+    b.disabled = true;
+    const r = await llama({ action:'chatFlags', conversation_id:id, calllink:b.dataset.ll });
+    cierraModal();
+    if (!r.ok) return avisa('No se pudo enviar el enlace', r.error || 'Inténtalo de nuevo.');
+    avisa('Enlace de llamada enviado', 'En unos segundos aparece en el chat: tócalo para entrar tú también. El cliente lo toca para unirse.');
+  };
+}
 async function llamaAlContacto(c){
   if (LLAMADA.estado !== 'idle') return avisa('Ya hay una llamada en curso');
   const id = c.id || c._id;
