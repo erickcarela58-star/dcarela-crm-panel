@@ -1,7 +1,7 @@
 {
-  "version": "2026-10-12-instalable-v155",
+  "version": "2026-10-12-estados-respuestas-v156",
   "channel": "crm",
-  "released_at": "2026-10-12T02:48:28.991Z",
-  "summary": "El panel ya se puede instalar como aplicación: en Chrome o Edge aparece «Instalar D' Carela CRM» en la barra de direcciones, y en iPhone con Compartir > Agregar a inicio. Ícono propio y ventana sin barra del navegador.",
+  "released_at": "2026-10-12T02:52:35.389Z",
+  "summary": "Las respuestas a un Estado (las que te hacen a tu estado y las que tú haces al de un contacto) ya se ven en el chat con su cita: «Tu estado» o «Estado de …». Requiere reiniciar el puente de la PC para las respuestas nuevas.",
   "requiere_puente": "2026-09-28-lectura-v34"
 }
