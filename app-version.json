@@ -1,7 +1,7 @@
 {
-  "version": "2026-10-12-ayuda-photoshop-v163",
+  "version": "2026-10-12-videos-nitidos-v164",
   "channel": "crm",
-  "released_at": "2026-10-12T05:33:47.810Z",
-  "summary": "La ayuda ahora es como la de Photoshop: deja el cursor quieto en una opción del menú y sale una tarjeta con el video arriba y debajo qué es y para qué sirve, con «Más información» y «Ver vídeo rápido».",
+  "released_at": "2026-10-12T05:45:45.957Z",
+  "summary": "Los videos de ayuda se regrabaron en alta resolución (texto y cursor grandes y nítidos), la tarjeta de ayuda sigue el modo claro u oscuro, y los campos de Tareas y Clientes de caja tienen el mismo estilo que el resto del CRM.",
   "requiere_puente": "2026-09-28-lectura-v34"
 }
