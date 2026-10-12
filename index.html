@@ -8,6 +8,14 @@
 <meta http-equiv="Expires" content="0">
 <title>D'Carela CRM</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><text y='26' font-size='26'>💬</text></svg>">
+<!-- Instalable como aplicacion (Chrome/Edge: «Instalar D' Carela CRM»; iPhone: Compartir > Agregar a inicio). Sin service worker a proposito: el panel no debe
+     guardar copias de si mismo, porque una version vieja en cache es justo lo que ya costo caro. -->
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="apple-touch-icon" href="./icono-192.png">
+<meta name="theme-color" content="#4a86e8">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="CRM">
 <script src="./crm-config.js"></script>
 <script src="./firebase-config.js"></script>
 <!-- opus-recorder graba OGG/Opus de verdad por WASM. MediaRecorder no sirve aqui: en
