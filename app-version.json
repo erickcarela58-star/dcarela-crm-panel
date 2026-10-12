@@ -1,7 +1,7 @@
 {
-  "version": "2026-10-12-historial-llamadas-v175",
+  "version": "2026-10-12-gif-no-leido-v176",
   "channel": "crm",
-  "released_at": "2026-10-12T20:52:39.068Z",
-  "summary": "Ficha: historial de llamadas; Conversaciones: filtro Llamadas sin devolver; avisos del Popular en pesos colombianos y retiros de cajero.",
+  "released_at": "2026-10-12T21:54:04.064Z",
+  "summary": "Archivos: GIF animado se convierte a MP4; marcar como no leido tambien en el telefono del 5644.",
   "requiere_puente": "2026-09-28-lectura-v34"
 }
