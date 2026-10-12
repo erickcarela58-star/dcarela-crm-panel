@@ -1,7 +1,7 @@
 {
-  "version": "2026-10-12-sin-whatsapp-web-v158",
+  "version": "2026-10-12-sin-whatsapp-web-v159",
   "channel": "crm",
-  "released_at": "2026-10-12T04:19:03.157Z",
-  "summary": "Reenviar con foto y nombre; Nuevo chat (botón y Alt+N); marcar como no leído; buscar dentro del chat (Ctrl+F); fijar mensajes; Info del mensaje; atajos de teclado (Ctrl+K, Alt+↑/↓).",
+  "released_at": "2026-10-12T04:29:50.645Z",
+  "summary": "Enlaces pulsables y con vista previa; stickers, GIF y cámara; mensajes temporales; lo que escribes sin internet queda pendiente y sale solo al volver. Algunas necesitan reiniciar el puente de la PC.",
   "requiere_puente": "2026-09-28-lectura-v34"
 }
