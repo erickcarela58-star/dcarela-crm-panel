@@ -2320,6 +2320,9 @@ input[type="checkbox"],input[type="radio"]{accent-color:var(--accent)}
 .cx-clave{grid-column:2/4;margin-top:8px;padding:12px 14px;border-radius:12px;background:var(--hover)}
 .cx-clave label{display:block;font-size:12px;font-weight:600;color:var(--mut);margin-bottom:6px}.cx-clave input{width:100%}
 .cx-form-acc{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.cx-ia{display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap;margin:8px 0 4px;padding:12px 14px;border-radius:12px;background:var(--hover)}
+.cx-ia label{display:flex;flex-direction:column;gap:5px;font-size:12px;font-weight:600;color:var(--mut)}
+.cx-ia .cx-chk{flex-direction:row;align-items:center;gap:7px;font-weight:500;color:var(--fg)}
 .cx-api{margin-top:18px}.cx-api summary{cursor:pointer;font-weight:650}
 .cx-api code{font:12px ui-monospace,Menlo,Consolas,monospace;background:var(--hover);padding:1px 6px;border-radius:6px}
 .cx-api table{width:100%;border-collapse:collapse;margin-top:10px;font-size:12.5px}.cx-api td{padding:6px 8px;border-top:1px solid var(--line);vertical-align:top}.cx-api td:first-child{white-space:nowrap}
@@ -12394,6 +12397,13 @@ async function pintaConexiones(){
   if (!r.ok) { cont.innerHTML = '<p class="cfgnota">' + esc(/permiso/i.test(String(r.error || '')) ? 'Solo el administrador o el supervisor ven las conexiones.' : (r.error || 'No se pudieron leer las conexiones.')) + '</p>'; return; }
   const x = r.resumen || {};
   const grupos = [...new Set(r.items.map(i => i.grupo))];
+  // Quien responde primero a la IA (Gemini, OpenAI, Anthropic, DeepSeek, OpenRouter) y si los demás sirven de respaldo cuando uno falla o se queda sin cuota.
+  const ia = r.ia_ajustes;
+  const ajustesIa = g => (g !== 'Inteligencia' || !ia) ? '' :
+    '<form class="cx-ia" data-cx-ia><label>Responde primero<select name="principal"' + (ROL_ACTUAL === 'admin' ? '' : ' disabled') + '>'
+    + ia.opciones.map(o => '<option value="' + esc(o.id) + '"' + (o.id === ia.principal ? ' selected' : '') + (o.disponible ? '' : ' disabled') + '>' + esc(o.nombre) + (o.disponible ? '' : ' (sin llave)') + '</option>').join('')
+    + '</select></label><label class="cx-chk"><input type="checkbox" name="respaldo"' + (ia.respaldo ? ' checked' : '') + (ROL_ACTUAL === 'admin' ? '' : ' disabled') + '> Si falla, probar con los demás que tengan llave</label>'
+    + (ROL_ACTUAL === 'admin' ? '<button class="btn-solido" type="submit">Guardar orden</button>' : '') + '</form>';
   cont.innerHTML = '<div class="cx-res">'
     + [['ok', x.ok], ['aviso', x.aviso], ['caida', x.caida], ['sin_configurar', x.sin_configurar]].filter(a => a[1]).map(a => '<span class="cx-pill ' + a[0] + '"><i></i>' + a[1] + ' ' + (CX_ESTADO[a[0]] || a[0]).toLowerCase() + '</span>').join('')
     + '<button class="btn-linea" id="cxOtra" style="margin-left:auto">Volver a comprobar</button></div>'
@@ -12406,12 +12416,21 @@ async function pintaConexiones(){
         + (i.configurable && ROL_ACTUAL === 'admin' ? '<form class="cx-clave" data-cx-form="' + esc(i.id) + '" hidden autocomplete="off"><label>' + esc(i.etiqueta || i.nombre)
           + '<input type="password" name="valor" autocomplete="off" spellcheck="false" placeholder="Pega aquí el valor" required></label><small>' + esc(i.ayuda || '') + '</small>'
           + '<div class="cx-form-acc"><button class="btn-solido" type="submit">Probar y guardar</button><button class="btn-linea" type="button" data-cx-cancela>Cancelar</button>'
-          + (i.origen_clave === 'panel' ? '<button class="btn-linea" type="button" data-cx-quita="' + esc(i.id) + '">Quitar la del panel</button>' : '') + '</div></form>' : '') + '</div>').join('')).join('')
+          + (i.origen_clave === 'panel' ? '<button class="btn-linea" type="button" data-cx-quita="' + esc(i.id) + '">Quitar la del panel</button>' : '') + '</div></form>' : '') + '</div>').join('') + ajustesIa(g)).join('')
     + '<details class="cx-api"><summary>API del CRM (para conectar otras herramientas)</summary>'
     + '<p class="cfgnota" style="margin:8px 0">Una sola puerta: <code>POST ' + esc(r.base) + '</code> con el cuerpo <code>{ "action": "…" }</code> y el token de sesión en <code>Authorization: Bearer …</code>. '
     + 'Cada acción comprueba tu rol (administrador, supervisor o agente).</p>'
     + '<table>' + (r.acciones || []).map(a => '<tr><td><code>' + esc(a.accion) + '</code></td><td>' + esc(a.descripcion) + '</td></tr>').join('') + '</table></details>';
   $('cxOtra').onclick = pintaConexiones;
+  cont.querySelectorAll('form[data-cx-ia]').forEach(f => f.onsubmit = async ev => {
+    ev.preventDefault();
+    const boton = f.querySelector('button[type=submit]'); boton.disabled = true;
+    const r2 = await llama({ action:'conexiones', operation:'iaAjustes', principal:f.principal.value, respaldo:f.respaldo.checked });
+    boton.disabled = false;
+    if (!r2.ok) return avisa('No se guardó', r2.error || 'Inténtalo de nuevo.');
+    avisa('Orden de la IA guardado', 'Responde primero ' + f.principal.selectedOptions[0].textContent.replace(' (sin llave)', '') + (f.respaldo.checked ? ' y, si falla, los demás con llave.' : ' y nadie más.'));
+    pintaConexiones();
+  });
   cont.querySelectorAll('[data-cx-clave]').forEach(b => b.onclick = () => {
     const f = cont.querySelector('[data-cx-form="' + b.dataset.cxClave + '"]'); if (!f) return;
     f.hidden = !f.hidden; if (!f.hidden) f.querySelector('input').focus();
