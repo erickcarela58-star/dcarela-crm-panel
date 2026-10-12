@@ -1151,6 +1151,32 @@ a.ayuda{color:var(--enlace)}
 .fwd-grupo{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.03em;
   color:var(--mut);margin:14px 0 6px;padding:0 2px}
 .fwd-grupo:first-child{margin-top:0}
+.fwd-letra{font-size:12px;font-weight:700;color:var(--enlace);padding:8px 4px 2px}
+.fwd-mas{justify-content:center;text-align:center;margin-top:6px}
+.ll-devuelve{margin-left:auto;font-size:12px;font-weight:600;color:var(--enlace);text-decoration:none;white-space:nowrap}
+.ll-devuelve:hover{text-decoration:underline}
+/* Tarjeta de llamada: abajo a la derecha, sobre todo lo demás. Verde = contestar, rojo = colgar/rechazar. */
+#llamadaDock{position:fixed;right:18px;bottom:18px;z-index:2147483000;display:none;align-items:center;gap:14px;min-width:300px;max-width:min(92vw,380px);padding:12px 14px;border-radius:18px;
+  background:var(--panel);color:var(--fg);border:1px solid var(--line2);box-shadow:0 18px 50px rgba(0,0,0,.28);backdrop-filter:blur(18px)}
+#llamadaDock.on{display:flex;animation:llEntra .22s ease-out}
+#llamadaDock[data-estado="timbre"]{animation:llEntra .22s ease-out,llLatido 1.4s ease-in-out .3s infinite}
+@keyframes llEntra{from{transform:translateY(14px);opacity:0}to{transform:none;opacity:1}}
+@keyframes llLatido{0%,100%{box-shadow:0 18px 50px rgba(0,0,0,.28)}50%{box-shadow:0 18px 50px rgba(0,0,0,.28),0 0 0 6px rgba(37,211,102,.28)}}
+#llamadaDock .llq{display:flex;align-items:center;gap:10px;flex:1;min-width:0;cursor:pointer}
+#llamadaDock .llq>span:last-child{display:flex;flex-direction:column;min-width:0}
+#llamadaDock .llq b{font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#llamadaDock .llq i{font-style:normal;font-size:12px;opacity:.7}
+#llamadaDock .llacc{display:flex;gap:8px}
+#llamadaDock .llb{width:44px;height:44px;border-radius:50%;border:0;display:grid;place-items:center;cursor:pointer;color:#fff;padding:0}
+#llamadaDock .llb span{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+#llamadaDock .llb svg{width:21px;height:21px}
+#llamadaDock .llb.si{background:#1faa59}
+#llamadaDock .llb.no{background:#e5484d}
+#llamadaDock .llb.no svg{transform:rotate(135deg)}
+#llamadaDock .llb.mu{background:rgba(120,120,128,.4);color:inherit}
+#llamadaDock .llb.mu.on{background:#f5a524;color:#fff}
+@media (prefers-reduced-motion:reduce){#llamadaDock.on,#llamadaDock[data-estado="timbre"]{animation:none}}
+.fwd-fila .ico{width:38px;height:38px;border-radius:50%;display:grid;place-items:center;background:var(--hover);flex:0 0 auto}
 .tplprev{display:block;margin-top:6px;font-size:12px;color:var(--mut);line-height:1.4;
   padding-top:6px;border-top:1px dashed var(--line)}
 .pdfs{display:flex;flex-wrap:wrap;gap:6px}
@@ -3083,6 +3109,7 @@ function aplicaConversaciones(s, modo = 'en vivo'){
     if (vistaActual === 'limpieza' && $('limpiezaCuerpo') && CONVS.filter(enElOlvido).length !== LIMPIEZA_N) pintaLimpieza();
     pintaCuentas();
     avisaMensajesNuevos();
+    vigilaLlamadas();
 }
 function detieneRespaldoConvs(){
   if (sondeoConvs) { clearInterval(sondeoConvs); sondeoConvs = null; }
@@ -5413,6 +5440,9 @@ function abre(c){
     +   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="8.600"/><path d="M12 11v5.200"/><circle cx="12" cy="7.800" r=".7" fill="currentColor" stroke="none"/></svg></button>'
     + '<button class="adj" id="btnBuscaChat" title="Buscar en esta conversación (Ctrl+F)" aria-label="Buscar en la conversación">'
     +   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="10.500" cy="10.500" r="6"/><path d="M15 15l5 5"/></svg></button>'
+    // Llamar por WhatsApp: solo el número oficial (WhatsApp Web no deja llamar desde un panel). El servidor dice si están activadas y si el cliente dio permiso.
+    + (canalDe(c) === 'whatsapp_cloud' && c.wa_phone ? '<button class="adj" id="btnLlamar" title="Llamar por WhatsApp (número oficial)" aria-label="Llamar por WhatsApp">'
+    +   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.9v3a2 2 0 01-2.2 2 19.8 19.8 0 01-8.6-3.1 19.5 19.5 0 01-6-6A19.8 19.8 0 012.1 4.2 2 2 0 014.1 2h3a2 2 0 012 1.7c.1 1 .3 1.9.6 2.8a2 2 0 01-.5 2.1L8.1 9.7a16 16 0 006 6l1.1-1.1a2 2 0 012.1-.5c.9.3 1.8.5 2.8.6a2 2 0 011.9 2.1z"/></svg></button>' : '')
     // Agendar es lo que mas se hace desde un chat y estaba escondido dentro del menu de los
     // tres puntos, a dos clics. Arriba, al lado de la ficha, se pulsa sin buscarlo: es el mismo
     // cuadro de siempre, no una funcion nueva.
@@ -7744,27 +7774,64 @@ function abreReenviar(ids){
   const fila = c => '<button class="tpl fwd-fila' + (destinos.has(c.id || c._id) ? ' marcado' : '') + '" data-dest="'
     + esc(c.id || c._id) + '">' + avatarDe(c, nombreDe(c)) + '<span class="fwd-quien"><b>' + esc(nombreDe(c)) + '</b>'
     + '<span class="tplmeta">' + (c.wa_phone ? '+' + esc(c.wa_phone) : esc(CANALES[canalDe(c)]?.corto || '')) + '</span></span><span class="tplcheck"></span></button>';
-  const pinta = () => {
-    const q = ($('fwdBusca').value || '').trim();
-    const todas = CONVS.filter(c => c._id !== (sel?._id))
+  // «Reenviar» ofrece TODOS los contactos, no solo los recientes (12/10/2026: «cuando le doy a reenviar no se muestran todos los contactos solo los recientes»). Antes cortaba en 40:
+  // ahora no hay tope (se pinta por tandas con «Mostrar más»), entran también las ignoradas (la familia, un colega: ignorar nunca es ocultar) y, al buscar, los números y clientes
+  // de la caja que todavía no tienen chat (se les abre el chat y quedan marcados como destino).
+  const TANDA = 60;
+  let visibles = TANDA;
+  const extras = new Map();   // chats creados desde esta ventana
+  const universo = () => {
+    const vistos = new Set();
+    return [...CONVS, ...CONVS_IGNORADAS.filter(c => !oculta(c)), ...extras.values()]
+      .filter(c => { const k = c._id || c.id; if (vistos.has(k)) return false; vistos.add(k); return true; })
+      .filter(c => c._id !== (sel?._id))
       .filter(c => !conArchivo || canalDe(c) === 'whatsapp_qr')
-      .filter(c => coincideContacto(c, q));
-    if (!todas.length) { $('fwdLista').innerHTML = '<p class="aviso">Sin resultados.</p>'; return; }
-    // Sin buscar nada, separar los primeros (los mas recientes: con quien mas se habla) del
-    // resto, con el mismo rotulo que usa WhatsApp Web. Buscando, la lista ya es corta y
-    // separarla en dos grupos solo estorba.
-    if (!q && todas.length > FWD_FRECUENTES_N) {
-      $('fwdLista').innerHTML = '<div class="fwd-grupo">Frecuentes</div>'
-        + todas.slice(0, FWD_FRECUENTES_N).map(fila).join('')
-        + '<div class="fwd-grupo">Todos los chats</div>'
-        + todas.slice(FWD_FRECUENTES_N, 40).map(fila).join('');
-    } else {
-      $('fwdLista').innerHTML = todas.slice(0, 40).map(fila).join('');
+      .sort((a, b) => String(b.last_message_at || '').localeCompare(String(a.last_message_at || '')));
+  };
+  const filaNueva = (tel, nombre, bajada) => '<button class="tpl fwd-fila" data-nuevo="' + esc(tel) + '" data-nombre="' + esc(nombre || '') + '"><span class="ico">💬</span>'
+    + '<span class="fwd-quien"><b>' + esc(nombre || telefonoLegible(tel)) + '</b><span class="tplmeta">' + esc(bajada) + '</span></span></button>';
+  const pinta = (reinicia = true) => {
+    if (reinicia) visibles = TANDA;
+    const q = ($('fwdBusca').value || '').trim();
+    const todas = universo().filter(c => coincideContacto(c, q));
+    // Números y clientes de la caja que aún no tienen chat: solo al buscar.
+    let nuevos = '';
+    if (q) {
+      const conChat = new Set(CONVS_TODAS.map(c => soloDigitos(c.wa_phone)).filter(Boolean));
+      const tel = telefonoParaChat(q);
+      if (tel && !conChat.has(tel)) nuevos += filaNueva(tel, '', 'Número sin chat · se comprueba que tenga WhatsApp y se abre el chat');
+      if (q.length >= 3) {
+        clientesDeCaja();
+        for (const r of (CLIENTES_CAJA.filas || []).map(x => ({ nombre: String(x.name || ''), tel: telefonoParaChat(x.phone) }))
+          .filter(x => x.tel && !conChat.has(x.tel) && x.tel !== tel).filter(x => coincideContacto({ pos_client_nombre: x.nombre, wa_phone: x.tel }, q)).slice(0, 8))
+          nuevos += filaNueva(r.tel, r.nombre, 'Cliente de la caja sin chat · ' + telefonoLegible(r.tel));
+      }
     }
+    if (!todas.length && !nuevos) { $('fwdLista').innerHTML = '<p class="aviso">Sin resultados.</p>'; return; }
+    // Sin buscar nada: los más recientes arriba («Frecuentes») y TODO el resto en orden alfabético, con su letra. Buscando, por recencia y sin grupos.
+    let html = '';
+    let resto = todas;
+    const agrupa = !q && todas.length > FWD_FRECUENTES_N;
+    if (agrupa) {
+      html += '<div class="fwd-grupo">Frecuentes</div>' + todas.slice(0, FWD_FRECUENTES_N).map(fila).join('');
+      resto = todas.slice(FWD_FRECUENTES_N).sort((a, b) => nombreDe(a).localeCompare(nombreDe(b), 'es', { sensitivity: 'base' }));
+      html += '<div class="fwd-grupo">Todos los contactos (' + resto.length + ')</div>';
+    }
+    let letra = '';
+    for (const c of resto.slice(0, visibles)) {
+      if (agrupa) {
+        const l = (sinTildes(nombreDe(c)).trim()[0] || '#').toUpperCase();
+        const L = /[A-Z]/.test(l) ? l : '#';
+        if (L !== letra) { letra = L; html += '<div class="fwd-letra">' + L + '</div>'; }
+      }
+      html += fila(c);
+    }
+    if (resto.length > visibles) html += '<button class="tpl fwd-mas" id="fwdMas"><b>Mostrar más</b><span class="tplmeta">' + (resto.length - visibles) + ' contactos más</span></button>';
+    $('fwdLista').innerHTML = html + (nuevos ? '<div class="fwd-grupo">Sin chat todavía</div>' + nuevos : '');
     resuelveAvatares();
   };
   pinta();
-  $('fwdBusca').oninput = pinta;
+  $('fwdBusca').oninput = () => pinta();
   const botonEstado = document.querySelector('#modal [data-dest="__estado"]');
   if (botonEstado) botonEstado.onclick = async () => {
     botonEstado.disabled = true;
@@ -7782,13 +7849,49 @@ function abreReenviar(ids){
       stCompositor('foto', { blobs });
     } catch (e) { botonEstado.disabled = false; avisa('No se pudo subir a estado', String(e && e.message || e)); }
   };
-  $('fwdLista').onclick = ev => {
+  const actualizaEnviar = () => {
+    $('fwdEnviar').disabled = !destinos.size;
+    $('fwdEnviar').textContent = destinos.size > 1 ? 'Enviar a ' + destinos.size + ' chats' : 'Enviar';
+  };
+  // Abre el chat de un número o cliente de la caja que aún no tiene (misma comprobación de WhatsApp que «Nuevo chat») y lo deja marcado como destino.
+  const creaChatParaReenviar = async (tel, nombre) => {
+    avisa('Comprobando si tiene WhatsApp…', telefonoLegible(tel));
+    const hasta = Date.now() + 30000;
+    let r;
+    for (;;) {
+      r = await llama({ action:'startChat', phone: tel, name: nombre || '' });
+      if (!r.ok) { avisa('No se pudo abrir el chat', r.error); return null; }
+      if (r.estado !== 'comprobando') break;
+      if (Date.now() > hasta) { avisa('WhatsApp no contestó a tiempo', 'Inténtalo otra vez en un momento.'); return null; }
+      await new Promise(res => setTimeout(res, 1500));
+    }
+    if (r.estado === 'sin_whatsapp') { avisa('Ese número no tiene WhatsApp', telefonoLegible(tel)); return null; }
+    if (r.estado === 'fallo') { avisa('No se pudo comprobar el número', 'Inténtalo otra vez en un momento.'); return null; }
+    const c = await esperaConversacion(r.conversation_id);
+    if (!c) avisa('Chat creado', 'Aparecerá en la bandeja en unos segundos; vuelve a abrir «Reenviar».');
+    return c;
+  };
+  $('fwdLista').onclick = async ev => {
+    if (ev.target.closest('#fwdMas')) { visibles += TANDA; pinta(false); return; }
+    const nuevo = ev.target.closest('[data-nuevo]');
+    if (nuevo) {
+      if (nuevo.disabled) return;
+      nuevo.disabled = true;
+      const c = await creaChatParaReenviar(nuevo.dataset.nuevo, nuevo.dataset.nombre || '');
+      if (!c) { nuevo.disabled = false; return; }
+      const id = c.id || c._id;
+      extras.set(c._id || c.id, c);
+      destinos.add(id);
+      $('fwdBusca').value = '';
+      pinta();
+      actualizaEnviar();
+      return;
+    }
     const b = ev.target.closest('[data-dest]'); if (!b) return;
     const id = b.dataset.dest;
     if (destinos.has(id)) destinos.delete(id); else destinos.add(id);
     b.classList.toggle('marcado', destinos.has(id));
-    $('fwdEnviar').disabled = !destinos.size;
-    $('fwdEnviar').textContent = destinos.size > 1 ? 'Enviar a ' + destinos.size + ' chats' : 'Enviar';
+    actualizaEnviar();
   };
   $('fwdEnviar').onclick = async () => {
     $('fwdEnviar').disabled = true;
@@ -8741,7 +8844,9 @@ function cuerpoMensaje(m){
     return '<div class="mllamada' + (sinAtender ? ' perdida' : '') + '">'
       + '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">'
       + icono + '</svg>'
-      + '<span>' + esc(clase + ' ' + (ESTADO_LLAMADA[l.estado] || 'contestada') + dur) + '</span></div>';
+      + '<span>' + esc(clase + ' ' + (ESTADO_LLAMADA[l.estado] || 'contestada') + dur) + '</span>'
+      // Devolver la llamada: por el oficial se hace desde el teléfono de la cabecera; por el 5644 (WhatsApp Web no marca desde un panel) se abre el marcador del equipo.
+      + (sinAtender && sel?.wa_phone ? '<a class="ll-devuelve" href="tel:+' + esc(String(sel.wa_phone).replace(/\D/g, '')) + '" title="Abre el marcador de tu equipo con este número">Devolver llamada</a>' : '') + '</div>';
   }
   // Ubicacion y contacto llegaban como un parrafo con coordenadas o con BEGIN:VCARD. Ahora son
   // tarjetas, como en WhatsApp: el mapa se abre con un toque y el telefono abre el chat.
@@ -9016,6 +9121,7 @@ function cableaBuscaChat(){
   cierraBuscaChat();
   if (!$('busChat')) return;
   if ($('btnBuscaChat')) $('btnBuscaChat').onclick = abreBuscaChat;
+  if ($('btnLlamar')) $('btnLlamar').onclick = () => { const cc = buscaConv(sel?.id || sel?._id); if (cc) void llamaAlContacto(cc); };
   $('busChat').oninput = () => { BUSCA_CHAT.q = $('busChat').value; BUSCA_CHAT.i = Infinity; aplicaBusquedaChat(true); };
   $('busChat').onkeydown = ev => {
     if (ev.key === 'Enter') { ev.preventDefault(); muevebusquedaChat(ev.shiftKey ? 1 : -1); }   // Enter va al mas antiguo, como WhatsApp; Mayus+Enter al mas reciente
@@ -11755,6 +11861,213 @@ function bindBridgeControls(){
   if ($('photoBotGlobalBtn')) $('photoBotGlobalBtn').onclick = togglePhotoBot;
 }
 
+/* ===== LLAMADAS DE WHATSAPP (número oficial) =====
+   El audio va por WebRTC entre este navegador y Meta; el servidor (whatsapp-calls.js) solo coordina. Recibir: la conversación trae `call` en «ringing» y aquí suena;
+   hacer: botón del teléfono en el chat (Meta exige el permiso del cliente). Por el 5644 (WhatsApp Web) NO hay llamadas desde el CRM: solo el registro y «Devolver llamada». */
+const LLAMADA = { estado:'idle', pc:null, stream:null, audioEl:null, callId:null, convId:null, dir:null, nombre:'', t0:0, reloj:null, sondeo:null, tono:null, mudo:false, vistas:new Set() };
+const ICE_LLAMADA = [{ urls:'stun:stun.l.google.com:19302' }];
+const segs = n => Math.floor(n / 60) + ':' + String(n % 60).padStart(2, '0');
+function dockLlamada(){
+  let d = $('llamadaDock');
+  if (!d) {
+    d = document.createElement('div'); d.id = 'llamadaDock'; d.setAttribute('role', 'dialog'); d.setAttribute('aria-live', 'assertive');
+    document.body.appendChild(d);
+    d.addEventListener('click', ev => {
+      const b = ev.target.closest('[data-ll]'); if (!b) return;
+      const a = b.dataset.ll;
+      if (a === 'contestar') void contestaLlamada();
+      else if (a === 'rechazar' || a === 'colgar') void cuelgaLlamada();
+      else if (a === 'mudo') { LLAMADA.mudo = !LLAMADA.mudo; LLAMADA.stream?.getAudioTracks().forEach(t => { t.enabled = !LLAMADA.mudo; }); pintaLlamada(); }
+      else if (a === 'abrir') { const c = buscaConv(LLAMADA.convId); if (c) abre(c); }
+    });
+  }
+  return d;
+}
+function pintaLlamada(){
+  const d = dockLlamada(), e = LLAMADA.estado;
+  if (e === 'idle') { d.classList.remove('on'); d.innerHTML = ''; return; }
+  const c = buscaConv(LLAMADA.convId);
+  const quien = (c ? nombreDe(c) : '') || LLAMADA.nombre || 'Cliente';
+  const texto = { timbre:'Llamada de WhatsApp', llamando:'Llamando…', conectando:'Conectando…', activa:'En llamada · ' + segs(Math.max(0, Math.round((Date.now() - LLAMADA.t0) / 1000))), fin:LLAMADA.mensajeFin || 'Llamada terminada' }[e];
+  const bt = (clase, acc, rotulo, icono) => '<button class="llb ' + clase + '" data-ll="' + acc + '" aria-label="' + rotulo + '" title="' + rotulo + '">' + icono + '<span>' + rotulo + '</span></button>';
+  const tel = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.9v3a2 2 0 01-2.2 2 19.8 19.8 0 01-8.6-3.1 19.5 19.5 0 01-6-6A19.8 19.8 0 012.1 4.2 2 2 0 014.1 2h3a2 2 0 012 1.7c.1 1 .3 1.9.6 2.8a2 2 0 01-.5 2.1L8.1 9.7a16 16 0 006 6l1.1-1.1a2 2 0 012.1-.5c.9.3 1.8.5 2.8.6a2 2 0 011.9 2.1z"/></svg>';
+  const mic = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0014 0M12 18v3"' + (LLAMADA.mudo ? '/><path d="M3 3l18 18"' : '') + '/></svg>';
+  d.innerHTML = '<div class="llq" data-ll="abrir" title="Abrir el chat">' + (c ? avatarDe(c, quien) : '<span class="av">?</span>') + '<span><b>' + esc(quien) + '</b><i>' + esc(texto) + '</i></span></div>'
+    + '<div class="llacc">'
+    + (e === 'timbre' ? bt('no', 'rechazar', 'Rechazar', tel) + bt('si', 'contestar', 'Contestar', tel) : '')
+    + (e === 'llamando' || e === 'conectando' ? bt('no', 'colgar', 'Colgar', tel) : '')
+    + (e === 'activa' ? bt('mu' + (LLAMADA.mudo ? ' on' : ''), 'mudo', LLAMADA.mudo ? 'Activar micrófono' : 'Silenciar', mic) + bt('no', 'colgar', 'Colgar', tel) : '')
+    + '</div>';
+  d.classList.add('on'); d.dataset.estado = e;
+  resuelveAvatares();
+}
+// Timbre con WebAudio (sin archivos). El navegador solo deja sonar tras algún clic en la página; si no, queda el aviso visual y la notificación del sistema.
+function tonoLlamada(enciende){
+  if (!enciende) { clearInterval(LLAMADA.tono); LLAMADA.tono = null; return; }
+  if (LLAMADA.tono) return;
+  const pita = () => {
+    try {
+      const ac = (tonoLlamada.ac ||= new (window.AudioContext || window.webkitAudioContext)());
+      if (ac.state === 'suspended') void ac.resume();
+      [0, .25].forEach(t => { const o = ac.createOscillator(), g = ac.createGain(); o.frequency.value = 440 + (t ? 40 : 0); g.gain.value = .0001; o.connect(g); g.connect(ac.destination);
+        const t0 = ac.currentTime + t; g.gain.exponentialRampToValueAtTime(.12, t0 + .02); g.gain.exponentialRampToValueAtTime(.0001, t0 + .22); o.start(t0); o.stop(t0 + .25); });
+    } catch (e) {}
+  };
+  pita(); LLAMADA.tono = setInterval(pita, 1800);
+}
+function limpiaLlamada(){
+  tonoLlamada(false);
+  clearInterval(LLAMADA.reloj); clearInterval(LLAMADA.sondeo); LLAMADA.reloj = LLAMADA.sondeo = null;
+  try { LLAMADA.pc?.close(); } catch (e) {}
+  LLAMADA.stream?.getTracks().forEach(t => t.stop());
+  if (LLAMADA.audioEl) LLAMADA.audioEl.srcObject = null;
+  LLAMADA.pc = LLAMADA.stream = LLAMADA.audioEl = null; LLAMADA.mudo = false;
+}
+function finLlamada(mensaje){
+  limpiaLlamada();
+  LLAMADA.estado = 'fin'; LLAMADA.mensajeFin = mensaje || 'Llamada terminada'; pintaLlamada();
+  setTimeout(() => { if (LLAMADA.estado === 'fin') { LLAMADA.estado = 'idle'; LLAMADA.callId = null; pintaLlamada(); } }, 3500);
+}
+function llamadaActiva(){
+  LLAMADA.estado = 'activa'; LLAMADA.t0 = Date.now();
+  clearInterval(LLAMADA.reloj); LLAMADA.reloj = setInterval(pintaLlamada, 1000);
+  clearInterval(LLAMADA.sondeo);
+  LLAMADA.sondeo = setInterval(async () => {
+    const r = await llama({ action:'callState', call_id:LLAMADA.callId });
+    if (r.ok && r.status === 'ended') finLlamada('Llamada terminada · ' + segs(r.duration || 0));
+  }, 3000);
+  pintaLlamada();
+}
+async function preparaAudioLlamada(){
+  if (!navigator.mediaDevices?.getUserMedia || !window.RTCPeerConnection) throw new Error('Este navegador no permite llamadas (usa Chrome, Edge o Safari actualizado).');
+  LLAMADA.stream = await navigator.mediaDevices.getUserMedia({ audio:{ echoCancellation:true, noiseSuppression:true, autoGainControl:true } })
+    .catch(() => { throw new Error('Permite el micrófono en el navegador para poder hablar.'); });
+  const pc = new RTCPeerConnection({ iceServers:ICE_LLAMADA, bundlePolicy:'max-bundle' });
+  LLAMADA.stream.getTracks().forEach(t => pc.addTrack(t, LLAMADA.stream));
+  const el = new Audio(); el.autoplay = true;
+  pc.ontrack = ev => { el.srcObject = ev.streams[0]; void el.play().catch(() => {}); };
+  LLAMADA.pc = pc; LLAMADA.audioEl = el;
+  return pc;
+}
+const esperaIce = pc => new Promise(res => {
+  if (pc.iceGatheringState === 'complete') return res();
+  const t = setTimeout(res, 2500);
+  pc.addEventListener('icegatheringstatechange', () => { if (pc.iceGatheringState === 'complete') { clearTimeout(t); res(); } });
+});
+const esperaConexion = (pc, ms) => new Promise(res => {
+  const listo = () => ['connected', 'completed'].includes(pc.iceConnectionState) || pc.connectionState === 'connected';
+  if (listo()) return res();
+  const t = setTimeout(res, ms);
+  const f = () => { if (listo()) { clearTimeout(t); pc.removeEventListener('iceconnectionstatechange', f); res(); } };
+  pc.addEventListener('iceconnectionstatechange', f);
+});
+// Entra una llamada: la conversación trae `call.status = 'ringing'` (el servidor la marca al recibir la oferta de Meta).
+function vigilaLlamadas(){
+  for (const c of CONVS_TODAS) {
+    const k = c.call;
+    if (!k || k.direction !== 'in' || k.status !== 'ringing' || LLAMADA.vistas.has(k.id)) continue;
+    if (Date.now() - Date.parse(k.since) > 58000) continue;
+    if (LLAMADA.estado !== 'idle') continue;
+    LLAMADA.vistas.add(k.id);
+    Object.assign(LLAMADA, { estado:'timbre', callId:k.id, convId:c.id || c._id, dir:'in', nombre:k.name || '' });
+    tonoLlamada(true); pintaLlamada();
+    try { if (window.Notification && Notification.permission === 'granted') new Notification('Llamada de WhatsApp', { body:(nombreDe(c) || 'Cliente') + ' te está llamando', requireInteraction:true, tag:'llamada-' + k.id }); } catch (e) {}
+  }
+  if (LLAMADA.estado === 'timbre') {
+    const c = buscaConv(LLAMADA.convId);
+    // Dejó de sonar: colgó el cliente, la contestó otra persona o pasó el minuto.
+    if (!c?.call || c.call.id !== LLAMADA.callId || c.call.status !== 'ringing' || Date.now() - Date.parse(c.call.since) > 60000) finLlamada('Llamada perdida');
+  }
+}
+async function contestaLlamada(){
+  if (LLAMADA.estado !== 'timbre') return;
+  const id = LLAMADA.callId;
+  LLAMADA.estado = 'conectando'; tonoLlamada(false); pintaLlamada();
+  try {
+    const off = await llama({ action:'callOffer', call_id:id });
+    if (!off.ok) throw new Error(off.error || 'La llamada ya no está sonando.');
+    const pc = await preparaAudioLlamada();
+    await pc.setRemoteDescription({ type:'offer', sdp:off.sdp });
+    await pc.setLocalDescription(await pc.createAnswer());
+    await esperaIce(pc);
+    const sdp = pc.localDescription.sdp;
+    const pre = await llama({ action:'callAccept', call_id:id, fase:'pre', sdp });
+    if (!pre.ok) throw new Error(pre.error || 'Meta no aceptó la llamada.');
+    await esperaConexion(pc, 10000);
+    const fin = await llama({ action:'callAccept', call_id:id, fase:'final', sdp });
+    if (!fin.ok) throw new Error(fin.error || 'Meta no aceptó la llamada.');
+    llamadaActiva();
+  } catch (e) {
+    avisa('No se pudo contestar', String(e?.message || e));
+    void llama({ action:'callTerminate', call_id:id });
+    finLlamada('No se pudo contestar');
+  }
+}
+async function cuelgaLlamada(){
+  const id = LLAMADA.callId, antes = LLAMADA.estado;
+  if (!id) return finLlamada();
+  finLlamada(antes === 'timbre' ? 'Llamada rechazada' : 'Llamada terminada');
+  const r = await llama({ action: antes === 'timbre' ? 'callReject' : 'callTerminate', call_id:id });
+  if (!r.ok && !/ya no|ended|already/i.test(String(r.error || ''))) avisa('No se pudo cortar la llamada', r.error || '');
+}
+// Llamar al cliente del chat abierto (solo número oficial). Meta pide su permiso: si no lo hay, se ofrece mandárselo.
+async function llamaAlContacto(c){
+  if (LLAMADA.estado !== 'idle') return avisa('Ya hay una llamada en curso');
+  const id = c.id || c._id;
+  const p = await llama({ action:'callPermission', conversation_id:id });
+  if (!p.ok) return avisa('No se puede llamar', p.error || 'Inténtalo de nuevo.');
+  if (!p.puede_llamar) {
+    if (!p.puede_pedir) return avisa('Todavía no puedes llamarle', 'Meta solo deja pedir permiso 1 vez al día y 2 por semana a cada cliente. Escríbele por el chat.');
+    if (!await confirmaAqui('Para llamar a ' + nombreDe(c) + ' WhatsApp exige su permiso. ¿Le mando el pedido por el chat? Cuando lo acepte podrás llamarle.', { si:'Pedir permiso', no:'Ahora no' })) return;
+    const r = await llama({ action:'callStart', conversation_id:id });
+    return avisa(r.necesita_permiso ? (r.pedido ? 'Pedido enviado' : 'No se pudo pedir') : 'No se pudo', r.motivo || r.error || '');
+  }
+  Object.assign(LLAMADA, { estado:'llamando', convId:id, dir:'out', nombre:nombreDe(c), callId:null }); pintaLlamada();
+  try {
+    const pc = await preparaAudioLlamada();
+    await pc.setLocalDescription(await pc.createOffer({ offerToReceiveAudio:true }));
+    await esperaIce(pc);
+    const r = await llama({ action:'callStart', conversation_id:id, sdp:pc.localDescription.sdp });
+    if (!r.ok || !r.call_id) throw new Error(r.motivo || r.error || 'Meta no inició la llamada.');
+    LLAMADA.callId = r.call_id;
+    let aplicada = false;
+    clearInterval(LLAMADA.sondeo);
+    LLAMADA.sondeo = setInterval(async () => {
+      const s = await llama({ action:'callState', call_id:LLAMADA.callId });
+      if (!s.ok) return;
+      if (s.sdp && !aplicada) { aplicada = true; try { await pc.setRemoteDescription({ type:'answer', sdp:s.sdp }); LLAMADA.estado = 'conectando'; pintaLlamada(); } catch (e) {} }
+      if (s.status === 'accepted' && LLAMADA.estado !== 'activa') llamadaActiva();
+      if (s.status === 'ended') finLlamada(s.estado === 'contestada' ? 'Llamada terminada · ' + segs(s.duration || 0) : s.estado === 'no_contestada' ? 'No contestó' : 'La llamada no se completó');
+    }, 1000);
+  } catch (e) {
+    avisa('No se pudo llamar', String(e?.message || e));
+    if (LLAMADA.callId) void llama({ action:'callTerminate', call_id:LLAMADA.callId });
+    finLlamada('No se pudo llamar');
+  }
+}
+// Tarjeta «Llamadas por WhatsApp» en Canales (solo administrador): estado en Meta y el interruptor. Apagadas hasta que se activen aquí.
+async function pintaLlamadasCaja(){
+  const cont = $('llamadasCaja'); if (!cont) return;
+  if (ROL_ACTUAL !== 'admin') { cont.innerHTML = '<p class="cfgnota">Solo el administrador activa o apaga las llamadas.</p>'; return; }
+  cont.innerHTML = '<p class="bajada"><span class="cargando"></span> Consultando a Meta…</p>';
+  const r = await llama({ action:'callSettings', operation:'get' });
+  if (!r.ok) { cont.innerHTML = '<p class="cfgnota">' + esc(r.error || 'No se pudo leer el estado de las llamadas.') + '</p>'; return; }
+  const on = r.estado === 'ENABLED';
+  cont.innerHTML = '<div class="cx-fila"><span class="cx-punto ' + (on ? 'ok' : 'sin_configurar') + '"></span><div><b>Llamadas por el número oficial</b>'
+    + '<small>' + (on ? 'Activadas: los clientes ven el botón de llamar en WhatsApp y suena aquí. Meta cobra las llamadas de empresa según su tarifa.' : 'Apagadas: nadie puede llamar al número oficial desde WhatsApp. Al activarlas, el cliente verá el botón de llamar y la llamada sonará en este panel (hay que dejar el CRM abierto para contestar).')
+    + '</small><small class="cx-origen">Estado en Meta: ' + esc(r.estado) + ' · el CRM: ' + (r.habilitado_crm ? 'listo para llamar' : 'apagado') + '</small></div>'
+    + '<span class="cx-acc"><button class="btn-' + (on ? 'linea' : 'solido') + '" id="llamadasToggle">' + (on ? 'Apagar llamadas' : 'Activar llamadas') + '</button></span></div>'
+    + '<p class="cfgnota">Requisitos: el campo <b>calls</b> del webhook suscrito en la app de Meta y un tope de mensajes de 2,000 o más (este número lo cumple). Por el WhatsApp Web (5644) no se pueden contestar ni hacer llamadas desde aquí: solo queda el registro.</p>';
+  $('llamadasToggle').onclick = async () => {
+    const quiere = on ? 'disable' : 'enable';
+    if (!await confirmaAqui(on ? '¿Apagar las llamadas del número oficial? Los clientes dejarán de ver el botón de llamar.' : '¿Activar las llamadas del número oficial? Los clientes verán el botón de llamar y las llamadas sonarán en este panel.', { si:on ? 'Apagar' : 'Activar', no:'Cancelar' })) return;
+    const b = $('llamadasToggle'); b.disabled = true; b.textContent = 'Cambiando…';
+    const x = await llama({ action:'callSettings', operation:quiere });
+    if (!x.ok) avisa('No se pudo cambiar', x.error || 'Inténtalo de nuevo.');
+    pintaLlamadasCaja();
+  };
+}
+
 function montaCanales(){
   if (!montadas.has('canales')) {
     montadas.add('canales');
@@ -11762,12 +12075,16 @@ function montaCanales(){
       + '<p class="bajada">Por dónde te escriben los clientes. Si un canal no está en verde, '
       +   'lo que escribas por ahí no le llega a nadie aunque el panel diga que se envió.</p>'
       + '<div id="canalesLista"></div>'
+      + '<h2 style="margin:30px 0 4px;font-size:18px">Llamadas por WhatsApp</h2>'
+      + '<p class="bajada">Recibir y hacer llamadas desde el CRM, solo por el número oficial.</p>'
+      + '<div id="llamadasCaja"></div>'
       + '<h2 style="margin:30px 0 4px;font-size:18px">Conexiones y API</h2>'
       + '<p class="bajada">Todo lo que el CRM usa por detrás, en una sola lista: si está conectado, qué pasa si no, y una prueba en vivo de las que se pueden probar. '
       +   'Abajo, la lista de acciones de la API del CRM para conectar otras herramientas.</p>'
       + '<div id="conexionesCaja"></div></div>');
   }
   pintaCanales();
+  pintaLlamadasCaja();
   pintaConexiones();
 }
 const CX_ESTADO = { ok: 'Conectado', aviso: 'Revisar', caida: 'Caída', sin_configurar: 'Sin configurar' };
