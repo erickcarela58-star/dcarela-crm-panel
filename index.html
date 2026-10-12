@@ -2272,6 +2272,27 @@ input[type="checkbox"],input[type="radio"]{accent-color:var(--accent)}
 .gmenu.arriba{top:auto;bottom:20px}
 /* «Mover de etapa» se lee entero (antes decia «Mover a…» y parecia cortado): sin partirse en dos lineas. */
 .fe-mover{white-space:nowrap;flex:0 0 auto}
+/* ---- Fluidez (K11, 12/10/2026): «animaciones y fluidez al entrar a paneles y al esconder y mostrar acordeones» ----
+   Cada pagina entra por partes (lo de arriba primero), las ventanas se asientan con un leve rebote y los paneles laterales se deslizan.
+   Los acordeones se animan desde JS (animaAcordeon) porque asi funciona en todos los navegadores y no recorta sombras ni anillos de foco. */
+@media(prefers-reduced-motion:no-preference){
+  .vista.on>.hoja{animation:entraFundido .22s ease both}
+  .vista.on>.hoja>*{animation:entraParte .38s var(--curva) backwards}
+  .vista.on>.hoja>*:nth-child(2){animation-delay:.04s}
+  .vista.on>.hoja>*:nth-child(3){animation-delay:.08s}
+  .vista.on>.hoja>*:nth-child(4){animation-delay:.12s}
+  .vista.on>.hoja>*:nth-child(5){animation-delay:.16s}
+  .vista.on>.hoja>*:nth-child(n+6){animation-delay:.2s}
+  @keyframes entraFundido{from{opacity:0}to{opacity:1}}
+  @keyframes entraParte{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+  .modal.on{animation:entraFundido .2s ease both}
+  .modal.on .caja{animation:cajaEntra .3s var(--curva) both}
+  @keyframes cajaEntra{from{opacity:0;transform:translateY(16px) scale(.96)}to{opacity:1;transform:none}}
+  .ficha.on{animation:panelDesliza .28s var(--curva) both}
+  @keyframes panelDesliza{from{opacity:0;transform:translateX(18px)}to{opacity:1;transform:none}}
+  @media(max-width:760px){body.chat-abierto .conversacion{animation:panelDesliza .26s var(--curva) both}}
+  details>summary::after,details>summary::before{transition:transform .26s var(--curva)}
+}
 @media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
 </head>
@@ -2661,6 +2682,43 @@ $('nav').addEventListener('click', ev => {
   ve(a.dataset.vista);
 });
 window.addEventListener('hashchange', () => ve(location.hash.slice(1)));
+
+/* ---- Acordeones que se abren y se cierran con suavidad (K11) -------------------------------------------- */
+// Un <details> salta de golpe. Aqui se intercepta el clic en su <summary> y se anima la altura (de la actual a la final) con la API de animaciones,
+// que funciona en todos los navegadores. Se salta con «reducir movimiento», si la animacion no existe, y cuando el clic fue en algo
+// interactivo dentro del resumen (una casilla, un boton, un enlace), que no debe abrir ni cerrar nada.
+const ACORDEON_MS = 260;
+function animaAcordeon(d){
+  const resumen = d.querySelector(':scope > summary');
+  if (!resumen || typeof d.animate !== 'function') return false;
+  if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return false;
+  const cerrandose = !!d._cerrando;
+  if (d._anim) d._anim.cancel();
+  const abre = cerrandose ? true : !d.open;
+  d._cerrando = !abre;
+  const h0 = d.getBoundingClientRect().height;
+  let h1;
+  if (abre) { d.open = true; h1 = d.getBoundingClientRect().height; }
+  else { d.open = false; h1 = d.getBoundingClientRect().height; d.open = true; }
+  d.style.overflow = 'hidden';
+  const a = d._anim = d.animate({ height: [h0 + 'px', h1 + 'px'] }, { duration: ACORDEON_MS, easing: 'cubic-bezier(.2,.8,.2,1)' });
+  const fin = () => {
+    if (d._anim !== a) return;
+    d._anim = null; d._cerrando = false; d.style.overflow = '';
+    if (!abre) d.open = false;
+  };
+  // `finished` y no `onfinish`: la promesa se resuelve aunque la pestaña este en segundo plano; cancelarla (clic a mitad de camino) la rechaza y no hace nada.
+  a.finished.then(fin, () => { if (d._anim === a) { d._anim = null; d._cerrando = false; d.style.overflow = ''; } });
+  return true;
+}
+document.addEventListener('click', ev => {
+  const resumen = ev.target.closest && ev.target.closest('summary');
+  if (!resumen || ev.defaultPrevented) return;
+  if (ev.target.closest('input,button,a,select,textarea,label') && ev.target.closest('input,button,a,select,textarea,label') !== resumen) return;
+  const d = resumen.parentElement;
+  if (!d || d.tagName !== 'DETAILS' || d.dataset.sinAnimar !== undefined) return;
+  if (animaAcordeon(d)) ev.preventDefault();
+});
 
 /* ---- Llamadas al servidor ------------------------------------------------ */
 // Todo pasa por crmApi con el token de Firebase. Ninguna escritura sale de aqui
