@@ -1,7 +1,7 @@
 {
-  "version": "2026-10-12-conexiones-v168",
+  "version": "2026-10-12-claves-y-conexiones-v169",
   "channel": "crm",
-  "released_at": "2026-10-12T14:30:55.096Z",
-  "summary": "Canales ahora trae el centro de conexiones: el estado de WhatsApp, redes, anuncios, Google, IA y la Caja en una lista, con prueba en vivo y la lista de acciones de la API del CRM.",
+  "released_at": "2026-10-12T16:29:45.896Z",
+  "summary": "Canales ahora tiene el espacio para poner las claves (Google AI, Meta Ads y Google Calendar), la lista de conexiones muestra el estado real de las cajas, el puente y los scripts de correo, y los avisos de tareas llevan los botones Hecho, Aún no y Mañana.",
   "requiere_puente": "2026-09-28-lectura-v34"
 }
