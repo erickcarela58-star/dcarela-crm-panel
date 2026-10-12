@@ -4755,7 +4755,12 @@ function filtradas(){
     : red ? CONVS_REDES
     : buscandoEnTodo
       ? [...CONVS, ...CONVS_IGNORADAS, ...CONVS_OCULTAS].sort((a, b) => String(b.last_message_at || '').localeCompare(String(a.last_message_at || '')))
-      : CONVS;
+      // «Todos» ensena TODO lo que el dueño tiene: tambien las ignoradas (marcadas «ignorada») y las ancladas de una linea desvinculada. Ignorar
+      // es dejar de mandarle seguimientos, promociones y automaticos -- NUNCA esconderla (orden del dueño, 12/10). Los demas filtros y todas
+      // las cifras siguen sin contarlas, para que la familia no infle «Sin leer».
+      : filtro === 'todos'
+        ? [...CONVS, ...CONVS_IGNORADAS, ...CONVS_OCULTAS.filter(anclado)].sort((a, b) => String(b.last_message_at || '').localeCompare(String(a.last_message_at || '')))
+        : CONVS;
   return base.filter(c => {
     if (!buscandoEnTodo) {
       if (filtro === 'sinleer' && !(Number(c.unread || 0) > 0)) return false;
@@ -4839,7 +4844,7 @@ function pintaChats(){
   if (filtro.startsWith('lin:') && !CONVS_OCULTAS.some(c => claveOculta(c) === filtro.slice(4))) filtro = 'todos';
   // Lo mismo con 'Ignorados' cuando ya no queda ninguna (se deshizo la ultima).
   if (filtro === 'ignorados' && !CONVS_IGNORADAS.length) filtro = 'todos';
-  const cuenta = f => CONVS.filter(c =>
+  const cuenta = f => (f === 'todos' ? [...CONVS, ...CONVS_IGNORADAS, ...CONVS_OCULTAS.filter(anclado)] : CONVS).filter(c =>
     f === 'todos' ? true
     : f === 'sinleer' ? Number(c.unread||0) > 0
     : f === 'humano' ? (c.mode === 'human' || c.human_handoff_required)
@@ -16288,8 +16293,9 @@ function abreRecordatorio(c){
 // y 250 las demas, piezas impresas que se quitan para compensar, ajuste a un presupuesto): aqui solo se pide lo que quiere el cliente, se ven las
 // opciones, se edita el mensaje y se manda por el canal del chat. Despues queda registrada en crm_quotes (lo que luego puede leer la Caja).
 // Un descuento NO se calcula aqui ni en el servidor: lo decide el administrador.
-const COT_TAMS_IMPRESA = ['cualquiera', '2x3', '4x6', '5x7', '6x8', '8x11'];
-const COT_TAMS_CUADRO = ['', '6x8', '8x11', '11x14', '13x19', '16x20', '17x22'];
+// COPIA de TABLA_BASE (firebase-functions/src/cotizador-core.js): los tamaños que maneja la Caja. test/v2-cotizar.test.js exige que sean los mismos.
+const COT_TAMS_IMPRESA = ['cualquiera', '2x3', '4x6', '5x7', '6x8', '8x11', '8x12', '9x13', '11x14', '11x17', '13x19', '16x20', '17x22'];
+const COT_TAMS_CUADRO = ['', '4x6', '5x7', '6x8', '8x11', '9x13', '11x14', '11x17', '13x19', '16x20', '17x22'];
 const COT_CATS = [['', 'Elige…'], ['xv', 'XV años'], ['cumpleanos', 'Cumpleaños'], ['infantil', 'Infantil'], ['graduacion', 'Graduación'], ['embarazadas', 'Embarazadas']];
 function categoriaParaCotizar(c){
   const t = String(c?.interested_category || '').toLowerCase();
@@ -16311,12 +16317,11 @@ function abreCotizador(c){
     + '<div class="par"><div class="campo"><label>Tipo de sesión</label><select id="cotCat">' + op(COT_CATS, categoriaParaCotizar(c)) + '</select></div>'
     +   '<div class="campo"><label>Presupuesto del cliente (opcional)</label><input type="number" min="0" id="cotPres" placeholder="RD$"></div></div>'
     + '<div class="par"><div class="campo"><label>Fotos digitales</label><input type="number" min="0" id="cotDig" value="0"></div>'
-    +   '<div class="campo"><label>Fotos impresas</label><div style="display:flex;gap:6px"><input type="number" min="0" id="cotImp" value="0" style="width:70px">'
-    +   '<select id="cotImpTam">' + op(COT_TAMS_IMPRESA, 'cualquiera') + '</select></div></div></div>'
-    + '<div class="par"><div class="campo"><label>Cuadros</label><div style="display:flex;gap:6px"><input type="number" min="0" id="cotCua" value="0" style="width:70px">'
-    +   '<select id="cotCuaTam">' + op(COT_TAMS_CUADRO, '') + '</select></div></div>'
     +   '<div class="campo"><label>Llaveros · tazas · fondos digitales</label><div class="cot3"><input type="number" min="0" id="cotLla" value="0" title="Llaveros">'
     +   '<input type="number" min="0" id="cotTaz" value="0" title="Tazas"><input type="number" min="0" id="cotFon" value="0" title="Fondos digitales"></div></div></div>'
+    // Fotos impresas y cuadros: una fila por tamaño (3 fotos 5x7 + 2 fotos 8x11; dos cuadros de tamaños distintos…).
+    + '<div class="campo"><label>Fotos impresas</label><div id="cotImpFilas"></div><button type="button" class="tplchip" id="cotImpMas">+ otro tamaño</button></div>'
+    + '<div class="campo"><label>Cuadros</label><div id="cotCuaFilas"></div><button type="button" class="tplchip" id="cotCuaMas">+ otro tamaño</button></div>'
     + '<div class="pdfs" style="margin:6px 0 10px"><button class="tplchip" id="cotLee">Leer lo que pidió el cliente</button>'
     +   '<button class="btn-solido" id="cotCalcula">Calcular</button></div>'
     + '<p class="aviso" id="cotAviso" hidden></p><div id="cotOpciones"></div>'
@@ -16332,23 +16337,41 @@ function abreCotizador(c){
   $('modal').querySelectorAll('[data-cerrar]').forEach(b => { b.onclick = cierraModal; });
   const n = id => Math.max(0, Math.floor(Number($(id).value) || 0));
   let ultimo = null; let elegida = 0;
+  // Filas de «cantidad + tamaño» para las impresas y los cuadros.
+  const agregaFila = (contId, tams, cuantas, tam) => {
+    const fila = document.createElement('div');
+    fila.className = 'cotfila'; fila.style.cssText = 'display:flex;gap:6px;margin-bottom:6px';
+    fila.innerHTML = '<input type="number" min="0" class="cn" value="' + (cuantas || 0) + '" style="width:70px" aria-label="Cantidad">'
+      + '<select class="ct" aria-label="Tamaño">' + op(tams, tam) + '</select>'
+      + '<button type="button" class="cx" aria-label="Quitar esta fila" style="border:0;background:transparent;color:var(--mut);font-size:18px;cursor:pointer">×</button>';
+    fila.querySelector('.cx').onclick = () => { if ($(contId).children.length > 1) fila.remove(); else fila.querySelector('.cn').value = 0; };
+    $(contId).appendChild(fila);
+  };
+  const leeFilas = contId => [...$(contId).querySelectorAll('.cotfila')]
+    .map(f => ({ n: Math.max(0, Math.floor(Number(f.querySelector('.cn').value) || 0)), t: f.querySelector('.ct').value }));
+  agregaFila('cotImpFilas', COT_TAMS_IMPRESA, 0, 'cualquiera');
+  agregaFila('cotCuaFilas', COT_TAMS_CUADRO, 0, '');
+  $('cotImpMas').onclick = () => agregaFila('cotImpFilas', COT_TAMS_IMPRESA, 0, '5x7');
+  $('cotCuaMas').onclick = () => agregaFila('cotCuaFilas', COT_TAMS_CUADRO, 0, '11x14');
   const pedidoDelForm = () => {
-    const imp = n('cotImp'); const cua = n('cotCua');
-    return { categoria: $('cotCat').value || null, digitales: n('cotDig'),
-      impresas: imp ? { [$('cotImpTam').value || 'cualquiera']: imp } : {},
-      cuadros: Array.from({ length: cua }, () => $('cotCuaTam').value || null),
+    const impresas = {}; const cuadros = [];
+    for (const { n: cuantas, t } of leeFilas('cotImpFilas')) if (cuantas) impresas[t || 'cualquiera'] = (impresas[t || 'cualquiera'] || 0) + cuantas;
+    for (const { n: cuantos, t } of leeFilas('cotCuaFilas')) for (let i = 0; i < cuantos; i++) cuadros.push(t || null);
+    return { categoria: $('cotCat').value || null, digitales: n('cotDig'), impresas, cuadros,
       llaveros: n('cotLla'), tazas: n('cotTaz'), fondos: n('cotFon'), presupuesto: n('cotPres') || null };
   };
   const llenaForm = p => {
     if (!p) return;
     if (p.categoria) $('cotCat').value = p.categoria;
     $('cotDig').value = p.digitales || 0;
-    const impTam = Object.keys(p.impresas || {})[0];
-    $('cotImp').value = Object.values(p.impresas || {}).reduce((s, x) => s + x, 0);
-    if (impTam) $('cotImpTam').value = COT_TAMS_IMPRESA.includes(impTam) ? impTam : 'cualquiera';
-    $('cotCua').value = (p.cuadros || []).length;
-    const cuaTam = (p.cuadros || []).find(Boolean);
-    if (cuaTam && COT_TAMS_CUADRO.includes(cuaTam)) $('cotCuaTam').value = cuaTam;
+    $('cotImpFilas').innerHTML = ''; $('cotCuaFilas').innerHTML = '';
+    const imps = Object.entries(p.impresas || {});
+    if (imps.length) imps.forEach(([tam, cuantas]) => agregaFila('cotImpFilas', COT_TAMS_IMPRESA, cuantas, COT_TAMS_IMPRESA.includes(tam) ? tam : 'cualquiera'));
+    else agregaFila('cotImpFilas', COT_TAMS_IMPRESA, 0, 'cualquiera');
+    const porTam = new Map();
+    for (const c of p.cuadros || []) porTam.set(c || '', (porTam.get(c || '') || 0) + 1);
+    if (porTam.size) porTam.forEach((cuantos, tam) => agregaFila('cotCuaFilas', COT_TAMS_CUADRO, cuantos, COT_TAMS_CUADRO.includes(tam) ? tam : ''));
+    else agregaFila('cotCuaFilas', COT_TAMS_CUADRO, 0, '');
     $('cotLla').value = p.llaveros || 0; $('cotTaz').value = p.tazas || 0; $('cotFon').value = p.fondos || 0;
     if (p.presupuesto) $('cotPres').value = p.presupuesto;
   };
@@ -16360,6 +16383,8 @@ function abreCotizador(c){
     const ops = r.opciones || [];
     $('cotOpciones').innerHTML = ops.map((o, i) => '<label class="cotop' + (i === 0 ? ' on' : '') + '"><input type="radio" name="cotOp" value="' + i + '"' + (i === 0 ? ' checked' : '') + '>'
       + '<b>' + esc(o.titulo) + '</b> — <b>RD$' + Math.round(o.total).toLocaleString('en-US') + '</b>'
+      + (o.dentroPresupuesto === true ? ' <small style="display:inline;color:var(--ok)">✓ dentro de su presupuesto</small>'
+        : o.diferenciaPresupuesto > 0 ? ' <small style="display:inline">+RD$' + Math.round(o.diferenciaPresupuesto).toLocaleString('en-US') + ' sobre su presupuesto</small>' : '')
       + '<small>' + esc((o.lineas || []).join(' · ')) + '</small>'
       + ((o.agrega || []).length ? '<small>+ ' + esc(o.agrega.join(' · ')) + '</small>' : '')
       + ((o.quita || []).length ? '<small>− ' + esc(o.quita.join(' · ')) + '</small>' : '')
