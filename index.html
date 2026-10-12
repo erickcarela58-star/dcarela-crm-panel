@@ -2323,6 +2323,7 @@ input[type="checkbox"],input[type="radio"]{accent-color:var(--accent)}
 .cx-ia{display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap;margin:8px 0 4px;padding:12px 14px;border-radius:12px;background:var(--hover)}
 .cx-ia label{display:flex;flex-direction:column;gap:5px;font-size:12px;font-weight:600;color:var(--mut)}
 .cx-ia .cx-chk{flex-direction:row;align-items:center;gap:7px;font-weight:500;color:var(--fg)}
+.cx-rechazo textarea{width:100%;min-height:54px;resize:vertical}.cx-5644{margin-top:14px}
 .cx-api{margin-top:18px}.cx-api summary{cursor:pointer;font-weight:650}
 .cx-api code{font:12px ui-monospace,Menlo,Consolas,monospace;background:var(--hover);padding:1px 6px;border-radius:6px}
 .cx-api table{width:100%;border-collapse:collapse;margin-top:10px;font-size:12.5px}.cx-api td{padding:6px 8px;border-top:1px solid var(--line);vertical-align:top}.cx-api td:first-child{white-space:nowrap}
@@ -12353,7 +12354,7 @@ async function pintaLlamadasCaja(){
   if (ROL_ACTUAL !== 'admin') { cont.innerHTML = '<p class="cfgnota">Solo el administrador activa o apaga las llamadas.</p>'; return; }
   cont.innerHTML = '<p class="bajada"><span class="cargando"></span> Consultando a Meta…</p>';
   const r = await llama({ action:'callSettings', operation:'get' });
-  if (!r.ok) { cont.innerHTML = '<p class="cfgnota">' + esc(r.error || 'No se pudo leer el estado de las llamadas.') + '</p>'; return; }
+  if (!r.ok) { cont.innerHTML = '<p class="cfgnota">' + esc(r.error || 'No se pudo leer el estado de las llamadas.') + '</p>'; pintaRechazoLlamadas5644(cont); return; }
   const on = r.estado === 'ENABLED';
   cont.innerHTML = '<div class="cx-fila"><span class="cx-punto ' + (on ? 'ok' : 'sin_configurar') + '"></span><div><b>Llamadas por el número oficial</b>'
     + '<small>' + (on ? 'Activadas: los clientes ven el botón de llamar en WhatsApp y suena aquí. Meta cobra las llamadas de empresa según su tarifa.' : 'Apagadas: nadie puede llamar al número oficial desde WhatsApp. Al activarlas, el cliente verá el botón de llamar y la llamada sonará en este panel (hay que dejar el CRM abierto para contestar).')
@@ -12366,6 +12367,32 @@ async function pintaLlamadasCaja(){
     const b = $('llamadasToggle'); b.disabled = true; b.textContent = 'Cambiando…';
     const x = await llama({ action:'callSettings', operation:quiere });
     if (!x.ok) avisa('No se pudo cambiar', x.error || 'Inténtalo de nuevo.');
+    pintaLlamadasCaja();
+  };
+  pintaRechazoLlamadas5644(cont);
+}
+// Llamadas del WhatsApp Web (5644): no se pueden contestar ni marcar desde el CRM. Siempre se avisa al dueño de cada perdida; opcionalmente el puente las
+// cuelga solas y se les contesta por mensaje (apagado por defecto; necesita el puente v39 o más en la PC del negocio).
+async function pintaRechazoLlamadas5644(cont){
+  const r = await llama({ action:'bridgeCallAutoreject', operation:'get' });
+  const bloque = document.createElement('div'); bloque.className = 'cx-5644';
+  if (!r.ok) { bloque.innerHTML = '<p class="cfgnota">' + esc(r.error || 'No se pudo leer el rechazo automático del 5644.') + '</p>'; cont.appendChild(bloque); return; }
+  bloque.innerHTML = '<div class="cx-fila"><span class="cx-punto ' + (r.enabled ? 'ok' : 'sin_configurar') + '"></span><div><b>Llamadas por el WhatsApp Web (5644)</b>'
+    + '<small>Desde el CRM no se pueden contestar ni hacer por este número, pero cada llamada perdida te avisa al momento por WhatsApp. Opcional: que el puente las rechace solas y le conteste al cliente por mensaje.</small>'
+    + '<small class="cx-origen">Rechazo automático: ' + (r.enabled ? 'encendido' : 'apagado') + (r.puente_listo ? '' : ' · el puente de la PC (' + esc(r.puente_version ? 'v' + r.puente_version : 'sin versión') + ') necesita reiniciarse para cargar la v39') + '</small></div></div>'
+    + '<form class="cx-ia cx-rechazo" autocomplete="off"><label class="cx-chk"><input type="checkbox" name="activo"' + (r.enabled ? ' checked' : '') + '> Rechazar solas y contestar por mensaje (no se rechaza a los contactos ignorados)</label>'
+    + '<label style="flex:1 1 320px">Mensaje que recibe quien llamó<textarea name="mensaje" rows="2" maxlength="300">' + esc(r.message || '') + '</textarea></label>'
+    + '<button class="btn-solido" type="submit">Guardar</button></form>';
+  cont.appendChild(bloque);
+  bloque.querySelector('form').onsubmit = async ev => {
+    ev.preventDefault();
+    const f = ev.target, activo = f.activo.checked;
+    if (activo && !await confirmaAqui('¿Rechazar solas las llamadas del 5644? Quien llame verá la llamada colgada y recibirá tu mensaje (una vez cada 12 horas). Tú recibirás el aviso.', { si:'Activar', no:'Cancelar' })) return;
+    const b = f.querySelector('button[type=submit]'); b.disabled = true;
+    const x = await llama({ action:'bridgeCallAutoreject', operation:'save', enabled:activo, message:f.mensaje.value });
+    b.disabled = false;
+    if (!x.ok) return avisa('No se guardó', x.error || 'Inténtalo de nuevo.');
+    avisa(activo ? 'Rechazo automático encendido' : 'Rechazo automático apagado', activo && !x.puente_listo ? 'Reinicia el puente en la PC del negocio para que cargue la versión nueva.' : 'Listo.');
     pintaLlamadasCaja();
   };
 }
