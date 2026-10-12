@@ -1,7 +1,7 @@
 {
-  "version": "2026-10-12-cotizador-completo-v152",
+  "version": "2026-10-12-mensajes-funnel-v153",
   "channel": "crm",
-  "released_at": "2026-10-12T02:33:31.100Z",
-  "summary": "Las conversaciones ancladas y las ignoradas (tu esposa, familia, tus números) ya se ven en Todos: ignorar solo detiene la automatización. El cotizador trae TODOS los tamaños de cuadros e impresas, permite varias filas de tamaño y arma presupuestos: te dice qué cabe, qué se pasa por cuánto y qué ajustar.",
+  "released_at": "2026-10-12T02:40:40.425Z",
+  "summary": "Funnel: botón «Escribir a varios» y «Escribirles» en cada grupo de leads parados. Revisas cada conversación, ajustas el mensaje (3 burbujas cortas, distinto según el caso) y sale de a uno con pausa.",
   "requiere_puente": "2026-09-28-lectura-v34"
 }
