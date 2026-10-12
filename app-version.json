@@ -1,7 +1,7 @@
 {
-  "version": "2026-10-12-videos-ayuda-v162",
+  "version": "2026-10-12-ayuda-photoshop-v163",
   "channel": "crm",
-  "released_at": "2026-10-12T05:18:52.737Z",
-  "summary": "Videos de ayuda en las 17 pantallas (deja el cursor quieto sobre el «?»), cabecera del chat que no se monta con la ficha abierta, Limpieza que carga bien al recargar y más pulido.",
+  "released_at": "2026-10-12T05:33:47.810Z",
+  "summary": "La ayuda ahora es como la de Photoshop: deja el cursor quieto en una opción del menú y sale una tarjeta con el video arriba y debajo qué es y para qué sirve, con «Más información» y «Ver vídeo rápido».",
   "requiere_puente": "2026-09-28-lectura-v34"
 }
