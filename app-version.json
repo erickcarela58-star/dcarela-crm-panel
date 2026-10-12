@@ -1,7 +1,7 @@
 {
-  "version": "2026-10-12-emojis-apple-v150",
+  "version": "2026-10-12-cotizacion-ticket-v151",
   "channel": "crm",
-  "released_at": "2026-10-12T02:12:57.744Z",
-  "summary": "Los emojis del CRM se ven como los de iPhone (estilo Apple): en los mensajes y en el selector. La hoja de imágenes se pide al servidor solo con sesión iniciada y se guarda en el navegador (se baja una vez); no está en el repositorio público del panel.",
+  "released_at": "2026-10-12T02:19:14.067Z",
+  "summary": "Cotizar ahora manda la cotización como imagen tipo ticket (marca, piezas, lo que se agregó o quitó y el total grande, con folio) o como texto, o las dos. Todo queda registrado con su folio para que la Caja la pueda leer.",
   "requiere_puente": "2026-09-28-lectura-v34"
 }
