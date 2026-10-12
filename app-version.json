@@ -1,7 +1,7 @@
 {
-  "version": "2026-10-12-avisos-a-su-hora-v167",
+  "version": "2026-10-12-conexiones-v168",
   "channel": "crm",
-  "released_at": "2026-10-12T14:19:41.318Z",
-  "summary": "Los avisos de tareas llegan a su hora (el recordatorio ya no espera 3 horas y el aviso previo nace en 15 minutos) y la encuesta de satisfacción ya no se manda a clientas con una sesión agendada que todavía no ocurre.",
+  "released_at": "2026-10-12T14:30:55.096Z",
+  "summary": "Canales ahora trae el centro de conexiones: el estado de WhatsApp, redes, anuncios, Google, IA y la Caja en una lista, con prueba en vivo y la lista de acciones de la API del CRM.",
   "requiere_puente": "2026-09-28-lectura-v34"
 }
