@@ -1,7 +1,7 @@
 {
-  "version": "2026-10-12-dashboard-modular-v160",
+  "version": "2026-10-12-atendido-auto-v161",
   "channel": "crm",
-  "released_at": "2026-10-12T04:42:34.662Z",
-  "summary": "Dashboard modular: cada recuadro se mueve, cambia de tamaño y se abre en grande; Actividad ocupa la fila completa y se ve nítida. «Atendido» también en la selección de varios chats.",
+  "released_at": "2026-10-12T05:03:24.556Z",
+  "summary": "Atendido automático (archivos para imprimir, reacciones y agradecimientos pasan solos a atendidos), etiquetas ordenadas (sin repetidas ni de etapa), Agenda y Dashboard más pulidos.",
   "requiere_puente": "2026-09-28-lectura-v34"
 }
