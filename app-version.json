@@ -1,7 +1,7 @@
 {
-  "version": "2026-10-12-llamadas-5644-v174",
+  "version": "2026-10-12-historial-llamadas-v175",
   "channel": "crm",
-  "released_at": "2026-10-12T20:41:30.889Z",
-  "summary": "Canales: aviso inmediato de llamadas perdidas del 5644 y rechazo automatico opcional con mensaje.",
+  "released_at": "2026-10-12T20:52:39.068Z",
+  "summary": "Ficha: historial de llamadas; Conversaciones: filtro Llamadas sin devolver; avisos del Popular en pesos colombianos y retiros de cajero.",
   "requiere_puente": "2026-09-28-lectura-v34"
 }
