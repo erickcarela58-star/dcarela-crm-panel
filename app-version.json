@@ -1,7 +1,7 @@
 {
-  "version": "2026-10-12-fluidez-v154",
+  "version": "2026-10-12-instalable-v155",
   "channel": "crm",
-  "released_at": "2026-10-12T02:45:31.594Z",
-  "summary": "Más fluidez: cada página entra por partes, las ventanas se asientan con suavidad, los paneles laterales se deslizan y los acordeones se abren y cierran animados. Se apaga solo si tu sistema pide reducir el movimiento.",
+  "released_at": "2026-10-12T02:48:28.991Z",
+  "summary": "El panel ya se puede instalar como aplicación: en Chrome o Edge aparece «Instalar D' Carela CRM» en la barra de direcciones, y en iPhone con Compartir > Agregar a inicio. Ícono propio y ventana sin barra del navegador.",
   "requiere_puente": "2026-09-28-lectura-v34"
 }
