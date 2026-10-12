@@ -1,7 +1,7 @@
 {
-  "version": "2026-10-12-estados-respuestas-v156",
+  "version": "2026-10-12-pegar-soltar-entrada-v157",
   "channel": "crm",
-  "released_at": "2026-10-12T02:52:35.389Z",
-  "summary": "Las respuestas a un Estado (las que te hacen a tu estado y las que tú haces al de un contacto) ya se ven en el chat con su cita: «Tu estado» o «Estado de …». Requiere reiniciar el puente de la PC para las respuestas nuevas.",
+  "released_at": "2026-10-12T04:06:32.304Z",
+  "summary": "Pegar imágenes con Ctrl+V y soltar archivos sobre el chat. En Canales, el puente ahora dice cuántos mensajes guardó, cuáles descartó y por qué, y avisa cuando la vinculación es de tipo navegador y por eso faltan mensajes anteriores.",
   "requiere_puente": "2026-09-28-lectura-v34"
 }
