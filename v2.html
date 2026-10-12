@@ -1811,6 +1811,7 @@ input[type="checkbox"],input[type="radio"]{accent-color:var(--accent)}
 /* --- Cabecera del chat --------------------------------------------------------------------------- */
 .cabecera .modo{border:0;border-radius:999px;background:var(--hover);padding:7px 14px;font-weight:600;font-size:12.5px}
 .cabecera .modo:hover{background:rgba(120,120,128,.2)}
+.cabecera .modo.atendido,.cabecera .modo.atendido:hover{background:var(--ok);color:#fff}
 .mas>button{color:var(--mut)}
 
 /* Todos los iconos con el mismo trazo. */
@@ -5147,8 +5148,10 @@ function abre(c){
     // Agendar es lo que mas se hace desde un chat y estaba escondido dentro del menu de los
     // tres puntos, a dos clics. Arriba, al lado de la ficha, se pulsa sin buscarlo: es el mismo
     // cuadro de siempre, no una funcion nueva.
-    + '<button class="adj" id="btnAgendar" title="Agendar un recordatorio" aria-label="Agendar">'
+    // Dos opciones, no una: «Recordatorio» (acordarse de escribirle) y «Agenda» (agendarle la sesion YA, con aviso al cliente).
+    + '<div class="mas" id="masAgenda"><button class="adj" id="btnAgendar" title="Agendar un recordatorio" aria-label="Agendar">'
     +   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3.500" y="5" width="17" height="15.500" rx="3.600"/><path d="M3.500 10h17M8 3v3.600M16 3v3.600"/><circle cx="8.500" cy="14" r=".8" fill="currentColor" stroke="none"/><circle cx="12" cy="14" r=".8" fill="currentColor" stroke="none"/></svg></button>'
+    +   '<div class="menu"><button data-ag="recordatorio">Recordatorio</button><button data-ag="agenda">Agenda · agendar sesión</button></div></div>'
     + '<div class="mas" id="mas"><button aria-label="Más opciones">⋯</button>'
     +   '<div class="menu"><button data-mas="recordar">Añadir recordatorio</button>'
     +   '<button data-mas="contacto">Guardar contacto</button>'
@@ -5303,6 +5306,17 @@ function pintaModoChat(){
   const modo = $('btnModo');
   if (!modo || !sel) return;
   modo.textContent = (sel.mode === 'human' || sel.human_handoff_required) ? 'Humano atiende' : 'Bot atiende';
+  // «Atendido» cambia de color para saber de un vistazo si ya se le dio: verde desde que se pulsa y mientras el cliente no escriba
+  // otra vez (un mensaje nuevo suyo lo devuelve a gris, igual que reaparece en «Sin responder»).
+  const at = $('btnAtendido');
+  if (at) {
+    const marcado = Date.parse(sel.atendido_at || '');
+    const cliente = Date.parse(sel.last_customer_reply_at || '');
+    const atendido = Number.isFinite(marcado) && !sel.human_handoff_required && !(Number.isFinite(cliente) && cliente > marcado);
+    at.classList.toggle('atendido', atendido);
+    at.textContent = atendido ? '✓ Atendido' : 'Atendido';
+    at.setAttribute('aria-pressed', atendido ? 'true' : 'false');
+  }
 }
 
 // Lo que cambia en la conversacion abierta, sin recargar y sin volver a montar el chat. Se llama
@@ -5437,12 +5451,12 @@ function cableaChat(c){
     avisa('Atendido', 'Ya no sale como pendiente. Si el cliente vuelve a escribir, reaparece sola.');
   };
   const mas = $('mas');
-  mas.querySelector('button').onclick = ev => { ev.stopPropagation(); mas.classList.toggle('on'); };
+  mas.querySelector('button').onclick = ev => { ev.stopPropagation(); $('masAgenda')?.classList.remove('on'); mas.classList.toggle('on'); };
   // Antes se añadia un listener de documento en CADA apertura de conversacion, y cada
   // uno quedaba apuntando a un nodo ya destruido. Tras un rato de trabajo eran cientos.
   // Uno solo, delegado, y busca el menu que exista en ese momento.
   if (!cableaChat.cerrarMenu) {
-    cableaChat.cerrarMenu = () => document.getElementById('mas')?.classList.remove('on');
+    cableaChat.cerrarMenu = () => { document.getElementById('mas')?.classList.remove('on'); document.getElementById('masAgenda')?.classList.remove('on'); };
     document.addEventListener('click', cableaChat.cerrarMenu);
   }
   mas.querySelector('.menu').onclick = async ev => {
@@ -5466,7 +5480,17 @@ function cableaChat(c){
     }
   };
   const agendar = $('btnAgendar');
-  if (agendar) agendar.onclick = () => abreRecordatorio(sel);
+  if (agendar) {
+    const menuAg = $('masAgenda');
+    agendar.onclick = ev => { ev.stopPropagation(); $('mas')?.classList.remove('on'); menuAg.classList.toggle('on'); };
+    menuAg.querySelector('.menu').onclick = ev => {
+      const b = ev.target.closest('[data-ag]'); if (!b) return;
+      menuAg.classList.remove('on');
+      abreRecordatorio(sel);
+      // «Agenda» abre el mismo cuadro ya en modo reservacion: una sola forma de guardar, dos entradas.
+      if (b.dataset.ag === 'agenda') { const sw = $('recEsReserva'); sw.checked = true; sw.dispatchEvent(new Event('change')); }
+    };
+  }
   cableaAdjuntos();
   cancelaCita();
   $('citaX').onclick = cancelaCita;
@@ -15999,6 +16023,9 @@ function abreRecordatorio(c){
   const reservaActual = c.scheduled_at || c.tentative_date || '';
   const reservaCancelada = c.session_status === 'cancelada';
   const hayReserva = !!reservaActual && !reservaCancelada;
+  // Por el 5644 (WhatsApp Web) no hay ventana de 24 h; por el oficial si; Instagram/Messenger la manejan con atencion humana (7 dias).
+  const ventanaAbierta = canalDe(c) === 'whatsapp_qr' || !!redSocial(c)
+    || (Date.now() - Date.parse(c.last_customer_reply_at || '')) < 24 * 3600000;
   abreModal('<div class="mtapa"><b id="recTitulo">Recordatorio · ' + esc(nombreDe(c)) + '</b>'
     + '<button class="cerrarm" data-cerrar>×</button></div>'
     + '<div class="mcuerpo">'
@@ -16024,6 +16051,13 @@ function abreRecordatorio(c){
     +   '</div>'
     +   '<label class="cfgsw"><input type="checkbox" id="recFirme" checked><span><b>Confirmada</b>'
     +     '<i>Sin marcar queda como fecha tentativa, que no bloquea el hueco.</i></span></label>'
+    // Al agendar se le avisa al cliente de inmediato por este mismo chat. En el numero oficial solo si su ventana de 24 h sigue abierta:
+    // fuera de ella WhatsApp no entrega texto libre y el aviso saldria con ⚠ (la cita se guarda igual).
+    +   '<label class="cfgsw"><input type="checkbox" id="recAvisar"' + (ventanaAbierta ? ' checked' : ' disabled') + '><span><b>Avisarle al cliente ahora</b>'
+    +     '<i>' + (ventanaAbierta ? 'Le llega este mismo mensaje por este chat apenas guardes.'
+        : 'Pasaron más de 24 h desde su último mensaje: por el número oficial no le llega texto libre. La cita se guarda igual.') + '</i></span></label>'
+    +   '<div class="campo" id="recAvisoCampo"' + (ventanaAbierta ? '' : ' hidden') + '><label>Mensaje para el cliente</label>'
+    +     '<textarea id="recAvisoTexto" rows="3"></textarea></div>'
     + '</div>'
     + '<div id="recBloqueRec">'
     + '<div class="campo"><label>Para acordarme de…</label>'
@@ -16057,7 +16091,7 @@ function abreRecordatorio(c){
   $('modal').querySelector('.pdfs').onclick = ev => {
     const b = ev.target.closest('[data-en]'); if (!b) return;
     $('recCuando').value = iso(en(Number(b.dataset.en)));
-    avisaChoque();
+    avisaChoque(); refrescaAviso();
   };
   $('recEnviar2').onchange = ev => { $('recMsgCampo').hidden = !ev.target.checked; };
   // Con el interruptor de reservacion se cambia el formulario: fecha + categoria/combo/confirmada en vez de nota y mensaje.
@@ -16073,8 +16107,28 @@ function abreRecordatorio(c){
       + esc(new Date(x.scheduled_at).toLocaleTimeString('es-DO', { hour:'numeric', minute:'2-digit' })) + ')').join(', ')
       + (choques.length > 3 ? ' y ' + (choques.length - 3) + ' más' : '') + '.' : '';
   };
-  $('recCuando').onchange = avisaChoque;
+  // El mensaje al cliente se arma con la fecha, la hora y el combo elegidos y se rehace al cambiarlos, salvo que ya lo hayas editado a mano.
+  let avisoEditado = false;
+  const armaAviso = () => {
+    const t = new Date($('recCuando').value);
+    if (Number.isNaN(t.getTime())) return '';
+    const nombre = String(nombreReal(c) || '').trim().split(/\s+/)[0];
+    const fecha = t.toLocaleDateString('es-DO', { weekday:'long', day:'numeric', month:'long' });
+    const hora = t.toLocaleTimeString('es-DO', { hour:'numeric', minute:'2-digit' }).replace(/\.$/, '');
+    const firme = $('recFirme').checked;
+    const combo = $('recCombo').value.trim();
+    return 'Hola' + (nombre ? ' ' + nombre : '') + ', ' + (firme ? 'te dejamos agendada tu sesión' : 'anotamos tu sesión como fecha tentativa')
+      + (combo ? ' (' + combo + ')' : '') + ' para el ' + fecha + ' a las ' + hora + '. '
+      + (firme ? "¡Te esperamos en D' Carela Compufoto! Si necesitas cambiarla, escríbenos por aquí." : 'Una persona del estudio te confirma la disponibilidad en breve.');
+  };
+  const refrescaAviso = () => { if (!avisoEditado) $('recAvisoTexto').value = armaAviso(); };
+  $('recAvisoTexto').oninput = () => { avisoEditado = true; };
+  refrescaAviso();
+  $('recAvisar').onchange = ev => { $('recAvisoCampo').hidden = !ev.target.checked; };
+  ['recFirme', 'recCombo'].forEach(id => { $(id).addEventListener('input', refrescaAviso); $(id).addEventListener('change', refrescaAviso); });
+  $('recCuando').onchange = () => { avisaChoque(); refrescaAviso(); };
   $('recEsReserva').onchange = () => {
+    refrescaAviso();
     const r = esReserva();
     $('recBloqueRes').hidden = !r;
     $('recBloqueRec').hidden = r;
@@ -16106,8 +16160,18 @@ function abreRecordatorio(c){
       $('recGuardar').disabled = false;
       if (!rr.ok) return avisa('No se pudo guardar la reservación', rr.error);
       Object.assign(c, reserva, firme ? {} : { scheduled_at: null });
+      // Aviso inmediato al cliente, por el mismo chat. Si no sale, la cita YA quedo guardada y se dice aparte: nunca se pierde una por el otro.
+      const aviso = $('recAvisar') && !$('recAvisar').disabled && $('recAvisar').checked ? $('recAvisoTexto').value.trim() : '';
       cierraModal();
       avisa(firme ? 'Reservación confirmada' : 'Reservación tentativa', nombreDe(c) + ' · ' + new Date(cuando).toLocaleString('es-DO', { dateStyle:'medium', timeStyle:'short' }));
+      if (aviso) {
+        const conv = c.id || c._id;
+        const porPuente = canalDe(c) === 'whatsapp_qr';
+        const env2 = await llama(porPuente ? { action:'bridgeQueue', conversation_id: conv, body: aviso }
+          : { action:'sendText', conversation_id: conv, body: aviso });
+        if (env2.ok) { if (porPuente) apuntaEnviando({ conv, tipo:'text', body: aviso }); }
+        else avisa('La cita se guardó, pero el aviso al cliente no salió', traduceErrorMeta(env2.error, env2.code));
+      }
       if (typeof pintaAgenda === 'function') pintaAgenda();
       if (typeof pintaChats === 'function') pintaChats();
       return;
