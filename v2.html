@@ -278,6 +278,8 @@ img.av{object-fit:cover}
   font-size:12.5px}
 .barra-lote[hidden]{display:none}
 .barra-lote .btn-linea{padding:5px 10px;font-size:11.5px}
+.barra-lote .btn-atendido{background:var(--ok);border-color:var(--ok);color:#fff;font-weight:650}
+.barra-lote .btn-atendido:hover{filter:brightness(1.08)}
 
 .canal{max-width:760px;margin-bottom:12px;border:1px solid var(--line);border-radius:var(--r2);
   background:var(--panel);overflow:hidden}
@@ -1318,7 +1320,7 @@ a.ayuda{color:var(--enlace)}
 .pgcab span{font-size:11px;color:var(--mut)}
 .graf{width:100%;height:170px;overflow:visible}
 .gguia{stroke:var(--line);stroke-width:1}
-.gnum{fill:var(--mut);font-size:9px}
+.gnum{fill:var(--mut);font-size:11px}
 .garea{fill:var(--ink);opacity:.08}
 .glinea{fill:none;stroke:var(--ink);stroke-width:2;stroke-linejoin:round;stroke-linecap:round}
 .gpunto{fill:var(--panel);stroke:var(--ink);stroke-width:1.6}
@@ -1749,6 +1751,43 @@ input[type="checkbox"],input[type="radio"]{accent-color:var(--accent)}
 .enlace-card b{display:block;font-size:13px}
 .enlace-card span{display:block;font-size:12px;color:var(--mut);margin-top:2px}
 .enlace-card i{display:block;font-style:normal;font-size:11px;color:var(--mut);margin-top:3px}
+/* ---- Dashboard modular (12/10): recuadros movibles, con tres tamaños y vista grande ---- */
+.tablero{max-width:1560px;grid-auto-flow:dense}
+.pgraf.mod{position:relative;min-width:0;transition:box-shadow .2s var(--curva),transform .2s var(--curva)}
+.pgraf.mod.t-w{grid-column:span 2}
+.pgraf.mod.t-g{grid-column:1/-1}
+@media(max-width:860px){.pgraf.mod.t-w,.pgraf.mod.t-g{grid-column:1/-1}}
+.pgraf.mod .pgcab{align-items:center;justify-content:flex-start;gap:8px;flex-wrap:wrap}
+.pgraf.mod .pgcab b{flex:0 1 auto}
+.pgraf.mod .mod-nota{font-size:12px;color:var(--mut);flex:1 1 auto;min-width:0}
+.mod-asa{display:inline-flex;width:22px;height:22px;color:var(--mut);cursor:grab;border-radius:6px;flex:0 0 auto}
+.mod-asa:hover{background:var(--hover);color:var(--fg)}
+.mod-asa svg{width:22px;height:22px}
+.mod-acc{display:inline-flex;gap:2px;margin-left:auto;opacity:.55;transition:opacity .15s}
+.pgraf.mod:hover .mod-acc,.pgraf.mod:focus-within .mod-acc{opacity:1}
+.mod-acc button{width:28px;height:28px;display:inline-flex;align-items:center;justify-content:center;border:0;border-radius:8px;background:transparent;color:var(--mut);cursor:pointer;padding:0}
+.mod-acc button:hover{background:var(--hover);color:var(--fg)}
+.mod-acc button.on{background:var(--accent-suave);color:var(--accent)}
+.mod-acc svg{width:18px;height:18px}
+.pgraf.mod.moviendo{opacity:.45}
+.pgraf.mod.encima{box-shadow:0 0 0 2px var(--accent)}
+.graf-host{width:100%;height:210px}
+.t-w .graf-host{height:270px}
+.t-g .graf-host{height:340px}
+.graf-host .graf{width:100%;height:100%;display:block}
+.t-w .barras,.t-g .barras{max-width:none}
+.t-w .anillo svg,.t-g .anillo svg{width:190px;height:190px}
+.t-g .anillo svg{width:230px;height:230px}
+.t-w .dash-grande b,.t-g .dash-grande b{font-size:54px}
+.t-g .embudo,.t-w .embudo{gap:14px}
+.modal .caja.ancha{max-width:min(1120px,94vw);width:100%}
+.mod-grande .graf-host{height:min(58vh,520px)}
+.mod-grande .pgraf{box-shadow:none;padding:0}
+.mod-grande .barras{max-width:none}
+.mod-grande .anillo svg{width:260px;height:260px}
+.mod-grande .dash-grande b{font-size:72px}
+.mtapa .mod-nota{margin-left:10px;font-size:12px;color:var(--mut)}
+.dash-barra .dash-reset{margin-left:auto}
 .sinred{position:fixed;left:50%;bottom:16px;transform:translateX(-50%);z-index:90;max-width:min(560px,calc(100vw - 32px));padding:10px 16px;border-radius:999px;background:#3a3a3c;color:#fff;font-size:13px;box-shadow:var(--sombra)}
 .sinred.enviando{background:var(--accent)}
 .barra-busca{display:flex;align-items:center;gap:8px;padding:8px 14px;border-bottom:1px solid var(--line);background:var(--panel)}
@@ -1763,7 +1802,10 @@ input[type="checkbox"],input[type="radio"]{accent-color:var(--accent)}
 .barra-fijado button{border:0;background:transparent;font-size:16px;cursor:pointer;color:var(--mut)}
 [data-msg].hallado{outline:2px solid color-mix(in srgb,var(--accent) 40%,transparent);outline-offset:2px}
 [data-msg].hallado-actual{outline:2px solid var(--accent);outline-offset:2px}
-.cabeza #btnNuevoChat{margin-left:6px;flex:0 0 auto}
+.busca-fila{display:flex;align-items:center;gap:8px}
+.busca-fila input{flex:1 1 auto;min-width:0}
+.cabeza #btnNuevoChat{flex:0 0 auto;width:38px;height:38px;display:inline-flex;align-items:center;justify-content:center;padding:0;border-radius:11px}
+.cabeza #btnNuevoChat svg{width:20px;height:20px}
 .conversacion.suelta{outline:2px dashed var(--accent);outline-offset:-8px;background:var(--accent-suave)}
 .lp-num{font-size:12px;font-weight:650;padding:3px 10px;border-radius:999px;background:var(--accent-suave);color:var(--accent);flex:0 0 auto}
 .lp-porque{margin:6px 0 10px;font-size:13px;line-height:1.5;color:var(--mut)}
@@ -4376,8 +4418,8 @@ function montaConversaciones(){
   montadas.add('conversations');
   hueco('conversations',
     '<div class="lista">'
-    + '<div class="cabeza"><input id="buscaChat" placeholder="Buscar conversación o mensaje…">'
-    +   '<button id="btnNuevoChat" class="adj" title="Nuevo chat con un número (Alt+N)" aria-label="Nuevo chat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20l1.200-4.200L16.500 4.500a2 2 0 013 3L8.200 18.800z"/></svg></button>'
+    + '<div class="cabeza"><div class="busca-fila"><input id="buscaChat" placeholder="Buscar conversación o mensaje…">'
+    +   '<button id="btnNuevoChat" class="adj" title="Nuevo chat con un número (Alt+N)" aria-label="Nuevo chat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20l1.200-4.200L16.500 4.500a2 2 0 013 3L8.200 18.800z"/></svg></button></div>'
     +   '<button id="buscaMsgs" title="Buscar dentro de los mensajes" hidden>En los mensajes</button></div>'
     + '<div class="filtros" id="filtros"></div>'
     + '<div class="resbusca" id="resBusca" hidden></div>'
@@ -13807,13 +13849,15 @@ function montaDashboard(){
   if (!montadas.has('dashboard')) {
     montadas.add('dashboard');
     hueco('dashboard', '<div class="hoja"><h1>Dashboard</h1>'
-      + '<p class="bajada">Lo que hay ahora mismo. Se actualiza solo.</p>'
+      + '<p class="bajada">Lo que hay ahora mismo. Se actualiza solo. Cada recuadro se puede mover (arrastra ⠿ o usa las flechas), cambiar de tamaño y abrir en grande.</p>'
       + '<div class="dash-hoy" id="dashHoy"></div>'
       + '<div class="cifras" id="cifras"></div>'
-      + '<div class="dash-barra"><b>Período</b><div class="filtros" id="dashPeriodo" style="padding:0"></div></div>'
+      + '<div class="dash-barra"><b>Período</b><div class="filtros" id="dashPeriodo" style="padding:0"></div>'
+      + '<button class="btn-linea dash-reset" id="dashReset" title="Volver al orden y a los tamaños de fábrica">Restablecer disposición</button></div>'
       + '<div class="tablero" id="tablero"></div></div>');
     $('dashPeriodo').onclick = ev => { const b = ev.target.closest('[data-dias]'); if (!b) return; DASH_DIAS = Number(b.dataset.dias); pintaDashboard(); };
     $('dashHoy').onclick = ev => { const b = ev.target.closest('[data-hsec]'); if (b) ve('hoy'); };
+    $('dashReset').onclick = () => cambiaDashLayout(l => { Object.assign(l, DASH_DEFECTO()); });
   }
   pintaDashboard();
 }
@@ -13823,8 +13867,8 @@ function diasAtras(n){
 }
 
 // --- Piezas de dibujo -------------------------------------------------------
-function grafArea(puntos, etiquetas){
-  const an = 640, al = 170, pad = { i:34, d:10, s:14, b:24 };
+function grafArea(puntos, etiquetas, an = 640, al = 170){
+  const pad = { i:34, d:10, s:14, b:24 };
   const max = Math.max(1, ...puntos);
   const x = i => pad.i + i * (an - pad.i - pad.d) / Math.max(1, puntos.length - 1);
   const y = v => pad.s + (1 - v / max) * (al - pad.s - pad.b);
@@ -13836,11 +13880,12 @@ function grafArea(puntos, etiquetas){
     return '<line x1="' + pad.i + '" x2="' + (an-pad.d) + '" y1="' + y(v) + '" y2="' + y(v) + '" class="gguia"/>'
       + '<text x="' + (pad.i-7) + '" y="' + (y(v)+3.5) + '" class="gnum" text-anchor="end">' + v + '</text>';
   }).join('');
-  const marcas = puntos.map((v,i) => (i % 3 === 0 || i === puntos.length-1)
+  const paso = Math.max(1, Math.ceil(puntos.length / Math.max(2, Math.floor(an / 64))));   // las etiquetas que caben, no una cada tres
+  const marcas = puntos.map((v,i) => (i % paso === 0 || i === puntos.length-1)
     ? '<text x="' + x(i) + '" y="' + (al-7) + '" class="gnum" text-anchor="middle">' + esc(etiquetas[i]) + '</text>' : '').join('');
   const picos = puntos.map((v,i) => '<circle cx="' + x(i) + '" cy="' + y(v) + '" r="2.5" class="gpunto">'
     + '<title>' + esc(etiquetas[i]) + ': ' + v + '</title></circle>').join('');
-  return '<svg viewBox="0 0 ' + an + ' ' + al + '" class="graf" preserveAspectRatio="none">'
+  return '<svg viewBox="0 0 ' + an + ' ' + al + '" class="graf">'
     + guias + '<path d="' + area + '" class="garea"/><path d="' + linea + '" class="glinea"/>'
     + picos + marcas + '</svg>';
 }
@@ -13876,6 +13921,129 @@ function grafAnillo(filas){
 function panel(titulo, nota, cuerpo){
   return '<div class="pgraf"><div class="pgcab"><b>' + esc(titulo) + '</b>'
     + (nota ? '<span>' + esc(nota) + '</span>' : '') + '</div>' + cuerpo + '</div>';
+}
+
+// ---- Dashboard modular (12/10): cada recuadro se puede mover, cambiar de tamaño y ampliar a pantalla grande ----
+// «El panel de actividad se ve muy pequeño. Cada recuadro debe ser modular para organizar mi dashboard a mi conveniencia y poder ampliarlos.»
+// La disposicion (orden y tamaño de cada modulo) se guarda en este navegador. Tamaños: n = normal, w = ancho (2 columnas), g = fila completa.
+const DASH_CLAVE = 'dcarela-dash-v2';
+const DASH_DEFECTO = () => ({ orden: [], tam: { actividad: 'g', embudo: 'w' } });
+function leeDashLayout(){
+  try {
+    const v = JSON.parse(localStorage.getItem(DASH_CLAVE) || 'null');
+    if (v && Array.isArray(v.orden) && v.tam && typeof v.tam === 'object') return v;
+  } catch (e) { /* sin almacenamiento o dato roto: se usa el de fabrica */ }
+  return DASH_DEFECTO();
+}
+let DASH_LAYOUT = leeDashLayout();
+function guardaDashLayout(){ try { localStorage.setItem(DASH_CLAVE, JSON.stringify(DASH_LAYOUT)); } catch (e) { /* queda en memoria */ } }
+const DASH_MODS = new Map();     // clave -> { titulo, nota, cuerpo }
+const DASH_GRAF = new Map();     // clave -> { puntos, etiquetas }  (la grafica se dibuja a la medida real de su caja)
+const claveDeModulo = t => sinTildes(t).replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+const ICO_TAM = {
+  n: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><rect x="8" y="7" width="8" height="10" rx="2"/></svg>',
+  w: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><rect x="4.500" y="7" width="15" height="10" rx="2"/></svg>',
+  g: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><rect x="2.500" y="6" width="19" height="12" rx="2.500"/><path d="M6 12h12"/></svg>',
+  max: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4.500h5.500V10M10 19.500H4.500V14M19.500 4.500l-6 6M4.500 19.500l6-6"/></svg>',
+  izq: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14.500 6l-6 6 6 6"/></svg>',
+  der: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9.500 6l6 6-6 6"/></svg>',
+  asa: '<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="9" cy="7" r="1.500"/><circle cx="15" cy="7" r="1.500"/><circle cx="9" cy="12" r="1.500"/><circle cx="15" cy="12" r="1.500"/><circle cx="9" cy="17" r="1.500"/><circle cx="15" cy="17" r="1.500"/></svg>',
+};
+function panelMod(titulo, nota, cuerpo){
+  const clave = claveDeModulo(titulo);
+  DASH_MODS.set(clave, { titulo, nota, cuerpo });
+  const tam = DASH_LAYOUT.tam[clave] || 'n';
+  const bTam = (k, txt) => '<button type="button" data-mtam="' + k + '" class="' + (tam === k ? 'on' : '') + '" title="' + txt + '" aria-label="' + txt + '" aria-pressed="' + (tam === k) + '">' + ICO_TAM[k] + '</button>';
+  return '<section class="pgraf mod t-' + tam + '" data-mod="' + clave + '">'
+    + '<div class="pgcab"><span class="mod-asa" draggable="true" title="Arrastra para mover este recuadro" aria-label="Mover">' + ICO_TAM.asa + '</span>'
+    + '<b>' + esc(titulo) + '</b>' + (nota ? '<span class="mod-nota">' + esc(nota) + '</span>' : '')
+    + '<span class="mod-acc">'
+    +   '<button type="button" data-mmover="-1" title="Mover antes" aria-label="Mover antes">' + ICO_TAM.izq + '</button>'
+    +   '<button type="button" data-mmover="1" title="Mover después" aria-label="Mover después">' + ICO_TAM.der + '</button>'
+    +   bTam('n', 'Tamaño normal') + bTam('w', 'Tamaño ancho') + bTam('g', 'Fila completa')
+    +   '<button type="button" data-mmax title="Ver en grande" aria-label="Ver en grande">' + ICO_TAM.max + '</button>'
+    + '</span></div>' + cuerpo + '</section>';
+}
+// Las claves en el orden elegido; las nuevas o desconocidas van al final en su orden natural.
+function ordenDeModulos(claves, orden = DASH_LAYOUT.orden){
+  const pos = k => { const i = orden.indexOf(k); return i < 0 ? 1e6 : i; };
+  return claves.map((k, i) => [k, i]).sort((a, b) => (pos(a[0]) - pos(b[0])) || (a[1] - b[1])).map(x => x[0]);
+}
+// Una grafica de area dibujada con el ancho y el alto REALES de su caja: asi el texto no se estira y crece de verdad al ampliar el recuadro.
+function pintaGraficas(raiz){
+  (raiz || document).querySelectorAll('[data-graf]').forEach(host => {
+    const datos = DASH_GRAF.get(host.dataset.graf); if (!datos) return;
+    const an = Math.max(200, Math.round(host.clientWidth)), al = Math.max(120, Math.round(host.clientHeight));
+    host.innerHTML = grafArea(datos.puntos, datos.etiquetas, an, al);
+  });
+}
+let DASH_OBS = null;
+function observaGraficas(raiz){
+  if (DASH_OBS) DASH_OBS.disconnect();
+  if (typeof ResizeObserver !== 'function') return;
+  let cola = 0;
+  DASH_OBS = new ResizeObserver(() => { clearTimeout(cola); cola = setTimeout(() => pintaGraficas(raiz), 80); });
+  (raiz || document).querySelectorAll('[data-graf]').forEach(h => DASH_OBS.observe(h));
+}
+function cambiaDashLayout(cambio){
+  cambio(DASH_LAYOUT); guardaDashLayout(); pintaDashboard();
+}
+function mueveModulo(clave, destino, despues){
+  const actual = [...document.querySelectorAll('#tablero [data-mod]')].map(n => n.dataset.mod).filter(k => k !== clave);
+  const i = destino ? actual.indexOf(destino) : actual.length;
+  actual.splice(i < 0 ? actual.length : i + (despues ? 1 : 0), 0, clave);
+  cambiaDashLayout(l => { l.orden = actual; });
+}
+function abreModuloGrande(clave){
+  const m = DASH_MODS.get(clave); if (!m) return;
+  const modal = abreModal('<div class="mtapa"><b>' + esc(m.titulo) + '</b>' + (m.nota ? '<span class="mod-nota">' + esc(m.nota) + '</span>' : '') + '<button class="cerrarm" data-cerrar>×</button></div>'
+    + '<div class="mcuerpo mod-grande">' + m.cuerpo + '</div>');
+  const caja = modal.querySelector('.caja'); if (caja) caja.classList.add('ancha');
+  pintaGraficas(modal);
+}
+function cableaDashModular(){
+  const t = $('tablero'); if (!t || t.dataset.modular) return;
+  t.dataset.modular = '1';
+  t.addEventListener('click', ev => {
+    const card = ev.target.closest('[data-mod]'); if (!card) return;
+    const clave = card.dataset.mod;
+    const tam = ev.target.closest('[data-mtam]');
+    if (tam) return cambiaDashLayout(l => { l.tam[clave] = tam.dataset.mtam; });
+    if (ev.target.closest('[data-mmax]')) return abreModuloGrande(clave);
+    const mv = ev.target.closest('[data-mmover]');
+    if (mv) {
+      const claves = [...t.querySelectorAll('[data-mod]')].map(n => n.dataset.mod);
+      const i = claves.indexOf(clave), j = i + Number(mv.dataset.mmover);
+      if (j < 0 || j >= claves.length) return;
+      claves.splice(j, 0, claves.splice(i, 1)[0]);
+      cambiaDashLayout(l => { l.orden = claves; });
+    }
+  });
+  // Arrastrar: se agarra por el asa y se suelta sobre otro recuadro; queda antes si se suelta en su mitad izquierda/superior, despues si no.
+  let arrastrado = null;
+  t.addEventListener('dragstart', ev => {
+    const asa = ev.target.closest && ev.target.closest('.mod-asa'); if (!asa) return;
+    const card = asa.closest('[data-mod]'); arrastrado = card.dataset.mod;
+    card.classList.add('moviendo');
+    try { ev.dataTransfer.setData('text/plain', arrastrado); ev.dataTransfer.effectAllowed = 'move'; ev.dataTransfer.setDragImage(card, 24, 18); } catch (e) { /* sin dataTransfer */ }
+  });
+  t.addEventListener('dragend', () => { arrastrado = null; t.querySelectorAll('.moviendo,.encima').forEach(n => n.classList.remove('moviendo', 'encima')); });
+  t.addEventListener('dragover', ev => {
+    if (!arrastrado) return;
+    const card = ev.target.closest('[data-mod]'); if (!card || card.dataset.mod === arrastrado) return;
+    ev.preventDefault();
+    t.querySelectorAll('.encima').forEach(n => n.classList.remove('encima'));
+    card.classList.add('encima');
+  });
+  t.addEventListener('drop', ev => {
+    if (!arrastrado) return;
+    const card = ev.target.closest('[data-mod]'); if (!card || card.dataset.mod === arrastrado) return;
+    ev.preventDefault();
+    const r = card.getBoundingClientRect();
+    const despues = ev.clientX > r.left + r.width / 2 && ev.clientY > r.top;
+    const quien = arrastrado; arrastrado = null;
+    mueveModulo(quien, card.dataset.mod, despues);
+  });
 }
 
 // --- Pintado ----------------------------------------------------------------
@@ -13984,19 +14152,25 @@ function pintaDashboard(){
   const franjas = [['6–9 h', 6, 9], ['9–12 h', 9, 12], ['12–15 h', 12, 15], ['15–18 h', 15, 18], ['18–21 h', 18, 21], ['21–6 h', 21, 30]];
   const porHora = franjas.map(([n, a, b]) => ({ n, v: CONVS.filter(x => { const t = Date.parse(String(x.last_customer_reply_at || '')); if (!Number.isFinite(t) || t < desde) return false; let h = new Date(t).getHours(); if (h < 6) h += 24; return h >= a && h < b; }).length }));
 
-  $('tablero').innerHTML =
-    panel('Actividad', 'últimos ' + N + ' días', grafArea(dias, etiq))
-    + panel('Por etapa', CONVS.length + ' contactos', grafBarras(porEtapa))
-    + panel('Por canal', 'de dónde escriben', grafAnillo(porCanal))
-    + panel('Contactos nuevos', 'últimos ' + N + ' días', nuevosHtml)
-    + panel('Qué piden', 'categoría de interés', grafBarras(porCategoria.length ? porCategoria : [{ n: 'Sin datos todavía', v: 0 }]))
-    + panel('Cuándo escriben', 'por franja horaria (hora local)', grafBarras(porHora))
-    + panel('Embudo', 'cuánta gente pasa de una etapa a la siguiente',
-        '<div class="embudo">' + embudo.map((f,i) =>
-          '<div class="epaso"><span class="en">' + esc(f.n) + '</span>'
-          + '<span class="eb"><i style="width:' + (embudo[0].v ? Math.round(f.v / embudo[0].v * 100) : 0) + '%"></i></span>'
-          + '<span class="ev">' + f.v + (i ? ' <em>' + f.pct + '%</em>' : '') + '</span></div>').join('')
-        + '</div>');
+  DASH_MODS.clear(); DASH_GRAF.clear();
+  DASH_GRAF.set('actividad', { puntos: dias, etiquetas: etiq });
+  const embudoHtml = '<div class="embudo">' + embudo.map((f,i) =>
+    '<div class="epaso"><span class="en">' + esc(f.n) + '</span>'
+    + '<span class="eb"><i style="width:' + (embudo[0].v ? Math.round(f.v / embudo[0].v * 100) : 0) + '%"></i></span>'
+    + '<span class="ev">' + f.v + (i ? ' <em>' + f.pct + '%</em>' : '') + '</span></div>').join('')
+    + '</div>';
+  const html = {};
+  [['Actividad', 'últimos ' + N + ' días', '<div class="graf-host" data-graf="actividad"></div>'],
+   ['Por etapa', CONVS.length + ' contactos', grafBarras(porEtapa)],
+   ['Por canal', 'de dónde escriben', grafAnillo(porCanal)],
+   ['Contactos nuevos', 'últimos ' + N + ' días', nuevosHtml],
+   ['Qué piden', 'categoría de interés', grafBarras(porCategoria.length ? porCategoria : [{ n: 'Sin datos todavía', v: 0 }])],
+   ['Cuándo escriben', 'por franja horaria (hora local)', grafBarras(porHora)],
+   ['Embudo', 'cuánta gente pasa de una etapa a la siguiente', embudoHtml],
+  ].forEach(([t, n, c]) => { html[claveDeModulo(t)] = panelMod(t, n, c); });
+  $('tablero').innerHTML = ordenDeModulos(Object.keys(html)).map(k => html[k]).join('');
+  cableaDashModular();
+  pintaGraficas($('tablero')); observaGraficas($('tablero'));
 }
 
 
@@ -15738,6 +15912,7 @@ function pintaLote(){
   b.hidden = LOTE.size === 0;
   if (!LOTE.size) return;
   b.innerHTML = '<span><b>' + LOTE.size + '</b> seleccionado(s)</span>'
+    + '<button class="btn-linea btn-atendido" data-lote="atendido" title="Marca como atendidos los chats seleccionados: salen de «Sin responder» y de «Se enfrían». Si el cliente vuelve a escribir, reaparecen.">Atendido</button>'
     + '<button class="btn-linea" data-lote="etq">Etiquetar</button>'
     + '<button class="btn-linea" data-lote="desinteres">Desinteresado</button>'
     + '<button class="btn-linea" data-lote="analizar">Analizar con IA</button>'
@@ -15756,6 +15931,18 @@ function cableaLote(){
     // Las dos ensenan antes la lista de a quien afecta; ninguna actua con un clic.
     if (op === 'ignorar') return abreIgnorarLote(ids);
     if (op === 'analizar') return abreAnalisisLote(ids);
+
+    // Lo mismo que el boton «Atendido» del chat, para varios a la vez: no envia nada ni cambia el modo; si el cliente vuelve a escribir, reaparece sola.
+    if (op === 'atendido') {
+      const ahora = new Date().toISOString();
+      return corridaLote(ids, async c => {
+        const campos = { cola_omitida_at: String(c.last_message_at || ahora), atendido_at: ahora };
+        if (c.human_handoff_required) campos.human_handoff_required = false;
+        const r = await llama({ action:'updateLead', conversation_id: c.id || c._id, fields: campos });
+        if (r?.ok) Object.assign(c, campos);
+        return r;
+      }, 'Atendidos');
+    }
 
     if (op === 'etq') {
       const e = (window.prompt('Etiqueta para los ' + ids.length + ' seleccionados:') || '').trim().toLowerCase();
