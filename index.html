@@ -10280,7 +10280,7 @@ function camposTareaHtml(p){
     +   '<div class="tar-atajos" data-atajo-hora="' + p + '"><button type="button" data-h="+1">En 1 hora</button><button type="button" data-h="9:00 AM">9:00 AM</button><button type="button" data-h="12:00 PM">12:00 PM</button><button type="button" data-h="4:00 PM">4:00 PM</button><button type="button" data-h="">Sin hora</button></div></div>'
     + '<label class="tar-c">Prioridad<select id="' + p + 'Prioridad">' + opt([['normal', 'Normal', 1], ['alta', 'Alta'], ['baja', 'Baja']]) + '</select></label>'
     + '<details class="tar-mas"><summary>Más opciones: repetir, aviso previo, categoría y notas</summary><div class="tar-mas-cuerpo">'
-    +   '<label class="tar-c">Aviso antes (si hay hora)<select id="' + p + 'AvisoAntes">' + opt([['0', 'Al vencer'], ['15', '15 minutos'], ['30', '30 minutos'], ['60', '1 hora', 1], ['120', '2 horas'], ['360', '6 horas'], ['720', '12 horas']]) + '</select></label>'
+    +   '<label class="tar-c">Aviso antes (si hay hora)<select id="' + p + 'AvisoAntes">' + opt([['0', 'Al vencer'], ['15', '15 minutos', 1], ['30', '30 minutos'], ['60', '1 hora'], ['120', '2 horas'], ['360', '6 horas'], ['720', '12 horas']]) + '</select></label>'
     +   '<label class="tar-c">Repetir<select id="' + p + 'Repite">' + opt([['none', 'No se repite', 1], ['diaria', 'Todos los días'], ['laborables', 'De lunes a sábado'], ['semanal', 'Cada semana'], ['mensual', 'Cada mes']]) + '</select></label>'
     +   '<label class="tar-c">Categoría<select id="' + p + 'Categoria">' + opt([['', 'Sin categoría', 1], ['estudio', 'Estudio'], ['impresion', 'Impresión'], ['caja', 'Caja'], ['limpieza', 'Limpieza'], ['compras', 'Compras'], ['clientes', 'Clientes'], ['otro', 'Otro']]) + '</select></label>'
     +   '<label class="tar-notas">Notas<textarea id="' + p + 'Notas" maxlength="1000" rows="2" placeholder="Detalles para quien la haga (opcional)"></textarea></label>'
@@ -10298,7 +10298,7 @@ function ponCamposTarea(p, t){
   $(p + 'Titulo').value = t.titulo || ''; $(p + 'Persona').value = t.empleado_id || '';
   $(p + 'Fecha').value = t.fecha_limite || ''; ponHoraCampo(p + 'Hora', t.hora_limite || '');
   $(p + 'Prioridad').value = t.prioridad || 'normal';
-  const antes = t.aviso_antes_min !== null && t.aviso_antes_min !== undefined && t.aviso_antes_min !== '' && Number.isInteger(Number(t.aviso_antes_min)) ? String(t.aviso_antes_min) : '60', selA = $(p + 'AvisoAntes');
+  const antes = t.aviso_antes_min !== null && t.aviso_antes_min !== undefined && t.aviso_antes_min !== '' && Number.isInteger(Number(t.aviso_antes_min)) ? String(t.aviso_antes_min) : '15', selA = $(p + 'AvisoAntes');
   if (![...selA.options].some(o => o.value === antes)) selA.add(new Option(antes + ' minutos', antes));
   selA.value = antes; $(p + 'Repite').value = t.repite || 'none'; $(p + 'Categoria').value = t.categoria || ''; $(p + 'Notas').value = t.notas || '';
   const mas = $(p + 'Repite').closest('details'); if (mas) mas.open = !!(t.repite && t.repite !== 'none') || !!t.categoria || !!t.notas;
