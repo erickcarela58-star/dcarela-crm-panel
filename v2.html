@@ -1739,6 +1739,24 @@ input[type="checkbox"],input[type="radio"]{accent-color:var(--accent)}
 .mm-dijo{margin:0 0 8px;padding:8px 10px;border-radius:10px;background:var(--accent-suave);font-size:13px}
 .mm-cuerpo textarea{width:100%;min-height:150px;resize:vertical}
 .mm-fila.mm-no{opacity:.6}
+.tpl.fwd-fila{display:flex;align-items:center;gap:11px;padding:9px 12px}
+.tpl.fwd-fila .av{width:38px;height:38px;font-size:13px}
+.tpl.fwd-fila .fwd-quien{flex:1 1 auto;min-width:0}
+.tpl.fwd-fila .fwd-quien b{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tpl.fwd-fila .tplcheck{float:none;flex:0 0 auto}
+.barra-busca{display:flex;align-items:center;gap:8px;padding:8px 14px;border-bottom:1px solid var(--line);background:var(--panel)}
+.barra-busca[hidden],.barra-fijado[hidden]{display:none}
+.barra-busca input{flex:1 1 auto;min-width:0}
+.barra-busca span{font-size:12px;color:var(--mut);white-space:nowrap}
+.barra-busca button{border:0;background:transparent;font-size:16px;padding:4px 8px;border-radius:8px;cursor:pointer;color:var(--fg)}
+.barra-busca button:hover{background:var(--hover)}
+.barra-fijado{display:flex;align-items:center;gap:10px;padding:7px 14px;border-bottom:1px solid var(--line);background:var(--accent-suave);cursor:pointer;font-size:13px}
+.barra-fijado .fj-txt{flex:1 1 auto;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.barra-fijado .fj-txt b{display:block;font-size:11.5px;color:var(--accent)}
+.barra-fijado button{border:0;background:transparent;font-size:16px;cursor:pointer;color:var(--mut)}
+[data-msg].hallado{outline:2px solid color-mix(in srgb,var(--accent) 40%,transparent);outline-offset:2px}
+[data-msg].hallado-actual{outline:2px solid var(--accent);outline-offset:2px}
+.cabeza #btnNuevoChat{margin-left:6px;flex:0 0 auto}
 .conversacion.suelta{outline:2px dashed var(--accent);outline-offset:-8px;background:var(--accent-suave)}
 .lp-num{font-size:12px;font-weight:650;padding:3px 10px;border-radius:999px;background:var(--accent-suave);color:var(--accent);flex:0 0 auto}
 .lp-porque{margin:6px 0 10px;font-size:13px;line-height:1.5;color:var(--mut)}
@@ -4352,6 +4370,7 @@ function montaConversaciones(){
   hueco('conversations',
     '<div class="lista">'
     + '<div class="cabeza"><input id="buscaChat" placeholder="Buscar conversación o mensaje…">'
+    +   '<button id="btnNuevoChat" class="adj" title="Nuevo chat con un número (Alt+N)" aria-label="Nuevo chat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20l1.200-4.200L16.500 4.500a2 2 0 013 3L8.200 18.800z"/></svg></button>'
     +   '<button id="buscaMsgs" title="Buscar dentro de los mensajes" hidden>En los mensajes</button></div>'
     + '<div class="filtros" id="filtros"></div>'
     + '<div class="resbusca" id="resBusca" hidden></div>'
@@ -4371,6 +4390,7 @@ function montaConversaciones(){
   });
   $('buscaChat').addEventListener('keydown', ev => { if (ev.key === 'Enter') buscaEnLosMensajes(); });
   $('buscaMsgs').onclick = buscaEnLosMensajes;
+  $('btnNuevoChat').onclick = abreNuevoChat;
   $('resBusca').addEventListener('click', ev => {
     const fila = ev.target.closest('[data-resconv]');
     if (!fila) return;
@@ -5241,6 +5261,8 @@ function abre(c){
     + '<button class="modo" id="btnAtendido" title="Ya lo atendiste: se quita de «Sin responder» y de «Se enfrían», se baja el aviso de atención humana y la satisfacción lo cuenta como cliente atendido.">Atendido</button>'
     + '<button class="adj" id="verFicha" title="Ficha del lead" aria-label="Ficha del lead">'
     +   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="8.600"/><path d="M12 11v5.200"/><circle cx="12" cy="7.800" r=".7" fill="currentColor" stroke="none"/></svg></button>'
+    + '<button class="adj" id="btnBuscaChat" title="Buscar en esta conversación (Ctrl+F)" aria-label="Buscar en la conversación">'
+    +   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="10.500" cy="10.500" r="6"/><path d="M15 15l5 5"/></svg></button>'
     // Agendar es lo que mas se hace desde un chat y estaba escondido dentro del menu de los
     // tres puntos, a dos clics. Arriba, al lado de la ficha, se pulsa sin buscarlo: es el mismo
     // cuadro de siempre, no una funcion nueva.
@@ -5253,12 +5275,17 @@ function abre(c){
     +   '<button data-mas="contacto">Guardar contacto</button>'
     +   '<button data-mas="silenciar" id="masSilenciar">Silenciar…</button>'
     +   '<button data-mas="anclar" id="masAnclar">Anclar arriba</button>'
+    +   '<button data-mas="buscar">Buscar en este chat</button>'
+    +   '<button data-mas="nolei">Marcar como no leído</button>'
     +   '<button data-mas="encuesta">Enviar encuesta</button>'
     +   (canalDe(c) === 'whatsapp_qr'
           ? '<button data-mas="ubicacion">Enviar ubicación…</button><button data-mas="tarjeta">Enviar contacto…</button>' : '')
     +   '<button data-mas="asistente">Preguntar al asistente</button>'
     +   '<button data-mas="cerrar">Cerrar conversación</button></div></div>'
     + '</div>'
+    + '<div class="barra-busca" id="barraBusca" hidden><input id="busChat" placeholder="Buscar en esta conversación…" autocomplete="off">'
+    +   '<span id="busCuenta" title="Se busca en los mensajes cargados de este chat"></span><button id="busPrev" aria-label="Anterior">↑</button><button id="busSig" aria-label="Siguiente">↓</button><button id="busX" aria-label="Cerrar búsqueda">×</button></div>'
+    + '<div class="barra-fijado" id="barraFijado" hidden></div>'
     + '<div class="mensajes" id="mensajes"></div>'
     + '<div class="ventana24" id="ventana24" hidden></div>'
     + '<div class="ventana24" id="avisoLinea" hidden></div>'
@@ -5569,6 +5596,8 @@ function cableaChat(c){
     if (b.dataset.mas === 'ubicacion') return abreEnviarUbicacion(sel);
     if (b.dataset.mas === 'tarjeta') return abreEnviarContacto(sel);
     if (b.dataset.mas === 'silenciar') return abreSilencio(sel);
+    if (b.dataset.mas === 'buscar') return abreBuscaChat();
+    if (b.dataset.mas === 'nolei') return marcaNoLeido(sel);
     if (b.dataset.mas === 'anclar') return marcaChat(sel, { pin: !anclado(sel) },
       anclado(sel) ? 'Chat desanclado' : 'Chat anclado arriba');
     if (b.dataset.mas === 'encuesta') { abreEncuesta(sel); } else {
@@ -5590,6 +5619,7 @@ function cableaChat(c){
       if (b.dataset.ag === 'agenda') { const sw = $('recEsReserva'); sw.checked = true; sw.dispatchEvent(new Event('change')); }
     };
   }
+  cableaBuscaChat();
   cableaAdjuntos();
   cancelaCita();
   $('citaX').onclick = cancelaCita;
@@ -7195,6 +7225,8 @@ document.addEventListener('click', async ev => {
     + '<button data-op="reenviar">Reenviar</button>'
     + '<button data-op="seleccionar">Seleccionar</button>'
     + '<button data-op="destacar">' + (destacado ? 'Quitar destacado' : 'Destacar') + '</button>'
+    + '<button data-op="fijar">' + (m.metadata?.pinned ? 'Quitar fijado' : 'Fijar en el chat') + '</button>'
+    + '<button data-op="info">Info del mensaje</button>'
     + '<button data-op="copiar">Copiar texto</button>'
     + (puedeEditar ? '<button data-op="editar">Editar</button>' : '')
     + (puedeRetirar ? '<button data-op="retirar" class="peligro">Eliminar para todos</button>' : '')
@@ -7230,6 +7262,11 @@ document.addEventListener('click', async ev => {
       const r = await llama({ action:'star', message_id: m.id, starred: !destacado });
       if (!r.ok) avisa('No se pudo destacar', r.error);
     }
+    else if (op === 'fijar') {
+      const r = await llama({ action:'star', message_id: m.id, pinned: !m.metadata?.pinned });
+      if (!r.ok) avisa('No se pudo fijar', r.error);
+    }
+    else if (op === 'info') abreInfoMensaje(m);
     else if (op === 'editar') abreEditar(m);
     else if (op === 'retirar') {
       const motivo = await pideMotivo({
@@ -7420,9 +7457,10 @@ function abreReenviar(ids){
     + '<div class="campo"><input id="fwdBusca" placeholder="Buscar conversación…"></div>'
     + '<div id="fwdLista"></div></div>'
     + '<div class="mpatas"><button class="fwd-enviar btn-solido" id="fwdEnviar" disabled>Enviar</button></div>');
-  const fila = c => '<button class="tpl' + (destinos.has(c.id || c._id) ? ' marcado' : '') + '" data-dest="'
-    + esc(c.id || c._id) + '"><span class="tplcheck"></span><b>' + esc(nombreDe(c)) + '</b>'
-    + '<span class="tplmeta">+' + esc(c.wa_phone || '') + '</span></button>';
+  // Cada destino lleva la foto del contacto y su nombre (como el selector de WhatsApp), no solo texto.
+  const fila = c => '<button class="tpl fwd-fila' + (destinos.has(c.id || c._id) ? ' marcado' : '') + '" data-dest="'
+    + esc(c.id || c._id) + '">' + avatarDe(c, nombreDe(c)) + '<span class="fwd-quien"><b>' + esc(nombreDe(c)) + '</b>'
+    + '<span class="tplmeta">' + (c.wa_phone ? '+' + esc(c.wa_phone) : esc(CANALES[canalDe(c)]?.corto || '')) + '</span></span><span class="tplcheck"></span></button>';
   const pinta = () => {
     const q = ($('fwdBusca').value || '').trim();
     const todas = CONVS.filter(c => c._id !== (sel?._id))
@@ -7440,6 +7478,7 @@ function abreReenviar(ids){
     } else {
       $('fwdLista').innerHTML = todas.slice(0, 40).map(fila).join('');
     }
+    resuelveAvatares();
   };
   pinta();
   $('fwdBusca').oninput = pinta;
@@ -8623,7 +8662,7 @@ function pintaMensajes(){
   // Se compara el html generado con el anterior; si no cambio, no se toca el DOM. Si
   // cambio, se sustituyen SOLO los globos distintos, y nunca uno con audio sonando.
   pintaVentana24();
-  if (cont.dataset.firma === html) { resuelveMedios(); return; }
+  if (cont.dataset.firma === html) { resuelveMedios(); postPintaMensajes(); return; }
   const previo = cont.dataset.firma;
   cont.dataset.firma = html;
 
@@ -8654,7 +8693,157 @@ function pintaMensajes(){
   }
   if (pegado) cont.scrollTop = cont.scrollHeight;
   resuelveMedios();
+  postPintaMensajes();
 }
+
+/* ---- Lo que faltaba para no abrir WhatsApp Web (K19): buscar en el chat, fijar mensajes, Info, no leido, nuevo chat y atajos ---- */
+const BUSCA_CHAT = { q: '', ids: [], i: 0 };
+function abreBuscaChat(){
+  const barra = $('barraBusca'); if (!barra || !sel) return;
+  barra.hidden = false; const caja = $('busChat'); caja.focus(); caja.select();
+}
+function cierraBuscaChat(){
+  const barra = $('barraBusca'); if (barra) barra.hidden = true;
+  BUSCA_CHAT.q = ''; BUSCA_CHAT.ids = []; BUSCA_CHAT.i = 0;
+  if ($('busChat')) $('busChat').value = '';
+  if ($('busCuenta')) $('busCuenta').textContent = '';
+  document.querySelectorAll('.globo.hallado,.globo.hallado-actual').forEach(g => g.classList.remove('hallado', 'hallado-actual'));
+}
+// Marca los globos que coinciden y salta al actual. Se llama tras cada repintado del hilo (los globos se reconstruyen) y al teclear.
+function aplicaBusquedaChat(salta){
+  document.querySelectorAll('.globo.hallado,.globo.hallado-actual').forEach(g => g.classList.remove('hallado', 'hallado-actual'));
+  const q = sinTildes(BUSCA_CHAT.q).trim();
+  const cuenta = $('busCuenta');
+  if (!q) { BUSCA_CHAT.ids = []; if (cuenta) cuenta.textContent = ''; return; }
+  BUSCA_CHAT.ids = MSGS.filter(m => !infoEliminado(m) && sinTildes(m.body).includes(q)).map(m => String(m.id || m.wamid || ''));
+  const n = BUSCA_CHAT.ids.length;
+  if (BUSCA_CHAT.i >= n || BUSCA_CHAT.i < 0) BUSCA_CHAT.i = Math.max(0, n - 1);
+  if (cuenta) cuenta.textContent = n ? (BUSCA_CHAT.i + 1) + ' de ' + n : 'Sin resultados';
+  BUSCA_CHAT.ids.forEach((id, k) => {
+    const g = document.querySelector('.globo[data-msg="' + CSS.escape(id) + '"]'); if (!g) return;
+    g.classList.add(k === BUSCA_CHAT.i ? 'hallado-actual' : 'hallado');
+    if (k === BUSCA_CHAT.i && salta) g.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  });
+}
+function muevebusquedaChat(paso){
+  const n = BUSCA_CHAT.ids.length; if (!n) return;
+  BUSCA_CHAT.i = (BUSCA_CHAT.i + paso + n) % n; aplicaBusquedaChat(true);
+}
+function cableaBuscaChat(){
+  cierraBuscaChat();
+  if (!$('busChat')) return;
+  if ($('btnBuscaChat')) $('btnBuscaChat').onclick = abreBuscaChat;
+  $('busChat').oninput = () => { BUSCA_CHAT.q = $('busChat').value; BUSCA_CHAT.i = Infinity; aplicaBusquedaChat(true); };
+  $('busChat').onkeydown = ev => {
+    if (ev.key === 'Enter') { ev.preventDefault(); muevebusquedaChat(ev.shiftKey ? 1 : -1); }   // Enter va al mas antiguo, como WhatsApp; Mayus+Enter al mas reciente
+    if (ev.key === 'Escape') cierraBuscaChat();
+  };
+  $('busPrev').onclick = () => muevebusquedaChat(-1);
+  $('busSig').onclick = () => muevebusquedaChat(1);
+  $('busX').onclick = cierraBuscaChat;
+}
+// Mensajes fijados del chat: una franja bajo la cabecera con el ultimo; pulsarla salta a el, la x lo suelta. Es una marca solo del CRM.
+let FIJADO_I = 0;
+function pintaFijado(){
+  const b = $('barraFijado'); if (!b) return;
+  const fijados = MSGS.filter(m => m.metadata?.pinned && !infoEliminado(m));
+  if (!fijados.length) { b.hidden = true; b.innerHTML = ''; b.dataset.msg = ''; return; }
+  FIJADO_I = Math.min(Math.max(0, FIJADO_I), fijados.length - 1);
+  const m = fijados[fijados.length - 1 - FIJADO_I];
+  b.hidden = false; b.dataset.msg = String(m.id || m.wamid || '');
+  const texto = String(m.body || '').replace(/\s+/g, ' ').trim().slice(0, 120) || '[' + String(m.msg_type || 'archivo') + ']';
+  b.innerHTML = '<span class="fj-ico">📌</span><span class="fj-txt"><b>Mensaje fijado' + (fijados.length > 1 ? ' · ' + (FIJADO_I + 1) + ' de ' + fijados.length : '') + '</b>' + esc(texto) + '</span>'
+    + '<button data-fj="quita" title="Quitar el fijado" aria-label="Quitar el fijado">×</button>';
+}
+document.addEventListener('click', async ev => {
+  const b = ev.target.closest && ev.target.closest('#barraFijado'); if (!b) return;
+  const id = b.dataset.msg; if (!id) return;
+  if (ev.target.closest('[data-fj="quita"]')) {
+    const r = await llama({ action: 'star', message_id: id, pinned: false });
+    if (!r.ok) avisa('No se pudo quitar', r.error);
+    return;
+  }
+  saltaAlMensaje(id); FIJADO_I++; setTimeout(pintaFijado, 50);
+});
+function postPintaMensajes(){ pintaFijado(); if (BUSCA_CHAT.q) aplicaBusquedaChat(false); }
+
+// «Info del mensaje»: lo que se sabe de el, sin inventar lo que WhatsApp no manda (la hora de entrega solo existe si el puente la apunto).
+function abreInfoMensaje(m){
+  const fecha = v => { const d = new Date(v); return v && !Number.isNaN(d.getTime()) ? d.toLocaleString('es-DO', { day:'numeric', month:'long', year:'numeric', hour:'numeric', minute:'2-digit', second:'2-digit' }) : ''; };
+  const sale = m.direction === 'out';
+  const estado = { read:'Leído', delivered:'Entregado', sent:'Enviado', failed:'No se pudo enviar', enviando:'En cola' }[String(m.delivery_status || (sale ? 'sent' : ''))] || '';
+  const filas = [
+    [sale ? 'Enviado' : 'Recibido', fecha(m.created_at || m.occurred_at)],
+    sale ? ['Estado', estado] : null,
+    sale && m.delivered_at ? ['Entregado', fecha(m.delivered_at)] : null,
+    sale && m.read_at ? ['Leído', fecha(m.read_at)] : null,
+    sale ? ['Lo envió', m.sender === 'bot' ? 'El bot' : (m.sender_name || 'Una persona del equipo')] : null,
+    ['Canal', CANALES[canalDe(sel)]?.nombre || ''],
+    m.metadata?.editado ? ['Editado', fecha(m.metadata.editado_en) || 'Sí'] : null,
+    m.metadata?.starred ? ['Destacado', 'Sí'] : null,
+    m.metadata?.pinned ? ['Fijado', 'Sí'] : null,
+  ].filter(f => f && f[1]);
+  abreModal('<div class="mtapa"><b>Info del mensaje</b><button class="cerrarm" data-cerrar>×</button></div><div class="mcuerpo">'
+    + '<p class="mm-dijo">' + esc(String(m.body || '[' + (m.msg_type || 'archivo') + ']').slice(0, 300)) + '</p>'
+    + filas.map(([k, v]) => '<div class="campo" style="margin:6px 0"><label>' + esc(k) + '</label><div>' + esc(v) + '</div></div>').join('')
+    + (sale && !m.read_at && !m.delivered_at ? '<p class="nota">WhatsApp solo avisa de la entrega y la lectura cuando el cliente lo permite (confirmación de lectura).</p>' : '')
+    + '</div>');
+}
+
+// «Marcar como no leido»: sube el contador a 1 y cierra el chat para que quede en la bandeja como pendiente. Solo del CRM (no cambia el telefono).
+async function marcaNoLeido(c){
+  if (!c) return;
+  const id = c.id || c._id;
+  const r = await llama({ action: 'updateLead', conversation_id: id, fields: { unread: 1 } });
+  if (!r.ok) return avisa('No se pudo marcar', r.error);
+  c.unread = 1;
+  sel = null; cierraBuscaChat();
+  if ($('conversacion')) $('conversacion').style.display = 'none';
+  if ($('sinChat')) $('sinChat').style.display = '';
+  if ($('ficha')) { $('ficha').style.display = 'none'; $('ficha').classList.remove('on'); }
+  document.body.classList.remove('chat-abierto');
+  pintaCuentas(); pintaChats();
+  avisa('Marcado como no leído', 'Queda en la bandeja como pendiente.');
+}
+
+// «Nuevo chat»: escribirle a un numero que aun no esta en el CRM. Si ya hay chat con ese numero se abre; si no, el servidor comprueba que tenga WhatsApp.
+function abreNuevoChat(){
+  abreModal('<div class="mtapa"><b>Nuevo chat</b><button class="cerrarm" data-cerrar>×</button></div><div class="mcuerpo">'
+    + '<p class="bajada">Escribe el número con el código de área (809, 829 o 849) o con el del país. Se comprueba que tenga WhatsApp y se abre el chat.</p>'
+    + '<div class="campo"><label>Número</label><input id="ncTel" inputmode="tel" placeholder="809 555 0123" autocomplete="off"></div>'
+    + '<div class="campo"><label>Nombre (opcional)</label><input id="ncNombre" placeholder="Cómo lo guardas" autocomplete="off"></div></div>'
+    + '<div class="mpatas"><button class="btn-solido" id="ncIr">Abrir chat</button></div>');
+  const ir = () => {
+    const tel = telefonoParaChat($('ncTel').value);
+    if (!tel) return avisa('Número no válido', 'Escríbelo con el código de área (809, 829 u 849) o con el del país.');
+    const nombre = $('ncNombre').value.trim();
+    cierraModal();
+    const ya = CONVS_TODAS.find(c => soloDigitos(c.wa_phone) === tel);
+    if (ya) { ve('conversations'); return abre(ya); }
+    iniciaChat(tel, nombre);
+  };
+  $('ncIr').onclick = ir;
+  $('ncTel').addEventListener('keydown', e => { if (e.key === 'Enter') ir(); });
+  setTimeout(() => $('ncTel')?.focus(), 60);
+}
+
+// Atajos, como en WhatsApp Web: Ctrl+K busca chats, Ctrl+F busca dentro del chat abierto, Alt+N chat nuevo, Alt+↑/↓ chat anterior/siguiente,
+// Esc cierra la busqueda. Ctrl+N no se puede usar: el navegador lo reserva para abrir una ventana.
+document.addEventListener('keydown', ev => {
+  if (typeof vistaActual === 'undefined' || vistaActual !== 'conversations' || !$('buscaChat')) return;
+  if (document.querySelector('.modal.on')) return;
+  const ctrl = ev.ctrlKey || ev.metaKey, k = String(ev.key || '').toLowerCase();
+  if (ctrl && k === 'k') { ev.preventDefault(); $('buscaChat').focus(); $('buscaChat').select(); return; }
+  if (ctrl && k === 'f' && sel) { ev.preventDefault(); abreBuscaChat(); return; }
+  if (ev.altKey && k === 'n') { ev.preventDefault(); abreNuevoChat(); return; }
+  if (ev.altKey && (k === 'arrowdown' || k === 'arrowup') && sel) {
+    ev.preventDefault();
+    const lista = filtradas(); const i = lista.findIndex(c => (c.id || c._id) === (sel.id || sel._id));
+    const sig = lista[i + (k === 'arrowdown' ? 1 : -1)]; if (sig) abre(sig);
+    return;
+  }
+  if (k === 'escape' && $('barraBusca') && !$('barraBusca').hidden) cierraBuscaChat();
+});
 
 /* ---- Ficha del lead ------------------------------------------------------ */
 // Copiados del panel anterior tal cual. Los invente de memoria en la primera version
