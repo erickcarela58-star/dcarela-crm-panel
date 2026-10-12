@@ -1,7 +1,7 @@
 {
-  "version": "2026-10-12-ia-proveedores-v173",
+  "version": "2026-10-12-llamadas-5644-v174",
   "channel": "crm",
-  "released_at": "2026-10-12T20:31:52.551Z",
-  "summary": "Conexiones y API: varios proveedores de IA (Gemini, OpenAI, Anthropic, DeepSeek, OpenRouter), orden y respaldo automatico.",
+  "released_at": "2026-10-12T20:41:30.889Z",
+  "summary": "Canales: aviso inmediato de llamadas perdidas del 5644 y rechazo automatico opcional con mensaje.",
   "requiere_puente": "2026-09-28-lectura-v34"
 }
