@@ -2174,6 +2174,18 @@ input[type="checkbox"],input[type="radio"]{accent-color:var(--accent)}
 .st-miniaturas img{width:96px;height:96px;object-fit:cover;border-radius:10px;display:block}
 .st-miniaturas .st-ctl{position:absolute;top:3px;right:3px;width:22px;height:22px;font-size:14px;line-height:20px;padding:0;border-radius:50%;background:rgba(0,0,0,.6);color:#fff}
 .st-mas{text-align:center;margin:8px 0}
+/* Dashboard: lo que toca hoy + periodo + paneles nuevos */
+.dash-hoy{margin:6px 0 16px;max-width:1240px;padding:16px 18px;border-radius:20px;background:linear-gradient(135deg,color-mix(in srgb,var(--ink,#2c6bed) 14%,transparent),transparent 70%),var(--panel);box-shadow:0 0 0 .5px var(--line)}
+.dh-titulo{display:flex;gap:10px;align-items:baseline;margin-bottom:10px}.dh-titulo b{font-size:15px}.dh-titulo span{font-size:12px;color:var(--mut)}
+.dh-fila{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px}
+.dh-i{display:flex;flex-direction:column;gap:2px;text-align:left;padding:12px 14px;border:0;border-radius:14px;background:var(--hover);cursor:pointer;transition:transform .15s}
+.dh-i:hover{transform:translateY(-2px)}
+.dh-i b{font-size:28px;line-height:1.1}.dh-i span{font-size:13px;font-weight:650}.dh-i i{font-size:11.5px;color:var(--mut);font-style:normal}
+.dh-i.ojo b{color:var(--warn)}.dh-i.mal b{color:var(--bad)}.dh-i.bien b{color:var(--ok)}.dh-i.medio b{color:var(--warn)}
+.dash-barra{display:flex;gap:12px;align-items:center;margin:4px 0 10px;font-size:13px;color:var(--mut)}
+.dash-grande b{font-size:38px;line-height:1}
+.dash-dl{display:block;margin-top:6px;font-size:12.5px;color:var(--mut)}.dash-dl.sube{color:var(--ok)}.dash-dl.baja{color:var(--bad)}
+.dash-mini{display:flex;gap:16px;flex-wrap:wrap;margin-top:12px;font-size:12.5px;color:var(--mut)}.dash-mini b{color:var(--fg);font-size:16px;margin-right:4px}
 /* Clientes de caja */
 .cc-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin:6px 0 14px;max-width:900px}
 .cc-kpi{padding:12px 14px;border-radius:14px;background:var(--panel);box-shadow:0 0 0 .5px var(--line)}
@@ -5528,9 +5540,10 @@ function cableaChat(c){
       let salieronQr = 0, falloQr = null;
       for (let i = 0; i < COLA.length && !falloQr; i++) {
         const a = COLA[i];
-        const r = await llama({
+        const adj = await cuerpoDeAdjunto(a);
+        const r = !adj.ok ? { ok:false, error: adj.error } : await llama({
           action:'bridgeQueue', conversation_id: conv,
-          media_kind: a.tipo, media_b64: a.datos, media_filename: a.nombre, media_mime: a.mime,
+          media_kind: a.tipo, ...adj.cuerpo, media_filename: a.nombre, media_mime: a.mime,
           // Se manda la vista previa junto al archivo: el archivo se borra al enviarse y esto
           // es lo que deja el mensaje visible en el hilo. Ver miniaturaParaEnviar.
           ...(a.thumb ? { media_thumb_b64: a.thumb } : {}),
@@ -5595,9 +5608,10 @@ function cableaChat(c){
     let enviados = 0;
     for (let i = 0; i < COLA.length && !fallo; i++) {
       const a = COLA[i];
-      const r = await llama({
+      const adj = await cuerpoDeAdjunto(a);
+      const r = !adj.ok ? { ok:false, error: adj.error } : await llama({
         action:'send', conversation_id: conv,
-        media_kind: a.tipo, media_b64: a.datos, media_filename: a.nombre, media_mime: a.mime,
+        media_kind: a.tipo, ...adj.cuerpo, media_filename: a.nombre, media_mime: a.mime,
         body: (t && i === ultimoConPie) ? t : '',
         // Los botones exigen texto: si el pie fue a otro adjunto, este va sin nada que
         // decir y Meta rechazaria el mensaje entero. En ese caso se manda sin botones.
@@ -5700,12 +5714,17 @@ let modoHd = true;
 //    compresion iba a bajar de sobra. Solo los documentos van intactos por el puente, y ahi
 //    si manda el tope del servidor (TOPE_MEDIO_PUENTE, 8 MB).
 function LIMITE_MB(porPuente, tipo){
-  if (porPuente) return tipo === 'document' ? 8 : 60;
-  // Un documento por Meta pesa hasta 22 MB: el cuerpo de la funcion admite 32 MB y base64 lo
-  // infla un tercio. Las fotos siguen en 15/12 porque Meta las acepta de 5 MB y se comprimen antes.
-  if (tipo === 'document') return 22;
+  // Los documentos grandes ya no caben en UN envio (la funcion admite 32 MB): se suben por trozos de 12 MB y el servidor los
+  // une (subeEnTrozos). Por WhatsApp Web (el puente) hasta 380 MB, que es lo que componen 32 trozos; por la API oficial el
+  // tope es de Meta, no nuestro: 100 MB. Las fotos siguen en 15/12 porque Meta las acepta de 5 MB y se comprimen antes.
+  if (porPuente) return tipo === 'document' ? 380 : 60;
+  if (tipo === 'document') return 100;
   return modoHd ? 15 : 12;
 }
+// Desde este peso un documento no viaja en un solo POST con base64: se parte (ver subeEnTrozos). Igual que
+// UMBRAL_SIN_TROZOS_BYTES / TROZO_MAX_BYTES de firebase-functions/src/subida-trozos-core.js.
+const UMBRAL_TROZOS = 14 * 1024 * 1024;
+const TROZO_SUBIDA = 12 * 1024 * 1024;
 
 // Lo que admite cada red social. Es una COPIA de FORMATOS_SOCIAL
 // (firebase-functions/src/transport-core.js): decide el servidor, y esto solo sirve para avisar
@@ -5757,6 +5776,9 @@ function problemaAdjuntoRed(red, a){
 async function recalculaCola(){
   for (const a of COLA) {
     if (a.tipo !== 'image' || !a.archivo) {
+      // Un documento grande NO se convierte a base64 aqui: no cabe en un solo envio y leerlo entero en memoria no sirve
+      // de nada. Se queda como archivo y se sube por trozos al enviar (subeEnTrozos).
+      if (a.tipo === 'document' && a.archivo && a.archivo.size > UMBRAL_TROZOS) { a.grande = true; a.kb = Math.round(a.archivo.size/1024); continue; }
       if (!a.datos && a.archivo) { a.datos = await leeBase64(a.archivo); a.kb = Math.round(a.archivo.size/1024); }
       continue;
     }
@@ -5818,9 +5840,11 @@ function pintaCola(){
       : '<span class="ico">' + (ICONO[a.tipo] || ICONO.document) + '</span>';
     const peso = a.kb || (a.datos ? Math.round(a.datos.length * 0.75 / 1024) : 0);
     const marca = a.tipo === 'image' ? (a.hd ? ' · HD' : '') : '';
+    // De 1 MB en adelante se dice en MB: «152340 KB» no se lee. Mientras sube por trozos se ve el avance.
+    const pesoTxt = peso >= 1024 ? (peso / 1024).toFixed(peso >= 10240 ? 0 : 1) + ' MB' : peso + ' KB';
     return '<span class="pieza">' + previa
       + '<span class="pnom">' + esc(a.nombre)
-      +   (peso ? '<i>' + peso + ' KB' + marca + '</i>' : '') + '</span>'
+      +   (a.subida ? '<i>' + esc(a.subida) + '</i>' : (peso ? '<i>' + pesoTxt + marca + '</i>' : '')) + '</span>'
       + '<button data-quita="' + i + '" aria-label="Quitar">×</button></span>';
   }).join('');
 }
@@ -5831,6 +5855,32 @@ function leeBase64(f){
     l.onerror = () => rej(new Error('no se pudo leer ' + f.name));
     l.readAsDataURL(f);
   });
+}
+// Un documento grande se parte en trozos de 12 MB y se sube de a uno por crmApi (accion subirTrozo); el envio lo une en
+// el servidor. Cada trozo se reintenta tres veces: en una subida de 60 MB un corte de red no debe obligar a empezar de cero
+// el archivo entero. Devuelve { ok, cuerpo } con lo que el envio necesita, o { ok:false, error }.
+async function subeEnTrozos(a){
+  const id = (crypto.randomUUID ? crypto.randomUUID() : '10000000-1000-4000-8000-100000000000'.replace(/[018]/g, c => (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16)));
+  const total = Math.ceil(a.archivo.size / TROZO_SUBIDA);
+  for (let i = 0; i < total; i++) {
+    a.subida = 'Subiendo ' + (i + 1) + ' de ' + total; pintaCola();
+    let base64;
+    try { base64 = await leeBase64(a.archivo.slice(i * TROZO_SUBIDA, (i + 1) * TROZO_SUBIDA)); }
+    catch (e) { a.subida = ''; pintaCola(); return { ok:false, error:'no se pudo leer el archivo' }; }
+    let r = { ok:false };
+    for (let intento = 1; intento <= 3 && !r.ok; intento++) {
+      r = await llama({ action:'subirTrozo', upload_id:id, index:i, total, base64 });
+      if (!r.ok && intento < 3) await new Promise(res => setTimeout(res, 800 * intento));
+    }
+    if (!r.ok) { a.subida = ''; pintaCola(); return { ok:false, error: r.error || 'no se pudo subir el archivo' }; }
+  }
+  a.subida = ''; pintaCola();
+  return { ok:true, cuerpo:{ media_upload_id:id, media_chunks:total } };
+}
+// Lo que lleva el envio de un adjunto: el base64 de siempre, o la referencia a la subida por trozos si es grande.
+async function cuerpoDeAdjunto(a){
+  if (!a.grande) return { ok:true, cuerpo:{ media_b64: a.datos } };
+  return subeEnTrozos(a);
 }
 // WhatsApp sube imagenes hasta ~5 MB por id, que es el metodo fiable; por encima cae
 // al envio por enlace y falla con #131053. Y recomprime a ~2560 px de lado largo de
@@ -13157,13 +13207,18 @@ function pintaHoy(){
 // TODO sale de CONVS, que ya esta en memoria y en vivo. Ninguna cifra se guarda aparte:
 // dos sitios donde vive el mismo numero acaban discrepando y nadie sabe cual creer.
 
+let DASH_DIAS = 14;
 function montaDashboard(){
   if (!montadas.has('dashboard')) {
     montadas.add('dashboard');
     hueco('dashboard', '<div class="hoja"><h1>Dashboard</h1>'
       + '<p class="bajada">Lo que hay ahora mismo. Se actualiza solo.</p>'
+      + '<div class="dash-hoy" id="dashHoy"></div>'
       + '<div class="cifras" id="cifras"></div>'
+      + '<div class="dash-barra"><b>Período</b><div class="filtros" id="dashPeriodo" style="padding:0"></div></div>'
       + '<div class="tablero" id="tablero"></div></div>');
+    $('dashPeriodo').onclick = ev => { const b = ev.target.closest('[data-dias]'); if (!b) return; DASH_DIAS = Number(b.dataset.dias); pintaDashboard(); };
+    $('dashHoy').onclick = ev => { const b = ev.target.closest('[data-hsec]'); if (b) ve('hoy'); };
   }
   pintaDashboard();
 }
@@ -13231,6 +13286,17 @@ function panel(titulo, nota, cuerpo){
 // --- Pintado ----------------------------------------------------------------
 function pintaDashboard(){
   const c = $('cifras'); if (!c) return;
+  // Lo primero que se ve: que toca atender HOY (la misma cola de la pantalla «Hoy»), con cada cifra tocable. Y el selector de periodo de las graficas.
+  try {
+    const cola = COLA_HOY.colaDeTrabajo(CONVS, { ahora: Date.now() });
+    const dh = (n, t, nota, tono) => '<button class="dh-i' + (tono ? ' ' + tono : '') + '" data-hsec="1"><b>' + n + '</b><span>' + esc(t) + '</span><i>' + esc(nota) + '</i></button>';
+    $('dashHoy').innerHTML = '<div class="dh-titulo"><b>Lo que toca hoy</b><span>toca una cifra para ir a «Hoy»</span></div><div class="dh-fila">'
+      + dh(cola.sin_responder.total, 'Sin responder', cola.sin_responder.hoy + ' de hoy · ' + cola.sin_responder.atrasado + ' atrasados', cola.sin_responder.total ? 'ojo' : '')
+      + dh(cola.se_enfrian.total, 'Se enfrían', 'cotizaciones sin respuesta nuestra', cola.se_enfrian.total ? 'medio' : '')
+      + dh(cola.seguimientos.total, 'Seguimientos', cola.seguimientos.vencidos + ' vencidos', cola.seguimientos.vencidos ? 'mal' : '')
+      + dh(cola.sesiones.total, 'Sesiones', cola.sesiones.hoy + ' hoy · el resto mañana', cola.sesiones.hoy ? 'bien' : '') + '</div>';
+  } catch (e) { $('dashHoy').innerHTML = ''; }
+  $('dashPeriodo').innerHTML = [7, 14, 30].map(n => '<button class="filtro' + (DASH_DIAS === n ? ' on' : '') + '" data-dias="' + n + '">' + n + ' días</button>').join('');
   const hoy = new Date().toDateString();
   const sinLeer = CONVS.filter(x => Number(x.unread||0) > 0).length;
   const humano = CONVS.filter(x => x.mode === 'human' || x.human_handoff_required).length;
@@ -13278,8 +13344,9 @@ function pintaDashboard(){
   };
 
   // --- Actividad de los ultimos 14 dias
+  const N = DASH_DIAS;
   const dias = [], etiq = [];
-  for (let i = 13; i >= 0; i--) {
+  for (let i = N - 1; i >= 0; i--) {
     const d = diasAtras(i), sig = diasAtras(i-1);
     dias.push(CONVS.filter(x => {
       const t = new Date(x.last_message_at || 0);
@@ -13305,10 +13372,30 @@ function pintaDashboard(){
     return { n: e.replace(/_/g,' '), v: de, pct: antes ? Math.round(de / antes * 100) : 100 };
   });
 
+  // Contactos nuevos del periodo y su variacion contra el periodo anterior de la misma duracion.
+  const primera = x => { const t = Date.parse(String(x.first_seen_at || x.created_at || '')); return Number.isFinite(t) ? t : NaN; };
+  const desde = diasAtras(N - 1).getTime(), desdeAnt = diasAtras(2 * N - 1).getTime();
+  const nuevosAhora = CONVS.filter(x => primera(x) >= desde).length;
+  const nuevosAntes = CONVS.filter(x => primera(x) >= desdeAnt && primera(x) < desde).length;
+  const delta = nuevosAntes ? Math.round((nuevosAhora - nuevosAntes) / nuevosAntes * 100) : null;
+  const reservasWeb = CONVS.filter(x => etiquetasDe(x).includes('reserva_web') && Date.parse(String(x.web_reserva_at || '')) >= desde).length;
+  const atendidos = CONVS.filter(x => Date.parse(String(x.atendido_at || '')) >= desde).length;
+  const nuevosHtml = '<div class="dash-grande"><b>' + nuevosAhora + '</b>' + (delta === null ? '<span class="dash-dl">sin período anterior para comparar</span>'
+      : '<span class="dash-dl ' + (delta >= 0 ? 'sube' : 'baja') + '">' + (delta >= 0 ? '▲ ' : '▼ ') + Math.abs(delta) + '% vs. los ' + N + ' días anteriores (' + nuevosAntes + ')</span>') + '</div>'
+    + '<div class="dash-mini"><span><b>' + reservasWeb + '</b> reservas desde la web</span><span><b>' + atendidos + '</b> marcados «Atendido»</span></div>';
+  const cuentaCat = new Map();
+  CONVS.forEach(x => { const k = String(x.interested_category || '').trim(); if (k && k !== 'Sin categoría') cuentaCat.set(k, (cuentaCat.get(k) || 0) + 1); });
+  const porCategoria = [...cuentaCat.entries()].sort((a, b) => b[1] - a[1]).slice(0, 7).map(([n, v]) => ({ n, v }));
+  const franjas = [['6–9 h', 6, 9], ['9–12 h', 9, 12], ['12–15 h', 12, 15], ['15–18 h', 15, 18], ['18–21 h', 18, 21], ['21–6 h', 21, 30]];
+  const porHora = franjas.map(([n, a, b]) => ({ n, v: CONVS.filter(x => { const t = Date.parse(String(x.last_customer_reply_at || '')); if (!Number.isFinite(t) || t < desde) return false; let h = new Date(t).getHours(); if (h < 6) h += 24; return h >= a && h < b; }).length }));
+
   $('tablero').innerHTML =
-    panel('Actividad', 'últimos 14 días', grafArea(dias, etiq))
+    panel('Actividad', 'últimos ' + N + ' días', grafArea(dias, etiq))
     + panel('Por etapa', CONVS.length + ' contactos', grafBarras(porEtapa))
     + panel('Por canal', 'de dónde escriben', grafAnillo(porCanal))
+    + panel('Contactos nuevos', 'últimos ' + N + ' días', nuevosHtml)
+    + panel('Qué piden', 'categoría de interés', grafBarras(porCategoria.length ? porCategoria : [{ n: 'Sin datos todavía', v: 0 }]))
+    + panel('Cuándo escriben', 'por franja horaria (hora local)', grafBarras(porHora))
     + panel('Embudo', 'cuánta gente pasa de una etapa a la siguiente',
         '<div class="embudo">' + embudo.map((f,i) =>
           '<div class="epaso"><span class="en">' + esc(f.n) + '</span>'
@@ -15908,17 +15995,37 @@ function abreRecordatorio(c){
   if (!c) return;
   const en = h => { const d = new Date(Date.now() + h*3600000); d.setMinutes(0,0,0); return d; };
   const iso = d => new Date(d.getTime() - d.getTimezoneOffset()*60000).toISOString().slice(0,16);
-  abreModal('<div class="mtapa"><b>Recordatorio · ' + esc(nombreDe(c)) + '</b>'
+  // Reservacion actual del contacto, para avisar que guardar otra la reemplaza (la ficha guarda UNA: scheduled_at o tentative_date).
+  const reservaActual = c.scheduled_at || c.tentative_date || '';
+  const reservaCancelada = c.session_status === 'cancelada';
+  const hayReserva = !!reservaActual && !reservaCancelada;
+  abreModal('<div class="mtapa"><b id="recTitulo">Recordatorio · ' + esc(nombreDe(c)) + '</b>'
     + '<button class="cerrarm" data-cerrar>×</button></div>'
     + '<div class="mcuerpo">'
+    // El segundo interruptor: el mismo cuadro sirve para agendar una RESERVACION vinculada a este contacto. Sale en la Agenda y en el embudo.
+    + '<label class="cfgsw"><input type="checkbox" id="recEsReserva"><span><b>Es una reservación</b>'
+    +   '<i>Agenda una sesión de ' + esc(nombreDe(c)) + ': queda en su ficha y en la Agenda.</i></span></label>'
     + '<div class="pdfs" style="margin-bottom:12px">'
     +   '<button class="tplchip" data-en="4">En 4 horas</button>'
     +   '<button class="tplchip" data-en="24">Mañana</button>'
     +   '<button class="tplchip" data-en="72">En 3 días</button>'
     +   '<button class="tplchip" data-en="168">En una semana</button>'
     + '</div>'
-    + '<div class="campo"><label>Cuándo</label>'
+    + '<div class="campo"><label id="recCuandoEt">Cuándo</label>'
     +   '<input type="datetime-local" id="recCuando" value="' + iso(en(24)) + '"></div>'
+    + '<div id="recBloqueRes" hidden>'
+    +   (hayReserva ? '<p class="aviso" id="recYaTiene">Ya tiene una reservación el <b>'
+        + esc(new Date(reservaActual).toLocaleString('es-DO', { dateStyle:'medium', timeStyle:'short' }))
+        + '</b>' + (c.scheduled_at ? '' : ' (tentativa)') + '. Guardar esta la reemplaza.</p>' : '')
+    +   '<p class="aviso" id="recChoque" hidden></p>'
+    +   '<div class="par">'
+    +     '<div class="campo"><label>Categoría</label><input id="recCat" value="' + esc(c.interested_category || '') + '" placeholder="xv, boda…"></div>'
+    +     '<div class="campo"><label>Combo</label><input id="recCombo" value="' + esc(c.selected_combo_name || '') + '"></div>'
+    +   '</div>'
+    +   '<label class="cfgsw"><input type="checkbox" id="recFirme" checked><span><b>Confirmada</b>'
+    +     '<i>Sin marcar queda como fecha tentativa, que no bloquea el hueco.</i></span></label>'
+    + '</div>'
+    + '<div id="recBloqueRec">'
     + '<div class="campo"><label>Para acordarme de…</label>'
     +   '<textarea id="recNota" rows="2" placeholder="Ej. confirmar si consiguió la fecha">'
     +   esc(c.next_step_suggested || '') + '</textarea></div>'
@@ -15943,17 +16050,68 @@ function abreRecordatorio(c){
             + 'de 24 horas ni plantillas.</p>')
     + '</div>'
     + '</div>'
+    + '</div>'
     + '<div class="mpatas"><button class="btn-linea" data-cerrar>Cancelar</button>'
     +   '<button class="btn-solido" id="recGuardar">Guardar recordatorio</button></div>');
   $('modal').querySelectorAll('[data-cerrar]').forEach(b => { b.onclick = cierraModal; });
   $('modal').querySelector('.pdfs').onclick = ev => {
     const b = ev.target.closest('[data-en]'); if (!b) return;
     $('recCuando').value = iso(en(Number(b.dataset.en)));
+    avisaChoque();
   };
   $('recEnviar2').onchange = ev => { $('recMsgCampo').hidden = !ev.target.checked; };
+  // Con el interruptor de reservacion se cambia el formulario: fecha + categoria/combo/confirmada en vez de nota y mensaje.
+  const esReserva = () => $('recEsReserva').checked;
+  // Otra sesion confirmada dentro de la misma hora (+-59 min) de OTRO contacto: se avisa, no se bloquea (el dueño decide).
+  const avisaChoque = () => {
+    const caja = $('recChoque'); if (!caja) return;
+    const t = new Date($('recCuando').value).getTime();
+    const choques = !esReserva() || !Number.isFinite(t) ? [] : CONVS.filter(x => x !== c && (x.id || x._id) !== (c.id || c._id)
+      && x.scheduled_at && x.session_status !== 'cancelada' && Math.abs(new Date(x.scheduled_at).getTime() - t) < 3600000);
+    caja.hidden = !choques.length;
+    caja.innerHTML = choques.length ? 'Ojo: a esa hora ya hay ' + choques.slice(0, 3).map(x => '<b>' + esc(nombreDe(x)) + '</b> ('
+      + esc(new Date(x.scheduled_at).toLocaleTimeString('es-DO', { hour:'numeric', minute:'2-digit' })) + ')').join(', ')
+      + (choques.length > 3 ? ' y ' + (choques.length - 3) + ' más' : '') + '.' : '';
+  };
+  $('recCuando').onchange = avisaChoque;
+  $('recEsReserva').onchange = () => {
+    const r = esReserva();
+    $('recBloqueRes').hidden = !r;
+    $('recBloqueRec').hidden = r;
+    $('recTitulo').textContent = (r ? 'Reservación · ' : 'Recordatorio · ') + nombreDe(c);
+    $('recCuandoEt').textContent = r ? 'Fecha y hora de la sesión' : 'Cuándo';
+    $('recGuardar').textContent = r ? 'Guardar reservación' : 'Guardar recordatorio';
+    avisaChoque();
+  };
   $('recGuardar').onclick = async () => {
     const cuando = $('recCuando').value;
     if (!cuando) return avisa('Falta la fecha');
+    if (esReserva()) {
+      // Igual que «Agendar sesion» de la Agenda: confirmada = scheduled_at (bloquea el hueco), sin marcar = fecha tentativa. La
+      // etapa pasa a «reservado» solo con la confirmada y nunca baja a quien ya es cliente. session_status se actualiza para que una
+      // reservacion anterior cancelada no deje la nueva marcada como cancelada.
+      const firme = $('recFirme').checked;
+      const iso8601 = new Date(cuando).toISOString();
+      const reserva = {
+        interested_category: $('recCat').value.trim() || c.interested_category || '',
+        reservation_status: firme ? 'confirmado' : 'fecha_tentativa',
+        session_status: firme ? 'confirmada' : 'por_confirmar',
+        ...(firme
+          ? { scheduled_at: iso8601, lifecycle_stage: ['cliente', 'reservado'].includes(c.lifecycle_stage) ? c.lifecycle_stage : 'reservado' }
+          : { tentative_date: iso8601, scheduled_at: '' }),
+      };
+      if ($('recCombo').value.trim()) reserva.selected_combo_name = $('recCombo').value.trim();
+      $('recGuardar').disabled = true;
+      const rr = await llama({ action:'updateLead', conversation_id: c.id || c._id, fields: reserva });
+      $('recGuardar').disabled = false;
+      if (!rr.ok) return avisa('No se pudo guardar la reservación', rr.error);
+      Object.assign(c, reserva, firme ? {} : { scheduled_at: null });
+      cierraModal();
+      avisa(firme ? 'Reservación confirmada' : 'Reservación tentativa', nombreDe(c) + ' · ' + new Date(cuando).toLocaleString('es-DO', { dateStyle:'medium', timeStyle:'short' }));
+      if (typeof pintaAgenda === 'function') pintaAgenda();
+      if (typeof pintaChats === 'function') pintaChats();
+      return;
+    }
     const campos = {
       follow_up_at: new Date(cuando).toISOString(),
       next_step_suggested: $('recNota').value.trim() || c.next_step_suggested || '',
