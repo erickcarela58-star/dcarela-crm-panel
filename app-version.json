@@ -1,7 +1,7 @@
 {
-  "version": "2026-10-13-sin-numero-v181",
+  "version": "2026-10-13-llamar-eligiendo-numero-v182",
   "channel": "crm",
-  "released_at": "2026-10-13T05:34:40.655Z",
-  "summary": "Los contactos que WhatsApp no deja ver con numero aparecen como «Sin numero» en vez de quedarse sin mostrar.",
+  "released_at": "2026-10-13T13:53:42.614Z",
+  "summary": "Llamar: cuadro para elegir con que numero (5644 sin permiso / oficial). Portafolio: guarda tambien el original completo.",
   "requiere_puente": "2026-09-28-lectura-v34"
 }
