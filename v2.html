@@ -9445,7 +9445,8 @@ function cableaBuscaChat(){
   cierraBuscaChat();
   if (!$('busChat')) return;
   if ($('btnBuscaChat')) $('btnBuscaChat').onclick = abreBuscaChat;
-  if ($('btnLlamar5644')) $('btnLlamar5644').onclick = () => { const cc = buscaConv(sel?.id || sel?._id); if (cc) abreLlamar5644(cc); };
+  // Llamar es nativo en todos los chats con teléfono: sale por el número oficial (WhatsApp Web no deja marcar), pidiendo permiso al cliente la primera vez.
+  if ($('btnLlamar5644')) $('btnLlamar5644').onclick = () => { const cc = buscaConv(sel?.id || sel?._id); if (cc) void llamaAlContacto(cc); };
   if ($('btnLlamar')) $('btnLlamar').onclick = () => { const cc = buscaConv(sel?.id || sel?._id); if (cc) void llamaAlContacto(cc); };
   $('busChat').oninput = () => { BUSCA_CHAT.q = $('busChat').value; BUSCA_CHAT.i = Infinity; aplicaBusquedaChat(true); };
   $('busChat').onkeydown = ev => {
@@ -12553,8 +12554,11 @@ async function llamaAlContacto(c){
   if (!p.ok) return avisa('No se puede llamar', p.error || 'Inténtalo de nuevo.');
   if (!p.puede_llamar) {
     if (!p.puede_pedir) return avisa('Todavía no puedes llamarle', 'Meta solo deja pedir permiso 1 vez al día y 2 por semana a cada cliente. Escríbele por el chat.');
-    if (!await confirmaAqui('Para llamar a ' + nombreDe(c) + ' WhatsApp exige su permiso. ¿Le mando el pedido por el chat? Cuando lo acepte podrás llamarle.', { si:'Pedir permiso', no:'Ahora no' })) return;
+    const del5644 = canalDe(c) === 'whatsapp_qr';
+    if (!await confirmaAqui('Para llamar a ' + nombreDe(c) + ' WhatsApp exige su permiso. ' + (del5644 ? 'La llamada sale por el número oficial (849-524-5620) y el pedido le llega de ese número. ' : '') + '¿Le mando el pedido? Cuando lo acepte te aviso y podrás llamarle.', { si:'Pedir permiso', no:'Ahora no' })) return;
     const r = await llama({ action:'callStart', conversation_id:id });
+    // La plantilla de permiso aún no está aprobada por Meta: se dice y se ofrece el enlace de llamada de WhatsApp mientras tanto.
+    if (r.sin_plantilla) { avisa('Falta la plantilla de permiso', r.motivo || ''); if (del5644) abreLlamar5644(c); return; }
     return avisa(r.necesita_permiso ? (r.pedido ? 'Pedido enviado' : 'No se pudo pedir') : 'No se pudo', r.motivo || r.error || '');
   }
   Object.assign(LLAMADA, { estado:'llamando', convId:id, dir:'out', nombre:nombreDe(c), callId:null }); pintaLlamada();
@@ -12592,7 +12596,16 @@ async function pintaLlamadasCaja(){
     + '<small>' + (on ? 'Activadas: los clientes ven el botón de llamar en WhatsApp y suena aquí. Meta cobra las llamadas de empresa según su tarifa.' : 'Apagadas: nadie puede llamar al número oficial desde WhatsApp. Al activarlas, el cliente verá el botón de llamar y la llamada sonará en este panel (hay que dejar el CRM abierto para contestar).')
     + '</small><small class="cx-origen">Estado en Meta: ' + esc(r.estado) + ' · el CRM: ' + (r.habilitado_crm ? 'listo para llamar' : 'apagado') + '</small></div>'
     + '<span class="cx-acc"><button class="btn-' + (on ? 'linea' : 'solido') + '" id="llamadasToggle">' + (on ? 'Apagar llamadas' : 'Activar llamadas') + '</button></span></div>'
-    + '<p class="cfgnota">Requisitos: el campo <b>calls</b> del webhook suscrito en la app de Meta y un tope de mensajes de 2,000 o más (este número lo cumple). Por el WhatsApp Web (5644) no se pueden contestar ni hacer llamadas desde aquí: solo queda el registro.</p>';
+    + '<p class="cfgnota">Requisitos: el campo <b>calls</b> del webhook suscrito en la app de Meta y un tope de mensajes de 2,000 o más (este número lo cumple). Se puede llamar a cualquier contacto, también a los del WhatsApp Web (5644): la llamada sale por este número oficial y, la primera vez, el cliente tiene que tocar «Permitir llamadas» en un mensaje.</p>'
+    + '<div class="cx-fila"><span class="cx-punto sin_configurar" id="plPermisoPunto"></span><div><b>Plantilla para pedir permiso de llamada</b><small>Hace falta para pedirle permiso a quien no te ha escrito al número oficial en las últimas 24 h (todos los del 5644). La aprueba Meta en minutos u horas; una sola vez.</small></div>'
+    + '<span class="cx-acc"><button class="btn-solido" id="plPermisoPedir">Pedir plantilla a Meta</button></span></div>';
+  $('plPermisoPedir').onclick = async () => {
+    const b = $('plPermisoPedir'); b.disabled = true; b.textContent = 'Pidiendo…';
+    const x = await llama({ action:'callSettings', operation:'plantilla' });
+    b.disabled = false; b.textContent = 'Pedir plantilla a Meta';
+    if (!x.ok) return avisa('No se pudo pedir la plantilla', x.error || 'Inténtalo de nuevo.');
+    avisa(x.existe ? 'La plantilla ya estaba pedida' : 'Plantilla enviada a Meta', x.aviso || '');
+  };
   $('llamadasToggle').onclick = async () => {
     const quiere = on ? 'disable' : 'enable';
     if (!await confirmaAqui(on ? '¿Apagar las llamadas del número oficial? Los clientes dejarán de ver el botón de llamar.' : '¿Activar las llamadas del número oficial? Los clientes verán el botón de llamar y las llamadas sonarán en este panel.', { si:on ? 'Apagar' : 'Activar', no:'Cancelar' })) return;
