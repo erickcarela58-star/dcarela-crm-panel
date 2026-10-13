@@ -1257,6 +1257,15 @@ a.ayuda{color:var(--enlace)}
 .agsem span{text-align:center;font-size:9.5px;font-weight:800;letter-spacing:.6px;
   text-transform:uppercase;color:var(--mut)}
 .agcal{display:grid;grid-template-columns:repeat(7,1fr);gap:5px;max-width:820px}
+/* Vistas de semana y de día de la Agenda */
+.agsemana{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:8px;max-width:1240px}
+.agsemcol{min-width:0;padding:8px;border-radius:var(--r2);background:var(--hover)}
+.agsemcol.hoy{outline:2px solid var(--ok)}
+.agsemcol .agcita{flex-wrap:wrap}
+.aghora{display:grid;grid-template-columns:64px minmax(0,1fr);gap:10px;align-items:start;max-width:820px;min-height:34px;padding:4px 0;border-top:1px solid var(--line)}
+.aghora>span{font-size:12px;color:var(--mut);padding-top:6px}
+.aghora.ocupada>span{color:var(--fg);font-weight:600}
+@media (max-width:900px){.agsemana{grid-template-columns:1fr}}
 .agcel{min-height:62px;padding:6px;border:1px solid var(--line);border-radius:var(--r);
   background:var(--panel);display:flex;flex-direction:column;align-items:flex-start;gap:4px}
 .agcel:hover{border-color:var(--line2);background:var(--hover)}
@@ -3445,6 +3454,68 @@ function pintaCuentas(){
   document.title = (pend ? '(' + pend + ') ' : '') + TITULO_BASE;
 }
 
+/* ---- Sonidos por canal y «No molestar» (de este navegador) ------------------------------------------------
+   El aviso de mensaje nuevo no sonaba: solo el globito, el titulo y la notificacion. Aqui se elige un tono por canal (o ninguno) y un «No molestar»: un horario fijo
+   (p. ej. de 10 pm a 7 am, pasando la medianoche) o «silenciar 1 hora». Dentro del «No molestar» no suena nada ni sale la notificacion del sistema; el globito dentro del
+   CRM y el contador siguen. Las llamadas NO se silencian. Se guarda en este navegador (localStorage): es una comodidad de quien lo usa, no un dato del negocio. */
+const AVISOS_CLAVE = 'dcarela-avisos-v1';
+const AVISOS_BASE = { sonido:{ whatsapp_cloud:'suave', whatsapp_qr:'suave', instagram:'doble', facebook:'doble' }, noMolestar:{ activo:false, desde:'22:00', hasta:'07:00' }, hasta:0 };
+const TONOS_AVISO = { suave:[[880, .12]], doble:[[880, .1], [1175, .14]], campana:[[1319, .18], [988, .3]], ninguno:[] };
+function leeAvisos(){
+  let v = null;
+  try { v = JSON.parse(localStorage.getItem(AVISOS_CLAVE) || 'null'); } catch (e) { v = null; }
+  return { ...AVISOS_BASE, ...(v || {}), sonido:{ ...AVISOS_BASE.sonido, ...((v && v.sonido) || {}) }, noMolestar:{ ...AVISOS_BASE.noMolestar, ...((v && v.noMolestar) || {}) } };
+}
+function guardaAvisos(a){ try { localStorage.setItem(AVISOS_CLAVE, JSON.stringify(a)); } catch (e) { /* sin almacenamiento: vale mientras esta abierto */ } }
+function minutosDeHora(t){ const [h, m] = String(t || '').split(':').map(Number); return (Number.isFinite(h) ? h : 0) * 60 + (Number.isFinite(m) ? m : 0); }
+// ¿Hay que callar los avisos ahora? Pura: recibe la hora y los ajustes.
+function avisosSilenciados(ahora = new Date(), a = leeAvisos()){
+  if (a.hasta && ahora.getTime() < a.hasta) return true;
+  if (!a.noMolestar || !a.noMolestar.activo) return false;
+  const n = ahora.getHours() * 60 + ahora.getMinutes(), d = minutosDeHora(a.noMolestar.desde), h = minutosDeHora(a.noMolestar.hasta);
+  if (d === h) return false;
+  return d < h ? (n >= d && n < h) : (n >= d || n < h);   // de 22:00 a 07:00 cruza la medianoche
+}
+let audioAviso = null;
+function suenaTono(nombre){
+  const notas = TONOS_AVISO[nombre] || [];
+  if (!notas.length) return;
+  try {
+    const ac = (audioAviso ||= new (window.AudioContext || window.webkitAudioContext)());
+    if (ac.state === 'suspended') void ac.resume();
+    let t = ac.currentTime + .02;
+    for (const [hz, dur] of notas) {
+      const o = ac.createOscillator(), g = ac.createGain();
+      o.type = 'sine'; o.frequency.value = hz;
+      g.gain.setValueAtTime(.0001, t); g.gain.exponentialRampToValueAtTime(.18, t + .02); g.gain.exponentialRampToValueAtTime(.0001, t + dur);
+      o.connect(g); g.connect(ac.destination); o.start(t); o.stop(t + dur + .02);
+      t += dur + .03;
+    }
+  } catch (e) { /* sin audio: queda el aviso visual */ }
+}
+function pintaAvisosLocal(){
+  const cont = $('avisosLocal'); if (!cont) return;
+  const a = leeAvisos();
+  const opciones = (actual) => [['suave', 'Suave'], ['doble', 'Doble'], ['campana', 'Campana'], ['ninguno', 'Sin sonido']]
+    .map(([id, t]) => '<option value="' + id + '"' + (id === actual ? ' selected' : '') + '>' + t + '</option>').join('');
+  const silencio = avisosSilenciados();
+  cont.innerHTML = '<div class="cx-ia" style="align-items:flex-start;flex-direction:column;gap:12px">'
+    + Object.keys(CANALES).map(k => '<label style="flex-direction:row;align-items:center;gap:10px;width:100%;max-width:520px"><span style="flex:1">Sonido · ' + esc(CANALES[k].corto) + '</span>'
+        + '<select data-av-sonido="' + k + '">' + opciones(a.sonido[k]) + '</select><button type="button" class="btn-linea" data-av-prueba="' + k + '">Probar</button></label>').join('')
+    + '<label class="cx-chk" style="flex-direction:row"><input type="checkbox" id="avNm"' + (a.noMolestar.activo ? ' checked' : '') + '> No molestar de</label>'
+    + '<div style="display:flex;gap:8px;align-items:center"><input type="time" id="avDesde" value="' + esc(a.noMolestar.desde) + '"> a <input type="time" id="avHasta" value="' + esc(a.noMolestar.hasta) + '"></div>'
+    + '<div style="display:flex;gap:8px;flex-wrap:wrap"><button type="button" class="btn-linea" id="avUnaHora">Silenciar 1 hora</button>'
+    + (a.hasta && a.hasta > Date.now() ? '<button type="button" class="btn-linea" id="avQuita">Quitar el silencio</button>' : '') + '</div>'
+    + '<small class="cfgnota">' + (silencio ? 'Ahora mismo están silenciados los avisos' + (a.hasta > Date.now() ? ' hasta las ' + new Date(a.hasta).toLocaleTimeString('es-DO', { hour:'2-digit', minute:'2-digit' }) : '') + '.' : 'Los avisos suenan con normalidad.')
+    + ' Las llamadas siempre suenan. Se guarda en este navegador.</small></div>';
+  cont.querySelectorAll('[data-av-sonido]').forEach(s => s.onchange = () => { const x = leeAvisos(); x.sonido[s.dataset.avSonido] = s.value; guardaAvisos(x); suenaTono(s.value); });
+  cont.querySelectorAll('[data-av-prueba]').forEach(b => b.onclick = () => suenaTono(leeAvisos().sonido[b.dataset.avPrueba]));
+  const guardaNm = () => { const x = leeAvisos(); x.noMolestar = { activo: $('avNm').checked, desde: $('avDesde').value || '22:00', hasta: $('avHasta').value || '07:00' }; guardaAvisos(x); pintaAvisosLocal(); };
+  ['avNm', 'avDesde', 'avHasta'].forEach(id => { $(id).onchange = guardaNm; });
+  $('avUnaHora').onclick = () => { const x = leeAvisos(); x.hasta = Date.now() + 3600000; guardaAvisos(x); pintaAvisosLocal(); };
+  if ($('avQuita')) $('avQuita').onclick = () => { const x = leeAvisos(); x.hasta = 0; guardaAvisos(x); pintaAvisosLocal(); };
+}
+
 /* ---- Avisos de mensaje nuevo --------------------------------------------- */
 // Ultima respuesta del cliente ya conocida, por conversacion: es lo que distingue "ha
 // entrado un mensaje" de "la lista se ha repintado", que pasa constantemente.
@@ -3499,6 +3570,11 @@ function avisaMensajesNuevos(){
       avisa('Mensaje nuevo · ' + nombreDe(c), String(c.last_inbound_preview || c.last_message_preview || '').slice(0, 100));
     }
   }
+  // El tono del canal del primer mensaje nuevo (uno solo por tanda, no uno por chat) y el «No molestar»: callado, no suena ni sale la notificacion del sistema.
+  const callar = avisosSilenciados();
+  const sonar = nuevos.find(c => !((c.id || c._id) === idSel && vistaActual === 'conversations' && !document.hidden));
+  if (sonar && !callar) suenaTono(leeAvisos().sonido[canalDe(sonar)]);
+  if (callar) return;
   if (typeof Notification === 'undefined' || Notification.permission !== 'granted') return;
   for (const c of nuevos.slice(0, 3)) {
     if (!document.hidden && (c.id || c._id) === idSel) continue;
@@ -11499,7 +11575,8 @@ function montaAgenda(){
       + '<p class="bajada">Sesiones con fecha. Las confirmadas llevan hora cerrada; '
       +   'las tentativas todavía no.</p>'
       + '<div class="agbar">'
-      +   '<div class="agtog"><button data-agv="cal" class="on">Calendario</button>'
+      +   '<div class="agtog"><button data-agv="cal" class="on">Mes</button>'
+      +     '<button data-agv="sem">Semana</button><button data-agv="dia">Día</button>'
       +     '<button data-agv="lista">Lista</button>'
       // Solo aparece si hay un id de calendario guardado en Configuración: sin el, el iframe
       // de Google no puede pintar nada y un botón que no lleva a ningún sitio estorba.
@@ -11528,8 +11605,17 @@ function montaAgenda(){
         else agMes = new Date(agMes.getFullYear(), agMes.getMonth() + Number(d), 1);
         agDia = null; pintaAgenda(); return;
       }
+      // Semana y Día: ‹ Hoy › mueven 7 o 1 día desde el día elegido (o desde hoy).
+      const nav = ev.target.closest('[data-agnav]');
+      if (nav) {
+        const paso = agVista === 'sem' ? 7 : 1;
+        const base = agDia ? new Date(agDia) : new Date();
+        if (nav.dataset.agnav === 'hoy') agDia = new Date();
+        else { base.setDate(base.getDate() + Number(nav.dataset.agnav) * paso); agDia = base; }
+        pintaAgenda(); return;
+      }
       const c = ev.target.closest('[data-agdia]');
-      if (c) { agDia = new Date(c.dataset.agdia); pintaAgenda(); return; }
+      if (c) { agDia = new Date(c.dataset.agdia); if (agVista !== 'cal') agVista = 'dia'; pintaAgenda(); return; }
       const ab = ev.target.closest('[data-agconv]');
       if (ab) { const cv = buscaConv(ab.dataset.agconv); if (cv) { ve('conversations'); abre(cv); } }
     });
@@ -11586,6 +11672,8 @@ function pintaAgenda(){
 
   if (agVista === 'google') { cont.innerHTML = iframeGoogleCalendar(ids); return; }
   if (agVista === 'cal') return pintaAgendaCalendario(todas);
+  if (agVista === 'sem') return pintaAgendaSemana(todas);
+  if (agVista === 'dia') return pintaAgendaDia(todas);
 
   const filtradas = todas.filter(({iso}) => {
     const k = diaAg(iso);
@@ -11647,6 +11735,46 @@ function filaGoogle(x){
     + '</div>';
 }
 
+// Semana (lunes a domingo, una columna por día) y Día (por horas). Leen las mismas citas que el mes y la lista; no escriben nada.
+const porHoraAg = (a, b) => String(a.iso || '').localeCompare(String(b.iso || ''));
+function navAgenda(titulo){
+  return '<div class="agnav"><button class="btn-linea" data-agnav="-1">‹</button><b>' + esc(titulo) + '</b>'
+    + '<button class="btn-linea" data-agnav="hoy">Hoy</button><button class="btn-linea" data-agnav="1">›</button></div>';
+}
+function pintaAgendaSemana(todas){
+  const cont = $('agCuerpo');
+  const base = agDia ? new Date(agDia) : new Date();
+  const lun = new Date(base.getFullYear(), base.getMonth(), base.getDate() - ((base.getDay() + 6) % 7));
+  const dom = new Date(lun); dom.setDate(lun.getDate() + 6);
+  const hoy = new Date(); hoy.setHours(0, 0, 0, 0);
+  let cols = '';
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(lun); d.setDate(lun.getDate() + i);
+    const citas = todas.filter(x => mismoDia(x.iso, d)).sort(porHoraAg);
+    cols += '<div class="agsemcol' + (d.getTime() === hoy.getTime() ? ' hoy' : '') + '"><div class="agdcab">'
+      + esc(d.toLocaleDateString('es-DO', { weekday:'short', day:'numeric' })) + '<b>' + citas.length + '</b></div>'
+      + (citas.length ? citas.map(filaCita).join('') : '<p class="cfgnota">Libre</p>') + '</div>';
+  }
+  const rango = lun.toLocaleDateString('es-DO', { day:'numeric', month:'short' }) + ' – ' + dom.toLocaleDateString('es-DO', { day:'numeric', month:'short', year:'numeric' });
+  cont.innerHTML = navAgenda(rango) + '<div class="agsemana">' + cols + '</div>';
+}
+function pintaAgendaDia(todas){
+  const cont = $('agCuerpo');
+  const d = agDia ? new Date(agDia) : new Date();
+  const citas = todas.filter(x => mismoDia(x.iso, d)).sort(porHoraAg);
+  const sinHora = citas.filter(x => x.todoElDia);
+  const conHora = citas.filter(x => !x.todoElDia);
+  const porHora = new Map();
+  conHora.forEach(x => { const h = new Date(x.iso).getHours(); (porHora.get(h) || porHora.set(h, []).get(h)).push(x); });
+  // De 7 am a 9 pm siempre; las citas fuera de ese rango agregan su propia hora para no esconderse.
+  const horas = [...new Set([...Array.from({ length: 15 }, (_, i) => 7 + i), ...porHora.keys()])].sort((a, b) => a - b);
+  const etiqueta = h => (h % 12 || 12) + (h < 12 ? ' am' : ' pm');
+  cont.innerHTML = navAgenda(d.toLocaleDateString('es-DO', { weekday:'long', day:'numeric', month:'long', year:'numeric' }))
+    + (sinHora.length ? '<div class="aghora"><span>Todo el día</span><div>' + sinHora.map(filaCita).join('') + '</div></div>' : '')
+    + horas.map(h => '<div class="aghora' + (porHora.has(h) ? ' ocupada' : '') + '"><span>' + etiqueta(h) + '</span><div>'
+        + (porHora.has(h) ? porHora.get(h).map(filaCita).join('') : '') + '</div></div>').join('')
+    + (citas.length ? '' : '<p class="cfgnota" style="padding:10px 0">Nada este día. Pulsa «＋ Agendar» para meter una cita.</p>');
+}
 function pintaAgendaCalendario(todas){
   const cont = $('agCuerpo');
   const primero = new Date(agMes.getFullYear(), agMes.getMonth(), 1);
@@ -12508,6 +12636,9 @@ function montaCanales(){
       + '<p class="bajada">Por dónde te escriben los clientes. Si un canal no está en verde, '
       +   'lo que escribas por ahí no le llega a nadie aunque el panel diga que se envió.</p>'
       + '<div id="canalesLista"></div>'
+      + '<h2 style="margin:30px 0 4px;font-size:18px">Avisos y sonidos</h2>'
+      + '<p class="bajada">Qué suena cuando entra un mensaje, y «No molestar» para no oír nada de noche.</p>'
+      + '<div id="avisosLocal"></div>'
       + '<h2 style="margin:30px 0 4px;font-size:18px">Llamadas por WhatsApp</h2>'
       + '<p class="bajada">Recibir y hacer llamadas desde el CRM, solo por el número oficial.</p>'
       + '<div id="llamadasCaja"></div>'
@@ -12517,6 +12648,7 @@ function montaCanales(){
       + '<div id="conexionesCaja"></div></div>');
   }
   pintaCanales();
+  pintaAvisosLocal();
   pintaLlamadasCaja();
   pintaConexiones();
 }
