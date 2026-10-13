@@ -1,7 +1,7 @@
 {
-  "version": "2026-10-13-llamadas-nativas-v180",
+  "version": "2026-10-13-sin-numero-v181",
   "channel": "crm",
-  "released_at": "2026-10-13T01:19:32.810Z",
-  "summary": "Llamadas nativas desde el CRM a cualquier contacto, tambien los del 5644, por el numero oficial.",
+  "released_at": "2026-10-13T05:34:40.655Z",
+  "summary": "Los contactos que WhatsApp no deja ver con numero aparecen como «Sin numero» en vez de quedarse sin mostrar.",
   "requiere_puente": "2026-09-28-lectura-v34"
 }
