@@ -1,7 +1,7 @@
 {
-  "version": "2026-10-13-agenda-avisos-v179",
+  "version": "2026-10-13-llamadas-nativas-v180",
   "channel": "crm",
-  "released_at": "2026-10-13T00:36:08.177Z",
-  "summary": "Agenda por semana y dia; sonido por canal y No molestar.",
+  "released_at": "2026-10-13T01:19:32.810Z",
+  "summary": "Llamadas nativas desde el CRM a cualquier contacto, tambien los del 5644, por el numero oficial.",
   "requiere_puente": "2026-09-28-lectura-v34"
 }
