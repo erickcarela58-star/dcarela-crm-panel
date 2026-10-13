@@ -3022,6 +3022,8 @@ function nombreDe(c){
   // Instagram y Messenger no traen telefono. Sin este respaldo salia un '+' suelto, IGUAL
   // en todas, y diez conversaciones distintas se veian como diez filas identicas. Se
   // ensenan los ultimos digitos del id para poder distinguirlas mientras no haya nombre.
+  // Contacto «Sin numero»: WhatsApp no da su telefono y wa_phone es su LID. Se rotula asi (con los ultimos digitos para distinguirlos) y no como un +numero falso.
+  if (c.wa_lid_only === true && c.wa_phone) return 'Sin número · ' + String(c.wa_phone).slice(-6);
   if (c.wa_phone) return '+' + c.wa_phone;
   const id = String(c.social_id || '');
   return id ? 'Sin nombre · ' + id.slice(-6) : 'Sin nombre';
