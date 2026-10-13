@@ -466,6 +466,7 @@ img.mmedia[data-medio]:not([src]),img.msticker[data-medio]:not([src]){
 :root[data-tema="oscuro"] .mllamada{background:rgba(255,255,255,.07)}
 .mllamada svg{width:17px;height:17px;flex:0 0 auto;stroke-width:1.9}
 .mllamada.perdida{color:var(--bad)}
+.mcuerpo-sub{margin:14px 0 6px;font-size:12.5px;letter-spacing:.01em;color:var(--mut)}.mcuerpo-sub:first-child{margin-top:0}
 .mpie{margin-top:3px;white-space:pre-wrap;word-break:break-word}
 .globo.eliminado > :not(.meliminado):not(.pie-globo):not(.msel):not(.gaccion):not(.gmenu){opacity:.6}
 .meliminado{display:flex;align-items:flex-start;gap:7px;margin:0 0 5px;padding:5px 8px;border-left:3px solid var(--bad);
@@ -12549,7 +12550,33 @@ function abreLlamar5644(c){
     avisa('Enlace de llamada enviado', 'En unos segundos aparece en el chat: tócalo para entrar tú también. El cliente lo toca para unirse.');
   };
 }
-async function llamaAlContacto(c){
+// Los dos botones de llamar abren este cuadro: se elige desde qué número llamar. El 5644 (WhatsApp Web) no pide permiso al cliente;
+// el número oficial sí (Meta) pero la llamada es directa desde el CRM.
+function llamaAlContacto(c){
+  if (LLAMADA.estado !== 'idle') return avisa('Ya hay una llamada en curso');
+  const tel = String(c.wa_phone || '').replace(/\D/g, '');
+  const sugerido = canalDe(c) === 'whatsapp_cloud' ? 'oficial' : '5644';
+  const opcion5644 = '<div class="mcuerpo-sub"><b>Desde el 5644 (WhatsApp Web) · sin pedir permiso</b></div>'
+    + '<button class="tpl" data-ll="voice"><b>Llamada de WhatsApp por enlace</b><span>Le mando un enlace al chat; cuando lo toque entra a la llamada y tú entras por el mismo enlace.</span></button>'
+    + '<button class="tpl" data-ll="video"><b>Videollamada por enlace</b><span>Igual, con video.</span></button>'
+    + (tel.length >= 8 ? '<a class="tpl" href="tel:+' + esc(tel) + '" style="text-decoration:none;display:block"><b>Marcar con el teléfono de este equipo</b><span>Abre el marcador (celular o programa de llamadas de la PC).</span></a>' : '');
+  const opcionOficial = '<div class="mcuerpo-sub"><b>Desde el número oficial (849-524-5620) · llamada directa en el CRM</b></div>'
+    + '<button class="tpl" data-oficial="1"><b>Llamar por el número oficial</b><span>Suena y se habla desde este panel. WhatsApp exige el permiso del cliente: si no lo tiene, te ofrezco pedírselo.</span></button>';
+  abreModal('<div class="mtapa"><b>¿Con qué número quieres llamar a ' + esc(nombreDe(c)) + '?</b><button class="cerrarm" data-cerrar>×</button></div><div class="mcuerpo">'
+    + (sugerido === 'oficial' ? opcionOficial + opcion5644 : opcion5644 + opcionOficial) + '</div>');
+  $('modal').querySelector('.mcuerpo').onclick = async ev => {
+    if (ev.target.closest('a[href^="tel:"]')) { cierraModal(); return; }
+    const of = ev.target.closest('[data-oficial]');
+    if (of) { cierraModal(); void llamaPorOficial(c); return; }
+    const b = ev.target.closest('[data-ll]'); if (!b) return;
+    b.disabled = true;
+    const r = await llama({ action:'chatFlags', conversation_id:c.id || c._id, calllink:b.dataset.ll });
+    cierraModal();
+    if (!r.ok) return avisa('No se pudo enviar el enlace', r.error || 'Inténtalo de nuevo.');
+    avisa('Enlace de llamada enviado', 'En unos segundos aparece en el chat: tócalo para entrar tú también. El cliente lo toca para unirse.');
+  };
+}
+async function llamaPorOficial(c){
   if (LLAMADA.estado !== 'idle') return avisa('Ya hay una llamada en curso');
   const id = c.id || c._id;
   const p = await llama({ action:'callPermission', conversation_id:id });
@@ -14342,6 +14369,7 @@ function pfLeeBase64(blob){
 async function pfPreparaFoto(archivo){
   const bmp = await createImageBitmap(archivo, { imageOrientation:'from-image' });
   const k = Math.min(1, PF_MAX_LADO / Math.max(bmp.width, bmp.height));
+  const origW = bmp.width, origH = bmp.height;
   const w = Math.max(16, Math.round(bmp.width * k)), h = Math.max(16, Math.round(bmp.height * k));
   const lienzo = document.createElement('canvas'); lienzo.width = w; lienzo.height = h;
   lienzo.getContext('2d').drawImage(bmp, 0, 0, w, h);
@@ -14349,7 +14377,7 @@ async function pfPreparaFoto(archivo){
   let blob = await new Promise(r => lienzo.toBlob(r, 'image/webp', 0.84));
   if (!blob || blob.type !== 'image/webp') blob = await new Promise(r => lienzo.toBlob(r, 'image/jpeg', 0.86));
   if (!blob) throw new Error('no se pudo convertir');
-  return { base64: await pfLeeBase64(blob), width: w, height: h };
+  return { base64: await pfLeeBase64(blob), width: w, height: h, origW, origH };
 }
 async function pfPintaGaleria(){
   const g = $('pfGaleria'); if (!g) return;
@@ -14391,6 +14419,10 @@ async function pfSube(archivos){
       const r = await llama({ action:'portfolio', operation:'upload', categoria:cat, nombre:f.name || '', base64:p.base64, width:p.width, height:p.height });
       if (!r.ok) throw new Error(r.error || 'el servidor la rechazó');
       if (r.duplicada) repetidas++; else hechas++;
+      // Además de la copia de 1800 px para la web, se guarda el ORIGINAL completo (privado) para flyers y pauta. Si falla, la foto de la web ya salió: no se cuenta como error.
+      if (r.id && /^image\/(?:jpeg|png|webp)$/.test(f.type || '') && f.size <= 18 * 1024 * 1024) {
+        try { await llama({ action:'portfolio', operation:'original', id:r.id, base64:await pfLeeBase64(f), width:p.origW || null, height:p.origH || null }); } catch (e) { /* sin original: la web igual queda bien */ }
+      }
     } catch (e) { falladas.push((f.name || 'foto') + ' (' + (e.message || e) + ')'); }
   }
   if (estado) estado.textContent = '✓ ' + hechas + ' subida(s)' + (repetidas ? ', ' + repetidas + ' ya estaba(n)' : '')
