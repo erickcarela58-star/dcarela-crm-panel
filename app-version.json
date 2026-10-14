@@ -1,7 +1,7 @@
 {
-  "version": "2026-10-14-planificador-originales-y-sincronizacion-v192",
+  "version": "2026-10-14-planificador-y-bot-verificados-v193",
   "channel": "crm",
-  "released_at": "2026-10-14T18:53:07.774Z",
-  "summary": "Planificador compacto, subida con borrador y originales del CRM compartidas con Drive. WhatsApp separa cola, envío y confirmación. Los chats sin número dejan de esperar tres minutos. Tema con sol y luna.",
-  "requiere_puente": "2026-10-14-sincronizacion-verificada-v45"
+  "released_at": "2026-10-14T19:26:00.000Z",
+  "summary": "El bot avanza solo después de enviar la pregunta, puede responder al chat LID y respeta la atención humana. Planificador con originales, borrador conservado, confirmación de Estados y sol/luna.",
+  "requiere_puente": "2026-10-14-bot-preguntas-entregadas-v46"
 }
