@@ -167,6 +167,33 @@ body.menu-abierto .velo{display:block}
 /* ---- Contenido: planificador (14/10/2026) ---- */
 .cont-tabs{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 14px}
 .cont-lista{display:flex;flex-direction:column;gap:10px}
+.plan-hoja{max-width:none!important;width:100%;padding:0!important}
+.plan-cabecera{display:flex;flex-direction:column;gap:5px;margin-bottom:16px}
+.plan-cabecera h1{margin:0;font-size:26px;letter-spacing:-.7px}
+.plan-cabecera .bajada{margin:0;max-width:900px}
+.plan-cifras{display:flex;gap:8px;flex-wrap:wrap}
+.plan-cifra{flex:1 1 140px;padding:12px 14px;border-radius:14px;background:var(--hover);display:flex;gap:8px;align-items:baseline}
+.plan-cifra b{font-size:24px;letter-spacing:-.8px}.plan-cifra small{color:var(--mut);font-size:12px}
+.plan-hoja .agente{background:var(--panel);padding:16px;border-radius:20px;gap:14px}
+.plan-hoja .agente-ico{font-size:20px}
+.plan-hoja .cont-tabs{gap:6px;flex-wrap:nowrap;overflow:auto;padding:4px 0 10px;scrollbar-width:thin}
+.plan-hoja .cont-tabs button{flex-shrink:0}
+.plan-rutina{border-top:1px solid var(--line);padding-top:10px}
+.plan-rutina>summary{cursor:pointer;font-size:13px;font-weight:650;padding:4px 0}
+.plan-rutina .agente-fila{margin-top:12px}.plan-rutina .agente-exp{padding-left:0}
+.plan-rutina .agente-rot{flex-basis:100%}
+.plan-hoja .cont{border-radius:18px;padding:14px;background:var(--panel)}
+.plan-hoja .cont-mini{width:112px;height:140px;flex-basis:112px;border-radius:12px}
+.plan-hoja .cont-lectura{margin:8px 0;padding:10px 12px;border-radius:12px;background:var(--hover)}
+.plan-hoja .cont-lectura summary{font-size:12px;font-weight:650;cursor:pointer}
+.plan-hoja .subir{max-width:none!important;gap:14px;padding:18px;border:1px solid var(--line);border-radius:20px;background:var(--panel)}
+.subir-paso{display:flex;flex-direction:column;gap:8px;padding-bottom:14px;border-bottom:1px solid var(--line)}
+.subir-paso>b{font-size:14px}.subir-campo{display:flex;flex-direction:column;gap:6px;font-size:12.5px;font-weight:600}
+.plan-hoja .subir-zona{border:1px dashed var(--line2);border-radius:16px;min-height:150px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:14px;background:var(--hover)}
+.plan-hoja .subir-zona img{max-height:360px;width:auto;max-width:100%;object-fit:contain;border-radius:12px}
+.plan-hoja .subir .fila{gap:10px}.plan-hoja .subir input[type=date],.plan-hoja .subir select{padding:10px;border:1px solid var(--line2);border-radius:10px;background:var(--panel);color:var(--fg);font:inherit}
+.subir-pie{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.subir-pie small{flex:1;color:var(--mut)}
+@media(max-width:640px){.plan-hoja .cont-mini{width:100%;height:240px;flex-basis:auto}.plan-cifra{flex-basis:120px}.plan-hoja .agente,.plan-hoja .subir{padding:12px}}
 .cont{display:flex;gap:12px;border:1px solid var(--line2);border-radius:12px;padding:12px}
 .cont-mini{flex:0 0 96px;width:96px;height:120px;border-radius:8px;object-fit:cover;background:var(--hover)}
 .cont-cuerpo{flex:1;min-width:0;display:flex;flex-direction:column;gap:6px}
@@ -2722,7 +2749,7 @@ input[type="checkbox"],input[type="radio"]{accent-color:var(--accent)}
     <div class="der">
       <span class="quien" id="quien"></span>
       <button class="btn-linea" id="btnAvisos" hidden>Activar avisos</button>
-      <button class="btn-linea" id="btnTema">Modo oscuro</button>
+      <button class="btn-linea" id="btnTema" aria-label="Activar modo oscuro" title="Activar modo oscuro"></button>
       <a class="btn-linea" href="./manual-v2.html" target="_blank" rel="noopener">Manual</a>
     </div>
   </header>
@@ -2766,7 +2793,11 @@ const esc = v => String(v ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;
 // Se guarda por navegador. El boton dice a donde vas, no donde estas.
 function aplicaTema(t){
   document.documentElement.setAttribute('data-tema', t);
-  $('btnTema').textContent = t === 'oscuro' ? 'Modo claro' : 'Modo oscuro';
+  const b = $('btnTema'), claro = t === 'oscuro';
+  const nombre = claro ? 'Activar modo claro' : 'Activar modo oscuro';
+  b.setAttribute('aria-label', nombre); b.title = nombre;
+  b.innerHTML = '<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true">'
+    + (claro ? '<circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5m11 11L19 19M5 19l1.5-1.5m11-11L19 5"/>' : '<path d="M20.8 14.2A9 9 0 0 1 9.8 3.2 9 9 0 1 0 20.8 14.2Z"/>') + '</svg>';
   try { localStorage.setItem('crm2_tema', t); } catch (e) {}
 }
 try { aplicaTema(localStorage.getItem('crm2_tema') || 'claro'); } catch (e) { aplicaTema('claro'); }
@@ -3288,7 +3319,7 @@ function actualizaEstadoSincronizacion(){
 }
 function aplicaConversaciones(s, modo = 'en vivo'){
     convsDesdeServidor = s?.metadata?.fromCache !== true;
-    CONVS_TODAS = s.docs.map(d => ({ ...d.data(), _id:d.id })).filter(perteneceAlCanal)
+    CONVS_TODAS = s.docs.map(d => ({ ...d.data(), _id:d.id })).filter(perteneceAlCanal).filter(c => !c.merged_into)
       .sort((a,b) => String(b.last_message_at||'').localeCompare(String(a.last_message_at||'')));
     // Un unico punto donde se separa lo vivo de lo oculto. Asi cada vista y cada contador cuenta
     // lo mismo que se ve, sin repetir el filtro en veinte sitios (y olvidarlo en alguno).
@@ -14343,7 +14374,7 @@ async function pintaConfig(){
 
     + (puedePortafolio ? tarjetaCfg('Portafolio de la web',
         'Sube aquí las fotos que quieres ver en dcarelacompufoto.com. Elige la categoría y arrastra fotos o una carpeta entera: '
-        + 'se reducen y se convierten a WebP en tu navegador y salen en las galerías de la web en un par de minutos. '
+        + 'la web recibe una copia ligera y el original JPG o PNG se conserva completo para los flyers. La PC lo copia a la carpeta de Drive cuando está conectada. '
         + 'Ocultar una foto la quita de la web sin borrarla.',
         '<div class="par"><div class="campo"><label>Categoría</label><select id="pfCategoria">'
         + '<option value="xv">XV Años</option><option value="cumpleanos">Cumpleaños</option><option value="infantil">Infantiles</option>'
@@ -14877,7 +14908,7 @@ async function pfPintaGaleria(){
     + (r.items.length ? '<div class="pf-miniaturas">' + r.items.map(f =>
       '<figure class="pf-mini' + (f.estado === 'oculta' ? ' oculta' : '') + '" data-id="' + esc(f.id) + '">'
       + '<img loading="lazy" alt="' + esc(nombres[f.categoria] || f.categoria) + '" src="' + PORTAFOLIO_URL + '?img=' + encodeURIComponent(f.id) + '">'
-      + '<figcaption><span>' + esc(nombres[f.categoria] || f.categoria) + (f.estado === 'oculta' ? ' · oculta' : '') + '</span>'
+      + '<figcaption><span>' + esc(nombres[f.categoria] || f.categoria) + (f.estado === 'oculta' ? ' · oculta' : '') + '<br>' + (f.original ? 'Original: ' + f.original_width + ' × ' + f.original_height : 'Falta la original para flyers') + '<br>' + (f.drive_estado === 'copiada_local' ? 'Copiada en carpeta Drive · nube sin confirmar' : f.original ? 'Copia a Drive pendiente' : '') + '</span>'
       + '<button class="btn-linea" data-pf-ver="' + esc(f.id) + '" data-estado="' + (f.estado === 'oculta' ? 'publicada' : 'oculta') + '">' + (f.estado === 'oculta' ? 'Mostrar' : 'Ocultar') + '</button>'
       + (ROL_ACTUAL === 'admin' ? '<button class="btn-linea" data-pf-quita="' + esc(f.id) + '">Quitar</button>' : '') + '</figcaption></figure>').join('') + '</div>'
       : '<p class="cfgnota">Aún no hay fotos subidas desde aquí. Las que ya están en la web siguen igual.</p>');
@@ -14904,13 +14935,14 @@ async function pfSube(archivos){
     if (estado) estado.textContent = 'Subiendo ' + (hechas + repetidas + falladas.length + 1) + ' de ' + fotos.length + '… (' + (f.name || 'foto') + ')';
     try {
       const p = await pfPreparaFoto(f);
+      if(!/\.(jpe?g|png)$/i.test(f.name||'') || f.size>24*1024*1024 || Math.max(p.origW,p.origH)<1600 || Math.min(p.origW,p.origH)<1000)throw new Error('Elige la original JPG o PNG: al menos 1600 × 1000 px y hasta 24 MB.');
       const r = await llama({ action:'portfolio', operation:'upload', categoria:cat, nombre:f.name || '', base64:p.base64, width:p.width, height:p.height });
       if (!r.ok) throw new Error(r.error || 'el servidor la rechazó');
-      if (r.duplicada) repetidas++; else hechas++;
       // Además de la copia de 1800 px para la web, se guarda el ORIGINAL completo (privado) para flyers y pauta. Si falla, la foto de la web ya salió: no se cuenta como error.
-      if (r.id && /^image\/(?:jpeg|png|webp)$/.test(f.type || '') && f.size <= 18 * 1024 * 1024) {
-        try { await llama({ action:'portfolio', operation:'original', id:r.id, base64:await pfLeeBase64(f), width:p.origW || null, height:p.origH || null }); } catch (e) { /* sin original: la web igual queda bien */ }
-      }
+      if (!r.id || !/\.(jpe?g|png)$/i.test(f.name || '') || f.size > 24 * 1024 * 1024) throw new Error('La web recibió su copia, pero falta una original JPG o PNG de hasta 24 MB para flyers y Drive.');
+      const original = await llamaCont({ action:'portfolio', operation:'original', id:r.id, base64:await pfLeeBase64(f), width:p.origW || null, height:p.origH || null });
+      if(!original.ok)throw new Error('La copia web está guardada; la original no: '+(original.error||'reintenta'));
+      if (r.duplicada) repetidas++; else hechas++;
     } catch (e) { falladas.push((f.name || 'foto') + ' (' + (e.message || e) + ')'); }
   }
   if (estado) estado.textContent = '✓ ' + hechas + ' subida(s)' + (repetidas ? ', ' + repetidas + ' ya estaba(n)' : '')
@@ -16567,7 +16599,7 @@ let CONT = { items: [], conteo: {}, calendario: [], canales: [], activos: [], ac
   autonomia: 'manual', cantidad: 0, tiktok: null, estilos: [], tendencias: null, amandine: true, gen: null, mes: null, mesItems: null, dia: null, diaItems: null, vistas: {}, nuevosIA: [], ref: null, subida: null };
 const CONT_TABS = [['calendario', 'Calendario'], ['porAprobar', 'Por aprobar'], ['programadas', 'Aprobadas'], ['publicadas', 'Publicadas'], ['tendencias', 'Tendencias'],
   ['subir', 'Subir contenido'], ['estilos', 'Estilos de flyer'], ['redes', 'Redes'], ['paquete', 'Paquete del día'], ['fechas', 'Fechas del nicho']];
-const CONT_ESTADOS = { propuesta: 'Por aprobar', aprobada: 'Aprobada', publicando: 'Publicando…', publicada: 'Publicada', fallida: 'Falló', rechazada: 'Rechazada', vencida: 'Vencida', lista: 'Lista para subir' };
+const CONT_ESTADOS = { propuesta: 'Por aprobar', aprobada: 'Aprobada', publicando: 'Enviando…', encola: 'En cola del puente', enviada: 'Enviada · esperando confirmación', sin_confirmar: 'Sin confirmación', publicada: 'Publicada · confirmada', fallida: 'Falló', rechazada: 'Rechazada', vencida: 'Vencida', lista: 'Lista para subir' };
 const CONT_CORTO = { instagram: 'IG', facebook: 'FB', whatsapp_estado: 'Estado', tiktok: 'TikTok', paquete_grupos: 'Grupos' };
 const CONT_AUTONOMIA = [
   ['manual', 'Manual', 'Te propone y tú apruebas todo (aquí o por WhatsApp).'],
@@ -16579,15 +16611,18 @@ const CONT_LAYOUT = { abajo_izq: 'Texto abajo', centro_abajo: 'Centrado', arriba
 function montaContenido(){
   if (!montadas.has('contenido')) {
     montadas.add('contenido');
-    hueco('contenido', '<div class="hoja"><h1>Planificador de contenido</h1>'
-      + '<p class="bajada">Tu <b>agente de marketing</b> prepara los creativos con tus fotos y las fechas del nicho, y los publica a su hora. Tú decides cuántos, en qué redes y cuánto decide solo. '
-      +   'Instagram, la Página de Facebook y TikTok salen solos; los Estados, por la PC del negocio; Marketplace y los grupos los publicas tú con el «paquete del día».</p>'
+    hueco('contenido', '<div class="hoja plan-hoja"><header class="plan-cabecera"><h1>Planificador de contenido</h1>'
+      + '<p class="bajada">Sube tus piezas, revisa las propuestas y organiza cuándo salen. Los estados de WhatsApp se muestran como publicados cuando llega una confirmación; TikTok recibe borradores.</p></header>'
       + '<div id="contAgente"></div><div class="cont-tabs" id="contTabs"></div><div id="contCuerpo"></div></div>');
     $('contTabs').addEventListener('click', ev => { const b = ev.target.closest('[data-ctab]'); if (b) cambiaTabContenido(b.dataset.ctab); });
     $('contAgente').addEventListener('click', clicContAgente);
     $('contAgente').addEventListener('change', cambioContAgente);
+    $('contAgente').addEventListener('toggle', ev => { if (ev.target.classList.contains('plan-rutina')) CONT.rutinaAbierta = ev.target.open; }, true);
     $('contCuerpo').addEventListener('click', clicContenido);
     $('contCuerpo').addEventListener('change', cambioContenido);
+    $('contCuerpo').addEventListener('input', ev => { const f = ev.target.closest('[data-csube]'); if (f) guardaBorradorSubida(f); });
+    $('contCuerpo').addEventListener('dragover', ev => { if (ev.target.closest('[data-csubezona]')) ev.preventDefault(); });
+    $('contCuerpo').addEventListener('drop', ev => { if (!ev.target.closest('[data-csubezona]')) return; ev.preventDefault(); const f = ev.target.closest('form'); if (f) guardaBorradorSubida(f); const a = ev.dataTransfer?.files?.[0]; if (a) void preparaSubidaContenido(a); });
     $('contCuerpo').addEventListener('submit', ev => { ev.preventDefault(); const f = ev.target.closest('form'); if (f) guardaFormContenido(f); });
   }
   void cargaContenido();
@@ -16622,12 +16657,12 @@ function pintaContenido(){
   const cuerpo = $('contCuerpo'); if (!cuerpo) return;
   pintaAgente();
   const n = e => CONT.items.filter(x => x.estado === e).length;
-  const cuenta = { porAprobar: n('propuesta'), programadas: n('aprobada') + n('publicando') + n('lista'), publicadas: n('publicada'), paquete: CONT.items.filter(x => x.canal === 'paquete_grupos' && x.estado === 'lista').length,
+  const cuenta = { porAprobar: n('propuesta'), programadas: ['aprobada','publicando','encola','enviada','sin_confirmar','lista'].reduce((s,k) => s + n(k), 0), publicadas: n('publicada'), paquete: CONT.items.filter(x => x.canal === 'paquete_grupos' && x.estado === 'lista').length,
     fechas: CONT.calendario.length, tendencias: CONT.tendencias ? (CONT.tendencias.ideas || []).length : 0, estilos: CONT.estilos.filter(e => e.activo).length };
   $('contTabs').innerHTML = CONT_TABS.map(([k, t]) => '<button type="button" class="cotz-chip' + (CONT.tab === k ? ' on' : '') + '" data-ctab="' + k + '">' + esc(t) + (cuenta[k] != null ? '<small>' + cuenta[k] + '</small>' : '') + '</button>').join('');
   const vistas = { calendario: pintaCalendario, tendencias: pintaTendencias, subir: pintaSubir, estilos: pintaEstilos, redes: pintaRedes, paquete: pintaPaquete, fechas: pintaFechasNicho };
   if (vistas[CONT.tab]) return vistas[CONT.tab](cuerpo);
-  const filtro = { porAprobar: x => x.estado === 'propuesta' || x.estado === 'rechazada', programadas: x => ['aprobada', 'publicando', 'lista', 'fallida', 'vencida'].includes(x.estado) && x.canal !== 'paquete_grupos', publicadas: x => x.estado === 'publicada' }[CONT.tab];
+  const filtro = { porAprobar: x => x.estado === 'propuesta', programadas: x => ['aprobada', 'publicando', 'encola', 'enviada', 'sin_confirmar', 'lista', 'fallida', 'vencida'].includes(x.estado) && x.canal !== 'paquete_grupos', publicadas: x => x.estado === 'publicada' }[CONT.tab];
   const lista = CONT.items.filter(filtro || (() => false));
   if (!lista.length) { cuerpo.innerHTML = '<p class="cfgnota">' + (CONT.tab === 'porAprobar' ? 'No hay publicaciones por aprobar. Pulsa «Generar creativos»: el agente también lo hace solo cada mañana.' : 'Nada aquí todavía.') + '</p>'; return; }
   cuerpo.innerHTML = '<div class="cont-lista">' + lista.map(x => tarjetaContenido(x, ROL_ACTUAL === 'admin')).join('') + '</div>';
@@ -16643,8 +16678,12 @@ function pintaAgente(){
   const aut = CONT_AUTONOMIA.find(a => a[0] === CONT.autonomia) || CONT_AUTONOMIA[0];
   el.innerHTML = '<section class="agente' + (CONT.activo ? '' : ' apagado') + '">'
     + '<div class="agente-cab"><span class="agente-ico" aria-hidden="true">🤖</span><div class="agente-tit"><b>Agente de marketing</b><small>'
-    +   (CONT.activo ? 'Trabajando: cada mañana a las 7:00 prepara lo que viene y publica lo aprobado a su hora.' : 'En pausa: no propone ni publica nada (tampoco lo ya aprobado).') + '</small></div>'
+    +   (CONT.activo ? 'Rutina activa · propuestas a las 7:00 y envíos a la hora programada.' : 'En pausa: no propone ni publica nada (tampoco lo ya aprobado).') + '</small></div>'
     +   (admin ? '<label class="agente-sw"><input type="checkbox" data-cactivo="1"' + (CONT.activo ? ' checked' : '') + '><span>' + (CONT.activo ? 'Encendido' : 'En pausa') + '</span></label>' : '') + '</div>'
+    + '<div class="plan-cifras">' + [[porAprobar, 'Por revisar'], [CONT.items.filter(x => x.estado === 'aprobada').length, 'Programadas'], [CONT.items.filter(x => ['encola','enviada','sin_confirmar'].includes(x.estado)).length, 'Esperando confirmación'], [CONT.items.filter(x => x.estado === 'publicada').length, 'Confirmadas']].map(([n,t]) => '<div class="plan-cifra"><b>' + n + '</b><small>' + esc(t) + '</small></div>').join('') + '</div>'
+    + '<div class="agente-acc"><button type="button" class="btn-solido" data-cirtab="subir">Subir contenido propio</button><button type="button" class="btn-linea" data-cbiblioteca="1">Biblioteca de fotos</button><button type="button" class="btn-linea" data-cirtab="calendario">Ver calendario</button>'
+    + (admin && porAprobar ? '<button type="button" class="btn-linea" data-cirtab="porAprobar">Revisar propuestas (' + porAprobar + ')</button>' : '') + '</div>'
+    + '<details class="plan-rutina"' + (CONT.rutinaAbierta ? ' open' : '') + '><summary>Rutina y automatización · ' + esc(aut[1]) + '</summary>'
     + '<div class="agente-fila"><span class="agente-rot">Autonomía</span><div class="segmento" role="radiogroup" aria-label="Autonomía del agente">'
     +   CONT_AUTONOMIA.map(([k, t]) => '<button type="button" role="radio" aria-checked="' + (CONT.autonomia === k) + '" class="' + (CONT.autonomia === k ? 'on' : '') + '" data-cautonomia="' + k + '"' + (admin ? '' : ' disabled') + '>' + esc(t) + '</button>').join('')
     +   '</div><small class="cont-sub agente-exp">' + esc(aut[2]) + '</small></div>'
@@ -16658,7 +16697,6 @@ function pintaAgente(){
     + '<div class="agente-acc">'
     +   '<button type="button" class="btn-solido" data-cgenera="1">Generar creativos</button>'
     +   '<button type="button" class="btn-linea" data-ctendencias="1">Investigar temporadas y tendencias</button>'
-    +   '<button type="button" class="btn-linea" data-cirtab="subir">Subir contenido propio</button>'
     +   (admin ? '<button type="button" class="btn-linea" data-cguardaagente="1" title="La rutina de cada mañana usará esta cantidad y estas plataformas">Usar esto cada mañana</button>' : '')
     +   (admin && porAprobar ? '<button type="button" class="btn-linea" data-caprueba-todo="1">Aprobar todo lo pendiente (' + porAprobar + ')</button>' : '')
     + '</div>'
@@ -16666,7 +16704,7 @@ function pintaAgente(){
       ? proximas.map(x => '<button type="button" class="prox" data-cirdia="' + esc(x.fecha) + '">' + esc(contDia(x.fecha) + ' · ' + contHora12(x.hora) + ' · ' + (CONT_CORTO[x.canal] || x.canal_nombre)) + '</button>').join('')
       : '<span class="cont-sub">Nada aprobado todavía' + (porAprobar ? ': tienes ' + porAprobar + ' por aprobar.' : '.') + '</span>') + '</div>'
     + (CONT.amandine ? '' : '<p class="cont-aviso" style="margin:8px 0 0">El servidor todavía no tiene la letra Amandine: los flyers salen con Marcellus hasta que la PC ejecute DCARELA-HACER-TODO (copia la letra y despliega).</p>')
-    + '</section>';
+    + '</details></section>';
 }
 function cambioContAgente(ev){
   const t = ev.target;
@@ -16685,6 +16723,8 @@ async function cambiaActivoAgente(b){
 async function clicContAgente(ev){
   const b = ev.target.closest('button'); if (!b || b.disabled) return;
   const d = b.dataset;
+  if (d.cirtab) return cambiaTabContenido(d.cirtab);
+  if (d.cbiblioteca) return ve('config');
   if (d.cautonomia) {
     if (d.cautonomia === CONT.autonomia) return;
     if (d.cautonomia === 'total' && !await confirmaAqui('Con autonomía TOTAL el agente programa solo lo que pasa las reglas (sin precios ni cupos inventados, con foto original y sin avisos). Saldrá a su hora sin preguntarte; puedes rechazar cualquiera antes de que salga.' + String.fromCharCode(10, 10) + '¿Le das autonomía total?', { si: 'Sí, autonomía total' })) return;
@@ -16699,8 +16739,8 @@ async function clicContAgente(ev){
     const r = await llama({ action: 'contenidoGenera', dias: g.dias, cantidad: Number(g.cantidad) || 0, canales });
     b.disabled = false; b.textContent = 'Generar creativos';
     if (!r.ok) return avisa('No se pudo generar', r.error);
-    avisa('Creativos listos', r.creadas + ' nuevos' + (r.auto_aprobadas ? ' · ' + r.auto_aprobadas + ' programados por el agente' : '') + (r.sin_imagen ? ' · ' + r.sin_imagen + ' sin imagen' : '') + (r.creadas ? '' : ' (lo de esas fechas ya estaba hecho)'));
-    CONT.tab = r.creadas - (r.auto_aprobadas || 0) > 0 ? 'porAprobar' : CONT.tab;
+    avisa(r.sin_imagen ? 'Faltan fotos originales' : 'Propuestas preparadas', r.creadas + ' nuevas · ' + (r.regeneradas||0) + ' revisadas' + (r.sin_imagen ? '. Sube originales de: ' + (r.categorias_sin_original||[]).join(', ') : r.creadas || r.regeneradas ? '' : '. No hay propuestas nuevas en esas fechas.'));
+    CONT.tab = r.creadas + (r.regeneradas||0) - (r.auto_aprobadas || 0) > 0 ? 'porAprobar' : CONT.tab;
     return cargaContenido();
   }
   if (d.cguardaagente) {
@@ -16829,6 +16869,7 @@ function tarjetaContenido(x, admin){
     + (marcas.length ? '<div class="cont-marcas">' + marcas.join('') + '</div>' : '')
     + (abierto ? '' : '<div class="cont-texto">' + esc(x.texto) + '</div>') + form
     + (x.error ? '<div class="cont-aviso">' + esc(x.error) + '</div>' : '') + ((x.avisos || []).length ? '<div class="cont-aviso">' + esc(x.avisos.join(' · ')) + '</div>' : '')
+    + (x.confirmacion ? '<div class="cont-sub">' + esc(x.confirmacion) + '</div>' : '')
     + (aviso ? '<div class="cont-aviso">' + esc(aviso) + '</div>' : '')
     + ((x.resultado && x.resultado.aviso) ? '<div class="cont-sub">' + esc(x.resultado.aviso) + '</div>' : '')
     + '<div class="cont-acc">' + acc.join('') + '</div></div></div>';
@@ -16870,7 +16911,16 @@ async function imagenParaSubir(archivo, { lado = 2880, maxBytes = 12 * 1024 * 10
   const tipo = String(archivo.type || '').toLowerCase();
   let bmp;
   try { bmp = await createImageBitmap(archivo, { imageOrientation: 'from-image' }); }
-  catch (e) { throw new Error('Este navegador no puede abrir esa imagen (¿es HEIC?). Compártela como JPG y vuelve a intentarlo.'); }
+  catch (e) {
+    let url;
+    try {
+      url = URL.createObjectURL(archivo); const im = new Image(); im.src = url; await im.decode();
+      bmp = im; bmp.close = () => URL.revokeObjectURL(url);
+    } catch {
+      if (url) URL.revokeObjectURL(url);
+      throw new Error(/^image\/(heic|heif)$/.test(tipo) ? 'Esta imagen HEIC necesita exportarse como JPG o PNG.' : 'No se pudo abrir «' + (archivo.name || 'la imagen') + '». Comprueba que sea JPG, PNG o WebP.');
+    }
+  }
   const ancho = bmp.width, alto = bmp.height, mayor = Math.max(ancho, alto);
   if (/^image\/(jpeg|png|webp)$/.test(tipo) && mayor <= lado && archivo.size <= maxBytes) { if (bmp.close) bmp.close(); return { b64: await leeBase64(archivo), mime: tipo, ancho, alto, reducida: false }; }
   const k = Math.min(1, lado / mayor);
@@ -16881,20 +16931,43 @@ async function imagenParaSubir(archivo, { lado = 2880, maxBytes = 12 * 1024 * 10
   if (blob.size > maxBytes) throw new Error('La imagen preparada supera ' + Math.round(maxBytes / 1024 / 1024) + ' MB. Usa un JPG de menor tamaño.');
   return { b64: await leeBase64(blob), mime: 'image/jpeg', ancho: c.width, alto: c.height, reducida: true };
 }
+function guardaBorradorSubida(f){
+  const s = CONT.subida; if (!s || !f) return;
+  const v = Object.fromEntries(new FormData(f).entries());
+  for (const k of ['texto','fecha','hora']) if (v[k] !== undefined) s[k] = String(v[k]);
+  s.aprobar = v.aprobar === 'on';
+  const contador = f.querySelector('[data-csubecontador]'); if (contador) contador.textContent = (s.texto || '').length + '/2200';
+}
+async function preparaSubidaContenido(archivo){
+  const s = CONT.subida; if (!s) return;
+  const ticket = s.preparacion = (s.preparacion || 0) + 1;
+  s.imagen = null; s.vista = null; s.nombre = archivo.name || 'Imagen'; s.preparando = true; s.info = 'Preparando imagen…'; s.error = null;
+  pintaContenido();
+  try {
+    const im = await imagenParaSubir(archivo);
+    if (CONT.subida !== s || s.preparacion !== ticket) return;
+    s.imagen = im; s.vista = 'data:' + im.mime + ';base64,' + im.b64;
+    s.info = im.ancho + '×' + im.alto + ' px' + (im.reducida ? ' · preparada en alta calidad' : ' · original sin recomprimir');
+  } catch (e) { if (s.preparacion === ticket) s.error = e.message; }
+  finally { if (CONT.subida === s && s.preparacion === ticket) { s.preparando = false; if (CONT.tab === 'subir') pintaContenido(); } }
+}
 function pintaSubir(cuerpo){
   const admin = ROL_ACTUAL === 'admin';
   const s = CONT.subida || (CONT.subida = { canales: new Set(['instagram', 'facebook']), fecha: CONT.hoy || '', hora: '18:30' });
   if (CONT.fechaSube) { s.fecha = CONT.fechaSube; CONT.fechaSube = null; }
-  cuerpo.innerHTML = '<p class="cfgnota">Programa un contenido tuyo: una foto o un flyer que ya tienes. Se adapta al formato de cada red <b>sin cortarlo</b> (Instagram y Facebook 4:5; Estados y TikTok 9:16) y en alta calidad. '
-    + 'El texto pasa por las mismas reglas (sin precios, descuentos ni cupos inventados).</p>'
+  cuerpo.innerHTML = '<p class="cfgnota">Tu imagen se adapta <b>sin cortarla</b>: 4:5 para Instagram/Facebook y 9:16 para Estados/TikTok. Revisa la vista previa y elige cuándo sale.</p>'
     + '<form class="cont-form subir" data-csube="1">'
-    + '<label class="subir-zona"><input type="file" name="archivo" accept="image/jpeg,image/png,image/webp" data-csubearchivo="1"><span id="contSubeVista">' + (s.vista ? '<img src="' + s.vista + '" alt="Vista previa">' : 'Toca para elegir la imagen') + '</span></label>'
-    + (s.info ? '<small class="cont-sub">' + esc(s.info) + '</small>' : '')
+    + '<div class="subir-paso"><b>1. Elige la imagen</b><input id="contSubeArchivo" type="file" name="archivo" accept="image/jpeg,image/png,image/webp" data-csubearchivo="1" hidden>'
+    + '<div class="subir-zona" data-csubezona="1"><span id="contSubeVista">' + (s.vista ? '<img src="' + s.vista + '" alt="Vista previa de ' + esc(s.nombre || 'la imagen') + '">' : s.preparando ? 'Preparando…' : 'Arrastra tu imagen aquí · JPG, PNG o WebP') + '</span>'
+    + '<button type="button" class="btn-linea" data-celegirimagen="1">' + (s.vista ? 'Cambiar imagen' : 'Elegir imagen') + '</button></div>'
+    + '<small class="cont-sub">' + esc([s.nombre, s.info].filter(Boolean).join(' · ') || 'La imagen y el texto se conservan al cambiar de pestaña.') + '</small>'
+    + (s.error ? '<p class="cont-aviso" role="alert">' + esc(s.error) + '</p>' : '') + '</div>'
+    + '<div class="subir-paso"><b>2. Texto y plataformas</b>'
     + '<div class="fila agente-redes">' + CONT.canales.filter(c => c.id !== 'paquete_grupos').map(c => '<label class="red-chip' + (s.canales.has(c.id) ? ' on' : '') + '"><input type="checkbox" data-csubered="' + esc(c.id) + '"' + (s.canales.has(c.id) ? ' checked' : '') + '>' + esc(c.nombre) + '</label>').join('') + '</div>'
-    + '<textarea name="texto" maxlength="2200" placeholder="El texto de la publicación (en un Estado, invita a responder: «Respóndeme este estado y te cuento…»)">' + esc(s.texto || '') + '</textarea>'
-    + '<div class="fila"><input type="date" name="fecha" required value="' + esc(s.fecha || '') + '"><select name="hora">' + contHoras(s.hora || '18:30') + '</select>'
-    + (admin ? '<label class="cont-sub" style="display:flex;gap:6px;align-items:center"><input type="checkbox" name="aprobar"> Dejarla aprobada (sale a su hora)</label>' : '')
-    + '<button class="btn-solido" type="submit">Programar</button></div></form>';
+    + '<label class="subir-campo">Texto de la publicación<textarea name="texto" maxlength="2200" placeholder="En un Estado, invita a responder: «Respóndeme y te cuento…»">' + esc(s.texto || '') + '</textarea></label><small class="cont-sub" data-csubecontador="1">' + (s.texto || '').length + '/2200</small></div>'
+    + '<div class="subir-paso"><b>3. Fecha y aprobación</b><label class="subir-campo">Día<input type="date" name="fecha" required value="' + esc(s.fecha || '') + '"></label><label class="subir-campo">Hora de La Romana<select name="hora">' + contHoras(s.hora || '18:30') + '</select></label>'
+    + (admin ? '<label class="cont-sub" style="display:flex;gap:6px;align-items:center"><input type="checkbox" name="aprobar"' + (s.aprobar ? ' checked' : '') + '> Aprobar para que salga a su hora</label>' : '') + '</div>'
+    + '<div class="subir-pie"><small>' + (s.aprobar ? 'Quedará aprobada para su fecha. El estado de WhatsApp espera confirmación real.' : 'Quedará por aprobar. Puedes revisarla antes de que salga.') + '</small><button class="btn-solido" type="submit"' + (!s.imagen || s.preparando || s.enviando ? ' disabled' : '') + '>' + (s.enviando ? 'Guardando…' : 'Guardar en el calendario') + '</button></div></form>';
 }
 
 // ---- estilos de flyer: los de fábrica, los de tus referencias y los que propone Gemini (la «pauta entrenada») ----
@@ -17024,6 +17097,8 @@ async function clicContenido(ev){
   const imgE = ev.target.closest('img[data-cvistaestilo]'); if (imgE) return verDataUrlEnGrande(imgE.src, 'estilo-' + imgE.dataset.cvistaestilo + '.jpg');
   const b = ev.target.closest('button'); if (!b || b.disabled) return;
   const d = b.dataset;
+  if (d.cbiblioteca) return ve('config');
+  if (d.celegirimagen) { $('contSubeArchivo')?.click(); return; }
   if (d.cdia) { CONT.dia = d.cdia === CONT.dia ? null : d.cdia; if (CONT.dia) return cargaDiaContenido(CONT.dia); return pintaContenido(); }
   if (d.cmes) { CONT.mes = d.cmes === '0' ? contMesHoy() : contSumaMes(CONT.mes || contMesHoy(), Number(d.cmes)); CONT.mesItems = null; CONT.dia = null; return pintaContenido(); }
   if (d.cirtab) { if (d.cfechasube) CONT.fechaSube = d.cfechasube; return cambiaTabContenido(d.cirtab); }
@@ -17043,7 +17118,7 @@ async function clicContenido(ev){
   if (d.cpublica) {
     if (!await confirmaAqui('Se publica AHORA, sin esperar su hora. ¿Seguimos?', { si: 'Publicar' })) return;
     b.disabled = true; const r = await llama({ action: 'contenidoPublica', id: d.cpublica });
-    avisa(r.ok ? (r.lista ? 'Lista para subir' : 'Publicada') : 'No se pudo publicar', r.ok ? (r.lista ? 'TikTok no está conectado: descárgala y súbela tú (o conéctalo en Redes).' : '') : (r.error || '')); return cargaContenido();
+    avisa(r.ok ? (r.en_cola ? 'En cola · esperando al puente' : r.lista ? 'Lista para subir' : 'Publicada') : 'No se pudo publicar', r.ok ? (r.en_cola ? 'Se confirmará cuando WhatsApp reciba el estado.' : r.lista ? 'TikTok no está conectado: descárgala y súbela tú (o conéctalo en Redes).' : '') : (r.error || '')); return cargaContenido();
   }
   if (d.cdescarga) {
     b.disabled = true; const r = await llama({ action: 'contenidoImagen', id: d.cdescarga }); b.disabled = false;
@@ -17085,18 +17160,12 @@ async function clicContenido(ev){
 }
 async function cambioContenido(ev){
   const t = ev.target;
+  const subidaForm = t.closest('[data-csube]'); if (subidaForm) guardaBorradorSubida(subidaForm);
   if (t.dataset.csubered && CONT.subida) { if (t.checked) CONT.subida.canales.add(t.dataset.csubered); else CONT.subida.canales.delete(t.dataset.csubered); t.closest('.red-chip')?.classList.toggle('on', t.checked); return; }
   if (t.name === 'canal') { t.closest('.red-chip')?.classList.toggle('on', t.checked); return; }
   if (t.dataset.csubearchivo) {
     const archivo = t.files && t.files[0]; if (!archivo) return;
-    const s = CONT.subida; s.imagen = null; s.info = 'Preparando…';
-    try {
-      const im = await imagenParaSubir(archivo);
-      s.imagen = im; s.vista = 'data:' + im.mime + ';base64,' + im.b64;
-      s.info = im.ancho + '×' + im.alto + ' px' + (im.reducida ? ' (reducida a 2880 px con calidad alta)' : ' · va tal cual, sin recomprimir');
-    } catch (e) { s.info = e.message; s.vista = null; }
-    const f = t.closest('form'); if (f) { const v = Object.fromEntries(new FormData(f).entries()); s.texto = v.texto; s.fecha = v.fecha; s.hora = v.hora; }
-    pintaContenido();
+    return preparaSubidaContenido(archivo);
   }
 }
 async function guardaFormContenido(f){
@@ -17119,11 +17188,16 @@ async function guardaFormContenido(f){
   if (f.dataset.csube) {
     const s = CONT.subida;
     if (!s || !s.imagen) return avisa('Elige la imagen');
+    if (s.enviando) return;
     if (!s.canales.size) return avisa('Elige al menos una red');
+    guardaBorradorSubida(f);
+    s.enviando = true; s.error = null;
     ocupa('Subiendo…');
-    const r = await llamaCont({ action: 'contenidoSube', media_b64: s.imagen.b64, media_mime: s.imagen.mime, canales: [...s.canales], fecha: v.fecha, hora: v.hora, texto: v.texto, aprobar: v.aprobar === 'on' });
-    suelta();
-    if (!r.ok) return avisa('No se pudo programar', r.error);
+    let r;
+    try { r = await llamaCont({ action: 'contenidoSube', media_b64: s.imagen.b64, media_mime: s.imagen.mime, canales: [...s.canales], fecha: s.fecha, hora: s.hora, texto: s.texto, aprobar: s.aprobar });
+      if (!r.ok) throw new Error(r.error || 'La subida no terminó');
+    } catch (e) { s.error = e.message; avisa('No se pudo programar', s.error); return; }
+    finally { s.enviando = false; suelta(); if (CONT.tab === 'subir') pintaContenido(); }
     avisa('Programado', r.ids.length + (r.ids.length === 1 ? ' publicación ' : ' publicaciones ') + (r.estado === 'aprobada' ? 'aprobadas: salen a su hora' : 'por aprobar'));
     CONT.subida = null; CONT.tab = 'calendario'; CONT.mes = String(v.fecha || '').slice(0, 7) || CONT.mes; CONT.dia = v.fecha || null;
     return cargaContenido();

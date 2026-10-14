@@ -1,7 +1,7 @@
 {
-  "version": "2026-10-14-cotizador-precios-actuales-v189",
+  "version": "2026-10-14-planificador-originales-y-sincronizacion-v190",
   "channel": "crm",
-  "released_at": "2026-10-14T17:05:00.000Z",
-  "summary": "Cotizador: las impresiones usan su producto y precio actual de la Caja, sin sustituirlas por fotos de estudio. Reconoce impresiones sueltas clasificadas como combo y verifica el catálogo en cada cálculo.",
-  "requiere_puente": "2026-09-28-lectura-v34"
+  "released_at": "2026-10-14T18:28:20.503Z",
+  "summary": "Planificador compacto, subida con borrador y originales del CRM compartidas con Drive. WhatsApp separa cola, envío y confirmación. Los chats sin número dejan de esperar tres minutos. Tema con sol y luna.",
+  "requiere_puente": "2026-10-14-estados-confirmados-v44"
 }
