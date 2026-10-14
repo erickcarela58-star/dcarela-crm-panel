@@ -186,6 +186,83 @@ body.menu-abierto .velo{display:block}
 .cont-evento{display:flex;gap:10px;align-items:baseline;padding:6px 0;border-bottom:1px solid var(--line2);font-size:13px}
 .cont-evento small{color:var(--mut)}
 @media(max-width:640px){.cont{flex-direction:column}.cont-mini{width:100%;height:220px;flex-basis:auto}}
+/* Planificador de contenido: la tarjeta del agente, el calendario, los estilos y las ideas */
+.agente{border:1px solid var(--line2);border-radius:16px;padding:14px 16px;margin:0 0 14px;background:linear-gradient(135deg,rgba(255,126,0,.07),rgba(10,143,77,.05));display:flex;flex-direction:column;gap:10px}
+.agente.apagado{background:var(--hover)}
+.agente-cab{display:flex;gap:12px;align-items:center}
+.agente-ico{font-size:26px;line-height:1}
+.agente-tit{flex:1;min-width:0;display:flex;flex-direction:column}
+.agente-tit b{font-size:15px}
+.agente-tit small{color:var(--mut);font-size:12.5px}
+.agente-sw{display:flex;gap:6px;align-items:center;font-size:12.5px;font-weight:600;cursor:pointer}
+.agente-fila{display:flex;gap:8px 12px;align-items:center;flex-wrap:wrap}
+.agente-rot{flex:0 0 92px;font-size:11px;font-weight:700;letter-spacing:.3px;text-transform:uppercase;color:var(--mut)}
+.agente-exp{flex-basis:100%;padding-left:104px}
+.segmento{display:inline-flex;border:1px solid var(--line2);border-radius:999px;padding:2px;gap:2px;background:var(--panel)}
+.segmento button{border:0;background:transparent;color:var(--fg);font:inherit;font-size:12.5px;font-weight:600;padding:6px 12px;border-radius:999px;cursor:pointer}
+.segmento button.on{background:var(--ink);color:var(--on-ink)}
+.segmento button:disabled{cursor:default}
+.agente-num{display:flex;gap:6px;align-items:center;font-size:12.5px}
+.agente-num input,.agente-num select{padding:6px 8px;border:1px solid var(--line2);border-radius:8px;background:transparent;color:var(--fg);font:inherit;font-size:13px}
+.agente-num input{width:76px}
+.agente-redes{display:flex;gap:6px;flex-wrap:wrap}
+.red-chip{display:inline-flex;gap:6px;align-items:center;padding:5px 10px;border:1px solid var(--line2);border-radius:999px;font-size:12.5px;cursor:pointer;user-select:none}
+.red-chip input{margin:0}
+.cont-form .red-chip input,.agente .red-chip input{flex:none;padding:0;border:0;width:auto;min-width:0}
+.red-chip{white-space:nowrap}
+.red-chip.on{border-color:var(--ok);background:rgba(10,143,77,.08)}
+.agente-acc{display:flex;gap:8px;flex-wrap:wrap}
+.agente-prox{display:flex;gap:6px;align-items:center;flex-wrap:wrap;font-size:12.5px}
+.agente-prox .prox{border:1px solid var(--line2);background:var(--panel);color:var(--fg);border-radius:999px;padding:4px 10px;font:inherit;font-size:12px;cursor:pointer}
+.cal-cab{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:0 0 10px}
+.cal-cab b{font-size:16px;min-width:150px;text-align:center}
+.cal-cab .btn-linea{padding:6px 11px}
+.cal-leyenda{margin-left:auto;display:flex;gap:10px;flex-wrap:wrap;font-size:11.5px;color:var(--mut)}
+.cal-leyenda span{display:inline-flex;gap:4px;align-items:center}
+.cal-leyenda i.cal-chip{width:10px;height:10px;padding:0;border-radius:3px}
+.cal-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px}
+.cal-sem{font-size:11px;font-weight:700;text-transform:uppercase;color:var(--mut);text-align:center;padding:4px 0}
+.cal-dia{min-height:92px;border:1px solid var(--line);border-radius:10px;padding:5px;display:flex;flex-direction:column;gap:3px;align-items:stretch;justify-content:flex-start;text-align:left;background:var(--panel);color:var(--fg);font:inherit;cursor:pointer;overflow:hidden;min-width:0}
+.cal-dia:hover{background:var(--hover)}
+.cal-dia.vacio{border:0;background:transparent;cursor:default}
+.cal-dia.pasado{opacity:.6}
+.cal-dia.hoy{border-color:var(--ok);box-shadow:inset 0 0 0 1px var(--ok)}
+.cal-dia.sel{border-color:var(--ink);box-shadow:inset 0 0 0 1px var(--ink)}
+.cal-num{font-size:12px;font-weight:700}
+.cal-ev{font-size:10.5px;color:var(--warn);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cal-chip{display:block;font-size:10.5px;font-weight:600;padding:2px 5px;border-radius:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;background:var(--hover);color:var(--fg)}
+.cal-chip.est-propuesta{background:rgba(178,106,0,.14);color:var(--warn)}
+.cal-chip.est-aprobada,.cal-chip.est-publicando{background:rgba(10,143,77,.14);color:var(--ok)}
+.cal-chip.est-publicada{background:var(--ok);color:#fff}
+.cal-chip.est-lista{background:rgba(2,126,181,.14);color:var(--enlace)}
+.cal-chip.est-fallida,.cal-chip.est-vencida{background:rgba(178,26,26,.12);color:var(--bad)}
+.cal-mas{font-size:10.5px;color:var(--mut)}
+.cal-tit-dia{margin:16px 0 8px;font-size:15px}
+.cont-marcas{display:flex;gap:5px;flex-wrap:wrap}
+.cont-marca{font-size:10.5px;font-weight:600;padding:2px 7px;border-radius:999px;background:var(--hover);color:var(--mut)}
+.cont-marca.agente{background:rgba(10,143,77,.12);color:var(--ok)}
+.cont-marca.hd{background:rgba(2,126,181,.12);color:var(--enlace)}
+.cont-marca.baja{background:rgba(178,106,0,.14);color:var(--warn)}
+.cont-mini[data-cver]{cursor:zoom-in}
+.cont-form select{padding:7px 9px;border:1px solid var(--line2);border-radius:8px;background:transparent;color:var(--fg);font:inherit;font-size:13px}
+.ideas{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:10px}
+.idea{border:1px solid var(--line2);border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:6px}
+.subir-zona{display:flex;align-items:center;justify-content:center;min-height:160px;border:1.5px dashed var(--line2);border-radius:12px;cursor:pointer;color:var(--mut);font-size:13px;overflow:hidden}
+.subir-zona input{display:none}
+.subir-zona img{max-width:100%;max-height:320px;display:block}
+.estilos-acc{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:10px;margin:0 0 6px}
+.estilos-acc form{border:1px solid var(--line2);border-radius:12px;padding:12px}
+.estilos{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:10px}
+.estilo{border:1px solid var(--line2);border-radius:12px;overflow:hidden;display:flex;flex-direction:column}
+.estilo.apagado{opacity:.6}
+.estilo-vista{aspect-ratio:4/5;background:var(--hover);display:flex;align-items:center;justify-content:center;overflow:hidden}
+.estilo-vista img{width:100%;height:100%;object-fit:cover;cursor:zoom-in}
+.estilo-vista img.estilo-ref{object-fit:contain;cursor:default}
+.estilo-muestra{border:1px solid var(--line2);width:64px;height:64px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:var(--acento);color:#fff;font-size:22px;box-shadow:inset 0 0 0 6px rgba(255,255,255,.35)}
+.estilo-info{padding:10px;display:flex;flex-direction:column;gap:5px}
+.red{border-bottom:1px solid var(--line2);padding:10px 0}
+.red code{font-size:11.5px;word-break:break-all;background:var(--hover);padding:1px 4px;border-radius:4px}
+@media(max-width:640px){.agente-rot{flex-basis:100%}.agente-exp{padding-left:0}.cal-dia{min-height:58px;padding:3px}.cal-chip{font-size:9px;padding:1px 3px}.cal-h{display:none}.cal-ev{display:none}.cal-leyenda{margin-left:0}.cal-cab b{min-width:0}}
 
 /* ---- Cotizaciones (14/10/2026) ---- */
 .cotz-barra{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:0 0 14px}
@@ -792,6 +869,7 @@ a.ayuda{color:var(--enlace)}
 #lupa .lupa-titulo{position:absolute;top:18px;left:20px;z-index:2;max-width:55%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font:600 15px system-ui;color:#e9edef}
 #lupa .lupa-titulo[hidden]{display:none}
 #lupa.perfil [data-lupa="citar"],#lupa.perfil [data-lupa="reenviar"]{display:none}
+#lupa.archivo [data-lupa="citar"],#lupa.archivo [data-lupa="reenviar"]{display:none}
 /* La foto de perfil es pequena de origen (WhatsApp da una miniatura): se ensena grande y cuadrada, no al tamano del archivo. */
 #lupa.perfil img{width:min(88vw,70vh,600px);height:min(88vw,70vh,600px);max-width:none;max-height:none;object-fit:cover;border-radius:14px;background:#1b1b1d;box-shadow:0 10px 50px rgba(0,0,0,.55)}
 .cabecera .avwrap{cursor:zoom-in;border-radius:50%}
@@ -2793,8 +2871,8 @@ const VISTAS = [
   { id:'hoy',           nombre:'Hoy',           fija:true,  icono:ico('<circle cx="12" cy="12" r="3.900"/><path d="M12 3.200v2.100M12 18.700v2.100M3.200 12h2.100M18.700 12h2.100M5.800 5.800l1.500 1.500M16.700 16.700l1.500 1.500M18.200 5.800l-1.500 1.500M7.300 16.700l-1.500 1.500"/>') },
   // Las cotizaciones de los chats y de la Caja: aprobar, mandar a la Caja con sus montos, borrar.
   { id:'cotizaciones',  nombre:'Cotizaciones',  fija:true,  icono:ico('<path d="M7 3.500h7.200L19 8.300V19a1.500 1.500 0 01-1.500 1.500h-10A1.500 1.500 0 016 19V5A1.500 1.500 0 017.500 3.500z"/><path d="M14 3.700V8.500h4.800"/><path d="M9 12.500h6M9 15.500h4"/><path d="M9.500 18.200c1.100.7 3.400.7 3.400-.6" stroke-width="0"/>') },
-  // Planificador de publicaciones (Instagram, Facebook, Estados de WhatsApp y paquete para grupos): se aprueban aqui o por WhatsApp.
-  { id:'contenido',     nombre:'Contenido',     fija:true,  icono:ico('<rect x="3.500" y="5" width="17" height="15.500" rx="3.200"/><path d="M3.500 9.500h17"/><path d="M8 3v4M16 3v4"/><path d="M8 13.500h3M13.500 13.500H16M8 17h3"/>') },
+  // Planificador de contenido: el agente de marketing (Instagram, Página de Facebook, TikTok, Estados y paquete para grupos). Antes se llamaba «Contenido» y no se encontraba.
+  { id:'contenido',     nombre:'Planificador de contenido', fija:true,  icono:ico('<rect x="3.500" y="5" width="17" height="15.500" rx="3.200"/><path d="M3.500 9.500h17"/><path d="M8 3v4M16 3v4"/><path d="M8 13.500h3M13.500 13.500H16M8 17h3"/>') },
   { id:'agenda',        nombre:'Agenda',        fija:true,  icono:ico('<rect x="3.5" y="5" width="17" height="15.5" rx="3.6"/><path d="M3.5 10h17M8 3v3.600M16 3v3.600"/><circle cx="8.500" cy="14" r=".7" fill="currentColor"/><circle cx="12" cy="14" r=".7" fill="currentColor"/><circle cx="15.500" cy="14" r=".7" fill="currentColor"/>') },
   { id:'dashboard',     nombre:'Dashboard',     icono:ico('<rect x="3.500" y="4" width="17" height="16" rx="3.600"/><path d="M8.200 16v-3.400M12 16V8.600M15.800 16v-5.400"/>') },
   { id:'funnel',        nombre:'Funnel · Kanban', icono:ico('<path d="M4.200 5.500h15.600a.7.7 0 01.5 1.200L14.500 12.800v5.900a.7.7 0 01-1 .6l-3-1.500a.7.7 0 01-.4-.6v-4.400L3.700 6.700a.7.7 0 01.5-1.200z"/>') },
@@ -7622,9 +7700,12 @@ function mensajeDeLupa(){
 function cierraLupa(){
   LUPA_TURNO++;
   const l = $('lupa');
-  l.classList.remove('on', 'esperando', 'con-imagen', 'con-video', 'con-error', 'perfil');
+  l.classList.remove('on', 'esperando', 'con-imagen', 'con-video', 'con-error', 'perfil', 'archivo');
   const titulo = $('lupaTitulo'); if (titulo) { titulo.hidden = true; titulo.textContent = ''; }
   const carga = l.querySelector('.lupa-carga'); if (carga) carga.textContent = 'Pidiendo el archivo a WhatsApp…';
+  // El flyer del planificador se ve desde un blob propio: se suelta al cerrar (los de los chats son de la cache y no se tocan).
+  const propio = LUPA_ACTUAL.archivo && l.querySelector('img').getAttribute('src');
+  if (propio && propio.startsWith('blob:')) URL.revokeObjectURL(propio);
   l.querySelector('img').removeAttribute('src');
   const v = l.querySelector('video');
   v.pause(); v.removeAttribute('src'); v.load();
@@ -7795,7 +7876,8 @@ $('lupaBarra').onclick = async ev => {
     const perfil = LUPA_ACTUAL.perfil;
     try {
       const blob = await (await fetch(src)).blob();
-      if (perfil) await descargaConNombre(blob, null, 'Foto de perfil - ' + perfil);
+      if (LUPA_ACTUAL.archivo) descargaComoArchivo(blob, LUPA_ACTUAL.archivo);
+      else if (perfil) await descargaConNombre(blob, null, 'Foto de perfil - ' + perfil);
       else await descargaConNombre(blob, m);
     } catch (e) {
       // La foto de perfil de una red social viene de otro dominio que no deja leerla con fetch: se abre en otra pestana para guardarla desde ahi.
@@ -16476,23 +16558,36 @@ function cableaLotes(){
   };
 }
 
-/* ---- Contenido: planificador de publicaciones ------------------------------------------------------------------------------------ */
-// El servidor propone cada manana la semana (calendario del nicho + rotacion de categorias), compone el flyer y espera la aprobacion del administrador (aqui o por WhatsApp:
-// «contenido», «aprobar publicacion 2», «aprobar todo»). Nada sale sin aprobar. Instagram y Facebook salen solos a su hora; el Estado de WhatsApp sale por la PC del negocio;
-// el «paquete del dia» (grupos y Marketplace) lo publica la persona: Facebook no tiene forma oficial de hacerlo desde un programa.
-let CONT = { items: [], conteo: {}, calendario: [], canales: [], activos: [], activo: true, tab: 'porAprobar', grupos: [], propias: [], quitadas: [], cargando: false, abiertos: new Set() };
-const CONT_TABS = [['porAprobar', 'Por aprobar'], ['programadas', 'Aprobadas'], ['publicadas', 'Publicadas'], ['paquete', 'Paquete del día'], ['fechas', 'Fechas del nicho']];
-const CONT_ESTADOS = { propuesta: 'Por aprobar', aprobada: 'Aprobada', publicando: 'Publicando…', publicada: 'Publicada', fallida: 'Falló', rechazada: 'Rechazada', vencida: 'Vencida', lista: 'Lista para grupos' };
+/* ---- Planificador de contenido: el AGENTE de marketing ------------------------------------------------------------------------------ */
+// El agente prepara cada mañana los creativos (cuántos y en qué redes lo decide el dueño), compone los flyers (Amandine, con variaciones estéticas y las
+// fotos ORIGINALES en alta cuando la PC las subió) y, según su AUTONOMÍA, programa solo lo que las reglas permiten o espera la aprobación (aquí o por
+// WhatsApp: «contenido», «aprobar todo», «pausar contenido», «autonomía total»). Instagram, la Página de Facebook y TikTok (como borrador) salen solos a su
+// hora; los Estados, por la PC del negocio. Marketplace y los grupos no se pueden publicar desde un programa: el «paquete del día» lo publica la persona.
+let CONT = { items: [], conteo: {}, calendario: [], canales: [], activos: [], activo: true, tab: null, grupos: [], propias: [], quitadas: [], cargando: false, abiertos: new Set(),
+  autonomia: 'manual', cantidad: 0, tiktok: null, estilos: [], tendencias: null, amandine: true, gen: null, mes: null, mesItems: null, dia: null, diaItems: null, vistas: {}, nuevosIA: [], ref: null, subida: null };
+const CONT_TABS = [['calendario', 'Calendario'], ['porAprobar', 'Por aprobar'], ['programadas', 'Aprobadas'], ['publicadas', 'Publicadas'], ['tendencias', 'Tendencias'],
+  ['subir', 'Subir contenido'], ['estilos', 'Estilos de flyer'], ['redes', 'Redes'], ['paquete', 'Paquete del día'], ['fechas', 'Fechas del nicho']];
+const CONT_ESTADOS = { propuesta: 'Por aprobar', aprobada: 'Aprobada', publicando: 'Publicando…', publicada: 'Publicada', fallida: 'Falló', rechazada: 'Rechazada', vencida: 'Vencida', lista: 'Lista para subir' };
+const CONT_CORTO = { instagram: 'IG', facebook: 'FB', whatsapp_estado: 'Estado', tiktok: 'TikTok', paquete_grupos: 'Grupos' };
+const CONT_AUTONOMIA = [
+  ['manual', 'Manual', 'Te propone y tú apruebas todo (aquí o por WhatsApp).'],
+  ['estados', 'Solo Estados', 'Publica solo los Estados de WhatsApp que pasan las reglas; lo demás te lo pide.'],
+  ['total', 'Total', 'Programa solo todo lo que pasa las reglas (nunca el paquete de grupos, ni lo que tenga avisos o salga sin la foto original). Puedes rechazar hasta que salga.'],
+];
+const CONT_ORIGEN = { base: 'De fábrica', ia: 'Propuesto por la IA', referencia: 'De tu referencia', 'dueño': 'Tuyo' };
+const CONT_LAYOUT = { abajo_izq: 'Texto abajo', centro_abajo: 'Centrado', arriba_izq: 'Texto arriba', tarjeta: 'Tarjeta de vidrio', marco: 'Marco fino', franja: 'Franja', resplandor: 'Resplandor' };
 function montaContenido(){
   if (!montadas.has('contenido')) {
     montadas.add('contenido');
-    hueco('contenido', '<div class="hoja"><h1>Contenido</h1>'
-      + '<p class="bajada">Lo que se publicaría esta semana, según las fechas de tu nicho. <b>Nada sale sin que un administrador lo apruebe</b> (aquí o respondiendo «contenido» por WhatsApp). '
-      +   'Instagram y Facebook salen solos a su hora; los Estados salen por la PC del negocio; el paquete para grupos y Marketplace lo publicas tú.</p>'
-      + '<div id="contCab"></div><div class="cont-tabs" id="contTabs"></div><div id="contCuerpo"></div></div>');
-    $('contTabs').addEventListener('click', ev => { const b = ev.target.closest('[data-ctab]'); if (b) { CONT.tab = b.dataset.ctab; pintaContenido(); } });
-    $('contCab').addEventListener('click', clicContCab);
+    hueco('contenido', '<div class="hoja"><h1>Planificador de contenido</h1>'
+      + '<p class="bajada">Tu <b>agente de marketing</b> prepara los creativos con tus fotos y las fechas del nicho, y los publica a su hora. Tú decides cuántos, en qué redes y cuánto decide solo. '
+      +   'Instagram, la Página de Facebook y TikTok salen solos; los Estados, por la PC del negocio; Marketplace y los grupos los publicas tú con el «paquete del día».</p>'
+      + '<div id="contAgente"></div><div class="cont-tabs" id="contTabs"></div><div id="contCuerpo"></div></div>');
+    $('contTabs').addEventListener('click', ev => { const b = ev.target.closest('[data-ctab]'); if (b) cambiaTabContenido(b.dataset.ctab); });
+    $('contAgente').addEventListener('click', clicContAgente);
+    $('contAgente').addEventListener('change', cambioContAgente);
     $('contCuerpo').addEventListener('click', clicContenido);
+    $('contCuerpo').addEventListener('change', cambioContenido);
     $('contCuerpo').addEventListener('submit', ev => { ev.preventDefault(); const f = ev.target.closest('form'); if (f) guardaFormContenido(f); });
   }
   void cargaContenido();
@@ -16504,31 +16599,191 @@ async function cargaContenido(){
   const [r, g] = await Promise.all([llama({ action: 'contenidoLista' }), llama({ action: 'contenidoGrupos', operation: 'list' })]);
   CONT.cargando = false;
   if (!r.ok) { if ($('contCuerpo')) $('contCuerpo').innerHTML = '<p class="cfgnota">' + esc(r.error || 'No se pudo leer el contenido.') + '</p>'; return; }
-  CONT.items = r.items || []; CONT.conteo = r.conteo || {}; CONT.calendario = r.calendario || []; CONT.canales = r.canales || []; CONT.activos = r.canales_activos || [];
-  CONT.activo = r.planificador_activo !== false; CONT.propias = r.fechas_propias || []; CONT.quitadas = r.plantillas_quitadas || []; CONT.hoy = r.hoy;
+  Object.assign(CONT, { items: r.items || [], conteo: r.conteo || {}, calendario: r.calendario || [], canales: r.canales || [], activos: r.canales_activos || [],
+    activo: r.planificador_activo !== false, propias: r.fechas_propias || [], quitadas: r.plantillas_quitadas || [], hoy: r.hoy, autonomia: r.autonomia || 'manual',
+    cantidad: Number(r.cantidad_semanal) || 0, tiktok: r.tiktok || null, estilos: r.estilos || [], tendencias: r.tendencias || null, amandine: r.amandine_en_servidor !== false });
   CONT.grupos = g && g.ok ? g.grupos : [];
+  if (!CONT.gen) CONT.gen = { cantidad: CONT.cantidad || '', dias: 7, canales: new Set(CONT.activos) };
+  if (!CONT.tab) CONT.tab = CONT.items.some(x => x.estado === 'propuesta') ? 'porAprobar' : 'calendario';
+  CONT.mesItems = null;   // el calendario vuelve a pedir su mes con lo nuevo
+  if (CONT.dia) void cargaDiaContenido(CONT.dia, { pintar: false });
   pintaContenido();
 }
-const contDia = f => { const d = new Date(f + 'T12:00:00Z'); return ['dom', 'lun', 'mar', 'mié', 'jue', 'vie', 'sáb'][d.getUTCDay()] + ' ' + f.slice(8, 10) + '/' + f.slice(5, 7); };
-function pintaContenido(){
-  const cab = $('contCab'), cuerpo = $('contCuerpo'); if (!cab || !cuerpo) return;
-  const admin = ROL_ACTUAL === 'admin';
-  const n = e => CONT.items.filter(x => x.estado === e).length;
-  cab.innerHTML = '<div class="cont-tabs">'
-    + '<button type="button" class="btn-solido" data-cgenera="1">Generar propuestas</button>'
-    + (admin && n('propuesta') ? '<button type="button" class="btn-linea" data-caprueba-todo="1">Aprobar todo lo que está por aprobar (' + CONT.items.filter(x => x.estado === 'propuesta' && x.tiene_imagen).length + ')</button>' : '')
-    + (admin ? '<label class="cont-sub" style="display:flex;gap:6px;align-items:center;font-size:12.5px"><input type="checkbox" data-cactivo="1"' + (CONT.activo ? ' checked' : '') + '> Planificador encendido</label>' : '')
-    + '</div>'
-    + (CONT.activo ? '' : '<p class="cfgnota">El planificador está apagado: no propone ni publica nada.</p>');
-  const cuenta = { porAprobar: n('propuesta'), programadas: n('aprobada') + n('publicando'), publicadas: n('publicada'), paquete: CONT.items.filter(x => x.canal === 'paquete_grupos' && x.estado === 'lista').length, fechas: CONT.calendario.length };
-  $('contTabs').innerHTML = CONT_TABS.map(([k, t]) => '<button type="button" class="cotz-chip' + (CONT.tab === k ? ' on' : '') + '" data-ctab="' + k + '">' + esc(t) + '<small>' + (cuenta[k] || 0) + '</small></button>').join('');
-  if (CONT.tab === 'paquete') return pintaPaquete(cuerpo);
-  if (CONT.tab === 'fechas') return pintaFechasNicho(cuerpo);
-  const filtro = { porAprobar: x => x.estado === 'propuesta' || x.estado === 'rechazada', programadas: x => ['aprobada', 'publicando', 'lista', 'fallida', 'vencida'].includes(x.estado), publicadas: x => x.estado === 'publicada' }[CONT.tab];
-  const lista = CONT.items.filter(filtro);
-  if (!lista.length) { cuerpo.innerHTML = '<p class="cfgnota">' + (CONT.tab === 'porAprobar' ? 'No hay publicaciones por aprobar. Pulsa «Generar propuestas»: el servidor también lo hace solo cada mañana.' : 'Nada aquí todavía.') + '</p>'; return; }
-  cuerpo.innerHTML = '<div class="cont-lista">' + lista.map(x => tarjetaContenido(x, admin)).join('') + '</div>';
+function cambiaTabContenido(tab){ CONT.tab = tab; pintaContenido(); }
+// Las acciones nuevas del agente, con un aviso claro mientras la PC no haya desplegado el servidor nuevo.
+async function llamaCont(cuerpo){
+  const r = await llama(cuerpo);
+  if (!r.ok && (r.code === 'action_not_migrated' || r.status === 501)) r.error = 'Esta parte del agente necesita el servidor nuevo: ejecuta DCARELA-HACER-TODO en la PC (despliega las funciones).';
+  return r;
 }
+const contDia = f => { const d = new Date(f + 'T12:00:00Z'); return ['dom', 'lun', 'mar', 'mié', 'jue', 'vie', 'sáb'][d.getUTCDay()] + ' ' + f.slice(8, 10) + '/' + f.slice(5, 7); };
+const contHora12 = h => { const [a, m] = String(h || '').split(':').map(Number); return Number.isFinite(a) ? ((a % 12) || 12) + ':' + String(m || 0).padStart(2, '0') + ' ' + (a < 12 ? 'AM' : 'PM') : ''; };
+function pintaContenido(){
+  const cuerpo = $('contCuerpo'); if (!cuerpo) return;
+  pintaAgente();
+  const n = e => CONT.items.filter(x => x.estado === e).length;
+  const cuenta = { porAprobar: n('propuesta'), programadas: n('aprobada') + n('publicando') + n('lista'), publicadas: n('publicada'), paquete: CONT.items.filter(x => x.canal === 'paquete_grupos' && x.estado === 'lista').length,
+    fechas: CONT.calendario.length, tendencias: CONT.tendencias ? (CONT.tendencias.ideas || []).length : 0, estilos: CONT.estilos.filter(e => e.activo).length };
+  $('contTabs').innerHTML = CONT_TABS.map(([k, t]) => '<button type="button" class="cotz-chip' + (CONT.tab === k ? ' on' : '') + '" data-ctab="' + k + '">' + esc(t) + (cuenta[k] != null ? '<small>' + cuenta[k] + '</small>' : '') + '</button>').join('');
+  const vistas = { calendario: pintaCalendario, tendencias: pintaTendencias, subir: pintaSubir, estilos: pintaEstilos, redes: pintaRedes, paquete: pintaPaquete, fechas: pintaFechasNicho };
+  if (vistas[CONT.tab]) return vistas[CONT.tab](cuerpo);
+  const filtro = { porAprobar: x => x.estado === 'propuesta' || x.estado === 'rechazada', programadas: x => ['aprobada', 'publicando', 'lista', 'fallida', 'vencida'].includes(x.estado) && x.canal !== 'paquete_grupos', publicadas: x => x.estado === 'publicada' }[CONT.tab];
+  const lista = CONT.items.filter(filtro || (() => false));
+  if (!lista.length) { cuerpo.innerHTML = '<p class="cfgnota">' + (CONT.tab === 'porAprobar' ? 'No hay publicaciones por aprobar. Pulsa «Generar creativos»: el agente también lo hace solo cada mañana.' : 'Nada aquí todavía.') + '</p>'; return; }
+  cuerpo.innerHTML = '<div class="cont-lista">' + lista.map(x => tarjetaContenido(x, ROL_ACTUAL === 'admin')).join('') + '</div>';
+}
+
+// ---- la tarjeta del agente: estado, autonomía, cuántos creativos, en qué redes y las acciones ----
+function pintaAgente(){
+  const el = $('contAgente'); if (!el) return;
+  const admin = ROL_ACTUAL === 'admin';
+  const g = CONT.gen || { cantidad: '', dias: 7, canales: new Set(CONT.activos) };
+  const proximas = CONT.items.filter(x => ['aprobada', 'publicando'].includes(x.estado)).slice(0, 4);
+  const porAprobar = CONT.items.filter(x => x.estado === 'propuesta' && x.tiene_imagen).length;
+  const aut = CONT_AUTONOMIA.find(a => a[0] === CONT.autonomia) || CONT_AUTONOMIA[0];
+  el.innerHTML = '<section class="agente' + (CONT.activo ? '' : ' apagado') + '">'
+    + '<div class="agente-cab"><span class="agente-ico" aria-hidden="true">🤖</span><div class="agente-tit"><b>Agente de marketing</b><small>'
+    +   (CONT.activo ? 'Trabajando: cada mañana a las 7:00 prepara lo que viene y publica lo aprobado a su hora.' : 'En pausa: no propone ni publica nada (tampoco lo ya aprobado).') + '</small></div>'
+    +   (admin ? '<label class="agente-sw"><input type="checkbox" data-cactivo="1"' + (CONT.activo ? ' checked' : '') + '><span>' + (CONT.activo ? 'Encendido' : 'En pausa') + '</span></label>' : '') + '</div>'
+    + '<div class="agente-fila"><span class="agente-rot">Autonomía</span><div class="segmento" role="radiogroup" aria-label="Autonomía del agente">'
+    +   CONT_AUTONOMIA.map(([k, t]) => '<button type="button" role="radio" aria-checked="' + (CONT.autonomia === k) + '" class="' + (CONT.autonomia === k ? 'on' : '') + '" data-cautonomia="' + k + '"' + (admin ? '' : ' disabled') + '>' + esc(t) + '</button>').join('')
+    +   '</div><small class="cont-sub agente-exp">' + esc(aut[2]) + '</small></div>'
+    + '<div class="agente-fila"><span class="agente-rot">Creativos</span>'
+    +   '<label class="agente-num">¿Cuántos? <input type="number" min="1" max="60" inputmode="numeric" placeholder="todos" value="' + esc(g.cantidad) + '" data-cgen="cantidad"></label>'
+    +   '<label class="agente-num">para los próximos <select data-cgen="dias">' + [7, 14, 30].map(d => '<option value="' + d + '"' + (Number(g.dias) === d ? ' selected' : '') + '>' + d + ' días</option>').join('') + '</select></label>'
+    +   '<small class="cont-sub">Vacío = todos los de la agenda.</small></div>'
+    + '<div class="agente-fila"><span class="agente-rot">Plataformas</span><div class="agente-redes">'
+    +   CONT.canales.map(c => '<label class="red-chip' + (g.canales.has(c.id) ? ' on' : '') + '"><input type="checkbox" data-cgenred="' + esc(c.id) + '"' + (g.canales.has(c.id) ? ' checked' : '') + '>' + esc(c.nombre) + '</label>').join('')
+    +   '</div></div>'
+    + '<div class="agente-acc">'
+    +   '<button type="button" class="btn-solido" data-cgenera="1">Generar creativos</button>'
+    +   '<button type="button" class="btn-linea" data-ctendencias="1">Investigar temporadas y tendencias</button>'
+    +   '<button type="button" class="btn-linea" data-cirtab="subir">Subir contenido propio</button>'
+    +   (admin ? '<button type="button" class="btn-linea" data-cguardaagente="1" title="La rutina de cada mañana usará esta cantidad y estas plataformas">Usar esto cada mañana</button>' : '')
+    +   (admin && porAprobar ? '<button type="button" class="btn-linea" data-caprueba-todo="1">Aprobar todo lo pendiente (' + porAprobar + ')</button>' : '')
+    + '</div>'
+    + '<div class="agente-prox"><span class="agente-rot">Próximo</span>' + (proximas.length
+      ? proximas.map(x => '<button type="button" class="prox" data-cirdia="' + esc(x.fecha) + '">' + esc(contDia(x.fecha) + ' · ' + contHora12(x.hora) + ' · ' + (CONT_CORTO[x.canal] || x.canal_nombre)) + '</button>').join('')
+      : '<span class="cont-sub">Nada aprobado todavía' + (porAprobar ? ': tienes ' + porAprobar + ' por aprobar.' : '.') + '</span>') + '</div>'
+    + (CONT.amandine ? '' : '<p class="cont-aviso" style="margin:8px 0 0">El servidor todavía no tiene la letra Amandine: los flyers salen con Marcellus hasta que la PC ejecute DCARELA-HACER-TODO (copia la letra y despliega).</p>')
+    + '</section>';
+}
+function cambioContAgente(ev){
+  const t = ev.target;
+  if (t.dataset.cactivo) return void cambiaActivoAgente(t);
+  if (!CONT.gen) return;
+  if (t.dataset.cgen === 'cantidad') CONT.gen.cantidad = t.value.replace(/[^\d]/g, '').slice(0, 2);
+  if (t.dataset.cgen === 'dias') CONT.gen.dias = Number(t.value) || 7;
+  if (t.dataset.cgenred) { if (t.checked) CONT.gen.canales.add(t.dataset.cgenred); else CONT.gen.canales.delete(t.dataset.cgenred); t.closest('.red-chip')?.classList.toggle('on', t.checked); }
+}
+async function cambiaActivoAgente(b){
+  const r = await llama({ action: 'contenidoAjustes', activo: b.checked });
+  if (!r.ok) { b.checked = !b.checked; return avisa('No se pudo cambiar', r.error); }
+  CONT.activo = b.checked; avisa(b.checked ? 'Agente encendido' : 'Agente en pausa', b.checked ? 'Mañana a las 7:00 prepara lo que viene.' : 'No publica nada hasta que lo enciendas.');
+  pintaContenido();
+}
+async function clicContAgente(ev){
+  const b = ev.target.closest('button'); if (!b || b.disabled) return;
+  const d = b.dataset;
+  if (d.cautonomia) {
+    if (d.cautonomia === CONT.autonomia) return;
+    if (d.cautonomia === 'total' && !await confirmaAqui('Con autonomía TOTAL el agente programa solo lo que pasa las reglas (sin precios ni cupos inventados, con foto original y sin avisos). Saldrá a su hora sin preguntarte; puedes rechazar cualquiera antes de que salga.' + String.fromCharCode(10, 10) + '¿Le das autonomía total?', { si: 'Sí, autonomía total' })) return;
+    const r = await llama({ action: 'contenidoAjustes', autonomia: d.cautonomia });
+    if (!r.ok) return avisa('No se pudo cambiar', r.error);
+    CONT.autonomia = d.cautonomia; avisa('Autonomía: ' + (CONT_AUTONOMIA.find(a => a[0] === d.cautonomia) || [])[1]); return pintaContenido();
+  }
+  if (d.cgenera) {
+    const g = CONT.gen; const canales = [...g.canales];
+    if (!canales.length) return avisa('Elige al menos una plataforma');
+    b.disabled = true; b.textContent = 'Generando… (puede tardar un par de minutos)';
+    const r = await llama({ action: 'contenidoGenera', dias: g.dias, cantidad: Number(g.cantidad) || 0, canales });
+    b.disabled = false; b.textContent = 'Generar creativos';
+    if (!r.ok) return avisa('No se pudo generar', r.error);
+    avisa('Creativos listos', r.creadas + ' nuevos' + (r.auto_aprobadas ? ' · ' + r.auto_aprobadas + ' programados por el agente' : '') + (r.sin_imagen ? ' · ' + r.sin_imagen + ' sin imagen' : '') + (r.creadas ? '' : ' (lo de esas fechas ya estaba hecho)'));
+    CONT.tab = r.creadas - (r.auto_aprobadas || 0) > 0 ? 'porAprobar' : CONT.tab;
+    return cargaContenido();
+  }
+  if (d.cguardaagente) {
+    const g = CONT.gen;
+    const r = await llama({ action: 'contenidoAjustes', canales: [...g.canales], cantidad_semanal: Number(g.cantidad) || 0 });
+    if (!r.ok) return avisa('No se pudo guardar', r.error);
+    avisa('Guardado', 'Cada mañana: ' + (Number(g.cantidad) ? g.cantidad + ' creativos por semana' : 'todos los de la agenda') + ' en ' + g.canales.size + ' plataformas.');
+    return cargaContenido();
+  }
+  if (d.ctendencias) { CONT.tab = 'tendencias'; pintaContenido(); return investigaTendencias(); }
+  if (d.cirtab) return cambiaTabContenido(d.cirtab);
+  if (d.cirdia) { CONT.tab = 'calendario'; CONT.mes = d.cirdia.slice(0, 7); CONT.mesItems = null; pintaContenido(); return cargaDiaContenido(d.cirdia); }
+  if (d.capruebaTodo) {
+    if (!await confirmaAqui('Vas a aprobar TODAS las publicaciones que están por aprobar. Saldrán a su hora (Instagram, Facebook y TikTok solas; los Estados por la PC del negocio).' + String.fromCharCode(10, 10) + '¿Seguimos?', { si: 'Aprobar todo' })) return;
+    const r = await llama({ action: 'contenidoAprueba', todo: true });
+    if (!r.ok) return avisa('No se pudo aprobar', r.error);
+    avisa('Aprobadas', r.hechas.length + (r.omitidas.length ? ' · ' + r.omitidas.length + ' no se pudieron' : ''));
+    return cargaContenido();
+  }
+}
+
+// ---- calendario del mes (lo aprobado, lo propuesto y las fechas del nicho) ----
+const contMesHoy = () => (CONT.hoy || new Date().toISOString().slice(0, 10)).slice(0, 7);
+const contSumaMes = (mes, k) => { const [y, m] = mes.split('-').map(Number); const d = new Date(Date.UTC(y, m - 1 + k, 1)); return d.toISOString().slice(0, 7); };
+const contFinMes = mes => { const [y, m] = mes.split('-').map(Number); return mes + '-' + String(new Date(Date.UTC(y, m, 0)).getUTCDate()).padStart(2, '0'); };
+async function cargaMesContenido(){
+  const mes = CONT.mes || (CONT.mes = contMesHoy());
+  const r = await llama({ action: 'contenidoLista', desde: mes + '-01', hasta: contFinMes(mes), ligero: true });
+  if (mes !== CONT.mes) return;
+  CONT.mesItems = r.ok ? (r.items || []) : [];
+  if (!r.ok) avisa('No se pudo leer el mes', r.error);
+  if (CONT.tab === 'calendario') pintaContenido();
+}
+async function cargaDiaContenido(dia, { pintar = true } = {}){
+  CONT.dia = dia; CONT.diaItems = null;
+  if (pintar && CONT.tab === 'calendario') pintaContenido();
+  const r = await llama({ action: 'contenidoLista', desde: dia, hasta: dia });
+  if (CONT.dia !== dia) return;
+  CONT.diaItems = r.ok ? (r.items || []) : [];
+  if (CONT.tab === 'calendario') pintaContenido();
+}
+function pintaCalendario(cuerpo){
+  const mes = CONT.mes || (CONT.mes = contMesHoy());
+  if (CONT.mesItems === null) { void cargaMesContenido(); CONT.mesItems = CONT.mesItems || undefined; }
+  const items = CONT.mesItems || [];
+  const [y, m] = mes.split('-').map(Number);
+  const primero = new Date(Date.UTC(y, m - 1, 1)).getUTCDay();              // 0 = domingo
+  const vacios = (primero + 6) % 7;                                          // la semana empieza el lunes
+  const dias = new Date(Date.UTC(y, m, 0)).getUTCDate();
+  const hoy = CONT.hoy || '';
+  const nombreMes = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'][m - 1] + ' ' + y;
+  const porDia = {};
+  for (const x of items) (porDia[x.fecha] = porDia[x.fecha] || []).push(x);
+  const eventos = {};
+  for (const e of CONT.calendario) (eventos[e.fecha] = eventos[e.fecha] || []).push(e.nombre);
+  let celdas = '';
+  for (let i = 0; i < vacios; i++) celdas += '<div class="cal-dia vacio"></div>';
+  for (let d = 1; d <= dias; d++) {
+    const f = mes + '-' + String(d).padStart(2, '0');
+    const lista = (porDia[f] || []).filter(x => x.estado !== 'rechazada').sort((a, b) => String(a.hora).localeCompare(String(b.hora)));
+    celdas += '<button type="button" class="cal-dia' + (f === hoy ? ' hoy' : '') + (f === CONT.dia ? ' sel' : '') + (f < hoy ? ' pasado' : '') + '" data-cdia="' + f + '">'
+      + '<span class="cal-num">' + d + '</span>'
+      + (eventos[f] ? '<span class="cal-ev">' + esc(eventos[f][0]) + '</span>' : '')
+      + lista.slice(0, 4).map(x => '<span class="cal-chip est-' + esc(x.estado) + '" title="' + esc(contHora12(x.hora) + ' · ' + x.canal_nombre + ' · ' + (CONT_ESTADOS[x.estado] || x.estado)) + '"><span class="cal-h">' + esc(contHora12(x.hora).replace(':00', '').replace(' ', '')) + ' </span>' + esc(CONT_CORTO[x.canal] || '') + '</span>').join('')
+      + (lista.length > 4 ? '<span class="cal-mas">+' + (lista.length - 4) + '</span>' : '') + '</button>';
+  }
+  const leyenda = [['propuesta', 'Por aprobar'], ['aprobada', 'Aprobada'], ['publicada', 'Publicada'], ['lista', 'Lista para subir'], ['fallida', 'Falló']]
+    .map(([k, t]) => '<span><i class="cal-chip est-' + k + '"></i>' + t + '</span>').join('');
+  let detalle = '';
+  if (CONT.dia) {
+    const lista = CONT.diaItems;
+    detalle = '<h3 class="cal-tit-dia">' + esc(contDia(CONT.dia)) + (eventos[CONT.dia] ? ' · ' + esc(eventos[CONT.dia].join(', ')) : '') + '</h3>'
+      + (lista === null ? '<p class="cfgnota"><span class="cargando"></span> Cargando el día…</p>'
+        : lista.length ? '<div class="cont-lista">' + lista.map(x => tarjetaContenido(x, ROL_ACTUAL === 'admin')).join('') + '</div>'
+        : '<p class="cfgnota">Nada programado ese día. Puedes <button type="button" class="btn-linea" data-cirtab="subir" data-cfechasube="' + esc(CONT.dia) + '">subir algo tuyo para ese día</button></p>');
+  }
+  cuerpo.innerHTML = '<div class="cal-cab"><button type="button" class="btn-linea" data-cmes="-1" aria-label="Mes anterior">‹</button><b>' + esc(nombreMes) + '</b>'
+    + '<button type="button" class="btn-linea" data-cmes="1" aria-label="Mes siguiente">›</button><button type="button" class="btn-linea" data-cmes="0">Hoy</button>'
+    + (CONT.mesItems === undefined ? '<span class="cont-sub"><span class="cargando"></span> Cargando…</span>' : '') + '<span class="cal-leyenda">' + leyenda + '</span></div>'
+    + '<div class="cal-grid">' + ['lun', 'mar', 'mié', 'jue', 'vie', 'sáb', 'dom'].map(t => '<div class="cal-sem">' + t + '</div>').join('') + celdas + '</div>' + detalle;
+}
+
+// ---- tarjeta de una publicación ----
 // La hora se elige en AM/PM, de media en media hora (como en el resto del panel); el valor que viaja es HH:MM.
 function contHoras(actual){
   const out = [];
@@ -16539,33 +16794,173 @@ function contHoras(actual){
   if (actual && !out.some(o => o.includes('value="' + actual + '"'))) out.unshift('<option value="' + esc(actual) + '" selected>' + esc(actual) + '</option>');
   return out.join('');
 }
+const contNombreEstilo = id => { const e = CONT.estilos.find(s => s.id === id); return e ? e.nombre : ''; };
 function tarjetaContenido(x, admin){
   const abierto = CONT.abiertos.has(x.id);
   const editable = !['publicada', 'publicando'].includes(x.estado);
   const acc = [];
   if (admin && ['propuesta', 'rechazada'].includes(x.estado) && x.tiene_imagen) acc.push('<button type="button" class="btn-solido" data-caprueba="' + esc(x.id) + '">Aprobar</button>');
-  if (admin && ['propuesta', 'aprobada', 'fallida'].includes(x.estado)) acc.push('<button type="button" class="btn-linea" data-crechaza="' + esc(x.id) + '">Rechazar</button>');
+  if (admin && ['propuesta', 'aprobada', 'fallida', 'lista'].includes(x.estado)) acc.push('<button type="button" class="btn-linea" data-crechaza="' + esc(x.id) + '">Rechazar</button>');
   if (editable) acc.push('<button type="button" class="btn-linea" data-cedita="' + esc(x.id) + '">' + (abierto ? 'Cerrar' : 'Editar') + '</button>');
+  if (x.tiene_imagen) acc.push('<button type="button" class="btn-linea" data-cver="' + esc(x.id) + '">Ver en grande</button>');
+  if (editable && x.tiene_imagen && x.origen !== 'propia') acc.push('<button type="button" class="btn-linea" data-cvariaciones="' + esc(x.id) + '" title="Otras versiones con otros estilos: apruebas la que más te guste">Variaciones</button>');
   if (admin && ['aprobada', 'fallida', 'vencida'].includes(x.estado) && x.canal !== 'paquete_grupos') acc.push('<button type="button" class="btn-linea" data-cpublica="' + esc(x.id) + '">' + (x.estado === 'aprobada' ? 'Publicar ahora' : 'Reintentar ahora') + '</button>');
-  if (x.tiene_imagen) acc.push('<button type="button" class="btn-linea" data-cdescarga="' + esc(x.id) + '">Descargar imagen</button>');
+  if (x.tiene_imagen) acc.push('<button type="button" class="btn-linea" data-cdescarga="' + esc(x.id) + '">Descargar</button>');
+  if (x.estado === 'lista' && x.canal !== 'paquete_grupos') acc.push('<button type="button" class="btn-linea" data-ccopia="' + esc(x.id) + '">Copiar texto</button>');
+  const estilos = CONT.estilos.filter(e => e.activo || e.id === x.estilo_id);
   const form = abierto ? '<form class="cont-form" data-cform="' + esc(x.id) + '">'
     + (x.titular ? '<div class="fila"><input name="l1" value="' + esc(x.titular.l1 || '') + '" maxlength="70" placeholder="Titular de la imagen"><input name="l2" value="' + esc(x.titular.l2 || '') + '" maxlength="24" placeholder="Mes o remate"></div>' : '')
+    + (x.origen !== 'propia' && estilos.length ? '<div class="fila"><label class="cont-sub" style="display:flex;gap:6px;align-items:center">Estilo del flyer <select name="estilo_id"><option value="">(el que eligió el agente)</option>'
+      + estilos.map(e => '<option value="' + esc(e.id) + '"' + (e.id === x.estilo_id ? ' selected' : '') + '>' + esc(e.nombre) + '</option>').join('') + '</select></label></div>' : '')
     + '<textarea name="texto" maxlength="5000">' + esc(x.texto) + '</textarea>'
     + '<div class="fila"><input type="date" name="fecha" value="' + esc(x.fecha) + '"><select name="hora">' + contHoras(x.hora) + '</select><button class="btn-solido" type="submit">Guardar</button></div>'
-    + '<small class="cont-sub">Si cambias el titular se vuelve a componer la imagen. Una publicación aprobada que editas vuelve a «Por aprobar».</small></form>' : '';
-  return '<div class="cont">' + (x.miniatura ? '<img class="cont-mini" src="' + esc(x.miniatura) + '" alt="Vista previa">' : '<div class="cont-mini"></div>')
-    + '<div class="cont-cuerpo"><div class="cont-cab"><b>' + esc(contDia(x.fecha) + ' · ' + x.hora) + '</b><span class="cotz-est ' + (x.estado === 'publicada' || x.estado === 'aprobada' ? 'aprobada' : x.estado === 'fallida' || x.estado === 'rechazada' || x.estado === 'vencida' ? 'rechazada' : '') + '">' + esc(CONT_ESTADOS[x.estado] || x.estado) + '</span>'
+    + '<small class="cont-sub">Si cambias el titular o el estilo se vuelve a componer la imagen. Una publicación aprobada que editas vuelve a «Por aprobar».</small></form>' : '';
+  const marcas = [];
+  if (x.auto) marcas.push('<span class="cont-marca agente">Programada por el agente</span>');
+  if (x.origen === 'propia') marcas.push('<span class="cont-marca">Tuya</span>');
+  if (x.origen === 'tendencia') marcas.push('<span class="cont-marca">Tendencia</span>');
+  if (x.variacion_de) marcas.push('<span class="cont-marca">Variación</span>');
+  if (x.estilo_id && contNombreEstilo(x.estilo_id)) marcas.push('<span class="cont-marca">' + esc(contNombreEstilo(x.estilo_id)) + '</span>');
+  if (x.tiene_imagen && x.origen !== 'propia') marcas.push(x.foto_hd ? '<span class="cont-marca hd">Foto original en alta</span>' : '<span class="cont-marca baja" title="Se usó la foto de la web (más chica). Sube las originales con DCARELA-HACER-TODO.">Foto de la web</span>');
+  const aviso = x.estado === 'lista' && x.canal !== 'paquete_grupos' ? (x.aviso_lista || 'Lista para subir a mano: descárgala y súbela desde la app.') : '';
+  return '<div class="cont">' + (x.miniatura ? '<img class="cont-mini" src="' + esc(x.miniatura) + '" alt="Vista previa" data-cver="' + esc(x.id) + '">' : '<div class="cont-mini"></div>')
+    + '<div class="cont-cuerpo"><div class="cont-cab"><b>' + esc(contDia(x.fecha) + ' · ' + contHora12(x.hora)) + '</b><span class="cotz-est ' + (x.estado === 'publicada' || x.estado === 'aprobada' ? 'aprobada' : x.estado === 'fallida' || x.estado === 'rechazada' || x.estado === 'vencida' ? 'rechazada' : '') + '">' + esc(x.estado === 'lista' && x.canal === 'paquete_grupos' ? 'Lista para grupos' : (CONT_ESTADOS[x.estado] || x.estado)) + '</span>'
     + '<span>' + esc(x.canal_nombre) + '</span>' + (x.evento_nombre ? '<span class="cont-sub">· ' + esc(x.evento_nombre) + '</span>' : '') + '</div>'
+    + (marcas.length ? '<div class="cont-marcas">' + marcas.join('') + '</div>' : '')
     + (abierto ? '' : '<div class="cont-texto">' + esc(x.texto) + '</div>') + form
     + (x.error ? '<div class="cont-aviso">' + esc(x.error) + '</div>' : '') + ((x.avisos || []).length ? '<div class="cont-aviso">' + esc(x.avisos.join(' · ')) + '</div>' : '')
+    + (aviso ? '<div class="cont-aviso">' + esc(aviso) + '</div>' : '')
+    + ((x.resultado && x.resultado.aviso) ? '<div class="cont-sub">' + esc(x.resultado.aviso) + '</div>' : '')
     + '<div class="cont-acc">' + acc.join('') + '</div></div></div>';
 }
+
+// ---- tendencias: Gemini investiga (con búsqueda de Google) temporadas y tendencias; cada idea se convierte en creativos con un toque ----
+async function investigaTendencias(){
+  const b = document.querySelector('[data-cinvestiga]') || null;
+  if (b) { b.disabled = true; b.textContent = 'Investigando… (hasta un par de minutos)'; }
+  CONT.investigando = true; if (CONT.tab === 'tendencias') pintaContenido();
+  const r = await llamaCont({ action: 'contenidoTendencias', operation: 'investigar', dias: 60 });
+  CONT.investigando = false;
+  if (!r.ok) { pintaContenido(); return avisa('No se pudo investigar', r.error); }
+  CONT.tendencias = { fecha: r.fecha, ideas: r.ideas || [], fuentes: r.fuentes || [] };
+  avisa('Investigación lista', (r.ideas || []).length + ' ideas para las próximas semanas');
+  pintaContenido();
+}
+function pintaTendencias(cuerpo){
+  const t = CONT.tendencias;
+  const canalesIdea = CONT.canales.filter(c => c.id !== 'paquete_grupos');
+  const NOMBRE_CAT = { xv: 'Quince', cumpleanos: 'Cumpleaños', graduacion: 'Graduación', embarazadas: 'Embarazo', infantil: 'Infantil' };
+  cuerpo.innerHTML = '<p class="cfgnota">El agente le pide a Gemini que investigue (con búsqueda de Google) las <b>temporadas, fechas y tendencias</b> de las próximas semanas que sirven para tus sesiones: graduaciones, quinces, fechas del país, formatos que están pegando en Instagram y TikTok. '
+    + 'Cada idea respeta tus reglas (sin precios, descuentos ni cupos inventados). «Usar idea» arma los creativos con tus fotos y quedan por aprobar.</p>'
+    + '<div class="cont-acc" style="margin:0 0 12px"><button type="button" class="btn-solido" data-cinvestiga="1"' + (CONT.investigando ? ' disabled' : '') + '>' + (CONT.investigando ? 'Investigando… (hasta un par de minutos)' : (t ? 'Investigar de nuevo' : 'Investigar temporadas y tendencias')) + '</button>'
+    + (t && t.fecha ? '<span class="cont-sub" style="align-self:center">Última investigación: ' + esc(t.fecha) + '</span>' : '') + '</div>'
+    + (!t || !(t.ideas || []).length ? '<p class="cfgnota">Todavía no hay una investigación.</p>'
+      : '<div class="ideas">' + t.ideas.map(i => '<div class="idea"><div class="cont-cab"><b>' + esc(i.titulo) + '</b>' + (i.fecha ? '<span class="cotz-est">' + esc(contDia(i.fecha)) + '</span>' : '<span class="cotz-est">Tendencia</span>')
+        + (i.categoria ? '<span class="cont-sub">' + esc(NOMBRE_CAT[i.categoria] || i.categoria) + '</span>' : '') + '<span class="cont-sub">· ' + esc(i.formato || 'post') + '</span></div>'
+        + '<div class="cont-texto" style="max-height:none;color:var(--fg)">«' + esc(i.angulo) + '»</div>' + (i.por_que ? '<small class="cont-sub">' + esc(i.por_que) + '</small>' : '')
+        + '<form class="cont-form idea-form" data-cidea="' + esc(i.id) + '"><div class="fila agente-redes">'
+        + canalesIdea.map(c => '<label class="red-chip' + ((i.canales || []).includes(c.id) ? ' on' : '') + '"><input type="checkbox" name="canal" value="' + esc(c.id) + '"' + ((i.canales || []).includes(c.id) ? ' checked' : '') + '>' + esc(c.nombre) + '</label>').join('')
+        + '</div><div class="fila"><input type="date" name="fecha" value="' + esc(i.fecha || '') + '" title="Fecha de publicación (vacía: la de la idea o mañana)"><button class="btn-solido" type="submit">Usar idea</button></div></form></div>').join('') + '</div>'
+      + ((t.fuentes || []).length ? '<p class="cont-sub" style="margin-top:12px">Fuentes: ' + t.fuentes.slice(0, 8).map(f => '<a href="' + esc(f.url) + '" target="_blank" rel="noopener noreferrer">' + esc(f.titulo || f.url) + '</a>').join(' · ') + '</p>' : ''));
+}
+
+// ---- subir contenido propio (una imagen tuya, a las redes y la fecha que elijas) ----
+// La imagen viaja SIN recomprimir si ya es JPG/PNG/WEBP y no pasa de 2880 px ni de 12 MB; si es más grande se reduce a 2880 px con JPEG 0.92.
+async function imagenParaSubir(archivo, { lado = 2880, maxBytes = 12 * 1024 * 1024 } = {}){
+  const tipo = String(archivo.type || '').toLowerCase();
+  let bmp;
+  try { bmp = await createImageBitmap(archivo, { imageOrientation: 'from-image' }); }
+  catch (e) { throw new Error('Este navegador no puede abrir esa imagen (¿es HEIC?). Compártela como JPG y vuelve a intentarlo.'); }
+  const ancho = bmp.width, alto = bmp.height, mayor = Math.max(ancho, alto);
+  if (/^image\/(jpeg|png|webp)$/.test(tipo) && mayor <= lado && archivo.size <= maxBytes) { if (bmp.close) bmp.close(); return { b64: await leeBase64(archivo), mime: tipo, ancho, alto, reducida: false }; }
+  const k = Math.min(1, lado / mayor);
+  const c = document.createElement('canvas'); c.width = Math.round(ancho * k); c.height = Math.round(alto * k);
+  const ctx = c.getContext('2d'); ctx.imageSmoothingQuality = 'high'; ctx.drawImage(bmp, 0, 0, c.width, c.height); if (bmp.close) bmp.close();
+  const blob = await new Promise(ok => c.toBlob(ok, 'image/jpeg', 0.92));
+  if (!blob) throw new Error('no se pudo preparar la imagen');
+  return { b64: await leeBase64(blob), mime: 'image/jpeg', ancho: c.width, alto: c.height, reducida: true };
+}
+function pintaSubir(cuerpo){
+  const admin = ROL_ACTUAL === 'admin';
+  const s = CONT.subida || (CONT.subida = { canales: new Set(['instagram', 'facebook']), fecha: CONT.hoy || '', hora: '18:30' });
+  if (CONT.fechaSube) { s.fecha = CONT.fechaSube; CONT.fechaSube = null; }
+  cuerpo.innerHTML = '<p class="cfgnota">Programa un contenido tuyo: una foto o un flyer que ya tienes. Se adapta al formato de cada red <b>sin cortarlo</b> (Instagram y Facebook 4:5; Estados y TikTok 9:16) y en alta calidad. '
+    + 'El texto pasa por las mismas reglas (sin precios, descuentos ni cupos inventados).</p>'
+    + '<form class="cont-form subir" data-csube="1">'
+    + '<label class="subir-zona"><input type="file" name="archivo" accept="image/jpeg,image/png,image/webp" data-csubearchivo="1"><span id="contSubeVista">' + (s.vista ? '<img src="' + s.vista + '" alt="Vista previa">' : 'Toca para elegir la imagen') + '</span></label>'
+    + (s.info ? '<small class="cont-sub">' + esc(s.info) + '</small>' : '')
+    + '<div class="fila agente-redes">' + CONT.canales.filter(c => c.id !== 'paquete_grupos').map(c => '<label class="red-chip' + (s.canales.has(c.id) ? ' on' : '') + '"><input type="checkbox" data-csubered="' + esc(c.id) + '"' + (s.canales.has(c.id) ? ' checked' : '') + '>' + esc(c.nombre) + '</label>').join('') + '</div>'
+    + '<textarea name="texto" maxlength="2200" placeholder="El texto de la publicación (en un Estado, invita a responder: «Respóndeme este estado y te cuento…»)">' + esc(s.texto || '') + '</textarea>'
+    + '<div class="fila"><input type="date" name="fecha" required value="' + esc(s.fecha || '') + '"><select name="hora">' + contHoras(s.hora || '18:30') + '</select>'
+    + (admin ? '<label class="cont-sub" style="display:flex;gap:6px;align-items:center"><input type="checkbox" name="aprobar"> Dejarla aprobada (sale a su hora)</label>' : '')
+    + '<button class="btn-solido" type="submit">Programar</button></div></form>';
+}
+
+// ---- estilos de flyer: los de fábrica, los de tus referencias y los que propone Gemini (la «pauta entrenada») ----
+async function cargaMuestrasDeEstilos(){
+  if (CONT.cargandoMuestras) return;
+  CONT.cargandoMuestras = true;
+  try {
+    for (const e of CONT.estilos.filter(x => !CONT.vistas[x.id]).slice(0, 12)) {
+      if (CONT.tab !== 'estilos') break;
+      const r = await llamaCont({ action: 'contenidoEstilos', operation: 'vista', id: e.id });
+      if (!r.ok || !r.vista) break;   // sin foto o sin servidor: se queda el botón «Ver muestra»
+      CONT.vistas[e.id] = r.vista;
+      if (CONT.tab === 'estilos') pintaContenido();
+    }
+  } finally { CONT.cargandoMuestras = false; }
+}
+function pintaEstilos(cuerpo){
+  const admin = ROL_ACTUAL === 'admin';
+  void cargaMuestrasDeEstilos();
+  const tarjeta = e => '<div class="estilo' + (e.activo ? '' : ' apagado') + '">'
+    + '<div class="estilo-vista">' + (CONT.vistas[e.id] ? '<img src="' + CONT.vistas[e.id] + '" alt="Muestra de ' + esc(e.nombre) + '" data-cvistaestilo="' + esc(e.id) + '">' : e.referencia ? '<img src="' + esc(e.referencia) + '" alt="Referencia" class="estilo-ref">' : '<span class="estilo-muestra" style="--acento:' + esc(e.acento || '#FF7E00') + '"><b>Aa</b></span>') + '</div>'
+    + '<div class="estilo-info"><b>' + esc(e.nombre) + '</b><small class="cont-sub">' + esc(CONT_ORIGEN[e.origen] || e.origen || '') + ' · ' + esc(CONT_LAYOUT[e.layout] || e.layout) + ' · botón ' + esc(e.boton === 'glass' ? 'de vidrio' : e.boton) + '</small>'
+    + (e.por_que ? '<small class="cont-sub">' + esc(e.por_que) + '</small>' : '')
+    + '<div class="cont-acc"><button type="button" class="btn-linea" data-cmuestra="' + esc(e.id) + '">' + (CONT.vistas[e.id] ? 'Ver en grande' : 'Ver muestra') + '</button>'
+    + (admin ? '<button type="button" class="btn-linea" data-cestilo="' + (e.activo ? 'desactivar' : 'activar') + '" data-id="' + esc(e.id) + '">' + (e.activo ? 'Apagar' : 'Activar') + '</button>' : '')
+    + (admin && e.origen !== 'base' ? '<button type="button" class="btn-linea" data-cestilo="borrar" data-id="' + esc(e.id) + '" aria-label="Borrar estilo">×</button>' : '') + '</div></div></div>';
+  const activos = CONT.estilos.filter(e => e.activo).length;
+  cuerpo.innerHTML = '<p class="cfgnota">Los flyers salen con la letra <b>Amandine</b> y con estas variaciones estéticas: el agente reparte las piezas entre los estilos <b>activos</b> (' + activos + '). '
+    + 'Todos usan el botón de vidrio (o su variante) en vez del rectángulo naranja. Para que el agente aprenda tu gusto: sube un flyer que te guste como <b>referencia</b> o pídele a Gemini estilos nuevos; los ves en muestra antes de activarlos.</p>'
+    + (CONT.amandine ? '' : '<p class="cont-aviso">El servidor todavía no tiene la Amandine (la copia la PC al desplegar): mientras tanto las muestras salen con Marcellus.</p>')
+    + (admin ? '<div class="estilos-acc"><form class="cont-form" data-cref="1"><b>Imagen de referencia</b><small class="cont-sub">Un flyer o una publicación que te guste: Gemini la mira y la convierte en un estilo que el agente dibuja con tus fotos (queda activo).</small>'
+      + '<div class="fila"><input type="file" name="archivo" accept="image/*" required><input name="nombre" maxlength="60" placeholder="Nombre (opcional)"><button class="btn-solido" type="submit">Guardar estilo</button></div></form>'
+      + '<form class="cont-form" data-cestilosia="1"><b>Variaciones con IA</b><small class="cont-sub">Gemini propone estilos nuevos a partir de los que ya tienes. Llegan <b>apagados</b>: activa los que te gusten.</small>'
+      + '<div class="fila"><select name="cantidad">' + [2, 3, 4, 6].map(n => '<option value="' + n + '"' + (n === 4 ? ' selected' : '') + '>' + n + ' estilos</option>').join('') + '</select><button class="btn-solido" type="submit">Pedir variaciones</button></div></form></div>' : '')
+    + (CONT.nuevosIA.length ? '<h3 style="margin:16px 0 6px">Recién propuestos</h3><div class="estilos">' + CONT.nuevosIA.map(n => { const e = CONT.estilos.find(s => s.id === n.id); return e ? tarjeta(e) : ''; }).join('') + '</div>' : '')
+    + '<h3 style="margin:16px 0 6px">Todos los estilos</h3><div class="estilos">' + CONT.estilos.map(tarjeta).join('') + '</div>';
+}
+
+// ---- redes: qué sale solo, qué no y conectar TikTok ----
+function pintaRedes(cuerpo){
+  const admin = ROL_ACTUAL === 'admin';
+  const t = CONT.tiktok || {};
+  const fila = (titulo, estado, texto, extra = '') => '<div class="red"><div class="cont-cab"><b>' + titulo + '</b>' + estado + '</div><p class="cont-sub" style="margin:4px 0 0">' + texto + '</p>' + extra + '</div>';
+  const ok = s => '<span class="cotz-est aprobada">' + s + '</span>', no = s => '<span class="cotz-est">' + s + '</span>';
+  cuerpo.innerHTML = '<p class="cfgnota">Al aprobar (aquí o por WhatsApp), cada pieza sale a su hora por su red. Esto es lo que se puede hacer en cada una:</p>'
+    + fila('Instagram', ok('Sale sola'), 'Publica a su hora con la cola de Instagram del CRM. La clave está en Canales → Conexiones («Instagram · publicar fotos»).')
+    + fila('Página de Facebook', ok('Sale sola'), 'Publica en la Página a su hora. Necesita que la Página esté conectada con el permiso de <b>publicar</b> (pages_manage_posts). Si una publicación dice que falta el permiso: Canales → Facebook → volver a conectar y aceptar «Administrar publicaciones de la Página».')
+    + fila('Estados de WhatsApp', ok('Sale solo'), 'Salen por la PC del negocio (el puente de WhatsApp), con la audiencia que elegiste. La PC tiene que estar encendida a esa hora.')
+    + fila('TikTok', t.conectado ? ok('Conectado') : no(t.app_configurada ? 'Falta conectar' : 'Sin conectar'),
+      'El flyer se convierte en un video corto (8 s, 1080×1920) y llega como <b>borrador</b> a la bandeja de TikTok: lo abres, le pones la música del momento y lo publicas. '
+      + 'TikTok no deja publicar directo a una app sin su auditoría. Sin conexión, la pieza queda «Lista para subir»: la descargas y la subes tú.',
+      admin ? '<form class="cont-form" data-ctiktok="app" style="margin-top:8px"><div class="fila"><input name="client_key" placeholder="Client key de tu app de TikTok" maxlength="120" autocomplete="off"><input name="client_secret" type="password" placeholder="Client secret" maxlength="200" autocomplete="off"><button class="btn-linea" type="submit">Guardar datos de la app</button></div>'
+        + '<small class="cont-sub">En developers.tiktok.com crea una app con «Login Kit» y «Content Posting API» y pon esta dirección de vuelta (Redirect URI): <code>' + esc(t.vuelta || '') + '</code>. El secreto se guarda en el servidor y no vuelve al panel.</small></form>'
+        + '<div class="cont-acc" style="margin-top:8px">' + (t.app_configurada ? '<button type="button" class="btn-solido" data-ctiktokconecta="1">' + (t.conectado ? 'Volver a conectar TikTok' : 'Conectar TikTok') + '</button>' : '')
+        + (t.conectado ? '<button type="button" class="btn-linea" data-ctiktokquita="1">Desconectar</button>' : '') + '</div>'
+        + (t.ultimo_error ? '<div class="cont-aviso">' + esc(t.ultimo_error) + '</div>' : '') : '')
+    + fila('Marketplace y grupos de Facebook', no('Lo publicas tú'), 'Facebook no tiene una forma oficial de publicar en Marketplace ni en grupos desde un programa (Marketplace nunca tuvo API y Meta cerró la de grupos en 2024). '
+      + 'Por eso el agente arma el «paquete del día» (flyer + texto) y tú lo publicas en dos toques; lo hacemos así para no arriesgar la cuenta.');
+}
+
+// ---- paquete del día y fechas del nicho (como antes) ----
 function pintaPaquete(cuerpo){
   const hoy = CONT.items.filter(x => x.canal === 'paquete_grupos' && x.estado === 'lista').sort((a, b) => String(b.fecha).localeCompare(String(a.fecha)));
   const pieza = hoy[0];
   cuerpo.innerHTML = '<p class="cfgnota">El paquete es el flyer y el texto del día para <b>Marketplace y tus grupos de Facebook</b>. Facebook no permite publicar ahí desde un programa, así que lo publicas tú: abre el grupo, pega el texto, sube la imagen y marca «Ya publiqué». '
     + 'Los grupos que llevan más tiempo sin publicación salen primero, para que ninguno se quede atrás. Lee las reglas de cada grupo: muchos no aceptan anuncios.</p>'
-    + (pieza ? '<div class="cont">' + (pieza.miniatura ? '<img class="cont-mini" src="' + esc(pieza.miniatura) + '" alt="">' : '')
+    + (pieza ? '<div class="cont">' + (pieza.miniatura ? '<img class="cont-mini" src="' + esc(pieza.miniatura) + '" alt="" data-cver="' + esc(pieza.id) + '">' : '')
       + '<div class="cont-cuerpo"><div class="cont-cab"><b>' + esc(contDia(pieza.fecha)) + '</b><span>' + esc(pieza.categoria || '') + '</span></div><div class="cont-texto" style="max-height:none">' + esc(pieza.texto) + '</div>'
       + '<div class="cont-acc"><button type="button" class="btn-solido" data-ccopia="' + esc(pieza.id) + '">Copiar texto</button><button type="button" class="btn-linea" data-cdescarga="' + esc(pieza.id) + '">Descargar imagen</button></div></div></div>'
       : '<p class="cfgnota">No hay un paquete listo. Aprueba una publicación de «Grupos y Marketplace (paquete del día)» en «Por aprobar» y aparecerá aquí.</p>')
@@ -16588,63 +16983,176 @@ function pintaFechasNicho(cuerpo){
     + '<form class="cont-form" data-cffecha="1" style="margin-top:14px"><div class="fila"><input name="nombre" placeholder="Nombre de la fecha" maxlength="80" required><input type="date" name="fecha" required><label style="display:flex;gap:6px;align-items:center;font-size:12.5px"><input type="checkbox" name="anual"> Cada año</label></div>'
     + '<div class="fila"><input name="angulo" placeholder="Qué quieres decir ese día (sin precios ni descuentos)" maxlength="240"><button class="btn-solido" type="submit">Agregar fecha</button></div></form>';
 }
-async function clicContCab(ev){
-  const b = ev.target.closest('[data-cgenera],[data-caprueba-todo],[data-cactivo]'); if (!b) return;
-  if (b.dataset.cactivo) {
-    const r = await llama({ action: 'contenidoAjustes', activo: b.checked });
-    if (!r.ok) { b.checked = !b.checked; return avisa('No se pudo cambiar', r.error); }
-    CONT.activo = b.checked; return pintaContenido();
-  }
-  if (b.dataset.cgenera) {
-    b.disabled = true; b.textContent = 'Generando… (puede tardar un minuto)';
-    const r = await llama({ action: 'contenidoGenera', dias: 7 });
-    if (!r.ok) { b.disabled = false; b.textContent = 'Generar propuestas'; return avisa('No se pudo generar', r.error); }
-    avisa('Propuestas listas', r.creadas + ' nuevas' + (r.sin_imagen ? ' · ' + r.sin_imagen + ' sin imagen' : ''));
-    return cargaContenido();
-  }
-  if (b.dataset.capruebaTodo) {
-    if (!await confirmaAqui('Vas a aprobar TODAS las publicaciones que están por aprobar. Saldrán a su hora (Instagram y Facebook solas; los Estados por la PC del negocio).' + String.fromCharCode(10, 10) + '¿Seguimos?', { si: 'Aprobar todo' })) return;
-    const r = await llama({ action: 'contenidoAprueba', todo: true });
-    if (!r.ok) return avisa('No se pudo aprobar', r.error);
-    avisa('Aprobadas', r.hechas.length + (r.omitidas.length ? ' · ' + r.omitidas.length + ' no se pudieron' : ''));
-    return cargaContenido();
-  }
+
+// ---- ver una imagen en grande (la del flyer completo, no la miniatura) ----
+async function verImagenContenido(id){
+  const turno = ++LUPA_TURNO;
+  LUPA_ACTUAL = { msgId: '', archivo: null };
+  const l = $('lupa'); l.classList.add('archivo');
+  const titulo = $('lupaTitulo'); if (titulo) { titulo.textContent = 'Flyer'; titulo.hidden = false; }
+  const carga = l.querySelector('.lupa-carga'); if (carga) carga.textContent = 'Cargando la imagen…';
+  abreLupaCargando();
+  const r = await llama({ action: 'contenidoImagen', id });
+  if (turno !== LUPA_TURNO) return;
+  if (!r.ok) { cierraLupa(); return avisa('No se pudo abrir la imagen', r.error); }
+  const bytes = Uint8Array.from(atob(r.jpeg_b64), c => c.charCodeAt(0));
+  LUPA_ACTUAL.archivo = r.nombre || 'flyer.jpg';
+  muestraLupa('img', URL.createObjectURL(new Blob([bytes], { type: 'image/jpeg' })));
 }
+function verDataUrlEnGrande(src, nombre){
+  ++LUPA_TURNO; LUPA_ACTUAL = { msgId: '', archivo: nombre || 'muestra.jpg' }; $('lupa').classList.add('archivo');
+  const titulo = $('lupaTitulo'); if (titulo) { titulo.textContent = 'Muestra'; titulo.hidden = false; }
+  muestraLupa('img', src);
+}
+
+// ---- clics y formularios ----
 async function clicContenido(ev){
-  const b = ev.target.closest('button'); if (!b) return;
+  const img = ev.target.closest('img[data-cver]'); if (img) return verImagenContenido(img.dataset.cver);
+  const imgE = ev.target.closest('img[data-cvistaestilo]'); if (imgE) return verDataUrlEnGrande(imgE.src, 'estilo-' + imgE.dataset.cvistaestilo + '.jpg');
+  const b = ev.target.closest('button'); if (!b || b.disabled) return;
   const d = b.dataset;
+  if (d.cdia) { CONT.dia = d.cdia === CONT.dia ? null : d.cdia; if (CONT.dia) return cargaDiaContenido(CONT.dia); return pintaContenido(); }
+  if (d.cmes) { CONT.mes = d.cmes === '0' ? contMesHoy() : contSumaMes(CONT.mes || contMesHoy(), Number(d.cmes)); CONT.mesItems = null; CONT.dia = null; return pintaContenido(); }
+  if (d.cirtab) { if (d.cfechasube) CONT.fechaSube = d.cfechasube; return cambiaTabContenido(d.cirtab); }
+  if (d.cinvestiga) return investigaTendencias();
+  if (d.cver) return verImagenContenido(d.cver);
   if (d.caprueba) { const r = await llama({ action: 'contenidoAprueba', ids: [d.caprueba] }); if (!r.ok || !r.hechas.length) return avisa('No se pudo aprobar', r.error || (r.omitidas[0] && r.omitidas[0].motivo)); avisa('Aprobada', 'Sale a su hora'); return cargaContenido(); }
   if (d.crechaza) { const r = await llama({ action: 'contenidoRechaza', ids: [d.crechaza] }); if (!r.ok) return avisa('No se pudo rechazar', r.error); return cargaContenido(); }
   if (d.cedita) { if (CONT.abiertos.has(d.cedita)) CONT.abiertos.delete(d.cedita); else CONT.abiertos.add(d.cedita); return pintaContenido(); }
+  if (d.cvariaciones) {
+    b.disabled = true; b.textContent = 'Haciendo variaciones…';
+    const r = await llamaCont({ action: 'contenidoVariaciones', id: d.cvariaciones, cantidad: 3 });
+    b.disabled = false; b.textContent = 'Variaciones';
+    if (!r.ok) return avisa('No se pudieron hacer variaciones', r.error);
+    avisa('Variaciones listas', r.ids.length + ' nuevas en «Por aprobar»: aprueba la que más te guste y rechaza las otras.');
+    CONT.tab = 'porAprobar'; return cargaContenido();
+  }
   if (d.cpublica) {
     if (!await confirmaAqui('Se publica AHORA, sin esperar su hora. ¿Seguimos?', { si: 'Publicar' })) return;
     b.disabled = true; const r = await llama({ action: 'contenidoPublica', id: d.cpublica });
-    avisa(r.ok ? 'Publicada' : 'No se pudo publicar', r.ok ? '' : (r.error || '')); return cargaContenido();
+    avisa(r.ok ? (r.lista ? 'Lista para subir' : 'Publicada') : 'No se pudo publicar', r.ok ? (r.lista ? 'TikTok no está conectado: descárgala y súbela tú (o conéctalo en Redes).' : '') : (r.error || '')); return cargaContenido();
   }
   if (d.cdescarga) {
     b.disabled = true; const r = await llama({ action: 'contenidoImagen', id: d.cdescarga }); b.disabled = false;
     if (!r.ok) return avisa('No se pudo bajar la imagen', r.error);
     const bytes = Uint8Array.from(atob(r.jpeg_b64), c => c.charCodeAt(0)); descargaComoArchivo(new Blob([bytes], { type: 'image/jpeg' }), r.nombre); return;
   }
-  if (d.ccopia) { const x = CONT.items.find(i => i.id === d.ccopia); try { await navigator.clipboard.writeText(x.texto); avisa('Texto copiado', 'Pégalo en el grupo'); } catch (e) { avisa('No se pudo copiar', 'Selecciónalo y cópialo a mano'); } return; }
+  if (d.ccopia) { const x = CONT.items.concat(CONT.diaItems || []).find(i => i.id === d.ccopia); try { await navigator.clipboard.writeText(x.texto); avisa('Texto copiado', 'Pégalo en la publicación'); } catch (e) { avisa('No se pudo copiar', 'Selecciónalo y cópialo a mano'); } return; }
+  if (d.cmuestra) {
+    if (CONT.vistas[d.cmuestra]) return verDataUrlEnGrande(CONT.vistas[d.cmuestra], 'estilo-' + d.cmuestra + '.jpg');
+    b.disabled = true; b.textContent = 'Componiendo…';
+    const r = await llamaCont({ action: 'contenidoEstilos', operation: 'vista', id: d.cmuestra });
+    b.disabled = false;
+    if (!r.ok || !r.vista) { b.textContent = 'Ver muestra'; return avisa('No se pudo componer la muestra', r.error || 'No hay una foto para la muestra.'); }
+    CONT.vistas[d.cmuestra] = r.vista; return pintaContenido();
+  }
+  if (d.cestilo) {
+    if (d.cestilo === 'borrar' && !await confirmaAqui('¿Borrar este estilo? Las piezas que ya lo usan se quedan como están.', { si: 'Borrar' })) return;
+    const r = await llamaCont({ action: 'contenidoEstilos', operation: d.cestilo, id: d.id });
+    if (!r.ok) return avisa('No se pudo cambiar', r.error);
+    return cargaContenido();
+  }
+  if (d.ctiktokconecta) {
+    const ventana = window.open('about:blank', '_blank');   // se abre YA (el bloqueo de ventanas no deja abrirla después de esperar al servidor)
+    const r = await llamaCont({ action: 'tiktokConexion', operation: 'pase' });
+    if (!r.ok) { if (ventana) ventana.close(); return avisa('No se pudo conectar', r.error); }
+    if (ventana) ventana.location.href = r.url; else location.href = r.url;
+    avisa('Conecta TikTok en la otra pestaña', 'Cuando diga «TikTok conectado», vuelve aquí y pulsa la pestaña Redes.');
+    return;
+  }
+  if (d.ctiktokquita) {
+    if (!await confirmaAqui('¿Desconectar TikTok? Las piezas de TikTok quedarán «Listas para subir» a mano.', { si: 'Desconectar' })) return;
+    const r = await llamaCont({ action: 'tiktokConexion', operation: 'desconectar' }); if (!r.ok) return avisa('No se pudo desconectar', r.error); return cargaContenido();
+  }
   if (d.cgpub) { const r = await llama({ action: 'contenidoGrupos', operation: 'publicado', id: d.cgpub, contenido_id: d.cpieza }); if (!r.ok) return avisa('No se pudo anotar', r.error); avisa('Anotado', 'Ese grupo pasa al final de la lista'); return cargaContenido(); }
   if (d.cgquita) { const r = await llama({ action: 'contenidoGrupos', operation: 'remove', id: d.cgquita }); if (!r.ok) return avisa('No se pudo quitar', r.error); return cargaContenido(); }
   if (d.cquitaev) { const r = await llama({ action: 'contenidoFechas', operation: 'quitar', base: d.cquitaev }); if (!r.ok) return avisa('No se pudo apagar', r.error); return cargaContenido(); }
   if (d.crestaura) { const r = await llama({ action: 'contenidoFechas', operation: 'restaurar', base: d.crestaura }); if (!r.ok) return avisa('No se pudo encender', r.error); return cargaContenido(); }
   if (d.cborraf) { const r = await llama({ action: 'contenidoFechas', operation: 'remove', id: d.cborraf }); if (!r.ok) return avisa('No se pudo quitar', r.error); return cargaContenido(); }
 }
+async function cambioContenido(ev){
+  const t = ev.target;
+  if (t.dataset.csubered && CONT.subida) { if (t.checked) CONT.subida.canales.add(t.dataset.csubered); else CONT.subida.canales.delete(t.dataset.csubered); t.closest('.red-chip')?.classList.toggle('on', t.checked); return; }
+  if (t.name === 'canal') { t.closest('.red-chip')?.classList.toggle('on', t.checked); return; }
+  if (t.dataset.csubearchivo) {
+    const archivo = t.files && t.files[0]; if (!archivo) return;
+    const s = CONT.subida; s.imagen = null; s.info = 'Preparando…';
+    try {
+      const im = await imagenParaSubir(archivo);
+      s.imagen = im; s.vista = 'data:' + im.mime + ';base64,' + im.b64;
+      s.info = im.ancho + '×' + im.alto + ' px' + (im.reducida ? ' (reducida a 2880 px con calidad alta)' : ' · va tal cual, sin recomprimir');
+    } catch (e) { s.info = e.message; s.vista = null; }
+    const f = t.closest('form'); if (f) { const v = Object.fromEntries(new FormData(f).entries()); s.texto = v.texto; s.fecha = v.fecha; s.hora = v.hora; }
+    pintaContenido();
+  }
+}
 async function guardaFormContenido(f){
   const v = Object.fromEntries(new FormData(f).entries());
   if (f.dataset.cgform) { const r = await llama({ action: 'contenidoGrupos', operation: 'add', nombre: v.nombre, url: v.url, reglas: v.reglas }); if (!r.ok) return avisa('No se pudo agregar', r.error); avisa('Grupo agregado'); return cargaContenido(); }
   if (f.dataset.cffecha) { const r = await llama({ action: 'contenidoFechas', operation: 'add', nombre: v.nombre, fecha: v.fecha, anual: v.anual === 'on', angulo: v.angulo }); if (!r.ok) return avisa('No se pudo agregar', r.error); avisa('Fecha agregada'); return cargaContenido(); }
+  const boton = f.querySelector('button[type=submit]');
+  const ocupa = texto => { if (boton) { boton.disabled = true; boton.dataset.antes = boton.textContent; boton.textContent = texto; } };
+  const suelta = () => { if (boton) { boton.disabled = false; boton.textContent = boton.dataset.antes || boton.textContent; } };
+  if (f.dataset.cidea) {
+    const canales = [...f.querySelectorAll('input[name=canal]:checked')].map(i => i.value);
+    if (!canales.length) return avisa('Elige al menos una red');
+    ocupa('Armando…');
+    const r = await llamaCont({ action: 'contenidoUsaIdea', idea_id: f.dataset.cidea, canales, fecha: v.fecha || null });
+    suelta();
+    if (!r.ok) return avisa('No se pudo usar la idea', r.error);
+    avisa('Idea convertida', r.ids.length + ' creativos' + (r.auto_aprobadas ? ' · ' + r.auto_aprobadas + ' programados por el agente' : ' por aprobar'));
+    CONT.tab = 'porAprobar'; return cargaContenido();
+  }
+  if (f.dataset.csube) {
+    const s = CONT.subida;
+    if (!s || !s.imagen) return avisa('Elige la imagen');
+    if (!s.canales.size) return avisa('Elige al menos una red');
+    ocupa('Subiendo…');
+    const r = await llamaCont({ action: 'contenidoSube', media_b64: s.imagen.b64, media_mime: s.imagen.mime, canales: [...s.canales], fecha: v.fecha, hora: v.hora, texto: v.texto, aprobar: v.aprobar === 'on' });
+    suelta();
+    if (!r.ok) return avisa('No se pudo programar', r.error);
+    avisa('Programado', r.ids.length + (r.ids.length === 1 ? ' publicación ' : ' publicaciones ') + (r.estado === 'aprobada' ? 'aprobadas: salen a su hora' : 'por aprobar'));
+    CONT.subida = null; CONT.tab = 'calendario'; CONT.mes = String(v.fecha || '').slice(0, 7) || CONT.mes; CONT.dia = v.fecha || null;
+    return cargaContenido();
+  }
+  if (f.dataset.cref) {
+    const archivo = f.querySelector('input[type=file]').files[0]; if (!archivo) return avisa('Elige la imagen de referencia');
+    ocupa('Gemini la está mirando…');
+    let im; try { im = await imagenParaSubir(archivo, { lado: 1600, maxBytes: 4 * 1024 * 1024 }); } catch (e) { suelta(); return avisa('No se pudo leer la imagen', e.message); }
+    const r = await llamaCont({ action: 'contenidoEstilos', operation: 'referencia', imagen_b64: im.b64, mime: im.mime, nombre: v.nombre });
+    suelta();
+    if (!r.ok) return avisa('No se pudo guardar el estilo', r.error);
+    if (r.vista) CONT.vistas[r.estilo.id] = r.vista;
+    CONT.nuevosIA = [{ id: r.estilo.id }];
+    avisa('Estilo guardado', '«' + r.estilo.nombre + '» ya está activo');
+    return cargaContenido();
+  }
+  if (f.dataset.cestilosia) {
+    ocupa('Gemini está diseñando…');
+    const r = await llamaCont({ action: 'contenidoEstilos', operation: 'ia', cantidad: Number(v.cantidad) || 4 });
+    suelta();
+    if (!r.ok) return avisa('No se pudieron pedir variaciones', r.error);
+    for (const e of r.estilos || []) if (e.vista) CONT.vistas[e.id] = e.vista;
+    CONT.nuevosIA = (r.estilos || []).map(e => ({ id: e.id }));
+    avisa('Estilos propuestos', CONT.nuevosIA.length + ' nuevos (apagados): activa los que te gusten');
+    return cargaContenido();
+  }
+  if (f.dataset.ctiktok === 'app') {
+    ocupa('Guardando…');
+    const r = await llamaCont({ action: 'tiktokConexion', operation: 'app', client_key: v.client_key, client_secret: v.client_secret });
+    suelta();
+    if (!r.ok) return avisa('No se pudo guardar', r.error);
+    avisa('Datos de la app guardados', 'Ahora pulsa «Conectar TikTok».'); return cargaContenido();
+  }
   const id = f.dataset.cform; if (!id) return;
   const cuerpo = { action: 'contenidoEdita', id, texto: v.texto, fecha: v.fecha, hora: v.hora };
   if (v.l1 !== undefined) cuerpo.titular = { l1: v.l1, l2: v.l2 || '' };
-  const antes = CONT.items.find(x => x.id === id);
+  const antes = CONT.items.concat(CONT.diaItems || []).find(x => x.id === id);
   if (antes && antes.titular && v.l1 === antes.titular.l1 && (v.l2 || '') === (antes.titular.l2 || '')) delete cuerpo.titular;   // sin cambios: no se recompone la imagen
-  const boton = f.querySelector('button[type=submit]'); if (boton) boton.disabled = true;
+  if (v.estilo_id !== undefined && v.estilo_id && (!antes || v.estilo_id !== antes.estilo_id)) cuerpo.estilo_id = v.estilo_id;
+  ocupa('Guardando…');
   const r = await llama(cuerpo);
-  if (!r.ok) { if (boton) boton.disabled = false; return avisa('No se pudo guardar', r.error); }
+  if (!r.ok) { suelta(); return avisa('No se pudo guardar', r.error); }
   CONT.abiertos.delete(id);
   avisa('Guardado', r.vuelve_a_propuesta ? 'Volvió a «Por aprobar»' : '');
   return cargaContenido();
@@ -16654,7 +17162,7 @@ async function guardaFormContenido(f){
 // Una cotizacion nace «enviada» (al mandarla desde el chat). Cuando el cliente dice que si se marca «aprobada»; entonces «Enviar a la Caja» la baja a la Caja
 // (evento `CotizacionCrm`) con sus partidas y montos ya hechos. La Caja devuelve su folio y cuando la factura. «Borrar» anula (se recupera en «Anuladas»).
 let COTZ = { lista: [], conteo: {}, filtro: 'activas', q: '', sel: new Set(), cargando: false };
-const COTZ_FILTROS = [['activas', 'Todas'], ['enviada', 'Enviadas'], ['aprobada', 'Aprobadas'], ['en_caja', 'En la Caja'], ['facturada', 'Facturadas'], ['rechazada', 'Rechazadas'], ['anulada', 'Anuladas']];
+const COTZ_FILTROS = [['activas', 'Todas'], ['enviada', 'Enviadas'], ['aprobada', 'Aprobadas'], ['en_caja', 'En la Caja'], ['facturada', 'Facturadas'], ['rechazada', 'Rechazadas'], ['anulada', 'Anuladas'], ['catalogo', 'Catálogo de la Caja']];
 const cotzDinero = n => 'RD$' + Number(n || 0).toLocaleString('es-DO', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 function montaCotizaciones(){
   if (!montadas.has('cotizaciones')) {
@@ -16668,13 +17176,16 @@ function montaCotizaciones(){
       + '<div id="cotzCuerpo"></div></div>');
     $('cotzFiltros').addEventListener('click', ev => {
       const b = ev.target.closest('[data-cfiltro]'); if (!b) return;
-      COTZ.filtro = b.dataset.cfiltro; COTZ.sel.clear(); void cargaCotizaciones();
+      COTZ.filtro = b.dataset.cfiltro; COTZ.sel.clear();
+      if (COTZ.filtro === 'catalogo') { pintaFiltrosCotz(); void cargaCatalogoCaja(); return; }
+      void cargaCotizaciones();
     });
     let t = null;
     $('cotzBuscar').addEventListener('input', ev => { clearTimeout(t); t = setTimeout(() => { COTZ.q = ev.target.value.trim(); void cargaCotizaciones(); }, 350); });
     $('cotzRecarga').onclick = () => cargaCotizaciones();
     $('cotzCuerpo').addEventListener('click', clicCotizaciones);
     $('cotzCuerpo').addEventListener('change', ev => {
+      if (ev.target.closest('[data-cmapa],[data-ccatsuc]')) return cambiaMapaCaja(ev.target);
       const c = ev.target.closest('[data-csel]'); if (!c) return;
       if (c.checked) COTZ.sel.add(c.dataset.csel); else COTZ.sel.delete(c.dataset.csel);
       pintaCotizaciones();
@@ -16683,6 +17194,7 @@ function montaCotizaciones(){
   void cargaCotizaciones();
 }
 async function cargaCotizaciones(){
+  if (COTZ.filtro === 'catalogo') return cargaCatalogoCaja();
   if (COTZ.cargando) return;
   COTZ.cargando = true;
   const cuerpo = $('cotzCuerpo');
@@ -16700,13 +17212,18 @@ function cotzCuando(iso){
   const h = Math.round((Date.now() - t) / 3600000);
   return h < 1 ? 'hace un momento' : h < 24 ? 'hace ' + h + ' h' : 'hace ' + Math.round(h / 24) + ' d';
 }
+function pintaFiltrosCotz(){
+  const total = Object.entries(COTZ.conteo).filter(([k]) => k !== 'anulada').reduce((s, [, n]) => s + n, 0);
+  const gestion = ['admin', 'supervisor'].includes(ROL_ACTUAL);
+  $('cotzFiltros').innerHTML = COTZ_FILTROS.filter(([k]) => k !== 'catalogo' || gestion).map(([k, n]) => {
+    const cuenta = k === 'catalogo' ? '' : k === 'activas' ? total : (COTZ.conteo[k] || 0);
+    return '<button type="button" class="cotz-chip' + (COTZ.filtro === k ? ' on' : '') + '" data-cfiltro="' + k + '">' + esc(n) + (cuenta === '' ? '' : '<small>' + cuenta + '</small>') + '</button>';
+  }).join('');
+}
 function pintaCotizaciones(){
   const cuerpo = $('cotzCuerpo'); if (!cuerpo) return;
-  const total = Object.entries(COTZ.conteo).filter(([k]) => k !== 'anulada').reduce((s, [, n]) => s + n, 0);
-  $('cotzFiltros').innerHTML = COTZ_FILTROS.map(([k, n]) => {
-    const cuenta = k === 'activas' ? total : (COTZ.conteo[k] || 0);
-    return '<button type="button" class="cotz-chip' + (COTZ.filtro === k ? ' on' : '') + '" data-cfiltro="' + k + '">' + esc(n) + '<small>' + cuenta + '</small></button>';
-  }).join('');
+  if (COTZ.filtro === 'catalogo') return pintaCatalogoCaja();
+  pintaFiltrosCotz();
   const puedeGestionar = ['admin', 'supervisor'].includes(ROL_ACTUAL);
   if (!COTZ.lista.length) {
     cuerpo.innerHTML = '<p class="cfgnota">' + (COTZ.q ? 'Nada coincide con esa búsqueda.' : COTZ.filtro === 'anulada' ? 'No hay cotizaciones anuladas.'
@@ -16743,9 +17260,67 @@ function pintaCotizaciones(){
       + '<button type="button" class="btn-linea" data-cborrar-lote="1">' + (COTZ.filtro === 'anulada' ? 'Eliminar definitivamente' : 'Borrar elegidas') + '</button>'
       + '<button type="button" class="btn-linea" data-cquita="1">Quitar selección</button></div>' : '');
 }
+// ---- Catálogo de la Caja: de qué producto sale cada precio del cotizador (dueño 14/10: «que no invente productos… que analice el catálogo actual, sujeto a cambios»)
+// Se lee la Caja AHORA. El dueño puede fijar el producto de una pieza o de un combo, o decir que la Caja no lo tiene; lo que no está en la Caja se cotiza «por confirmar».
+let CATCAJA = { sucursal: 'dcarela', datos: null };
+async function cargaCatalogoCaja(){
+  const cuerpo = $('cotzCuerpo'); if (!cuerpo) return;
+  cuerpo.innerHTML = '<p class="cfgnota"><span class="cargando"></span> Leyendo el catálogo de la Caja…</p>';
+  const r = await llama({ action: 'cotizadorPrecios', sucursal: CATCAJA.sucursal });
+  if (!r.ok) { cuerpo.innerHTML = '<p class="cfgnota">' + esc(r.error || 'No se pudo leer el catálogo de la Caja.') + '</p>'; return; }
+  CATCAJA.datos = r; pintaCatalogoCaja();
+}
+const CONF_CATCAJA = { alta: ['Seguro', 'aprobada'], media: ['Probable', 'enviada'], 'dueño': ['Elegido por ti', 'aprobada'], revisar: ['Revisar', 'rechazada'], ninguno: ['No está en la Caja', 'rechazada'] };
+function pintaCatalogoCaja(){
+  const r = CATCAJA.datos; const cuerpo = $('cotzCuerpo'); if (!cuerpo) return;
+  pintaFiltrosCotz();
+  if (!r) return void cargaCatalogoCaja();
+  const admin = ROL_ACTUAL === 'admin';
+  const chip = k => '<span class="cotz-est ' + ((CONF_CATCAJA[k] || [])[1] || '') + '">' + esc((CONF_CATCAJA[k] || [k])[0]) + '</span>';
+  const opcion = (p, sel) => '<option value="' + esc(p.id) + '"' + (p.id === sel ? ' selected' : '') + '>' + esc(p.nombre + ' · ' + cotzDinero(p.precio)) + '</option>';
+  const elige = (tipo, clave, actual, candidatos, todos, conf) => {
+    if (!admin) return '';
+    const vistos = new Set(); const lista = [...(candidatos || []), ...(todos || [])].filter(p => p && !vistos.has(p.id) && vistos.add(p.id));
+    return '<select data-cmapa="1" data-tipo="' + tipo + '" data-clave="' + esc(clave) + '" aria-label="Producto de la Caja para ' + esc(clave) + '" style="max-width:100%">'
+      + '<option value="">Automático (lo elige el CRM)</option>'
+      + lista.map(p => opcion(p, conf === 'dueño' ? actual : '')).join('')
+      + '<option value="ninguno"' + (conf === 'ninguno' && actual === 'ninguno' ? ' selected' : '') + '>La Caja no lo tiene: no cotizar</option></select>';
+  };
+  const filaPieza = x => '<tr><td><b>' + esc(x.nombre) + '</b></td><td>' + esc(x.producto) + (x.candidatos && x.candidatos.length > 1 ? '<br><small class="cont-sub">otros: ' + esc(x.candidatos.slice(1, 4).map(c => c.nombre + ' ' + cotzDinero(c.precio)).join(' · ')) + '</small>' : '') + '</td>'
+    + '<td>' + esc(cotzDinero(x.precio)) + '</td><td>' + chip(x.confianza) + '</td><td>' + elige('pieza', x.llave, x.producto_id, x.candidatos, r.para_elegir, x.confianza) + '</td></tr>';
+  const filaFalta = x => '<tr><td><b>' + esc(x.nombre) + '</b></td><td colspan="2"><small>' + esc(x.texto) + '</small></td><td>' + chip('ninguno') + '</td><td>' + elige('pieza', x.llave, '', [], r.para_elegir, '') + '</td></tr>';
+  const filaCombo = x => '<tr><td><b>' + esc(x.web) + '</b><br><small class="cont-sub">' + esc(x.cat) + ' · web ' + esc(cotzDinero(x.precio_web)) + '</small></td>'
+    + '<td>' + (x.caja ? esc(x.caja.nombre) : '<small>' + esc(x.confianza === 'revisar' ? 'Hay varios parecidos: elige el bueno' : 'No encontré este combo en la Caja: no se ofrece') + '</small>') + (x.aviso ? '<br><small style="color:var(--bad)">' + esc(x.aviso) + '</small>' : '') + '</td>'
+    + '<td>' + (x.caja ? esc(cotzDinero(x.caja.precio)) + (x.difiere ? '<br><small style="color:var(--bad)">la web dice ' + esc(cotzDinero(x.precio_web)) + '</small>' : '') : '') + '</td>'
+    + '<td>' + chip(x.confianza) + '</td><td>' + elige('combo', x.clave, x.caja ? x.caja.id : (x.confianza === 'ninguno' && x.fijado ? 'ninguno' : ''), x.candidatos, r.combos_caja, x.confianza) + '</td></tr>';
+  const tabla = (titulo, filas, nota) => '<h3 style="margin:16px 0 6px">' + titulo + '</h3>' + (nota ? '<p class="cfgnota">' + nota + '</p>' : '')
+    + (filas ? '<div style="overflow-x:auto"><table class="cotz-tabla" style="width:100%"><thead><tr><th>En el cotizador</th><th>Producto de la Caja</th><th>Precio</th><th></th><th>' + (admin ? 'Cambiar' : '') + '</th></tr></thead><tbody>' + filas + '</tbody></table></div>' : '<p class="cfgnota">Nada.</p>');
+  const combosMal = (r.combos || []).filter(x => !x.caja || x.difiere || x.confianza === 'media');
+  const combosBien = (r.combos || []).filter(x => !combosMal.includes(x));
+  cuerpo.innerHTML = '<div class="cotz-barra"><label style="display:flex;gap:6px;align-items:center;font-size:13px">Sucursal <select data-ccatsuc="1"><option value="dcarela"' + (CATCAJA.sucursal === 'dcarela' ? ' selected' : '') + '>Central</option>'
+    + '<option value="plaza-artesanal"' + (CATCAJA.sucursal === 'plaza-artesanal' ? ' selected' : '') + '>Plaza Artesanal</option></select></label>'
+    + '<button type="button" class="btn-linea" data-ccatrecarga="1">Volver a leer la Caja</button>'
+    + '<small class="cont-sub">' + esc((r.productos_leidos || 0) + ' productos leídos' + (r.leido_at ? ' · ' + new Date(r.leido_at).toLocaleTimeString('es-DO', { hour: '2-digit', minute: '2-digit' }) : '')) + '</small></div>'
+    + '<p class="cfgnota">El cotizador solo usa productos de la Caja de cada sucursal (lo que su Caja no tiene, de la central). <b>Nada se inventa:</b> una pieza que la Caja no tiene sale «por confirmar» y un combo de la web que no está en la Caja no se ofrece. '
+    +   'Si cambias un precio o un producto en la Caja, se ve aquí y en la siguiente cotización.' + (admin ? ' Si el CRM eligió mal, fija el producto correcto en «Cambiar».' : '') + '</p>'
+    + ((r.anomalias || []).length ? '<div class="cotz" style="border-color:var(--bad)"><b>Revisa en la Caja</b><ul class="cotz-lineas">' + r.anomalias.map(a => '<li>' + esc(a.texto) + '</li>').join('') + '</ul></div>' : '')
+    + tabla('Piezas sueltas', (r.piezas || []).map(filaPieza).join('') + (r.faltan || []).map(filaFalta).join(''), 'Cuadros, fotos, fotos digitales, llaveros, tazas y fondos: el producto de la Caja que se usa para cotizarlos.')
+    + tabla('Combos que hay que revisar (' + combosMal.length + ')', combosMal.map(filaCombo).join(''), 'El contenido del combo sale de la web; el precio y el producto, de la Caja.')
+    + tabla('Combos emparejados (' + combosBien.length + ')', combosBien.map(filaCombo).join(''));
+}
+async function cambiaMapaCaja(el){
+  if (el.dataset.ccatsuc) { CATCAJA.sucursal = el.value; return cargaCatalogoCaja(); }
+  el.disabled = true;
+  const r = await llama({ action: 'cotizadorMapaCaja', sucursal: CATCAJA.sucursal, tipo: el.dataset.tipo, clave: el.dataset.clave, producto_id: el.value });
+  el.disabled = false;
+  if (!r.ok) return avisa('No se pudo cambiar', r.error);
+  avisa('Guardado', el.value === 'ninguno' ? 'No se cotizará' : el.value ? 'El cotizador usará ese producto' : 'Vuelve a elegirlo el CRM');
+  return cargaCatalogoCaja();
+}
 async function clicCotizaciones(ev){
   const b = ev.target.closest('button'); if (!b) return;
   const q = id => COTZ.lista.find(x => x.id === id);
+  if (b.dataset.ccatrecarga) return cargaCatalogoCaja();
   if (b.dataset.cquita) { COTZ.sel.clear(); return pintaCotizaciones(); }
   if (b.dataset.cabrir) {
     const cot = q(b.dataset.cabrir); const c = cot && buscaConv(cot.conversation_id);
@@ -19305,11 +19880,13 @@ function abreCotizador(c){
       + '<small>' + esc((o.lineas || []).join(' · ')) + '</small>'
       + ((o.agrega || []).length ? '<small>+ ' + esc(o.agrega.join(' · ')) + '</small>' : '')
       + ((o.quita || []).length ? '<small>− ' + esc(o.quita.join(' · ')) + '</small>' : '')
-      + (o.nota ? '<small>' + esc(o.nota) + '</small>' : '') + '</label>').join('');
+      + (o.nota ? '<small>' + esc(o.nota) + '</small>' : '')
+      + ((o.porConfirmar || []).length ? '<small style="color:var(--bad)">Por confirmar (no está en el catálogo de la Caja, no suma al total): ' + esc(o.porConfirmar.join(' · ')) + '</small>' : '') + '</label>').join('');
     // De que sucursal salen los precios (la asignada a ESTE chat) y si vienen de su Caja: si el precio cambia, el siguiente «Calcular» ya trae el nuevo.
     const pr = r.precios; const lineaPrecios = $('cotPrecios');
     lineaPrecios.hidden = !(pr && ops.length);
-    if (pr) lineaPrecios.textContent = 'Precios de ' + pr.sucursal + (pr.desde_la_caja ? ' · de su Caja (' + pr.piezas_de_la_caja + ' piezas' + (pr.piezas_de_la_central ? ', ' + pr.piezas_de_la_central + ' de la central' : '') + ')' : ' · la Caja aún no los trae: son los de referencia')
+    if (pr) lineaPrecios.textContent = 'Precios de ' + pr.sucursal + (pr.desde_la_caja ? ' · de su Caja (' + pr.piezas_de_la_caja + ' piezas' + (pr.piezas_de_la_central ? ', ' + pr.piezas_de_la_central + ' de la central' : '') + (pr.combos_en_la_caja != null ? ', ' + pr.combos_en_la_caja + ' combos' : '') + ')' : ' · la Caja no trae piezas: todo queda por confirmar')
+      + (pr.combos_sin_caja ? ' · ' + pr.combos_sin_caja + ' combos de la web no están en la Caja (no se ofrecen)' : '')
       + (pr.leido_at ? ' · leídos ' + new Date(pr.leido_at).toLocaleTimeString('es-DO', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : '');
     $('cotMsgCampo').hidden = !ops.length;
     $('cotTexto').value = ops.length ? textoActual() : '';
@@ -19354,7 +19931,11 @@ function abreCotizador(c){
     const texto = $('cotTexto').value.trim();
     if (!ultimo || (formato !== 'imagen' && !texto)) return;
     if (!ventanaAbierta) return avisa('No se le puede escribir ahora', 'Pasaron más de 24 h desde su último mensaje. Copia el mensaje o usa una plantilla.');
-    const boton = ev.currentTarget; boton.disabled = true;
+    const boton = ev.currentTarget;
+    const opElegida = ultimo.opciones[elegida];
+    if (opElegida && opElegida.incompleta && !await confirmaAqui('Esta opción tiene piezas que NO están en el catálogo de la Caja (' + opElegida.porConfirmar.join(', ') + '): no tienen precio y no suman al total.'
+      + String.fromCharCode(10, 10) + 'Si la mandas, dile al cliente cuánto cuestan esas piezas. No se podrá enviar a la Caja hasta que estén en su catálogo.', { si: 'Mandarla igual' })) return;
+    boton.disabled = true;
     const conv = c.id || c._id;
     const porPuente = canalDe(c) === 'whatsapp_qr';
     const manda = cuerpo => llama(porPuente ? { action:'bridgeQueue', conversation_id: conv, ...cuerpo }

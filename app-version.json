@@ -1,7 +1,7 @@
 {
-  "version": "2026-10-14-contenido-cotizaciones-v185",
+  "version": "2026-10-14-agente-marketing-v186",
   "channel": "crm",
-  "released_at": "2026-10-14T18:00:00.000Z",
-  "summary": "Nueva vista Contenido (planificador de publicaciones con aprobación), nueva vista Cotizaciones (aprobar, enviar a la Caja, borrar) y foto de perfil grande en alta calidad.",
+  "released_at": "2026-10-15T03:30:00.000Z",
+  "summary": "Planificador de contenido (antes «Contenido») con el agente de marketing: autonomía, cuántos creativos y en qué redes (con TikTok), calendario del mes, investigar temporadas y tendencias, subir contenido propio, estilos de flyer (referencia o IA), variaciones y ver en grande. Cotizaciones: pestaña Catálogo de la Caja.",
   "requiere_puente": "2026-09-28-lectura-v34"
 }
