@@ -164,6 +164,55 @@ body.menu-abierto .velo{display:block}
    :hover tambien delataba lo contrario de la verdad, porque seguia iluminando un boton
    muerto; por eso ahora lleva :not(:disabled). */
 .btn-linea:disabled{opacity:.45;cursor:not-allowed}
+/* ---- Contenido: planificador (14/10/2026) ---- */
+.cont-tabs{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 14px}
+.cont-lista{display:flex;flex-direction:column;gap:10px}
+.cont{display:flex;gap:12px;border:1px solid var(--line2);border-radius:12px;padding:12px}
+.cont-mini{flex:0 0 96px;width:96px;height:120px;border-radius:8px;object-fit:cover;background:var(--hover)}
+.cont-cuerpo{flex:1;min-width:0;display:flex;flex-direction:column;gap:6px}
+.cont-cab{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:12.5px}
+.cont-cab b{font-size:13.5px}
+.cont-texto{white-space:pre-wrap;font-size:12.5px;color:var(--mut);max-height:84px;overflow:hidden}
+.cont-form{display:flex;flex-direction:column;gap:6px}
+.cont-form textarea{min-height:110px}
+.cont-form input,.cont-form textarea{padding:7px 9px;border:1px solid var(--line2);border-radius:8px;background:transparent;color:var(--fg);font:inherit;font-size:13px}
+.cont-form .fila{display:flex;gap:6px;flex-wrap:wrap}
+.cont-form .fila input{flex:1 1 120px}
+.cont-acc{display:flex;gap:6px;flex-wrap:wrap}
+.cont-acc .btn-linea{padding:6px 10px;font-size:12px}
+.cont-aviso{font-size:12px;color:var(--bad)}
+.cont-grupo{display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:8px 0;border-bottom:1px solid var(--line2);font-size:13px}
+.cont-grupo b{flex:1 1 180px}
+.cont-evento{display:flex;gap:10px;align-items:baseline;padding:6px 0;border-bottom:1px solid var(--line2);font-size:13px}
+.cont-evento small{color:var(--mut)}
+@media(max-width:640px){.cont{flex-direction:column}.cont-mini{width:100%;height:220px;flex-basis:auto}}
+
+/* ---- Cotizaciones (14/10/2026) ---- */
+.cotz-barra{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:0 0 14px}
+.cotz-chip{padding:6px 12px;border:1px solid var(--line2);border-radius:999px;font-size:12px;font-weight:600;background:transparent;color:var(--fg);cursor:pointer}
+.cotz-chip.on{background:var(--ok);border-color:var(--ok);color:#fff}
+.cotz-chip small{opacity:.75;margin-left:4px}
+.cotz-buscar{flex:1 1 200px;min-width:160px;padding:8px 12px;border:1px solid var(--line2);border-radius:var(--r);background:transparent;color:var(--fg);font-size:13px}
+.cotz-lista{display:flex;flex-direction:column;gap:10px}
+.cotz{border:1px solid var(--line2);border-radius:12px;padding:12px 14px;display:flex;flex-direction:column;gap:8px}
+.cotz-cab{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.cotz-cab input[type=checkbox]{width:16px;height:16px}
+.cotz-folio{font-weight:700;font-size:13.5px}
+.cotz-total{margin-left:auto;font-weight:800;font-size:16px}
+.cotz-est{font-size:10.5px;font-weight:800;letter-spacing:.3px;text-transform:uppercase;padding:3px 8px;border-radius:999px;background:var(--hover);color:var(--mut)}
+.cotz-est.aprobada,.cotz-est.en_caja,.cotz-est.facturada{background:var(--ok);color:#fff}
+.cotz-est.rechazada,.cotz-est.anulada{background:var(--bad);color:#fff}
+.cotz-sub{color:var(--mut);font-size:12.5px}
+.cotz-lineas{margin:0;padding-left:18px;font-size:12.5px;color:var(--mut)}
+.cotz-det summary{cursor:pointer;font-size:12.5px;font-weight:600}
+.cotz-tabla{width:100%;border-collapse:collapse;font-size:12.5px;margin-top:6px}
+.cotz-tabla th,.cotz-tabla td{padding:4px 6px;border-bottom:1px solid var(--line2);text-align:right}
+.cotz-tabla th:first-child,.cotz-tabla td:first-child{text-align:left}
+.cotz-acc{display:flex;gap:6px;flex-wrap:wrap}
+.cotz-acc .btn-linea{padding:6px 10px;font-size:12px}
+.cotz-caja{font-size:12px;color:var(--ok);font-weight:600}
+.cotz-lote{position:sticky;bottom:0;display:flex;gap:8px;align-items:center;padding:10px 12px;border:1px solid var(--line2);border-radius:12px;background:var(--bg);margin-top:12px}
+
 /* El campo del numero a vincular va en la misma fila que los botones del puente, asi que
    comparte alto y borde con ellos: si no, se ve como un injerto. */
 /* La x aparece al pasar el cursor. Visible siempre ocuparia sitio en una barra que ya va
@@ -743,7 +792,8 @@ a.ayuda{color:var(--enlace)}
 #lupa .lupa-titulo{position:absolute;top:18px;left:20px;z-index:2;max-width:55%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font:600 15px system-ui;color:#e9edef}
 #lupa .lupa-titulo[hidden]{display:none}
 #lupa.perfil [data-lupa="citar"],#lupa.perfil [data-lupa="reenviar"]{display:none}
-#lupa.perfil img{max-width:min(92vw,720px);max-height:82vh;object-fit:contain}
+/* La foto de perfil es pequena de origen (WhatsApp da una miniatura): se ensena grande y cuadrada, no al tamano del archivo. */
+#lupa.perfil img{width:min(88vw,70vh,600px);height:min(88vw,70vh,600px);max-width:none;max-height:none;object-fit:cover;border-radius:14px;background:#1b1b1d;box-shadow:0 10px 50px rgba(0,0,0,.55)}
 .cabecera .avwrap{cursor:zoom-in;border-radius:50%}
 .cabecera .avwrap:focus-visible{outline:2px solid var(--ok);outline-offset:2px}
 #lupa .lupa-nav{position:absolute;top:50%;transform:translateY(-50%);z-index:2;width:46px;height:46px;border-radius:50%;
@@ -1638,6 +1688,8 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{outline:0}
 .nav a[data-vista="estados"] svg{--tint:#df7a92}
 .nav a[data-vista="hoy"] svg{--tint:#e0a94e}
 .nav a[data-vista="agenda"] svg{--tint:#df766e}
+.nav a[data-vista="cotizaciones"] svg{--tint:#58b5a0}
+.nav a[data-vista="contenido"] svg{--tint:#d98c5f}
 .nav a[data-vista="dashboard"] svg{--tint:#8b8bdf}
 .nav a[data-vista="funnel"] svg{--tint:#dfa25c}
 .nav a[data-vista="prospecting"] svg{--tint:#b08ad6}
@@ -2739,6 +2791,10 @@ const VISTAS = [
   { id:'estados',       nombre:'Estados',       fija:true,  icono:ico('<circle cx="12" cy="12" r="8.6" stroke-dasharray="3.4 2.5"/><circle cx="12" cy="12" r="3.4"/>') },
   // Lo que toca atender HOY: chats donde el ultimo mensaje es del cliente, cotizaciones que se enfrian, seguimientos, sesiones.
   { id:'hoy',           nombre:'Hoy',           fija:true,  icono:ico('<circle cx="12" cy="12" r="3.900"/><path d="M12 3.200v2.100M12 18.700v2.100M3.200 12h2.100M18.700 12h2.100M5.800 5.800l1.500 1.500M16.700 16.700l1.500 1.500M18.200 5.800l-1.500 1.500M7.300 16.700l-1.500 1.500"/>') },
+  // Las cotizaciones de los chats y de la Caja: aprobar, mandar a la Caja con sus montos, borrar.
+  { id:'cotizaciones',  nombre:'Cotizaciones',  fija:true,  icono:ico('<path d="M7 3.500h7.200L19 8.300V19a1.500 1.500 0 01-1.500 1.500h-10A1.500 1.500 0 016 19V5A1.500 1.500 0 017.500 3.500z"/><path d="M14 3.700V8.500h4.800"/><path d="M9 12.500h6M9 15.500h4"/><path d="M9.500 18.200c1.100.7 3.400.7 3.400-.6" stroke-width="0"/>') },
+  // Planificador de publicaciones (Instagram, Facebook, Estados de WhatsApp y paquete para grupos): se aprueban aqui o por WhatsApp.
+  { id:'contenido',     nombre:'Contenido',     fija:true,  icono:ico('<rect x="3.500" y="5" width="17" height="15.500" rx="3.200"/><path d="M3.500 9.500h17"/><path d="M8 3v4M16 3v4"/><path d="M8 13.500h3M13.500 13.500H16M8 17h3"/>') },
   { id:'agenda',        nombre:'Agenda',        fija:true,  icono:ico('<rect x="3.5" y="5" width="17" height="15.5" rx="3.6"/><path d="M3.5 10h17M8 3v3.600M16 3v3.600"/><circle cx="8.500" cy="14" r=".7" fill="currentColor"/><circle cx="12" cy="14" r=".7" fill="currentColor"/><circle cx="15.500" cy="14" r=".7" fill="currentColor"/>') },
   { id:'dashboard',     nombre:'Dashboard',     icono:ico('<rect x="3.500" y="4" width="17" height="16" rx="3.600"/><path d="M8.200 16v-3.400M12 16V8.600M15.800 16v-5.400"/>') },
   { id:'funnel',        nombre:'Funnel · Kanban', icono:ico('<path d="M4.200 5.500h15.600a.7.7 0 01.5 1.200L14.500 12.800v5.900a.7.7 0 01-1 .6l-3-1.500a.7.7 0 01-.4-.6v-4.400L3.700 6.700a.7.7 0 01.5-1.200z"/>') },
@@ -3641,6 +3697,8 @@ function hueco(id, html){
 function monta(id){
   if (id === 'conversations') return montaConversaciones();
   if (id === 'estados') return montaEstados();
+  if (id === 'cotizaciones') return montaCotizaciones();
+  if (id === 'contenido') return montaContenido();
   if (id === 'planning') return montaPlanificacion();
   if (id === 'plantillas') return montaPlantillasVista();
   if (id === 'campanas') return montaBroadcast();
@@ -5769,6 +5827,23 @@ async function abreFotoPerfil(c){
   const img = l.querySelector('img');
   img.referrerPolicy = 'no-referrer';   // los CDN de Meta rechazan la peticion si ven el origen
   muestraLupa('img', src);
+  // WhatsApp Web solo guarda la MINIATURA para las listas: al abrir el perfil en grande se pide la foto completa al puente y la lupa
+  // se cambia sola cuando llega (si sigue abierta en este mismo perfil).
+  if (f.medio && canalDe(c) === 'whatsapp_qr' && c.profile_pic_calidad !== 'image') {
+    const antes = c.profile_pic_media_id;
+    const r = await llama({ action:'bridgeAvatarVisible', conversation_ids: [idConv], hd: true });
+    if (turno !== LUPA_TURNO || !r?.ok || !r.pedidas) return;
+    avisa('Pidiendo la foto en alta calidad…', 'Se actualiza sola en unos segundos.');
+    for (let intento = 0; intento < 12; intento++) {
+      await new Promise(ok => setTimeout(ok, 3500));
+      if (turno !== LUPA_TURNO) return;
+      if (c.profile_pic_media_id && c.profile_pic_media_id !== antes) {
+        const grande = await urlDeMedio(c.profile_pic_media_id, idConv);
+        if (grande && turno === LUPA_TURNO) { img.referrerPolicy = 'no-referrer'; muestraLupa('img', grande); }
+        return;
+      }
+    }
+  }
 }
 document.addEventListener('click', ev => {
   const av = ev.target?.closest?.('.cabecera .avwrap[data-foto-perfil]');
@@ -16399,6 +16474,317 @@ function cableaLotes(){
     avisa('Etapas reparadas', (r.movidas || 0) + ' ficha(s) reparadas.' + sobran);
     $('etpRevisar').click();
   };
+}
+
+/* ---- Contenido: planificador de publicaciones ------------------------------------------------------------------------------------ */
+// El servidor propone cada manana la semana (calendario del nicho + rotacion de categorias), compone el flyer y espera la aprobacion del administrador (aqui o por WhatsApp:
+// «contenido», «aprobar publicacion 2», «aprobar todo»). Nada sale sin aprobar. Instagram y Facebook salen solos a su hora; el Estado de WhatsApp sale por la PC del negocio;
+// el «paquete del dia» (grupos y Marketplace) lo publica la persona: Facebook no tiene forma oficial de hacerlo desde un programa.
+let CONT = { items: [], conteo: {}, calendario: [], canales: [], activos: [], activo: true, tab: 'porAprobar', grupos: [], propias: [], quitadas: [], cargando: false, abiertos: new Set() };
+const CONT_TABS = [['porAprobar', 'Por aprobar'], ['programadas', 'Aprobadas'], ['publicadas', 'Publicadas'], ['paquete', 'Paquete del día'], ['fechas', 'Fechas del nicho']];
+const CONT_ESTADOS = { propuesta: 'Por aprobar', aprobada: 'Aprobada', publicando: 'Publicando…', publicada: 'Publicada', fallida: 'Falló', rechazada: 'Rechazada', vencida: 'Vencida', lista: 'Lista para grupos' };
+function montaContenido(){
+  if (!montadas.has('contenido')) {
+    montadas.add('contenido');
+    hueco('contenido', '<div class="hoja"><h1>Contenido</h1>'
+      + '<p class="bajada">Lo que se publicaría esta semana, según las fechas de tu nicho. <b>Nada sale sin que un administrador lo apruebe</b> (aquí o respondiendo «contenido» por WhatsApp). '
+      +   'Instagram y Facebook salen solos a su hora; los Estados salen por la PC del negocio; el paquete para grupos y Marketplace lo publicas tú.</p>'
+      + '<div id="contCab"></div><div class="cont-tabs" id="contTabs"></div><div id="contCuerpo"></div></div>');
+    $('contTabs').addEventListener('click', ev => { const b = ev.target.closest('[data-ctab]'); if (b) { CONT.tab = b.dataset.ctab; pintaContenido(); } });
+    $('contCab').addEventListener('click', clicContCab);
+    $('contCuerpo').addEventListener('click', clicContenido);
+    $('contCuerpo').addEventListener('submit', ev => { ev.preventDefault(); const f = ev.target.closest('form'); if (f) guardaFormContenido(f); });
+  }
+  void cargaContenido();
+}
+async function cargaContenido(){
+  if (CONT.cargando) return;
+  CONT.cargando = true;
+  if (!CONT.items.length && $('contCuerpo')) $('contCuerpo').innerHTML = '<p class="cfgnota"><span class="cargando"></span> Cargando…</p>';
+  const [r, g] = await Promise.all([llama({ action: 'contenidoLista' }), llama({ action: 'contenidoGrupos', operation: 'list' })]);
+  CONT.cargando = false;
+  if (!r.ok) { if ($('contCuerpo')) $('contCuerpo').innerHTML = '<p class="cfgnota">' + esc(r.error || 'No se pudo leer el contenido.') + '</p>'; return; }
+  CONT.items = r.items || []; CONT.conteo = r.conteo || {}; CONT.calendario = r.calendario || []; CONT.canales = r.canales || []; CONT.activos = r.canales_activos || [];
+  CONT.activo = r.planificador_activo !== false; CONT.propias = r.fechas_propias || []; CONT.quitadas = r.plantillas_quitadas || []; CONT.hoy = r.hoy;
+  CONT.grupos = g && g.ok ? g.grupos : [];
+  pintaContenido();
+}
+const contDia = f => { const d = new Date(f + 'T12:00:00Z'); return ['dom', 'lun', 'mar', 'mié', 'jue', 'vie', 'sáb'][d.getUTCDay()] + ' ' + f.slice(8, 10) + '/' + f.slice(5, 7); };
+function pintaContenido(){
+  const cab = $('contCab'), cuerpo = $('contCuerpo'); if (!cab || !cuerpo) return;
+  const admin = ROL_ACTUAL === 'admin';
+  const n = e => CONT.items.filter(x => x.estado === e).length;
+  cab.innerHTML = '<div class="cont-tabs">'
+    + '<button type="button" class="btn-solido" data-cgenera="1">Generar propuestas</button>'
+    + (admin && n('propuesta') ? '<button type="button" class="btn-linea" data-caprueba-todo="1">Aprobar todo lo que está por aprobar (' + CONT.items.filter(x => x.estado === 'propuesta' && x.tiene_imagen).length + ')</button>' : '')
+    + (admin ? '<label class="cont-sub" style="display:flex;gap:6px;align-items:center;font-size:12.5px"><input type="checkbox" data-cactivo="1"' + (CONT.activo ? ' checked' : '') + '> Planificador encendido</label>' : '')
+    + '</div>'
+    + (CONT.activo ? '' : '<p class="cfgnota">El planificador está apagado: no propone ni publica nada.</p>');
+  const cuenta = { porAprobar: n('propuesta'), programadas: n('aprobada') + n('publicando'), publicadas: n('publicada'), paquete: CONT.items.filter(x => x.canal === 'paquete_grupos' && x.estado === 'lista').length, fechas: CONT.calendario.length };
+  $('contTabs').innerHTML = CONT_TABS.map(([k, t]) => '<button type="button" class="cotz-chip' + (CONT.tab === k ? ' on' : '') + '" data-ctab="' + k + '">' + esc(t) + '<small>' + (cuenta[k] || 0) + '</small></button>').join('');
+  if (CONT.tab === 'paquete') return pintaPaquete(cuerpo);
+  if (CONT.tab === 'fechas') return pintaFechasNicho(cuerpo);
+  const filtro = { porAprobar: x => x.estado === 'propuesta' || x.estado === 'rechazada', programadas: x => ['aprobada', 'publicando', 'lista', 'fallida', 'vencida'].includes(x.estado), publicadas: x => x.estado === 'publicada' }[CONT.tab];
+  const lista = CONT.items.filter(filtro);
+  if (!lista.length) { cuerpo.innerHTML = '<p class="cfgnota">' + (CONT.tab === 'porAprobar' ? 'No hay publicaciones por aprobar. Pulsa «Generar propuestas»: el servidor también lo hace solo cada mañana.' : 'Nada aquí todavía.') + '</p>'; return; }
+  cuerpo.innerHTML = '<div class="cont-lista">' + lista.map(x => tarjetaContenido(x, admin)).join('') + '</div>';
+}
+// La hora se elige en AM/PM, de media en media hora (como en el resto del panel); el valor que viaja es HH:MM.
+function contHoras(actual){
+  const out = [];
+  for (let m = 6 * 60; m <= 23 * 60 + 30; m += 30) {
+    const h = Math.floor(m / 60), mm = m % 60, v = String(h).padStart(2, '0') + ':' + String(mm).padStart(2, '0');
+    out.push('<option value="' + v + '"' + (v === actual ? ' selected' : '') + '>' + ((h % 12) || 12) + ':' + String(mm).padStart(2, '0') + ' ' + (h < 12 ? 'AM' : 'PM') + '</option>');
+  }
+  if (actual && !out.some(o => o.includes('value="' + actual + '"'))) out.unshift('<option value="' + esc(actual) + '" selected>' + esc(actual) + '</option>');
+  return out.join('');
+}
+function tarjetaContenido(x, admin){
+  const abierto = CONT.abiertos.has(x.id);
+  const editable = !['publicada', 'publicando'].includes(x.estado);
+  const acc = [];
+  if (admin && ['propuesta', 'rechazada'].includes(x.estado) && x.tiene_imagen) acc.push('<button type="button" class="btn-solido" data-caprueba="' + esc(x.id) + '">Aprobar</button>');
+  if (admin && ['propuesta', 'aprobada', 'fallida'].includes(x.estado)) acc.push('<button type="button" class="btn-linea" data-crechaza="' + esc(x.id) + '">Rechazar</button>');
+  if (editable) acc.push('<button type="button" class="btn-linea" data-cedita="' + esc(x.id) + '">' + (abierto ? 'Cerrar' : 'Editar') + '</button>');
+  if (admin && ['aprobada', 'fallida', 'vencida'].includes(x.estado) && x.canal !== 'paquete_grupos') acc.push('<button type="button" class="btn-linea" data-cpublica="' + esc(x.id) + '">' + (x.estado === 'aprobada' ? 'Publicar ahora' : 'Reintentar ahora') + '</button>');
+  if (x.tiene_imagen) acc.push('<button type="button" class="btn-linea" data-cdescarga="' + esc(x.id) + '">Descargar imagen</button>');
+  const form = abierto ? '<form class="cont-form" data-cform="' + esc(x.id) + '">'
+    + (x.titular ? '<div class="fila"><input name="l1" value="' + esc(x.titular.l1 || '') + '" maxlength="70" placeholder="Titular de la imagen"><input name="l2" value="' + esc(x.titular.l2 || '') + '" maxlength="24" placeholder="Mes o remate"></div>' : '')
+    + '<textarea name="texto" maxlength="5000">' + esc(x.texto) + '</textarea>'
+    + '<div class="fila"><input type="date" name="fecha" value="' + esc(x.fecha) + '"><select name="hora">' + contHoras(x.hora) + '</select><button class="btn-solido" type="submit">Guardar</button></div>'
+    + '<small class="cont-sub">Si cambias el titular se vuelve a componer la imagen. Una publicación aprobada que editas vuelve a «Por aprobar».</small></form>' : '';
+  return '<div class="cont">' + (x.miniatura ? '<img class="cont-mini" src="' + esc(x.miniatura) + '" alt="Vista previa">' : '<div class="cont-mini"></div>')
+    + '<div class="cont-cuerpo"><div class="cont-cab"><b>' + esc(contDia(x.fecha) + ' · ' + x.hora) + '</b><span class="cotz-est ' + (x.estado === 'publicada' || x.estado === 'aprobada' ? 'aprobada' : x.estado === 'fallida' || x.estado === 'rechazada' || x.estado === 'vencida' ? 'rechazada' : '') + '">' + esc(CONT_ESTADOS[x.estado] || x.estado) + '</span>'
+    + '<span>' + esc(x.canal_nombre) + '</span>' + (x.evento_nombre ? '<span class="cont-sub">· ' + esc(x.evento_nombre) + '</span>' : '') + '</div>'
+    + (abierto ? '' : '<div class="cont-texto">' + esc(x.texto) + '</div>') + form
+    + (x.error ? '<div class="cont-aviso">' + esc(x.error) + '</div>' : '') + ((x.avisos || []).length ? '<div class="cont-aviso">' + esc(x.avisos.join(' · ')) + '</div>' : '')
+    + '<div class="cont-acc">' + acc.join('') + '</div></div></div>';
+}
+function pintaPaquete(cuerpo){
+  const hoy = CONT.items.filter(x => x.canal === 'paquete_grupos' && x.estado === 'lista').sort((a, b) => String(b.fecha).localeCompare(String(a.fecha)));
+  const pieza = hoy[0];
+  cuerpo.innerHTML = '<p class="cfgnota">El paquete es el flyer y el texto del día para <b>Marketplace y tus grupos de Facebook</b>. Facebook no permite publicar ahí desde un programa, así que lo publicas tú: abre el grupo, pega el texto, sube la imagen y marca «Ya publiqué». '
+    + 'Los grupos que llevan más tiempo sin publicación salen primero, para que ninguno se quede atrás. Lee las reglas de cada grupo: muchos no aceptan anuncios.</p>'
+    + (pieza ? '<div class="cont">' + (pieza.miniatura ? '<img class="cont-mini" src="' + esc(pieza.miniatura) + '" alt="">' : '')
+      + '<div class="cont-cuerpo"><div class="cont-cab"><b>' + esc(contDia(pieza.fecha)) + '</b><span>' + esc(pieza.categoria || '') + '</span></div><div class="cont-texto" style="max-height:none">' + esc(pieza.texto) + '</div>'
+      + '<div class="cont-acc"><button type="button" class="btn-solido" data-ccopia="' + esc(pieza.id) + '">Copiar texto</button><button type="button" class="btn-linea" data-cdescarga="' + esc(pieza.id) + '">Descargar imagen</button></div></div></div>'
+      : '<p class="cfgnota">No hay un paquete listo. Aprueba una publicación de «Grupos y Marketplace (paquete del día)» en «Por aprobar» y aparecerá aquí.</p>')
+    + '<h3 style="margin:18px 0 6px">Tus grupos</h3>'
+    + (CONT.grupos.length ? CONT.grupos.map(g => '<div class="cont-grupo"><b>' + esc(g.nombre) + '</b><small class="cont-sub">' + (g.ultima_publicacion ? 'última publicación ' + esc(cotzCuando(g.ultima_publicacion)) : 'sin publicar todavía') + '</small>'
+      + (g.url ? '<a class="btn-linea" href="' + esc(g.url) + '" target="_blank" rel="noopener noreferrer">Abrir grupo ↗</a>' : '')
+      + (pieza ? '<button type="button" class="btn-linea" data-cgpub="' + esc(g.id) + '" data-cpieza="' + esc(pieza.id) + '">Ya publiqué aquí</button>' : '')
+      + '<button type="button" class="btn-linea" data-cgquita="' + esc(g.id) + '" aria-label="Quitar">×</button>' + (g.reglas ? '<small class="cont-sub" style="flex-basis:100%">Reglas: ' + esc(g.reglas) + '</small>' : '') + '</div>').join('')
+      : '<p class="cfgnota">Todavía no has agregado grupos.</p>')
+    + '<form class="cont-form" data-cgform="1" style="margin-top:10px"><div class="fila"><input name="nombre" placeholder="Nombre del grupo" maxlength="100" required><input name="url" placeholder="Enlace (facebook.com/groups/…)" maxlength="400"></div>'
+    + '<div class="fila"><input name="reglas" placeholder="Reglas que debes recordar (opcional)" maxlength="300"><button class="btn-solido" type="submit">Agregar grupo</button></div></form>';
+}
+function pintaFechasNicho(cuerpo){
+  cuerpo.innerHTML = '<p class="cfgnota">Las fechas del nicho que ya entraron en su ventana de publicación (festividades de República Dominicana y de la fotografía). Las marcadas «revisar» son enfoques que debes confirmar. '
+    + 'Puedes apagar las que no te sirven y agregar las tuyas (aniversario del estudio, una promoción que tú hayas autorizado).</p>'
+    + (CONT.calendario.length ? CONT.calendario.map(e => '<div class="cont-evento"><b>' + esc(contDia(e.fecha)) + '</b><span>' + esc(e.nombre) + '</span><small>' + (e.faltan === 0 ? 'hoy' : 'en ' + e.faltan + ' d') + (e.revisar ? ' · revisar' : '') + '</small>'
+      + (e.base !== 'propia' ? '<button type="button" class="btn-linea" data-cquitaev="' + esc(e.base) + '" style="margin-left:auto">No me sirve</button>' : '') + '</div>').join('') : '<p class="cfgnota">No hay fechas cerca.</p>')
+    + (CONT.quitadas.length ? '<p class="cont-sub" style="margin-top:10px">Apagadas: ' + CONT.quitadas.map(b => esc(b) + ' <button type="button" class="btn-linea" data-crestaura="' + esc(b) + '">Volver a encender</button>').join(' · ') + '</p>' : '')
+    + (CONT.propias.length ? '<h3 style="margin:16px 0 6px">Tus fechas</h3>' + CONT.propias.map(f => '<div class="cont-evento"><b>' + esc(f.fecha) + '</b><span>' + esc(f.nombre) + '</span><small>' + (f.anual ? 'cada año' : '') + '</small><button type="button" class="btn-linea" data-cborraf="' + esc(f.id) + '" style="margin-left:auto">Quitar</button></div>').join('') : '')
+    + '<form class="cont-form" data-cffecha="1" style="margin-top:14px"><div class="fila"><input name="nombre" placeholder="Nombre de la fecha" maxlength="80" required><input type="date" name="fecha" required><label style="display:flex;gap:6px;align-items:center;font-size:12.5px"><input type="checkbox" name="anual"> Cada año</label></div>'
+    + '<div class="fila"><input name="angulo" placeholder="Qué quieres decir ese día (sin precios ni descuentos)" maxlength="240"><button class="btn-solido" type="submit">Agregar fecha</button></div></form>';
+}
+async function clicContCab(ev){
+  const b = ev.target.closest('[data-cgenera],[data-caprueba-todo],[data-cactivo]'); if (!b) return;
+  if (b.dataset.cactivo) {
+    const r = await llama({ action: 'contenidoAjustes', activo: b.checked });
+    if (!r.ok) { b.checked = !b.checked; return avisa('No se pudo cambiar', r.error); }
+    CONT.activo = b.checked; return pintaContenido();
+  }
+  if (b.dataset.cgenera) {
+    b.disabled = true; b.textContent = 'Generando… (puede tardar un minuto)';
+    const r = await llama({ action: 'contenidoGenera', dias: 7 });
+    if (!r.ok) { b.disabled = false; b.textContent = 'Generar propuestas'; return avisa('No se pudo generar', r.error); }
+    avisa('Propuestas listas', r.creadas + ' nuevas' + (r.sin_imagen ? ' · ' + r.sin_imagen + ' sin imagen' : ''));
+    return cargaContenido();
+  }
+  if (b.dataset.capruebaTodo) {
+    if (!await confirmaAqui('Vas a aprobar TODAS las publicaciones que están por aprobar. Saldrán a su hora (Instagram y Facebook solas; los Estados por la PC del negocio).' + String.fromCharCode(10, 10) + '¿Seguimos?', { si: 'Aprobar todo' })) return;
+    const r = await llama({ action: 'contenidoAprueba', todo: true });
+    if (!r.ok) return avisa('No se pudo aprobar', r.error);
+    avisa('Aprobadas', r.hechas.length + (r.omitidas.length ? ' · ' + r.omitidas.length + ' no se pudieron' : ''));
+    return cargaContenido();
+  }
+}
+async function clicContenido(ev){
+  const b = ev.target.closest('button'); if (!b) return;
+  const d = b.dataset;
+  if (d.caprueba) { const r = await llama({ action: 'contenidoAprueba', ids: [d.caprueba] }); if (!r.ok || !r.hechas.length) return avisa('No se pudo aprobar', r.error || (r.omitidas[0] && r.omitidas[0].motivo)); avisa('Aprobada', 'Sale a su hora'); return cargaContenido(); }
+  if (d.crechaza) { const r = await llama({ action: 'contenidoRechaza', ids: [d.crechaza] }); if (!r.ok) return avisa('No se pudo rechazar', r.error); return cargaContenido(); }
+  if (d.cedita) { if (CONT.abiertos.has(d.cedita)) CONT.abiertos.delete(d.cedita); else CONT.abiertos.add(d.cedita); return pintaContenido(); }
+  if (d.cpublica) {
+    if (!await confirmaAqui('Se publica AHORA, sin esperar su hora. ¿Seguimos?', { si: 'Publicar' })) return;
+    b.disabled = true; const r = await llama({ action: 'contenidoPublica', id: d.cpublica });
+    avisa(r.ok ? 'Publicada' : 'No se pudo publicar', r.ok ? '' : (r.error || '')); return cargaContenido();
+  }
+  if (d.cdescarga) {
+    b.disabled = true; const r = await llama({ action: 'contenidoImagen', id: d.cdescarga }); b.disabled = false;
+    if (!r.ok) return avisa('No se pudo bajar la imagen', r.error);
+    const bytes = Uint8Array.from(atob(r.jpeg_b64), c => c.charCodeAt(0)); descargaComoArchivo(new Blob([bytes], { type: 'image/jpeg' }), r.nombre); return;
+  }
+  if (d.ccopia) { const x = CONT.items.find(i => i.id === d.ccopia); try { await navigator.clipboard.writeText(x.texto); avisa('Texto copiado', 'Pégalo en el grupo'); } catch (e) { avisa('No se pudo copiar', 'Selecciónalo y cópialo a mano'); } return; }
+  if (d.cgpub) { const r = await llama({ action: 'contenidoGrupos', operation: 'publicado', id: d.cgpub, contenido_id: d.cpieza }); if (!r.ok) return avisa('No se pudo anotar', r.error); avisa('Anotado', 'Ese grupo pasa al final de la lista'); return cargaContenido(); }
+  if (d.cgquita) { const r = await llama({ action: 'contenidoGrupos', operation: 'remove', id: d.cgquita }); if (!r.ok) return avisa('No se pudo quitar', r.error); return cargaContenido(); }
+  if (d.cquitaev) { const r = await llama({ action: 'contenidoFechas', operation: 'quitar', base: d.cquitaev }); if (!r.ok) return avisa('No se pudo apagar', r.error); return cargaContenido(); }
+  if (d.crestaura) { const r = await llama({ action: 'contenidoFechas', operation: 'restaurar', base: d.crestaura }); if (!r.ok) return avisa('No se pudo encender', r.error); return cargaContenido(); }
+  if (d.cborraf) { const r = await llama({ action: 'contenidoFechas', operation: 'remove', id: d.cborraf }); if (!r.ok) return avisa('No se pudo quitar', r.error); return cargaContenido(); }
+}
+async function guardaFormContenido(f){
+  const v = Object.fromEntries(new FormData(f).entries());
+  if (f.dataset.cgform) { const r = await llama({ action: 'contenidoGrupos', operation: 'add', nombre: v.nombre, url: v.url, reglas: v.reglas }); if (!r.ok) return avisa('No se pudo agregar', r.error); avisa('Grupo agregado'); return cargaContenido(); }
+  if (f.dataset.cffecha) { const r = await llama({ action: 'contenidoFechas', operation: 'add', nombre: v.nombre, fecha: v.fecha, anual: v.anual === 'on', angulo: v.angulo }); if (!r.ok) return avisa('No se pudo agregar', r.error); avisa('Fecha agregada'); return cargaContenido(); }
+  const id = f.dataset.cform; if (!id) return;
+  const cuerpo = { action: 'contenidoEdita', id, texto: v.texto, fecha: v.fecha, hora: v.hora };
+  if (v.l1 !== undefined) cuerpo.titular = { l1: v.l1, l2: v.l2 || '' };
+  const antes = CONT.items.find(x => x.id === id);
+  if (antes && antes.titular && v.l1 === antes.titular.l1 && (v.l2 || '') === (antes.titular.l2 || '')) delete cuerpo.titular;   // sin cambios: no se recompone la imagen
+  const boton = f.querySelector('button[type=submit]'); if (boton) boton.disabled = true;
+  const r = await llama(cuerpo);
+  if (!r.ok) { if (boton) boton.disabled = false; return avisa('No se pudo guardar', r.error); }
+  CONT.abiertos.delete(id);
+  avisa('Guardado', r.vuelve_a_propuesta ? 'Volvió a «Por aprobar»' : '');
+  return cargaContenido();
+}
+
+/* ---- Cotizaciones: lista, aprobar, mandar a la Caja, borrar --------------------------------------------------------------------- */
+// Una cotizacion nace «enviada» (al mandarla desde el chat). Cuando el cliente dice que si se marca «aprobada»; entonces «Enviar a la Caja» la baja a la Caja
+// (evento `CotizacionCrm`) con sus partidas y montos ya hechos. La Caja devuelve su folio y cuando la factura. «Borrar» anula (se recupera en «Anuladas»).
+let COTZ = { lista: [], conteo: {}, filtro: 'activas', q: '', sel: new Set(), cargando: false };
+const COTZ_FILTROS = [['activas', 'Todas'], ['enviada', 'Enviadas'], ['aprobada', 'Aprobadas'], ['en_caja', 'En la Caja'], ['facturada', 'Facturadas'], ['rechazada', 'Rechazadas'], ['anulada', 'Anuladas']];
+const cotzDinero = n => 'RD$' + Number(n || 0).toLocaleString('es-DO', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+function montaCotizaciones(){
+  if (!montadas.has('cotizaciones')) {
+    montadas.add('cotizaciones');
+    hueco('cotizaciones', '<div class="hoja"><h1>Cotizaciones</h1>'
+      + '<p class="bajada">Las cotizaciones que mandas desde un chat o que se hacen en la Caja. Cuando el cliente la aprueba, <b>Enviar a la Caja</b> la baja allá con todos sus montos hechos. '
+      +   'Lo que la Caja factura vuelve aquí solo.</p>'
+      + '<div class="cotz-barra" id="cotzFiltros"></div>'
+      + '<div class="cotz-barra"><input type="search" class="cotz-buscar" id="cotzBuscar" placeholder="Buscar por cliente, teléfono o folio" aria-label="Buscar cotizaciones">'
+      +   '<button type="button" class="btn-linea" id="cotzRecarga">Actualizar</button></div>'
+      + '<div id="cotzCuerpo"></div></div>');
+    $('cotzFiltros').addEventListener('click', ev => {
+      const b = ev.target.closest('[data-cfiltro]'); if (!b) return;
+      COTZ.filtro = b.dataset.cfiltro; COTZ.sel.clear(); void cargaCotizaciones();
+    });
+    let t = null;
+    $('cotzBuscar').addEventListener('input', ev => { clearTimeout(t); t = setTimeout(() => { COTZ.q = ev.target.value.trim(); void cargaCotizaciones(); }, 350); });
+    $('cotzRecarga').onclick = () => cargaCotizaciones();
+    $('cotzCuerpo').addEventListener('click', clicCotizaciones);
+    $('cotzCuerpo').addEventListener('change', ev => {
+      const c = ev.target.closest('[data-csel]'); if (!c) return;
+      if (c.checked) COTZ.sel.add(c.dataset.csel); else COTZ.sel.delete(c.dataset.csel);
+      pintaCotizaciones();
+    });
+  }
+  void cargaCotizaciones();
+}
+async function cargaCotizaciones(){
+  if (COTZ.cargando) return;
+  COTZ.cargando = true;
+  const cuerpo = $('cotzCuerpo');
+  if (cuerpo && !COTZ.lista.length) cuerpo.innerHTML = '<p class="cfgnota"><span class="cargando"></span> Cargando cotizaciones…</p>';
+  const r = await llama({ action: 'cotizacionesLista', estado: COTZ.filtro === 'activas' ? '' : COTZ.filtro, q: COTZ.q });
+  COTZ.cargando = false;
+  if (!r.ok) { if (cuerpo) cuerpo.innerHTML = '<p class="cfgnota">' + esc(r.error || 'No se pudieron leer las cotizaciones.') + '</p>'; return; }
+  COTZ.lista = r.cotizaciones || []; COTZ.conteo = r.conteo || {};
+  const ids = new Set(COTZ.lista.map(x => x.id));
+  for (const id of [...COTZ.sel]) if (!ids.has(id)) COTZ.sel.delete(id);
+  pintaCotizaciones();
+}
+function cotzCuando(iso){
+  const t = Date.parse(iso || ''); if (!Number.isFinite(t)) return '';
+  const h = Math.round((Date.now() - t) / 3600000);
+  return h < 1 ? 'hace un momento' : h < 24 ? 'hace ' + h + ' h' : 'hace ' + Math.round(h / 24) + ' d';
+}
+function pintaCotizaciones(){
+  const cuerpo = $('cotzCuerpo'); if (!cuerpo) return;
+  const total = Object.entries(COTZ.conteo).filter(([k]) => k !== 'anulada').reduce((s, [, n]) => s + n, 0);
+  $('cotzFiltros').innerHTML = COTZ_FILTROS.map(([k, n]) => {
+    const cuenta = k === 'activas' ? total : (COTZ.conteo[k] || 0);
+    return '<button type="button" class="cotz-chip' + (COTZ.filtro === k ? ' on' : '') + '" data-cfiltro="' + k + '">' + esc(n) + '<small>' + cuenta + '</small></button>';
+  }).join('');
+  const puedeGestionar = ['admin', 'supervisor'].includes(ROL_ACTUAL);
+  if (!COTZ.lista.length) {
+    cuerpo.innerHTML = '<p class="cfgnota">' + (COTZ.q ? 'Nada coincide con esa búsqueda.' : COTZ.filtro === 'anulada' ? 'No hay cotizaciones anuladas.'
+      : 'Todavía no hay cotizaciones aquí. Se crean desde un chat con el botón «Cotizar» y quedan guardadas al enviarlas.') + '</p>';
+    return;
+  }
+  const fila = q => {
+    const acciones = [];
+    if (q.conversation_id) acciones.push('<button type="button" class="btn-linea" data-cabrir="' + esc(q.id) + '">Abrir chat</button>');
+    if (['enviada', 'rechazada'].includes(q.estado)) acciones.push('<button type="button" class="btn-linea" data-cestado="aprobada" data-cid="' + esc(q.id) + '">✓ Aprobada por el cliente</button>');
+    if (q.estado === 'enviada') acciones.push('<button type="button" class="btn-linea" data-cestado="rechazada" data-cid="' + esc(q.id) + '">Rechazada</button>');
+    if (q.estado === 'aprobada') acciones.push('<button type="button" class="btn-solido" data-ccaja="' + esc(q.id) + '">Enviar a la Caja →</button>');
+    if (q.estado === 'en_caja') acciones.push('<button type="button" class="btn-linea" data-ccaja="' + esc(q.id) + '" title="Vuelve a mandarla con los montos actuales">Reenviar a la Caja</button>');
+    if (puedeGestionar && q.estado !== 'facturada') acciones.push('<button type="button" class="btn-linea" data-cborrar="' + esc(q.id) + '">' + (q.estado === 'anulada' ? 'Eliminar definitivamente' : 'Borrar') + '</button>');
+    const partidas = q.partidas && q.partidas.length
+      ? '<details class="cotz-det"><summary>Ver montos</summary><table class="cotz-tabla"><thead><tr><th>Concepto</th><th>Cant.</th><th>Precio</th><th>Total</th></tr></thead><tbody>'
+        + q.partidas.map(p => '<tr><td>' + esc(p.descripcion) + '</td><td>' + esc(p.cantidad) + '</td><td>' + esc(cotzDinero(p.precio_unitario)) + '</td><td>' + esc(cotzDinero(p.total)) + '</td></tr>').join('')
+        + '<tr><th colspan="3">Total</th><th>' + esc(cotzDinero(q.total)) + '</th></tr></tbody></table></details>'
+      : (q.lineas && q.lineas.length ? '<ul class="cotz-lineas">' + q.lineas.map(l => '<li>' + esc(l) + '</li>').join('') + '</ul>' : '');
+    const caja = q.caja_folio || q.caja_venta_folio || q.enviada_caja
+      ? '<div class="cotz-caja">Caja' + (q.caja_folio ? ' · cotización ' + esc(q.caja_folio) : '') + (q.caja_venta_folio ? ' · venta ' + esc(q.caja_venta_folio) : '')
+        + (q.caja_envios ? ' · enviada ' + q.caja_envios + (q.caja_envios === 1 ? ' vez' : ' veces') : '') + '</div>' : '';
+    return '<div class="cotz"><div class="cotz-cab">'
+      + (puedeGestionar && q.estado !== 'facturada' ? '<input type="checkbox" data-csel="' + esc(q.id) + '"' + (COTZ.sel.has(q.id) ? ' checked' : '') + ' aria-label="Elegir ' + esc(q.folio || '') + '">' : '')
+      + '<span class="cotz-folio">' + esc(q.folio || 'Cotización') + '</span><span class="cotz-est ' + esc(q.estado) + '">' + esc(q.etiqueta) + '</span>'
+      + (q.origen === 'caja' ? '<span class="cotz-est">De la Caja</span>' : '')
+      + '<span class="cotz-total">' + esc(cotzDinero(q.total)) + '</span></div>'
+      + '<div class="cotz-sub">' + esc([q.cliente || 'Sin nombre', q.telefono, q.titulo || q.categoria, cotzCuando(q.creada)].filter(Boolean).join(' · ')) + '</div>'
+      + partidas + caja
+      + '<div class="cotz-acc">' + acciones.join('') + '</div></div>';
+  };
+  cuerpo.innerHTML = '<div class="cotz-lista">' + COTZ.lista.map(fila).join('') + '</div>'
+    + (COTZ.sel.size && puedeGestionar ? '<div class="cotz-lote"><b>' + COTZ.sel.size + ' elegidas</b>'
+      + '<button type="button" class="btn-linea" data-cborrar-lote="1">' + (COTZ.filtro === 'anulada' ? 'Eliminar definitivamente' : 'Borrar elegidas') + '</button>'
+      + '<button type="button" class="btn-linea" data-cquita="1">Quitar selección</button></div>' : '');
+}
+async function clicCotizaciones(ev){
+  const b = ev.target.closest('button'); if (!b) return;
+  const q = id => COTZ.lista.find(x => x.id === id);
+  if (b.dataset.cquita) { COTZ.sel.clear(); return pintaCotizaciones(); }
+  if (b.dataset.cabrir) {
+    const cot = q(b.dataset.cabrir); const c = cot && buscaConv(cot.conversation_id);
+    if (!c) return avisa('No encuentro ese chat', 'La conversación ya no está en la lista.');
+    ve('conversations'); abre(c); return;
+  }
+  if (b.dataset.cestado) {
+    b.disabled = true;
+    const r = await llama({ action: 'cotizacionEstado', id: b.dataset.cid, estado: b.dataset.cestado });
+    if (!r.ok) { b.disabled = false; return avisa('No se pudo cambiar', r.error); }
+    avisa('Hecho', 'Cotización ' + String(r.etiqueta || '').toLowerCase());
+    return cargaCotizaciones();
+  }
+  if (b.dataset.ccaja) {
+    const cot = q(b.dataset.ccaja); if (!cot) return;
+    const reenvio = cot.estado === 'en_caja';
+    if (!await confirmaAqui((reenvio ? 'Vas a volver a mandar a la Caja la cotización ' : 'Vas a mandar a la Caja la cotización ') + (cot.folio || '') + ' de ' + (cot.cliente || 'este cliente') + ' por ' + cotzDinero(cot.total) + '.'
+      + (cot.desglose ? '' : String.fromCharCode(10, 10) + 'Esta es una cotización guardada antes del desglose: llega a la Caja como UNA sola línea con el total.')
+      + String.fromCharCode(10, 10) + 'No cobra nada: queda como cotización abierta en la Caja.', { si: reenvio ? 'Reenviar' : 'Enviar a la Caja' })) return;
+    b.disabled = true;
+    const r = await llama({ action: 'cotizacionEnviarCaja', id: b.dataset.ccaja });
+    if (!r.ok) { b.disabled = false; return avisa('No se pudo mandar a la Caja', r.error); }
+    avisa('Enviada a la Caja', r.partidas + (r.partidas === 1 ? ' línea' : ' líneas') + ' · ' + cotzDinero(r.total));
+    return cargaCotizaciones();
+  }
+  const borrarIds = b.dataset.cborrarLote ? [...COTZ.sel] : b.dataset.cborrar ? [b.dataset.cborrar] : null;
+  if (borrarIds) {
+    const definitivo = COTZ.filtro === 'anulada';
+    const n = borrarIds.length;
+    if (!await confirmaAqui(definitivo
+      ? 'Vas a ELIMINAR DEFINITIVAMENTE ' + n + (n === 1 ? ' cotización anulada' : ' cotizaciones anuladas') + '. No se puede deshacer.'
+      : 'Vas a borrar ' + n + (n === 1 ? ' cotización' : ' cotizaciones') + '.' + String.fromCharCode(10, 10) + 'Quedan guardadas en «Anuladas» por si hay que recuperar algo, y si ya estaban en la Caja se le avisa para que las cierre.',
+      { si: definitivo ? 'Eliminar' : 'Borrar' })) return;
+    const r = await llama({ action: 'cotizacionBorrar', ids: borrarIds, definitivo });
+    if (!r.ok) return avisa('No se pudo borrar', r.error);
+    COTZ.sel.clear();
+    avisa(definitivo ? 'Eliminadas' : 'Borradas', r.hechas.length + (r.omitidas.length ? ' · ' + r.omitidas.length + ' no se pudieron: ' + r.omitidas.map(o => (o.folio || o.id) + ' (' + o.motivo + ')').join(', ') : ''));
+    return cargaCotizaciones();
+  }
 }
 
 function montaLimpieza(){
