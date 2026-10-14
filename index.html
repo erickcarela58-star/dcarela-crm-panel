@@ -167,6 +167,16 @@ body.menu-abierto .velo{display:block}
 /* ---- Contenido: planificador (14/10/2026) ---- */
 .cont-tabs{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 14px}
 .cont-lista{display:flex;flex-direction:column;gap:10px}
+.plan-vistas{display:flex;align-items:center;gap:8px;margin-left:auto;font-size:12px;color:var(--mut)}
+.plan-vistas select,.plan-creador select{border:1px solid var(--line2);border-radius:10px;padding:8px;background:var(--panel);color:var(--fg);font:inherit}
+.plan-seccion-cab{display:flex;align-items:center;gap:12px;margin:18px 0 12px}.plan-seccion-cab h2{font-size:18px;letter-spacing:-.4px;margin:0}
+.plan-bloqueadas{margin-top:16px;border:1px solid var(--line);border-radius:14px;padding:14px}.plan-bloqueadas>summary{font-size:13px;font-weight:600;cursor:pointer}.plan-bloqueadas .cont-lista{margin-top:12px}
+.plan-acciones>summary{font-size:12px;padding:6px 10px;cursor:pointer;color:var(--mut)}.plan-acciones[open]{flex-basis:100%}.plan-acciones .cont-acc{margin-top:8px}
+.plan-vacio{padding:30px 14px;background:var(--panel);border-radius:14px;color:var(--mut);font-size:13px}
+.plan-creador{padding:18px;border:1px solid var(--line);border-radius:16px;background:var(--panel)}.plan-creador .cont-form{gap:12px;margin-top:14px}.plan-creador label{display:flex;flex-direction:column;gap:7px;font-size:12px}.plan-creador button[type=submit]{align-self:flex-start}.plan-ref-vista{max-height:240px;max-width:100%;align-self:flex-start;border-radius:12px;object-fit:contain}
+.plan-hoja .estilos{display:flex;flex-direction:column;gap:10px}.plan-hoja .estilo{display:flex;flex-direction:row;border-radius:16px;min-width:0}.plan-hoja .estilo-vista{flex:0 0 110px;width:110px;height:138px}.plan-hoja .estilo-vista img{height:100%;width:100%;object-fit:contain}.plan-hoja .estilo-info{flex:1;min-width:0;padding:14px}
+@media(max-width:640px){.plan-vistas{margin-left:0;width:100%}.plan-vistas select{flex:1;min-width:0}.plan-hoja .estilo-vista{flex-basis:76px;width:76px;height:100px}.plan-creador{padding:12px}.plan-hoja .agente-cab{flex-wrap:wrap}}
+
 .plan-hoja{max-width:none!important;width:100%;padding:16px 18px!important;box-sizing:border-box}
 .plan-hoja .plan-cabecera h1{font-size:26px;margin:0;line-height:1.2}
 .plan-hoja .plan-cabecera .bajada{max-width:none;margin:6px 0 16px;line-height:1.5}
@@ -178,7 +188,7 @@ body.menu-abierto .velo{display:block}
 .plan-cifra b{font-size:24px;letter-spacing:-.8px}.plan-cifra small{color:var(--mut);font-size:12px}
 .plan-hoja .agente{background:var(--panel);padding:16px;border-radius:20px;gap:14px}
 .plan-hoja .agente-ico{font-size:20px}
-.plan-hoja .cont-tabs{gap:6px;flex-wrap:nowrap;overflow:auto;padding:4px 0 10px;scrollbar-width:thin}
+.plan-hoja .cont-tabs{gap:6px;flex-wrap:wrap;overflow:visible;padding:4px 0 10px;align-items:center}
 .plan-hoja .cont-tabs button{flex-shrink:0}
 .plan-rutina{border-top:1px solid var(--line);padding-top:10px}
 .plan-rutina>summary{cursor:pointer;font-size:13px;font-weight:650;padding:4px 0}
@@ -14379,16 +14389,7 @@ async function pintaConfig(){
         'Sube aquí las fotos que quieres ver en dcarelacompufoto.com. Elige la categoría y arrastra fotos o una carpeta entera: '
         + 'la web recibe una copia ligera y el original JPG o PNG se conserva completo para los flyers. La PC lo copia a la carpeta de Drive cuando está conectada. '
         + 'Ocultar una foto la quita de la web sin borrarla.',
-        '<div class="par"><div class="campo"><label>Categoría</label><select id="pfCategoria">'
-        + '<option value="xv">XV Años</option><option value="cumpleanos">Cumpleaños</option><option value="infantil">Infantiles</option>'
-        + '<option value="graduacion">Graduaciones</option><option value="embarazadas">Embarazadas</option><option value="boda">Bodas</option></select></div></div>'
-        + '<div id="pfZona" class="pf-zona" tabindex="0" role="button" aria-label="Soltar fotos o carpeta aquí">Arrastra aquí tus fotos o una carpeta, o usa los botones.</div>'
-        + '<div class="pf-botones"><button class="btn-solido" id="pfElegir">Elegir fotos</button>'
-        + '<button class="btn-linea" id="pfCarpeta">Elegir carpeta</button></div>'
-        + '<input type="file" id="pfArchivos" accept="image/*" multiple hidden>'
-        + '<input type="file" id="pfDirectorio" webkitdirectory multiple hidden>'
-        + '<p class="cfgnota" id="pfEstado" aria-live="polite"></p>'
-        + '<div id="pfGaleria" class="pf-galeria"><p class="cfgnota">Cargando…</p></div>',
+        '<a class="btn-linea" href="#contenido" id="cfgFototeca">Abrir fototeca</a>',
         'portafolio-web') : '')
 
     + (puedePortafolio ? tarjetaCfg('Publicar en Instagram',
@@ -14870,6 +14871,7 @@ async function pintaConfig(){
   if ($('igZona')) cableaInstagram();
   const cr = $('cfgReglas2'); if (cr) cr.onclick = abreReglas;
   const ic = $('cfgIrCanales'); if (ic) ic.onclick = () => ve('canales');
+  const fototeca = $('cfgFototeca'); if (fototeca) fototeca.onclick = () => { CONT.tab = 'fotos'; ve('contenido'); };
   cableaIgnoradosCfg();
   cableaAnalisisCfg();
   if (esAdmin) cableaUsuarios();
@@ -16600,8 +16602,8 @@ function cableaLotes(){
 // hora; los Estados, por la PC del negocio. Marketplace y los grupos no se pueden publicar desde un programa: el «paquete del día» lo publica la persona.
 let CONT = { items: [], conteo: {}, calendario: [], canales: [], activos: [], activo: true, tab: null, grupos: [], propias: [], quitadas: [], cargando: false, abiertos: new Set(),
   autonomia: 'manual', cantidad: 0, tiktok: null, estilos: [], tendencias: null, amandine: true, gen: null, mes: null, mesItems: null, dia: null, diaItems: null, vistas: {}, nuevosIA: [], ref: null, subida: null };
-const CONT_TABS = [['calendario', 'Calendario'], ['porAprobar', 'Por aprobar'], ['programadas', 'Aprobadas'], ['publicadas', 'Publicadas'], ['tendencias', 'Tendencias'],
-  ['subir', 'Subir contenido'], ['estilos', 'Estilos de flyer'], ['redes', 'Redes'], ['paquete', 'Paquete del día'], ['fechas', 'Fechas del nicho']];
+const CONT_TABS = [['calendario', 'Calendario'], ['porAprobar', 'Revisión'], ['estilos', 'Plantillas'], ['fotos', 'Fototeca']];
+const CONT_VISTAS = [['programadas', 'Programadas'], ['publicadas', 'Publicadas'], ['tendencias', 'Ideas y tendencias'], ['redes', 'Conexiones'], ['paquete', 'Paquete de grupos'], ['fechas', 'Fechas del negocio'], ['subir', 'Nueva publicación']];
 const CONT_ESTADOS = { propuesta: 'Por aprobar', aprobada: 'Aprobada', publicando: 'Enviando…', encola: 'En cola del puente', enviada: 'Enviada · esperando confirmación', sin_confirmar: 'Sin confirmación', publicada: 'Publicada · confirmada', fallida: 'Falló', rechazada: 'Rechazada', vencida: 'Vencida', lista: 'Lista para subir' };
 const CONT_CORTO = { instagram: 'IG', facebook: 'FB', whatsapp_estado: 'Estado', tiktok: 'TikTok', paquete_grupos: 'Grupos' };
 const CONT_AUTONOMIA = [
@@ -16615,15 +16617,16 @@ function montaContenido(){
   if (!montadas.has('contenido')) {
     montadas.add('contenido');
     hueco('contenido', '<div class="hoja plan-hoja"><header class="plan-cabecera"><h1>Planificador de contenido</h1>'
-      + '<p class="bajada">Sube tus piezas, revisa las propuestas y organiza cuándo salen. Los estados de WhatsApp se muestran como publicados cuando llega una confirmación; TikTok recibe borradores.</p></header>'
+      + '<p class="bajada">Tus publicaciones, fotos y plantillas en un solo lugar.</p></header>'
       + '<div id="contAgente"></div><div class="cont-tabs" id="contTabs"></div><div id="contCuerpo"></div></div>');
     $('contTabs').addEventListener('click', ev => { const b = ev.target.closest('[data-ctab]'); if (b) cambiaTabContenido(b.dataset.ctab); });
+    $('contTabs').addEventListener('change', ev => { if (ev.target.matches('[data-cvista]') && ev.target.value) cambiaTabContenido(ev.target.value); });
     $('contAgente').addEventListener('click', clicContAgente);
     $('contAgente').addEventListener('change', cambioContAgente);
     $('contAgente').addEventListener('toggle', ev => { if (ev.target.classList.contains('plan-rutina')) CONT.rutinaAbierta = ev.target.open; }, true);
     $('contCuerpo').addEventListener('click', clicContenido);
     $('contCuerpo').addEventListener('change', cambioContenido);
-    $('contCuerpo').addEventListener('input', ev => { const f = ev.target.closest('[data-csube]'); if (f) guardaBorradorSubida(f); });
+    $('contCuerpo').addEventListener('input', ev => { const f = ev.target.closest('[data-csube]'); if (f) guardaBorradorSubida(f); if (ev.target.closest('[data-cref]') && ev.target.name === 'nombre') (CONT.refDraft ||= {}).nombre = ev.target.value; });
     $('contCuerpo').addEventListener('dragover', ev => { if (ev.target.closest('[data-csubezona]')) ev.preventDefault(); });
     $('contCuerpo').addEventListener('drop', ev => { if (!ev.target.closest('[data-csubezona]')) return; ev.preventDefault(); const f = ev.target.closest('form'); if (f) guardaBorradorSubida(f); const a = ev.dataTransfer?.files?.[0]; if (a) void preparaSubidaContenido(a); });
     $('contCuerpo').addEventListener('submit', ev => { ev.preventDefault(); const f = ev.target.closest('form'); if (f) guardaFormContenido(f); });
@@ -16660,15 +16663,19 @@ function pintaContenido(){
   const cuerpo = $('contCuerpo'); if (!cuerpo) return;
   pintaAgente();
   const n = e => CONT.items.filter(x => x.estado === e).length;
-  const cuenta = { porAprobar: n('propuesta'), programadas: ['aprobada','publicando','encola','enviada','sin_confirmar','lista'].reduce((s,k) => s + n(k), 0), publicadas: n('publicada'), paquete: CONT.items.filter(x => x.canal === 'paquete_grupos' && x.estado === 'lista').length,
+  const cuenta = { porAprobar: CONT.items.filter(x => x.estado === 'propuesta' && x.tiene_imagen).length, programadas: ['aprobada','publicando','encola','enviada','sin_confirmar','lista'].reduce((s,k) => s + n(k), 0), publicadas: n('publicada'), paquete: CONT.items.filter(x => x.canal === 'paquete_grupos' && x.estado === 'lista').length,
     fechas: CONT.calendario.length, tendencias: CONT.tendencias ? (CONT.tendencias.ideas || []).length : 0, estilos: CONT.estilos.filter(e => e.activo).length };
-  $('contTabs').innerHTML = CONT_TABS.map(([k, t]) => '<button type="button" class="cotz-chip' + (CONT.tab === k ? ' on' : '') + '" data-ctab="' + k + '">' + esc(t) + (cuenta[k] != null ? '<small>' + cuenta[k] + '</small>' : '') + '</button>').join('');
-  const vistas = { calendario: pintaCalendario, tendencias: pintaTendencias, subir: pintaSubir, estilos: pintaEstilos, redes: pintaRedes, paquete: pintaPaquete, fechas: pintaFechasNicho };
+  $('contTabs').innerHTML = CONT_TABS.map(([k, t]) => '<button type="button" class="cotz-chip' + (CONT.tab === k ? ' on' : '') + '" data-ctab="' + k + '">' + esc(t) + (cuenta[k] != null ? '<small>' + cuenta[k] + '</small>' : '') + '</button>').join('') + '<label class="plan-vistas"><span>Otras vistas</span><select data-cvista="1" aria-label="Otras vistas del planificador"><option value="">Elegir…</option>' + CONT_VISTAS.map(([k,t]) => '<option value="' + k + '"' + (CONT.tab === k ? ' selected' : '') + '>' + esc(t) + '</option>').join('') + '</select></label>';
+  const vistas = { fotos: pintaFotosContenido, calendario: pintaCalendario, tendencias: pintaTendencias, subir: pintaSubir, estilos: pintaEstilos, redes: pintaRedes, paquete: pintaPaquete, fechas: pintaFechasNicho };
   if (vistas[CONT.tab]) return vistas[CONT.tab](cuerpo);
   const filtro = { porAprobar: x => x.estado === 'propuesta', programadas: x => ['aprobada', 'publicando', 'encola', 'enviada', 'sin_confirmar', 'lista', 'fallida', 'vencida'].includes(x.estado) && x.canal !== 'paquete_grupos', publicadas: x => x.estado === 'publicada' }[CONT.tab];
   const lista = CONT.items.filter(filtro || (() => false));
   if (!lista.length) { cuerpo.innerHTML = '<p class="cfgnota">' + (CONT.tab === 'porAprobar' ? 'No hay publicaciones por aprobar. Pulsa «Generar creativos»: el agente también lo hace solo cada mañana.' : 'Nada aquí todavía.') + '</p>'; return; }
-  cuerpo.innerHTML = '<div class="cont-lista">' + lista.map(x => tarjetaContenido(x, ROL_ACTUAL === 'admin')).join('') + '</div>';
+  const listas = CONT.tab === 'porAprobar' ? lista.filter(x => x.tiene_imagen) : lista;
+  const bloqueadas = CONT.tab === 'porAprobar' ? lista.filter(x => !x.tiene_imagen) : [];
+  cuerpo.innerHTML = '<div class="plan-seccion-cab"><h2>' + (CONT.tab === 'porAprobar' ? 'Listas para revisar' : CONT.tab === 'publicadas' ? 'Publicaciones confirmadas' : 'Próximas publicaciones') + '</h2><span class="cont-sub">' + listas.length + ' publicaciones</span></div>'
+    + (listas.length ? '<div class="cont-lista">' + listas.map(x => tarjetaContenido(x, ROL_ACTUAL === 'admin')).join('') + '</div>' : '<div class="plan-vacio">No hay piezas listas para revisar.</div>')
+    + (bloqueadas.length ? '<details class="plan-bloqueadas"><summary>' + bloqueadas.length + ' pendientes de foto original</summary><p class="cont-sub">Estas piezas no se pueden aprobar hasta tener una foto en alta calidad.</p><button type="button" class="btn-linea" data-cbiblioteca="1">Subir originales a la fototeca</button><div class="cont-lista">' + bloqueadas.map(x => tarjetaContenido(x, ROL_ACTUAL === 'admin')).join('') + '</div></details>' : '');
 }
 
 // ---- la tarjeta del agente: estado, autonomía, cuántos creativos, en qué redes y las acciones ----
@@ -16680,13 +16687,11 @@ function pintaAgente(){
   const porAprobar = CONT.items.filter(x => x.estado === 'propuesta' && x.tiene_imagen).length;
   const aut = CONT_AUTONOMIA.find(a => a[0] === CONT.autonomia) || CONT_AUTONOMIA[0];
   el.innerHTML = '<section class="agente' + (CONT.activo ? '' : ' apagado') + '">'
-    + '<div class="agente-cab"><span class="agente-ico" aria-hidden="true">🤖</span><div class="agente-tit"><b>Agente de marketing</b><small>'
+    + '<div class="agente-cab"><span class="agente-ico" aria-hidden="true">🤖</span><div class="agente-tit"><b>Automatización</b><small>'
     +   (CONT.activo ? 'Rutina activa · propuestas a las 7:00 y envíos a la hora programada.' : 'En pausa: no propone ni publica nada (tampoco lo ya aprobado).') + '</small></div>'
     +   (admin ? '<label class="agente-sw"><input type="checkbox" data-cactivo="1"' + (CONT.activo ? ' checked' : '') + '><span>' + (CONT.activo ? 'Encendido' : 'En pausa') + '</span></label>' : '') + '</div>'
-    + '<div class="plan-cifras">' + [[porAprobar, 'Listas para aprobar'], [CONT.items.filter(x => x.estado === 'aprobada').length, 'Programadas'], [CONT.items.filter(x => ['encola','enviada','sin_confirmar'].includes(x.estado)).length, 'Esperando confirmación'], [CONT.items.filter(x => x.estado === 'publicada').length, 'Confirmadas']].map(([n,t]) => '<div class="plan-cifra"><b>' + n + '</b><small>' + esc(t) + '</small></div>').join('') + '</div>'
-    + '<div class="agente-acc"><button type="button" class="btn-solido" data-cirtab="subir">Subir contenido propio</button><button type="button" class="btn-linea" data-cbiblioteca="1">Biblioteca de fotos</button><button type="button" class="btn-linea" data-cirtab="calendario">Ver calendario</button>'
-    + (admin && porAprobar ? '<button type="button" class="btn-linea" data-cirtab="porAprobar">Revisar propuestas (' + porAprobar + ')</button>' : '') + '</div>'
-    + '<details class="plan-rutina"' + (CONT.rutinaAbierta ? ' open' : '') + '><summary>Rutina y automatización · ' + esc(aut[1]) + '</summary>'
+    + '<div class="agente-acc"><button type="button" class="btn-solido" data-cirtab="subir">Nueva publicación</button><button type="button" class="btn-linea" data-cprepara="1">Crear propuestas</button></div>'
+    + '<details class="plan-rutina"' + (CONT.rutinaAbierta ? ' open' : '') + '><summary>Ajustes de la rutina · ' + esc(aut[1]) + '</summary>'
     + '<div class="agente-fila"><span class="agente-rot">Autonomía</span><div class="segmento" role="radiogroup" aria-label="Autonomía del agente">'
     +   CONT_AUTONOMIA.map(([k, t]) => '<button type="button" role="radio" aria-checked="' + (CONT.autonomia === k) + '" class="' + (CONT.autonomia === k ? 'on' : '') + '" data-cautonomia="' + k + '"' + (admin ? '' : ' disabled') + '>' + esc(t) + '</button>').join('')
     +   '</div><small class="cont-sub agente-exp">' + esc(aut[2]) + '</small></div>'
@@ -16727,7 +16732,8 @@ async function clicContAgente(ev){
   const b = ev.target.closest('button'); if (!b || b.disabled) return;
   const d = b.dataset;
   if (d.cirtab) return cambiaTabContenido(d.cirtab);
-  if (d.cbiblioteca) return ve('config');
+  if (d.cbiblioteca) return cambiaTabContenido('fotos');
+  if (d.cprepara) { CONT.rutinaAbierta = true; pintaContenido(); document.querySelector('[data-cgenera]')?.focus(); return; }
   if (d.cautonomia) {
     if (d.cautonomia === CONT.autonomia) return;
     if (d.cautonomia === 'total' && !await confirmaAqui('Con autonomía TOTAL el agente programa solo lo que pasa las reglas (sin precios ni cupos inventados, con foto original y sin avisos). Saldrá a su hora sin preguntarte; puedes rechazar cualquiera antes de que salga.' + String.fromCharCode(10, 10) + '¿Le das autonomía total?', { si: 'Sí, autonomía total' })) return;
@@ -16875,22 +16881,22 @@ function tarjetaContenido(x, admin){
     + (x.confirmacion ? '<div class="cont-sub">' + esc(x.confirmacion) + '</div>' : '')
     + (aviso ? '<div class="cont-aviso">' + esc(aviso) + '</div>' : '')
     + ((x.resultado && x.resultado.aviso) ? '<div class="cont-sub">' + esc(x.resultado.aviso) + '</div>' : '')
-    + '<div class="cont-acc">' + acc.join('') + '</div></div></div>';
+    + '<div class="cont-acc">' + acc.slice(0, 2).join('') + (acc.length > 2 ? '<details class="plan-acciones"><summary>Opciones</summary><div class="cont-acc">' + acc.slice(2).join('') + '</div></details>' : '') + '</div></div></div>';
 }
 
 // ---- tendencias: Gemini investiga (con búsqueda de Google) temporadas y tendencias; cada idea se convierte en creativos con un toque ----
 async function investigaTendencias(){
-  const b = document.querySelector('[data-cinvestiga]') || null;
-  if (b) { b.disabled = true; b.textContent = 'Investigando… (hasta un par de minutos)'; }
-  CONT.investigando = true; if (CONT.tab === 'tendencias') pintaContenido();
-  const r = await llamaCont({ action: 'contenidoTendencias', operation: 'investigar', dias: 60 });
-  CONT.investigando = false;
-  if (!r.ok) { pintaContenido(); return avisa('No se pudo investigar', r.error); }
-  CONT.tendencias = { fecha: r.fecha, ideas: r.ideas || [], fuentes: r.fuentes || [] };
-  avisa('Investigación lista', (r.ideas || []).length + ' ideas para las próximas semanas');
-  pintaContenido();
-}
-function pintaTendencias(cuerpo){
+  if (CONT.investigando) return;
+  CONT.investigando = true; CONT.tendenciaError = null;
+  if (CONT.tab === 'tendencias') pintaContenido();
+  try {
+    const r = await llamaCont({ action: 'contenidoTendencias', operation: 'investigar', dias: 60 });
+    if (!r.ok) throw new Error(r.error || 'La investigación no terminó');
+    CONT.tendencias = { fecha: r.fecha, ideas: r.ideas || [], fuentes: r.fuentes || [] };
+    avisa('Investigación lista', (r.ideas || []).length + ' ideas para las próximas semanas');
+  } catch (e) { CONT.tendenciaError = e.message; avisa('No se pudo investigar', e.message); }
+  finally { CONT.investigando = false; if (CONT.tab === 'tendencias') pintaContenido(); }
+}function pintaTendencias(cuerpo){
   const t = CONT.tendencias;
   const canalesIdea = CONT.canales.filter(c => c.id !== 'paquete_grupos');
   const NOMBRE_CAT = { xv: 'Quince', cumpleanos: 'Cumpleaños', graduacion: 'Graduación', embarazadas: 'Embarazo', infantil: 'Infantil' };
@@ -16898,6 +16904,7 @@ function pintaTendencias(cuerpo){
     + 'Cada idea respeta tus reglas (sin precios, descuentos ni cupos inventados). «Usar idea» arma los creativos con tus fotos y quedan por aprobar.</p>'
     + '<div class="cont-acc" style="margin:0 0 12px"><button type="button" class="btn-solido" data-cinvestiga="1"' + (CONT.investigando ? ' disabled' : '') + '>' + (CONT.investigando ? 'Investigando… (hasta un par de minutos)' : (t ? 'Investigar de nuevo' : 'Investigar temporadas y tendencias')) + '</button>'
     + (t && t.fecha ? '<span class="cont-sub" style="align-self:center">Última investigación: ' + esc(t.fecha) + '</span>' : '') + '</div>'
+    + (CONT.tendenciaError ? '<p class="cont-aviso" role="alert">' + esc(CONT.tendenciaError) + '</p>' : '')
     + (!t || !(t.ideas || []).length ? '<p class="cfgnota">Todavía no hay una investigación.</p>'
       : '<div class="ideas">' + t.ideas.map(i => '<div class="idea"><div class="cont-cab"><b>' + esc(i.titulo) + '</b>' + (i.fecha ? '<span class="cotz-est">' + esc(contDia(i.fecha)) + '</span>' : '<span class="cotz-est">Tendencia</span>')
         + (i.categoria ? '<span class="cont-sub">' + esc(NOMBRE_CAT[i.categoria] || i.categoria) + '</span>' : '') + '<span class="cont-sub">· ' + esc(i.formato || 'post') + '</span></div>'
@@ -16973,6 +16980,20 @@ function pintaSubir(cuerpo){
     + '<div class="subir-pie"><small>' + (s.aprobar ? 'Quedará aprobada para su fecha. El estado de WhatsApp espera confirmación real.' : 'Quedará por aprobar. Puedes revisarla antes de que salga.') + '</small><button class="btn-solido" type="submit"' + (!s.imagen || s.preparando || s.enviando ? ' disabled' : '') + '>' + (s.enviando ? 'Guardando…' : 'Guardar en el calendario') + '</button></div></form>';
 }
 
+function pintaFotosContenido(cuerpo){
+  cuerpo.innerHTML = '<div class="plan-seccion-cab"><h2>Fototeca</h2><span class="cont-sub">Originales para web y flyers</span></div><p class="cfgnota">Sube JPG o PNG en alta calidad. El original se conserva completo; la web recibe su copia ligera. La PC copia los originales a la carpeta de Drive.</p><section class="plan-creador">' + '<div class="par"><div class="campo"><label>Categoría</label><select id="pfCategoria">'
+        + '<option value="xv">XV Años</option><option value="cumpleanos">Cumpleaños</option><option value="infantil">Infantiles</option>'
+        + '<option value="graduacion">Graduaciones</option><option value="embarazadas">Embarazadas</option><option value="boda">Bodas</option></select></div></div>'
+        + '<div id="pfZona" class="pf-zona" tabindex="0" role="button" aria-label="Soltar fotos o carpeta aquí">Arrastra aquí tus fotos o una carpeta, o usa los botones.</div>'
+        + '<div class="pf-botones"><button class="btn-solido" id="pfElegir">Elegir fotos</button>'
+        + '<button class="btn-linea" id="pfCarpeta">Elegir carpeta</button></div>'
+        + '<input type="file" id="pfArchivos" accept="image/*" multiple hidden>'
+        + '<input type="file" id="pfDirectorio" webkitdirectory multiple hidden>'
+        + '<p class="cfgnota" id="pfEstado" aria-live="polite"></p>'
+        + '<div id="pfGaleria" class="pf-galeria"><p class="cfgnota">Cargando…</p></div>' + '</section>';
+  cableaPortafolio();
+}
+
 // ---- estilos de flyer: los de fábrica, los de tus referencias y los que propone Gemini (la «pauta entrenada») ----
 async function cargaMuestrasDeEstilos(){
   if (CONT.cargandoMuestras) return;
@@ -16996,6 +17017,13 @@ function lecturaReferenciaHtml(analisis, abierto = false){
     + '<p class="cont-sub"><b>Texto leído:</b> ' + (textos.length ? textos.map(esc).join(' · ') : 'No encontró texto legible') + '</p>'
     + (colores.length ? '<p class="cont-sub"><b>Colores:</b> ' + colores.map(esc).join(' · ') + '</p>' : '') + '</details>';
 }
+function formularioEstiloContenido(){
+  const s = CONT.refDraft || (CONT.refDraft = {}), ia = CONT.estiloModo === 'ia';
+  return '<section class="plan-creador"><div class="segmento" aria-label="Cómo crear una plantilla"><button type="button" data-cestilomodo="referencia" class="' + (!ia ? 'on' : '') + '">Desde una referencia</button><button type="button" data-cestilomodo="ia" class="' + (ia ? 'on' : '') + '">Proponer con IA</button></div>'
+    + (ia ? '<form class="cont-form" data-cestilosia="1"><p class="cont-sub">Las propuestas quedan apagadas hasta que elijas cuáles usar.</p><div class="fila"><label>Cantidad <select name="cantidad">' + [2,3,4,6].map(n => '<option value="' + n + '"' + (n === 4 ? ' selected' : '') + '>' + n + ' estilos</option>').join('') + '</select></label><button class="btn-solido" type="submit"' + (CONT.estiloOcupado ? ' disabled' : '') + '>' + (CONT.estiloOcupado ? 'Diseñando…' : 'Pedir variaciones') + '</button></div></form>'
+      : '<form class="cont-form" data-cref="1"><p class="cont-sub">Sube un flyer nítido. Gemini lee su foto, colores, texto y posiciones; el diseño usa tus originales.</p>' + (s.vista ? '<img class="plan-ref-vista" src="' + esc(s.vista) + '" alt="Referencia seleccionada">' : '') + '<label>Imagen de referencia<input type="file" name="archivo" accept="image/jpeg,image/png,image/webp" data-crefarchivo="1"' + (s.archivo ? '' : ' required') + '></label><small class="cont-sub">' + esc(s.archivo?.name || 'JPG, PNG o WebP') + '</small><label>Nombre de la plantilla<input name="nombre" maxlength="60" placeholder="Opcional" value="' + esc(s.nombre || '') + '"></label><button class="btn-solido" type="submit"' + (s.ocupado ? ' disabled' : '') + '>' + (s.ocupado ? 'Analizando la referencia…' : 'Analizar y guardar estilo') + '</button></form>')
+    + (s.error && !ia || CONT.estiloError && ia ? '<p class="cont-aviso" role="alert">' + esc(ia ? CONT.estiloError : s.error) + '</p>' : '') + '</section>';
+}
 function pintaEstilos(cuerpo){
   const admin = ROL_ACTUAL === 'admin';
   void cargaMuestrasDeEstilos();
@@ -17008,17 +17036,11 @@ function pintaEstilos(cuerpo){
     + (admin ? '<button type="button" class="btn-linea" data-cestilo="' + (e.activo ? 'desactivar' : 'activar') + '" data-id="' + esc(e.id) + '">' + (e.activo ? 'Apagar' : 'Activar') + '</button>' : '')
     + (admin && e.origen !== 'base' ? '<button type="button" class="btn-linea" data-cestilo="borrar" data-id="' + esc(e.id) + '" aria-label="Borrar estilo">×</button>' : '') + '</div></div></div>';
   const activos = CONT.estilos.filter(e => e.activo).length;
-  cuerpo.innerHTML = '<p class="cfgnota">Los flyers salen con la letra <b>Amandine</b> y con estas variaciones estéticas: el agente reparte las piezas entre los estilos <b>activos</b> (' + activos + '). '
-    + 'Todos usan el botón de vidrio (o su variante) en vez del rectángulo naranja. Para que el agente aprenda tu gusto: sube un flyer que te guste como <b>referencia</b> o pídele a Gemini estilos nuevos; los ves en muestra antes de activarlos.</p>'
+  cuerpo.innerHTML = '<div class="plan-seccion-cab"><h2>Plantillas</h2><span class="cont-sub">' + activos + ' activas</span></div><p class="cfgnota">Usa una referencia para definir la composición, o explora estilos con IA.</p>'
     + (CONT.amandine ? '' : '<p class="cont-aviso">El servidor todavía no tiene la Amandine (la copia la PC al desplegar): mientras tanto las muestras salen con Marcellus.</p>')
     + (CONT.ref ? '<div class="cont-form" role="status"><b>Referencia analizada: ' + esc(CONT.ref.nombre) + '</b>' + lecturaReferenciaHtml(CONT.ref.analisis, true) + '</div>' : '')
-    + (admin ? '<div class="estilos-acc"><form class="cont-form" data-cref="1"><b>Imagen de referencia</b><small class="cont-sub">Un flyer o una publicación que te guste: Gemini la mira y la convierte en un estilo que el agente dibuja con tus fotos (queda activo).</small>'
-      + '<small class="cont-sub">Después verás la descripción, el texto y los colores que reconoció. Formatos JPG, PNG o WebP.</small>'
-      + '<div class="fila"><input type="file" name="archivo" accept="image/jpeg,image/png,image/webp" required><input name="nombre" maxlength="60" placeholder="Nombre (opcional)"><button class="btn-solido" type="submit">Analizar y guardar estilo</button></div></form>'
-      + '<form class="cont-form" data-cestilosia="1"><b>Variaciones con IA</b><small class="cont-sub">Gemini propone estilos nuevos a partir de los que ya tienes. Llegan <b>apagados</b>: activa los que te gusten.</small>'
-      + '<div class="fila"><select name="cantidad">' + [2, 3, 4, 6].map(n => '<option value="' + n + '"' + (n === 4 ? ' selected' : '') + '>' + n + ' estilos</option>').join('') + '</select><button class="btn-solido" type="submit">Pedir variaciones</button></div></form></div>' : '')
-    + (CONT.nuevosIA.length ? '<h3 style="margin:16px 0 6px">Recién propuestos</h3><div class="estilos">' + CONT.nuevosIA.map(n => { const e = CONT.estilos.find(s => s.id === n.id); return e ? tarjeta(e) : ''; }).join('') + '</div>' : '')
-    + '<h3 style="margin:16px 0 6px">Todos los estilos</h3><div class="estilos">' + CONT.estilos.map(tarjeta).join('') + '</div>';
+    + (admin ? formularioEstiloContenido() : '')
+    + '<h3 style="margin:16px 0 6px">Tus plantillas</h3><div class="estilos">' + CONT.estilos.map(tarjeta).join('') + '</div>';
 }
 
 // ---- redes: qué sale solo, qué no y conectar TikTok ----
@@ -17100,7 +17122,8 @@ async function clicContenido(ev){
   const imgE = ev.target.closest('img[data-cvistaestilo]'); if (imgE) return verDataUrlEnGrande(imgE.src, 'estilo-' + imgE.dataset.cvistaestilo + '.jpg');
   const b = ev.target.closest('button'); if (!b || b.disabled) return;
   const d = b.dataset;
-  if (d.cbiblioteca) return ve('config');
+  if (d.cbiblioteca) return cambiaTabContenido('fotos');
+  if (d.cestilomodo) { CONT.estiloModo = d.cestilomodo; return pintaContenido(); }
   if (d.celegirimagen) { $('contSubeArchivo')?.click(); return; }
   if (d.cdia) { CONT.dia = d.cdia === CONT.dia ? null : d.cdia; if (CONT.dia) return cargaDiaContenido(CONT.dia); return pintaContenido(); }
   if (d.cmes) { CONT.mes = d.cmes === '0' ? contMesHoy() : contSumaMes(CONT.mes || contMesHoy(), Number(d.cmes)); CONT.mesItems = null; CONT.dia = null; return pintaContenido(); }
@@ -17163,6 +17186,7 @@ async function clicContenido(ev){
 }
 async function cambioContenido(ev){
   const t = ev.target;
+  if (t.dataset.crefarchivo) { const archivo = t.files?.[0]; if (!archivo) return; const s = CONT.refDraft || (CONT.refDraft = {}); if (s.vista) URL.revokeObjectURL(s.vista); s.archivo = archivo; s.vista = URL.createObjectURL(archivo); s.error = null; return pintaContenido(); }
   const subidaForm = t.closest('[data-csube]'); if (subidaForm) guardaBorradorSubida(subidaForm);
   if (t.dataset.csubered && CONT.subida) { if (t.checked) CONT.subida.canales.add(t.dataset.csubered); else CONT.subida.canales.delete(t.dataset.csubered); t.closest('.red-chip')?.classList.toggle('on', t.checked); return; }
   if (t.name === 'canal') { t.closest('.red-chip')?.classList.toggle('on', t.checked); return; }
@@ -17207,30 +17231,37 @@ async function guardaFormContenido(f){
   }
   if (f.dataset.cref) {
     if (boton && boton.disabled) return;
-    const archivo = f.querySelector('input[type=file]').files[0]; if (!archivo) return avisa('Elige la imagen de referencia');
+    const s = CONT.refDraft || (CONT.refDraft = {});
+    if (s.ocupado) return;
+    const archivo = s.archivo || f.querySelector('input[type=file]').files[0]; if (!archivo) return avisa('Elige la imagen de referencia');
+    s.archivo = archivo; s.nombre = v.nombre; s.ocupado = true; s.error = null;
     ocupa('Gemini la está mirando…');
     try {
       const im = await imagenParaSubir(archivo, { lado: 1600, maxBytes: 4 * 1024 * 1024 });
       const r = await llamaCont({ action: 'contenidoEstilos', operation: 'referencia', imagen_b64: im.b64, mime: im.mime, nombre: v.nombre });
-      if (!r.ok) return avisa('No se pudo analizar la referencia', r.error);
+      if (!r.ok) throw new Error(r.error || 'Gemini no terminó el análisis');
       if (r.vista) CONT.vistas[r.estilo.id] = r.vista;
       CONT.ref = { nombre: r.estilo.nombre, analisis: r.analisis };
       CONT.nuevosIA = [{ id: r.estilo.id }];
       avisa('Referencia analizada y estilo guardado', '«' + r.estilo.nombre + '» ya está activo');
       return await cargaContenido();
     } catch (e) {
-      return avisa('No se pudo analizar la referencia', e.message);
-    } finally { suelta(); }
+      s.error = e.message; return avisa('No se pudo analizar la referencia', e.message);
+    } finally { s.ocupado = false; suelta(); if (CONT.tab === 'estilos') pintaContenido(); }
   }
   if (f.dataset.cestilosia) {
+    if (CONT.estiloOcupado) return;
+    CONT.estiloOcupado = true; CONT.estiloError = null;
     ocupa('Gemini está diseñando…');
-    const r = await llamaCont({ action: 'contenidoEstilos', operation: 'ia', cantidad: Number(v.cantidad) || 4 });
-    suelta();
-    if (!r.ok) return avisa('No se pudieron pedir variaciones', r.error);
-    for (const e of r.estilos || []) if (e.vista) CONT.vistas[e.id] = e.vista;
-    CONT.nuevosIA = (r.estilos || []).map(e => ({ id: e.id }));
-    avisa('Estilos propuestos', CONT.nuevosIA.length + ' nuevos (apagados): activa los que te gusten');
-    return cargaContenido();
+    try {
+      const r = await llamaCont({ action: 'contenidoEstilos', operation: 'ia', cantidad: Number(v.cantidad) || 4 });
+      if (!r.ok) throw new Error(r.error || 'Gemini no terminó las variaciones');
+      for (const e of r.estilos || []) if (e.vista) CONT.vistas[e.id] = e.vista;
+      CONT.nuevosIA = (r.estilos || []).map(e => ({ id: e.id }));
+      avisa('Estilos propuestos', CONT.nuevosIA.length + ' nuevos (apagados): activa los que te gusten');
+      return await cargaContenido();
+    } catch (e) { CONT.estiloError = e.message; avisa('No se pudieron pedir variaciones', e.message); }
+    finally { CONT.estiloOcupado = false; suelta(); if (CONT.tab === 'estilos') pintaContenido(); }
   }
   if (f.dataset.ctiktok === 'app') {
     ocupa('Guardando…');

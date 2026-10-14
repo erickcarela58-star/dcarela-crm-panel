@@ -1,7 +1,7 @@
 {
-  "version": "2026-10-14-planificador-y-bot-verificados-v193",
+  "version": "2026-10-14-planificador-contexto-gemini-v194",
   "channel": "crm",
-  "released_at": "2026-10-14T19:26:00.000Z",
-  "summary": "El bot avanza solo después de enviar la pregunta, puede responder al chat LID y respeta la atención humana. Planificador con originales, borrador conservado, confirmación de Estados y sol/luna.",
-  "requiere_puente": "2026-10-14-bot-preguntas-entregadas-v46"
+  "released_at": "2026-10-14T23:03:00.000Z",
+  "summary": "Planificador con Revisión, Plantillas y Fototeca directa; referencias conservadas y errores de Gemini recuperables. El bot relee el hilo al retomar y conserva datos conocidos.",
+  "requiere_puente": "2026-10-14-bot-contexto-conversacion-v47"
 }
