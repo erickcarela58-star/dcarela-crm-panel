@@ -1,7 +1,7 @@
 {
-  "version": "2026-10-13-llamar-eligiendo-numero-v182",
+  "version": "2026-10-14-lupa-galeria-v183",
   "channel": "crm",
-  "released_at": "2026-10-13T13:53:42.614Z",
-  "summary": "Llamar: cuadro para elegir con que numero (5644 sin permiso / oficial). Portafolio: guarda tambien el original completo.",
+  "released_at": "2026-10-14T05:00:00.000Z",
+  "summary": "Lupa: flechas para pasar de una foto a otra, descargas con nombre y formato originales, y la foto ya no desaparece al pulsarla.",
   "requiere_puente": "2026-09-28-lectura-v34"
 }

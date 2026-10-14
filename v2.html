@@ -735,6 +735,24 @@ a.ayuda{color:var(--enlace)}
 #lupa .lupa-barra svg{width:16px;height:16px;stroke-width:1.9}
 #lupa .lupa-barra .lupa-x{padding:8px 11px}
 @media(max-width:640px){#lupa .lupa-barra button span{display:none}}
+/* Flechas para pasar de una foto a otra, como WhatsApp Web, y el «2 de 5». El contador va a la
+   izquierda de la barra de acciones; las flechas, a media altura de cada lado. */
+#lupa .lupa-contador{position:absolute;top:18px;left:20px;z-index:2;font:600 13px system-ui;color:#e9edef;
+  padding:6px 12px;border-radius:999px;background:rgba(255,255,255,.14);cursor:default}
+#lupa .lupa-contador[hidden]{display:none}
+#lupa .lupa-nav{position:absolute;top:50%;transform:translateY(-50%);z-index:2;width:46px;height:46px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,.16);color:#e9edef;cursor:pointer;
+  -webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);transition:background .15s}
+#lupa .lupa-nav[hidden]{display:none}
+#lupa .lupa-nav:hover{background:rgba(255,255,255,.3)}
+#lupa .lupa-nav svg{width:22px;height:22px;stroke-width:2.2}
+#lupa .lupa-nav.ant{left:16px}
+#lupa .lupa-nav.sig{right:16px}
+@media(max-width:640px){#lupa .lupa-nav{width:38px;height:38px}#lupa .lupa-nav.ant{left:8px}#lupa .lupa-nav.sig{right:8px}}
+#lupa .lupa-fallo{display:none;flex-direction:column;align-items:center;gap:6px;color:#e9edef;text-align:center;font:14px system-ui}
+#lupa .lupa-fallo p{margin:0;font-weight:600}
+#lupa .lupa-fallo small{opacity:.7}
+#lupa.con-error .lupa-fallo{display:flex}
 
 /* El compositor se envuelve cuando no cabe. Con siete botones de adjuntar en una fila
    rigida y la ventana estrecha, la caja de texto se quedaba con cuarenta pixeles y
@@ -2583,7 +2601,10 @@ input[type="checkbox"],input[type="radio"]{accent-color:var(--accent)}
   <button type="button" data-lupa="descargar" title="Descargar el archivo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="M7 11l5 5 5-5"/><path d="M5 21h14"/></svg><span>Descargar</span></button>
   <button type="button" class="lupa-x" data-lupa="cerrar" aria-label="Cerrar" title="Cerrar (Esc)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
 </div>
-<div class="lupa-espera"><span class="lupa-rueda"></span><p class="lupa-carga">Pidiendo el archivo a WhatsApp…</p></div><img alt="imagen ampliada"><video controls></video></div>
+<span class="lupa-contador" id="lupaContador" hidden></span>
+<button type="button" class="lupa-nav ant" data-lupa="ant" aria-label="Anterior" title="Anterior (←)" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button>
+<button type="button" class="lupa-nav sig" data-lupa="sig" aria-label="Siguiente" title="Siguiente (→)" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg></button>
+<div class="lupa-espera"><span class="lupa-rueda"></span><p class="lupa-carga">Pidiendo el archivo a WhatsApp…</p></div><div class="lupa-fallo"><p>No se pudo mostrar este archivo.</p><small>Pasa a otro con las flechas o ciérralo y vuelve a abrirlo.</small></div><img alt="imagen ampliada"><video controls></video></div>
 
 <script type="module">
 import { initializeApp, getApps } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js';
@@ -7375,67 +7396,256 @@ document.addEventListener('keydown', ev => { if (ev.key === 'Escape') { cierraMo
 /* ---- Lupa: nombre con el que se descarga ---------------------------------- */
 // ---- Lupa: piezas puras
 const EXT_DE_MIME = {
-  'image/jpeg':'jpg', 'image/png':'png', 'image/webp':'webp', 'image/gif':'gif',
+  'image/jpeg':'jpg', 'image/jpg':'jpg', 'image/png':'png', 'image/webp':'webp', 'image/gif':'gif',
+  'image/heic':'heic', 'image/heif':'heif', 'image/bmp':'bmp', 'image/tiff':'tif', 'image/svg+xml':'svg',
   'video/mp4':'mp4', 'video/quicktime':'mov', 'video/webm':'webm', 'video/3gpp':'3gp',
-  'audio/ogg':'ogg', 'audio/mpeg':'mp3', 'audio/mp4':'m4a', 'application/pdf':'pdf',
+  'video/x-matroska':'mkv', 'video/x-msvideo':'avi', 'video/mpeg':'mpg',
+  'audio/ogg':'ogg', 'audio/opus':'opus', 'audio/mpeg':'mp3', 'audio/mp4':'m4a', 'audio/aac':'aac',
+  'audio/x-m4a':'m4a', 'audio/wav':'wav', 'audio/x-wav':'wav', 'audio/amr':'amr',
+  'application/pdf':'pdf',
+  'application/msword':'doc',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document':'docx',
+  'application/vnd.ms-excel':'xls',
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet':'xlsx',
+  'application/vnd.ms-powerpoint':'ppt',
+  'application/vnd.openxmlformats-officedocument.presentationml.presentation':'pptx',
+  'application/zip':'zip', 'application/x-zip-compressed':'zip', 'application/vnd.rar':'rar',
+  'application/x-rar-compressed':'rar', 'application/x-7z-compressed':'7z', 'application/gzip':'gz',
+  'application/json':'json', 'application/xml':'xml', 'application/rtf':'rtf',
+  'text/plain':'txt', 'text/csv':'csv', 'text/html':'html', 'text/calendar':'ics', 'text/vcard':'vcf',
 };
-// El nombre con el que se guarda lo que se descarga desde la lupa: el del archivo si lo tiene
-// (un documento), y si no uno que dice que es y cuando --imagen-20260928-153045.jpg--, como
-// hace WhatsApp Web. Sin caracteres que Windows no admita en un nombre de archivo.
+// Lo que el archivo DICE ser por dentro, mirando sus primeros bytes. El servidor sirve como
+// application/octet-stream todo lo que no es una foto, un video o un audio (media-core.js), y un
+// blob que llega asi no dice nada: sin esto una foto o un PDF se guardaban como «archivo.bin».
+function mimeDeBytes(b){
+  if (!b || b.length < 4) return '';
+  const a = i => b[i];
+  const txt = (i, t) => [...t].every((c, k) => b[i + k] === c.charCodeAt(0));
+  if (a(0) === 0xFF && a(1) === 0xD8 && a(2) === 0xFF) return 'image/jpeg';
+  if (a(0) === 0x89 && txt(1, 'PNG')) return 'image/png';
+  if (txt(0, 'GIF8')) return 'image/gif';
+  if (txt(0, 'RIFF') && b.length >= 12 && txt(8, 'WEBP')) return 'image/webp';
+  if (txt(0, 'RIFF') && b.length >= 12 && txt(8, 'WAVE')) return 'audio/wav';
+  if (txt(0, '%PDF')) return 'application/pdf';
+  if (txt(0, 'OggS')) return 'audio/ogg';
+  if (txt(0, 'ID3') || (a(0) === 0xFF && (a(1) & 0xE0) === 0xE0)) return 'audio/mpeg';
+  if (b.length >= 12 && txt(4, 'ftyp')) {
+    const marca = String.fromCharCode(a(8), a(9), a(10), a(11));
+    if (/^(heic|heix|hevc|hevx)/.test(marca)) return 'image/heic';
+    if (/^(mif1|msf1|heim|heis)/.test(marca)) return 'image/heif';
+    if (marca === 'qt  ') return 'video/quicktime';
+    if (/^M4A/.test(marca)) return 'audio/mp4';
+    return 'video/mp4';
+  }
+  if (a(0) === 0x1A && a(1) === 0x45 && a(2) === 0xDF && a(3) === 0xA3) return 'video/webm';
+  return '';
+}
+function extensionDeNombre(nombre){
+  const m = String(nombre || '').match(/\.([a-z0-9]{1,8})$/i);
+  return m ? m[1].toLowerCase() : '';
+}
+function mimeBase(mime){ return String(mime || '').split(';')[0].trim().toLowerCase(); }
+// El mime de lo que se mando, tal como lo guardo el mensaje (campo suelto o dentro del adjunto).
+function mimeDeMensaje(m){
+  let ad = m && m.attachments;
+  if (typeof ad === 'string') { try { ad = JSON.parse(ad); } catch (e) { ad = null; } }
+  const a = Array.isArray(ad) ? (ad.find(x => x && typeof x === 'object') || {}) : (ad && typeof ad === 'object' ? ad : {});
+  return mimeBase((m && m.media_mime) || a.mimeType || a.mime_type || a.mimetype || '');
+}
+function nombreAdjunto(m){
+  let ad = m && m.attachments;
+  if (typeof ad === 'string') { try { ad = JSON.parse(ad); } catch (e) { ad = null; } }
+  const a = Array.isArray(ad) ? (ad.find(x => x && typeof x === 'object') || {}) : (ad && typeof ad === 'object' ? ad : {});
+  return String((m && m.media_filename) || a.fileName || a.file_name || a.filename || '');
+}
+// El nombre con el que se guarda lo que se descarga: el ORIGINAL del archivo si lo tiene (un
+// documento), con su extension --si el nombre vino sin ella se le pone la del tipo--, y si no uno
+// que dice que es y cuando --imagen-20260928-153045.jpg--, como hace WhatsApp Web. `mime` es lo
+// que se sabe del contenido; si viene vacio o como octet-stream se usa el del mensaje. Sin
+// caracteres que Windows no admita en un nombre de archivo.
 function nombreDeDescarga(m, mime, ahora = new Date()){
-  const dado = String((m && (m.media_filename || m.attachments?.[0]?.fileName)) || '')
-    .replace(/[\\/:*?"<>|\u0000-\u001f]/g, '_').trim().slice(0, 120);
-  if (dado) return dado;
-  const t = String(mime || '').split(';')[0].trim().toLowerCase();
+  let t = mimeBase(mime);
+  if (!t || t === 'application/octet-stream') t = mimeDeMensaje(m) || t;
+  const dado = nombreAdjunto(m).replace(/[\\/:*?"<>|\u0000-\u001f]/g, '_').trim().slice(0, 120);
+  const ext = EXT_DE_MIME[t] || '';
+  if (dado) return extensionDeNombre(dado) || !ext ? dado : dado + '.' + ext;
   const tipo = t.startsWith('video/') ? 'video' : t.startsWith('audio/') ? 'audio'
     : t.startsWith('image/') ? 'imagen' : 'archivo';
   const p = n => String(n).padStart(2, '0');
   return tipo + '-' + ahora.getFullYear() + p(ahora.getMonth() + 1) + p(ahora.getDate())
     + '-' + p(ahora.getHours()) + p(ahora.getMinutes()) + p(ahora.getSeconds())
-    + '.' + (EXT_DE_MIME[t] || 'bin');
+    + '.' + (ext || 'bin');
 }
 // ---- Lupa: fin de las piezas puras
 
 /* ---- Lupa de imagenes, videos y stickers ---------------------------------- */
 // Que mensaje esta abierto en la lupa: de ahi salen Responder, Reenviar y el nombre al descargar.
 let LUPA_ACTUAL = { msgId: '' };
+// Cada apertura o cambio de foto lleva su numero: una foto que tarda en llegar NO puede pisar a
+// la que se abrio despues, ni reabrir una lupa que ya se cerro.
+let LUPA_TURNO = 0;
 function fijaLupa(msgId){ LUPA_ACTUAL = { msgId: String(msgId || '') }; }
 function mensajeDeLupa(){
   return LUPA_ACTUAL.msgId ? (MSGS.find(x => (x.id || x.wamid) === LUPA_ACTUAL.msgId) || null) : null;
 }
 function cierraLupa(){
+  LUPA_TURNO++;
   const l = $('lupa');
-  l.classList.remove('on', 'esperando', 'con-imagen', 'con-video');
-  l.querySelector('img').src = '';
+  l.classList.remove('on', 'esperando', 'con-imagen', 'con-video', 'con-error');
+  l.querySelector('img').removeAttribute('src');
   const v = l.querySelector('video');
   v.pause(); v.removeAttribute('src'); v.load();
   LUPA_ACTUAL = { msgId: '' };
+  pintaNavLupa();
+}
+
+// ---- Lupa: pasar de una foto a otra, como WhatsApp Web ----
+// Las fotos y videos del chat, en orden. Los stickers no entran: WhatsApp tampoco los mete en
+// la galeria. Sirve tanto lo guardado (url o id) como lo que se pide bajo demanda al telefono.
+function esMedioDeGaleria(m){
+  if (!m || m._enviando) return false;
+  const a = adjuntoDe(m);
+  if (!(m.media_id || m.media_url || a.url || esBajoDemanda(m))) return false;
+  const t = tipoRealMedio(m, a);
+  return t === 'image' || t === 'video';
+}
+function galeriaDeLupa(){
+  return MSGS.filter(esMedioDeGaleria).sort((x, y) => instanteMsg(x) - instanteMsg(y));
+}
+// Pieza pura: donde esta `id` en la lista y cuales son sus vecinos (null en los extremos).
+function vecinosEnGaleria(lista, id){
+  const i = lista.findIndex(x => String(x.id || x.wamid || '') === String(id || ''));
+  if (i < 0) return { pos: -1, total: lista.length, ant: null, sig: null };
+  return { pos: i, total: lista.length, ant: i > 0 ? lista[i - 1] : null, sig: i < lista.length - 1 ? lista[i + 1] : null };
+}
+function pintaNavLupa(){
+  const l = $('lupa');
+  const ant = l.querySelector('[data-lupa="ant"]'), sig = l.querySelector('[data-lupa="sig"]'), cont = $('lupaContador');
+  if (!ant || !sig) return;
+  const v = LUPA_ACTUAL.msgId ? vecinosEnGaleria(galeriaDeLupa(), LUPA_ACTUAL.msgId) : { pos: -1, total: 0, ant: null, sig: null };
+  const hay = v.pos >= 0 && v.total > 1;
+  ant.hidden = !hay || !v.ant;
+  sig.hidden = !hay || !v.sig;
+  if (cont) { cont.hidden = !hay; cont.textContent = hay ? (v.pos + 1) + ' de ' + v.total : ''; }
+}
+// La url de un mensaje de la galeria, venga de donde venga. '' si no se pudo conseguir.
+async function urlDeMensajeMedio(m){
+  const id = String(m.id || m.wamid || '');
+  if (esBajoDemanda(m)) return pideMedioCompleto(id);
+  const a = adjuntoDe(m);
+  if (a.url) return a.url;
+  return m.media_id ? urlDeMedio(m.media_id) : '';
+}
+async function tipoDeUrlMedio(m, url){
+  const decl = tipoRealMedio(m, adjuntoDe(m));
+  if (decl === 'video') return 'video';
+  // Una foto declarada como tal pero que en realidad es otra cosa se resuelve por su contenido.
+  try {
+    const blob = await (await fetch(url)).blob();
+    const t = mimeBase(blob.type) || mimeDeBytes(new Uint8Array(await blob.slice(0, 16).arrayBuffer()));
+    if (/^video\//.test(t)) return 'video';
+    if (/^image\//.test(t)) return 'img';
+  } catch (e) { /* se queda lo declarado */ }
+  return decl === 'image' ? 'img' : '';
+}
+async function navegaLupa(delta){
+  const v = vecinosEnGaleria(galeriaDeLupa(), LUPA_ACTUAL.msgId);
+  const destino = delta < 0 ? v.ant : v.sig;
+  if (!destino) return;
+  const turno = ++LUPA_TURNO;
+  fijaLupa(destino.id || destino.wamid);
+  pintaNavLupa();
+  const l = $('lupa');
+  const v0 = l.querySelector('video'); v0.pause();
+  l.classList.remove('con-imagen', 'con-video', 'con-error');
+  l.classList.add('on', 'esperando');
+  l.querySelector('[data-lupa="descargar"]').disabled = true;
+  const url = await urlDeMensajeMedio(destino).catch(() => '');
+  if (turno !== LUPA_TURNO) return;            // se cerro o se paso a otra mientras llegaba
+  const tipo = url ? await tipoDeUrlMedio(destino, url) : '';
+  if (turno !== LUPA_TURNO) return;
+  if (!url || !tipo) {
+    l.classList.remove('esperando'); l.classList.add('con-error');
+    l.querySelector('[data-lupa="descargar"]').disabled = true;
+    return;
+  }
+  muestraLupa(tipo, url);
 }
 // Se abre YA, antes de tener el archivo: pedirlo bajo demanda puede tardar unos segundos
 // y esto no es una ventana nueva, asi que no la alcanza el bloqueo de popups de Chrome.
 function abreLupaCargando(){
   const l = $('lupa');
-  l.classList.remove('con-imagen', 'con-video');
+  l.classList.remove('con-imagen', 'con-video', 'con-error');
   l.classList.add('on', 'esperando');
   l.querySelector('[data-lupa="descargar"]').disabled = true;
+  pintaNavLupa();
 }
 function muestraLupa(tipo, src){
   const l = $('lupa');
-  l.classList.remove('esperando');
+  l.classList.remove('esperando', 'con-error');
   l.querySelector('[data-lupa="descargar"]').disabled = false;
   l.classList.add('on');
+  const img = l.querySelector('img');
   if (tipo === 'video') {
     l.classList.remove('con-imagen'); l.classList.add('con-video');
+    img.removeAttribute('src');
     const v = l.querySelector('video'); v.src = src; v.play().catch(() => {});
   } else {
     l.classList.remove('con-video'); l.classList.add('con-imagen');
-    l.querySelector('img').src = src;
+    const v = l.querySelector('video'); v.pause(); v.removeAttribute('src');
+    img.src = src;
   }
+  pintaNavLupa();
 }
 $('lupa').onclick = cierraLupa;
+// La foto que no carga no deja la lupa en negro: se dice, y se puede pasar a la siguiente.
+$('lupa').querySelector('img').onerror = () => {
+  const l = $('lupa');
+  if (!l.classList.contains('con-imagen') || !l.querySelector('img').getAttribute('src')) return;
+  l.classList.remove('con-imagen'); l.classList.add('con-error');
+};
 // El video no cierra la lupa al tocarlo: hacen falta los controles nativos (pausa, avance,
 // volumen) sin que cada toque cierre la vista.
 $('lupa').querySelector('video').onclick = ev => ev.stopPropagation();
+// Flechas a los lados (y teclado): no cierran la lupa al pulsarlas.
+$('lupa').querySelectorAll('[data-lupa="ant"],[data-lupa="sig"]').forEach(b => {
+  b.onclick = ev => { ev.stopPropagation(); navegaLupa(b.dataset.lupa === 'ant' ? -1 : 1); };
+});
+document.addEventListener('keydown', ev => {
+  const l = $('lupa');
+  if (!l || !l.classList.contains('on') || ev.altKey || ev.ctrlKey || ev.metaKey) return;
+  if (ev.key === 'ArrowLeft') { ev.preventDefault(); navegaLupa(-1); }
+  else if (ev.key === 'ArrowRight') { ev.preventDefault(); navegaLupa(1); }
+});
+// Deslizar el dedo, en el celular: izquierda = siguiente, derecha = anterior.
+{
+  let x0 = null, y0 = 0;
+  const l = $('lupa');
+  l.addEventListener('touchstart', ev => { const t = ev.touches[0]; x0 = ev.touches.length === 1 ? t.clientX : null; y0 = t.clientY; }, { passive: true });
+  l.addEventListener('touchend', ev => {
+    if (x0 === null) return;
+    const t = ev.changedTouches[0], dx = t.clientX - x0, dy = t.clientY - y0;
+    x0 = null;
+    if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.5) { ev.preventDefault(); navegaLupa(dx < 0 ? 1 : -1); }
+  });
+}
+// La fecha del mensaje, para el nombre del archivo que se descarga: el mismo mensaje da siempre el
+// mismo nombre, en vez del instante en que se pulso Descargar.
+function fechaDeMensaje(m){
+  const t = m ? instanteMsg(m) : NaN;
+  return Number.isFinite(t) && t < Number.MAX_SAFE_INTEGER ? new Date(t) : new Date();
+}
+// Guarda un archivo con su nombre ORIGINAL y su formato. El blob que sirve el servidor llega como
+// application/octet-stream si no es foto, video o audio, asi que el formato se saca de los primeros
+// bytes y del mensaje, nunca solo del blob.
+async function descargaConNombre(blob, m, nombreDado){
+  let tipo = mimeBase(blob.type);
+  if (!tipo || tipo === 'application/octet-stream') {
+    try { tipo = mimeDeBytes(new Uint8Array(await blob.slice(0, 16).arrayBuffer())) || tipo; } catch (e) { /* se usa el del mensaje */ }
+  }
+  const base = nombreDado ? { ...(m || {}), media_filename: nombreDado } : (m || {});
+  descargaComoArchivo(blob, nombreDeDescarga(base, tipo, fechaDeMensaje(m)));
+}
 // Responder, Reenviar y Descargar sobre el mensaje que esta abierto. Reenviar y Responder
 // cierran la lupa: lo que sigue (elegir chat, escribir) pasa en el panel, no encima de la foto.
 $('lupaBarra').onclick = async ev => {
@@ -7451,7 +7661,7 @@ $('lupaBarra').onclick = async ev => {
     if (!src) return;
     try {
       const blob = await (await fetch(src)).blob();
-      descargaComoArchivo(blob, nombreDeDescarga(m, blob.type));
+      await descargaConNombre(blob, m);
     } catch (e) { avisa('No se pudo descargar el archivo'); }
     return;
   }
@@ -7467,6 +7677,10 @@ $('lupaBarra').onclick = async ev => {
 document.addEventListener('click', ev => {
   const img = ev.target;
   if (img?.tagName === 'IMG' && (img.classList.contains('mmedia') || img.classList.contains('msticker'))) {
+    // Una foto que aun no llego no tiene nada que ampliar: abrir la lupa con un src vacio la
+    // dejaba en negro, y era justo lo que se leia como «la imagen se oculta».
+    const src = img.getAttribute('src');
+    if (!src || img.hasAttribute('data-medio')) return;
     fijaLupa(img.closest('[data-msg]')?.dataset.msg);
     muestraLupa('img', img.src);
   }
@@ -8563,14 +8777,20 @@ function cableaBajoDemanda(){
     // pudo previsualizar) y sigue yendo por pestaña nueva o descarga directa, como antes.
     const conMiniatura = el.classList.contains('mthumb');
     el.onclick = async () => {
-      const etiqueta = el.querySelector('.vertag') || el;
-      const antes = etiqueta.textContent;
+      // El texto de «Pidiendo…» solo se toca si hay una etiqueta propia (.vertag, o el boton de un
+      // documento, que es solo texto). La foto ya nitida es un boton con una <img> dentro y sin
+      // etiqueta: antes se escribia «Pidiendo…» sobre el propio boton, lo que BORRABA la foto del
+      // globo hasta recargar el panel -- «le doy click a una imagen y se oculta».
+      const etiqueta = el.querySelector('.vertag') || (el.querySelector('img') ? null : el);
+      const antes = etiqueta ? etiqueta.textContent : '';
       const yaEsta = LISTOS_BAJO.has(el.dataset.bajo);
       // Si el panel ya lo pidio por adelantado no hay nada que esperar: ni «Pidiendo…» ni lupa en
       // blanco, se abre con la foto.
-      if (!yaEsta) etiqueta.textContent = 'Pidiendo…';
+      if (!yaEsta && etiqueta && !el.classList.contains('pidiendo')) etiqueta.textContent = 'Pidiendo…';
+      const yaPidiendo = el.classList.contains('pidiendo');
       el.classList.add('pidiendo');
-      if (conMiniatura) { fijaLupa(el.dataset.bajo); if (!yaEsta) abreLupaCargando(); }
+      let turno = 0;
+      if (conMiniatura) { fijaLupa(el.dataset.bajo); turno = ++LUPA_TURNO; if (!yaEsta) abreLupaCargando(); }
       // La pestana se abre YA, dentro del clic, solo para lo que no tiene miniatura. Pedirle
       // el archivo al telefono tarda unos segundos, y Chrome bloquea sin avisar una ventana
       // que se abre mas de cinco segundos despues de pulsar: "Ver" no hacia nada. Un documento
@@ -8579,9 +8799,14 @@ function cableaBajoDemanda(){
       try { ventana?.document.write('<p style="font:14px system-ui;padding:24px;color:#54656f">Pidiendo el archivo a WhatsApp…</p>'); } catch (e) {}
       try {
         const url = await pideMedioCompleto(el.dataset.bajo);
-        if (!url) { ventana?.close(); if (conMiniatura) cierraLupa(); return; }
+        if (!url) { ventana?.close(); if (conMiniatura && turno === LUPA_TURNO) cierraLupa(); return; }
         const blob = await (await fetch(url)).blob();
-        const tipo = String(blob.type || '').split(';')[0].trim();
+        let tipo = mimeBase(blob.type);
+        if (!tipo || tipo === 'application/octet-stream') {
+          try { tipo = mimeDeBytes(new Uint8Array(await blob.slice(0, 16).arrayBuffer())) || tipo; } catch (e) { /* queda el declarado */ }
+        }
+        // Se cerro la lupa (o se paso a otra foto) mientras llegaba: no se reabre.
+        if (conMiniatura && turno !== LUPA_TURNO) return;
         if (conMiniatura && /^image\//i.test(tipo)) return muestraLupa('img', url);
         if (conMiniatura && /^video\//i.test(tipo)) return muestraLupa('video', url);
         if (conMiniatura) cierraLupa();
@@ -8591,19 +8816,31 @@ function cableaBajoDemanda(){
           return;
         }
         ventana?.close();
-        descargaComoArchivo(blob, el.dataset.nombre || 'archivo');
+        await descargaConNombre(blob, MSGS.find(x => String(x.id || x.wamid || '') === el.dataset.bajo) || null, el.dataset.nombre);
       } catch (e) {
         ventana?.close();
-        if (conMiniatura) cierraLupa();
+        if (conMiniatura && turno === LUPA_TURNO) cierraLupa();
         avisa('No se pudo abrir el archivo');
       } finally {
-        etiqueta.textContent = antes;
-        el.classList.remove('pidiendo');
+        if (etiqueta && !yaPidiendo) etiqueta.textContent = antes;
+        if (!yaPidiendo) el.classList.remove('pidiendo');
       }
     };
   });
   cableaAutoBajo();
 }
+
+// «Reintentar» sobre una foto que no llego. Se borra lo apuntado de ese fallo --si no, la espera
+// escalonada la dejaba para despues de recargar-- y se repinta el hilo para que vuelva a pedirse.
+document.addEventListener('click', ev => {
+  const b = ev.target.closest?.('[data-reintenta]');
+  if (!b) return;
+  const id = b.dataset.reintenta;
+  MEDIOS_FALLO.delete(id); MEDIOS.delete(id);
+  const cont = $('mensajes');
+  if (cont) cont.dataset.firma = '';
+  pintaMensajes();
+});
 
 // ---- Pedir por adelantado lo que se ve ------------------------------------------------------
 //
@@ -8844,12 +9081,22 @@ async function pintaMedio(el){
   const url = await urlDeMedio(el.dataset.medio);
   if (!el.isConnected) return;
   if (!url) {
-    el.replaceWith(Object.assign(document.createElement('div'),
-      { className:'marchivo', innerHTML:'<b>Archivo</b><span>no se pudo recuperar de WhatsApp</span>' }));
+    // Un fallo pasajero no puede dejar la foto fuera hasta recargar el panel: la tarjeta trae su
+    // boton para volver a pedirla (ver el manejador de [data-reintenta]).
+    const caja = document.createElement('div');
+    caja.className = 'marchivo';
+    caja.innerHTML = '<b>' + (el.classList?.contains('msticker') ? 'Sticker' : 'Imagen') + '</b>'
+      + '<span>no se pudo recuperar de WhatsApp</span>';
+    const reintenta = document.createElement('button');
+    reintenta.type = 'button'; reintenta.textContent = 'Reintentar';
+    reintenta.setAttribute('data-reintenta', el.dataset.medio || '');
+    caja.appendChild(reintenta);
+    el.replaceWith(caja);
     return;
   }
   ponMedio(el, url);
 }
+
 
 function ponMedio(el, url){
   el.removeAttribute('data-medio');
@@ -8870,11 +9117,12 @@ function cableaDescargas(){
       try {
         const url = await urlDeMedio(el.dataset.descarga);
         if (!url) return avisa('No se pudo recuperar el archivo');
-        const enlace = Object.assign(document.createElement('a'),
-          { href: url, download: el.dataset.nombre || 'archivo', rel: 'noopener' });
-        document.body.appendChild(enlace);
-        enlace.click();
-        enlace.remove();
+        // El servidor entrega lo que no es foto/video/audio como octet-stream: el nombre original y
+        // el formato salen del mensaje y de los bytes, no de lo que diga el blob.
+        const blob = await (await fetch(url)).blob();
+        const idMsg = el.closest('[data-msg]')?.dataset.msg;
+        const m = MSGS.find(x => String(x.id || x.wamid || '') === String(idMsg || '')) || null;
+        await descargaConNombre(blob, m, el.dataset.nombre);
       } finally {
         el.textContent = antes;
         el.disabled = false;
@@ -9230,7 +9478,7 @@ function cuerpoMensaje(m){
     // Un documento guardado no se ve dentro del globo: se baja al pulsar, no al pintar el hilo.
     if (!a.url && id) return '<div class="marchivo"><b>' + esc(a.nombre || m.media_filename || 'Documento') + '</b>'
       + '<span>' + esc(m.media_mime || a.mime || 'archivo') + '</span>'
-      + '<button data-descarga="' + esc(id) + '" data-nombre="' + esc(a.nombre || m.media_filename || 'archivo') + '">Descargar</button>'
+      + '<button data-descarga="' + esc(id) + '" data-nombre="' + esc(a.nombre || m.media_filename || '') + '">Descargar</button>'
       + opsArchivo(m) + '</div>' + pie;
     return tarjetaArchivo(a, 'Archivo', m) + pie;
   }
@@ -13259,7 +13507,7 @@ const CAT_DE_TARJETA = {
   'Seguimientos automáticos': 'auto', 'Análisis de conversaciones con IA': 'auto', 'Asistente IA': 'auto',
   'Agente de marketing': 'auto', 'Clientes de otros servicios': 'auto',
   'Agenda en Google Calendar': 'agenda', 'Recordatorios del iPhone': 'agenda', 'Tu Google Calendar dentro del CRM': 'agenda',
-  'Catálogo público': 'agenda', 'Datos del negocio': 'agenda', 'Portafolio de la web': 'agenda',
+  'Catálogo público': 'agenda', 'Datos del negocio': 'agenda', 'Portafolio de la web': 'agenda', 'Publicar en Instagram': 'agenda',
 };
 function categoriaDeCfg(titulo){ return CAT_DE_TARJETA[titulo] || 'otros'; }
 // Dentro de cada categoria, las tarjetas van en SECCIONES con su titulo y una linea que dice para que sirven, y en el orden
@@ -13287,7 +13535,7 @@ const SECCIONES_CFG = {
   ],
   agenda: [
     { id: 'calendarios', nombre: 'Calendarios', nota: 'Google y el iPhone, en las dos direcciones.', tarjetas: ['Agenda en Google Calendar', 'Tu Google Calendar dentro del CRM', 'Recordatorios del iPhone'] },
-    { id: 'negocio', nombre: 'Tu negocio', nota: 'Los datos y el catálogo que usa el CRM.', tarjetas: ['Datos del negocio', 'Catálogo público', 'Portafolio de la web'] },
+    { id: 'negocio', nombre: 'Tu negocio', nota: 'Los datos y el catálogo que usa el CRM.', tarjetas: ['Datos del negocio', 'Catálogo público', 'Portafolio de la web', 'Publicar en Instagram'] },
   ],
 };
 // Donde va una tarjeta: su categoria, su seccion y su lugar dentro de ella.
@@ -13888,6 +14136,24 @@ async function pintaConfig(){
         + '<div id="pfGaleria" class="pf-galeria"><p class="cfgnota">Cargando…</p></div>',
         'portafolio-web') : '')
 
+    + (puedePortafolio ? tarjetaCfg('Publicar en Instagram',
+        'Sube aquí las fotos que quieres publicar en el Instagram del negocio. Se ponen en una cola y salen solas todos los días a la <b>1:00 a. m.</b> (una por día), '
+        + 'o al momento con el botón «Publicar ahora». Elige hasta 10 fotos para un carrusel. Las fotos se recortan a formato vertical 4:5 y se pasan a JPEG en tu navegador. '
+        + 'Hace falta la clave de Instagram en <b>Canales → Conexiones y API</b> («Instagram · publicar fotos»). Nada se publica sin que tú lo pongas en la cola.',
+        '<p class="cfgnota" id="igEstado" aria-live="polite"><span class="cargando"></span> Comprobando la conexión…</p>'
+        + '<div id="igZona" class="pf-zona" tabindex="0" role="button" aria-label="Elegir fotos para Instagram">Arrastra aquí hasta 10 fotos, o usa el botón.</div>'
+        + '<div class="pf-botones"><button class="btn-solido" id="igElegir">Elegir fotos</button></div>'
+        + '<input type="file" id="igArchivos" accept="image/*" multiple hidden>'
+        + '<div id="igPrevia" class="pf-miniaturas"></div>'
+        + '<div class="campo"><label for="igPie">Texto de la publicación <span class="cfgnota" id="igContador">0 / 2200</span></label>'
+        + '<textarea id="igPie" rows="4" maxlength="2200" placeholder="Ej.: Sesión de cumpleaños en estudio ✨ Reserva tu fecha por WhatsApp 849-524-5620 #dcarelacompufoto #laromana"></textarea></div>'
+        + '<div class="pf-botones"><button class="btn-linea" id="igCola" disabled>Agregar a la cola</button>'
+        + '<button class="btn-solido" id="igYa" disabled>Publicar ahora</button>'
+        + '<button class="btn-linea" id="igSiguiente">Publicar la siguiente de la cola</button></div>'
+        + '<p class="cfgnota" id="igMensaje" aria-live="polite"></p>'
+        + '<div id="igCola-lista"><p class="cfgnota">Cargando la cola…</p></div>',
+        'instagram-publicar') : '')
+
     + tarjetaCfg('Datos del negocio', '',
         dato('Marca', CFG.brandName)
         + dato('WhatsApp oficial', CFG.businessDisplayNumber || CFG.businessNumber)
@@ -14346,6 +14612,7 @@ async function pintaConfig(){
       : 'No había cambios pendientes.');
   };
   if ($('pfZona')) cableaPortafolio();
+  if ($('igZona')) cableaInstagram();
   const cr = $('cfgReglas2'); if (cr) cr.onclick = abreReglas;
   const ic = $('cfgIrCanales'); if (ic) ic.onclick = () => ve('canales');
   cableaIgnoradosCfg();
@@ -14442,6 +14709,128 @@ function cableaPortafolio(){
   zona.ondragleave = () => zona.classList.remove('sobre');
   zona.ondrop = e => { e.preventDefault(); zona.classList.remove('sobre'); const f = [...(e.dataTransfer?.files || [])]; if (f.length) pfSube(f); };
   pfPintaGaleria();
+}
+
+// ---- Publicar en Instagram: cola de fotos. El navegador recorta a 4:5 y pasa a JPEG (Instagram solo acepta JPEG por la API); el servidor valida y guarda (instagram-publicador-store.js).
+// La publica el botón «Publicar ahora» o la tarea de la 1:00 a. m. Hasta 10 fotos = carrusel. ----
+const IG_MAX_FOTOS = 10;
+const IG_ANCHO = 1080;
+const IG_MAX_TOTAL_B64 = 9 * 1024 * 1024;   // el cuerpo de una llamada a la API admite unos 10 MB
+let IG_FOTOS = [];                           // [{ base64, url, nombre }] ya convertidas
+// Recorta al formato de Instagram (entre 4:5 vertical y 1.91:1 horizontal; fuera de eso se recorta al centro a 4:5) y lo pasa a JPEG de como mucho 1080 px de ancho.
+async function igPreparaFoto(archivo){
+  const bmp = await createImageBitmap(archivo, { imageOrientation:'from-image' });
+  let sx = 0, sy = 0, sw = bmp.width, sh = bmp.height;
+  const razon = sw / sh;
+  if (razon < 0.8) { sh = Math.round(sw / 0.8); sy = Math.round((bmp.height - sh) / 2); }
+  else if (razon > 1.91) { sw = Math.round(sh * 1.91); sx = Math.round((bmp.width - sw) / 2); }
+  const k = Math.min(1, IG_ANCHO / sw);
+  const w = Math.max(320, Math.round(sw * k)), h = Math.max(200, Math.round(sh * k));
+  const lienzo = document.createElement('canvas'); lienzo.width = w; lienzo.height = h;
+  const g = lienzo.getContext('2d');
+  g.fillStyle = '#fff'; g.fillRect(0, 0, w, h);                 // un PNG con transparencia no puede salir negro
+  g.drawImage(bmp, sx, sy, sw, sh, 0, 0, w, h);
+  if (bmp.close) bmp.close();
+  const blob = await new Promise(r => lienzo.toBlob(r, 'image/jpeg', 0.88));
+  if (!blob) throw new Error('no se pudo convertir');
+  return { base64: await pfLeeBase64(blob), url: URL.createObjectURL(blob), nombre: archivo.name || 'foto' };
+}
+function igPintaPrevia(){
+  const cont = $('igPrevia'); if (!cont) return;
+  cont.innerHTML = IG_FOTOS.map((f, i) => '<figure class="pf-mini" data-i="' + i + '"><img alt="' + esc(f.nombre) + '" src="' + esc(f.url) + '">'
+    + '<figcaption><span>' + (IG_FOTOS.length > 1 ? (i + 1) + ' de ' + IG_FOTOS.length : '1 foto') + '</span><button class="btn-linea" data-ig-saca="' + i + '">Quitar</button></figcaption></figure>').join('');
+  cont.querySelectorAll('[data-ig-saca]').forEach(b => b.onclick = () => { const f = IG_FOTOS.splice(Number(b.dataset.igSaca), 1)[0]; if (f) URL.revokeObjectURL(f.url); igPintaPrevia(); });
+  const hay = IG_FOTOS.length > 0;
+  if ($('igCola')) $('igCola').disabled = !hay;
+  if ($('igYa')) $('igYa').disabled = !hay;
+}
+async function igAgregaArchivos(archivos){
+  const msg = $('igMensaje');
+  const fotos = [...archivos].filter(f => /^image\//.test(f.type) || /\.(jpe?g|png|webp|heic)$/i.test(f.name || ''));
+  if (!fotos.length) { if (msg) msg.textContent = 'No hay fotos en lo que elegiste.'; return; }
+  const sitio = IG_MAX_FOTOS - IG_FOTOS.length;
+  if (fotos.length > sitio && msg) msg.textContent = 'Un carrusel admite hasta ' + IG_MAX_FOTOS + ' fotos: se agregaron solo las primeras ' + Math.max(sitio, 0) + '.';
+  for (const f of fotos.slice(0, Math.max(sitio, 0))) {
+    try { IG_FOTOS.push(await igPreparaFoto(f)); }
+    catch (e) { if (msg) msg.textContent = 'No se pudo preparar ' + (f.name || 'una foto') + ' (¿HEIC? Ábrela y expórtala a JPG).'; }
+  }
+  igPintaPrevia();
+}
+const IG_ESTADO = { pending:'En cola', publishing:'Publicando…', published:'Publicada', failed:'Con error' };
+async function igPintaCola(){
+  const cont = $('igCola-lista'); if (!cont) return;
+  const r = await llama({ action:'instagram', operation:'list' });
+  if (!r.ok) { cont.innerHTML = '<p class="cfgnota">' + esc(r.error || 'No se pudo leer la cola.') + '</p>'; return; }
+  const cuando = v => v ? new Date(v).toLocaleString('es-DO', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' }) : '';
+  cont.innerHTML = r.items.length ? '<div class="tabla">' + r.items.map(x =>
+    '<div class="fila" style="grid-template-columns:minmax(0,3fr) auto"><span><b>' + esc(IG_ESTADO[x.estado] || x.estado) + '</b> · ' + x.fotos + (x.fotos === 1 ? ' foto' : ' fotos')
+    + (x.publicada_en ? ' · ' + esc(cuando(x.publicada_en)) : (x.creada_en ? ' · subida ' + esc(cuando(x.creada_en)) : ''))
+    + '<small>' + esc((x.pie || '(sin texto)').slice(0, 140)) + '</small>'
+    + (x.error ? '<small style="color:var(--bad)">' + esc(x.error) + '</small>' : '')
+    + (x.enlace ? '<small><a href="' + esc(x.enlace) + '" target="_blank" rel="noopener">Ver en Instagram</a></small>' : '') + '</span>'
+    + '<span>' + (['pending', 'failed'].includes(x.estado) ? '<button class="btn-solido" data-ig-pub="' + esc(x.id) + '">Publicar ahora</button> ' : '')
+    + (x.estado !== 'publishing' ? '<button class="btn-linea" data-ig-quita="' + esc(x.id) + '">Quitar</button>' : '') + '</span></div>').join('') + '</div>'
+    : '<p class="cfgnota">La cola está vacía.</p>';
+  cont.querySelectorAll('[data-ig-pub]').forEach(b => b.onclick = () => igPublica(b.dataset.igPub, b));
+  cont.querySelectorAll('[data-ig-quita]').forEach(b => b.onclick = async () => {
+    if (!await confirmaAqui('¿Quitar esta publicación de la cola? Se borran sus fotos de la nube.', { si:'Quitar', no:'Cancelar' })) return;
+    b.disabled = true;
+    const x = await llama({ action:'instagram', operation:'remove', id:b.dataset.igQuita });
+    if (!x.ok) { b.disabled = false; return avisa('No se pudo quitar', x.error || 'Inténtalo de nuevo.'); }
+    igPintaCola();
+  });
+}
+async function igPintaEstado(){
+  const el = $('igEstado'); if (!el) return;
+  const r = await llama({ action:'instagram', operation:'estado' });
+  if (!r.ok) { el.textContent = r.error || 'No se pudo comprobar Instagram.'; return; }
+  el.innerHTML = (r.conectado ? '✅ Instagram conectado para publicar.' : '⚠️ Falta la clave de Instagram: ponla en <b>Canales → Conexiones y API</b> («Instagram · publicar fotos»). Mientras tanto la cola espera y no se publica nada.')
+    + ' Publicación automática: ' + (r.diario ? '<b>activa</b> a la ' + esc(r.hora_diaria) + ', máximo ' + r.maximo_diario + ' por día' : '<b>apagada</b>') + ' · ' + r.en_cola + ' en cola.';
+}
+async function igPublica(id, boton){
+  const msg = $('igMensaje');
+  if (boton) { boton.disabled = true; boton.textContent = 'Publicando…'; }
+  if (msg) msg.textContent = 'Publicando en Instagram… puede tardar hasta un minuto.';
+  const r = await llama({ action:'instagram', operation:'publish', ...(id ? { id } : {}) });
+  if (msg) msg.innerHTML = r.ok ? '✅ Publicada.' + (r.enlace ? ' <a href="' + esc(r.enlace) + '" target="_blank" rel="noopener">Ver en Instagram</a>' : '') : '⚠️ ' + esc(r.error || 'No se pudo publicar.');
+  if (boton) { boton.disabled = false; boton.textContent = 'Publicar ahora'; }
+  igPintaCola(); igPintaEstado();
+  return r;
+}
+async function igSubeALaCola(){
+  const msg = $('igMensaje'), pie = $('igPie')?.value || '';
+  if (!IG_FOTOS.length) return null;
+  const fotos = IG_FOTOS.map(f => f.base64);
+  if (fotos.join('').length > IG_MAX_TOTAL_B64) { if (msg) msg.textContent = 'Son demasiadas fotos juntas para una sola subida: elige menos.'; return null; }
+  if (msg) msg.textContent = 'Subiendo a la cola…';
+  const r = await llama({ action:'instagram', operation:'add', pie, fotos });
+  if (!r.ok) { if (msg) msg.textContent = '⚠️ ' + (r.error || 'No se pudo agregar.'); return null; }
+  IG_FOTOS.forEach(f => URL.revokeObjectURL(f.url)); IG_FOTOS = []; igPintaPrevia();
+  if ($('igPie')) { $('igPie').value = ''; $('igPie').dispatchEvent(new Event('input')); }
+  if (msg) msg.textContent = '✅ Agregada a la cola. Sale sola a la 1:00 a. m. o cuando pulses «Publicar ahora».';
+  igPintaCola(); igPintaEstado();
+  return r;
+}
+function cableaInstagram(){
+  const zona = $('igZona'), arch = $('igArchivos'); if (!zona || !arch) return;
+  IG_FOTOS = [];
+  $('igElegir').onclick = () => arch.click();
+  zona.onclick = () => arch.click();
+  zona.onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); arch.click(); } };
+  arch.onchange = () => { const f = [...arch.files]; arch.value = ''; igAgregaArchivos(f); };
+  zona.ondragover = e => { e.preventDefault(); zona.classList.add('sobre'); };
+  zona.ondragleave = () => zona.classList.remove('sobre');
+  zona.ondrop = e => { e.preventDefault(); zona.classList.remove('sobre'); const f = [...(e.dataTransfer?.files || [])]; if (f.length) igAgregaArchivos(f); };
+  const pie = $('igPie'), cuenta = $('igContador');
+  pie.oninput = () => { cuenta.textContent = pie.value.length + ' / 2200'; };
+  $('igCola').onclick = async () => { $('igCola').disabled = true; $('igYa').disabled = true; await igSubeALaCola(); igPintaPrevia(); };
+  $('igYa').onclick = async () => {
+    $('igCola').disabled = true; $('igYa').disabled = true;
+    const r = await igSubeALaCola();
+    if (r && r.id) await igPublica(r.id, null); else igPintaPrevia();
+  };
+  $('igSiguiente').onclick = () => igPublica('', $('igSiguiente'));
+  igPintaEstado(); igPintaCola(); igPintaPrevia();
 }
 
 async function pintaUsuarios(esAdmin){
@@ -19959,7 +20348,7 @@ const AYUDAS = {
   plantillas: ['Plantillas', 'Mensajes aprobados por Meta para escribir fuera de las 24 horas, con botones para que el cliente responda rápido.', ['Ver las aprobadas', 'Crear una nueva (Meta la revisa)'], 'Toda plantilla debe llevar botones, incluida la opción de no querer el servicio.'],
   reminders: ['Tareas', 'Tareas y recordatorios para tu equipo. Cada colaborador los recibe en su WhatsApp dentro de su horario.', ['Asignar una tarea a un colaborador', 'Ver pendientes y completadas', 'Los seguimientos de clientes y tus recordatorios del iPhone están plegados abajo'], 'Los colaboradores contestan LISTO, MAÑANA, EN PROCESO o AYUDA.'],
   canales: ['Canales', 'Conecta y administra tus números y redes: WhatsApp oficial, WhatsApp Web, Instagram y Messenger.', ['Ver si cada canal está conectado', 'Encender o apagar el bot en UN canal'], 'Apagar el bot de un canal no afecta a los demás.'],
-  config: ['Configuración', 'Los ajustes del CRM en secciones, cada una con su explicación.', ['Avisos al supervisor y resumen diario', 'Contactos ignorados', 'Portafolio de la web', 'Número del administrador'], 'Si dudas de un ajuste, lee su explicación antes de cambiarlo.'],
+  config: ['Configuración', 'Los ajustes del CRM en secciones, cada una con su explicación.', ['Avisos al supervisor y resumen diario', 'Contactos ignorados', 'Portafolio de la web', 'Publicar en Instagram', 'Número del administrador'], 'Si dudas de un ajuste, lee su explicación antes de cambiarlo.'],
 };
 // Ayuda tipo Photoshop (12/10): al dejar el cursor quieto sobre una OPCION DEL MENU (o sobre el «?» de la pantalla) sale una tarjeta oscura con el video de la
 // accion arriba y debajo su nombre, una definicion corta, «Mas informacion» y «Ver video rapido» (el mismo video en grande). Si no hay video, no se enseña un hueco.
