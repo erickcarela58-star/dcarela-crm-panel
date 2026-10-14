@@ -167,7 +167,9 @@ body.menu-abierto .velo{display:block}
 /* ---- Contenido: planificador (14/10/2026) ---- */
 .cont-tabs{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 14px}
 .cont-lista{display:flex;flex-direction:column;gap:10px}
-.plan-hoja{max-width:none!important;width:100%;padding:0!important}
+.plan-hoja{max-width:none!important;width:100%;padding:16px 18px!important;box-sizing:border-box}
+.plan-hoja .plan-cabecera h1{font-size:26px;margin:0;line-height:1.2}
+.plan-hoja .plan-cabecera .bajada{max-width:none;margin:6px 0 16px;line-height:1.5}
 .plan-cabecera{display:flex;flex-direction:column;gap:5px;margin-bottom:16px}
 .plan-cabecera h1{margin:0;font-size:26px;letter-spacing:-.7px}
 .plan-cabecera .bajada{margin:0;max-width:900px}
@@ -184,6 +186,7 @@ body.menu-abierto .velo{display:block}
 .plan-rutina .agente-rot{flex-basis:100%}
 .plan-hoja .cont{border-radius:18px;padding:14px;background:var(--panel)}
 .plan-hoja .cont-mini{width:112px;height:140px;flex-basis:112px;border-radius:12px}
+.plan-hoja .cont-sin-imagen .cont-mini{display:none}
 .plan-hoja .cont-lectura{margin:8px 0;padding:10px 12px;border-radius:12px;background:var(--hover)}
 .plan-hoja .cont-lectura summary{font-size:12px;font-weight:650;cursor:pointer}
 .plan-hoja .subir{max-width:none!important;gap:14px;padding:18px;border:1px solid var(--line);border-radius:20px;background:var(--panel)}
@@ -16680,7 +16683,7 @@ function pintaAgente(){
     + '<div class="agente-cab"><span class="agente-ico" aria-hidden="true">🤖</span><div class="agente-tit"><b>Agente de marketing</b><small>'
     +   (CONT.activo ? 'Rutina activa · propuestas a las 7:00 y envíos a la hora programada.' : 'En pausa: no propone ni publica nada (tampoco lo ya aprobado).') + '</small></div>'
     +   (admin ? '<label class="agente-sw"><input type="checkbox" data-cactivo="1"' + (CONT.activo ? ' checked' : '') + '><span>' + (CONT.activo ? 'Encendido' : 'En pausa') + '</span></label>' : '') + '</div>'
-    + '<div class="plan-cifras">' + [[porAprobar, 'Por revisar'], [CONT.items.filter(x => x.estado === 'aprobada').length, 'Programadas'], [CONT.items.filter(x => ['encola','enviada','sin_confirmar'].includes(x.estado)).length, 'Esperando confirmación'], [CONT.items.filter(x => x.estado === 'publicada').length, 'Confirmadas']].map(([n,t]) => '<div class="plan-cifra"><b>' + n + '</b><small>' + esc(t) + '</small></div>').join('') + '</div>'
+    + '<div class="plan-cifras">' + [[porAprobar, 'Listas para aprobar'], [CONT.items.filter(x => x.estado === 'aprobada').length, 'Programadas'], [CONT.items.filter(x => ['encola','enviada','sin_confirmar'].includes(x.estado)).length, 'Esperando confirmación'], [CONT.items.filter(x => x.estado === 'publicada').length, 'Confirmadas']].map(([n,t]) => '<div class="plan-cifra"><b>' + n + '</b><small>' + esc(t) + '</small></div>').join('') + '</div>'
     + '<div class="agente-acc"><button type="button" class="btn-solido" data-cirtab="subir">Subir contenido propio</button><button type="button" class="btn-linea" data-cbiblioteca="1">Biblioteca de fotos</button><button type="button" class="btn-linea" data-cirtab="calendario">Ver calendario</button>'
     + (admin && porAprobar ? '<button type="button" class="btn-linea" data-cirtab="porAprobar">Revisar propuestas (' + porAprobar + ')</button>' : '') + '</div>'
     + '<details class="plan-rutina"' + (CONT.rutinaAbierta ? ' open' : '') + '><summary>Rutina y automatización · ' + esc(aut[1]) + '</summary>'
@@ -16837,7 +16840,7 @@ function contHoras(actual){
 const contNombreEstilo = id => { const e = CONT.estilos.find(s => s.id === id); return e ? e.nombre : ''; };
 function tarjetaContenido(x, admin){
   const abierto = CONT.abiertos.has(x.id);
-  const editable = !['publicada', 'publicando'].includes(x.estado);
+  const editable = !['publicada', 'publicando', 'encola', 'enviada', 'sin_confirmar'].includes(x.estado);
   const acc = [];
   if (admin && ['propuesta', 'rechazada'].includes(x.estado) && x.tiene_imagen) acc.push('<button type="button" class="btn-solido" data-caprueba="' + esc(x.id) + '">Aprobar</button>');
   if (admin && ['propuesta', 'aprobada', 'fallida', 'lista'].includes(x.estado)) acc.push('<button type="button" class="btn-linea" data-crechaza="' + esc(x.id) + '">Rechazar</button>');
@@ -16863,7 +16866,7 @@ function tarjetaContenido(x, admin){
   if (x.estilo_id && contNombreEstilo(x.estilo_id)) marcas.push('<span class="cont-marca">' + esc(contNombreEstilo(x.estilo_id)) + '</span>');
   if (x.tiene_imagen && x.origen !== 'propia') marcas.push(x.foto_hd ? '<span class="cont-marca hd">Foto original en alta</span>' : '<span class="cont-marca baja" title="Se usó la foto de la web (más chica). Sube las originales con DCARELA-HACER-TODO.">Foto de la web</span>');
   const aviso = x.estado === 'lista' && x.canal !== 'paquete_grupos' ? (x.aviso_lista || 'Lista para subir a mano: descárgala y súbela desde la app.') : '';
-  return '<div class="cont">' + (x.miniatura ? '<img class="cont-mini" src="' + esc(x.miniatura) + '" alt="Vista previa" data-cver="' + esc(x.id) + '">' : '<div class="cont-mini"></div>')
+  return '<div class="cont' + (x.miniatura ? '' : ' cont-sin-imagen') + '">' + (x.miniatura ? '<img class="cont-mini" src="' + esc(x.miniatura) + '" alt="Vista previa" data-cver="' + esc(x.id) + '">' : '')
     + '<div class="cont-cuerpo"><div class="cont-cab"><b>' + esc(contDia(x.fecha) + ' · ' + contHora12(x.hora)) + '</b><span class="cotz-est ' + (x.estado === 'publicada' || x.estado === 'aprobada' ? 'aprobada' : x.estado === 'fallida' || x.estado === 'rechazada' || x.estado === 'vencida' ? 'rechazada' : '') + '">' + esc(x.estado === 'lista' && x.canal === 'paquete_grupos' ? 'Lista para grupos' : (CONT_ESTADOS[x.estado] || x.estado)) + '</span>'
     + '<span>' + esc(x.canal_nombre) + '</span>' + (x.evento_nombre ? '<span class="cont-sub">· ' + esc(x.evento_nombre) + '</span>' : '') + '</div>'
     + (marcas.length ? '<div class="cont-marcas">' + marcas.join('') + '</div>' : '')

@@ -1,7 +1,7 @@
 {
-  "version": "2026-10-14-planificador-originales-y-sincronizacion-v191",
+  "version": "2026-10-14-planificador-originales-y-sincronizacion-v192",
   "channel": "crm",
-  "released_at": "2026-10-14T18:41:45.363Z",
+  "released_at": "2026-10-14T18:53:07.774Z",
   "summary": "Planificador compacto, subida con borrador y originales del CRM compartidas con Drive. WhatsApp separa cola, envío y confirmación. Los chats sin número dejan de esperar tres minutos. Tema con sol y luna.",
   "requiere_puente": "2026-10-14-sincronizacion-verificada-v45"
 }
