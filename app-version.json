@@ -1,7 +1,7 @@
 {
-  "version": "2026-10-14-agente-marketing-v186",
+  "version": "2026-10-14-cotizador-impresiones-vision-v187",
   "channel": "crm",
-  "released_at": "2026-10-15T03:30:00.000Z",
-  "summary": "Planificador de contenido (antes «Contenido») con el agente de marketing: autonomía, cuántos creativos y en qué redes (con TikTok), calendario del mes, investigar temporadas y tendencias, subir contenido propio, estilos de flyer (referencia o IA), variaciones y ver en grande. Cotizaciones: pestaña Catálogo de la Caja.",
+  "released_at": "2026-10-14T13:57:00.000Z",
+  "summary": "Cotizador: cada cuadro añade su impresión como otro artículo; llaveros con micas por unidad y una impresión 2x2 de ocho fotos por cada cuatro. Foto digital sin confundir impresiones ni CD. Gemini analiza referencias reales y avisa de adjuntos inválidos; cambiar el pedido exige recalcular.",
   "requiere_puente": "2026-09-28-lectura-v34"
 }

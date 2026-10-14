@@ -19786,7 +19786,7 @@ function abreRecordatorio(c){
 // opciones, se edita el mensaje y se manda por el canal del chat. Despues queda registrada en crm_quotes (lo que luego puede leer la Caja).
 // Un descuento NO se calcula aqui ni en el servidor: lo decide el administrador.
 // COPIA de TABLA_BASE (firebase-functions/src/cotizador-core.js): los tamaños que maneja la Caja. test/v2-cotizar.test.js exige que sean los mismos.
-const COT_TAMS_IMPRESA = ['cualquiera', '2x3', '4x6', '5x7', '6x8', '8x11', '8x12', '9x13', '11x14', '11x17', '13x19', '16x20', '17x22'];
+const COT_TAMS_IMPRESA = ['cualquiera', '2x2', '2x3', '4x6', '5x7', '6x8', '8x11', '8x12', '9x13', '11x14', '11x17', '13x19', '16x20', '17x22'];
 const COT_TAMS_CUADRO = ['', '4x6', '5x7', '6x8', '8x11', '9x13', '11x14', '11x17', '13x19', '16x20', '17x22'];
 const COT_CATS = [['', 'Elige…'], ['xv', 'XV años'], ['cumpleanos', 'Cumpleaños'], ['infantil', 'Infantil'], ['graduacion', 'Graduación'], ['embarazadas', 'Embarazadas']];
 function categoriaParaCotizar(c){
@@ -19801,7 +19801,7 @@ function categoriaParaCotizar(c){
 function abreCotizador(c){
   if (!c) return avisa('Abre una conversación primero');
   const op = (lista, sel0) => lista.map(x => { const [v, t] = Array.isArray(x) ? x : [x, x || 'Cualquiera'];
-    return '<option value="' + esc(v) + '"' + (v === sel0 ? ' selected' : '') + '>' + esc(t) + '</option>'; }).join('');
+    return '<option value="' + esc(v) + '"' + (v === sel0 ? ' selected' : '') + '>' + esc(t === '2x2' ? '2x2 · 8 fotos por impresión' : t) + '</option>'; }).join('');
   const ventanaAbierta = canalDe(c) === 'whatsapp_qr' || !!redSocial(c)
     || (Date.now() - Date.parse(c.last_customer_reply_at || '')) < 24 * 3600000;
   abreModal('<div class="mtapa"><b>Cotizar · ' + esc(nombreDe(c)) + '</b><button class="cerrarm" data-cerrar>×</button></div>'
@@ -19809,11 +19809,12 @@ function abreCotizador(c){
     + '<div class="par"><div class="campo"><label>Tipo de sesión</label><select id="cotCat">' + op(COT_CATS, categoriaParaCotizar(c)) + '</select></div>'
     +   '<div class="campo"><label>Presupuesto del cliente (opcional)</label><input type="number" min="0" id="cotPres" placeholder="RD$"></div></div>'
     + '<div class="par"><div class="campo"><label>Fotos digitales</label><input type="number" min="0" id="cotDig" value="0"></div>'
-    +   '<div class="campo"><label>Llaveros · tazas · fondos digitales</label><div class="cot3"><input type="number" min="0" id="cotLla" value="0" title="Llaveros">'
+    +   '<div class="campo"><label>Llaveros (micas) · tazas · fondos digitales</label><div class="cot3"><input type="number" min="0" id="cotLla" value="0" title="Micas para llaveros de dos caras" aria-label="Llaveros de dos caras">'
     +   '<input type="number" min="0" id="cotTaz" value="0" title="Tazas"><input type="number" min="0" id="cotFon" value="0" title="Fondos digitales"></div></div></div>'
     // Fotos impresas y cuadros: una fila por tamaño (3 fotos 5x7 + 2 fotos 8x11; dos cuadros de tamaños distintos…).
-    + '<div class="campo"><label>Fotos impresas</label><div id="cotImpFilas"></div><button type="button" class="tplchip" id="cotImpMas">+ otro tamaño</button></div>'
+    + '<div class="campo"><label>Fotos impresas adicionales</label><div id="cotImpFilas"></div><button type="button" class="tplchip" id="cotImpMas">+ otro tamaño</button></div>'
     + '<div class="campo"><label>Cuadros</label><div id="cotCuaFilas"></div><button type="button" class="tplchip" id="cotCuaMas">+ otro tamaño</button></div>'
+    + '<div class="hint" id="cotDependencias" role="status" aria-live="polite" style="margin:6px 0 12px"></div>'
     + '<div class="pdfs" style="margin:6px 0 10px"><button class="tplchip" id="cotLee">Leer lo que pidió el cliente</button>'
     +   '<button class="btn-solido" id="cotCalcula">Calcular</button></div>'
     + '<p class="aviso" id="cotAviso" hidden></p><div id="cotOpciones"></div><p class="hint" id="cotPrecios" hidden style="margin:6px 0 0"></p>'
@@ -19836,7 +19837,7 @@ function abreCotizador(c){
     fila.innerHTML = '<input type="number" min="0" class="cn" value="' + (cuantas || 0) + '" style="width:70px" aria-label="Cantidad">'
       + '<select class="ct" aria-label="Tamaño">' + op(tams, tam) + '</select>'
       + '<button type="button" class="cx" aria-label="Quitar esta fila" style="border:0;background:transparent;color:var(--mut);font-size:18px;cursor:pointer">×</button>';
-    fila.querySelector('.cx').onclick = () => { if ($(contId).children.length > 1) fila.remove(); else fila.querySelector('.cn').value = 0; };
+    fila.querySelector('.cx').onclick = () => { if ($(contId).children.length > 1) fila.remove(); else fila.querySelector('.cn').value = 0; actualizaDependencias(); };
     $(contId).appendChild(fila);
   };
   const leeFilas = contId => [...$(contId).querySelectorAll('.cotfila')]
@@ -19852,6 +19853,16 @@ function abreCotizador(c){
     return { categoria: $('cotCat').value || null, digitales: n('cotDig'), impresas, cuadros,
       llaveros: n('cotLla'), tazas: n('cotTaz'), fondos: n('cotFon'), presupuesto: n('cotPres') || null };
   };
+  function actualizaDependencias(){
+    const p = pedidoDelForm(); const porTam = {};
+    for (const tam of p.cuadros) { const t = tam || '11x14'; porTam[t] = (porTam[t] || 0) + 1; }
+    const partes = Object.entries(porTam).map(([tam, cantidad]) => cantidad + (cantidad === 1 ? ' impresión' : ' impresiones') + ' ' + tam + ' para cuadro');
+    if (p.llaveros) { const pliegos = Math.ceil(p.llaveros / 4); partes.push(pliegos + (pliegos === 1 ? ' impresión' : ' impresiones') + ' 2x2 para ' + p.llaveros + ' llavero' + (p.llaveros === 1 ? '' : 's') + ' de dos caras (8 fotos por impresión)'); }
+    $('cotDependencias').textContent = partes.length ? 'Se incluyen automáticamente: ' + partes.join(' · ') + '. El cuadro o la mica y su impresión son artículos separados; si el combo ya los incluye, se cuentan dentro del paquete.' : 'Cada cuadro incluye su impresión automáticamente. Cada impresión 2x2 cubre hasta cuatro llaveros de dos caras.';
+    if (ultimo) { ultimo = null; $('cotEnviar').disabled = true; $('cotOpciones').innerHTML = ''; $('cotMsgCampo').hidden = true; $('cotAviso').hidden = false; $('cotAviso').textContent = 'Cambiaste el pedido. Vuelve a calcular la cotización.'; }
+  }
+  for (const id of ['cotCat', 'cotPres', 'cotDig', 'cotLla', 'cotTaz', 'cotFon', 'cotImpFilas', 'cotCuaFilas']) $(id).addEventListener('input', actualizaDependencias);
+  actualizaDependencias();
   const llenaForm = p => {
     if (!p) return;
     if (p.categoria) $('cotCat').value = p.categoria;
@@ -19866,6 +19877,8 @@ function abreCotizador(c){
     else agregaFila('cotCuaFilas', COT_TAMS_CUADRO, 0, '');
     $('cotLla').value = p.llaveros || 0; $('cotTaz').value = p.tazas || 0; $('cotFon').value = p.fondos || 0;
     if (p.presupuesto) $('cotPres').value = p.presupuesto;
+    // «Leer lo que pidió» acaba de calcular: refrescar el resumen sin invalidar esa respuesta.
+    const calculada = ultimo; ultimo = null; actualizaDependencias(); ultimo = calculada;
   };
   const textoActual = () => ($('cotModo').value === 'una' && ultimo?.textos?.[elegida]) ? ultimo.textos[elegida] : (ultimo?.texto || '');
   const pinta = r => {
@@ -20541,14 +20554,19 @@ function montaPlanificacion(){
   $('planFile').onchange = async e => {
     const files = [...e.target.files]; e.target.value = '';
     for (const f of files) {
-      if (f.type === 'application/pdf') {
+      if (PLAN_IMGS.length >= 3) { avisa('Máximo tres adjuntos', 'Quita uno antes de añadir otro.'); break; }
+      const mime = mimeDeArchivo(f);
+      if (mime === 'application/pdf') {
         if (f.size > 5 * 1024 * 1024) { avisa('PDF demasiado grande', 'El máximo son 5 MB.'); continue; }
         PLAN_IMGS.push({ nombre:f.name, mime:'application/pdf', datos: await leeBase64(f) });
         continue;
       }
-      if (!f.type?.startsWith('image/')) continue;
-      const blob = await comprimeNormal(f);   // no le hace falta la resolucion completa
-      PLAN_IMGS.push({ nombre:f.name, mime: blob.type || 'image/jpeg', datos: await leeBase64(blob) });
+      if (!mime.startsWith('image/')) { avisa('Archivo no compatible', 'Adjunta una imagen o un PDF.'); continue; }
+      try {
+        const imagen = await imagenParaSubir(f, { lado: 2880, maxBytes: 5 * 1024 * 1024 });
+        if (imagen.b64.length > 7000000) throw new Error('La imagen supera el tamaño permitido. Usa una versión de hasta 5 MB.');
+        PLAN_IMGS.push({ nombre:f.name, mime: imagen.mime, datos: imagen.b64 });
+      } catch (err) { avisa('No se pudo preparar la imagen', err.message); }
     }
     pintaPlanCola();
   };
