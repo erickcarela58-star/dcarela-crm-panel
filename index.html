@@ -16878,6 +16878,7 @@ async function imagenParaSubir(archivo, { lado = 2880, maxBytes = 12 * 1024 * 10
   const ctx = c.getContext('2d'); ctx.imageSmoothingQuality = 'high'; ctx.drawImage(bmp, 0, 0, c.width, c.height); if (bmp.close) bmp.close();
   const blob = await new Promise(ok => c.toBlob(ok, 'image/jpeg', 0.92));
   if (!blob) throw new Error('no se pudo preparar la imagen');
+  if (blob.size > maxBytes) throw new Error('La imagen preparada supera ' + Math.round(maxBytes / 1024 / 1024) + ' MB. Usa un JPG de menor tamaño.');
   return { b64: await leeBase64(blob), mime: 'image/jpeg', ancho: c.width, alto: c.height, reducida: true };
 }
 function pintaSubir(cuerpo){
@@ -16910,6 +16911,15 @@ async function cargaMuestrasDeEstilos(){
     }
   } finally { CONT.cargandoMuestras = false; }
 }
+function lecturaReferenciaHtml(analisis, abierto = false){
+  if (!analisis || !analisis.descripcion) return '';
+  const textos = (Array.isArray(analisis.texto_visible) ? analisis.texto_visible : []).slice(0, 10);
+  const colores = (Array.isArray(analisis.colores) ? analisis.colores : []).filter(c => /^#[0-9a-f]{6}$/i.test(c)).slice(0, 6);
+  return '<details class="cont-lectura"' + (abierto ? ' open' : '') + '><summary>Lo que Gemini vio</summary>'
+    + '<p class="cont-sub">' + esc(analisis.descripcion) + '</p>'
+    + '<p class="cont-sub"><b>Texto leído:</b> ' + (textos.length ? textos.map(esc).join(' · ') : 'No encontró texto legible') + '</p>'
+    + (colores.length ? '<p class="cont-sub"><b>Colores:</b> ' + colores.map(esc).join(' · ') + '</p>' : '') + '</details>';
+}
 function pintaEstilos(cuerpo){
   const admin = ROL_ACTUAL === 'admin';
   void cargaMuestrasDeEstilos();
@@ -16917,6 +16927,7 @@ function pintaEstilos(cuerpo){
     + '<div class="estilo-vista">' + (CONT.vistas[e.id] ? '<img src="' + CONT.vistas[e.id] + '" alt="Muestra de ' + esc(e.nombre) + '" data-cvistaestilo="' + esc(e.id) + '">' : e.referencia ? '<img src="' + esc(e.referencia) + '" alt="Referencia" class="estilo-ref">' : '<span class="estilo-muestra" style="--acento:' + esc(e.acento || '#FF7E00') + '"><b>Aa</b></span>') + '</div>'
     + '<div class="estilo-info"><b>' + esc(e.nombre) + '</b><small class="cont-sub">' + esc(CONT_ORIGEN[e.origen] || e.origen || '') + ' · ' + esc(CONT_LAYOUT[e.layout] || e.layout) + ' · botón ' + esc(e.boton === 'glass' ? 'de vidrio' : e.boton) + '</small>'
     + (e.por_que ? '<small class="cont-sub">' + esc(e.por_que) + '</small>' : '')
+    + lecturaReferenciaHtml(e.analisis)
     + '<div class="cont-acc"><button type="button" class="btn-linea" data-cmuestra="' + esc(e.id) + '">' + (CONT.vistas[e.id] ? 'Ver en grande' : 'Ver muestra') + '</button>'
     + (admin ? '<button type="button" class="btn-linea" data-cestilo="' + (e.activo ? 'desactivar' : 'activar') + '" data-id="' + esc(e.id) + '">' + (e.activo ? 'Apagar' : 'Activar') + '</button>' : '')
     + (admin && e.origen !== 'base' ? '<button type="button" class="btn-linea" data-cestilo="borrar" data-id="' + esc(e.id) + '" aria-label="Borrar estilo">×</button>' : '') + '</div></div></div>';
@@ -16924,8 +16935,10 @@ function pintaEstilos(cuerpo){
   cuerpo.innerHTML = '<p class="cfgnota">Los flyers salen con la letra <b>Amandine</b> y con estas variaciones estéticas: el agente reparte las piezas entre los estilos <b>activos</b> (' + activos + '). '
     + 'Todos usan el botón de vidrio (o su variante) en vez del rectángulo naranja. Para que el agente aprenda tu gusto: sube un flyer que te guste como <b>referencia</b> o pídele a Gemini estilos nuevos; los ves en muestra antes de activarlos.</p>'
     + (CONT.amandine ? '' : '<p class="cont-aviso">El servidor todavía no tiene la Amandine (la copia la PC al desplegar): mientras tanto las muestras salen con Marcellus.</p>')
+    + (CONT.ref ? '<div class="cont-form" role="status"><b>Referencia analizada: ' + esc(CONT.ref.nombre) + '</b>' + lecturaReferenciaHtml(CONT.ref.analisis, true) + '</div>' : '')
     + (admin ? '<div class="estilos-acc"><form class="cont-form" data-cref="1"><b>Imagen de referencia</b><small class="cont-sub">Un flyer o una publicación que te guste: Gemini la mira y la convierte en un estilo que el agente dibuja con tus fotos (queda activo).</small>'
-      + '<div class="fila"><input type="file" name="archivo" accept="image/*" required><input name="nombre" maxlength="60" placeholder="Nombre (opcional)"><button class="btn-solido" type="submit">Guardar estilo</button></div></form>'
+      + '<small class="cont-sub">Después verás la descripción, el texto y los colores que reconoció. Formatos JPG, PNG o WebP.</small>'
+      + '<div class="fila"><input type="file" name="archivo" accept="image/jpeg,image/png,image/webp" required><input name="nombre" maxlength="60" placeholder="Nombre (opcional)"><button class="btn-solido" type="submit">Analizar y guardar estilo</button></div></form>'
       + '<form class="cont-form" data-cestilosia="1"><b>Variaciones con IA</b><small class="cont-sub">Gemini propone estilos nuevos a partir de los que ya tienes. Llegan <b>apagados</b>: activa los que te gusten.</small>'
       + '<div class="fila"><select name="cantidad">' + [2, 3, 4, 6].map(n => '<option value="' + n + '"' + (n === 4 ? ' selected' : '') + '>' + n + ' estilos</option>').join('') + '</select><button class="btn-solido" type="submit">Pedir variaciones</button></div></form></div>' : '')
     + (CONT.nuevosIA.length ? '<h3 style="margin:16px 0 6px">Recién propuestos</h3><div class="estilos">' + CONT.nuevosIA.map(n => { const e = CONT.estilos.find(s => s.id === n.id); return e ? tarjeta(e) : ''; }).join('') + '</div>' : '')
@@ -17116,16 +17129,21 @@ async function guardaFormContenido(f){
     return cargaContenido();
   }
   if (f.dataset.cref) {
+    if (boton && boton.disabled) return;
     const archivo = f.querySelector('input[type=file]').files[0]; if (!archivo) return avisa('Elige la imagen de referencia');
     ocupa('Gemini la está mirando…');
-    let im; try { im = await imagenParaSubir(archivo, { lado: 1600, maxBytes: 4 * 1024 * 1024 }); } catch (e) { suelta(); return avisa('No se pudo leer la imagen', e.message); }
-    const r = await llamaCont({ action: 'contenidoEstilos', operation: 'referencia', imagen_b64: im.b64, mime: im.mime, nombre: v.nombre });
-    suelta();
-    if (!r.ok) return avisa('No se pudo guardar el estilo', r.error);
-    if (r.vista) CONT.vistas[r.estilo.id] = r.vista;
-    CONT.nuevosIA = [{ id: r.estilo.id }];
-    avisa('Estilo guardado', '«' + r.estilo.nombre + '» ya está activo');
-    return cargaContenido();
+    try {
+      const im = await imagenParaSubir(archivo, { lado: 1600, maxBytes: 4 * 1024 * 1024 });
+      const r = await llamaCont({ action: 'contenidoEstilos', operation: 'referencia', imagen_b64: im.b64, mime: im.mime, nombre: v.nombre });
+      if (!r.ok) return avisa('No se pudo analizar la referencia', r.error);
+      if (r.vista) CONT.vistas[r.estilo.id] = r.vista;
+      CONT.ref = { nombre: r.estilo.nombre, analisis: r.analisis };
+      CONT.nuevosIA = [{ id: r.estilo.id }];
+      avisa('Referencia analizada y estilo guardado', '«' + r.estilo.nombre + '» ya está activo');
+      return await cargaContenido();
+    } catch (e) {
+      return avisa('No se pudo analizar la referencia', e.message);
+    } finally { suelta(); }
   }
   if (f.dataset.cestilosia) {
     ocupa('Gemini está diseñando…');

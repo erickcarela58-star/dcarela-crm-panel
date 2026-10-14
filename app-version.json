@@ -1,7 +1,7 @@
 {
-  "version": "2026-10-14-cotizador-impresiones-vision-v187",
+  "version": "2026-10-14-planificador-referencias-gemini-v188",
   "channel": "crm",
-  "released_at": "2026-10-14T13:57:00.000Z",
-  "summary": "Cotizador: cada cuadro añade su impresión como otro artículo; llaveros con micas por unidad y una impresión 2x2 de ocho fotos por cada cuatro. Foto digital sin confundir impresiones ni CD. Gemini analiza referencias reales y avisa de adjuntos inválidos; cambiar el pedido exige recalcular.",
+  "released_at": "2026-10-14T16:47:00.000Z",
+  "summary": "Planificador de contenido: Gemini termina el análisis de la imagen de referencia y muestra lo que vio, el texto leído y sus colores. Los errores conservan el archivo para reintentar y no guardan estilos incompletos.",
   "requiere_puente": "2026-09-28-lectura-v34"
 }
