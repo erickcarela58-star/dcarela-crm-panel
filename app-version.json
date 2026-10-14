@@ -1,7 +1,7 @@
 {
-  "version": "2026-10-14-lupa-galeria-v183",
+  "version": "2026-10-14-perfil-y-precios-v184",
   "channel": "crm",
-  "released_at": "2026-10-14T05:00:00.000Z",
-  "summary": "Lupa: flechas para pasar de una foto a otra, descargas con nombre y formato originales, y la foto ya no desaparece al pulsarla.",
+  "released_at": "2026-10-14T12:00:00.000Z",
+  "summary": "Foto de perfil al pulsar el icono del contacto en el chat, y la cotización usa los precios de la sucursal asignada al chat (recalcula antes de enviar si cambiaron).",
   "requiere_puente": "2026-09-28-lectura-v34"
 }

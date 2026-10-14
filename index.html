@@ -740,6 +740,12 @@ a.ayuda{color:var(--enlace)}
 #lupa .lupa-contador{position:absolute;top:18px;left:20px;z-index:2;font:600 13px system-ui;color:#e9edef;
   padding:6px 12px;border-radius:999px;background:rgba(255,255,255,.14);cursor:default}
 #lupa .lupa-contador[hidden]{display:none}
+#lupa .lupa-titulo{position:absolute;top:18px;left:20px;z-index:2;max-width:55%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font:600 15px system-ui;color:#e9edef}
+#lupa .lupa-titulo[hidden]{display:none}
+#lupa.perfil [data-lupa="citar"],#lupa.perfil [data-lupa="reenviar"]{display:none}
+#lupa.perfil img{max-width:min(92vw,720px);max-height:82vh;object-fit:contain}
+.cabecera .avwrap{cursor:zoom-in;border-radius:50%}
+.cabecera .avwrap:focus-visible{outline:2px solid var(--ok);outline-offset:2px}
 #lupa .lupa-nav{position:absolute;top:50%;transform:translateY(-50%);z-index:2;width:46px;height:46px;border-radius:50%;
   display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,.16);color:#e9edef;cursor:pointer;
   -webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);transition:background .15s}
@@ -2601,7 +2607,7 @@ input[type="checkbox"],input[type="radio"]{accent-color:var(--accent)}
   <button type="button" data-lupa="descargar" title="Descargar el archivo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="M7 11l5 5 5-5"/><path d="M5 21h14"/></svg><span>Descargar</span></button>
   <button type="button" class="lupa-x" data-lupa="cerrar" aria-label="Cerrar" title="Cerrar (Esc)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
 </div>
-<span class="lupa-contador" id="lupaContador" hidden></span>
+<span class="lupa-contador" id="lupaContador" hidden></span><span class="lupa-titulo" id="lupaTitulo" hidden></span>
 <button type="button" class="lupa-nav ant" data-lupa="ant" aria-label="Anterior" title="Anterior (←)" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button>
 <button type="button" class="lupa-nav sig" data-lupa="sig" aria-label="Siguiente" title="Siguiente (→)" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg></button>
 <div class="lupa-espera"><span class="lupa-rueda"></span><p class="lupa-carga">Pidiendo el archivo a WhatsApp…</p></div><div class="lupa-fallo"><p>No se pudo mostrar este archivo.</p><small>Pasa a otro con las flechas o ciérralo y vuelve a abrirlo.</small></div><img alt="imagen ampliada"><video controls></video></div>
@@ -5565,7 +5571,7 @@ function abre(c){
   const n = nombreDe(c);
   $('conversacion').innerHTML =
     '<div class="cabecera">'
-    + '<div class="avwrap">' + avatarDe(c, n)
+    + '<div class="avwrap" role="button" tabindex="0" data-foto-perfil="1" title="Ver foto de perfil" aria-label="Ver la foto de perfil de ' + esc(n) + '">' + avatarDe(c, n)
     +   '<span class="canalpin" title="' + esc(CANALES[canalDe(c)].nombre) + '" '
     +     'style="background:' + CANALES[canalDe(c)].color + '">' + CANALES[canalDe(c)].logo + '</span></div>'
     + '<div class="quien-chat"><b>' + esc(n) + '</b>' + subtituloChat(c) + '</div>'
@@ -5723,6 +5729,56 @@ function abreSilencio(c){
     marcaChat(c, { mute: boton.dataset.sil }, 'Chat silenciado');
   };
 }
+
+// ---- Foto de perfil del contacto (clic en su icono, arriba del chat) ----
+// Se abre en la misma lupa que las fotos del chat, sin Responder/Reenviar ni flechas. La foto sale de lo que ya
+// guarda la ficha: una URL (Facebook, Instagram) o una foto bajada por el puente de WhatsApp Web (profile_pic_media_id).
+// El numero OFICIAL de WhatsApp no entrega la foto de sus contactos: ahi se dice, en vez de dejar el clic muerto.
+function fuenteFotoPerfil(c){
+  const url = String(c?.profile_pic_url || c?.avatar_url || c?.metadata?.profile_pic_url || '');
+  if (/^https?:\/\//i.test(url)) return { url };
+  const medio = String(c?.profile_pic_media_id || '');
+  if (medio.startsWith('fbs:')) return { medio };
+  return {};
+}
+async function abreFotoPerfil(c){
+  if (!c) return;
+  const nombre = nombreDe(c);
+  const idConv = c._id || c.id || '';
+  const f = fuenteFotoPerfil(c);
+  if (!f.url && !f.medio) {
+    const k = canalDe(c);
+    if (k === 'whatsapp_qr' && !['sin_foto', 'privada'].includes(String(c.profile_pic_status || ''))) {
+      pideAvatarVisible(idConv);
+      return avisa('Pidiéndole la foto al teléfono…', 'Vuelve a tocar el icono en unos segundos.');
+    }
+    return avisa(nombre + ' no tiene foto de perfil para mostrar',
+      k === 'whatsapp_cloud' ? 'El número oficial de WhatsApp no entrega la foto de sus contactos.'
+        : c.profile_pic_status === 'privada' ? 'La tiene oculta en su privacidad de WhatsApp.' : 'No la tiene o no la comparte.');
+  }
+  const turno = ++LUPA_TURNO;
+  LUPA_ACTUAL = { msgId: '', perfil: nombre };
+  const l = $('lupa');
+  const titulo = $('lupaTitulo'); titulo.textContent = nombre; titulo.hidden = false;
+  l.classList.add('perfil');
+  l.querySelector('.lupa-carga').textContent = 'Cargando la foto de perfil…';
+  abreLupaCargando();
+  const src = f.url || await urlDeMedio(f.medio, idConv);
+  if (turno !== LUPA_TURNO) return;   // se cerro o se abrio otra cosa mientras llegaba
+  if (!src) { cierraLupa(); return avisa('No se pudo traer la foto de perfil', 'Intenta de nuevo en un momento.'); }
+  const img = l.querySelector('img');
+  img.referrerPolicy = 'no-referrer';   // los CDN de Meta rechazan la peticion si ven el origen
+  muestraLupa('img', src);
+}
+document.addEventListener('click', ev => {
+  const av = ev.target?.closest?.('.cabecera .avwrap[data-foto-perfil]');
+  if (av) { ev.preventDefault(); abreFotoPerfil(sel); }
+});
+document.addEventListener('keydown', ev => {
+  if (ev.key !== 'Enter' && ev.key !== ' ') return;
+  const av = ev.target?.closest?.('.cabecera .avwrap[data-foto-perfil]');
+  if (av) { ev.preventDefault(); abreFotoPerfil(sel); }
+});
 
 function pintaCabeceraChat(){
   const cab = $('conversacion')?.querySelector('.cabecera');
@@ -7491,7 +7547,9 @@ function mensajeDeLupa(){
 function cierraLupa(){
   LUPA_TURNO++;
   const l = $('lupa');
-  l.classList.remove('on', 'esperando', 'con-imagen', 'con-video', 'con-error');
+  l.classList.remove('on', 'esperando', 'con-imagen', 'con-video', 'con-error', 'perfil');
+  const titulo = $('lupaTitulo'); if (titulo) { titulo.hidden = true; titulo.textContent = ''; }
+  const carga = l.querySelector('.lupa-carga'); if (carga) carga.textContent = 'Pidiendo el archivo a WhatsApp…';
   l.querySelector('img').removeAttribute('src');
   const v = l.querySelector('video');
   v.pause(); v.removeAttribute('src'); v.load();
@@ -7659,10 +7717,16 @@ $('lupaBarra').onclick = async ev => {
     const l = $('lupa');
     const src = (l.classList.contains('con-video') ? l.querySelector('video') : l.querySelector('img')).getAttribute('src');
     if (!src) return;
+    const perfil = LUPA_ACTUAL.perfil;
     try {
       const blob = await (await fetch(src)).blob();
-      await descargaConNombre(blob, m);
-    } catch (e) { avisa('No se pudo descargar el archivo'); }
+      if (perfil) await descargaConNombre(blob, null, 'Foto de perfil - ' + perfil);
+      else await descargaConNombre(blob, m);
+    } catch (e) {
+      // La foto de perfil de una red social viene de otro dominio que no deja leerla con fetch: se abre en otra pestana para guardarla desde ahi.
+      if (perfil && /^https?:/i.test(src)) window.open(src, '_blank', 'noopener');
+      else avisa('No se pudo descargar el archivo');
+    }
     return;
   }
   if (!m) return avisa('Ese mensaje ya no está abierto', 'Ciérralo y ábrelo de nuevo desde el chat.');
@@ -18791,7 +18855,7 @@ function abreCotizador(c){
     + '<div class="campo"><label>Cuadros</label><div id="cotCuaFilas"></div><button type="button" class="tplchip" id="cotCuaMas">+ otro tamaño</button></div>'
     + '<div class="pdfs" style="margin:6px 0 10px"><button class="tplchip" id="cotLee">Leer lo que pidió el cliente</button>'
     +   '<button class="btn-solido" id="cotCalcula">Calcular</button></div>'
-    + '<p class="aviso" id="cotAviso" hidden></p><div id="cotOpciones"></div>'
+    + '<p class="aviso" id="cotAviso" hidden></p><div id="cotOpciones"></div><p class="hint" id="cotPrecios" hidden style="margin:6px 0 0"></p>'
     + '<div class="campo" id="cotMsgCampo" hidden><label>Cómo se la mandas</label>'
     +   '<select id="cotFormato"><option value="imagen">Imagen tipo ticket (la opción elegida)</option><option value="texto">Mensaje de texto</option><option value="ambos">Imagen y mensaje de texto</option></select>'
     +   '<div id="cotTextoBloque" hidden style="margin-top:8px"><label>Mensaje para el cliente <span style="text-transform:none;letter-spacing:0">(puedes editarlo)</span></label>'
@@ -18856,6 +18920,11 @@ function abreCotizador(c){
       + ((o.agrega || []).length ? '<small>+ ' + esc(o.agrega.join(' · ')) + '</small>' : '')
       + ((o.quita || []).length ? '<small>− ' + esc(o.quita.join(' · ')) + '</small>' : '')
       + (o.nota ? '<small>' + esc(o.nota) + '</small>' : '') + '</label>').join('');
+    // De que sucursal salen los precios (la asignada a ESTE chat) y si vienen de su Caja: si el precio cambia, el siguiente «Calcular» ya trae el nuevo.
+    const pr = r.precios; const lineaPrecios = $('cotPrecios');
+    lineaPrecios.hidden = !(pr && ops.length);
+    if (pr) lineaPrecios.textContent = 'Precios de ' + pr.sucursal + (pr.desde_la_caja ? ' · de su Caja (' + pr.piezas_de_la_caja + ' piezas' + (pr.piezas_de_la_central ? ', ' + pr.piezas_de_la_central + ' de la central' : '') + ')' : ' · la Caja aún no los trae: son los de referencia')
+      + (pr.leido_at ? ' · leídos ' + new Date(pr.leido_at).toLocaleTimeString('es-DO', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : '');
     $('cotMsgCampo').hidden = !ops.length;
     $('cotTexto').value = ops.length ? textoActual() : '';
     $('cotEnviar').disabled = !ops.length;
@@ -18904,9 +18973,17 @@ function abreCotizador(c){
     const porPuente = canalDe(c) === 'whatsapp_qr';
     const manda = cuerpo => llama(porPuente ? { action:'bridgeQueue', conversation_id: conv, ...cuerpo }
       : { action: cuerpo.media_b64 ? 'send' : 'sendText', conversation_id: conv, ...cuerpo });
+    // 0) Los precios pueden haber cambiado en la Caja desde que se calculo: se recalcula con los de AHORA y, si el total elegido ya no es el mismo, no sale nada con el precio viejo.
+    const vista = ultimo.opciones[elegida]?.total;
+    const ahora = await llama({ action:'cotizar', conversation_id: conv, pedido: ultimo.pedido });
+    const nuevo = ahora.ok && ahora.opciones ? ahora.opciones[elegida]?.total : null;
+    if (typeof vista === 'number' && typeof nuevo === 'number' && Math.abs(nuevo - vista) >= 1) {
+      boton.disabled = false; pinta(ahora);
+      return avisa('El precio cambió en la Caja', 'Era RD$' + Math.round(vista).toLocaleString('en-US') + ' y ahora es RD$' + Math.round(nuevo).toLocaleString('en-US') + '. Revisa las opciones y vuelve a elegir.');
+    }
     // 1) El ticket (imagen): lo dibuja el servidor con la opcion elegida; el pie lleva el folio.
     if (formato !== 'texto') {
-      const img = await llama({ action:'cotizacionImagen', conversation_id: conv, pedido: ultimo.pedido, opcion: elegida });
+      const img = await llama({ action:'cotizacionImagen', conversation_id: conv, pedido: ultimo.pedido, opcion: elegida, total_visto: ultimo.opciones[elegida]?.total });
       if (!img.ok) { boton.disabled = false; return avisa('No se pudo armar la imagen', img.error); }
       const pie = 'Aquí está tu cotización (' + img.folio + '). ¿Te la reservo con tu fecha?';
       const r1 = await manda({ media_kind:'image', media_b64: img.png_b64, media_mime: img.mime, media_filename: 'cotizacion-' + img.folio + '.png', body: pie });
@@ -18920,7 +18997,7 @@ function abreCotizador(c){
       if (porPuente) apuntaEnviando({ conv, tipo:'text', body: texto });
     }
     // Registrar despues de enviar: si el registro falla, el cliente ya la recibio y se dice aparte.
-    const g = await llama({ action:'cotizacionGuarda', conversation_id: conv, pedido: ultimo.pedido, opcion: elegida, formato, texto: formato === 'imagen' ? '' : texto });
+    const g = await llama({ action:'cotizacionGuarda', conversation_id: conv, pedido: ultimo.pedido, opcion: elegida, total_visto: ultimo.opciones[elegida]?.total, formato, texto: formato === 'imagen' ? '' : texto });
     cierraModal();
     if (g.ok) { if (g.etapa) c.lifecycle_stage = g.etapa; avisa('Cotización enviada', nombreDe(c) + ' · RD$' + Math.round(g.total).toLocaleString('en-US')); }
     else avisa('Se envió, pero no quedó registrada', g.error);
