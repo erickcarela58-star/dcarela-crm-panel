@@ -1,7 +1,7 @@
 {
-  "version": "2026-10-14-planificador-referencias-gemini-v188",
+  "version": "2026-10-14-cotizador-precios-actuales-v189",
   "channel": "crm",
-  "released_at": "2026-10-14T16:47:00.000Z",
-  "summary": "Planificador de contenido: Gemini termina el análisis de la imagen de referencia y muestra lo que vio, el texto leído y sus colores. Los errores conservan el archivo para reintentar y no guardan estilos incompletos.",
+  "released_at": "2026-10-14T17:05:00.000Z",
+  "summary": "Cotizador: las impresiones usan su producto y precio actual de la Caja, sin sustituirlas por fotos de estudio. Reconoce impresiones sueltas clasificadas como combo y verifica el catálogo en cada cálculo.",
   "requiere_puente": "2026-09-28-lectura-v34"
 }
