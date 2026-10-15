@@ -17195,6 +17195,7 @@ function formularioEstiloContenido(){
 }
 function pintaEstilos(cuerpo){
   const admin = ROL_ACTUAL === 'admin';
+  CONT.muestraCategoria ||= 'infantil';
   /* Las muestras se componen al solicitarlas; abrir una vista no renderiza doce originales. */
   const tarjeta = e => '<div class="estilo' + (e.activo ? '' : ' apagado') + '">'
     + '<div class="estilo-vista">' + (CONT.vistas[e.id] ? '<img src="' + CONT.vistas[e.id] + '" alt="Muestra de ' + esc(e.nombre) + '" data-cvistaestilo="' + esc(e.id) + '">' : e.referencia ? '<img src="' + esc(e.referencia) + '" alt="Referencia" class="estilo-ref">' : '<span class="estilo-muestra" style="--acento:' + esc(e.acento || '#FF7E00') + '"><b>Aa</b></span>') + '</div>'
@@ -17209,7 +17210,7 @@ function pintaEstilos(cuerpo){
     + (CONT.amandine ? '' : '<p class="cont-aviso">El servidor todavía no tiene la Amandine (la copia la PC al desplegar): mientras tanto las muestras salen con Marcellus.</p>')
     + (CONT.ref ? '<div class="cont-form" role="status"><b>Referencia analizada: ' + esc(CONT.ref.nombre) + '</b>' + lecturaReferenciaHtml(CONT.ref.analisis, true) + '</div>' : '')
     + (admin ? formularioEstiloContenido() : '')
-    + '<h3 style="margin:16px 0 6px">Tus plantillas</h3><div class="estilos">' + CONT.estilos.map(tarjeta).join('') + '</div>';
+    + '<div class="plan-seccion-cab"><h3>Tus plantillas</h3><label class="plan-vistas">Categoría de la muestra<select data-cmuestracategoria="1" aria-label="Categoría de la muestra">'+CONT_CATEGORIAS.map(([id,t])=>'<option value="'+id+'"'+(CONT.muestraCategoria===id?' selected':'')+'>'+esc(t)+'</option>').join('')+'</select></label></div><div class="estilos">' + CONT.estilos.map(tarjeta).join('') + '</div>';
 }
 
 // ---- redes: qué sale solo, qué no y conectar TikTok ----
@@ -17334,9 +17335,11 @@ async function clicContenido(ev){
   if (d.ccopia) { const x = CONT.items.concat(CONT.diaItems || []).find(i => i.id === d.ccopia); try { await navigator.clipboard.writeText(x.texto); avisa('Texto copiado', 'Pégalo en la publicación'); } catch (e) { avisa('No se pudo copiar', 'Selecciónalo y cópialo a mano'); } return; }
   if (d.cmuestra) {
     if (CONT.vistas[d.cmuestra]) return verDataUrlEnGrande(CONT.vistas[d.cmuestra], 'estilo-' + d.cmuestra + '.jpg');
+    const categoria=CONT.muestraCategoria||'infantil';
     b.disabled = true; b.textContent = 'Componiendo…';
-    const r = await llamaCont({ action: 'contenidoEstilos', operation: 'vista', id: d.cmuestra });
+    const r = await llamaCont({ action: 'contenidoEstilos', operation: 'vista', id: d.cmuestra, categoria });
     b.disabled = false;
+    if((CONT.muestraCategoria||'infantil')!==categoria)return;
     if (!r.ok || !r.vista) { b.textContent = 'Ver muestra'; return avisa('No se pudo componer la muestra', r.error || 'No hay una foto para la muestra.'); }
     CONT.vistas[d.cmuestra] = r.vista; return pintaContenido();
   }
@@ -17366,6 +17369,7 @@ async function clicContenido(ev){
 }
 async function cambioContenido(ev){
   const t = ev.target;
+  if(t.dataset.cmuestracategoria){CONT.muestraCategoria=t.value;CONT.vistas={};return pintaContenido();}
   if (t.closest('[data-ccrear]')) { guardaCrearContenido(t.closest('form')); if(t.name==='categoria' || t.name.startsWith('foto_') || t.name==='otra_foto')pintaContenido(); return; }
   if (t.dataset.crefarchivo) { const archivo = t.files?.[0]; if (!archivo) return; const s = CONT.refDraft || (CONT.refDraft = {}); if (s.vista) URL.revokeObjectURL(s.vista); s.archivo = archivo; s.vista = URL.createObjectURL(archivo); s.error = null; return pintaContenido(); }
   const subidaForm = t.closest('[data-csube]'); if (subidaForm) guardaBorradorSubida(subidaForm);
