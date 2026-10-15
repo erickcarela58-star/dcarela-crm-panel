@@ -3316,7 +3316,7 @@ function avatarDe(c, n){
 
 function iniciales(n){
   return String(n || '?').replace(/[^\p{L}\p{N} ]/gu,'').trim().split(/\s+/)
-    .slice(0,2).map(p => p[0] || '').join('').toUpperCase() || '#';
+    .slice(0,2).map(p => [...p][0] || '').join('').toUpperCase() || '#';
 }
 // Instante de un valor de fecha, en milisegundos, o NaN si no se puede leer. Acepta la cadena
 // ISO que escriben casi todos los caminos, el Timestamp de Firestore y un numero.
@@ -5570,13 +5570,13 @@ function pintaChats(){
       +   '<span class="canalpin" title="' + esc(canal.nombre) + '" '
       +     'style="background:' + canal.color + '">' + canal.logo + '</span></div>'
       + '<div class="cuerpo">'
-      +   '<div class="fila1"><div class="nom">' + esc(n) + '</div>'
+      +   '<div class="fila1"><div class="nom">' + emojisApple(esc(n)) + '</div>'
       +     '<div class="hora">' + esc(hora(c.last_message_at)) + '</div></div>'
       // En la lista tambien, como WhatsApp Web: mientras escribe, la vista previa del ultimo
       // mensaje se cambia por el aviso, no se le suma al lado.
       +   (escribeAqui
           ? '<div class="prev escribiendo-cliente">' + esc(escribeAqui) + '</div>'
-          : '<div class="prev">' + esc(c.last_message_preview || '') + '</div>')
+          : '<div class="prev">' + emojisApple(esc(c.last_message_preview || '')) + '</div>')
       +   '<div class="marcas">' + marcas.join('') + '</div>'
       + '</div></div>';
   }).join('');
@@ -5789,7 +5789,7 @@ function abre(c){
     + '<div class="avwrap" role="button" tabindex="0" data-foto-perfil="1" title="Ver foto de perfil" aria-label="Ver la foto de perfil de ' + esc(n) + '">' + avatarDe(c, n)
     +   '<span class="canalpin" title="' + esc(CANALES[canalDe(c)].nombre) + '" '
     +     'style="background:' + CANALES[canalDe(c)].color + '">' + CANALES[canalDe(c)].logo + '</span></div>'
-    + '<div class="quien-chat"><b>' + esc(n) + '</b>' + subtituloChat(c) + '</div>'
+    + '<div class="quien-chat"><b>' + emojisApple(esc(n)) + '</b>' + subtituloChat(c) + '</div>'
     + (c.human_handoff_notification_status ? '<span class="etiqueta" data-aviso-handoff="1" title="Aviso interno al teléfono de avisos (Configuración), por la línea de WhatsApp Web conectada. Enviado no significa leído.">'
       + esc(({pending:'Aviso pendiente',sent:'Aviso enviado',failed:'Aviso fallido',skipped:'Aviso no enviado'})[c.human_handoff_notification_status] || 'Aviso pendiente') + '</span>' : '')
     + '<button class="modo" id="btnModo"></button>'
@@ -5810,7 +5810,8 @@ function abre(c){
     // Dos opciones, no una: «Recordatorio» (acordarse de escribirle) y «Agenda» (agendarle la sesion YA, con aviso al cliente).
     + '<div class="mas" id="masAgenda"><button class="adj" id="btnAgendar" title="Agendar un recordatorio" aria-label="Agendar">'
     +   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3.500" y="5" width="17" height="15.500" rx="3.600"/><path d="M3.500 10h17M8 3v3.600M16 3v3.600"/><circle cx="8.500" cy="14" r=".8" fill="currentColor" stroke="none"/><circle cx="12" cy="14" r=".8" fill="currentColor" stroke="none"/></svg></button>'
-    +   '<div class="menu"><button data-ag="recordatorio">Recordatorio</button><button data-ag="agenda">Agenda · agendar sesión</button></div></div>'
+    +   '<div class="menu"><button data-ag="recordatorio">Recordatorio</button><button data-ag="agenda">Agenda · agendar sesión</button>'
+    +   ((c.scheduled_at || c.tentative_date) ? '<button data-ag="editar">Editar reservación</button>' : '') + '</div></div>'
     + '<div class="mas" id="mas"><button aria-label="Más opciones">⋯</button>'
     +   '<div class="menu"><button data-mas="recordar">Añadir recordatorio</button>'
     +   '<button data-mas="contacto">Guardar contacto</button>'
@@ -6345,7 +6346,7 @@ function cableaChat(c){
     menuAg.querySelector('.menu').onclick = ev => {
       const b = ev.target.closest('[data-ag]'); if (!b) return;
       menuAg.classList.remove('on');
-      abreRecordatorio(sel);
+      abreRecordatorio(sel, { editarReserva:b.dataset.ag === 'editar' });
       // «Agenda» abre el mismo cuadro ya en modo reservacion: una sola forma de guardar, dos entradas.
       if (b.dataset.ag === 'agenda') { const sw = $('recEsReserva'); sw.checked = true; sw.dispatchEvent(new Event('change')); }
     };
@@ -6442,6 +6443,7 @@ function cableaChat(c){
           // es lo que deja el mensaje visible en el hilo. Ver miniaturaParaEnviar.
           ...(a.thumb ? { media_thumb_b64: a.thumb } : {}),
           body: (t && i === pieEnQr) ? t : '',
+          ...(citando?.wamid && i === 0 ? { reply_to_wamid:citando.wamid } : {}),
         });
         if (r.ok) {
           salieronQr++;
@@ -6455,7 +6457,8 @@ function cableaChat(c){
       sueltaCola();
       pintaCola();
       if (!falloQr && t && pieEnQr < 0) {
-        const r = await llama({ action:'bridgeQueue', conversation_id: conv, body: t });
+        const r = await llama({ action:'bridgeQueue', conversation_id: conv, body: t,
+          ...(citando?.wamid ? { reply_to_wamid:citando.wamid } : {}) });
         if (!r.ok) falloQr = r; else apuntaEnviando({ conv, tipo:'text', body: t });
       }
       env.disabled = false;
@@ -6508,6 +6511,11 @@ function cableaChat(c){
         action:'send', conversation_id: conv,
         media_kind: a.tipo, ...adj.cuerpo, media_filename: a.nombre, media_mime: a.mime,
         body: (t && i === ultimoConPie) ? t : '',
+        ...(citando?.wamid && i === ultimoConPie ? {
+          reply_to_wamid: citando.wamid,
+          reply_snippet: String(citando.body || '').slice(0, 200),
+          reply_sender: citando.direction === 'in' ? 'customer' : 'agent',
+        } : {}),
         // Los botones exigen texto: si el pie fue a otro adjunto, este va sin nada que
         // decir y Meta rechazaria el mensaje entero. En ese caso se manda sin botones.
         ...(a.botones && t && i === ultimoConPie ? { botones: a.botones } : {}),
@@ -7276,6 +7284,7 @@ function activaEmojisApple(blob, meta){
   EMOJI_APPLE.estado = 'listo';
   // Lo que ya estaba pintado con el emoji del sistema se repinta con la hoja.
   try { if (sel && typeof pintaMensajes === 'function') pintaMensajes(); } catch (e) { /* nada */ }
+  try { if (typeof pintaChats === 'function') pintaChats(); } catch (e) { /* nada */ }
   const pop = document.getElementById('emojiPop');
   if (pop && pop.classList.contains('on')) { pop.classList.remove('on'); abreEmojis(); }
 }
@@ -16783,7 +16792,7 @@ function periodoListaContenido(){
   return { mes, desde: mes+'-01', hasta: mes+'-'+new Date(Date.UTC(a,m,0)).getUTCDate() };
 }
 function borradorCrearContenido(){
-  return CONT.crear || (CONT.crear = {mes:periodoListaContenido().mes,cantidad:1,categorias:new Set(['infantil']),formatos:new Set(['imagen_4x5','imagen_9x16']),canales:new Set(['instagram','whatsapp_estado']),modelo:CONT.modelo || 'gemini-4-argon',estilo_id:'',brief:'',objetivo:'consultas',publico:'',diferencial:'',evitar:'',paso:1});
+  return CONT.crear || (CONT.crear = {mes:periodoListaContenido().mes,cantidad:1,categorias:new Set(['infantil']),formatos:new Set(['imagen_4x5','imagen_9x16']),canales:new Set(['instagram','whatsapp_estado']),modelo:CONT.modelo || 'gemini-4-argon',estilo_id:'',brief:'',objetivo:'consultas',publico:'',diferencial:'',evitar:'',logosPropios:{},paso:1});
 }
 async function cargaModelosContenido(){
   if (CONT.modelosCargando || CONT.modelos) return;
@@ -16805,13 +16814,15 @@ async function cargaModelosContenido(){
 function guardaCrearContenido(f){
   const c = borradorCrearContenido(); if(c.enviando)return;
   const v = Object.fromEntries(new FormData(f).entries());
-  const anterior=JSON.stringify([c.mes,c.cantidad,c.modelo,c.estilo_id,c.brief,c.objetivo,c.publico,c.diferencial,c.evitar,c.otraFoto,c.fotos,[...c.categorias],[...c.formatos],[...c.canales]]);
+  const anterior=JSON.stringify([c.mes,c.cantidad,c.modelo,c.estilo_id,c.brief,c.objetivo,c.publico,c.diferencial,c.evitar,c.otraFoto,c.fotos,c.logosPropios,[...c.categorias],[...c.formatos],[...c.canales]]);
+  const fotosAnteriores={...(c.fotos||{})};
   Object.assign(c,{mes:v.mes || c.mes,cantidad:Number(v.cantidad)||1,modelo:v.modelo || c.modelo,estilo_id:v.estilo_id ?? c.estilo_id,brief:v.brief || '',otraFoto:v.otra_foto==='on'});
   for(const k of ['objetivo','publico','diferencial','evitar']) if(v[k] !== undefined)c[k]=String(v[k]);
   c.fotos = Object.fromEntries(CONT_CATEGORIAS.map(([id])=>[id,v['foto_'+id] || '']));
+  c.logosPropios=Object.fromEntries(CONT_CATEGORIAS.filter(([id])=>ROL_ACTUAL==='admin'&&c.fotos[id]&&fotosAnteriores[id]===c.fotos[id]&&v['logo_propio_'+id]==='on').map(([id])=>[id,c.fotos[id]]));
   if(!c.baseId) for(const [name,key] of [['categoria','categorias'],['formato','formatos'],['plataforma','canales']]) c[key] = new Set([...f.querySelectorAll('input[name="'+name+'"]:checked')].map(x=>x.value));
-  const actual=JSON.stringify([c.mes,c.cantidad,c.modelo,c.estilo_id,c.brief,c.objetivo,c.publico,c.diferencial,c.evitar,c.otraFoto,c.fotos,[...c.categorias],[...c.formatos],[...c.canales]]);
-  if(anterior!==actual){c.solicitud=null;guardaTareaContenido();}
+  const actual=JSON.stringify([c.mes,c.cantidad,c.modelo,c.estilo_id,c.brief,c.objetivo,c.publico,c.diferencial,c.evitar,c.otraFoto,c.fotos,c.logosPropios,[...c.categorias],[...c.formatos],[...c.canales]]);
+  if(anterior!==actual){c.solicitud=null;c.error=null;guardaTareaContenido();}
 }
 function fotosCrearContenido(c){
   if(c.baseId && !c.otraFoto)return '<p class="cont-sub">Se conserva la original de la pieza. Marca «Cambiar también la foto» para explorar otras.</p>';
@@ -16820,7 +16831,8 @@ function fotosCrearContenido(c){
     const ordenadas=[...fotos].sort((a,b)=>Number(b.id===seleccion)-Number(a.id===seleccion));
     const tarjeta=(f,i)=>{const rechazo=c.incidencia?.detalles?.foto_id===f.id;return '<label class="plan-original-opcion'+(rechazo?' rechazada':'')+'"><input type="radio" name="foto_'+id+'" value="'+esc(f.id)+'"'+(f.id===seleccion?' checked':'')+'>'+(f.preview?'<img src="'+esc(f.preview)+'" loading="lazy" alt="Original '+(i+1)+' de '+esc(t)+'">':'<span>Original '+(i+1)+'</span>')+'<span>'+Number(f.width)+' × '+Number(f.height)+' px</span><span class="plan-foto-estado">'+(rechazo?'Rechazada en el pedido anterior':'Calidad pendiente de validar')+'</span></label>';};
     return '<section><div class="plan-original-cab"><b>'+esc(t)+'</b><span class="cont-sub">'+fotos.length+' originales en el catálogo</span></div><p class="plan-uso-foto">'+(seleccion?'Original elegida manualmente. Se revisará antes de usarla.':'Sin foto fijada: se buscará una original apta para esta categoría.')+'</p>'
-      + (fotos.length?'<div class="plan-originales-grid"><label class="plan-original-opcion plan-original-auto"><input type="radio" name="foto_'+id+'" value=""'+(!seleccion?' checked':'')+'><b>Buscar una apta</b><span>Se descartan fotos con marcas, desenfoque o poca resolución.</span></label>'+ordenadas.slice(0,5).map(tarjeta).join('')+'</div>'+(ordenadas.length>5?'<details class="plan-opciones"><summary>Ver '+(ordenadas.length-5)+' originales más</summary><div class="plan-originales-grid">'+ordenadas.slice(5).map(tarjeta).join('')+'</div></details>':''):'<div class="plan-vacio">Falta una original de esta categoría. <button type="button" class="btn-linea" data-cbiblioteca="1">Subir a Fototeca</button></div>')+'</section>';
+      + (fotos.length?'<div class="plan-originales-grid"><label class="plan-original-opcion plan-original-auto"><input type="radio" name="foto_'+id+'" value=""'+(!seleccion?' checked':'')+'><b>Buscar una apta</b><span>Se descartan fotos con marcas, desenfoque o poca resolución.</span></label>'+ordenadas.slice(0,5).map(tarjeta).join('')+'</div>'+(ordenadas.length>5?'<details class="plan-opciones"><summary>Ver '+(ordenadas.length-5)+' originales más</summary><div class="plan-originales-grid">'+ordenadas.slice(5).map(tarjeta).join('')+'</div></details>':''):'<div class="plan-vacio">Falta una original de esta categoría. <button type="button" class="btn-linea" data-cbiblioteca="1">Subir a Fototeca</button></div>')
+      + (ROL_ACTUAL==='admin'&&seleccion?'<label class="plan-uso-foto"><input type="checkbox" name="logo_propio_'+id+'"'+(c.logosPropios?.[id]===seleccion?' checked':'')+'> Confirmo que la marca visible en esta foto es el logo de D’ Carela. Se conserva en el flyer; otras marcas siguen bloqueadas.</label>':'')+'</section>';
   }).join('')+'</div>';
 }
 function categoriasSinOriginalCrear(c){
@@ -16844,7 +16856,7 @@ function pintaCrearContenido(cuerpo){
     + '<fieldset'+disabled+(paso!==2?' hidden':'')+'><legend>La foto manda</legend><p class="plan-intro">Elige una original nítida y una dirección visual. La composición usa tu fotografía completa, sin cambiar rostros ni generar otra persona.</p><label>Dirección visual<select name="estilo_id"><option value="">Composición nueva para estas fotografías</option>'+ref.map(e=>'<option value="'+esc(e.id)+'"'+(e.id===c.estilo_id?' selected':'')+'>'+esc(e.nombre)+(e.origen==='referencia'?' · de tu referencia':'')+'</option>').join('')+'</select></label>'
     + (referencia?'<section class="plan-ref-compara"><b>Referencia: '+esc(referencia.nombre)+'</b>'+(imagenRef?'<img src="'+esc(imagenRef)+'" alt="Referencia del diseño seleccionado">':'')+'<p class="plan-ayuda">Se toman la jerarquía, las formas, los espacios y el color. Tu original sustituye la foto de la referencia; se adapta al formato elegido.</p>'+lecturaReferenciaHtml(referencia.analisis)+'</section>':'<p class="plan-ayuda">¿Tienes un flyer como referencia? <button type="button" class="btn-linea" data-cirtab="estilos">Analizar referencia</button></p>')
     + (c.baseId?'<label class="red-chip"><input type="checkbox" name="otra_foto"'+(c.otraFoto?' checked':'')+'> Cambiar también la foto</label>':'') + fotosCrearContenido(c)
-    + (CONT.originalesError?'<p class="cont-aviso">'+esc(CONT.originalesError)+'</p>':'')+'<p class="plan-ayuda">Las miniaturas son solo para elegir. El render usa el archivo original y descarta fotos con marcas, desenfoque o resolución insuficiente.</p><div class="plan-modelo-linea"><label>Modelo de Gemini<select name="modelo" required'+(!CONT.modelos?.length?' disabled':'')+'>'+((CONT.modelos||[]).map(m=>'<option value="'+esc(m.id)+'"'+(m.id===c.modelo?' selected':'')+'>'+esc(m.nombre)+'</option>').join('') || '<option>Consultando modelos…</option>')+'</select></label>'+(ROL_ACTUAL==='admin'?'<button type="button" class="btn-linea" data-cmodelodefault="1">Guardar como predeterminado</button>':'')+'</div><details class="plan-opciones"><summary>Disponibilidad por categoría</summary><p class="plan-ayuda">'+CONT_CATEGORIAS.map(([id,t])=>esc(t)+': '+Number(CONT.originales?.[id]||0)).join(' · ')+'</p><p class="plan-ayuda">Son archivos disponibles en el catálogo, pendientes del control de calidad para cada creación.</p><button type="button" class="btn-linea" data-cbiblioteca="1">Subir más originales</button></details></fieldset>'
+    + (CONT.originalesError?'<p class="cont-aviso">'+esc(CONT.originalesError)+'</p>':'')+'<p class="plan-ayuda">Las miniaturas son solo para elegir. El render usa el archivo original. Si el sello es el logo de D’ Carela, el administrador puede confirmarlo en esa foto; nitidez y resolución se siguen revisando.</p><div class="plan-modelo-linea"><label>Modelo de Gemini<select name="modelo" required'+(!CONT.modelos?.length?' disabled':'')+'>'+((CONT.modelos||[]).map(m=>'<option value="'+esc(m.id)+'"'+(m.id===c.modelo?' selected':'')+'>'+esc(m.nombre)+'</option>').join('') || '<option>Consultando modelos…</option>')+'</select></label>'+(ROL_ACTUAL==='admin'?'<button type="button" class="btn-linea" data-cmodelodefault="1">Guardar como predeterminado</button>':'')+'</div><details class="plan-opciones"><summary>Disponibilidad por categoría</summary><p class="plan-ayuda">'+CONT_CATEGORIAS.map(([id,t])=>esc(t)+': '+Number(CONT.originales?.[id]||0)).join(' · ')+'</p><p class="plan-ayuda">Son archivos disponibles en el catálogo, pendientes del control de calidad para cada creación.</p><button type="button" class="btn-linea" data-cbiblioteca="1">Subir más originales</button></details></fieldset>'
     + '<fieldset'+disabled+(paso!==3?' hidden':'')+'><legend>Prepara la entrega</legend><p class="plan-intro">Primero revisas foto, gancho y diseño. La creación manual deja todas las piezas pendientes de tu aprobación.</p><div class="plan-control-grupo"><strong>Tamaños</strong><div class="agente-redes">'+chips([['imagen_4x5','Feed · 4:5'],['imagen_9x16','Historia · 9:16'],['imagen_1x1','Cuadrado · 1:1']],'formato',c.formatos,!!c.baseId)+'</div></div><div class="plan-control-grupo"><strong>Destinos</strong><div class="agente-redes">'+chips(CONT.canales.filter(x=>x.id!=='paquete_grupos').map(x=>[x.id,x.nombre]),'plataforma',c.canales,!!c.baseId)+'</div></div><p class="plan-ayuda">WhatsApp usa el número oficial 849-524-5620. No se inventan precios, promociones ni disponibilidad.</p></fieldset>'
     + (c.error || CONT.modelosError?'<p class="cont-aviso" role="alert">'+esc(c.error || CONT.modelosError)+'</p>'+ (CONT.modelosError?'<button type="button" class="btn-linea" data-cmodelosretry="1">Volver a consultar modelos</button>':''):'')
     + '<div class="plan-resumen"><span>Mes<b>'+esc(c.mes)+'</b></span><span>Ideas<b>'+c.cantidad+' × '+c.categorias.size+' categoría'+(c.categorias.size===1?'':'s')+'</b></span><span>Formatos<b>'+c.formatos.size+'</b></span><span>Modelo<b>'+esc(c.modelo || 'Consultando…')+'</b></span></div><div class="plan-footer"><p class="plan-ayuda">'+(c.enviando?'El trabajo continúa en el servidor. Puedes salir de esta vista y volver a consultar su progreso.':'Las propuestas se guardan para revisión. Tú decides cuáles programar.')+'</p><div class="cont-acc">'+(paso>1?'<button type="button" class="btn-linea" data-cpaso="'+(paso-1)+'"'+disabled+'>Atrás</button>':'<button type="button" class="btn-linea" data-cnuevolote="1"'+disabled+'>Empezar de nuevo</button>')+(paso<3?'<button type="button" class="btn-solido" data-cpaso="'+(paso+1)+'"'+disabled+'>Continuar</button>':'<button type="submit" class="btn-solido"'+(c.enviando || !CONT.modelos?.length?' disabled':'')+'>'+(c.enviando?'Preparación en curso…':c.baseId?'Preparar nuevas variaciones':'Preparar propuestas')+'</button>')+'</div></div></form>';
@@ -16920,7 +16932,7 @@ async function generaLoteContenido(f){
   c.enviando=true;c.error=null;if(CONT.tab==='crear')pintaContenido();
   let r;
   try {
-    const payload=c.baseId?{action:'contenidoVariaciones',id:c.baseId,cantidad:c.cantidad,otra_foto:c.otraFoto,mes:c.mes,modelo:c.modelo,brief:briefCrearContenido(c),estilo_id:c.estilo_id,fotos_por_categoria:c.fotos}:{action:'contenidoGenera',creativo:true,mes:c.mes,categorias:[...c.categorias],cantidad:c.cantidad,formatos:[...c.formatos],canales:[...c.canales],estilo_id:c.estilo_id,modelo:c.modelo,brief:briefCrearContenido(c),fotos_por_categoria:c.fotos};
+    const payload=c.baseId?{action:'contenidoVariaciones',id:c.baseId,cantidad:c.cantidad,otra_foto:c.otraFoto,mes:c.mes,modelo:c.modelo,brief:briefCrearContenido(c),estilo_id:c.estilo_id,fotos_por_categoria:c.fotos,logos_propios:c.logosPropios||{}}:{action:'contenidoGenera',creativo:true,mes:c.mes,categorias:[...c.categorias],cantidad:c.cantidad,formatos:[...c.formatos],canales:[...c.canales],estilo_id:c.estilo_id,modelo:c.modelo,brief:briefCrearContenido(c),fotos_por_categoria:c.fotos,logos_propios:c.logosPropios||{}};
     if(!c.solicitud)c.solicitud={idempotency_key:crypto.randomUUID(),payload};
     guardaTareaContenido();
     r=await llamaCont({action:'contenidoTarea',operation:'crear',...c.solicitud});
@@ -18351,7 +18363,7 @@ async function decideDescartes(ids, decision){
 
 // Preparar = dejar todo puesto y llevar a donde se simula o se confirma. No envia. `linea` = 'puente' prepara la
 // campaña para el segundo numero (texto libre, sin plantillas); la propuesta queda ligada para excluir a quien dijo que no.
-function preparaPropuesta(p, linea){
+async function preparaPropuesta(p, linea){
   const a = p.accion || {};
   MK.preparada = a.tipo === 'campana' ? { id: p.id, titulo: p.titulo, linea: linea === 'puente' ? 'puente' : 'oficial', etiqueta: a.etiqueta || '' } : null;
   const texto = a.texto || p.texto || '';
@@ -18370,7 +18382,11 @@ function preparaPropuesta(p, linea){
   poner('bcCategoria', a.categoria || '');
   const modo = $('bcModo');
   const libre = a.modo !== 'template' || linea === 'puente';
-  if (modo) { modo.value = libre ? 'freeform' : 'template'; modo.onchange && modo.onchange(); }
+  if (modo) { modo.value = libre ? 'freeform' : 'template'; if (modo.onchange) await modo.onchange(); }
+  if (!libre && a.template_name) {
+    const i = ($('bcTpl')?._validas || []).findIndex(t => t.template_name === a.template_name);
+    if (i >= 0) $('bcTpl').value = String(i);
+  }
   if (libre) poner('bcTexto', texto);
   const sug = $('bcSugerido');
   if (sug) {
@@ -18379,7 +18395,7 @@ function preparaPropuesta(p, linea){
     sug.querySelector('.mk-sug-nota').hidden = libre;
   }
   document.querySelector('#vista-campanas .prompt')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  avisa(linea === 'puente' ? 'Campaña del 5644 preparada' : 'Campaña preparada', 'Pulsa «Simular envío»: verás a quién le llegaría antes de que salga nada.');
+  await simulaBroadcast();
 }
 
 function cableaMarketing(){
@@ -18407,8 +18423,8 @@ function cableaMarketing(){
     }
     const p = MK.propuestas.find(x => x.id === id);
     if (!p) return;
-    if (acc === 'preparar') { if (await decideMarketing(id, 'aceptar')) preparaPropuesta(p); return; }
-    if (acc === 'preparar5644') { if (await decideMarketing(id, 'aceptar')) preparaPropuesta(p, 'puente'); return; }
+    if (acc === 'preparar') { if (await decideMarketing(id, 'aceptar')) await preparaPropuesta(p); return; }
+    if (acc === 'preparar5644') { if (await decideMarketing(id, 'aceptar')) await preparaPropuesta(p, 'puente'); return; }
     if (acc === 'meta') {
       const a = p.accion || {};
       b.disabled = true; b.textContent = 'Enviando…';
@@ -18832,6 +18848,7 @@ async function llenaPlantillasBc(){
   // y es mejor no ofrecerlas que dejar que el operador elija una que sera rechazada.
   const validas = lista.filter(t => String(t.meta_status||'').toUpperCase() === 'APPROVED'
     && t.contains_opt_out === true && t.active !== false);
+  sel2._validas = validas;
   if (!validas.length) {
     sel2.innerHTML = '<option value="">— ninguna disponible —</option>';
     $('bcTplAviso').textContent = 'No hay ninguna plantilla aprobada que incluya opción de baja (STOP). '
@@ -18841,7 +18858,6 @@ async function llenaPlantillasBc(){
   }
   sel2.innerHTML = validas.map((t,i) =>
     '<option value="' + i + '">' + esc(t.display_name || t.template_name) + '</option>').join('');
-  sel2._validas = validas;
   $('bcTplAviso').textContent = validas.length + ' plantilla(s) aptas para difusión.';
 }
 
@@ -18878,10 +18894,10 @@ async function simulaBroadcast(){
   const r = await llama(cuerpo);
   $('bcSimular').disabled = false;
   if (!r.ok) { $('bcSalida').innerHTML = ''; return avisa('No se pudo simular', r.error); }
-  AUDIENCIA = r;
+  AUDIENCIA = { ...r, excluidosManuales:new Set() };
   const destinos = r.targets || r.sample || [];
   $('bcSalida').innerHTML = '<div class="propuesta">'
-    + '<div class="tapa"><b>' + Number(r.found || 0) + ' contactos recibirían este mensaje</b></div>'
+    + '<div class="tapa"><b id="bcCuenta">' + Number(r.found || 0) + ' contactos seleccionados</b></div>'
     + '<div class="cuerpo">'
     +   '<div class="cambio"><div class="k">Revisados</div>' + Number(r.scanned || 0) + '</div>'
     +   '<div class="cambio"><div class="k">Excluidos por baja o permiso</div>' + Number(r.skippedOptOut || 0) + '</div>'
@@ -18889,16 +18905,18 @@ async function simulaBroadcast(){
         + Number(r.excluidosPorContexto || 0) + ' fuera por lo que dijeron en su conversación</div>' : '')
     +   (destinos.length
         // Acordeon: cada destinatario se puede abrir para revisar su conversacion antes de dar el OK (que el criterio del agente se pueda comprobar).
-        ? '<details class="grupo" style="margin:6px 0"><summary>A quién le llega <span class="nota">' + destinos.length + ' contacto(s) · toca uno para ver su conversación</span></summary><div class="destinos" style="margin-top:8px">'
-          + destinos.slice(0,200).map(t => '<span>' + (t.id ? '<button type="button" class="btn-linea" data-bcabre="' + esc(t.id) + '" style="padding:2px 8px;font-size:12px">' + esc(t.name || t.phone) + '</button>' : esc(t.name || t.phone))
-            + ' · +' + esc(t.phone) + '</span>').join('')
-          + (destinos.length > 200 ? '<span>… y ' + (destinos.length - 200) + ' más</span>' : '')
+         ? '<details class="grupo" open style="margin:6px 0"><summary>Revisar destinatarios <span class="nota">' + destinos.length + ' · abre el chat o quita a quien no corresponda</span></summary><div class="destinos" style="margin-top:8px">'
+           + destinos.map(t => '<div class="bc-destino" data-bcid="' + esc(t.id) + '" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:9px 0;border-bottom:1px solid var(--line)">'
+             + '<div style="flex:1;min-width:180px"><b>' + esc(t.name || t.phone) + '</b><div class="nota">' + esc([t.etapa,t.categoria].filter(Boolean).join(' · ')) + '</div>'
+             + (t.resumen ? '<div class="nota">' + esc(t.resumen) + '</div>' : '') + '</div>'
+             + '<button type="button" class="btn-linea" data-bcabre="' + esc(t.id) + '">Ver chat</button>'
+             + '<button type="button" class="btn-linea" data-bcquitar="' + esc(t.id) + '" aria-label="Quitar destinatario">Quitar</button></div>').join('')
           + '</div></details>'
         : '<p class="aviso" style="margin:0">Nadie cumple estos filtros. Con «mensaje libre» solo entran '
           + 'quienes escribieron en las últimas 24 horas.</p>')
     + '</div>'
     + (Number(r.found || 0) > 0
-      ? '<div class="patas">' + (r.linea === 'puente' ? '' : '<button class="btn-solido" id="bcEnviar">Enviar a ' + Number(r.found) + '</button>')
+       ? '<div class="patas">' + (r.linea === 'puente' ? '' : '<button class="btn-solido" id="bcEnviar">Enviar a ' + Number(r.found) + '</button>')
         // El segundo numero --el puente de WhatsApp Web-- no pasa por la API oficial, asi
         // que no le aplican ni la ventana de 24 h ni las plantillas: puede mandar texto
         // libre. Lo que si le aplica, y con mas motivo, es el anti-baneo, porque ahi el
@@ -18909,6 +18927,19 @@ async function simulaBroadcast(){
       : '')
     + '</div>';
   $('bcSalida').onclick = ev => {
+    const quitar = ev.target.closest('[data-bcquitar]');
+    if (quitar) {
+      const id = quitar.dataset.bcquitar, excluidos = AUDIENCIA?.excluidosManuales;
+      if (!excluidos) return;
+      if (excluidos.has(id)) excluidos.delete(id); else excluidos.add(id);
+      quitar.textContent = excluidos.has(id) ? 'Reincluir' : 'Quitar';
+      quitar.closest('[data-bcid]')?.classList.toggle('atenuado', excluidos.has(id));
+      const quedan = (AUDIENCIA.targets || []).filter(t => !excluidos.has(String(t.id))).length;
+      $('bcCuenta').textContent = quedan + ' contactos seleccionados';
+      if ($('bcEnviar')) { $('bcEnviar').disabled = !quedan; $('bcEnviar').textContent = 'Enviar a ' + quedan; }
+      if ($('bcPuente')) $('bcPuente').disabled = !quedan;
+      return;
+    }
     const b = ev.target.closest('[data-bcabre]'); if (!b) return;
     const c = buscaConv(b.dataset.bcabre);
     if (!c) return avisa('No encuentro ese chat', 'Puede que ya no exista o que se haya archivado.');
@@ -18929,7 +18960,7 @@ async function simulaBroadcast(){
 // dejarian de ser lo mismo.
 async function enviaPorPuente(){
   if (!AUDIENCIA) return avisa('Simula primero');
-  const destinos = (AUDIENCIA.targets || [])
+  const destinos = (AUDIENCIA.targets || []).filter(t => !AUDIENCIA.excluidosManuales?.has(String(t.id)))
     .filter(t => t.phone)
     .map(t => ({ id: t.id, name: t.name || '', phone: String(t.phone) }));
   if (!destinos.length) {
@@ -19012,7 +19043,9 @@ function avisoAntibloqueo(cuantos){
 
 async function enviaBroadcast(){
   if (!AUDIENCIA) return;
-  const cuantos = Number(AUDIENCIA.found || 0);
+  const idsSeleccionados = (AUDIENCIA.ids || []).map(String).filter(id => !AUDIENCIA.excluidosManuales?.has(id));
+  const cuantos = idsSeleccionados.length;
+  if (!cuantos) return avisa('No hay destinatarios seleccionados');
   const { problemas, minutos } = avisoAntibloqueo(cuantos);
   if (problemas.length && !await confirmaAqui('Ojo antes de enviar:\n\n• ' + problemas.join('\n• ')
     + '\n\nUna penalización de Meta tarda semanas en irse.\n\n¿Enviar igualmente?')) return;
@@ -19024,7 +19057,7 @@ async function enviaBroadcast(){
   cuerpo.ritmo_por_minuto = ANTIBLOQUEO.porMinuto;
   // Se envia sobre los ids QUE SE ENSEÑARON, no sobre una audiencia recalculada: entre
   // la simulacion y la confirmacion puede haber entrado gente nueva que nadie reviso.
-  if (Array.isArray(AUDIENCIA.ids) && AUDIENCIA.ids.length) cuerpo.only_ids = AUDIENCIA.ids;
+  cuerpo.only_ids = idsSeleccionados;
   $('bcEnviar').disabled = true;
   $('bcEnviar').textContent = 'Enviando…';
   // Por tandas. El servidor procesa lo que cabe en el tiempo de la funcion y devuelve el
@@ -20107,7 +20140,7 @@ function abreEnviarContacto(c){
   };
 }
 
-function abreRecordatorio(c){
+function abreRecordatorio(c, { editarReserva = false } = {}){
   if (!c) return;
   const en = h => { const d = new Date(Date.now() + h*3600000); d.setMinutes(0,0,0); return d; };
   const iso = d => new Date(d.getTime() - d.getTimezoneOffset()*60000).toISOString().slice(0,16);
@@ -20118,11 +20151,11 @@ function abreRecordatorio(c){
   // Por el 5644 (WhatsApp Web) no hay ventana de 24 h; por el oficial si; Instagram/Messenger la manejan con atencion humana (7 dias).
   const ventanaAbierta = canalDe(c) === 'whatsapp_qr' || !!redSocial(c)
     || (Date.now() - Date.parse(c.last_customer_reply_at || '')) < 24 * 3600000;
-  abreModal('<div class="mtapa"><b id="recTitulo">Recordatorio · ' + esc(nombreDe(c)) + '</b>'
+  abreModal('<div class="mtapa"><b id="recTitulo">' + (editarReserva ? 'Editar reservación' : 'Recordatorio') + ' · ' + esc(nombreDe(c)) + '</b>'
     + '<button class="cerrarm" data-cerrar>×</button></div>'
     + '<div class="mcuerpo">'
     // El segundo interruptor: el mismo cuadro sirve para agendar una RESERVACION vinculada a este contacto. Sale en la Agenda y en el embudo.
-    + '<label class="cfgsw"><input type="checkbox" id="recEsReserva"><span><b>Es una reservación</b>'
+    + '<label class="cfgsw"><input type="checkbox" id="recEsReserva"' + (editarReserva ? ' checked' : '') + '><span><b>Es una reservación</b>'
     +   '<i>Agenda una sesión de ' + esc(nombreDe(c)) + ': queda en su ficha y en la Agenda.</i></span></label>'
     + '<div class="pdfs" style="margin-bottom:12px">'
     +   '<button class="tplchip" data-en="4">En 4 horas</button>'
@@ -20131,8 +20164,8 @@ function abreRecordatorio(c){
     +   '<button class="tplchip" data-en="168">En una semana</button>'
     + '</div>'
     + '<div class="campo"><label id="recCuandoEt">Cuándo</label>'
-    +   '<input type="datetime-local" id="recCuando" value="' + iso(en(24)) + '"></div>'
-    + '<div id="recBloqueRes" hidden>'
+    +   '<input type="datetime-local" id="recCuando" value="' + esc(editarReserva && reservaActual ? fechaLocal(reservaActual) : iso(en(24)) + '') + '"></div>'
+    + '<div id="recBloqueRes"' + (editarReserva ? '' : ' hidden') + '>'
     +   (hayReserva ? '<p class="aviso" id="recYaTiene">Ya tiene una reservación el <b>'
         + esc(new Date(reservaActual).toLocaleString('es-DO', { dateStyle:'medium', timeStyle:'short' }))
         + '</b>' + (c.scheduled_at ? '' : ' (tentativa)') + '. Guardar esta la reemplaza.</p>' : '')
@@ -20141,17 +20174,21 @@ function abreRecordatorio(c){
     +     '<div class="campo"><label>Categoría</label><input id="recCat" value="' + esc(c.interested_category || '') + '" placeholder="xv, boda…"></div>'
     +     comboPickerHtml('rec', c.selected_combo_name)
     +   '</div>'
-    +   '<label class="cfgsw"><input type="checkbox" id="recFirme" checked><span><b>Confirmada</b>'
+    +   (editarReserva ? '<div class="par"><div class="campo"><label>Nombre del contacto</label><input id="recNombre" value="' + esc(nombreReal(c)) + '"></div>'
+      + '<div class="campo"><label>Precio del paquete registrado (RD$)</label><input id="recPrecioEditable" type="number" min="0" step="0.01" value="' + esc(c.selected_combo_price ?? '') + '"></div></div>'
+      + '<div class="campo"><label>Detalles y próximo paso</label><textarea id="recDetalles" rows="2">' + esc(c.next_step_suggested || '') + '</textarea></div>'
+      + '<label class="cfgsw"><input type="checkbox" id="recCancelarReserva"><span><b>Cancelar esta reservación</b><i>No modifica cobros ni pagos.</i></span></label>' : '')
+    +   '<label class="cfgsw"><input type="checkbox" id="recFirme"' + (!editarReserva || !!c.scheduled_at ? ' checked' : '') + '><span><b>Confirmada</b>'
     +     '<i>Sin marcar queda como fecha tentativa, que no bloquea el hueco.</i></span></label>'
     // Al agendar se le avisa al cliente de inmediato por este mismo chat. En el numero oficial solo si su ventana de 24 h sigue abierta:
     // fuera de ella WhatsApp no entrega texto libre y el aviso saldria con ⚠ (la cita se guarda igual).
-    +   '<label class="cfgsw"><input type="checkbox" id="recAvisar"' + (ventanaAbierta ? ' checked' : ' disabled') + '><span><b>Avisarle al cliente ahora</b>'
+    +   '<label class="cfgsw"><input type="checkbox" id="recAvisar"' + (ventanaAbierta && !editarReserva ? ' checked' : ventanaAbierta ? '' : ' disabled') + '><span><b>Avisarle al cliente ahora</b>'
     +     '<i>' + (ventanaAbierta ? 'Le llega este mismo mensaje por este chat apenas guardes.'
         : 'Pasaron más de 24 h desde su último mensaje: por el número oficial no le llega texto libre. La cita se guarda igual.') + '</i></span></label>'
-    +   '<div class="campo" id="recAvisoCampo"' + (ventanaAbierta ? '' : ' hidden') + '><label>Mensaje para el cliente</label>'
+    +   '<div class="campo" id="recAvisoCampo"' + (ventanaAbierta && !editarReserva ? '' : ' hidden') + '><label>Mensaje para el cliente</label>'
     +     '<textarea id="recAvisoTexto" rows="3"></textarea></div>'
     + '</div>'
-    + '<div id="recBloqueRec">'
+    + '<div id="recBloqueRec"' + (editarReserva ? ' hidden' : '') + '>'
     + '<div class="campo"><label>Para acordarme de…</label>'
     +   '<textarea id="recNota" rows="2" placeholder="Ej. confirmar si consiguió la fecha">'
     +   esc(c.next_step_suggested || '') + '</textarea></div>'
@@ -20178,7 +20215,7 @@ function abreRecordatorio(c){
     + '</div>'
     + '</div>'
     + '<div class="mpatas"><button class="btn-linea" data-cerrar>Cancelar</button>'
-    +   '<button class="btn-solido" id="recGuardar">Guardar recordatorio</button></div>');
+    +   '<button class="btn-solido" id="recGuardar">' + (editarReserva ? 'Guardar cambios' : 'Guardar recordatorio') + '</button></div>');
   $('modal').querySelectorAll('[data-cerrar]').forEach(b => { b.onclick = cierraModal; });
   $('modal').querySelector('.pdfs').onclick = ev => {
     const b = ev.target.closest('[data-en]'); if (!b) return;
@@ -20226,38 +20263,46 @@ function abreRecordatorio(c){
     $('recBloqueRec').hidden = r;
     $('recTitulo').textContent = (r ? 'Reservación · ' : 'Recordatorio · ') + nombreDe(c);
     $('recCuandoEt').textContent = r ? 'Fecha y hora de la sesión' : 'Cuándo';
-    $('recGuardar').textContent = r ? 'Guardar reservación' : 'Guardar recordatorio';
+    $('recGuardar').textContent = r ? (editarReserva ? 'Guardar cambios' : 'Guardar reservación') : 'Guardar recordatorio';
     avisaChoque();
   };
   montaComboPicker('rec', { conv: () => c, categoria: v => { $('recCat').value = v; } });
   $('recGuardar').onclick = async () => {
     const cuando = $('recCuando').value;
-    if (!cuando) return avisa('Falta la fecha');
+    if (!cuando && !($('recCancelarReserva')?.checked)) return avisa('Falta la fecha');
     if (esReserva()) {
+      const cancelar = !!$('recCancelarReserva')?.checked;
+      if (!cancelar && !Number.isFinite(new Date(cuando).getTime())) return avisa('Fecha de sesión no válida');
+      if (cancelar && !await confirmaAqui('¿Cancelar esta reservación? La cita saldrá de la agenda. No cambia pagos ni ventas.')) return;
       // Igual que «Agendar sesion» de la Agenda: confirmada = scheduled_at (bloquea el hueco), sin marcar = fecha tentativa. La
       // etapa pasa a «reservado» solo con la confirmada y nunca baja a quien ya es cliente. session_status se actualiza para que una
       // reservacion anterior cancelada no deje la nueva marcada como cancelada.
       const firme = $('recFirme').checked;
-      const iso8601 = new Date(cuando).toISOString();
+      const iso8601 = cancelar ? '' : new Date(cuando).toISOString();
       const reserva = {
         interested_category: $('recCat').value.trim() || c.interested_category || '',
-        reservation_status: firme ? 'confirmado' : 'fecha_tentativa',
-        session_status: firme ? 'confirmada' : 'por_confirmar',
-        ...(firme
-          ? { scheduled_at: iso8601, lifecycle_stage: ['cliente', 'reservado'].includes(c.lifecycle_stage) ? c.lifecycle_stage : 'reservado' }
-          : { tentative_date: iso8601, scheduled_at: '' }),
+        reservation_status: cancelar ? 'cancelado' : firme ? 'confirmado' : 'fecha_tentativa',
+        session_status: cancelar ? 'cancelada' : firme ? 'confirmada' : 'por_confirmar',
+        scheduled_at: cancelar || !firme ? '' : iso8601,
+        tentative_date: cancelar || firme ? '' : iso8601,
+        ...(!cancelar && firme ? { lifecycle_stage: ['cliente', 'reservado'].includes(c.lifecycle_stage) ? c.lifecycle_stage : 'reservado' } : {}),
       };
-      if ($('recCombo').value.trim()) reserva.selected_combo_name = $('recCombo').value.trim();
+      reserva.selected_combo_name = $('recCombo').value.trim();
       if ($('recComboPrecio').value) reserva.selected_combo_price = Number($('recComboPrecio').value);
+      if (editarReserva) {
+        reserva.customer_name = $('recNombre').value.trim();
+        reserva.next_step_suggested = $('recDetalles').value.trim();
+        if (!$('recComboPrecio').value) reserva.selected_combo_price = $('recPrecioEditable').value === '' ? '' : Number($('recPrecioEditable').value);
+      }
       $('recGuardar').disabled = true;
       const rr = await llama({ action:'updateLead', conversation_id: c.id || c._id, fields: reserva });
       $('recGuardar').disabled = false;
       if (!rr.ok) return avisa('No se pudo guardar la reservación', rr.error);
-      Object.assign(c, reserva, firme ? {} : { scheduled_at: null });
+      Object.assign(c, reserva, { scheduled_at:reserva.scheduled_at || null, tentative_date:reserva.tentative_date || null });
       // Aviso inmediato al cliente, por el mismo chat. Si no sale, la cita YA quedo guardada y se dice aparte: nunca se pierde una por el otro.
-      const aviso = $('recAvisar') && !$('recAvisar').disabled && $('recAvisar').checked ? $('recAvisoTexto').value.trim() : '';
+      const aviso = !cancelar && $('recAvisar') && !$('recAvisar').disabled && $('recAvisar').checked ? $('recAvisoTexto').value.trim() : '';
       cierraModal();
-      avisa(firme ? 'Reservación confirmada' : 'Reservación tentativa', nombreDe(c) + ' · ' + new Date(cuando).toLocaleString('es-DO', { dateStyle:'medium', timeStyle:'short' }));
+      avisa(cancelar ? 'Reservación cancelada' : firme ? 'Reservación confirmada' : 'Reservación tentativa', cancelar ? nombreDe(c) : nombreDe(c) + ' · ' + new Date(cuando).toLocaleString('es-DO', { dateStyle:'medium', timeStyle:'short' }));
       if (aviso) {
         const conv = c.id || c._id;
         const porPuente = canalDe(c) === 'whatsapp_qr';

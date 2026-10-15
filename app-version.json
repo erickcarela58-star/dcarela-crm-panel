@@ -1,7 +1,7 @@
 {
-  "version": "2026-10-15-planificador-preverifica-originales-v204",
+  "version": "2026-10-15-planificador-crm-flujos-v205",
   "channel": "crm",
-  "released_at": "2026-10-15T17:32:57Z",
-  "summary": "El creador identifica las categorías sin originales antes de pedir flyers a Gemini y conserva la corrección del chat y la bandeja.",
-  "requiere_puente": "2026-10-14-bot-contexto-conversacion-v47"
+  "released_at": "2026-10-15T22:22:15Z",
+  "summary": "Logo propio verificable, revisión de campañas, edición de reservas y respuestas citadas; composición y bandeja social afinadas.",
+  "requiere_puente": "2026-10-15-citas-en-chat-v48"
 }
