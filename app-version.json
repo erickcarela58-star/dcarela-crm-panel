@@ -1,7 +1,7 @@
 {
-  "version": "2026-10-15-planificador-estudio-v199",
+  "version": "2026-10-15-planificador-estudio-v200",
   "channel": "crm",
-  "released_at": "2026-10-15T05:42:11.528Z",
-  "summary": "Estudio por pasos y videos originales; Gemini con respuesta progresiva y avance guardado, referencia visual completa, variaciones con intención y comprobaciones de legibilidad.",
+  "released_at": "2026-10-15T05:53:20Z",
+  "summary": "Estudio por pasos, videos originales y Gemini recuperable; referencias completas y líneas decorativas separadas del texto.",
   "requiere_puente": "2026-10-14-bot-contexto-conversacion-v47"
 }
