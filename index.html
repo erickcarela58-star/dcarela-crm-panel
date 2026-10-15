@@ -169,6 +169,7 @@ body.menu-abierto .velo{display:block}
 .cont-lista{display:flex;flex-direction:column;gap:10px}
 .plan-vistas{display:flex;align-items:center;gap:8px;margin-left:auto;font-size:12px;color:var(--mut)}
 .plan-vistas select,.plan-creador select{border:1px solid var(--line2);border-radius:10px;padding:8px;background:var(--panel);color:var(--fg);font:inherit}
+.plan-gancho{font-size:18px;line-height:1.3;letter-spacing:-.3px;margin:5px 0}.plan-generador fieldset{border:0;border-bottom:1px solid var(--line);margin:0 0 18px;padding:0 0 16px;display:flex;flex-direction:column;gap:12px}.plan-generador legend{font-size:14px;font-weight:650;margin-bottom:12px}.plan-generador textarea{background:var(--panel);border:1px solid var(--line2);border-radius:12px;padding:12px;color:var(--fg);font:inherit;resize:vertical}.plan-campos{display:flex;gap:12px;flex-wrap:wrap}.plan-campos label{flex:1 1 200px}.plan-generador input[type=month],.plan-periodo input{padding:8px;border:1px solid var(--line2);border-radius:10px;background:var(--panel);color:var(--fg);font:inherit}.plan-generador details summary{font-size:12px;cursor:pointer}.plan-generador input[type=checkbox]{accent-color:var(--accent)}.plan-hoja .cont-mini{width:160px;flex-basis:160px;height:200px}.plan-periodo{margin-left:0}.plan-original-vista{max-height:240px;max-width:100%;object-fit:contain;border-radius:10px;margin:10px 0}.plan-hoja .cont-lista .cont-mini{width:160px;height:200px;flex-basis:160px}@media(max-width:640px){.plan-hoja .cont-lista .cont-mini{width:100%;height:300px;flex-basis:auto}}
 .plan-seccion-cab{display:flex;align-items:center;gap:12px;margin:18px 0 12px}.plan-seccion-cab h2{font-size:18px;letter-spacing:-.4px;margin:0}
 .plan-bloqueadas{margin-top:16px;border:1px solid var(--line);border-radius:14px;padding:14px}.plan-bloqueadas>summary{font-size:13px;font-weight:600;cursor:pointer}.plan-bloqueadas .cont-lista{margin-top:12px}
 .plan-acciones>summary{font-size:12px;padding:6px 10px;cursor:pointer;color:var(--mut)}.plan-acciones[open]{flex-basis:100%}.plan-acciones .cont-acc{margin-top:8px}
@@ -16613,6 +16614,72 @@ const CONT_AUTONOMIA = [
 ];
 const CONT_ORIGEN = { base: 'De fábrica', ia: 'Propuesto por la IA', referencia: 'De tu referencia', 'dueño': 'Tuyo' };
 const CONT_LAYOUT = { abajo_izq: 'Texto abajo', centro_abajo: 'Centrado', arriba_izq: 'Texto arriba', tarjeta: 'Tarjeta de vidrio', marco: 'Marco fino', franja: 'Franja', resplandor: 'Resplandor' };
+
+const CONT_CATEGORIAS = [['infantil','Infantil'],['xv','Quinceañeras'],['cumpleanos','Cumpleaños'],['embarazadas','Maternidad'],['graduacion','Graduación']];
+function hoyContenidoLocal(){ return new Intl.DateTimeFormat('en-CA',{timeZone:'America/Santo_Domingo',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date()); }
+function periodoListaContenido(){
+  const mes = CONT.filtroMes || (CONT.hoy || hoyContenidoLocal()).slice(0,7), [a,m] = mes.split('-').map(Number);
+  return { mes, desde: mes+'-01', hasta: mes+'-'+new Date(Date.UTC(a,m,0)).getUTCDate() };
+}
+function borradorCrearContenido(){
+  return CONT.crear || (CONT.crear = {mes:periodoListaContenido().mes,cantidad:3,categorias:new Set(['infantil','xv','cumpleanos']),formatos:new Set(['imagen_4x5','imagen_9x16']),canales:new Set(['instagram','whatsapp_estado']),modelo:CONT.modelo || 'gemini-4-argon',estilo_id:'',brief:''});
+}
+async function cargaModelosContenido(){
+  if (CONT.modelosCargando || CONT.modelos) return;
+  CONT.modelosCargando = true;
+  try {
+    const r = await llamaCont({action:'contenidoModelos'});
+    if (!r.ok) throw new Error(r.error || 'No se pudieron consultar los modelos');
+    if (!r.modelos?.length) throw new Error('Esta conexión no tiene modelos de Gemini disponibles. Revisa Canales → Conexiones y API.');
+    CONT.modelos = r.modelos || []; CONT.modelo = r.modelo; CONT.originales = r.originales || {}; CONT.fotosCreativas = r.fotos || [];
+    const c = borradorCrearContenido(); if (!CONT.modelos.some(m=>m.id===c.modelo)) c.modelo = CONT.modelos[0]?.id || '';
+  } catch (e) { CONT.modelosError = e.message; }
+  finally { CONT.modelosCargando = false; if (CONT.tab === 'crear') pintaContenido(); }
+}
+function guardaCrearContenido(f){
+  const c = borradorCrearContenido(); if(c.enviando)return;
+  const v = Object.fromEntries(new FormData(f).entries());
+  Object.assign(c,{mes:v.mes || c.mes,cantidad:Number(v.cantidad)||3,modelo:v.modelo || c.modelo,estilo_id:v.estilo_id ?? c.estilo_id,brief:v.brief || '',otraFoto:v.otra_foto==='on'});
+  c.fotos = Object.fromEntries(CONT_CATEGORIAS.map(([id])=>[id,v['foto_'+id] || '']));
+  if(!c.baseId) for(const [name,key] of [['categoria','categorias'],['formato','formatos'],['plataforma','canales']]) c[key] = new Set([...f.querySelectorAll('input[name="'+name+'"]:checked')].map(x=>x.value));
+}
+function fotosCrearContenido(c){
+  if(c.baseId && !c.otraFoto)return '<p class="cont-sub">Se conserva la original de la pieza. Marca «Cambiar también la foto» para explorar otras.</p>';
+  return '<details><summary>Elegir originales por categoría</summary><p class="cont-sub">Puedes fijar una original o dejar que Gemini elija entre las más recientes de la categoría.</p>' + CONT_CATEGORIAS.filter(([id])=>c.categorias.has(id)).map(([id,t])=>{
+    const fotos=(CONT.fotosCreativas||[]).filter(f=>f.categoria===id),elegida=fotos.find(f=>f.id===c.fotos?.[id]);
+    return '<label class="subir-campo">'+esc(t)+'<select name="foto_'+id+'"><option value="">Selección de Gemini</option>'+fotos.map((f,i)=>'<option value="'+esc(f.id)+'"'+(f.id===c.fotos?.[id]?' selected':'')+'>Original '+(i+1)+' · '+Number(f.width)+'×'+Number(f.height)+'</option>').join('')+'</select></label>' + (elegida?.preview?'<img class="plan-original-vista" src="'+esc(elegida.preview)+'" alt="Vista previa de la original elegida para '+esc(t)+'">':'');
+  }).join('')+'</details>';
+}
+function pintaCrearContenido(cuerpo){
+  const c=borradorCrearContenido(); if(!CONT.modelos && !CONT.modelosCargando && !CONT.modelosError) void cargaModelosContenido();
+  const disabled=c.enviando?' disabled':'',ref=CONT.estilos.filter(e=>e.activo || e.id===c.estilo_id);
+  const chips=(items,name,set,lock=false)=>items.map(([id,t])=>'<label class="red-chip'+(set.has(id)?' on':'')+'"><input type="checkbox" name="'+name+'" value="'+id+'"'+(set.has(id)?' checked':'')+(lock || c.enviando?' disabled':'')+'>'+esc(t)+'</label>').join('');
+  cuerpo.innerHTML='<div class="plan-seccion-cab"><h2>'+(c.baseId?'Variaciones con nuevos ganchos':'Crear flyers')+'</h2><span class="cont-sub">Originales + dirección creativa + diseño</span></div>'
+    + '<form class="plan-creador plan-generador" data-ccrear="1"><fieldset'+disabled+'><legend>1. Define la campaña</legend><div class="plan-campos"><label>Mes de los flyers<input type="month" name="mes" required value="'+esc(c.mes)+'"></label><label>Ideas por categoría<select name="cantidad">'+[1,2,3,4,6,8].map(n=>'<option value="'+n+'"'+(c.cantidad===n?' selected':'')+'>'+n+'</option>').join('')+'</select></label></div><div class="agente-redes">'+chips(CONT_CATEGORIAS,'categoria',c.categorias,!!c.baseId)+'</div><p class="cont-sub">Cada idea tiene un gancho y argumento distintos. El mes elegido se respeta en el texto y la imagen.</p></fieldset>'
+    + '<fieldset'+disabled+'><legend>2. Elige dirección y modelo</legend><label>Qué quieres comunicar<textarea name="brief" maxlength="800" rows="3" placeholder="Ej.: Retratos de cumpleaños con personalidad, luz de estudio y una experiencia tranquila. Evita frases genéricas.">'+esc(c.brief)+'</textarea></label><div class="plan-campos"><label>Modelo de Gemini<select name="modelo" required'+(!CONT.modelos?.length?' disabled':'')+'>'+((CONT.modelos||[]).map(m=>'<option value="'+esc(m.id)+'"'+(m.id===c.modelo?' selected':'')+'>'+esc(m.nombre)+'</option>').join('') || '<option>Consultando modelos…</option>')+'</select></label><label>Diseño<select name="estilo_id"><option value="">Dirección editorial con IA</option>'+ref.map(e=>'<option value="'+esc(e.id)+'"'+(e.id===c.estilo_id?' selected':'')+'>'+esc(e.nombre)+(e.origen==='referencia'?' · referencia':'')+'</option>').join('')+'</select></label></div>'
+    + (c.baseId?'<label class="cont-sub"><input type="checkbox" name="otra_foto"'+(c.otraFoto?' checked':'')+'> Cambiar también la foto</label>':'')
+    + fotosCrearContenido(c) + (ROL_ACTUAL==='admin'?'<button type="button" class="btn-linea" data-cmodelodefault="1">Usar este modelo por defecto</button>':'')
+    + '<details><summary>Originales disponibles</summary><p class="cont-sub">'+CONT_CATEGORIAS.map(([id,t])=>esc(t)+': '+Number(CONT.originales?.[id]||0)).join(' · ')+'</p><p class="cont-sub">Gemini ve las originales y evalúa foco, exposición y marcas. Una categoría sin original apta no se completa con miniaturas.</p><button type="button" class="btn-linea" data-cbiblioteca="1">Abrir fototeca</button></details></fieldset>'
+    + '<fieldset'+disabled+'><legend>3. Formatos y plataformas</legend><div class="agente-redes">'+chips([['imagen_4x5','Feed 4:5'],['imagen_9x16','Historia 9:16'],['imagen_1x1','Cuadrado 1:1']],'formato',c.formatos,!!c.baseId)+'</div><div class="agente-redes">'+chips(CONT.canales.map(x=>[x.id,x.nombre]),'plataforma',c.canales,!!c.baseId)+'</div><p class="cont-sub">Se preparan propuestas por aprobar. Puedes ajustar foto, texto, fecha y hora antes de que salgan.</p></fieldset>'
+    + (c.error || CONT.modelosError?'<p class="cont-aviso" role="alert">'+esc(c.error || CONT.modelosError)+'</p>'+ (CONT.modelosError?'<button type="button" class="btn-linea" data-cmodelosretry="1">Volver a consultar modelos</button>':''):'')
+    + '<div class="subir-pie"><small>'+(c.enviando?'Gemini analiza las originales y escribe nuevos ganchos; después se componen los formatos. Puedes cambiar de vista.':'Los rostros y la foto original se conservan. Ninguna propuesta se aprueba automáticamente desde este formulario.')+'</small><button type="submit" class="btn-solido"'+(c.enviando || !CONT.modelos?.length?' disabled':'')+'>'+(c.enviando?'Preparando flyers…':c.baseId?'Crear nuevas variaciones':'Preparar propuestas')+'</button><button type="button" class="btn-linea" data-cnuevolote="1"'+disabled+'>Nuevo lote</button></div></form>';
+}
+async function generaLoteContenido(f){
+  const c=borradorCrearContenido(); if(c.enviando)return;
+  guardaCrearContenido(f);
+  if(!c.categorias.size || !c.formatos.size || !c.canales.size || !c.modelo)return avisa('Elige categoría, formato, plataforma y modelo');
+  c.enviando=true;c.error=null;if(CONT.tab==='crear')pintaContenido();
+  let r;
+  try {
+    r = await llamaCont(c.baseId?{action:'contenidoVariaciones',id:c.baseId,cantidad:c.cantidad,otra_foto:c.otraFoto,mes:c.mes,modelo:c.modelo,brief:c.brief,estilo_id:c.estilo_id,fotos_por_categoria:c.fotos}:{action:'contenidoGenera',creativo:true,mes:c.mes,categorias:[...c.categorias],cantidad:c.cantidad,formatos:[...c.formatos],canales:[...c.canales],estilo_id:c.estilo_id,modelo:c.modelo,brief:c.brief,fotos_por_categoria:c.fotos});
+    if(!r.ok)throw new Error(r.error || 'No se pudo completar el lote');
+    CONT.filtroMes=c.mes;CONT.mes=c.mes;CONT.tab='porAprobar';
+    avisa('Propuestas preparadas',(r.creadas || r.ids?.length || 0)+' publicaciones con nuevos ganchos'+(r.categorias_sin_original?.length?'. Faltan originales de: '+r.categorias_sin_original.join(', '):'')+(r.errores?.length?'. '+r.errores.length+' formatos necesitan revisión.':''));
+    await cargaContenido();
+  } catch(e){c.error=e.message;avisa('No se pudo generar',e.message);}
+  finally{c.enviando=false;if(CONT.tab==='crear')pintaContenido();}
+}
+
 function montaContenido(){
   if (!montadas.has('contenido')) {
     montadas.add('contenido');
@@ -16620,13 +16687,13 @@ function montaContenido(){
       + '<p class="bajada">Tus publicaciones, fotos y plantillas en un solo lugar.</p></header>'
       + '<div id="contAgente"></div><div class="cont-tabs" id="contTabs"></div><div id="contCuerpo"></div></div>');
     $('contTabs').addEventListener('click', ev => { const b = ev.target.closest('[data-ctab]'); if (b) cambiaTabContenido(b.dataset.ctab); });
-    $('contTabs').addEventListener('change', ev => { if (ev.target.matches('[data-cvista]') && ev.target.value) cambiaTabContenido(ev.target.value); });
+    $('contTabs').addEventListener('change', ev => { if (ev.target.matches('[data-cvista]') && ev.target.value) cambiaTabContenido(ev.target.value); if (ev.target.matches('[data-cmeslista]') && ev.target.value) { CONT.filtroMes = ev.target.value; CONT.mes = ev.target.value; void cargaContenido(); } });
     $('contAgente').addEventListener('click', clicContAgente);
     $('contAgente').addEventListener('change', cambioContAgente);
     $('contAgente').addEventListener('toggle', ev => { if (ev.target.classList.contains('plan-rutina')) CONT.rutinaAbierta = ev.target.open; }, true);
     $('contCuerpo').addEventListener('click', clicContenido);
     $('contCuerpo').addEventListener('change', cambioContenido);
-    $('contCuerpo').addEventListener('input', ev => { const f = ev.target.closest('[data-csube]'); if (f) guardaBorradorSubida(f); if (ev.target.closest('[data-cref]') && ev.target.name === 'nombre') (CONT.refDraft ||= {}).nombre = ev.target.value; });
+    $('contCuerpo').addEventListener('input', ev => { const f = ev.target.closest('[data-csube]'); if (f) guardaBorradorSubida(f); if (ev.target.closest('[data-cref]') && ev.target.name === 'nombre') (CONT.refDraft ||= {}).nombre = ev.target.value; if (ev.target.closest('[data-ccrear]')) guardaCrearContenido(ev.target.closest('form')); });
     $('contCuerpo').addEventListener('dragover', ev => { if (ev.target.closest('[data-csubezona]')) ev.preventDefault(); });
     $('contCuerpo').addEventListener('drop', ev => { if (!ev.target.closest('[data-csubezona]')) return; ev.preventDefault(); const f = ev.target.closest('form'); if (f) guardaBorradorSubida(f); const a = ev.dataTransfer?.files?.[0]; if (a) void preparaSubidaContenido(a); });
     $('contCuerpo').addEventListener('submit', ev => { ev.preventDefault(); const f = ev.target.closest('form'); if (f) guardaFormContenido(f); });
@@ -16637,7 +16704,8 @@ async function cargaContenido(){
   if (CONT.cargando) return;
   CONT.cargando = true;
   if (!CONT.items.length && $('contCuerpo')) $('contCuerpo').innerHTML = '<p class="cfgnota"><span class="cargando"></span> Cargando…</p>';
-  const [r, g] = await Promise.all([llama({ action: 'contenidoLista' }), llama({ action: 'contenidoGrupos', operation: 'list' })]);
+  const periodo = periodoListaContenido();
+  const [r, g] = await Promise.all([llama({ action: 'contenidoLista', desde: periodo.desde, hasta: periodo.hasta }), llama({ action: 'contenidoGrupos', operation: 'list' })]);
   CONT.cargando = false;
   if (!r.ok) { if ($('contCuerpo')) $('contCuerpo').innerHTML = '<p class="cfgnota">' + esc(r.error || 'No se pudo leer el contenido.') + '</p>'; return; }
   Object.assign(CONT, { items: r.items || [], conteo: r.conteo || {}, calendario: r.calendario || [], canales: r.canales || [], activos: r.canales_activos || [],
@@ -16665,8 +16733,8 @@ function pintaContenido(){
   const n = e => CONT.items.filter(x => x.estado === e).length;
   const cuenta = { porAprobar: CONT.items.filter(x => x.estado === 'propuesta' && x.tiene_imagen).length, programadas: ['aprobada','publicando','encola','enviada','sin_confirmar','lista'].reduce((s,k) => s + n(k), 0), publicadas: n('publicada'), paquete: CONT.items.filter(x => x.canal === 'paquete_grupos' && x.estado === 'lista').length,
     fechas: CONT.calendario.length, tendencias: CONT.tendencias ? (CONT.tendencias.ideas || []).length : 0, estilos: CONT.estilos.filter(e => e.activo).length };
-  $('contTabs').innerHTML = CONT_TABS.map(([k, t]) => '<button type="button" class="cotz-chip' + (CONT.tab === k ? ' on' : '') + '" data-ctab="' + k + '">' + esc(t) + (cuenta[k] != null ? '<small>' + cuenta[k] + '</small>' : '') + '</button>').join('') + '<label class="plan-vistas"><span>Otras vistas</span><select data-cvista="1" aria-label="Otras vistas del planificador"><option value="">Elegir…</option>' + CONT_VISTAS.map(([k,t]) => '<option value="' + k + '"' + (CONT.tab === k ? ' selected' : '') + '>' + esc(t) + '</option>').join('') + '</select></label>';
-  const vistas = { fotos: pintaFotosContenido, calendario: pintaCalendario, tendencias: pintaTendencias, subir: pintaSubir, estilos: pintaEstilos, redes: pintaRedes, paquete: pintaPaquete, fechas: pintaFechasNicho };
+  $('contTabs').innerHTML = CONT_TABS.map(([k, t]) => '<button type="button" class="cotz-chip' + (CONT.tab === k ? ' on' : '') + '" data-ctab="' + k + '">' + esc(t) + (cuenta[k] != null ? '<small>' + cuenta[k] + '</small>' : '') + '</button>').join('') + '<label class="plan-vistas"><span>Otras vistas</span><select data-cvista="1" aria-label="Otras vistas del planificador"><option value="">Elegir…</option>' + CONT_VISTAS.map(([k,t]) => '<option value="' + k + '"' + (CONT.tab === k ? ' selected' : '') + '>' + esc(t) + '</option>').join('') + '</select></label><label class="plan-vistas plan-periodo"><span>Mes</span><input type="month" data-cmeslista="1" aria-label="Mes del contenido" value="' + esc(periodoListaContenido().mes) + '"></label>';
+  const vistas = { crear: pintaCrearContenido, fotos: pintaFotosContenido, calendario: pintaCalendario, tendencias: pintaTendencias, subir: pintaSubir, estilos: pintaEstilos, redes: pintaRedes, paquete: pintaPaquete, fechas: pintaFechasNicho };
   if (vistas[CONT.tab]) return vistas[CONT.tab](cuerpo);
   const filtro = { porAprobar: x => x.estado === 'propuesta', programadas: x => ['aprobada', 'publicando', 'encola', 'enviada', 'sin_confirmar', 'lista', 'fallida', 'vencida'].includes(x.estado) && x.canal !== 'paquete_grupos', publicadas: x => x.estado === 'publicada' }[CONT.tab];
   const lista = CONT.items.filter(filtro || (() => false));
@@ -16690,7 +16758,7 @@ function pintaAgente(){
     + '<div class="agente-cab"><span class="agente-ico" aria-hidden="true">🤖</span><div class="agente-tit"><b>Automatización</b><small>'
     +   (CONT.activo ? 'Rutina activa · propuestas a las 7:00 y envíos a la hora programada.' : 'En pausa: no propone ni publica nada (tampoco lo ya aprobado).') + '</small></div>'
     +   (admin ? '<label class="agente-sw"><input type="checkbox" data-cactivo="1"' + (CONT.activo ? ' checked' : '') + '><span>' + (CONT.activo ? 'Encendido' : 'En pausa') + '</span></label>' : '') + '</div>'
-    + '<div class="agente-acc"><button type="button" class="btn-solido" data-cirtab="subir">Nueva publicación</button><button type="button" class="btn-linea" data-cprepara="1">Crear propuestas</button></div>'
+    + '<div class="agente-acc"><button type="button" class="btn-solido" data-cirtab="subir">Nueva publicación</button><button type="button" class="btn-linea" data-cprepara="1">Crear flyers</button></div>'
     + '<details class="plan-rutina"' + (CONT.rutinaAbierta ? ' open' : '') + '><summary>Ajustes de la rutina · ' + esc(aut[1]) + '</summary>'
     + '<div class="agente-fila"><span class="agente-rot">Autonomía</span><div class="segmento" role="radiogroup" aria-label="Autonomía del agente">'
     +   CONT_AUTONOMIA.map(([k, t]) => '<button type="button" role="radio" aria-checked="' + (CONT.autonomia === k) + '" class="' + (CONT.autonomia === k ? 'on' : '') + '" data-cautonomia="' + k + '"' + (admin ? '' : ' disabled') + '>' + esc(t) + '</button>').join('')
@@ -16733,7 +16801,7 @@ async function clicContAgente(ev){
   const d = b.dataset;
   if (d.cirtab) return cambiaTabContenido(d.cirtab);
   if (d.cbiblioteca) return cambiaTabContenido('fotos');
-  if (d.cprepara) { CONT.rutinaAbierta = true; pintaContenido(); document.querySelector('[data-cgenera]')?.focus(); return; }
+  if (d.cprepara) return cambiaTabContenido('crear');
   if (d.cautonomia) {
     if (d.cautonomia === CONT.autonomia) return;
     if (d.cautonomia === 'total' && !await confirmaAqui('Con autonomía TOTAL el agente programa solo lo que pasa las reglas (sin precios ni cupos inventados, con foto original y sin avisos). Saldrá a su hora sin preguntarte; puedes rechazar cualquiera antes de que salga.' + String.fromCharCode(10, 10) + '¿Le das autonomía total?', { si: 'Sí, autonomía total' })) return;
@@ -16741,17 +16809,7 @@ async function clicContAgente(ev){
     if (!r.ok) return avisa('No se pudo cambiar', r.error);
     CONT.autonomia = d.cautonomia; avisa('Autonomía: ' + (CONT_AUTONOMIA.find(a => a[0] === d.cautonomia) || [])[1]); return pintaContenido();
   }
-  if (d.cgenera) {
-    const g = CONT.gen; const canales = [...g.canales];
-    if (!canales.length) return avisa('Elige al menos una plataforma');
-    b.disabled = true; b.textContent = 'Generando… (puede tardar un par de minutos)';
-    const r = await llama({ action: 'contenidoGenera', dias: g.dias, cantidad: Number(g.cantidad) || 0, canales });
-    b.disabled = false; b.textContent = 'Generar creativos';
-    if (!r.ok) return avisa('No se pudo generar', r.error);
-    avisa(r.sin_imagen ? 'Faltan fotos originales' : 'Propuestas preparadas', r.creadas + ' nuevas · ' + (r.regeneradas||0) + ' revisadas' + (r.sin_imagen ? '. Sube originales de: ' + (r.categorias_sin_original||[]).join(', ') : r.creadas || r.regeneradas ? '' : '. No hay propuestas nuevas en esas fechas.'));
-    CONT.tab = r.creadas + (r.regeneradas||0) - (r.auto_aprobadas || 0) > 0 ? 'porAprobar' : CONT.tab;
-    return cargaContenido();
-  }
+  if (d.cgenera) return cambiaTabContenido('crear');
   if (d.cguardaagente) {
     const g = CONT.gen;
     const r = await llama({ action: 'contenidoAjustes', canales: [...g.canales], cantidad_semanal: Number(g.cantidad) || 0 });
@@ -16852,7 +16910,7 @@ function tarjetaContenido(x, admin){
   if (admin && ['propuesta', 'aprobada', 'fallida', 'lista'].includes(x.estado)) acc.push('<button type="button" class="btn-linea" data-crechaza="' + esc(x.id) + '">Rechazar</button>');
   if (editable) acc.push('<button type="button" class="btn-linea" data-cedita="' + esc(x.id) + '">' + (abierto ? 'Cerrar' : 'Editar') + '</button>');
   if (x.tiene_imagen) acc.push('<button type="button" class="btn-linea" data-cver="' + esc(x.id) + '">Ver en grande</button>');
-  if (editable && x.tiene_imagen && x.origen !== 'propia') acc.push('<button type="button" class="btn-linea" data-cvariaciones="' + esc(x.id) + '" title="Otras versiones con otros estilos: apruebas la que más te guste">Variaciones</button>');
+  if (editable && x.tiene_imagen && x.origen !== 'propia') acc.push('<button type="button" class="btn-linea" data-cvariaciones="' + esc(x.id) + '" title="Nuevos ganchos, enfoques y composiciones">Variaciones</button>');
   if (admin && ['aprobada', 'fallida', 'vencida'].includes(x.estado) && x.canal !== 'paquete_grupos') acc.push('<button type="button" class="btn-linea" data-cpublica="' + esc(x.id) + '">' + (x.estado === 'aprobada' ? 'Publicar ahora' : 'Reintentar ahora') + '</button>');
   if (x.tiene_imagen) acc.push('<button type="button" class="btn-linea" data-cdescarga="' + esc(x.id) + '">Descargar</button>');
   if (x.estado === 'lista' && x.canal !== 'paquete_grupos') acc.push('<button type="button" class="btn-linea" data-ccopia="' + esc(x.id) + '">Copiar texto</button>');
@@ -16876,6 +16934,8 @@ function tarjetaContenido(x, admin){
     + '<div class="cont-cuerpo"><div class="cont-cab"><b>' + esc(contDia(x.fecha) + ' · ' + contHora12(x.hora)) + '</b><span class="cotz-est ' + (x.estado === 'publicada' || x.estado === 'aprobada' ? 'aprobada' : x.estado === 'fallida' || x.estado === 'rechazada' || x.estado === 'vencida' ? 'rechazada' : '') + '">' + esc(x.estado === 'lista' && x.canal === 'paquete_grupos' ? 'Lista para grupos' : (CONT_ESTADOS[x.estado] || x.estado)) + '</span>'
     + '<span>' + esc(x.canal_nombre) + '</span>' + (x.evento_nombre ? '<span class="cont-sub">· ' + esc(x.evento_nombre) + '</span>' : '') + '</div>'
     + (marcas.length ? '<div class="cont-marcas">' + marcas.join('') + '</div>' : '')
+    + (x.gancho || x.titular?.l1 ? '<h3 class="plan-gancho">' + esc(x.gancho || x.titular.l1) + '</h3>' : '')
+    + (x.mes_objetivo ? '<small class="cont-sub">Mes elegido: ' + esc(x.mes_objetivo) + (x.enfoque ? ' · ' + esc(x.enfoque) : '') + '</small>' : '')
     + (abierto ? '' : '<div class="cont-texto">' + esc(x.texto) + '</div>') + form
     + (x.error ? '<div class="cont-aviso">' + esc(x.error) + '</div>' : '') + ((x.avisos || []).length ? '<div class="cont-aviso">' + esc(x.avisos.join(' · ')) + '</div>' : '')
     + (x.confirmacion ? '<div class="cont-sub">' + esc(x.confirmacion) + '</div>' : '')
@@ -17032,7 +17092,7 @@ function pintaEstilos(cuerpo){
     + '<div class="estilo-info"><b>' + esc(e.nombre) + '</b><small class="cont-sub">' + esc(CONT_ORIGEN[e.origen] || e.origen || '') + ' · ' + esc(CONT_LAYOUT[e.layout] || e.layout) + ' · botón ' + esc(e.boton === 'glass' ? 'de vidrio' : e.boton) + '</small>'
     + (e.por_que ? '<small class="cont-sub">' + esc(e.por_que) + '</small>' : '')
     + lecturaReferenciaHtml(e.analisis)
-    + '<div class="cont-acc"><button type="button" class="btn-linea" data-cmuestra="' + esc(e.id) + '">' + (CONT.vistas[e.id] ? 'Ver en grande' : 'Ver muestra') + '</button>'
+    + '<div class="cont-acc"><button type="button" class="btn-solido" data-cdesdeestilo="' + esc(e.id) + '">Crear flyers con esta plantilla</button><button type="button" class="btn-linea" data-cmuestra="' + esc(e.id) + '">' + (CONT.vistas[e.id] ? 'Ver en grande' : 'Ver muestra') + '</button>'
     + (admin ? '<button type="button" class="btn-linea" data-cestilo="' + (e.activo ? 'desactivar' : 'activar') + '" data-id="' + esc(e.id) + '">' + (e.activo ? 'Apagar' : 'Activar') + '</button>' : '')
     + (admin && e.origen !== 'base' ? '<button type="button" class="btn-linea" data-cestilo="borrar" data-id="' + esc(e.id) + '" aria-label="Borrar estilo">×</button>' : '') + '</div></div></div>';
   const activos = CONT.estilos.filter(e => e.activo).length;
@@ -17123,6 +17183,10 @@ async function clicContenido(ev){
   const b = ev.target.closest('button'); if (!b || b.disabled) return;
   const d = b.dataset;
   if (d.cbiblioteca) return cambiaTabContenido('fotos');
+  if (d.cdesdeestilo) { const c = borradorCrearContenido(); c.estilo_id = d.cdesdeestilo; c.baseId = null; return cambiaTabContenido('crear'); }
+  if (d.cmodelodefault) { const f=b.closest('form'); if(f)guardaCrearContenido(f); const c=borradorCrearContenido(); const r=await llamaCont({action:'contenidoAjustes',modelo:c.modelo}); if(!r.ok)return avisa('No se guardó el modelo',r.error); CONT.modelo=c.modelo; return avisa('Modelo predeterminado guardado',c.modelo); }
+  if (d.cmodelosretry) { CONT.modelos = null; CONT.modelosError = null; return cargaModelosContenido(); }
+  if (d.cnuevolote) { if (CONT.crear?.enviando) return; CONT.crear = null; return cambiaTabContenido('crear'); }
   if (d.cestilomodo) { CONT.estiloModo = d.cestilomodo; return pintaContenido(); }
   if (d.celegirimagen) { $('contSubeArchivo')?.click(); return; }
   if (d.cdia) { CONT.dia = d.cdia === CONT.dia ? null : d.cdia; if (CONT.dia) return cargaDiaContenido(CONT.dia); return pintaContenido(); }
@@ -17134,12 +17198,10 @@ async function clicContenido(ev){
   if (d.crechaza) { const r = await llama({ action: 'contenidoRechaza', ids: [d.crechaza] }); if (!r.ok) return avisa('No se pudo rechazar', r.error); return cargaContenido(); }
   if (d.cedita) { if (CONT.abiertos.has(d.cedita)) CONT.abiertos.delete(d.cedita); else CONT.abiertos.add(d.cedita); return pintaContenido(); }
   if (d.cvariaciones) {
-    b.disabled = true; b.textContent = 'Haciendo variaciones…';
-    const r = await llamaCont({ action: 'contenidoVariaciones', id: d.cvariaciones, cantidad: 3 });
-    b.disabled = false; b.textContent = 'Variaciones';
-    if (!r.ok) return avisa('No se pudieron hacer variaciones', r.error);
-    avisa('Variaciones listas', r.ids.length + ' nuevas en «Por aprobar»: aprueba la que más te guste y rechaza las otras.');
-    CONT.tab = 'porAprobar'; return cargaContenido();
+    const pieza = CONT.items.concat(CONT.diaItems || []).find(x => x.id === d.cvariaciones);
+    if (!pieza) return avisa('La pieza ya no está disponible');
+    CONT.crear = { baseId: pieza.id, mes: pieza.mes_objetivo || pieza.fecha.slice(0,7), cantidad: 3, categorias: new Set([pieza.categoria]), formatos: new Set([pieza.formato]), canales: new Set([pieza.canal]), estilo_id: pieza.estilo_referencia_id || '', modelo: CONT.modelo || 'gemini-4-argon', brief: '', otraFoto: false };
+    return cambiaTabContenido('crear');
   }
   if (d.cpublica) {
     if (!await confirmaAqui('Se publica AHORA, sin esperar su hora. ¿Seguimos?', { si: 'Publicar' })) return;
@@ -17186,6 +17248,7 @@ async function clicContenido(ev){
 }
 async function cambioContenido(ev){
   const t = ev.target;
+  if (t.closest('[data-ccrear]')) { guardaCrearContenido(t.closest('form')); if(t.name==='categoria' || t.name.startsWith('foto_') || t.name==='otra_foto')pintaContenido(); return; }
   if (t.dataset.crefarchivo) { const archivo = t.files?.[0]; if (!archivo) return; const s = CONT.refDraft || (CONT.refDraft = {}); if (s.vista) URL.revokeObjectURL(s.vista); s.archivo = archivo; s.vista = URL.createObjectURL(archivo); s.error = null; return pintaContenido(); }
   const subidaForm = t.closest('[data-csube]'); if (subidaForm) guardaBorradorSubida(subidaForm);
   if (t.dataset.csubered && CONT.subida) { if (t.checked) CONT.subida.canales.add(t.dataset.csubered); else CONT.subida.canales.delete(t.dataset.csubered); t.closest('.red-chip')?.classList.toggle('on', t.checked); return; }
@@ -17197,6 +17260,7 @@ async function cambioContenido(ev){
 }
 async function guardaFormContenido(f){
   const v = Object.fromEntries(new FormData(f).entries());
+  if (f.dataset.ccrear) return generaLoteContenido(f);
   if (f.dataset.cgform) { const r = await llama({ action: 'contenidoGrupos', operation: 'add', nombre: v.nombre, url: v.url, reglas: v.reglas }); if (!r.ok) return avisa('No se pudo agregar', r.error); avisa('Grupo agregado'); return cargaContenido(); }
   if (f.dataset.cffecha) { const r = await llama({ action: 'contenidoFechas', operation: 'add', nombre: v.nombre, fecha: v.fecha, anual: v.anual === 'on', angulo: v.angulo }); if (!r.ok) return avisa('No se pudo agregar', r.error); avisa('Fecha agregada'); return cargaContenido(); }
   const boton = f.querySelector('button[type=submit]');

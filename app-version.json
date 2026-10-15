@@ -1,7 +1,7 @@
 {
-  "version": "2026-10-14-planificador-contexto-gemini-v194",
+  "version": "2026-10-14-planificador-creativo-gemini4-v195",
   "channel": "crm",
-  "released_at": "2026-10-14T23:03:00.000Z",
-  "summary": "Planificador con Revisión, Plantillas y Fototeca directa; referencias conservadas y errores de Gemini recuperables. El bot relee el hilo al retomar y conserva datos conocidos.",
+  "released_at": "2026-10-15T01:08:59.743Z",
+  "summary": "Gemini 4 y selector de modelos; ganchos nuevos, originales elegibles y flyers con el mes indicado, en tres composiciones y formatos. Referencias con geometría y colores reales; propuestas manuales por aprobar.",
   "requiere_puente": "2026-10-14-bot-contexto-conversacion-v47"
 }
