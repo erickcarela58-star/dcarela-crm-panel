@@ -1,7 +1,7 @@
 {
-  "version": "2026-10-14-planificador-creativo-gemini4-v195",
+  "version": "2026-10-14-planificador-memoria-v196",
   "channel": "crm",
-  "released_at": "2026-10-15T01:08:59.743Z",
-  "summary": "Gemini 4 y selector de modelos; ganchos nuevos, originales elegibles y flyers con el mes indicado, en tres composiciones y formatos. Referencias con geometría y colores reales; propuestas manuales por aprobar.",
+  "released_at": "2026-10-15T01:28:53.028Z",
+  "summary": "Corrección del error 500 por memoria: selector ligero, composición aislada por imagen, cola limitada y muestras a petición.",
   "requiere_puente": "2026-10-14-bot-contexto-conversacion-v47"
 }

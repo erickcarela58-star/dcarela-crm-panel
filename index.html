@@ -16631,7 +16631,7 @@ async function cargaModelosContenido(){
     const r = await llamaCont({action:'contenidoModelos'});
     if (!r.ok) throw new Error(r.error || 'No se pudieron consultar los modelos');
     if (!r.modelos?.length) throw new Error('Esta conexión no tiene modelos de Gemini disponibles. Revisa Canales → Conexiones y API.');
-    CONT.modelos = r.modelos || []; CONT.modelo = r.modelo; CONT.originales = r.originales || {}; CONT.fotosCreativas = r.fotos || [];
+    CONT.modelos = r.modelos || []; CONT.modelo = r.modelo; CONT.originales = r.originales || {}; CONT.fotosCreativas = r.fotos || []; CONT.originalesError = r.originales_error || null;
     const c = borradorCrearContenido(); if (!CONT.modelos.some(m=>m.id===c.modelo)) c.modelo = CONT.modelos[0]?.id || '';
   } catch (e) { CONT.modelosError = e.message; }
   finally { CONT.modelosCargando = false; if (CONT.tab === 'crear') pintaContenido(); }
@@ -16658,7 +16658,7 @@ function pintaCrearContenido(cuerpo){
     + '<form class="plan-creador plan-generador" data-ccrear="1"><fieldset'+disabled+'><legend>1. Define la campaña</legend><div class="plan-campos"><label>Mes de los flyers<input type="month" name="mes" required value="'+esc(c.mes)+'"></label><label>Ideas por categoría<select name="cantidad">'+[1,2,3,4,6,8].map(n=>'<option value="'+n+'"'+(c.cantidad===n?' selected':'')+'>'+n+'</option>').join('')+'</select></label></div><div class="agente-redes">'+chips(CONT_CATEGORIAS,'categoria',c.categorias,!!c.baseId)+'</div><p class="cont-sub">Cada idea tiene un gancho y argumento distintos. El mes elegido se respeta en el texto y la imagen.</p></fieldset>'
     + '<fieldset'+disabled+'><legend>2. Elige dirección y modelo</legend><label>Qué quieres comunicar<textarea name="brief" maxlength="800" rows="3" placeholder="Ej.: Retratos de cumpleaños con personalidad, luz de estudio y una experiencia tranquila. Evita frases genéricas.">'+esc(c.brief)+'</textarea></label><div class="plan-campos"><label>Modelo de Gemini<select name="modelo" required'+(!CONT.modelos?.length?' disabled':'')+'>'+((CONT.modelos||[]).map(m=>'<option value="'+esc(m.id)+'"'+(m.id===c.modelo?' selected':'')+'>'+esc(m.nombre)+'</option>').join('') || '<option>Consultando modelos…</option>')+'</select></label><label>Diseño<select name="estilo_id"><option value="">Dirección editorial con IA</option>'+ref.map(e=>'<option value="'+esc(e.id)+'"'+(e.id===c.estilo_id?' selected':'')+'>'+esc(e.nombre)+(e.origen==='referencia'?' · referencia':'')+'</option>').join('')+'</select></label></div>'
     + (c.baseId?'<label class="cont-sub"><input type="checkbox" name="otra_foto"'+(c.otraFoto?' checked':'')+'> Cambiar también la foto</label>':'')
-    + fotosCrearContenido(c) + (ROL_ACTUAL==='admin'?'<button type="button" class="btn-linea" data-cmodelodefault="1">Usar este modelo por defecto</button>':'')
+    + fotosCrearContenido(c) + (CONT.originalesError?'<p class="cont-aviso">'+esc(CONT.originalesError)+'</p>':'') + (ROL_ACTUAL==='admin'?'<button type="button" class="btn-linea" data-cmodelodefault="1">Usar este modelo por defecto</button>':'')
     + '<details><summary>Originales disponibles</summary><p class="cont-sub">'+CONT_CATEGORIAS.map(([id,t])=>esc(t)+': '+Number(CONT.originales?.[id]||0)).join(' · ')+'</p><p class="cont-sub">Gemini ve las originales y evalúa foco, exposición y marcas. Una categoría sin original apta no se completa con miniaturas.</p><button type="button" class="btn-linea" data-cbiblioteca="1">Abrir fototeca</button></details></fieldset>'
     + '<fieldset'+disabled+'><legend>3. Formatos y plataformas</legend><div class="agente-redes">'+chips([['imagen_4x5','Feed 4:5'],['imagen_9x16','Historia 9:16'],['imagen_1x1','Cuadrado 1:1']],'formato',c.formatos,!!c.baseId)+'</div><div class="agente-redes">'+chips(CONT.canales.map(x=>[x.id,x.nombre]),'plataforma',c.canales,!!c.baseId)+'</div><p class="cont-sub">Se preparan propuestas por aprobar. Puedes ajustar foto, texto, fecha y hora antes de que salgan.</p></fieldset>'
     + (c.error || CONT.modelosError?'<p class="cont-aviso" role="alert">'+esc(c.error || CONT.modelosError)+'</p>'+ (CONT.modelosError?'<button type="button" class="btn-linea" data-cmodelosretry="1">Volver a consultar modelos</button>':''):'')
@@ -17086,7 +17086,7 @@ function formularioEstiloContenido(){
 }
 function pintaEstilos(cuerpo){
   const admin = ROL_ACTUAL === 'admin';
-  void cargaMuestrasDeEstilos();
+  /* Las muestras se componen al solicitarlas; abrir una vista no renderiza doce originales. */
   const tarjeta = e => '<div class="estilo' + (e.activo ? '' : ' apagado') + '">'
     + '<div class="estilo-vista">' + (CONT.vistas[e.id] ? '<img src="' + CONT.vistas[e.id] + '" alt="Muestra de ' + esc(e.nombre) + '" data-cvistaestilo="' + esc(e.id) + '">' : e.referencia ? '<img src="' + esc(e.referencia) + '" alt="Referencia" class="estilo-ref">' : '<span class="estilo-muestra" style="--acento:' + esc(e.acento || '#FF7E00') + '"><b>Aa</b></span>') + '</div>'
     + '<div class="estilo-info"><b>' + esc(e.nombre) + '</b><small class="cont-sub">' + esc(CONT_ORIGEN[e.origen] || e.origen || '') + ' · ' + esc(CONT_LAYOUT[e.layout] || e.layout) + ' · botón ' + esc(e.boton === 'glass' ? 'de vidrio' : e.boton) + '</small>'
