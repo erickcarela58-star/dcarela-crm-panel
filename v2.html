@@ -170,7 +170,7 @@ body.menu-abierto .velo{display:block}
 .plan-vistas{display:flex;align-items:center;gap:8px;margin-left:auto;font-size:12px;color:var(--mut)}
 .plan-vistas select,.plan-creador select{border:1px solid var(--line2);border-radius:10px;padding:8px;background:var(--panel);color:var(--fg);font:inherit}
 .plan-gancho{font-size:18px;line-height:1.3;letter-spacing:-.3px;margin:5px 0}.plan-generador fieldset{border:0;border-bottom:1px solid var(--line);margin:0 0 18px;padding:0 0 16px;display:flex;flex-direction:column;gap:12px}.plan-generador legend{font-size:14px;font-weight:650;margin-bottom:12px}.plan-generador textarea{background:var(--panel);border:1px solid var(--line2);border-radius:12px;padding:12px;color:var(--fg);font:inherit;resize:vertical}.plan-campos{display:flex;gap:12px;flex-wrap:wrap}.plan-campos label{flex:1 1 200px}.plan-generador input[type=month],.plan-periodo input{padding:8px;border:1px solid var(--line2);border-radius:10px;background:var(--panel);color:var(--fg);font:inherit}.plan-generador details summary{font-size:12px;cursor:pointer}.plan-generador input[type=checkbox]{accent-color:var(--accent)}.plan-hoja .cont-mini{width:160px;flex-basis:160px;height:200px}.plan-periodo{margin-left:0}.plan-original-vista{max-height:240px;max-width:100%;object-fit:contain;border-radius:10px;margin:10px 0}.plan-hoja .cont-lista .cont-mini{width:160px;height:200px;flex-basis:160px}@media(max-width:640px){.plan-hoja .cont-lista .cont-mini{width:100%;height:300px;flex-basis:auto}}
-.plan-seccion-cab{display:flex;align-items:center;gap:12px;margin:18px 0 12px}.plan-seccion-cab h2{font-size:18px;letter-spacing:-.4px;margin:0}
+.plan-seccion-cab{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin:18px 0 12px}.plan-seccion-cab h2{font-size:20px;letter-spacing:-.5px;margin:0}
 .plan-bloqueadas{margin-top:16px;border:1px solid var(--line);border-radius:14px;padding:14px}.plan-bloqueadas>summary{font-size:13px;font-weight:600;cursor:pointer}.plan-bloqueadas .cont-lista{margin-top:12px}
 .plan-acciones>summary{font-size:12px;padding:6px 10px;cursor:pointer;color:var(--mut)}.plan-acciones[open]{flex-basis:100%}.plan-acciones .cont-acc{margin-top:8px}
 .plan-vacio{padding:30px 14px;background:var(--panel);border-radius:14px;color:var(--mut);font-size:13px}
@@ -208,6 +208,14 @@ body.menu-abierto .velo{display:block}
 .plan-hoja .subir .fila{gap:10px}.plan-hoja .subir input[type=date],.plan-hoja .subir select{padding:10px;border:1px solid var(--line2);border-radius:10px;background:var(--panel);color:var(--fg);font:inherit}
 .subir-pie{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.subir-pie small{flex:1;color:var(--mut)}
 @media(max-width:640px){.plan-hoja .cont-mini{width:100%;height:240px;flex-basis:auto}.plan-cifra{flex-basis:120px}.plan-hoja .agente,.plan-hoja .subir{padding:12px}}
+ .plan-hoja .subir .red-chip,.plan-hoja .plan-rutina .red-chip{display:flex;flex-direction:row;align-items:center;gap:8px}.plan-hoja .subir .red-chip input{width:15px;height:15px;margin:0}
+/* Estudio de contenido: una sola ruta de trabajo, con controles alineados. */
+.plan-hoja .agente{padding:0;background:none;border:0;border-radius:0;gap:0;margin-bottom:18px}.plan-hoja .agente-cab{gap:10px}.plan-hoja .agente-tit small{font-size:12px}.plan-hoja .agente-ico{display:none}.plan-hoja .agente-acc{margin:12px 0}.plan-hoja .plan-rutina{border:1px solid var(--line);border-radius:12px;padding:10px 14px;background:var(--panel)}
+.plan-hoja .plan-creador,.plan-hoja .subir{border-radius:18px;padding:22px;box-shadow:none}.plan-pasos{display:flex;gap:6px;overflow:auto;margin:0 0 22px;padding-bottom:12px;border-bottom:1px solid var(--line)}.plan-pasos button{display:flex;align-items:center;gap:9px;padding:9px 13px;border:0;background:none;color:var(--mut);border-radius:10px;white-space:nowrap;font-size:13px;font-weight:600}.plan-pasos button span{display:grid;place-items:center;width:24px;height:24px;border-radius:50%;background:var(--hover);font-size:12px}.plan-pasos button[aria-current=step]{background:var(--hover);color:var(--fg)}.plan-pasos button[aria-current=step] span{background:var(--fg);color:var(--panel)}
+.plan-generador fieldset{margin:0;padding:0;border:0;gap:18px;min-width:0}.plan-generador fieldset[hidden]{display:none}.plan-generador legend{font-size:22px;letter-spacing:-.6px;margin:0 0 6px;padding:0;font-weight:650}.plan-intro{font-size:13px;line-height:1.6;color:var(--mut);margin:0 0 6px;max-width:760px}.plan-generador label{font-size:13px;font-weight:550;line-height:1.4}.plan-generador input:not([type=checkbox]):not([type=radio]),.plan-generador select,.plan-generador textarea{width:100%;box-sizing:border-box;min-height:42px;border-radius:10px;padding:10px 12px;background:var(--panel);border:1px solid var(--line2);color:var(--fg);font:inherit}.plan-generador textarea{line-height:1.6;resize:vertical}.plan-campos{gap:14px}.plan-campos label{flex:1 1 220px}.plan-hoja .plan-generador .red-chip{display:flex;flex-direction:row;align-items:center;gap:8px;min-height:40px;padding:9px 12px;border-radius:10px;font-size:13px}.plan-generador .red-chip input{width:15px;height:15px;margin:0;flex:0 0 auto}.plan-control-grupo{display:flex;flex-direction:column;gap:10px}.plan-control-grupo>strong{font-size:13px}.plan-ayuda{font-size:12px;line-height:1.6;color:var(--mut);margin:0}.plan-opciones{border:1px solid var(--line);border-radius:12px;padding:12px 14px}.plan-opciones summary{cursor:pointer;font-size:13px!important;font-weight:600}.plan-opciones[open]>summary{margin-bottom:14px}.plan-opciones .plan-campos{margin:12px 0}
+.plan-originales{display:flex;flex-direction:column;gap:20px}.plan-original-cab{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px}.plan-original-cab b{font-size:14px}.plan-originales-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px}.plan-original-opcion{position:relative;border:2px solid transparent;background:var(--hover);border-radius:12px;overflow:hidden;min-width:0;cursor:pointer;padding:0!important;gap:0!important}.plan-original-opcion:has(input:checked){border-color:var(--accent)}.plan-original-opcion input{position:absolute;top:10px;left:10px;z-index:1;accent-color:var(--accent)}.plan-original-opcion img{width:100%;height:185px;object-fit:contain;background:var(--bg)}.plan-original-opcion span{padding:9px 10px;font-size:11px;color:var(--mut)}.plan-original-auto{min-height:222px;display:flex!important;align-items:center;justify-content:center;gap:10px!important;padding:20px!important;box-sizing:border-box;text-align:center}.plan-original-auto b{font-size:16px;font-weight:550}.plan-original-auto span{line-height:1.5;padding:0}.plan-original-auto input{position:static;width:16px;height:16px}.plan-ref-compara{display:flex;flex-direction:column;gap:12px;border:1px solid var(--line);border-radius:14px;padding:16px}.plan-ref-compara img{max-width:100%;max-height:360px;object-fit:contain;border-radius:10px;align-self:flex-start}.plan-ref-compara b{font-size:14px}.plan-resumen{display:flex;flex-wrap:wrap;gap:10px 24px;padding:16px 0;margin-top:20px;border-top:1px solid var(--line);font-size:12px;color:var(--mut)}.plan-resumen b{display:block;color:var(--fg);font-size:14px;margin-top:4px}.plan-footer{display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap;padding-top:16px;border-top:1px solid var(--line)}.plan-footer .cont-acc{margin:0}.plan-footer p{margin:0;max-width:600px}.plan-job{padding:16px;border:1px solid var(--line);border-radius:14px;background:var(--hover);margin-bottom:18px}.plan-job-cab{display:flex;align-items:center;justify-content:space-between;gap:12px;font-size:14px}.plan-job progress{width:100%;height:7px;margin:12px 0;accent-color:var(--accent)}.plan-job p{margin:0;color:var(--mut);font-size:12px;line-height:1.5}.plan-job .cont-acc{margin:10px 0 0}.plan-respaldo{display:flex;align-items:center;gap:9px;font-size:12px;color:var(--mut)}.plan-respaldo::before{content:'';width:6px;height:6px;background:#58a784;border-radius:50%;flex:0 0 auto}
+.plan-hoja .cont-lista .cont{padding:18px;gap:22px;border-radius:16px;align-items:flex-start}.plan-hoja .cont-lista .cont-mini{width:clamp(200px,25vw,320px);height:auto;max-height:460px;aspect-ratio:4/5;flex:0 0 clamp(200px,25vw,320px);object-fit:contain;background:var(--hover);border-radius:10px;cursor:zoom-in}.plan-hoja .cont-cuerpo{gap:10px}.plan-hoja .cont-cab{gap:8px 12px}.plan-hoja .cont-texto{font-size:14px;line-height:1.7;max-height:120px}.plan-hoja .plan-gancho{font-size:23px;line-height:1.3;max-width:700px;margin:0}.plan-hoja .cont-acc{gap:8px;align-items:center}.plan-objetivo{font-size:12px;line-height:1.6;margin:0;padding:10px 12px;background:var(--hover);border-radius:10px}.plan-media-badge{display:inline-flex;gap:5px;align-items:center;font-size:11px;font-weight:650;border:1px solid var(--line2);border-radius:7px;padding:4px 7px}.plan-hoja .subir-paso{gap:12px;padding-bottom:18px}.plan-hoja .subir-paso>b{font-size:17px;letter-spacing:-.3px}.plan-hoja .subir-zona{min-height:220px;padding:20px}.plan-hoja .subir-zona video{max-width:100%;max-height:480px;border-radius:10px}.plan-hoja .subir-zona>span{max-width:100%;text-align:center;color:var(--mut);font-size:13px;line-height:1.6}.plan-hoja .subir-campo textarea{min-height:130px;line-height:1.6}.plan-hoja .estilo-vista{width:200px;flex:0 0 200px;height:250px}.plan-hoja .estilo-info{padding:18px}.plan-hoja .estilo-info>b{font-size:17px}.plan-hoja .estilo-info .cont-acc{margin-top:14px}.plan-hoja .estilos{gap:14px}.plan-hoja .plan-ref-vista{max-height:360px}.plan-subida-progreso{width:100%;accent-color:var(--accent)}
+
 .cont{display:flex;gap:12px;border:1px solid var(--line2);border-radius:12px;padding:12px}
 .cont-mini{flex:0 0 96px;width:96px;height:120px;border-radius:8px;object-fit:cover;background:var(--hover)}
 .cont-cuerpo{flex:1;min-width:0;display:flex;flex-direction:column;gap:6px}
@@ -1671,6 +1679,8 @@ a.ayuda{color:var(--enlace)}
   .hoja{padding:18px 16px}
   .agbarra strong{order:-1;width:100%;text-align:left}
   .agbarra .ag-suscribe{margin-left:0}
+
+.plan-hoja{padding:14px 12px!important}.plan-hoja .plan-creador,.plan-hoja .subir{padding:16px}.plan-pasos{gap:2px}.plan-pasos button{padding:8px;font-size:12px}.plan-pasos button span{width:21px;height:21px}.plan-campos label{flex-basis:100%}.plan-originales-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.plan-original-opcion img{height:190px}.plan-hoja .cont-lista .cont{flex-direction:column;padding:14px;gap:16px}.plan-hoja .cont-lista .cont-mini{width:100%;max-height:520px;flex-basis:auto;aspect-ratio:auto}.plan-hoja .plan-gancho{font-size:20px}.plan-hoja .estilo{flex-direction:column}.plan-hoja .estilo-vista{width:100%;height:300px;flex-basis:auto}.plan-footer{align-items:stretch}.plan-footer>.cont-acc{width:100%;justify-content:space-between}.plan-footer button{flex:1}.plan-resumen{gap:10px 18px}
 }
 @media(max-width:430px){
   /* Solo aqui, y solo la barra. Con grid en vez de flex: envolver con flex no basta porque
@@ -16605,7 +16615,7 @@ let CONT = { items: [], conteo: {}, calendario: [], canales: [], activos: [], ac
   autonomia: 'manual', cantidad: 0, tiktok: null, estilos: [], tendencias: null, amandine: true, gen: null, mes: null, mesItems: null, dia: null, diaItems: null, vistas: {}, nuevosIA: [], ref: null, subida: null };
 const CONT_TABS = [['calendario', 'Calendario'], ['porAprobar', 'Revisión'], ['estilos', 'Plantillas'], ['fotos', 'Fototeca']];
 const CONT_VISTAS = [['programadas', 'Programadas'], ['publicadas', 'Publicadas'], ['tendencias', 'Ideas y tendencias'], ['redes', 'Conexiones'], ['paquete', 'Paquete de grupos'], ['fechas', 'Fechas del negocio'], ['subir', 'Nueva publicación']];
-const CONT_ESTADOS = { propuesta: 'Por aprobar', aprobada: 'Aprobada', publicando: 'Enviando…', encola: 'En cola del puente', enviada: 'Enviada · esperando confirmación', sin_confirmar: 'Sin confirmación', publicada: 'Publicada · confirmada', fallida: 'Falló', rechazada: 'Rechazada', vencida: 'Vencida', lista: 'Lista para subir' };
+const CONT_ESTADOS = { propuesta: 'Por aprobar', aprobada: 'Aprobada', publicando: 'Enviando…', encola: 'Procesando en el canal', enviada: 'Enviada · esperando confirmación', sin_confirmar: 'Sin confirmación', publicada: 'Publicada · confirmada', fallida: 'Falló', rechazada: 'Rechazada', vencida: 'Vencida', lista: 'Lista para subir' };
 const CONT_CORTO = { instagram: 'IG', facebook: 'FB', whatsapp_estado: 'Estado', tiktok: 'TikTok', paquete_grupos: 'Grupos' };
 const CONT_AUTONOMIA = [
   ['manual', 'Manual', 'Te propone y tú apruebas todo (aquí o por WhatsApp).'],
@@ -16622,7 +16632,7 @@ function periodoListaContenido(){
   return { mes, desde: mes+'-01', hasta: mes+'-'+new Date(Date.UTC(a,m,0)).getUTCDate() };
 }
 function borradorCrearContenido(){
-  return CONT.crear || (CONT.crear = {mes:periodoListaContenido().mes,cantidad:3,categorias:new Set(['infantil','xv','cumpleanos']),formatos:new Set(['imagen_4x5','imagen_9x16']),canales:new Set(['instagram','whatsapp_estado']),modelo:CONT.modelo || 'gemini-4-argon',estilo_id:'',brief:''});
+  return CONT.crear || (CONT.crear = {mes:periodoListaContenido().mes,cantidad:1,categorias:new Set(['infantil']),formatos:new Set(['imagen_4x5','imagen_9x16']),canales:new Set(['instagram','whatsapp_estado']),modelo:CONT.modelo || 'gemini-4-argon',estilo_id:'',brief:'',objetivo:'consultas',publico:'',diferencial:'',evitar:'',paso:1});
 }
 async function cargaModelosContenido(){
   if (CONT.modelosCargando || CONT.modelos) return;
@@ -16644,30 +16654,83 @@ async function cargaModelosContenido(){
 function guardaCrearContenido(f){
   const c = borradorCrearContenido(); if(c.enviando)return;
   const v = Object.fromEntries(new FormData(f).entries());
-  Object.assign(c,{mes:v.mes || c.mes,cantidad:Number(v.cantidad)||3,modelo:v.modelo || c.modelo,estilo_id:v.estilo_id ?? c.estilo_id,brief:v.brief || '',otraFoto:v.otra_foto==='on'});
+  const anterior=JSON.stringify([c.mes,c.cantidad,c.modelo,c.estilo_id,c.brief,c.objetivo,c.publico,c.diferencial,c.evitar,c.otraFoto,c.fotos,[...c.categorias],[...c.formatos],[...c.canales]]);
+  Object.assign(c,{mes:v.mes || c.mes,cantidad:Number(v.cantidad)||1,modelo:v.modelo || c.modelo,estilo_id:v.estilo_id ?? c.estilo_id,brief:v.brief || '',otraFoto:v.otra_foto==='on'});
+  for(const k of ['objetivo','publico','diferencial','evitar']) if(v[k] !== undefined)c[k]=String(v[k]);
   c.fotos = Object.fromEntries(CONT_CATEGORIAS.map(([id])=>[id,v['foto_'+id] || '']));
   if(!c.baseId) for(const [name,key] of [['categoria','categorias'],['formato','formatos'],['plataforma','canales']]) c[key] = new Set([...f.querySelectorAll('input[name="'+name+'"]:checked')].map(x=>x.value));
+  const actual=JSON.stringify([c.mes,c.cantidad,c.modelo,c.estilo_id,c.brief,c.objetivo,c.publico,c.diferencial,c.evitar,c.otraFoto,c.fotos,[...c.categorias],[...c.formatos],[...c.canales]]);
+  if(anterior!==actual)c.solicitud=null;
 }
 function fotosCrearContenido(c){
   if(c.baseId && !c.otraFoto)return '<p class="cont-sub">Se conserva la original de la pieza. Marca «Cambiar también la foto» para explorar otras.</p>';
-  return '<details><summary>Elegir originales por categoría</summary><p class="cont-sub">Puedes fijar una original o dejar que Gemini elija entre las más recientes de la categoría.</p>' + CONT_CATEGORIAS.filter(([id])=>c.categorias.has(id)).map(([id,t])=>{
-    const fotos=(CONT.fotosCreativas||[]).filter(f=>f.categoria===id),elegida=fotos.find(f=>f.id===c.fotos?.[id]);
-    return '<label class="subir-campo">'+esc(t)+'<select name="foto_'+id+'"><option value="">Selección de Gemini</option>'+fotos.map((f,i)=>'<option value="'+esc(f.id)+'"'+(f.id===c.fotos?.[id]?' selected':'')+'>Original '+(i+1)+' · '+Number(f.width)+'×'+Number(f.height)+'</option>').join('')+'</select></label>' + (elegida?.preview?'<img class="plan-original-vista" src="'+esc(elegida.preview)+'" alt="Vista previa de la original elegida para '+esc(t)+'">':'');
-  }).join('')+'</details>';
+  return '<div class="plan-originales">' + CONT_CATEGORIAS.filter(([id])=>c.categorias.has(id)).map(([id,t])=>{
+    const fotos=(CONT.fotosCreativas||[]).filter(f=>f.categoria===id),seleccion=c.fotos?.[id] || '';
+    const ordenadas=[...fotos].sort((a,b)=>Number(b.id===seleccion)-Number(a.id===seleccion));
+    const tarjeta=(f,i)=>'<label class="plan-original-opcion"><input type="radio" name="foto_'+id+'" value="'+esc(f.id)+'"'+(f.id===seleccion?' checked':'')+'>'+(f.preview?'<img src="'+esc(f.preview)+'" loading="lazy" alt="Original '+(i+1)+' de '+esc(t)+'">':'<span>Original '+(i+1)+'</span>')+'<span>'+Number(f.width)+' × '+Number(f.height)+' px</span></label>';
+    return '<section><div class="plan-original-cab"><b>'+esc(t)+'</b><span class="cont-sub">'+fotos.length+' originales disponibles</span></div>'
+      + (fotos.length?'<div class="plan-originales-grid"><label class="plan-original-opcion plan-original-auto"><input type="radio" name="foto_'+id+'" value=""'+(!seleccion?' checked':'')+'><b>Elegir la más apta</b><span>La IA revisa foco, luz y marcas antes de diseñar.</span></label>'+ordenadas.slice(0,5).map(tarjeta).join('')+'</div>'+(ordenadas.length>5?'<details class="plan-opciones"><summary>Ver '+(ordenadas.length-5)+' originales más</summary><div class="plan-originales-grid">'+ordenadas.slice(5).map(tarjeta).join('')+'</div></details>':''):'<div class="plan-vacio">Falta una original de esta categoría. <button type="button" class="btn-linea" data-cbiblioteca="1">Subir a Fototeca</button></div>')+'</section>';
+  }).join('')+'</div>';
 }
 function pintaCrearContenido(cuerpo){
   const c=borradorCrearContenido(); if(!CONT.modelos && !CONT.modelosCargando && !CONT.modelosError) void cargaModelosContenido();
-  const disabled=c.enviando?' disabled':'',ref=CONT.estilos.filter(e=>e.activo || e.id===c.estilo_id);
+  const disabled=c.enviando?' disabled':'',ref=CONT.estilos.filter(e=>e.activo || e.id===c.estilo_id),paso=Number(c.paso)||1;
+  const referencia=ref.find(e=>e.id===c.estilo_id),imagenRef=referencia?.referencia || CONT.vistas?.[c.estilo_id];
+  const objetivos=[['consultas','Conseguir consultas por WhatsApp'],['reservas','Convertir interés en una reserva'],['portafolio','Mostrar el trabajo y la experiencia']];
   const chips=(items,name,set,lock=false)=>items.map(([id,t])=>'<label class="red-chip'+(set.has(id)?' on':'')+'"><input type="checkbox" name="'+name+'" value="'+id+'"'+(set.has(id)?' checked':'')+(lock || c.enviando?' disabled':'')+'>'+esc(t)+'</label>').join('');
-  cuerpo.innerHTML='<div class="plan-seccion-cab"><h2>'+(c.baseId?'Variaciones con nuevos ganchos':'Crear flyers')+'</h2><span class="cont-sub">Originales + dirección creativa + diseño</span></div>'
-    + '<form class="plan-creador plan-generador" data-ccrear="1"><fieldset'+disabled+'><legend>1. Define la campaña</legend><div class="plan-campos"><label>Mes de los flyers<input type="month" name="mes" required value="'+esc(c.mes)+'"></label><label>Ideas por categoría<select name="cantidad">'+[1,2,3,4,6,8].map(n=>'<option value="'+n+'"'+(c.cantidad===n?' selected':'')+'>'+n+'</option>').join('')+'</select></label></div><div class="agente-redes">'+chips(CONT_CATEGORIAS,'categoria',c.categorias,!!c.baseId)+'</div><p class="cont-sub">Cada idea tiene un gancho y argumento distintos. El mes elegido se respeta en el texto y la imagen.</p></fieldset>'
-    + '<fieldset'+disabled+'><legend>2. Elige dirección y modelo</legend><label>Qué quieres comunicar<textarea name="brief" maxlength="800" rows="3" placeholder="Ej.: Retratos de cumpleaños con personalidad, luz de estudio y una experiencia tranquila. Evita frases genéricas.">'+esc(c.brief)+'</textarea></label><div class="plan-campos"><label>Modelo de Gemini<select name="modelo" required'+(!CONT.modelos?.length?' disabled':'')+'>'+((CONT.modelos||[]).map(m=>'<option value="'+esc(m.id)+'"'+(m.id===c.modelo?' selected':'')+'>'+esc(m.nombre)+'</option>').join('') || '<option>Consultando modelos…</option>')+'</select></label><label>Diseño<select name="estilo_id"><option value="">Diseño nuevo según las originales</option>'+ref.map(e=>'<option value="'+esc(e.id)+'"'+(e.id===c.estilo_id?' selected':'')+'>'+esc(e.nombre)+(e.origen==='referencia'?' · referencia':'')+'</option>').join('')+'</select></label></div>'
-    + (c.baseId?'<label class="cont-sub"><input type="checkbox" name="otra_foto"'+(c.otraFoto?' checked':'')+'> Cambiar también la foto</label>':'')
-    + fotosCrearContenido(c) + (CONT.originalesError?'<p class="cont-aviso">'+esc(CONT.originalesError)+'</p>':'') + (ROL_ACTUAL==='admin'?'<button type="button" class="btn-linea" data-cmodelodefault="1">Usar este modelo por defecto</button>':'')
-    + '<details><summary>Originales en alta · pendientes de revisar</summary><p class="cont-sub">'+CONT_CATEGORIAS.map(([id,t])=>esc(t)+': '+Number(CONT.originales?.[id]||0)).join(' · ')+'</p><p class="cont-sub">Gemini ve las originales y evalúa foco, exposición y marcas. Una categoría sin original apta no se completa con miniaturas.</p><button type="button" class="btn-linea" data-cbiblioteca="1">Abrir fototeca</button></details></fieldset>'
-    + '<fieldset'+disabled+'><legend>3. Formatos y plataformas</legend><div class="agente-redes">'+chips([['imagen_4x5','Feed 4:5'],['imagen_9x16','Historia 9:16'],['imagen_1x1','Cuadrado 1:1']],'formato',c.formatos,!!c.baseId)+'</div><div class="agente-redes">'+chips(CONT.canales.map(x=>[x.id,x.nombre]),'plataforma',c.canales,!!c.baseId)+'</div><p class="cont-sub">Se preparan propuestas por aprobar. Puedes ajustar foto, texto, fecha y hora antes de que salgan.</p></fieldset>'
+  cuerpo.innerHTML='<div class="plan-seccion-cab"><div><h2>'+(c.baseId?'Otra dirección creativa':'Crear flyers')+'</h2><p class="plan-intro">De una intención concreta a una pieza que puedas revisar.</p></div><span class="plan-respaldo">Foto original conservada</span></div>'
+    + (CONT.tarea?estadoTareaContenidoHtml(CONT.tarea):'')
+    + '<form class="plan-creador plan-generador" data-ccrear="1"><nav class="plan-pasos" aria-label="Pasos de creación">'+['Intención','Foto y estilo','Entrega'].map((t,i)=>'<button type="button" data-cpaso="'+(i+1)+'"'+(paso===i+1?' aria-current="step"':'')+disabled+'><span>'+(i+1)+'</span>'+t+'</button>').join('')+'</nav>'
+    + '<fieldset'+disabled+(paso!==1?' hidden':'')+'><legend>¿A quién quieres atraer?</legend><p class="plan-intro">El objetivo y lo que hace especial tu trabajo guían los ganchos. Cada propuesta explora un argumento distinto.</p><div class="plan-campos"><label>Mes de los flyers<input type="month" name="mes" required value="'+esc(c.mes)+'"></label><label>Ideas por categoría<select name="cantidad">'+[1,2,3,4,6,8].map(n=>'<option value="'+n+'"'+(c.cantidad===n?' selected':'')+'>'+n+' ideas distintas</option>').join('')+'</select></label></div><div class="plan-control-grupo"><strong>Tipo de sesión</strong><div class="agente-redes">'+chips(CONT_CATEGORIAS,'categoria',c.categorias,!!c.baseId)+'</div></div>'
+    + '<div class="plan-campos"><label>Qué debe conseguir la pieza<select name="objetivo">'+objetivos.map(([k,t])=>'<option value="'+k+'"'+((c.objetivo||'consultas')===k?' selected':'')+'>'+t+'</option>').join('')+'</select></label><label>A quién le hablas<input name="publico" maxlength="140" placeholder="Ej.: mamás que quieren documentar el primer año" value="'+esc(c.publico||'')+'"></label></div><label>Qué quieres que vean en tu trabajo<input name="diferencial" maxlength="180" placeholder="Ej.: retratos naturales, luz suave y dirección cercana" value="'+esc(c.diferencial||'')+'"></label><label>Dirección del mensaje<textarea name="brief" maxlength="400" rows="3" placeholder="Qué historia quieres contar. Puedes mencionar una ocasión, una emoción o algo que sí se vea en tus fotos.">'+esc(c.brief)+'</textarea></label><details class="plan-opciones"><summary>Frases o enfoques que quieres evitar</summary><label>No usar<input name="evitar" maxlength="120" placeholder="Ej.: momentos mágicos, cupos limitados, clichés" value="'+esc(c.evitar||'')+'"></label></details></fieldset>'
+    + '<fieldset'+disabled+(paso!==2?' hidden':'')+'><legend>La foto manda</legend><p class="plan-intro">Elige una original nítida y una dirección visual. La composición usa tu fotografía completa, sin cambiar rostros ni generar otra persona.</p><label>Dirección visual<select name="estilo_id"><option value="">Composición nueva para estas fotografías</option>'+ref.map(e=>'<option value="'+esc(e.id)+'"'+(e.id===c.estilo_id?' selected':'')+'>'+esc(e.nombre)+(e.origen==='referencia'?' · de tu referencia':'')+'</option>').join('')+'</select></label>'
+    + (referencia?'<section class="plan-ref-compara"><b>Referencia: '+esc(referencia.nombre)+'</b>'+(imagenRef?'<img src="'+esc(imagenRef)+'" alt="Referencia del diseño seleccionado">':'')+'<p class="plan-ayuda">Se toman la jerarquía, las formas, los espacios y el color. Tu original sustituye la foto de la referencia; se adapta al formato elegido.</p>'+lecturaReferenciaHtml(referencia.analisis)+'</section>':'<p class="plan-ayuda">¿Tienes un flyer como referencia? <button type="button" class="btn-linea" data-cirtab="estilos">Analizar referencia</button></p>')
+    + (c.baseId?'<label class="red-chip"><input type="checkbox" name="otra_foto"'+(c.otraFoto?' checked':'')+'> Cambiar también la foto</label>':'') + fotosCrearContenido(c)
+    + (CONT.originalesError?'<p class="cont-aviso">'+esc(CONT.originalesError)+'</p>':'')+'<p class="plan-ayuda">Las miniaturas son solo para elegir. El render usa el archivo original y descarta fotos con marcas, desenfoque o resolución insuficiente.</p><details class="plan-opciones"><summary>Modelo y originales disponibles</summary><label>Modelo de Gemini<select name="modelo" required'+(!CONT.modelos?.length?' disabled':'')+'>'+((CONT.modelos||[]).map(m=>'<option value="'+esc(m.id)+'"'+(m.id===c.modelo?' selected':'')+'>'+esc(m.nombre)+'</option>').join('') || '<option>Consultando modelos…</option>')+'</select></label><p class="plan-ayuda">'+CONT_CATEGORIAS.map(([id,t])=>esc(t)+': '+Number(CONT.originales?.[id]||0)).join(' · ')+'</p>'+(ROL_ACTUAL==='admin'?'<button type="button" class="btn-linea" data-cmodelodefault="1">Usar este modelo por defecto</button>':'')+'</details></fieldset>'
+    + '<fieldset'+disabled+(paso!==3?' hidden':'')+'><legend>Prepara la entrega</legend><p class="plan-intro">Primero revisas foto, gancho y diseño. La creación manual deja todas las piezas pendientes de tu aprobación.</p><div class="plan-control-grupo"><strong>Tamaños</strong><div class="agente-redes">'+chips([['imagen_4x5','Feed · 4:5'],['imagen_9x16','Historia · 9:16'],['imagen_1x1','Cuadrado · 1:1']],'formato',c.formatos,!!c.baseId)+'</div></div><div class="plan-control-grupo"><strong>Destinos</strong><div class="agente-redes">'+chips(CONT.canales.filter(x=>x.id!=='paquete_grupos').map(x=>[x.id,x.nombre]),'plataforma',c.canales,!!c.baseId)+'</div></div><p class="plan-ayuda">WhatsApp usa el número oficial 849-524-5620. No se inventan precios, promociones ni disponibilidad.</p></fieldset>'
     + (c.error || CONT.modelosError?'<p class="cont-aviso" role="alert">'+esc(c.error || CONT.modelosError)+'</p>'+ (CONT.modelosError?'<button type="button" class="btn-linea" data-cmodelosretry="1">Volver a consultar modelos</button>':''):'')
-    + '<div class="subir-pie"><small>'+(c.enviando?'Se revisan las originales y se descartan las que tengan marcas; después Gemini diseña y escribe los nuevos ganchos. Puedes cambiar de vista.':'Los rostros y la foto original se conservan. Ninguna propuesta se aprueba automáticamente desde este formulario.')+'</small><button type="submit" class="btn-solido"'+(c.enviando || !CONT.modelos?.length?' disabled':'')+'>'+(c.enviando?'Preparando flyers…':c.baseId?'Crear nuevas variaciones':'Preparar propuestas')+'</button><button type="button" class="btn-linea" data-cnuevolote="1"'+disabled+'>Nuevo lote</button></div></form>';
+    + '<div class="plan-resumen"><span>Mes<b>'+esc(c.mes)+'</b></span><span>Ideas<b>'+c.cantidad+' × '+c.categorias.size+' categoría'+(c.categorias.size===1?'':'s')+'</b></span><span>Formatos<b>'+c.formatos.size+'</b></span><span>Modelo<b>'+esc(c.modelo || 'Consultando…')+'</b></span></div><div class="plan-footer"><p class="plan-ayuda">'+(c.enviando?'El trabajo continúa en el servidor. Puedes salir de esta vista y volver a consultar su progreso.':'Las propuestas se guardan para revisión. Tú decides cuáles programar.')+'</p><div class="cont-acc">'+(paso>1?'<button type="button" class="btn-linea" data-cpaso="'+(paso-1)+'"'+disabled+'>Atrás</button>':'<button type="button" class="btn-linea" data-cnuevolote="1"'+disabled+'>Empezar de nuevo</button>')+(paso<3?'<button type="button" class="btn-solido" data-cpaso="'+(paso+1)+'"'+disabled+'>Continuar</button>':'<button type="submit" class="btn-solido"'+(c.enviando || !CONT.modelos?.length?' disabled':'')+'>'+(c.enviando?'Preparación en curso…':c.baseId?'Preparar nuevas variaciones':'Preparar propuestas')+'</button>')+'</div></div></form>';
+}
+function estadoTareaContenidoHtml(t){
+  const estado=t.estado || 'pendiente',fin=['completada','fallida'].includes(estado),p=Math.max(0,Math.min(100,Number(t.progreso)||0));
+  return '<section class="plan-job" aria-live="polite"><div class="plan-job-cab"><b>'+esc(estado==='completada'?'Tus propuestas están listas':estado==='fallida'?'La preparación necesita atención':'Preparando tus propuestas')+'</b><span>'+p+'%</span></div><progress max="100" value="'+p+'" aria-label="Progreso de preparación"></progress><p>'+esc(t.error?.mensaje || t.avisoConexion || t.mensaje || t.etapa || 'Validando originales y dirección creativa…')+'</p>'
+    + (!fin?'<p>Puedes cambiar de vista o recargar: el trabajo continúa.</p>':'')+'<div class="cont-acc">'+(estado==='completada'?'<button type="button" class="btn-solido" data-cirtab="porAprobar">Revisar propuestas</button>':estado==='fallida' && t.error?.reintentable!==false?'<button type="button" class="btn-solido" data-ctarearetry="1">Retomar desde el último paso</button>':'')+'<button type="button" class="btn-linea" data-ctareaactualiza="1">Actualizar progreso</button></div></section>';
+}
+function claveTareaContenido(){
+  return 'dcarela-contenido-tarea:'+String(typeof NEGOCIO==='undefined'?'':NEGOCIO)+':'+String(typeof auth==='undefined'?'':auth.currentUser?.uid || '');
+}
+function guardaTareaContenido(){
+  try { const c=CONT.crear;localStorage.setItem(claveTareaContenido(),JSON.stringify({tarea:CONT.tarea,solicitud:c?.solicitud,mes:c?.mes,crear:c?{...c,categorias:[...c.categorias],formatos:[...c.formatos],canales:[...c.canales]}:null})); } catch {}
+}
+function restauraTareaContenido(){
+  if(CONT.tareaRestaurada)return;CONT.tareaRestaurada=true;
+  try { const v=JSON.parse(localStorage.getItem(claveTareaContenido())||'null');if(v?.tarea?.id)CONT.tarea=v.tarea;if(v?.solicitud){const c=borradorCrearContenido();if(v.crear){Object.assign(c,v.crear);for(const k of ['categorias','formatos','canales'])c[k]=new Set(v.crear[k]||[]);}c.solicitud=v.solicitud;if(v.mes)c.mes=v.mes;c.enviando=!!CONT.tarea && !['fallida','completada'].includes(CONT.tarea.estado);} } catch {}
+  if(CONT.tarea?.id)void sigueTareaContenido();
+}
+async function sigueTareaContenido(){
+  if(!CONT.tarea?.id || CONT.consultandoTarea)return;
+  if(CONT.tareaTimer)clearTimeout(CONT.tareaTimer);CONT.consultandoTarea=true;
+  const id=CONT.tarea.id;
+  try {
+    const r=await llamaCont({action:'contenidoTarea',operation:'estado',id});
+    if(!r.ok || !r.tarea)throw new Error(r.error || 'No se pudo consultar el progreso');
+    if(CONT.tarea?.id!==id)return;
+    CONT.tarea=r.tarea;const c=borradorCrearContenido(),fin=['completada','fallida'].includes(r.tarea.estado);c.enviando=!fin;
+    if(fin){c.error=r.tarea.estado==='fallida'?(r.tarea.error?.mensaje || 'No se completó la preparación'):null;}
+    guardaTareaContenido();
+    if(r.tarea.estado==='completada' && CONT.tareaNotificada!==id){CONT.tareaNotificada=id;CONT.filtroMes=c.mes;CONT.mes=c.mes;await cargaContenido();avisa('Propuestas listas','Revisa originales, textos y diseños antes de aprobar.');}
+  } catch(e){if(CONT.tarea?.id===id)CONT.tarea.avisoConexion='La consulta de progreso no terminó. La tarea sigue guardada; volveremos a conectar.';}
+  finally {CONT.consultandoTarea=false;if($('contCuerpo'))pintaContenido();if(CONT.tarea?.id===id && !['completada','fallida'].includes(CONT.tarea.estado))CONT.tareaTimer=setTimeout(()=>void sigueTareaContenido(),CONT.tarea.avisoConexion?10000:3000);}
+}
+async function reintentaTareaContenido(){
+  if(CONT.retomandoTarea || !CONT.tarea?.id)return;CONT.retomandoTarea=true;
+  try {const r=await llamaCont({action:'contenidoTarea',operation:'reintentar',id:CONT.tarea.id});if(!r.ok || !r.tarea)throw new Error(r.error || 'No se pudo retomar');CONT.tarea=r.tarea;borradorCrearContenido().enviando=true;guardaTareaContenido();void sigueTareaContenido();}
+  catch(e){avisa('No se pudo retomar',e.message);}
+  finally{CONT.retomandoTarea=false;pintaContenido();}
+}
+function briefCrearContenido(c){
+  const objetivo={consultas:'Conseguir consultas por WhatsApp',reservas:'Convertir interés en reserva sin inventar disponibilidad',portafolio:'Mostrar el trabajo y la experiencia fotográfica'}[c.objetivo || 'consultas'];
+  return ['Objetivo: '+objetivo,c.publico?'Público: '+c.publico:'',c.diferencial?'Diferencial visible/real: '+c.diferencial:'',c.brief?'Dirección: '+c.brief:'',c.evitar?'Evitar: '+c.evitar:''].filter(Boolean).join('\n').slice(0,800);
 }
 async function generaLoteContenido(f){
   const c=borradorCrearContenido(); if(c.enviando)return;
@@ -16676,13 +16739,14 @@ async function generaLoteContenido(f){
   c.enviando=true;c.error=null;if(CONT.tab==='crear')pintaContenido();
   let r;
   try {
-    r = await llamaCont(c.baseId?{action:'contenidoVariaciones',id:c.baseId,cantidad:c.cantidad,otra_foto:c.otraFoto,mes:c.mes,modelo:c.modelo,brief:c.brief,estilo_id:c.estilo_id,fotos_por_categoria:c.fotos}:{action:'contenidoGenera',creativo:true,mes:c.mes,categorias:[...c.categorias],cantidad:c.cantidad,formatos:[...c.formatos],canales:[...c.canales],estilo_id:c.estilo_id,modelo:c.modelo,brief:c.brief,fotos_por_categoria:c.fotos});
-    if(!r.ok)throw new Error(r.error || 'No se pudo completar el lote');
-    CONT.filtroMes=c.mes;CONT.mes=c.mes;CONT.tab='porAprobar';
-    avisa('Propuestas preparadas',(r.creadas || r.ids?.length || 0)+' publicaciones con nuevos ganchos'+(r.categorias_sin_original?.length?'. Faltan originales de: '+r.categorias_sin_original.join(', '):'')+(r.errores?.length?'. '+r.errores.length+' formatos necesitan revisión.':''));
-    await cargaContenido();
+    const payload=c.baseId?{action:'contenidoVariaciones',id:c.baseId,cantidad:c.cantidad,otra_foto:c.otraFoto,mes:c.mes,modelo:c.modelo,brief:briefCrearContenido(c),estilo_id:c.estilo_id,fotos_por_categoria:c.fotos}:{action:'contenidoGenera',creativo:true,mes:c.mes,categorias:[...c.categorias],cantidad:c.cantidad,formatos:[...c.formatos],canales:[...c.canales],estilo_id:c.estilo_id,modelo:c.modelo,brief:briefCrearContenido(c),fotos_por_categoria:c.fotos};
+    if(!c.solicitud)c.solicitud={idempotency_key:crypto.randomUUID(),payload};
+    guardaTareaContenido();
+    r=await llamaCont({action:'contenidoTarea',operation:'crear',...c.solicitud});
+    if(!r.ok || !r.tarea)throw new Error(r.error || 'No se pudo iniciar la preparación');
+    CONT.tarea=r.tarea;guardaTareaContenido();void sigueTareaContenido();
   } catch(e){c.error=e.message;avisa('No se pudo generar',e.message);}
-  finally{c.enviando=false;if(CONT.tab==='crear')pintaContenido();}
+  finally{c.enviando=!!CONT.tarea && !['fallida','completada'].includes(CONT.tarea.estado);if(CONT.tab==='crear')pintaContenido();}
 }
 
 function montaContenido(){
@@ -16703,6 +16767,7 @@ function montaContenido(){
     $('contCuerpo').addEventListener('drop', ev => { if (!ev.target.closest('[data-csubezona]')) return; ev.preventDefault(); const f = ev.target.closest('form'); if (f) guardaBorradorSubida(f); const a = ev.dataTransfer?.files?.[0]; if (a) void preparaSubidaContenido(a); });
     $('contCuerpo').addEventListener('submit', ev => { ev.preventDefault(); const f = ev.target.closest('form'); if (f) guardaFormContenido(f); });
   }
+  restauraTareaContenido();
   void cargaContenido();
 }
 async function cargaContenido(){
@@ -16759,11 +16824,11 @@ function pintaAgente(){
   const proximas = CONT.items.filter(x => ['aprobada', 'publicando'].includes(x.estado)).slice(0, 4);
   const porAprobar = CONT.items.filter(x => x.estado === 'propuesta' && x.tiene_imagen).length;
   const aut = CONT_AUTONOMIA.find(a => a[0] === CONT.autonomia) || CONT_AUTONOMIA[0];
-  el.innerHTML = '<section class="agente' + (CONT.activo ? '' : ' apagado') + '">'
+  el.innerHTML = (CONT.tarea && CONT.tab!=='crear'?estadoTareaContenidoHtml(CONT.tarea):'')+'<section class="agente' + (CONT.activo ? '' : ' apagado') + '">'
     + '<div class="agente-cab"><span class="agente-ico" aria-hidden="true">🤖</span><div class="agente-tit"><b>Automatización</b><small>'
     +   (CONT.activo ? 'Rutina activa · propuestas a las 7:00 y envíos a la hora programada.' : 'En pausa: no propone ni publica nada (tampoco lo ya aprobado).') + '</small></div>'
     +   (admin ? '<label class="agente-sw"><input type="checkbox" data-cactivo="1"' + (CONT.activo ? ' checked' : '') + '><span>' + (CONT.activo ? 'Encendido' : 'En pausa') + '</span></label>' : '') + '</div>'
-    + '<div class="agente-acc"><button type="button" class="btn-solido" data-cirtab="subir">Nueva publicación</button><button type="button" class="btn-linea" data-cprepara="1">Crear flyers</button></div>'
+    + '<div class="agente-acc"><button type="button" class="btn-solido" data-cprepara="1">Crear flyers</button><button type="button" class="btn-linea" data-cirtab="subir">Subir foto o video</button></div>'
     + '<details class="plan-rutina"' + (CONT.rutinaAbierta ? ' open' : '') + '><summary>Ajustes de la rutina · ' + esc(aut[1]) + '</summary>'
     + '<div class="agente-fila"><span class="agente-rot">Autonomía</span><div class="segmento" role="radiogroup" aria-label="Autonomía del agente">'
     +   CONT_AUTONOMIA.map(([k, t]) => '<button type="button" role="radio" aria-checked="' + (CONT.autonomia === k) + '" class="' + (CONT.autonomia === k ? 'on' : '') + '" data-cautonomia="' + k + '"' + (admin ? '' : ' disabled') + '>' + esc(t) + '</button>').join('')
@@ -16804,6 +16869,8 @@ async function cambiaActivoAgente(b){
 async function clicContAgente(ev){
   const b = ev.target.closest('button'); if (!b || b.disabled) return;
   const d = b.dataset;
+  if(d.ctarearetry)return reintentaTareaContenido();
+  if(d.ctareaactualiza)return sigueTareaContenido();
   if (d.cirtab) return cambiaTabContenido(d.cirtab);
   if (d.cbiblioteca) return cambiaTabContenido('fotos');
   if (d.cprepara) return cambiaTabContenido('crear');
@@ -16929,6 +16996,7 @@ function tarjetaContenido(x, admin){
     + '<small class="cont-sub">Si cambias el titular o el estilo se vuelve a componer la imagen. Una publicación aprobada que editas vuelve a «Por aprobar».</small></form>' : '';
   const marcas = [];
   if (x.auto) marcas.push('<span class="cont-marca agente">Programada por el agente</span>');
+  if(x.tipo_media==='video')marcas.push('<span class="plan-media-badge">Video · '+Number(x.video_duracion||0).toFixed(1)+' s</span>');
   if (x.origen === 'propia') marcas.push('<span class="cont-marca">Tuya</span>');
   if (x.origen === 'tendencia') marcas.push('<span class="cont-marca">Tendencia</span>');
   if (x.variacion_de) marcas.push('<span class="cont-marca">Variación</span>');
@@ -17013,12 +17081,46 @@ function guardaBorradorSubida(f){
   s.aprobar = v.aprobar === 'on';
   const contador = f.querySelector('[data-csubecontador]'); if (contador) contador.textContent = (s.texto || '').length + '/2200';
 }
+async function videoParaSubir(archivo){
+  if(String(archivo.type||'').toLowerCase()!=='video/mp4')throw new Error('Exporta el video como MP4 con H.264 y audio AAC.');
+  if(archivo.size>64*1024*1024)throw new Error('El video supera 64 MB. Exporta una copia MP4 más ligera.');
+  const vista=URL.createObjectURL(archivo),v=document.createElement('video');v.preload='metadata';
+  try {
+    await new Promise((resolve,reject)=>{const timer=setTimeout(()=>reject(new Error('No se pudieron leer los datos del video.')),15000);v.onloadedmetadata=()=>{clearTimeout(timer);resolve();};v.onerror=()=>{clearTimeout(timer);reject(new Error('No se pudo abrir este MP4. Exporta con H.264 y AAC.'));};v.src=vista;});
+    if(!Number.isFinite(v.duration) || v.duration<3 || v.duration>60)throw new Error('El video debe durar entre 3 y 60 segundos. Para WhatsApp, hasta 30 segundos.');
+    return {archivo,mime:'video/mp4',ancho:v.videoWidth,alto:v.videoHeight,duracion:v.duration,vista};
+  } catch(e){URL.revokeObjectURL(vista);throw e;}
+  finally{v.removeAttribute('src');v.load();}
+}
+async function subeVideoContenido(s){
+  const archivo=s.video.archivo,total=Math.ceil(archivo.size/(8*1024*1024));
+  s.upload ||= {id:crypto.randomUUID(),total,completados:0};
+  for(let i=s.upload.completados;i<total;i++){
+    s.info='Subiendo video · parte '+(i+1)+' de '+total;s.progreso=Math.round(i/total*100);if(CONT.tab==='subir')pintaContenido();
+    const base64=await leeBase64(archivo.slice(i*8*1024*1024,(i+1)*8*1024*1024));let r;
+    for(let intento=0;intento<3;intento++){
+      r=await llamaCont({action:'subirTrozo',upload_id:s.upload.id,index:i,total,base64});
+      if(r.ok)break;if(intento<2)await new Promise(resolve=>setTimeout(resolve,800*(intento+1)));
+    }
+    if(!r?.ok)throw new Error(r?.error || 'La subida se interrumpió. Reintenta para continuar desde la última parte.');
+    s.upload.completados=i+1;
+  }
+  s.progreso=100;s.info='Video subido · validando y guardando';if(CONT.tab==='subir')pintaContenido();
+  return {media_upload_id:s.upload.id,media_chunks:total,media_mime:'video/mp4',media_filename:archivo.name};
+}
 async function preparaSubidaContenido(archivo){
   const s = CONT.subida; if (!s) return;
   const ticket = s.preparacion = (s.preparacion || 0) + 1;
-  s.imagen = null; s.vista = null; s.nombre = archivo.name || 'Imagen'; s.preparando = true; s.info = 'Preparando imagen…'; s.error = null;
+  if(s.video?.vista)URL.revokeObjectURL(s.video.vista);
+  s.imagen = null; s.video=null;s.upload=null;s.progreso=null;s.vista = null; s.nombre = archivo.name || 'Archivo'; s.preparando = true; s.info = 'Preparando archivo…'; s.error = null;
   pintaContenido();
   try {
+    if(/^video\//i.test(archivo.type||'') || /\.mp4$/i.test(archivo.name||'')){
+      const video=await videoParaSubir(archivo);if(CONT.subida!==s || s.preparacion!==ticket){URL.revokeObjectURL(video.vista);return;}
+      s.video=video;s.vista=video.vista;s.info=video.ancho+'×'+video.alto+' px · '+video.duracion.toFixed(1)+' s · '+(archivo.size/1024/1024).toFixed(1)+' MB · original sin recomprimir';
+      if(s.canales?.has('whatsapp_estado') && (video.duracion>30 || archivo.size>16*1024*1024))s.canales.delete('whatsapp_estado');
+      return;
+    }
     const im = await imagenParaSubir(archivo);
     if (CONT.subida !== s || s.preparacion !== ticket) return;
     s.imagen = im; s.vista = 'data:' + im.mime + ';base64,' + im.b64;
@@ -17030,11 +17132,12 @@ function pintaSubir(cuerpo){
   const admin = ROL_ACTUAL === 'admin';
   const s = CONT.subida || (CONT.subida = { canales: new Set(['instagram', 'facebook']), fecha: CONT.hoy || '', hora: '18:30' });
   if (CONT.fechaSube) { s.fecha = CONT.fechaSube; CONT.fechaSube = null; }
-  cuerpo.innerHTML = '<p class="cfgnota">Tu imagen se adapta <b>sin cortarla</b>: 4:5 para Instagram/Facebook y 9:16 para Estados/TikTok. Revisa la vista previa y elige cuándo sale.</p>'
+  cuerpo.innerHTML = '<div class="plan-seccion-cab"><div><h2>Subir foto o video</h2><p class="plan-intro">Una vista previa, un mensaje y la fecha de salida.</p></div></div><p class="cfgnota">Las fotos se adaptan sin cortarlas. Los videos mantienen su encuadre, audio y calidad originales; no se recomprimen.</p>'
     + '<form class="cont-form subir" data-csube="1">'
-    + '<div class="subir-paso"><b>1. Elige la imagen</b><input id="contSubeArchivo" type="file" name="archivo" accept="image/jpeg,image/png,image/webp" data-csubearchivo="1" hidden>'
-    + '<div class="subir-zona" data-csubezona="1"><span id="contSubeVista">' + (s.vista ? '<img src="' + s.vista + '" alt="Vista previa de ' + esc(s.nombre || 'la imagen') + '">' : s.preparando ? 'Preparando…' : 'Arrastra tu imagen aquí · JPG, PNG o WebP') + '</span>'
-    + '<button type="button" class="btn-linea" data-celegirimagen="1">' + (s.vista ? 'Cambiar imagen' : 'Elegir imagen') + '</button></div>'
+    + '<div class="subir-paso"><b>1. Elige tu archivo</b><input id="contSubeArchivo" type="file" name="archivo" accept="image/jpeg,image/png,image/webp,image/heic,image/heif,video/mp4,.mp4" data-csubearchivo="1" hidden>'
+    + '<div class="subir-zona" data-csubezona="1"><span id="contSubeVista">' + (s.video ? '<video src="'+esc(s.vista)+'" controls preload="metadata" playsinline aria-label="Vista previa del video original"></video>' : s.vista ? '<img src="' + s.vista + '" alt="Vista previa de ' + esc(s.nombre || 'la imagen') + '">' : s.preparando ? 'Preparando…' : 'Arrastra una foto o un video MP4 aquí') + '</span>'
+    + '<button type="button" class="btn-linea" data-celegirimagen="1"'+(s.enviando?' disabled':'')+'>' + (s.vista ? 'Cambiar archivo' : 'Elegir foto o video') + '</button></div>'
+    + '<small class="cont-sub">MP4 H.264 · AAC o sin audio · 3–60 s · hasta 64 MB · mínimo 720 px. Estado de WhatsApp: hasta 30 s y 16 MB. TikTok recibe un borrador que terminas en su app.</small>'
     + '<small class="cont-sub">' + esc([s.nombre, s.info].filter(Boolean).join(' · ') || 'La imagen y el texto se conservan al cambiar de pestaña.') + '</small>'
     + (s.error ? '<p class="cont-aviso" role="alert">' + esc(s.error) + '</p>' : '') + '</div>'
     + '<div class="subir-paso"><b>2. Texto y plataformas</b>'
@@ -17042,7 +17145,8 @@ function pintaSubir(cuerpo){
     + '<label class="subir-campo">Texto de la publicación<textarea name="texto" maxlength="2200" placeholder="En un Estado, invita a responder: «Respóndeme y te cuento…»">' + esc(s.texto || '') + '</textarea></label><small class="cont-sub" data-csubecontador="1">' + (s.texto || '').length + '/2200</small></div>'
     + '<div class="subir-paso"><b>3. Fecha y aprobación</b><label class="subir-campo">Día<input type="date" name="fecha" required value="' + esc(s.fecha || '') + '"></label><label class="subir-campo">Hora de La Romana<select name="hora">' + contHoras(s.hora || '18:30') + '</select></label>'
     + (admin ? '<label class="cont-sub" style="display:flex;gap:6px;align-items:center"><input type="checkbox" name="aprobar"' + (s.aprobar ? ' checked' : '') + '> Aprobar para que salga a su hora</label>' : '') + '</div>'
-    + '<div class="subir-pie"><small>' + (s.aprobar ? 'Quedará aprobada para su fecha. El estado de WhatsApp espera confirmación real.' : 'Quedará por aprobar. Puedes revisarla antes de que salga.') + '</small><button class="btn-solido" type="submit"' + (!s.imagen || s.preparando || s.enviando ? ' disabled' : '') + '>' + (s.enviando ? 'Guardando…' : 'Guardar en el calendario') + '</button></div></form>';
+    + (s.enviando?'<progress class="plan-subida-progreso" max="100" value="'+Number(s.progreso||0)+'" aria-label="Progreso de subida"></progress><p class="plan-ayuda">'+esc(s.info || 'Guardando archivo…')+'</p>':'')
+    + '<div class="subir-pie"><small>' + (s.aprobar ? 'Quedará aprobada para su fecha. El canal debe confirmar la publicación.' : 'Quedará por aprobar. Puedes revisarla antes de que salga.') + '</small><button class="btn-solido" type="submit"' + ((!s.imagen && !s.video) || s.preparando || s.enviando ? ' disabled' : '') + '>' + (s.enviando ? 'Guardando…' : 'Guardar en el calendario') + '</button></div></form>';
 }
 
 function pintaFotosContenido(cuerpo){
@@ -17171,6 +17275,7 @@ async function verImagenContenido(id){
   const r = await llama({ action: 'contenidoImagen', id });
   if (turno !== LUPA_TURNO) return;
   if (!r.ok) { cierraLupa(); return avisa('No se pudo abrir la imagen', r.error); }
+  if(r.video_url){LUPA_ACTUAL.archivo=r.nombre || 'video.mp4';if(titulo)titulo.textContent='Video original';muestraLupa('video',r.video_url);return;}
   const bytes = Uint8Array.from(atob(r.jpeg_b64), c => c.charCodeAt(0));
   LUPA_ACTUAL.archivo = r.nombre || 'flyer.jpg';
   muestraLupa('img', URL.createObjectURL(new Blob([bytes], { type: 'image/jpeg' })));
@@ -17187,6 +17292,13 @@ async function clicContenido(ev){
   const imgE = ev.target.closest('img[data-cvistaestilo]'); if (imgE) return verDataUrlEnGrande(imgE.src, 'estilo-' + imgE.dataset.cvistaestilo + '.jpg');
   const b = ev.target.closest('button'); if (!b || b.disabled) return;
   const d = b.dataset;
+  if(d.ctarearetry)return reintentaTareaContenido();
+  if(d.ctareaactualiza)return sigueTareaContenido();
+  if(d.cpaso){
+    const f=b.closest('form'),c=borradorCrearContenido();if(c.enviando)return;
+    if(f)guardaCrearContenido(f);
+    c.paso=Math.max(1,Math.min(3,Number(d.cpaso)||1));pintaContenido();return;
+  }
   if (d.cbiblioteca) return cambiaTabContenido('fotos');
   if (d.cdesdeestilo) { const c = borradorCrearContenido(); c.estilo_id = d.cdesdeestilo; c.baseId = null; return cambiaTabContenido('crear'); }
   if (d.cmodelodefault) { const f=b.closest('form'); if(f)guardaCrearContenido(f); const c=borradorCrearContenido(); const r=await llamaCont({action:'contenidoAjustes',modelo:c.modelo}); if(!r.ok)return avisa('No se guardó el modelo',r.error); CONT.modelo=c.modelo; return avisa('Modelo predeterminado guardado',c.modelo); }
@@ -17211,11 +17323,12 @@ async function clicContenido(ev){
   if (d.cpublica) {
     if (!await confirmaAqui('Se publica AHORA, sin esperar su hora. ¿Seguimos?', { si: 'Publicar' })) return;
     b.disabled = true; const r = await llama({ action: 'contenidoPublica', id: d.cpublica });
-    avisa(r.ok ? (r.en_cola ? 'En cola · esperando al puente' : r.lista ? 'Lista para subir' : 'Publicada') : 'No se pudo publicar', r.ok ? (r.en_cola ? 'Se confirmará cuando WhatsApp reciba el estado.' : r.lista ? 'TikTok no está conectado: descárgala y súbela tú (o conéctalo en Redes).' : '') : (r.error || '')); return cargaContenido();
+    avisa(r.ok ? (r.sin_confirmar ? 'Sin confirmación' : r.en_cola ? 'Procesando en el canal' : r.lista ? 'Borrador listo para completar' : r.en_curso ? 'El envío está en curso' : 'Publicada') : 'No se pudo publicar', r.ok ? (r.sin_confirmar ? 'Revisa el canal antes de volver a enviar.' : r.en_cola ? 'El canal debe confirmar la publicación. Todavía no se presenta como publicada.' : r.lista ? 'Revisa la indicación de la tarjeta y completa la publicación en la app.' : '') : (r.error || '')); return cargaContenido();
   }
   if (d.cdescarga) {
     b.disabled = true; const r = await llama({ action: 'contenidoImagen', id: d.cdescarga }); b.disabled = false;
     if (!r.ok) return avisa('No se pudo bajar la imagen', r.error);
+    if(r.video_url){const a=document.createElement('a');a.href=r.video_url+'&descarga=1';a.download=r.nombre || 'video.mp4';a.rel='noopener';a.target='_blank';a.click();return;}
     const bytes = Uint8Array.from(atob(r.jpeg_b64), c => c.charCodeAt(0)); descargaComoArchivo(new Blob([bytes], { type: 'image/jpeg' }), r.nombre); return;
   }
   if (d.ccopia) { const x = CONT.items.concat(CONT.diaItems || []).find(i => i.id === d.ccopia); try { await navigator.clipboard.writeText(x.texto); avisa('Texto copiado', 'Pégalo en la publicación'); } catch (e) { avisa('No se pudo copiar', 'Selecciónalo y cópialo a mano'); } return; }
@@ -17265,7 +17378,12 @@ async function cambioContenido(ev){
 }
 async function guardaFormContenido(f){
   const v = Object.fromEntries(new FormData(f).entries());
-  if (f.dataset.ccrear) return generaLoteContenido(f);
+  if (f.dataset.ccrear) {
+    const c=borradorCrearContenido();if(c.enviando)return;
+    guardaCrearContenido(f);
+    if((Number(c.paso)||1)<3){c.paso=(Number(c.paso)||1)+1;return pintaContenido();}
+    return generaLoteContenido(f);
+  }
   if (f.dataset.cgform) { const r = await llama({ action: 'contenidoGrupos', operation: 'add', nombre: v.nombre, url: v.url, reglas: v.reglas }); if (!r.ok) return avisa('No se pudo agregar', r.error); avisa('Grupo agregado'); return cargaContenido(); }
   if (f.dataset.cffecha) { const r = await llama({ action: 'contenidoFechas', operation: 'add', nombre: v.nombre, fecha: v.fecha, anual: v.anual === 'on', angulo: v.angulo }); if (!r.ok) return avisa('No se pudo agregar', r.error); avisa('Fecha agregada'); return cargaContenido(); }
   const boton = f.querySelector('button[type=submit]');
@@ -17283,18 +17401,23 @@ async function guardaFormContenido(f){
   }
   if (f.dataset.csube) {
     const s = CONT.subida;
-    if (!s || !s.imagen) return avisa('Elige la imagen');
+    if (!s || (!s.imagen && !s.video)) return avisa('Elige una foto o un video');
     if (s.enviando) return;
     if (!s.canales.size) return avisa('Elige al menos una red');
     guardaBorradorSubida(f);
     s.enviando = true; s.error = null;
     ocupa('Subiendo…');
     let r;
-    try { r = await llamaCont({ action: 'contenidoSube', media_b64: s.imagen.b64, media_mime: s.imagen.mime, canales: [...s.canales], fecha: s.fecha, hora: s.hora, texto: s.texto, aprobar: s.aprobar });
+    try {
+      if(s.video && s.canales.has('whatsapp_estado') && (s.video.duracion>30 || s.video.archivo.size>16*1024*1024))throw new Error('WhatsApp admite aquí hasta 30 segundos y 16 MB. Desmárcalo para conservar el video completo en los demás destinos.');
+      const medio=s.video?await subeVideoContenido(s):{media_b64:s.imagen.b64,media_mime:s.imagen.mime};
+      s.finalizando=true;
+      r = await llamaCont({ action: 'contenidoSube', ...medio, canales: [...s.canales], fecha: s.fecha, hora: s.hora, texto: s.texto, aprobar: s.aprobar });
       if (!r.ok) throw new Error(r.error || 'La subida no terminó');
-    } catch (e) { s.error = e.message; avisa('No se pudo programar', s.error); return; }
-    finally { s.enviando = false; suelta(); if (CONT.tab === 'subir') pintaContenido(); }
+    } catch (e) { if(s.finalizando)s.upload=null;s.error = e.message; avisa('No se pudo programar', s.error); return; }
+    finally { s.finalizando=false;s.enviando = false; suelta(); if (CONT.tab === 'subir') pintaContenido(); }
     avisa('Programado', r.ids.length + (r.ids.length === 1 ? ' publicación ' : ' publicaciones ') + (r.estado === 'aprobada' ? 'aprobadas: salen a su hora' : 'por aprobar'));
+    if(s.video?.vista)URL.revokeObjectURL(s.video.vista);
     CONT.subida = null; CONT.tab = 'calendario'; CONT.mes = String(v.fecha || '').slice(0, 7) || CONT.mes; CONT.dia = v.fecha || null;
     return cargaContenido();
   }

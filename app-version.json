@@ -1,7 +1,7 @@
 {
-  "version": "2026-10-14-planificador-diseno-libre-v197",
+  "version": "2026-10-15-planificador-estudio-v199",
   "channel": "crm",
-  "released_at": "2026-10-15T03:56:33.524Z",
-  "summary": "Diseños medidos por Gemini sobre originales; filtro de ganchos corregido, reintentos de ideas rechazadas, selección sin marcas y análisis de imágenes aislado en memoria.",
+  "released_at": "2026-10-15T05:42:11.528Z",
+  "summary": "Estudio por pasos y videos originales; Gemini con respuesta progresiva y avance guardado, referencia visual completa, variaciones con intención y comprobaciones de legibilidad.",
   "requiere_puente": "2026-10-14-bot-contexto-conversacion-v47"
 }
