@@ -1,7 +1,7 @@
 {
-  "version": "2026-10-15-planificador-crm-flujos-v205",
+  "version": "2026-10-15-crm-emojis-y-enlaces-v206",
   "channel": "crm",
-  "released_at": "2026-10-15T22:22:15Z",
-  "summary": "Logo propio verificable, revisión de campañas, edición de reservas y respuestas citadas; composición y bandeja social afinadas.",
+  "released_at": "2026-10-16T00:20:00Z",
+  "summary": "Los emojis de la bandeja ya no rompen un enlace que lleve emoji dentro; banderas, familias ZWJ, tonos de piel y teclas se pintan como una sola pieza.",
   "requiere_puente": "2026-10-15-citas-en-chat-v48"
 }

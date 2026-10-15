@@ -7316,10 +7316,14 @@ function emojisApple(html){
   if (EMOJI_APPLE.estado === 'sin') iniciaEmojisApple();
   if (EMOJI_APPLE.estado !== 'listo') return html;
   const cols = Number(getComputedStyle(document.documentElement).getPropertyValue('--emoji-cols')) || 48;
-  return String(html || '').replace(RE_EMOJI, e => {
+  const pinta = trozo => trozo.replace(RE_EMOJI, e => {
     const i = indiceEmojiApple(e);
     return i == null ? e : '<span class="emj" role="img" aria-label="' + e + '" style="--x:' + (i % cols) + ';--y:' + Math.floor(i / cols) + '">' + e + '</span>';
   });
+  // Solo se toca el TEXTO, nunca lo que va dentro de una etiqueta. Un mensaje con una direccion
+  // que lleva un emoji («https://…/😀») metia el <span> DENTRO del href y rompia el enlace
+  // entero. El HTML que llega ya viene escapado, asi que el unico «>» es el que cierra etiqueta.
+  return String(html || '').split(/(<[^>]*>)/).map((trozo, i) => (i % 2 ? trozo : pinta(trozo))).join('');
 }
 // Insertar EN EL CURSOR, no al final: es lo que hace WhatsApp Web, y lo que se
 // esperaria si a uno se le ocurre poner un emoji a mitad de frase.
