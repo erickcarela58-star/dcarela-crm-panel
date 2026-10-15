@@ -1,7 +1,7 @@
 {
-  "version": "2026-10-14-planificador-memoria-v196",
+  "version": "2026-10-14-planificador-diseno-libre-v197",
   "channel": "crm",
-  "released_at": "2026-10-15T01:28:53.028Z",
-  "summary": "Corrección del error 500 por memoria: selector ligero, composición aislada por imagen, cola limitada y muestras a petición.",
+  "released_at": "2026-10-15T03:56:33.524Z",
+  "summary": "Diseños medidos por Gemini sobre originales; filtro de ganchos corregido, reintentos de ideas rechazadas, selección sin marcas y análisis de imágenes aislado en memoria.",
   "requiere_puente": "2026-10-14-bot-contexto-conversacion-v47"
 }
