@@ -1,7 +1,7 @@
 {
-  "version": "2026-10-15-crm-chat-originales-inbox-v203",
+  "version": "2026-10-15-planificador-preverifica-originales-v204",
   "channel": "crm",
-  "released_at": "2026-10-15T17:11:35Z",
-  "summary": "Chat con etapa, etiquetas y sesión realizada; originales con errores explicados y recuperación del planificador; sincronización de mensajes sociales.",
+  "released_at": "2026-10-15T17:32:57Z",
+  "summary": "El creador identifica las categorías sin originales antes de pedir flyers a Gemini y conserva la corrección del chat y la bandeja.",
   "requiere_puente": "2026-10-14-bot-contexto-conversacion-v47"
 }

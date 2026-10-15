@@ -16823,15 +16823,21 @@ function fotosCrearContenido(c){
       + (fotos.length?'<div class="plan-originales-grid"><label class="plan-original-opcion plan-original-auto"><input type="radio" name="foto_'+id+'" value=""'+(!seleccion?' checked':'')+'><b>Buscar una apta</b><span>Se descartan fotos con marcas, desenfoque o poca resolución.</span></label>'+ordenadas.slice(0,5).map(tarjeta).join('')+'</div>'+(ordenadas.length>5?'<details class="plan-opciones"><summary>Ver '+(ordenadas.length-5)+' originales más</summary><div class="plan-originales-grid">'+ordenadas.slice(5).map(tarjeta).join('')+'</div></details>':''):'<div class="plan-vacio">Falta una original de esta categoría. <button type="button" class="btn-linea" data-cbiblioteca="1">Subir a Fototeca</button></div>')+'</section>';
   }).join('')+'</div>';
 }
+function categoriasSinOriginalCrear(c){
+  if(!CONT.modelos?.length || (c.baseId && !c.otraFoto))return [];
+  return CONT_CATEGORIAS.filter(([id])=>c.categorias.has(id)
+    && !(CONT.fotosCreativas||[]).some(f=>f.categoria===id)).map(([,titulo])=>titulo);
+}
 function pintaCrearContenido(cuerpo){
   const c=borradorCrearContenido(); if(!CONT.modelos && !CONT.modelosCargando && !CONT.modelosError) void cargaModelosContenido();
   const disabled=c.enviando?' disabled':'',ref=CONT.estilos.filter(e=>e.activo || e.id===c.estilo_id),paso=Number(c.paso)||1;
+  const sinOriginal=categoriasSinOriginalCrear(c);
   const referencia=ref.find(e=>e.id===c.estilo_id),imagenRef=referencia?.referencia || CONT.vistas?.[c.estilo_id];
   const objetivos=[['consultas','Conseguir consultas por WhatsApp'],['reservas','Convertir interés en una reserva'],['portafolio','Mostrar el trabajo y la experiencia']];
   const chips=(items,name,set,lock=false)=>items.map(([id,t])=>'<label class="red-chip'+(set.has(id)?' on':'')+'"><input type="checkbox" name="'+name+'" value="'+id+'"'+(set.has(id)?' checked':'')+(lock || c.enviando?' disabled':'')+'>'+esc(t)+'</label>').join('');
   cuerpo.innerHTML='<div class="plan-seccion-cab"><div><h2>'+(c.baseId?'Otra dirección creativa':'Crear flyers')+'</h2><p class="plan-intro">De una intención concreta a una pieza que puedas revisar.</p></div><span class="plan-respaldo">Foto original conservada</span></div>'
     + (CONT.tarea?estadoTareaContenidoHtml(CONT.tarea):'')
-    + (c.incidencia?'<details class="plan-pedido-anterior" open><summary>Pedido anterior: '+esc(c.incidencia.titulo || 'necesita un ajuste')+'</summary><p>'+esc(c.incidencia.mensaje)+'</p><p>El mes, la intención y el modelo siguen aquí. Ajusta la selección antes de preparar un pedido nuevo.</p></details>':'')
+    + (c.incidencia?'<details class="plan-pedido-anterior" open><summary>Pedido anterior: '+esc(c.incidencia.titulo || 'necesita un ajuste')+'</summary><p>'+esc(c.incidencia.mensaje)+'</p>'+(sinOriginal.length?'<p class="cont-aviso">Falta una original en el catálogo para: '+esc(sinOriginal.join(', '))+'. Quita esa categoría o sube una foto original a Fototeca.</p>':'')+'<p>El mes, la intención y el modelo siguen aquí. Ajusta la selección antes de preparar un pedido nuevo.</p></details>':'')
     + '<form class="plan-creador plan-generador" data-ccrear="1"><nav class="plan-pasos" aria-label="Pasos de creación">'+['Intención','Foto y estilo','Entrega'].map((t,i)=>'<button type="button" data-cpaso="'+(i+1)+'"'+(paso===i+1?' aria-current="step"':'')+disabled+'><span>'+(i+1)+'</span>'+t+'</button>').join('')+'</nav>'
     + '<fieldset'+disabled+(paso!==1?' hidden':'')+'><legend>¿A quién quieres atraer?</legend><p class="plan-intro">El objetivo y lo que hace especial tu trabajo guían los ganchos. Cada propuesta explora un argumento distinto.</p><div class="plan-campos"><label>Mes de los flyers<input type="month" name="mes" required value="'+esc(c.mes)+'"></label><label>Ideas por categoría<select name="cantidad">'+[1,2,3,4,6,8].map(n=>'<option value="'+n+'"'+(c.cantidad===n?' selected':'')+'>'+n+' ideas distintas</option>').join('')+'</select></label></div><div class="plan-control-grupo"><strong>Tipo de sesión</strong><div class="agente-redes">'+chips(CONT_CATEGORIAS,'categoria',c.categorias,!!c.baseId)+'</div></div>'
     + '<div class="plan-campos"><label>Qué debe conseguir la pieza<select name="objetivo">'+objetivos.map(([k,t])=>'<option value="'+k+'"'+((c.objetivo||'consultas')===k?' selected':'')+'>'+t+'</option>').join('')+'</select></label><label>A quién le hablas<input name="publico" maxlength="140" placeholder="Ej.: mamás que quieren documentar el primer año" value="'+esc(c.publico||'')+'"></label></div><label>Qué quieres que vean en tu trabajo<input name="diferencial" maxlength="180" placeholder="Ej.: retratos naturales, luz suave y dirección cercana" value="'+esc(c.diferencial||'')+'"></label><label>Dirección del mensaje<textarea name="brief" maxlength="400" rows="3" placeholder="Qué historia quieres contar. Puedes mencionar una ocasión, una emoción o algo que sí se vea en tus fotos.">'+esc(c.brief)+'</textarea></label><details class="plan-opciones"><summary>Frases o enfoques que quieres evitar</summary><label>No usar<input name="evitar" maxlength="120" placeholder="Ej.: momentos mágicos, cupos limitados, clichés" value="'+esc(c.evitar||'')+'"></label></details></fieldset>'
@@ -16906,6 +16912,11 @@ async function generaLoteContenido(f){
   const c=borradorCrearContenido(); if(c.enviando)return;
   guardaCrearContenido(f);
   if(!c.categorias.size || !c.formatos.size || !c.canales.size || !c.modelo)return avisa('Elige categoría, formato, plataforma y modelo');
+  const sinOriginal=categoriasSinOriginalCrear(c);
+  if(sinOriginal.length){
+    c.paso=2;c.error='Falta una original para '+sinOriginal.join(', ')+'. Quita esa categoría o sube una foto original a Fototeca.';
+    pintaContenido();return avisa('Faltan originales',c.error);
+  }
   c.enviando=true;c.error=null;if(CONT.tab==='crear')pintaContenido();
   let r;
   try {
