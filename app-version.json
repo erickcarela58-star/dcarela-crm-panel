@@ -1,7 +1,7 @@
 {
-  "version": "2026-10-16-estados-honestos-y-bot-v214",
+  "version": "2026-10-16-tope-por-estado-v215",
   "channel": "crm",
-  "released_at": "2026-10-16T05:10:00.000Z",
-  "summary": "El historial de estados ya no llama «publicado» a un simple identificador: dice «enviado · sin confirmar que alguien lo abriera» y, cuando llega el recibo de lectura, cuándo lo abrieron. Si la lectura falla lo dice en vez de dejar el cuadro en blanco. Y el chat explica en una línea por qué el bot no contesta (canal apagado, otra línea, pausa, modo humano o atención humana).",
+  "released_at": "2026-10-16T06:20:00.000Z",
+  "summary": "El historial de estados ya no llama «publicado» a un simple identificador: dice «enviado · sin confirmar que alguien lo abriera» y, cuando llega el recibo de lectura, cuándo lo abrieron. Un estado sale a un máximo de 1000 contactos por llamada —tus números van siempre delante— y el resto queda en cola visible, con su botón para publicarlo aparte. El chat explica en una línea por qué el bot no contesta.",
   "requiere_puente": "2026-10-15-citas-y-conexion-v49"
 }
