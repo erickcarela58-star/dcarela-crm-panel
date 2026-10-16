@@ -1,7 +1,7 @@
 {
-  "version": "2026-10-15-crm-emojis-y-enlaces-v206",
+  "version": "2026-10-16-difusion-sin-repetir-v207",
   "channel": "crm",
-  "released_at": "2026-10-16T00:20:00Z",
-  "summary": "Los emojis de la bandeja ya no rompen un enlace que lleve emoji dentro; banderas, familias ZWJ, tonos de piel y teclas se pintan como una sola pieza.",
+  "released_at": "2026-10-16T01:40:00Z",
+  "summary": "Una difusión reintentada ya no le vuelve a escribir a quien la recibió: la campaña lleva un identificador y el resumen dice a cuántos se les evitó el mensaje repetido.",
   "requiere_puente": "2026-10-15-citas-en-chat-v48"
 }

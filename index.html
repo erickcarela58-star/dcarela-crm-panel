@@ -18889,6 +18889,14 @@ function cuerpoBc(dry){
   return c;
 }
 
+// Id estable de la campaña. Viaja al servidor en cada tanda y TAMBIÉN si el dueño vuelve a
+// pulsar Enviar después de un fallo: el servidor anota a quién ya le llegó y no le repite el
+// mensaje. Una difusión no se puede deshacer.
+function nuevoIdCampana(){
+  try { if (crypto.randomUUID) return 'bc-' + crypto.randomUUID().replace(/-/g, '').slice(0, 24); } catch (e) { /* sin crypto */ }
+  return 'bc-' + Date.now().toString(36) + Math.random().toString(36).slice(2, 12);
+}
+
 async function simulaBroadcast(){
   const cuerpo = cuerpoBc(true);
   if (!cuerpo) return avisa('Elige una plantilla');
@@ -18898,7 +18906,7 @@ async function simulaBroadcast(){
   const r = await llama(cuerpo);
   $('bcSimular').disabled = false;
   if (!r.ok) { $('bcSalida').innerHTML = ''; return avisa('No se pudo simular', r.error); }
-  AUDIENCIA = { ...r, excluidosManuales:new Set() };
+  AUDIENCIA = { ...r, excluidosManuales:new Set(), campanaId: nuevoIdCampana() };
   const destinos = r.targets || r.sample || [];
   $('bcSalida').innerHTML = '<div class="propuesta">'
     + '<div class="tapa"><b id="bcCuenta">' + Number(r.found || 0) + ' contactos seleccionados</b></div>'
@@ -19062,18 +19070,25 @@ async function enviaBroadcast(){
   // Se envia sobre los ids QUE SE ENSEÑARON, no sobre una audiencia recalculada: entre
   // la simulacion y la confirmacion puede haber entrado gente nueva que nadie reviso.
   cuerpo.only_ids = idsSeleccionados;
+  // La MISMA campaña en todas las tandas y al reintentar: el servidor anota a quién ya le llegó.
+  // El id se creó al preparar la audiencia y solo se pierde cuando la campaña termina entera.
+  cuerpo.campaign_id = AUDIENCIA.campanaId || nuevoIdCampana();
   $('bcEnviar').disabled = true;
   $('bcEnviar').textContent = 'Enviando…';
   // Por tandas. El servidor procesa lo que cabe en el tiempo de la funcion y devuelve el
   // resto en pendientes_ids. Antes era una sola peticion que moria hacia el contacto 100:
   // error sin cifras, y reintentar le volvia a escribir a los que ya lo tenian.
   const r = { ok:true, sent:0, failed:0, errors:[] };
-  let corte = '', errorTanda = '';
+  let corte = '', errorTanda = '', repetidos = 0;
   for (let vuelta = 0; vuelta < 60; vuelta++) {
     const t = await llama(cuerpo);
     if (!t.ok) { errorTanda = t.error || 'error'; break; }
+    // Se adopta el id que confirma el servidor: si esta tanda creó la campaña, las siguientes
+    // y un reintento posterior siguen anotando en la misma.
+    if (t.campaign_id) { cuerpo.campaign_id = t.campaign_id; AUDIENCIA.campanaId = t.campaign_id; }
     r.sent += Number(t.sent || 0);
     r.failed += Number(t.failed || 0);
+    repetidos += Number(t.ya_enviados || 0);
     r.errors.push(...(t.errors || []));
     $('bcEnviar').textContent = 'Enviando… ' + (r.sent + r.failed) + ' de ' + cuantos;
     if (t.corte) { corte = t.corte; break; }
@@ -19094,6 +19109,8 @@ async function enviaBroadcast(){
     + '<div class="cuerpo">'
     +   '<div class="cambio"><div class="k">Enviados</div>' + Number(r.sent || 0) + '</div>'
     +   '<div class="cambio"><div class="k">Fallidos</div>' + Number(r.failed || 0) + '</div>'
+    // Los que ya la tenían: si el dueño reintentó, aquí se ve que NO se les repitió.
+    +   (repetidos ? '<div class="cambio"><div class="k">Ya la tenían</div>' + repetidos + '</div>' : '')
     +   ((r.errors || []).length
         ? '<div class="cambio"><div class="k">Motivos</div>'
           + (r.errors || []).slice(0,10).map(e => esc(e.error)).join('<br>') + '</div>' : '')
