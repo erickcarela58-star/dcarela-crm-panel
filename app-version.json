@@ -1,7 +1,7 @@
 {
-  "version": "2026-10-16-sin-filtro-de-marcas-v209",
+  "version": "2026-10-16-reservas-desde-la-agenda-v210",
   "channel": "crm",
-  "released_at": "2026-10-16T03:45:00Z",
-  "summary": "Fuera el filtro de marcas de agua: una original con sello se usa tal cual, sin rechazos ni recortes para esconderlo. La nitidez y la resolución se siguen revisando.",
+  "released_at": "2026-10-16T05:00:00.000Z",
+  "summary": "Recordatorios de reservación al cliente: el bot avisa unos días antes y el mismo día, y se apaga desde Configuración. Desde la Agenda se abre, se mueve o se cancela cada reservación sin entrar al chat.",
   "requiere_puente": "2026-10-15-citas-y-conexion-v49"
 }
