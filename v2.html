@@ -18948,9 +18948,21 @@ async function esCuenta(silencioso){
       + 'reciente; ' + c.todos.recortado + ' se quedan fuera. Un estado se manda en una sola '
       + 'operación con la lista dentro, y una lista sin tope la paga el número del negocio.</p>'
     : '';
+  // El tope de UNA publicación. No es un recorte silencioso: lo que no cabe queda en cola y se
+  // publica después, cuando el dueño lo pida. Antes entraba todo en una sola lista de más de mil
+  // números, que es justo donde la librería del puente falla.
+  const tope = Number(d.tope_estado) || 0;
+  const elegidos = c[$('esQuien')?.value] ? c[$('esQuien').value].total : 0;
+  const enCola = tope && elegidos > tope ? elegidos - tope : 0;
+  const reparto = enCola
+    ? '<p class="bajada">Van ' + tope + ' en este estado y los otros <b>' + enCola + '</b> quedan en '
+      + 'cola: se publican aparte, desde el historial de abajo, para no mandarlos dos veces. Se '
+      + 'parte a propósito: una lista de más de mil números en la misma operación es donde el '
+      + 'envío falla sin avisar.</p>'
+    : '';
   s.innerHTML = (d.listo
     ? '<p class="bajada">Línea lista: ' + esc(d.linea || '') + '.</p>'
-    : '<p class="aviso">No se puede publicar ahora: ' + esc(d.motivo || 'la línea no está lista') + '</p>') + recorte;
+    : '<p class="aviso">No se puede publicar ahora: ' + esc(d.motivo || 'la línea no está lista') + '</p>') + reparto + recorte;
   return d;
 }
 
@@ -18992,7 +19004,8 @@ async function esPublicaEstado(){
   if (!r.ok) return avisa('No se pudo publicar', r.error);
   const res = r.data || {};
   avisa('Estado en camino', 'Sale para ' + res.total + ' contacto(s). Aparece abajo en cuanto el '
-    + 'puente lo publique; tarda unos segundos.');
+    + 'puente lo publique; tarda unos segundos.'
+    + (res.en_cola ? ' Quedan ' + res.en_cola + ' en cola: salen desde el historial, con su botón, cuando este termine.' : ''));
   $('esTexto').value = ''; ES_FOTO = null; esPintaPrevia();
   setTimeout(esHistorialEstados, 3500);
   esHistorialEstados();
@@ -19030,10 +19043,35 @@ async function esHistorialEstados(){
       + (f.status === 'published' && f.confirmed_at ? ' · lo abrieron ' + esc(esCuando(f.confirmed_at)) : '')
       + (f.status === 'sent' ? ' · aún nadie lo ha abierto' : '')
       + (f.error ? ' · ' + esc(f.error) : '') + '</p>'
+      // La cola de ese mismo estado: lo que no cabía en una sola llamada. Se ve, con su botón, y
+      // no se puede publicar mientras el de arriba sigue saliendo (dos estados seguidos se ven
+      // como si se hubiera publicado dos veces).
+      + (f.resto_total ? '<p class="bajada" style="margin:2px 0 0">Quedan <b>' + f.resto_total
+        + '</b> sin enviar de este estado.' + (f.status === 'pending' || f.status === 'sending'
+          ? ' Espera a que termine el de arriba.' : '') + '</p>'
+        + (f.status === 'pending' || f.status === 'sending' ? ''
+          : '<div class="acciones" style="margin-top:6px"><button class="btn-linea" data-stresto="'
+            + esc(f.id) + '">Publicar los ' + f.resto_total + ' que faltan</button></div>') : '')
       + '<div style="clear:both"></div></div>').join('');
 }
 
 function cableaPublicarEstado(){
+  // El boton de la cola vive dentro del historial, que se repinta entero cada vez: se resuelve
+  // por delegacion, no cableando botones que nacen y mueren.
+  $('esHistorial').addEventListener('click', async ev => {
+    const b = ev.target.closest('[data-stresto]');
+    if (!b || b.disabled) return;
+    const cuantos = (b.textContent.match(/\d+/) || [])[0] || '';
+    if (!await confirmaAqui('¿Publicar el resto de ese estado? Sale para los ' + cuantos
+      + ' contactos que quedaron en cola. No se le repite a quien ya lo recibió.')) return;
+    b.disabled = true;
+    const r = await llama({ action:'statusResto', id: b.dataset.stresto });
+    if (!r.ok) { b.disabled = false; return avisa('No se pudo publicar el resto', r.error); }
+    const d = r.data || {};
+    avisa('Resto en camino', 'Sale para ' + (d.total || 0) + ' contacto(s).'
+      + (d.en_cola ? ' Aún quedan ' + d.en_cola + ' en cola.' : ''));
+    esHistorialEstados();
+  });
   const ir = $('esIr'); if (!ir) return;
   ir.onclick = esPublicaEstado;
   $('esVer').onclick = () => esCuenta(false);
