@@ -12432,7 +12432,10 @@ function filaCita(fila){
         + 'se le contesta desde la bandeja de Meta">' + esc(CANALES[canalDe(c)]?.corto || 'red') + ' · oculto</i>' : '')
     + '<i class="chip ' + (firme ? 'ok' : 'medio') + '">' + (firme ? 'confirmada' : 'tentativa') + '</i>'
     // Control total desde la Agenda: abrir el chat, mover/cambiar de día o cancelar, sin tener que entrar a la conversación.
-    + '<button class="agmas" data-agmenu="' + esc(c._id) + '" title="Opciones de la reservación" aria-label="Opciones de la reservación">⋯</button>'
+    // `data-menu-flotante` NO es decorativo: el listener global de clic cierra los menús flotantes
+    // salvo que el botón lo lleve, así que sin él el menú se abría y se cerraba en el mismo clic
+    // («le doy y no hace nada»). El id también hace falta: menuFlotante lo usa para alternarlo.
+    + '<button class="agmas" id="agm-' + esc(String(c._id).replace(/[^A-Za-z0-9_-]/g, '')) + '" data-menu-flotante data-agmenu="' + esc(c._id) + '" title="Opciones de la reservación" aria-label="Opciones de la reservación">⋯</button>'
     + '</div>';
 }
 
