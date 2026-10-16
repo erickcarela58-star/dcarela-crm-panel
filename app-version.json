@@ -1,7 +1,7 @@
 {
-  "version": "2026-10-16-tope-por-estado-v215",
+  "version": "2026-10-16-historias-y-reels-v216",
   "channel": "crm",
-  "released_at": "2026-10-16T06:20:00.000Z",
-  "summary": "El historial de estados ya no llama «publicado» a un simple identificador: dice «enviado · sin confirmar que alguien lo abriera» y, cuando llega el recibo de lectura, cuándo lo abrieron. Un estado sale a un máximo de 1000 contactos por llamada —tus números van siempre delante— y el resto queda en cola visible, con su botón para publicarlo aparte. El chat explica en una línea por qué el bot no contesta.",
+  "released_at": "2026-10-16T14:40:00.000Z",
+  "summary": "El tamaño 9:16 ya no es solo para WhatsApp y TikTok: en Instagram y en tu Página de Facebook sale como historia y, además, como Reel, con la foto convertida en un video corto. Si una de las dos publicaciones cae, la otra sí cuenta y el fallo queda anotado en la pieza. Y el generador respeta de verdad la referencia que subes: su composición, sus colores y su jerarquía mandan, y la referencia viaja como JSON exacto.",
   "requiere_puente": "2026-10-15-citas-y-conexion-v49"
 }
