@@ -2193,6 +2193,8 @@ input[type="checkbox"],input[type="radio"]{accent-color:var(--accent)}
 
 /* --- Cabecera del chat --------------------------------------------------------------------------- */
 .cabecera .modo{border:0;border-radius:999px;background:var(--hover);padding:7px 14px;font-weight:600;font-size:12.5px}
+.cabecera .modo-porque{flex:1 1 160px;min-width:0;font-size:11.5px;line-height:1.35;color:var(--mut);padding:0 4px}
+@media(max-width:900px){.cabecera .modo-porque{display:none}}
 .cabecera .modo:hover{background:rgba(120,120,128,.2)}
 .cabecera .modo.atendido,.cabecera .modo.atendido:hover{background:var(--ok);color:#fff}
 :root{--emoji-sprite:none;--emoji-cols:48;--emoji-filas:40}
@@ -5819,6 +5821,10 @@ function abre(c){
     + (c.human_handoff_notification_status ? '<span class="etiqueta" data-aviso-handoff="1" title="Aviso interno al teléfono de avisos (Configuración), por la línea de WhatsApp Web conectada. Enviado no significa leído.">'
       + esc(({pending:'Aviso pendiente',sent:'Aviso enviado',failed:'Aviso fallido',skipped:'Aviso no enviado'})[c.human_handoff_notification_status] || 'Aviso pendiente') + '</span>' : '')
     + '<button class="modo" id="btnModo"></button>'
+    // Por qué el bot no contesta este chat (o que sí): una línea al lado del botón. Un chat en
+    // «Bot atiende» que no responde parece roto y la causa estaba repartida entre Canales, el
+    // chat y el contexto. El texto lo decide el servidor con la misma puerta que usa el puente.
+    + '<span class="modo-porque" id="modoPorque" hidden></span>'
     + '<button class="modo" id="btnAtendido" title="Ya lo atendiste: se quita de «Sin responder» y de «Se enfrían», se baja el aviso de atención humana y la satisfacción lo cuenta como cliente atendido.">Atendido</button>'
     + '<button class="adj" id="verFicha" title="Ficha del lead" aria-label="Ficha del lead">'
     +   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="8.600"/><path d="M12 11v5.200"/><circle cx="12" cy="7.800" r=".7" fill="currentColor" stroke="none"/></svg></button>'
@@ -6102,6 +6108,39 @@ function pintaCabeceraChat(){
   resuelveAvatares();
 }
 
+// Por que el bot no contesta este chat. El servidor lo decide con la MISMA puerta que usa el
+// puente (canal, pausa, linea, modo y atencion humana); el panel solo lo ensena. Se pregunta una
+// sola vez por estado exacto del chat: el snapshot repinta el chat muy seguido y sin esta memoria
+// seria una llamada por repintado.
+const MODO_DICHO = new Map();
+function firmaDeModo(c){
+  return [c._id || c.id, c.mode, c.bot_paused === true, c.human_handoff_required === true,
+    c.proactive_blocked_at ? 1 : 0, c.ignored_at ? 1 : 0].join('|');
+}
+function pintaPorqueDelBot(){
+  const el = $('modoPorque');
+  if (!el || !sel) return;
+  const id = sel._id || sel.id;
+  const firma = firmaDeModo(sel);
+  if (!MODO_DICHO.has(firma)) {
+    if (MODO_DICHO.size > 200) MODO_DICHO.clear();
+    MODO_DICHO.set(firma, '');              // mientras viaja: no se pregunta dos veces
+    (async () => {
+      const r = await llama({ action:'botChatEstado', conversation_id: id });
+      // Si no se pudo leer, se deja sin frase: antes que inventar una causa, silencio.
+      MODO_DICHO.set(firma, r && r.ok ? String(r.porque || '') : '');
+      // El chat pudo cambiar mientras viajaba: solo se pinta si sigue siendo el mismo y en el
+      // mismo estado que cuando se pregunto.
+      if (!sel || (sel._id || sel.id) !== id || firmaDeModo(sel) !== firma) return;
+      el.textContent = MODO_DICHO.get(firma);
+      el.hidden = !el.textContent;
+    })();
+  }
+  const dicho = MODO_DICHO.get(firma) || '';
+  el.textContent = dicho;
+  el.hidden = !dicho;
+}
+
 // El boton de modo dice quien atiende. Lo pinta el chat al abrirse y tambien el snapshot: si el
 // servidor pasa la conversacion a humano --lo hace solo cuando el cliente pide una persona-- el
 // boton seguia diciendo "Bot atiende", y pulsarlo la devolvia al bot, que es lo contrario de lo
@@ -6109,6 +6148,7 @@ function pintaCabeceraChat(){
 function pintaModoChat(){
   const modo = $('btnModo');
   if (!modo || !sel) return;
+  pintaPorqueDelBot();
   const humano = sel.mode === 'human' || sel.human_handoff_required || sel.bot_paused;
   modo.textContent = humano ? 'Humano atiende' : 'Bot atiende';
   modo.title = humano ? 'Bot pausado en este chat. Pulsa para reanudarlo si ya revisaste el contexto.' : 'Bot activo en este chat. Pulsa para pasarlo a atención humana.';
@@ -18963,10 +19003,21 @@ async function esPublicaEstado(){
 async function esHistorialEstados(){
   const h = $('esHistorial'); if (!h) return;
   const r = await llama({ action:'statusList' });
-  if (!r.ok) { h.innerHTML = ''; return; }
+  // Antes, un fallo de lectura borraba el cuadro entero y no quedaba ni el aviso: el dueño veía
+  // un hueco y no podía distinguir «no hay nada» de «no se pudo leer».
+  if (!r.ok) {
+    h.innerHTML = '<div class="seccion" style="margin:26px 0 6px">Últimos estados</div>'
+      + '<p class="bajada">No se pudo leer el historial ahora mismo (' + esc(r.error || 'sin conexión')
+      + '). El estado que acabas de publicar sigue en camino; vuelve a abrir esta sección en un minuto.</p>';
+    return;
+  }
   const filas = r.data || [];
   if (!filas.length) { h.innerHTML = '<p class="bajada">Todavía no se ha publicado ningún estado desde aquí.</p>'; return; }
-  const COMO = { pending:'esperando al puente', sending:'saliendo…', sent:'publicado',
+  // Lo que dice cada estado, sin prometer más de lo que se sabe: `sent` es que WhatsApp recibió
+  // la orden y devolvió un identificador, NO que alguien lo haya visto. Solo el recibo de lectura
+  // (`published`, con `confirmed_at`) prueba que un contacto lo abrió. Este rótulo mentía.
+  const COMO = { pending:'en cola para el puente', sending:'saliendo…',
+    sent:'enviado · sin confirmar que alguien lo abriera', published:'visto: alguien lo abrió',
     failed:'no salió', expired:'caducó sin publicarse' };
   h.innerHTML = '<div class="seccion" style="margin:26px 0 6px">Últimos estados</div>'
     + filas.map(f => '<div class="cfgc" style="margin:8px 0">'
@@ -18976,6 +19027,8 @@ async function esHistorialEstados(){
       + '<p class="bajada" style="margin:4px 0 0">' + esc(f.body || '(sólo foto)') + '</p>'
       + '<p class="bajada" style="margin:2px 0 0">' + esc(ES_ETIQUETAS[f.modo] || f.modo) + ' · '
       + f.total + ' contacto(s) · ' + esc(esCuando(f.sent_at || f.created_at))
+      + (f.status === 'published' && f.confirmed_at ? ' · lo abrieron ' + esc(esCuando(f.confirmed_at)) : '')
+      + (f.status === 'sent' ? ' · aún nadie lo ha abierto' : '')
       + (f.error ? ' · ' + esc(f.error) : '') + '</p>'
       + '<div style="clear:both"></div></div>').join('');
 }
