@@ -1,7 +1,7 @@
 {
-  "version": "2026-10-16-agenda-opciones-v211",
+  "version": "2026-10-16-interruptores-honestos-v212",
   "channel": "crm",
-  "released_at": "2026-10-16T06:30:00.000Z",
-  "summary": "Arreglado el menú de opciones de cada cita de la Agenda (los tres puntos ya abren abrir chat, mover o cancelar). Incluye los recordatorios de reservación al cliente y el control de reservaciones desde la Agenda.",
+  "released_at": "2026-10-16T07:30:00.000Z",
+  "summary": "Los tres puntos de cada cita de la Agenda ya abren (abrir chat, mover o cancelar) y se quita el interruptor «Pedir la encuesta automáticamente», que no hacía nada: su función real es «Satisfacción automática».",
   "requiere_puente": "2026-10-15-citas-y-conexion-v49"
 }
