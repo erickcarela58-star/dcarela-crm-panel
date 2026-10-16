@@ -1,7 +1,7 @@
 {
-  "version": "2026-10-16-difusion-sin-repetir-v207",
+  "version": "2026-10-16-difusion-avisos-v208",
   "channel": "crm",
-  "released_at": "2026-10-16T01:40:00Z",
-  "summary": "Una difusión reintentada ya no le vuelve a escribir a quien la recibió: la campaña lleva un identificador y el resumen dice a cuántos se les evitó el mensaje repetido.",
+  "released_at": "2026-10-16T02:30:00Z",
+  "summary": "En Instagram y Messenger ya no se ofrece «Responder»: ese canal no acepta respuestas citadas. El resumen de una difusión dice a cuántos se omitió y por qué.",
   "requiere_puente": "2026-10-15-citas-en-chat-v48"
 }

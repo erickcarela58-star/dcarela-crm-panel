@@ -8496,7 +8496,12 @@ document.addEventListener('click', async ev => {
   const puedeEditar = esPropioEnWa && (m.msg_type || 'text') === 'text' && edadMs <= 15 * 60000;
   const puedeRetirar = esPropioEnWa && edadMs <= 48 * 3600000;
   const yaEliminado = !!infoEliminado(m);
-  menu.innerHTML = yaEliminado ? '<button data-op="copiar">Copiar texto</button>' : '<button data-op="citar">Responder</button>'
+  // Responder citando: WhatsApp lo lleva por las dos vías (el oficial manda `context.message_id`
+  // y el 5644 manda `quote_message`). Instagram y Messenger NO lo aceptan, y el servidor lo
+  // rechaza con un error claro; igual que con los plazos de editar y retirar, no se ofrece un
+  // botón que solo puede acabar en error.
+  const puedeCitar = !redSocial(sel);
+  menu.innerHTML = yaEliminado ? '<button data-op="copiar">Copiar texto</button>' : (puedeCitar ? '<button data-op="citar">Responder</button>' : '')
     + (yaEliminado ? '' : (puedeReaccionar ? '<button data-op="reaccionar">Reaccionar</button>' : '')
     + '<button data-op="reenviar">Reenviar</button>'
     + '<button data-op="seleccionar">Seleccionar</button>'
@@ -9647,11 +9652,13 @@ function nitidaDe(id){
   return typeof NITIDAS !== 'undefined' ? (NITIDAS.get(id) || '') : '';
 }
 // Responder y Reenviar sobre un archivo, dentro de su propia tarjeta: en un documento no hay
-// lupa donde ponerlos, y el menu del globo (⌄) no se descubre solo.
+// lupa donde ponerlos, y el menu del globo (⌄) no se descubre solo. En Instagram y Messenger el
+// boton de responder no sale: ese canal no acepta respuestas citadas (ver el menu del globo).
 function opsArchivo(m){
   const id = String(m?.id || '');
   if (!id || m._enviando) return '';
-  return '<div class="marchivo-op"><button data-gop="citar" data-gmsg="' + esc(id) + '">Responder</button>'
+  return '<div class="marchivo-op">'
+    + (redSocial(sel) ? '' : '<button data-gop="citar" data-gmsg="' + esc(id) + '">Responder</button>')
     + '<button data-gop="reenviar" data-gmsg="' + esc(id) + '">Reenviar</button></div>';
 }
 function tarjetaBajoDemanda(m, a, etiqueta){
@@ -18889,6 +18896,32 @@ function cuerpoBc(dry){
   return c;
 }
 
+// Por qué alguien de la lista revisada se cayó justo antes de escribirle. Se cuenta por motivos
+// y en palabras del negocio: una lista de identificadores no dice nada.
+const MOTIVO_OMISION = {
+  baja_o_sin_permiso: 'pidieron la baja o no tienen permiso',
+  fuera_de_ventana: 'se les cerró la ventana de 24 h',
+  etapa_cambiada: 'ya no están en la etapa elegida',
+  categoria_cambiada: 'ya no son de esa categoría',
+  prioridad_cambiada: 'cambió su prioridad',
+  etiqueta_ausente: 'ya no tienen la etiqueta',
+  sin_telefono: 'no tienen teléfono',
+  linea_distinta: 'son de la otra línea',
+  ya_no_existe: 'su ficha ya no existe',
+  ficha_ausente: 'su ficha ya no está',
+  no_se_pudo_comprobar: 'no se pudo comprobar su ficha',
+  ya_no_esta_frio: 'ya no son un contacto frío',
+  fuera_de_la_ventana_de_frios: 'se salieron del rango de fríos',
+};
+function resumenOmitidos(omitidos){
+  const cuenta = new Map();
+  for (const o of omitidos || []) {
+    const texto = MOTIVO_OMISION[o?.motivo] || 'dejaron de cumplir el criterio';
+    cuenta.set(texto, (cuenta.get(texto) || 0) + 1);
+  }
+  return [...cuenta.entries()].map(([texto, n]) => n + ' ' + texto).join(' · ') || 'ninguno';
+}
+
 // Id estable de la campaña. Viaja al servidor en cada tanda y TAMBIÉN si el dueño vuelve a
 // pulsar Enviar después de un fallo: el servidor anota a quién ya le llegó y no le repite el
 // mensaje. Una difusión no se puede deshacer.
@@ -19080,6 +19113,7 @@ async function enviaBroadcast(){
   // error sin cifras, y reintentar le volvia a escribir a los que ya lo tenian.
   const r = { ok:true, sent:0, failed:0, errors:[] };
   let corte = '', errorTanda = '', repetidos = 0;
+  const omitidos = [];
   for (let vuelta = 0; vuelta < 60; vuelta++) {
     const t = await llama(cuerpo);
     if (!t.ok) { errorTanda = t.error || 'error'; break; }
@@ -19089,6 +19123,9 @@ async function enviaBroadcast(){
     r.sent += Number(t.sent || 0);
     r.failed += Number(t.failed || 0);
     repetidos += Number(t.ya_enviados || 0);
+    // Gente que estaba en la lista revisada y se cayó justo antes de escribirle (respondió STOP,
+    // se cerró su ventana de 24 h, cambió de etapa…): el servidor dice a quién y por qué.
+    omitidos.push(...(t.omitidos_ultimo_momento || []));
     r.errors.push(...(t.errors || []));
     $('bcEnviar').textContent = 'Enviando… ' + (r.sent + r.failed) + ' de ' + cuantos;
     if (t.corte) { corte = t.corte; break; }
@@ -19111,6 +19148,9 @@ async function enviaBroadcast(){
     +   '<div class="cambio"><div class="k">Fallidos</div>' + Number(r.failed || 0) + '</div>'
     // Los que ya la tenían: si el dueño reintentó, aquí se ve que NO se les repitió.
     +   (repetidos ? '<div class="cambio"><div class="k">Ya la tenían</div>' + repetidos + '</div>' : '')
+    // Omitidos en el último momento: se revisaron y se quitaron solos antes de escribirles.
+    +   (omitidos.length ? '<div class="cambio"><div class="k">Omitidos al enviar</div>' + omitidos.length
+          + '<div class="nota">' + esc(resumenOmitidos(omitidos)) + '</div></div>' : '')
     +   ((r.errors || []).length
         ? '<div class="cambio"><div class="k">Motivos</div>'
           + (r.errors || []).slice(0,10).map(e => esc(e.error)).join('<br>') + '</div>' : '')
