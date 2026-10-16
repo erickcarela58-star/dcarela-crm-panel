@@ -1,7 +1,7 @@
 {
-  "version": "2026-10-16-interruptores-honestos-v212",
+  "version": "2026-10-16-agenda-y-bandeja-v213",
   "channel": "crm",
-  "released_at": "2026-10-16T07:30:00.000Z",
-  "summary": "Los tres puntos de cada cita de la Agenda ya abren (abrir chat, mover o cancelar) y se quita el interruptor «Pedir la encuesta automáticamente», que no hacía nada: su función real es «Satisfacción automática».",
+  "released_at": "2026-10-16T03:49:00.000Z",
+  "summary": "Agenda con gráficas filtrables de sesiones agendadas y realizadas, confirmación de tentativas con hora y botón visible para fijar chats. El estado del bot por conversación se actualiza tras cambiarlo.",
   "requiere_puente": "2026-10-15-citas-y-conexion-v49"
 }
