@@ -2233,6 +2233,9 @@ input[type="checkbox"],input[type="radio"]{accent-color:var(--accent)}
 .agcel.sel.hoy .agnum{color:#fff}
 .agpanel,.agdia,.agproximas{max-width:1000px}
 .agcita{border:0;border-radius:14px;background:var(--panel);box-shadow:var(--sombra-suave)}
+/* Control de la reservación desde la propia Agenda (16/10/2026: el dueño lo pidió ahí, no solo en el chat). */
+.agmas{margin-left:auto;flex:0 0 auto;border:0;background:transparent;color:var(--mut);font-size:17px;line-height:1;padding:2px 7px;border-radius:9px;cursor:pointer}
+.agmas:hover,.agmas:focus-visible{background:rgba(120,120,128,.16);color:var(--ink)}
 .agcita:hover{background:var(--panel);box-shadow:0 0 0 1.5px var(--accent-suave),var(--sombra-suave)}
 .agdcab{font-size:15px;font-weight:650;letter-spacing:-.015em;border-bottom:0}
 
@@ -12297,6 +12300,22 @@ function montaAgenda(){
       }
       const c = ev.target.closest('[data-agdia]');
       if (c) { agDia = new Date(c.dataset.agdia); if (agVista !== 'cal') agVista = 'dia'; pintaAgenda(); return; }
+      // El menú de la reservación va ANTES del atajo de abrir el chat: el botón vive dentro de la fila
+      // y, sin esto, pulsarlo abriría el chat en vez de cancelar o mover.
+      const mn = ev.target.closest('[data-agmenu]');
+      if (mn) {
+        const cv = buscaConv(mn.dataset.agmenu);
+        if (cv) menuFlotante(mn, [
+          { id:'chat', texto:'Abrir chat' },
+          { id:'mover', texto:'Mover o cambiar de día', nota:'Cambia la fecha y la hora de la sesión' },
+          { id:'cancelar', texto:'Cancelar la reservación', nota:'Sale de la Agenda; no toca pagos ni ventas' },
+        ], { alElegir: id => {
+          if (id === 'chat') { ve('conversations'); abre(cv); }
+          else if (id === 'mover') abreRecordatorio(cv, { editarReserva:true });
+          else cancelaReservaAgenda(cv);
+        } });
+        return;
+      }
       const ab = ev.target.closest('[data-agconv]');
       if (ab) { const cv = buscaConv(ab.dataset.agconv); if (cv) { ve('conversations'); abre(cv); } }
     });
@@ -12322,6 +12341,21 @@ function montaAgenda(){
 
 // Los filtros de la lista, recogidos en un solo boton.
 const AG_FILTROS = [['proximas','Próximas'],['hoy','Hoy'],['pasadas','Pasadas'],['todas','Todas']];
+
+// Cancelar una reservación desde la propia Agenda (16/10/2026, pedido del dueño). Escribe los MISMOS
+// campos que «Editar reservación» del chat, para que las dos vías dejen la ficha igual y ninguna toque
+// pagos, ventas ni Caja. Mover/cambiar de día reusa el modal de reservación del chat.
+async function cancelaReservaAgenda(c){
+  if (!c) return;
+  if (!await confirmaAqui('¿Cancelar la reservación de ' + nombreDe(c) + '? Sale de la Agenda y del embudo. No cambia pagos ni ventas.')) return;
+  const campos = { reservation_status:'cancelado', session_status:'cancelada', scheduled_at:'', tentative_date:'' };
+  const r = await llama({ action:'updateLead', conversation_id: c.id || c._id, fields: campos });
+  if (!r.ok) return avisa('No se pudo cancelar la reservación', r.error);
+  Object.assign(c, campos, { scheduled_at:null, tentative_date:null });
+  avisa('Reservación cancelada', nombreDe(c));
+  pintaAgenda();
+  if (typeof pintaChats === 'function') pintaChats();
+}
 
 function pintaAgenda(){
   const cont = $('agCuerpo'); if (!cont) return;
@@ -12397,6 +12431,8 @@ function filaCita(fila){
     + (deRedOculta ? '<i class="chip medio" title="Su chat entró por una red oculta en el CRM: '
         + 'se le contesta desde la bandeja de Meta">' + esc(CANALES[canalDe(c)]?.corto || 'red') + ' · oculto</i>' : '')
     + '<i class="chip ' + (firme ? 'ok' : 'medio') + '">' + (firme ? 'confirmada' : 'tentativa') + '</i>'
+    // Control total desde la Agenda: abrir el chat, mover/cambiar de día o cancelar, sin tener que entrar a la conversación.
+    + '<button class="agmas" data-agmenu="' + esc(c._id) + '" title="Opciones de la reservación" aria-label="Opciones de la reservación">⋯</button>'
     + '</div>';
 }
 
@@ -13935,7 +13971,7 @@ const CAT_DE_TARJETA = {
   'Auto-cierre a los 14 días': 'auto', 'Leads al día': 'auto', 'Cerebro local': 'auto', 'Etiquetas y contexto automáticos': 'auto',
   'Seguimientos automáticos': 'auto', 'Análisis de conversaciones con IA': 'auto', 'Asistente IA': 'auto',
   'Agente de marketing': 'auto', 'Clientes de otros servicios': 'auto',
-  'Agenda en Google Calendar': 'agenda', 'Recordatorios del iPhone': 'agenda', 'Tu Google Calendar dentro del CRM': 'agenda',
+  'Recordatorios de reservación': 'agenda', 'Agenda en Google Calendar': 'agenda', 'Recordatorios del iPhone': 'agenda', 'Tu Google Calendar dentro del CRM': 'agenda',
   'Catálogo público': 'agenda', 'Datos del negocio': 'agenda', 'Portafolio de la web': 'agenda', 'Publicar en Instagram': 'agenda',
 };
 function categoriaDeCfg(titulo){ return CAT_DE_TARJETA[titulo] || 'otros'; }
@@ -13963,6 +13999,7 @@ const SECCIONES_CFG = {
     { id: 'marketing', nombre: 'Marketing', nota: 'Propuestas de campaña; nunca envía sin tu aprobación.', tarjetas: ['Agente de marketing', 'Clientes de otros servicios'] },
   ],
   agenda: [
+    { id: 'reservas', nombre: 'Reservaciones', nota: 'Los avisos de las sesiones que ya están agendadas.', tarjetas: ['Recordatorios de reservación'] },
     { id: 'calendarios', nombre: 'Calendarios', nota: 'Google y el iPhone, en las dos direcciones.', tarjetas: ['Agenda en Google Calendar', 'Tu Google Calendar dentro del CRM', 'Recordatorios del iPhone'] },
     { id: 'negocio', nombre: 'Tu negocio', nota: 'Los datos y el catálogo que usa el CRM.', tarjetas: ['Datos del negocio', 'Catálogo público', 'Portafolio de la web', 'Publicar en Instagram'] },
   ],
@@ -14480,6 +14517,13 @@ async function pintaConfig(){
         + 'aquí: dos seguimientos ignorados y el contacto pasa a desinteresado.',
         interruptorCfg('seguimientos', 'Enviar seguimientos automáticos',
           'Como máximo dos por contacto, nunca más.', true))
+
+    + tarjetaCfg('Recordatorios de reservación',
+        'Al agendar o mover una sesión confirmada, el bot le escribe al cliente por su misma conversación: '
+        + '<b>unos días antes</b> y <b>el mismo día</b> de la sesión. No hace falta pulsar nada y no toca ni la Agenda ni la ficha. '
+        + 'Se envía una sola vez por reserva; si mueves la sesión a otro día, el aviso vuelve a salir para la fecha nueva.',
+        interruptorCfg('recordatorio_reserva_auto', 'Avisar al cliente de su sesión',
+          'Apagado: nadie le recuerda la cita. La reserva sigue en la Agenda y no se borra nada.', true))
 
     + tarjetaCfg('Permiso de marketing',
         'Si se activa, quien escriba por primera vez queda con marketing permitido. '
