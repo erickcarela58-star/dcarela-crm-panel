@@ -1,7 +1,7 @@
 {
-  "version": "2026-10-16-difusion-avisos-v208",
+  "version": "2026-10-16-sin-filtro-de-marcas-v209",
   "channel": "crm",
-  "released_at": "2026-10-16T02:30:00Z",
-  "summary": "En Instagram y Messenger ya no se ofrece «Responder»: ese canal no acepta respuestas citadas. El resumen de una difusión dice a cuántos se omitió y por qué.",
-  "requiere_puente": "2026-10-15-citas-en-chat-v48"
+  "released_at": "2026-10-16T03:45:00Z",
+  "summary": "Fuera el filtro de marcas de agua: una original con sello se usa tal cual, sin rechazos ni recortes para esconderlo. La nitidez y la resolución se siguen revisando.",
+  "requiere_puente": "2026-10-15-citas-y-conexion-v49"
 }
