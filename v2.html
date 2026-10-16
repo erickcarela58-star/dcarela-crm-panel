@@ -13968,7 +13968,7 @@ const CAT_DE_TARJETA = {
   'Instagram y Messenger': 'mensajes', 'Cómo te ve el cliente': 'mensajes', 'Límites de seguridad del 2.º número': 'mensajes',
   'Número del administrador': 'mensajes',
   'Mensajes por defecto': 'mensajes', 'Avisos al supervisor': 'mensajes', 'Resumen diario del CRM': 'mensajes', 'Bot de WhatsApp': 'mensajes',
-  'Encuesta de satisfacción': 'mensajes', 'Satisfacción automática': 'clientes', 'Atendido automático': 'clientes', 'Orden de las etiquetas': 'clientes',
+'Satisfacción automática': 'clientes', 'Atendido automático': 'clientes', 'Orden de las etiquetas': 'clientes',
   'Permiso de marketing': 'clientes', 'Contactos ignorados': 'clientes', 'Baja de una lista entera': 'clientes',
   'Guardar contactos solo': 'clientes', 'Clientes de caja en el chat': 'clientes', 'Etiquetas del buscador': 'clientes',
   'Auto-cierre a los 14 días': 'auto', 'Leads al día': 'auto', 'Cerebro local': 'auto', 'Etiquetas y contexto automáticos': 'auto',
@@ -13988,7 +13988,7 @@ const SECCIONES_CFG = {
   ],
   mensajes: [
     { id: 'lineas', nombre: 'Tus líneas de WhatsApp', nota: 'El bot, las redes y cómo te ve el cliente.', tarjetas: ['Bot de WhatsApp', 'Número del administrador', 'Instagram y Messenger', 'Cómo te ve el cliente', 'Límites de seguridad del 2.º número'] },
-    { id: 'textos', nombre: 'Lo que se le escribe al cliente', nota: 'Atajos y encuesta.', tarjetas: ['Mensajes por defecto', 'Encuesta de satisfacción'] },
+    { id: 'textos', nombre: 'Lo que se le escribe al cliente', nota: 'Atajos y encuesta.', tarjetas: ['Mensajes por defecto'] },
     { id: 'avisos', nombre: 'Avisos para ti', nota: 'Lo que te llega por WhatsApp para que no se te pase nada.', tarjetas: ['Resumen diario del CRM', 'Avisos al supervisor'] },
   ],
   clientes: [
@@ -14535,10 +14535,6 @@ async function pintaConfig(){
         interruptorCfg('marketing_auto', 'Dar permiso de marketing automáticamente',
           'Al primer mensaje del cliente.', false))
 
-    + tarjetaCfg('Encuesta de satisfacción',
-        'Se envía sola al cerrar una conversación como cliente.',
-        interruptorCfg('encuesta_auto', 'Pedir la encuesta automáticamente',
-          'Solo a quien terminó comprando.', false))
 
     + tarjetaCfg('Instagram y Messenger',
         'Apagado, esas dos redes salen de la bandeja, de los filtros, de los contadores y del '
