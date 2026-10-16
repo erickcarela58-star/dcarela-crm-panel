@@ -509,6 +509,9 @@ img.av{object-fit:cover}
 .chat .nom{flex:1;min-width:0;font-size:13.5px;font-weight:600;
   overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .chat .hora{font-size:10.5px;color:var(--mut);flex:0 0 auto}
+.chat .pin-chat{flex:0 0 auto;border:0;border-radius:8px;background:transparent;color:var(--mut);font-size:15px;padding:6px;opacity:.58;cursor:pointer}
+.chat:hover .pin-chat,.chat .pin-chat:focus-visible,.chat .pin-chat.anclado{opacity:1}.chat .pin-chat.anclado{color:var(--accent)}
+.chat .pin-chat svg{display:block;width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linejoin:round;stroke-linecap:round}
 .chat.sinleer .hora{color:var(--ok);font-weight:700}
 .chat .prev{font-size:12px;color:var(--mut);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .chat .prev.escribiendo-cliente{color:var(--ok);font-style:italic}
@@ -2238,6 +2241,17 @@ input[type="checkbox"],input[type="radio"]{accent-color:var(--accent)}
 .agmas:hover,.agmas:focus-visible{background:rgba(120,120,128,.16);color:var(--ink)}
 .agcita:hover{background:var(--panel);box-shadow:0 0 0 1.5px var(--accent-suave),var(--sombra-suave)}
 .agdcab{font-size:15px;font-weight:650;letter-spacing:-.015em;border-bottom:0}
+.agconfirm{cursor:pointer;font:inherit;border:0}.agconfirm:hover,.agconfirm:focus-visible{outline:2px solid var(--warn);outline-offset:2px}
+.ag-mes-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(250px,310px);gap:18px;align-items:start;max-width:1360px}
+.ag-mes-main{min-width:0}.ag-mes-main .agcal,.ag-mes-main .agsem,.ag-mes-main .agpanel{max-width:none}
+.ag-metricas{background:var(--panel);border-radius:var(--r3);box-shadow:var(--sombra-suave);padding:17px;min-width:0}
+.ag-metricas h2{font-size:16px;letter-spacing:-.02em;margin:0 0 5px}.ag-metricas .cfgnota{margin:0 0 14px}
+.ag-metricas select{width:100%;margin:0 0 14px}.ag-metrica-totales{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px}
+.ag-metrica-totales div{background:var(--hover);border-radius:11px;padding:10px}.ag-metrica-totales b{display:block;font-size:23px;font-variant-numeric:tabular-nums}.ag-metrica-totales small{color:var(--mut);font-size:11px}
+.ag-metrica-mes{display:grid;grid-template-columns:48px minmax(0,1fr) 28px;align-items:center;gap:7px;margin:9px 0;font-size:11px}
+.ag-metrica-mes .ag-barra{height:7px;border-radius:5px;background:var(--hover);overflow:hidden}.ag-metrica-mes .ag-barra i{display:block;height:100%;border-radius:5px;background:var(--ok)}
+.ag-metrica-mes.hechas .ag-barra i{background:var(--accent)}.ag-metrica-mes b{text-align:right;font-variant-numeric:tabular-nums}
+@media(max-width:1050px){.ag-mes-grid{grid-template-columns:1fr}.ag-metricas{max-width:none}}
 
 /* =============================================================================
    VIDRIO. Las superficies son translucidas y desenfocan lo que hay detras, sobre un fondo de
@@ -4939,6 +4953,13 @@ function montaConversaciones(){
   });
   arrastraFiltros($('filtros'));
   $('chats').addEventListener('click', ev => {
+    const pin = ev.target.closest('[data-chat-pin]');
+    if (pin) {
+      ev.stopPropagation();
+      const conv = buscaConv(pin.dataset.chatPin);
+      if (conv) void marcaChat(conv, {pin:!anclado(conv)}, anclado(conv) ? 'Chat desanclado' : 'Chat fijado arriba');
+      return;
+    }
     const marca = ev.target.closest('.marcar');
     if (marca) {
       ev.stopPropagation();
@@ -5561,7 +5582,6 @@ function pintaChats(){
     if (c.lifecycle_stage) marcas.push('<span class="etiqueta">' + esc(c.lifecycle_stage) + '</span>');
     if (c.proactive_blocked_at) marcas.push('<span class="etiqueta">sin automatización</span>');
     else if (c.mode === 'human' || c.human_handoff_required) marcas.push('<span class="etiqueta">humano</span>');
-    if (anclado(c)) marcas.push('<span class="etiqueta">📌 anclado</span>');
     if (silenciado(c)) marcas.push('<span class="etiqueta">🔕 silenciado</span>');
     if (sinLeer) marcas.push('<span class="globito">' + Number(c.unread) + '</span>');
     const canal = CANALES[canalDe(c)];
@@ -5581,7 +5601,10 @@ function pintaChats(){
           ? '<div class="prev escribiendo-cliente">' + esc(escribeAqui) + '</div>'
           : '<div class="prev">' + emojisApple(esc(c.last_message_preview || '')) + '</div>')
       +   '<div class="marcas">' + marcas.join('') + '</div>'
-      + '</div></div>';
+      + '</div><button type="button" class="pin-chat' + (anclado(c) ? ' anclado' : '')
+      + '" data-chat-pin="' + esc(c._id) + '" title="' + (anclado(c) ? 'Desfijar chat' : 'Fijar chat arriba')
+      + '" aria-label="' + (anclado(c) ? 'Desfijar' : 'Fijar') + ' chat de ' + esc(n) + '">'
+      + '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 3h8l-1 5 3 3v2H6v-2l3-3-1-5zm4 10v8"/></svg></button></div>';
   }).join('');
   resuelveAvatares();
 }
@@ -5931,7 +5954,8 @@ function pintaMarcasChat(){
 }
 
 async function marcaChat(c, cambio, texto){
-  const r = await llama({ action:'chatFlags', conversation_id: c.id || c._id, ...cambio });
+  const action = 'pin' in cambio && canalDe(c) !== 'whatsapp_qr' ? 'chatPin' : 'chatFlags';
+  const r = await llama({ action, conversation_id: c.id || c._id, ...cambio });
   if (!r.ok) return avisa('No se pudo cambiar', r.error);
   // El snapshot lo traerá igual, pero la lista no puede quedarse quieta hasta entonces.
   if ('muted_until' in r) c.muted_until = r.muted_until;
@@ -6085,7 +6109,10 @@ function pintaCabeceraChat(){
 function pintaModoChat(){
   const modo = $('btnModo');
   if (!modo || !sel) return;
-  modo.textContent = (sel.mode === 'human' || sel.human_handoff_required) ? 'Humano atiende' : 'Bot atiende';
+  const humano = sel.mode === 'human' || sel.human_handoff_required || sel.bot_paused;
+  modo.textContent = humano ? 'Humano atiende' : 'Bot atiende';
+  modo.title = humano ? 'Bot pausado en este chat. Pulsa para reanudarlo si ya revisaste el contexto.' : 'Bot activo en este chat. Pulsa para pasarlo a atención humana.';
+  modo.setAttribute('aria-pressed', humano ? 'false' : 'true');
   // «Atendido» cambia de color para saber de un vistazo si ya se le dio: verde desde que se pulsa y mientras el cliente no escriba
   // otra vez (un mensaje nuevo suyo lo devuelve a gris, igual que reaparece en «Sin responder»).
   const at = $('btnAtendido');
@@ -6285,7 +6312,8 @@ function cableaChat(c){
     const r = await callFn({ action: 'mode', conversation_id: sel.id, mode: newMode });
     modo.disabled = false;
     if (!r.ok) return avisa('No se pudo cambiar', r.error);
-    sel.mode = newMode; pintaModoChat();
+    Object.assign(sel, {mode:r.mode, bot_paused:r.bot_paused, human_handoff_required:r.human_handoff_required});
+    pintaModoChat(); pintaChats();
     avisa(newMode === 'human' ? 'La atiendes tú' : 'Vuelve al bot',
       'El cambio se aplicará únicamente a esta conversación.');
   };
@@ -11903,6 +11931,8 @@ let agVista = 'cal';         // 'cal' | 'lista'
 let agFiltro = 'proximas';   // proximas | hoy | pasadas | todas
 let agMes = new Date();      // mes que se esta mirando
 let agDia = null;            // dia seleccionado en el calendario
+let agCategoria = '';        // filtro del resumen; no oculta citas del calendario
+let agPeriodo = 6;          // ventana del resumen; el calendario mantiene su mes
 
 // La agenda y los recordatorios eran dos listas que no se hablaban: la cita vive en
 // scheduled_at/tentative_date y el seguimiento en follow_up_at, los dos en la MISMA ficha.
@@ -12316,8 +12346,18 @@ function montaAgenda(){
         } });
         return;
       }
+      const confirmar = ev.target.closest('[data-agconfirm]');
+      if (confirmar) {
+        const cv = buscaConv(confirmar.dataset.agconfirm);
+        if (cv) void confirmaTentativaAgenda(cv, confirmar);
+        return;
+      }
       const ab = ev.target.closest('[data-agconv]');
       if (ab) { const cv = buscaConv(ab.dataset.agconv); if (cv) { ve('conversations'); abre(cv); } }
+    });
+    $('vista-agenda').addEventListener('change', ev => {
+      if (ev.target?.id === 'agCategoriaGrafica') { agCategoria = ev.target.value; pintaAgenda(); }
+      if (ev.target?.id === 'agPeriodoGrafica') { agPeriodo = Number(ev.target.value) || 6; pintaAgenda(); }
     });
     $('agNueva').onclick = () => abreAgendar(null);
     $('agFiltroBtn').onclick = () => menuFlotante($('agFiltroBtn'),
@@ -12355,6 +12395,32 @@ async function cancelaReservaAgenda(c){
   avisa('Reservación cancelada', nombreDe(c));
   pintaAgenda();
   if (typeof pintaChats === 'function') pintaChats();
+}
+
+// Confirmar desde la propia etiqueta. Las tentativas antiguas sin hora necesitan que el dueño
+// elija una antes: nunca se inventa un horario para una cita real.
+async function confirmaTentativaAgenda(c, boton){
+  if (!c || c.scheduled_at || String(c.reservation_status || '') === 'cancelado') return;
+  const tentativa = String(c.tentative_date || '');
+  if (!tentativa || soloDiaAg(tentativa) || !Number.isFinite(Date.parse(tentativa))) {
+    abreRecordatorio(c, { editarReserva:true });
+    return;
+  }
+  if (boton) boton.disabled = true;
+  const campos = {
+    scheduled_at: tentativa,
+    tentative_date: '',
+    reservation_status: 'confirmado',
+    session_status: 'confirmada',
+    lifecycle_stage: ['cliente','reservado'].includes(c.lifecycle_stage) ? c.lifecycle_stage : 'reservado',
+  };
+  const r = await llama({ action:'updateLead', conversation_id:c.id || c._id, fields:campos });
+  if (boton) boton.disabled = false;
+  if (!r.ok) return avisa('No se pudo confirmar la sesión', r.error);
+  Object.assign(c, campos);
+  avisa('Sesión confirmada', nombreDe(c));
+  pintaAgenda();
+  pintaChats();
 }
 
 function pintaAgenda(){
@@ -12430,7 +12496,9 @@ function filaCita(fila){
     // atiende en la bandeja de Meta, no aqui.
     + (deRedOculta ? '<i class="chip medio" title="Su chat entró por una red oculta en el CRM: '
         + 'se le contesta desde la bandeja de Meta">' + esc(CANALES[canalDe(c)]?.corto || 'red') + ' · oculto</i>' : '')
-    + '<i class="chip ' + (firme ? 'ok' : 'medio') + '">' + (firme ? 'confirmada' : 'tentativa') + '</i>'
+    + (firme ? '<i class="chip ok">confirmada</i>'
+      : '<button type="button" class="chip medio agconfirm" data-agconfirm="' + esc(c._id)
+        + '" title="Confirmar esta sesión" aria-label="Confirmar sesión tentativa de ' + esc(nombreDe(c)) + '">Tentativa · confirmar</button>')
     // Control total desde la Agenda: abrir el chat, mover/cambiar de día o cancelar, sin tener que entrar a la conversación.
     // `data-menu-flotante` NO es decorativo: el listener global de clic cierra los menús flotantes
     // salvo que el botón lo lleve, así que sin él el menú se abría y se cerraba en el mismo clic
@@ -12495,6 +12563,47 @@ function pintaAgendaDia(todas){
         + (porHora.has(h) ? porHora.get(h).map(filaCita).join('') : '') + '</div></div>').join('')
     + (citas.length ? '' : '<p class="cfgnota" style="padding:10px 0">Nada este día. Pulsa «＋ Agendar» para meter una cita.</p>');
 }
+// Se cuentan fichas del CRM, no eventos personales de Google ni seguimientos. La fecha de
+// realización es attended_at; las fichas históricas sin ella usan su fecha agendada.
+function datosGraficaAgenda(conversaciones, mesFinal, categoria = '', periodo = 6){
+  const cuantos = [3,6,12].includes(Number(periodo)) ? Number(periodo) : 6;
+  const meses = Array.from({length:cuantos}, (_, i) => {
+    const d = new Date(mesFinal.getFullYear(), mesFinal.getMonth() - cuantos + 1 + i, 1);
+    return { clave:claveDiaAg(d).slice(0,7), nombre:d.toLocaleDateString('es-DO',{month:'short'}), agendadas:0, hechas:0 };
+  });
+  const porMes = new Map(meses.map(m => [m.clave,m]));
+  for (const c of conversaciones || []) {
+    if (categoria && c.interested_category !== categoria) continue;
+    if (c.scheduled_at && c.reservation_status !== 'cancelado' && c.session_status !== 'cancelada') {
+      const m = porMes.get(diaAg(c.scheduled_at).slice(0,7));
+      if (m) m.agendadas++;
+    }
+    if (['asistio','realizada','hecha','completada'].includes(String(c.session_status || '').toLowerCase())) {
+      const m = porMes.get(diaAg(c.attended_at || c.scheduled_at).slice(0,7));
+      if (m) m.hechas++;
+    }
+  }
+  return meses;
+}
+function graficaAgendaHtml(){
+  // La Agenda conserva citas de canales ocultos, pero nunca cuenta fichas ignoradas.
+  const meses = datosGraficaAgenda([...CONVS,...CONVS_OCULTAS,...CONVS_REDES], agMes, agCategoria, agPeriodo);
+  const maximo = Math.max(1,...meses.flatMap(m => [m.agendadas,m.hechas]));
+  const total = k => meses.reduce((n,m) => n + m[k],0);
+  const barras = (k, clase) => meses.map(m => '<div class="ag-metrica-mes ' + clase + '"><span>' + esc(m.nombre) + '</span>'
+    + '<span class="ag-barra"><i style="width:' + Math.round(m[k] / maximo * 100) + '%"></i></span><b>' + m[k] + '</b></div>').join('');
+  return '<aside class="ag-metricas" aria-label="Resumen de sesiones"><h2>Sesiones</h2>'
+    + '<p class="cfgnota">Hasta ' + esc(agMes.toLocaleDateString('es-DO',{month:'long',year:'numeric'})) + '</p>'
+    + '<label class="cfgnota" for="agPeriodoGrafica">Período</label><select id="agPeriodoGrafica">'
+    + [3,6,12].map(n => '<option value="' + n + '"' + (agPeriodo === n ? ' selected' : '') + '>' + n + ' meses</option>').join('') + '</select>'
+    + '<label class="cfgnota" for="agCategoriaGrafica">Categoría</label><select id="agCategoriaGrafica"><option value="">Todas</option>'
+    + CATEGORIAS.map(x => '<option value="' + esc(x) + '"' + (agCategoria === x ? ' selected' : '') + '>' + esc(x) + '</option>').join('') + '</select>'
+    + '<div class="ag-metrica-totales"><div><b>' + total('agendadas') + '</b><small>Agendadas</small></div>'
+    + '<div><b>' + total('hechas') + '</b><small>Hechas</small></div></div>'
+    + '<p class="cfgnota">Agendadas</p>' + barras('agendadas','agendadas')
+    + '<p class="cfgnota" style="margin-top:16px">Hechas</p>' + barras('hechas','hechas')
+    + '</aside>';
+}
 function pintaAgendaCalendario(todas){
   const cont = $('agCuerpo');
   const primero = new Date(agMes.getFullYear(), agMes.getMonth(), 1);
@@ -12523,7 +12632,7 @@ function pintaAgendaCalendario(todas){
   }
 
   const delDia = agDia ? todas.filter(x => mismoDia(x.iso, agDia)) : [];
-  cont.innerHTML = '<div class="agnav">'
+  cont.innerHTML = '<div class="ag-mes-grid"><div class="ag-mes-main"><div class="agnav">'
     + '<button class="btn-linea" data-agmes="-1">‹</button>'
     + '<b>' + esc(agMes.toLocaleDateString('es-DO', { month:'long', year:'numeric' })) + '</b>'
     + '<button class="btn-linea" data-agmes="hoy">Hoy</button>'
@@ -12538,7 +12647,8 @@ function pintaAgendaCalendario(todas){
           + (delDia.length ? delDia.map(filaCita).join('')
              : '<p class="cfgnota" style="padding:10px 0">Nada este día.</p>')
           + '</div>'
-        : '<p class="bajada" style="margin-top:14px">Pulsa un día para ver sus sesiones.</p>');
+        : '<p class="bajada" style="margin-top:14px">Pulsa un día para ver sus sesiones.</p>')
+    + '</div>' + graficaAgendaHtml() + '</div>';
 }
 
 /* ---- Selector de combo: acordeón con todos los combos, «Personalizado» y «Cotizaciones» ----------------
