@@ -18276,16 +18276,16 @@ function abreEditorPlantilla(id, piezaInicialId = ''){
     +'<div class="estudio-bloque-cab"><span>🖼️ Replicar Foto de Referencia con Gemini (MCP)</span><span class="cotz-est" style="background:#f3e8ff;color:#7c3aed">dcarela_replicar_referencia</span></div>'
     +'<p class="cont-sub" style="margin:0 0 8px">Gemini analiza una de las 10 fotos/flyers de referencia oficiales del estudio o una imagen externa que subas, extrae tipografía, jerarquía y paleta cromática, asocia la foto original en alta resolución sin marcas de agua y genera la réplica de diseño en alta definición.</p>'
     +'<label>Elegir referencia oficial del estudio<select name="gemini_ref_selector">'
-    +'<option value="01_editorial_social">01 · Editorial social (Infantil / Retrato suave)</option>'
-    +'<option value="02_editorial_rojo_serif">02 · Editorial rojo serif (XV Años / Eventos)</option>'
-    +'<option value="03_editorial_azul_suave">03 · Editorial azul suave (Infantil / Columna adaptable)</option>'
-    +'<option value="04_mosaico_oferta">04 · Mosaico oferta 5 fotos (Infantil / Set dinámico)</option>'
-    +'<option value="05_spotlight_noir">05 · Spotlight noir (Cumpleaños / Foco cinematográfico)</option>'
+    +'<option value="01_editorial_social">01 · Editorial social (Maternidad / Retrato elegante)</option>'
+    +'<option value="02_editorial_rojo_serif">02 · Editorial rojo serif (Retrato editorial / Cumpleaños)</option>'
+    +'<option value="03_editorial_azul_suave">03 · Editorial azul suave (Retrato sobrio / Estudio)</option>'
+    +'<option value="04_mosaico_oferta">04 · Mosaico oferta (5 fotos / Infantil y familiar)</option>'
+    +'<option value="05_spotlight_noir">05 · Spotlight noir (Cinematográfico / Retrato oscuro)</option>'
     +'<option value="06_glow_carmesi">06 · Glow carmesí (XV Años / Resplandor moderno)</option>'
-    +'<option value="07_contraste_titular_banda">07 · Contraste titular banda (Cumpleaños / Banda sangrada)</option>'
-    +'<option value="08_tarjeta_cristal">08 · Tarjeta cristal (Maternidad / Frosted glass)</option>'
+    +'<option value="07_contraste_titular_banda">07 · Contraste titular banda (Retrato de actitud / Banda carmesí)</option>'
+    +'<option value="08_tarjeta_cristal">08 · Tarjeta cristal (Gala XV / Frosted glass)</option>'
     +'<option value="09_spotlight_azul_corporativo">09 · Spotlight azul corporativo (Graduación / Formal)</option>'
-    +'<option value="10_alta_clave_fotografia">10 · Alta clave fotográfica (Infantil / Fondo blanco puro)</option>'
+    +'<option value="10_alta_clave_fotografia">10 · Alta clave fotográfica (Infantil / Luz pura alta clave)</option>'
     +'</select></label>'
     +'<div style="display:flex;gap:8px;margin-top:6px;flex-wrap:wrap;align-items:center">'
     +'<button type="button" class="btn-solido" data-cgemini-replica="1" style="background:#7c3aed;color:#fff">✨ Diseñar y replicar con Gemini MCP</button>'
@@ -18413,7 +18413,7 @@ function abreEditorPlantilla(id, piezaInicialId = ''){
     ultimoEstado=s;if(btnUndo)btnUndo.disabled=!historial.length;
     sincronizaUIEstudio();
   };
-  const titularActivo=v=>v._pieza_id&&v._pieza_l1?{l1:v._pieza_l1,l2:v._pieza_l2}:null;
+  const titularActivo=v=>v._pieza_id&&v._pieza_l1?{l1:v._pieza_l1,l2:v._pieza_l2}:(v.texto_muestra_l1||v.texto_muestra_l2?{l1:v.texto_muestra_l1||'',l2:v.texto_muestra_l2||''}:null);
   const previsualiza=async()=>{
     const n=++turno,v=valores();
     vista.innerHTML='<span class="cont-sub">Componiendo con la original…</span>';
@@ -18652,6 +18652,17 @@ function abreEditorPlantilla(id, piezaInicialId = ''){
         else abreEditorPlantilla(targetPlantilla,pzActual);
         return;
       }
+      if(rep.categoria&&f.elements.categoria)f.elements.categoria.value=rep.categoria;
+      if(f.elements.foto_id){
+        let optRef=f.elements.foto_id.querySelector('option[value="referencia"]');
+        if(!optRef){
+          optRef=document.createElement('option');
+          optRef.value='referencia';
+          optRef.textContent='🌟 Foto oficial limpia de referencia (HD)';
+          f.elements.foto_id.insertBefore(optRef,f.elements.foto_id.firstChild);
+        }
+        f.elements.foto_id.value='referencia';
+      }
       const pz=rep.personalizacion||{};
       if(pz.texto_muestra_l1&&f.elements.texto_muestra_l1)f.elements.texto_muestra_l1.value=pz.texto_muestra_l1;
       if(pz.texto_muestra_l2&&f.elements.texto_muestra_l2)f.elements.texto_muestra_l2.value=pz.texto_muestra_l2;
@@ -18666,7 +18677,7 @@ function abreEditorPlantilla(id, piezaInicialId = ''){
       if(pz.color_panel&&f.elements.color_panel)f.elements.color_panel.value=pz.color_panel;
       if(pz.opacidad_panel&&f.elements.opacidad_panel)f.elements.opacidad_panel.value=pz.opacidad_panel;
       guardaHistorial();sincronizaUIEstudio();void previsualiza();
-      avisa('Réplica cargada con éxito', 'Se aplicó el diseño, tipografía y composición de la referencia al editor.');
+      avisa('Réplica cargada con éxito', 'Se aplicó la foto limpia HD, titular y estilo exacto de la referencia.');
       return;
     }
     if(b.dataset?.ceditorStepTarget){
@@ -18764,6 +18775,34 @@ function abreEditorPlantilla(id, piezaInicialId = ''){
     if(cCrear){cCrear.estilo_id=e.template_id||idReal;if(v.cta_texto!==undefined)cCrear.cta_texto=v.cta_texto;cCrear.mostrar_whatsapp=v.mostrar_whatsapp!=='no';if(v.tipografia)cCrear.tipografia=v.tipografia;if(v.etiqueta_texto!==undefined)cCrear.etiqueta_texto=v.etiqueta_texto;if(v.texto_muestra_l1)cCrear.titular_l1=v.texto_muestra_l1;if(v.texto_muestra_l2!==undefined&&v.texto_muestra_l1)cCrear.titular_l2=v.texto_muestra_l2;cCrear.solicitud=null;}
     if(!enModulo)cierraModal();
     pintaContenido();avisa('Diseño guardado','Personalización V2 activa para todos los formatos.');};
+  if(CONT._replicaPendienteDeCargar){
+    const rep=CONT._replicaPendienteDeCargar;
+    CONT._replicaPendienteDeCargar=null;
+    if(rep.categoria&&f.elements.categoria)f.elements.categoria.value=rep.categoria;
+    if(f.elements.foto_id){
+      let optRef=f.elements.foto_id.querySelector('option[value="referencia"]');
+      if(!optRef){
+        optRef=document.createElement('option');
+        optRef.value='referencia';
+        optRef.textContent='🌟 Foto oficial limpia de referencia (HD)';
+        f.elements.foto_id.insertBefore(optRef,f.elements.foto_id.firstChild);
+      }
+      f.elements.foto_id.value='referencia';
+    }
+    const pz=rep.personalizacion||{};
+    if(pz.texto_muestra_l1&&f.elements.texto_muestra_l1)f.elements.texto_muestra_l1.value=pz.texto_muestra_l1;
+    if(pz.texto_muestra_l2&&f.elements.texto_muestra_l2)f.elements.texto_muestra_l2.value=pz.texto_muestra_l2;
+    if(pz.tipografia&&f.elements.tipografia)f.elements.tipografia.value=pz.tipografia;
+    if(pz.peso_titulo&&f.elements.peso_titulo)f.elements.peso_titulo.value=pz.peso_titulo;
+    if(pz.escala_titulo&&f.elements.escala_titulo)fijaEscala('escala_titulo',pz.escala_titulo);
+    if(pz.alineacion&&f.elements.alineacion)f.elements.alineacion.value=pz.alineacion;
+    if(pz.acento&&f.elements.acento)f.elements.acento.value=pz.acento;
+    if(pz.texto&&f.elements.texto)f.elements.texto.value=pz.texto;
+    if(pz.sombra&&f.elements.sombra)f.elements.sombra.value=pz.sombra;
+    if(pz.efecto&&f.elements.efecto)f.elements.efecto.value=pz.efecto;
+    if(pz.color_panel&&f.elements.color_panel)f.elements.color_panel.value=pz.color_panel;
+    if(pz.opacidad_panel&&f.elements.opacidad_panel)f.elements.opacidad_panel.value=pz.opacidad_panel;
+  }
   sincronizaUIEstudio();
   ultimoEstado=JSON.stringify(valores());
   void previsualiza();
