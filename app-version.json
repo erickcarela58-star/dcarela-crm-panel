@@ -1,7 +1,7 @@
 {
-  "version": "2026-10-17-estudio-flyers-v7-v220",
+  "version": "2026-10-17-estudio-flyers-mcp-gemini-v221",
   "channel": "crm",
-  "released_at": "2026-10-17T14:10:00.000Z",
-  "summary": "Estudio de Flyers V7 v220: módulo independiente en menú lateral (Editor de flyers) con interfaz profesional de 3 columnas (plantillas V7 y capas a la izquierda, lienzo interactivo con barra rápida de formato al centro, e inspector organizado por pestañas a la derecha). Control total de tamaño tipográfico por bloque (titular, subtítulo, botón CTA y firma de marca con controles A-/A+ y deslizadores de 60% a 160%), soporte para tipografías comerciales (Bodoni Moda, Plus Jakarta Sans, DM Serif Display, Playfair, Amandine, Marcellus, Poppins, Spartan, Inter), alineaciones, mayúsculas, interlineado y colores personalizados.",
+  "released_at": "2026-10-17T15:00:00.000Z",
+  "summary": "Conexión oficial MCP (Model Context Protocol) con Gemini 2.5 para el Editor de Flyers V7 y el Planificador de contenido. Servidor stdio dcarela-flyers con 6 herramientas: listar plantillas V7, fototeca HD, redactor de ganchos comerciales cumpliendo reglas de D' Carela Compufoto en La Romana, recomendador de diseño según fotos originales, renderizado en vivo y guardado de personalizaciones. Asistente interactivo ✨ Gemini IA integrado en la barra superior y pestaña dedicada del inspector, con previsualización en alta definición y aplicación directa en 1 clic.",
   "requiere_puente": "2026-10-15-citas-y-conexion-v49"
 }
