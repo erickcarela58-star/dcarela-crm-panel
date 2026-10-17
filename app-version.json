@@ -1,7 +1,7 @@
 {
-  "version": "2026-10-17-estudio-flyers-mcp-gemini-v221",
+  "version": "2026-10-17-estudio-flyers-mcp-replica-v222",
   "channel": "crm",
-  "released_at": "2026-10-17T15:00:00.000Z",
-  "summary": "Conexión oficial MCP (Model Context Protocol) con Gemini 2.5 para el Editor de Flyers V7 y el Planificador de contenido. Servidor stdio dcarela-flyers con 6 herramientas: listar plantillas V7, fototeca HD, redactor de ganchos comerciales cumpliendo reglas de D' Carela Compufoto en La Romana, recomendador de diseño según fotos originales, renderizado en vivo y guardado de personalizaciones. Asistente interactivo ✨ Gemini IA integrado en la barra superior y pestaña dedicada del inspector, con previsualización en alta definición y aplicación directa en 1 clic.",
+  "released_at": "2026-10-17T16:15:00.000Z",
+  "summary": "Replicación de fotos y flyers de referencia con Gemini y MCP para D' Carela Compufoto. Nuevas herramientas MCP dcarela_listar_referencias y dcarela_replicar_referencia para analizar portadas oficiales o subidas, extraer estilo y tipografía, enlazar la fotografía de estudio original en alta resolución y renderizar la réplica en alta definición respetando las reglas comerciales estrictas. Nueva tarjeta interactiva en el Asistente ✨ Gemini IA del editor con selector de las 10 referencias, subida de archivos, comparación side-by-side y carga en 1 clic al lienzo.",
   "requiere_puente": "2026-10-15-citas-y-conexion-v49"
 }
