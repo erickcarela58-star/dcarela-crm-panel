@@ -1,7 +1,7 @@
 {
-  "version": "2026-10-16-historias-y-reels-v216",
+  "version": "2026-10-16-editor-plantillas-v7-v217",
   "channel": "crm",
-  "released_at": "2026-10-16T14:40:00.000Z",
-  "summary": "El tamaño 9:16 ya no es solo para WhatsApp y TikTok: en Instagram y en tu Página de Facebook sale como historia y, además, como Reel, con la foto convertida en un video corto. Si una de las dos publicaciones cae, la otra sí cuenta y el fallo queda anotado en la pieza. Y el generador respeta de verdad la referencia que subes: su composición, sus colores y su jerarquía mandan, y la referencia viaja como JSON exacto.",
+  "released_at": "2026-10-16T20:41:00.000Z",
+  "summary": "Nuevo módulo avanzado de edición de plantillas V7: controles independientes de tipografía por rol (Playfair Display, Inter, League Spartan, Poppins, Marcellus, Amandine), jerarquía editorial estricta, arrastre de bloques en lienzo con offsets dx/dy numéricos, conmutadores de visibilidad, tarjeta de cristal esmerilado translúcido, edición de piezas directas, guardado de borrador y comparación antes/después.",
   "requiere_puente": "2026-10-15-citas-y-conexion-v49"
 }
