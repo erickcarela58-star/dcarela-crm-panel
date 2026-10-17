@@ -314,6 +314,26 @@ body.menu-abierto .velo{display:block}
 .estilo-vista img{width:100%;height:100%;object-fit:cover;cursor:zoom-in}
 .estilo-vista img.estilo-ref{object-fit:contain;cursor:default}
 .estilo-info{padding:10px;display:flex;flex-direction:column;gap:5px}
+.plan-v7-banner{background:linear-gradient(135deg,rgba(255,126,0,.08),rgba(10,143,77,.08));border:1px solid var(--line2);border-radius:14px;padding:14px 16px;margin:0 0 14px;display:flex;flex-direction:column;gap:8px}
+.plan-v7-banner-info{display:flex;flex-direction:column;gap:4px}
+.plan-v7-pill{font-size:10.5px;font-weight:800;letter-spacing:.8px;padding:2px 8px;border-radius:6px;background:var(--ok);color:#fff;display:inline-block;align-self:flex-start}
+.plan-v7-badges{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px}
+.galeria-v7{display:grid;grid-template-columns:repeat(auto-fill,minmax(215px,1fr));gap:12px;margin:10px 0 16px}
+.tarjeta-v7{border:2px solid var(--line2);border-radius:14px;overflow:hidden;background:var(--panel);cursor:pointer;transition:border-color .18s,box-shadow .18s,transform .18s;display:flex;flex-direction:column;position:relative;user-select:none}
+.tarjeta-v7:hover{border-color:var(--ok);transform:translateY(-2px);box-shadow:0 6px 18px rgba(0,0,0,.1)}
+.tarjeta-v7.seleccionada{border-color:var(--ok);background:rgba(10,143,77,.05);box-shadow:0 0 0 1px var(--ok)}
+.tarjeta-v7-vista{aspect-ratio:4/5;background:var(--hover);display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden}
+.tarjeta-v7-vista img{width:100%;height:100%;object-fit:cover}
+.tarjeta-v7-indice{position:absolute;top:8px;left:8px;background:rgba(0,0,0,.75);color:#fff;padding:2px 8px;border-radius:6px;font-size:11px;font-weight:700;z-index:2;letter-spacing:.5px}
+.tarjeta-v7-tag{position:absolute;top:8px;right:8px;background:rgba(0,0,0,.75);color:#fff;padding:2px 8px;border-radius:6px;font-size:10.5px;font-weight:600;z-index:2}
+.tarjeta-v7-tag.alerta{background:#b98852;color:#fff}
+.tarjeta-v7-check{position:absolute;bottom:8px;right:8px;width:26px;height:26px;border-radius:50%;background:var(--ok);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;box-shadow:0 2px 8px rgba(0,0,0,.3);z-index:2}
+.tarjeta-v7-cuerpo{padding:10px 12px;display:flex;flex-direction:column;gap:5px;flex:1}
+.tarjeta-v7-titulo{font-size:13.5px;font-weight:700;color:var(--fg);margin:0}
+.tarjeta-v7-desc{font-size:11px;color:var(--mut);line-height:1.45;margin:0;flex:1}
+.tarjeta-v7-acc{display:flex;gap:6px;margin-top:6px;flex-wrap:wrap;align-items:center;justify-content:space-between}
+.plan-v7-personaliza{border:1px solid var(--line2);border-radius:14px;padding:14px;background:var(--panel);margin:14px 0;display:flex;flex-direction:column;gap:10px}
+.plan-mockup-svg{width:100%;height:100%;display:block}
 .red{border-bottom:1px solid var(--line2);padding:10px 0}
 .red code{font-size:11.5px;word-break:break-all;background:var(--hover);padding:1px 4px;border-radius:4px}
 @media(max-width:640px){.agente-rot{flex-basis:100%}.agente-exp{padding-left:0}.cal-dia{min-height:58px;padding:3px}.cal-chip{font-size:9px;padding:1px 3px}.cal-h{display:none}.cal-ev{display:none}.cal-leyenda{margin-left:0}.cal-cab b{min-width:0}}
@@ -17028,7 +17048,31 @@ function periodoListaContenido(){
   return { mes, desde: mes+'-01', hasta: mes+'-'+new Date(Date.UTC(a,m,0)).getUTCDate() };
 }
 function borradorCrearContenido(){
-  return CONT.crear || (CONT.crear = {mes:periodoListaContenido().mes,cantidad:1,categorias:new Set(['infantil']),formatos:new Set(['imagen_4x5','imagen_9x16']),canales:new Set(['instagram','whatsapp_estado']),modelo:CONT.modelo || 'gemini-4-argon',estilo_id:'',brief:'',objetivo:'consultas',publico:'',diferencial:'',evitar:'',logosPropios:{},mosaicoFotos:{},paso:1});
+  const c = CONT.crear || (CONT.crear = {
+    mes: periodoListaContenido().mes,
+    cantidad: 1,
+    categorias: new Set(['infantil']),
+    formatos: new Set(['imagen_4x5','imagen_9x16','imagen_1x1','imagen_16x9']),
+    canales: new Set(['instagram','whatsapp_estado']),
+    modelo: CONT.modelo || 'gemini-4-argon',
+    estilo_id: '01-editorial-social',
+    brief: '',
+    objetivo: 'consultas',
+    publico: '',
+    diferencial: '',
+    evitar: '',
+    titular_l1: '',
+    titular_l2: '',
+    cta_texto: 'Escríbenos',
+    mostrar_whatsapp: true,
+    tipografia: 'playfair',
+    etiqueta_texto: '',
+    logosPropios: {},
+    mosaicoFotos: {},
+    paso: 1
+  });
+  if (!c.estilo_id) c.estilo_id = '01-editorial-social';
+  return c;
 }
 async function cargaModelosContenido(){
   if (CONT.modelosCargando || CONT.modelos) return;
@@ -17050,15 +17094,16 @@ async function cargaModelosContenido(){
 function guardaCrearContenido(f){
   const c = borradorCrearContenido(); if(c.enviando)return;
   const v = Object.fromEntries(new FormData(f).entries());
-  const anterior=JSON.stringify([c.mes,c.cantidad,c.modelo,c.estilo_id,c.brief,c.objetivo,c.publico,c.diferencial,c.evitar,c.otraFoto,c.fotos,c.mosaicoFotos,c.logosPropios,[...c.categorias],[...c.formatos],[...c.canales]]);
+  const anterior=JSON.stringify([c.mes,c.cantidad,c.modelo,c.estilo_id,c.brief,c.objetivo,c.publico,c.diferencial,c.evitar,c.titular_l1,c.titular_l2,c.cta_texto,c.mostrar_whatsapp,c.tipografia,c.etiqueta_texto,c.otraFoto,c.fotos,c.mosaicoFotos,c.logosPropios,[...c.categorias],[...c.formatos],[...c.canales]]);
   const fotosAnteriores={...(c.fotos||{})};
-  Object.assign(c,{mes:v.mes || c.mes,cantidad:Number(v.cantidad)||1,modelo:v.modelo || c.modelo,estilo_id:v.estilo_id ?? c.estilo_id,brief:v.brief || '',otraFoto:v.otra_foto==='on'});
-  for(const k of ['objetivo','publico','diferencial','evitar']) if(v[k] !== undefined)c[k]=String(v[k]);
+  Object.assign(c,{mes:v.mes || c.mes,cantidad:Number(v.cantidad)||1,modelo:v.modelo || c.modelo,estilo_id:v.estilo_id || c.estilo_id || '01-editorial-social',brief:v.brief || '',otraFoto:v.otra_foto==='on'});
+  for(const k of ['objetivo','publico','diferencial','evitar','titular_l1','titular_l2','cta_texto','tipografia','etiqueta_texto']) if(v[k] !== undefined)c[k]=String(v[k]);
+  c.mostrar_whatsapp = v.mostrar_whatsapp === 'si' || v.mostrar_whatsapp === 'on' || (v.mostrar_whatsapp === undefined && c.mostrar_whatsapp !== false);
   c.fotos = Object.fromEntries(CONT_CATEGORIAS.map(([id])=>[id,v['foto_'+id] || '']));
   c.mosaicoFotos = Object.fromEntries(CONT_CATEGORIAS.map(([id])=>[id,[...f.querySelectorAll('input[name="mosaico_'+id+'"]:checked')].map(x=>x.value)]));
   c.logosPropios=Object.fromEntries(CONT_CATEGORIAS.filter(([id])=>ROL_ACTUAL==='admin'&&c.fotos[id]&&fotosAnteriores[id]===c.fotos[id]&&v['logo_propio_'+id]==='on').map(([id])=>[id,c.fotos[id]]));
   if(!c.baseId) for(const [name,key] of [['categoria','categorias'],['formato','formatos'],['plataforma','canales']]) c[key] = new Set([...f.querySelectorAll('input[name="'+name+'"]:checked')].map(x=>x.value));
-  const actual=JSON.stringify([c.mes,c.cantidad,c.modelo,c.estilo_id,c.brief,c.objetivo,c.publico,c.diferencial,c.evitar,c.otraFoto,c.fotos,c.mosaicoFotos,c.logosPropios,[...c.categorias],[...c.formatos],[...c.canales]]);
+  const actual=JSON.stringify([c.mes,c.cantidad,c.modelo,c.estilo_id,c.brief,c.objetivo,c.publico,c.diferencial,c.evitar,c.titular_l1,c.titular_l2,c.cta_texto,c.mostrar_whatsapp,c.tipografia,c.etiqueta_texto,c.otraFoto,c.fotos,c.mosaicoFotos,c.logosPropios,[...c.categorias],[...c.formatos],[...c.canales]]);
   if(anterior!==actual){c.solicitud=null;c.error=null;guardaTareaContenido();}
 }
 function fotosCrearContenido(c){
@@ -17067,7 +17112,7 @@ function fotosCrearContenido(c){
     const fotos=(CONT.fotosCreativas||[]).filter(f=>f.categoria===id),seleccion=c.fotos?.[id] || '';
     const ordenadas=[...fotos].sort((a,b)=>Number(b.id===seleccion)-Number(a.id===seleccion));
     const tarjeta=(f,i)=>{const rechazo=c.incidencia?.detalles?.foto_id===f.id;return '<label class="plan-original-opcion'+(rechazo?' rechazada':'')+'"><input type="radio" name="foto_'+id+'" value="'+esc(f.id)+'"'+(f.id===seleccion?' checked':'')+'>'+(f.preview?'<img src="'+esc(f.preview)+'" loading="lazy" alt="Original '+(i+1)+' de '+esc(t)+'">':'<span>Original '+(i+1)+'</span>')+'<span>'+Number(f.width)+' × '+Number(f.height)+' px</span><span class="plan-foto-estado">'+(rechazo?'Rechazada en el pedido anterior':'Calidad pendiente de validar')+'</span></label>';};
-    const mosaico=c.estilo_id==='v6-mosaico-oferta';
+    const mosaico=['04-mosaico-oferta','v6-mosaico-oferta'].includes(c.estilo_id) || c.estilo_id?.endsWith('mosaico-oferta');
     const elegidas=c.mosaicoFotos?.[id]||[];
     const secundarias=mosaico?'<details class="plan-opciones" open><summary>Otras cuatro fotos del mismo set · '+elegidas.length+'/4</summary><p class="plan-ayuda">El mosaico usa cinco originales distintas: la principal de arriba y cuatro secundarias. No se repetirán recortes de una sola foto.</p><div class="plan-originales-grid">'+fotos.filter(x=>x.id!==seleccion).map((foto,i)=>'<label class="plan-original-opcion"><input type="checkbox" name="mosaico_'+id+'" value="'+esc(foto.id)+'"'+(elegidas.includes(foto.id)?' checked':'')+'>'+(foto.preview?'<img src="'+esc(foto.preview)+'" loading="lazy" alt="Foto secundaria '+(i+1)+' de '+esc(t)+'">':'<span>Original '+(i+1)+'</span>')+'<span>'+Number(foto.width)+' × '+Number(foto.height)+' px</span></label>').join('')+'</div></details>':'';
     return '<section><div class="plan-original-cab"><b>'+esc(t)+'</b><span class="cont-sub">'+fotos.length+' originales en el catálogo</span></div><p class="plan-uso-foto">'+(seleccion?'Original elegida manualmente. Se revisará antes de usarla.':'Sin foto fijada: se buscará una original apta para esta categoría.')+'</p>'
@@ -17082,22 +17127,135 @@ function categoriasSinOriginalCrear(c){
 }
 function pintaCrearContenido(cuerpo){
   const c=borradorCrearContenido(); if(!CONT.modelos && !CONT.modelosCargando && !CONT.modelosError) void cargaModelosContenido();
-  const disabled=c.enviando?' disabled':'',ref=CONT.estilos.filter(e=>e.activo || e.id===c.estilo_id),paso=Number(c.paso)||1;
+  const disabled=c.enviando?' disabled':'',paso=Number(c.paso)||1;
   const sinOriginal=categoriasSinOriginalCrear(c);
-  const referencia=ref.find(e=>e.id===c.estilo_id),imagenRef=referencia?.referencia || CONT.vistas?.[c.estilo_id];
   const objetivos=[['consultas','Conseguir consultas por WhatsApp'],['reservas','Convertir interés en una reserva'],['portafolio','Mostrar el trabajo y la experiencia']];
   const chips=(items,name,set,lock=false)=>items.map(([id,t])=>'<label class="red-chip'+(set.has(id)?' on':'')+'"><input type="checkbox" name="'+name+'" value="'+id+'"'+(set.has(id)?' checked':'')+(lock || c.enviando?' disabled':'')+'>'+esc(t)+'</label>').join('');
+  if(CONT.estilos?.length && !CONT.cargandoMuestras && typeof cargaMuestrasDeEstilos === 'function' && CONT.estilos.some(e=>!CONT.vistas?.[e.id])) void cargaMuestrasDeEstilos();
+
+  const plantillasV7Lista = [
+    { id: '01-editorial-social', altId: 'v6-editorial-social', indice: '01', nombre: 'Editorial social', badge: '1 foto full-bleed', fotosReq: 1, resumen: 'Foto full-bleed con titular editorial serif en la zona inferior, elegante, aire premium, composición limpia.', acento: '#FFFFFF' },
+    { id: '02-editorial-rojo-serif', altId: 'v6-editorial-rojo-serif', indice: '02', nombre: 'Editorial rojo serif', badge: '1 foto full-bleed', fotosReq: 1, resumen: 'Línea de acento carmesí en el remate del título, divisor fino y botón de contorno sutil.', acento: '#E53935' },
+    { id: '03-editorial-azul-suave', altId: 'v6-editorial-azul-suave', indice: '03', nombre: 'Editorial azul suave', badge: '1 foto full-bleed', fotosReq: 1, resumen: 'Atmósfera suave con tinte azul sutil, tipografía serif limpia de gran impacto y lectura fluida.', acento: '#82B1FF' },
+    { id: '04-mosaico-oferta', altId: 'v6-mosaico-oferta', indice: '04', nombre: 'Mosaico oferta (5 fotos)', badge: '5 fotos requeridas', alerta: true, fotosReq: 5, resumen: 'Multi-foto collage para sesiones completas: 1 foto héroe protagonista y 4 secundarias distintas del mismo set.', acento: '#FFD700' },
+    { id: '05-spotlight-noir', altId: 'v6-spotlight-noir', indice: '05', nombre: 'Spotlight noir', badge: '1 foto full-bleed', fotosReq: 1, resumen: 'Gradiente oscuro atmosférico en la base inferior con titular stark-white de máxima legibilidad.', acento: '#FFFFFF' },
+    { id: '06-glow-carmesi', altId: 'v6-glow-carmesi', indice: '06', nombre: 'Glow carmesí', badge: '1 foto full-bleed', fotosReq: 1, resumen: 'Resplandor carmesí dramático detrás del titular principal, capturando la mirada de inmediato.', acento: '#FF1744' },
+    { id: '07-contraste-titular-banda', altId: 'v6-contraste-titular-banda', indice: '07', nombre: 'Contraste titular banda', badge: '1 foto full-bleed', fotosReq: 1, resumen: 'Banda horizontal de alto contraste al pie de la foto, garantizando legibilidad total sobre fondos claros.', acento: '#0A8F4D' },
+    { id: '08-tarjeta-cristal', altId: 'v6-tarjeta-cristal', indice: '08', nombre: 'Tarjeta cristal', badge: '1 foto full-bleed', fotosReq: 1, resumen: 'Contenedor frosted glass translúcido inferior con bordes redondeados y botón blanco sólido.', acento: '#FFFFFF' },
+    { id: '09-spotlight-azul-corporativo', altId: 'v6-spotlight-azul-corporativo', indice: '09', nombre: 'Spotlight azul corporativo', badge: '1 foto full-bleed', fotosReq: 1, resumen: 'Viñeta corporativa azul zafiro, tipografía serif editorial y botón en píldora clara redondeada.', acento: '#448AFF' },
+    { id: '10-alta-clave-fotografica', altId: 'v6-alta-clave-fotografia', indice: '10', nombre: 'Alta clave fotográfica', badge: '1 foto full-bleed', fotosReq: 1, resumen: 'Velo pastel suave de alta clave con tipografía oscura profunda de máximo contraste sobre fotos luminosas.', acento: '#1A1A1A' }
+  ];
+
+  const selCheck = (m) => {
+    const sel = String(c.estilo_id || '').toLowerCase().trim();
+    const id1 = String(m.id).toLowerCase();
+    const id2 = String(m.altId).toLowerCase();
+    const ind = String(m.indice);
+    return sel === id1 || sel === id2 || sel === ind || sel === String(Number(ind)) ||
+      sel.replace(/^v6-/, '') === id1.replace(/^\d{2}-/, '') ||
+      sel.replace(/^\d{2}-/, '') === id1.replace(/^\d{2}-/, '');
+  };
+
+  const svgMockup = (indNum, acento) => {
+    const ind = Number(indNum) || 1;
+    const bg = ind === 10 ? '#F6F4EE' : ind === 9 ? '#0c1b30' : ind === 5 ? '#0c0d10' : '#141416';
+    const fg = ind === 10 ? '#18181b' : '#FFFFFF';
+    const ctaBg = ind === 7 ? '#0A8F4D' : ind === 8 ? '#FFFFFF' : ind === 9 ? '#82B1FF' : 'transparent';
+    const ctaFg = ind === 8 ? '#18181b' : ind === 9 ? '#0c1b30' : '#FFFFFF';
+    const ctaBorder = ind === 7 || ind === 8 || ind === 9 ? 'none' : 'rgba(255,255,255,0.6)';
+    return '<svg viewBox="0 0 108 135" class="plan-mockup-svg" style="width:100%;height:100%;display:block;background:'+bg+'" xmlns="http://www.w3.org/2000/svg">'
+      + '<rect width="108" height="135" fill="'+bg+'"/>'
+      + (ind === 4 ? '<rect x="6" y="8" width="96" height="54" rx="4" fill="#27272a"/><rect x="6" y="66" width="22" height="22" rx="3" fill="#3f3f46"/><rect x="31" y="66" width="22" height="22" rx="3" fill="#3f3f46"/><rect x="55" y="66" width="22" height="22" rx="3" fill="#3f3f46"/><rect x="80" y="66" width="22" height="22" rx="3" fill="#3f3f46"/>' : '')
+      + (ind === 5 ? '<rect x="0" y="45" width="108" height="30" fill="#000" opacity="0.45"/><rect x="0" y="75" width="108" height="60" fill="#000" opacity="0.88"/>' : '')
+      + (ind === 6 ? '<circle cx="54" cy="95" r="28" fill="#FF1744" opacity="0.32" filter="blur(6px)"/>' : '')
+      + (ind === 7 ? '<rect x="6" y="78" width="96" height="48" rx="6" fill="#18181b" stroke="#333" stroke-width="0.8"/>' : '')
+      + (ind === 8 ? '<rect x="6" y="76" width="96" height="50" rx="8" fill="rgba(255,255,255,0.14)" stroke="rgba(255,255,255,0.3)" stroke-width="0.8"/>' : '')
+      + (ind === 9 ? '<circle cx="54" cy="70" r="50" fill="#1e3a8a" opacity="0.35"/>' : '')
+      + '<text x="54" y="20" fill="'+(ind===10?'#71717a':'rgba(255,255,255,0.6)')+'" font-size="4.5" font-family="sans-serif" font-weight="600" text-anchor="middle" letter-spacing="1">D\u0027 CARELA COMPUFOTO</text>'
+      + (ind !== 4 ? '<text x="54" y="88" fill="'+fg+'" font-size="7.5" font-family="serif" font-weight="700" text-anchor="middle" letter-spacing="0.5">QUINCE AÑOS</text>'
+        + (ind === 2 ? '<line x1="32" y1="92" x2="76" y2="92" stroke="#E53935" stroke-width="1.2"/>' : '')
+        + '<text x="54" y="98" fill="'+(ind===10?'#52525b':'rgba(255,255,255,0.85)')+'" font-size="4.2" font-family="sans-serif" text-anchor="middle" letter-spacing="0.8">EN SU MEJOR MOMENTO</text>'
+        : '<text x="54" y="98" fill="#FFFFFF" font-size="5" font-family="sans-serif" font-weight="700" text-anchor="middle">OFERTA DE ESTUDIO · 5 FOTOS</text>')
+      + '<rect x="34" y="108" width="40" height="11" rx="5.5" fill="'+ctaBg+'" stroke="'+ctaBorder+'" stroke-width="0.7"/>'
+      + '<text x="54" y="115.5" fill="'+ctaFg+'" font-size="3.8" font-family="sans-serif" font-weight="700" text-anchor="middle" letter-spacing="0.5">ESCRÍBENOS</text>'
+      + '</svg>';
+  };
+
+  const galeriaHtml = '<div class="galeria-v7">' + plantillasV7Lista.map(meta => {
+    const estiloObj = (CONT.estilos||[]).find(e => e.id === meta.id || e.template_id === meta.id || e.id === meta.altId || e.template_id === meta.altId || e.indice === Number(meta.indice));
+    const sel = selCheck(meta);
+    const vista = estiloObj?.id && CONT.vistas?.[estiloObj.id];
+    const refImg = estiloObj?.referencia;
+    const vistaHtml = vista
+      ? '<img src="' + esc(vista) + '" alt="' + esc(meta.nombre) + '" loading="lazy">'
+      : refImg
+        ? '<img src="' + esc(refImg) + '" alt="' + esc(meta.nombre) + '" loading="lazy">'
+        : svgMockup(meta.indice, meta.acento);
+    return '<div class="tarjeta-v7' + (sel ? ' seleccionada' : '') + '" data-celegirplantilla="' + esc(meta.id) + '">'
+      + '<input type="radio" name="estilo_id" value="' + esc(meta.id) + '"' + (sel ? ' checked' : '') + ' style="display:none">'
+      + '<div class="tarjeta-v7-vista">'
+      + '<span class="tarjeta-v7-indice">' + esc(meta.indice) + '</span>'
+      + '<span class="tarjeta-v7-tag' + (meta.fotosReq > 1 ? ' alerta' : '') + '">' + esc(meta.badge) + '</span>'
+      + vistaHtml
+      + (sel ? '<span class="tarjeta-v7-check" aria-hidden="true">✓</span>' : '')
+      + '</div>'
+      + '<div class="tarjeta-v7-cuerpo">'
+      + '<b class="tarjeta-v7-titulo">' + esc(meta.nombre) + '</b>'
+      + '<p class="tarjeta-v7-desc">' + esc(meta.resumen) + '</p>'
+      + '<div class="tarjeta-v7-acc">'
+      + '<button type="button" class="btn-linea" data-ceditardiseno="' + esc(estiloObj?.id || meta.altId || meta.id) + '" style="font-size:11px;padding:4px 8px">Personalizar en lienzo</button>'
+      + (sel ? '<span class="cotz-chip on" style="font-size:10.5px;padding:3px 8px">Activa</span>' : '<button type="button" class="btn-linea" data-cseleccionaplantilla="' + esc(meta.id) + '" style="font-size:11px;padding:4px 8px">Elegir</button>')
+      + '</div></div></div>';
+  }).join('') + '</div>';
+
+  const metaSel = plantillasV7Lista.find(m => selCheck(m)) || plantillasV7Lista[0];
+  const estiloSelObj = (CONT.estilos||[]).find(e => e.id === metaSel.id || e.template_id === metaSel.id || e.id === metaSel.altId || e.template_id === metaSel.altId || e.indice === Number(metaSel.indice));
+  const esMosaico = metaSel.fotosReq === 5;
+
+  const personalizaHtml = '<div class="plan-v7-personaliza">'
+    + '<div class="plan-original-cab"><div><b>Personalización · ' + esc(metaSel.nombre) + '</b><span class="cont-sub">Parámetros del contrato V7 (' + esc(metaSel.indice) + '/10)</span></div>'
+    + '<button type="button" class="btn-linea" data-ceditardiseno="' + esc(estiloSelObj?.id || metaSel.altId || metaSel.id) + '">Editar en lienzo grande</button></div>'
+    + (esMosaico ? '<div class="cont-aviso" style="margin:4px 0 8px"><b>Atención Plantilla 04:</b> Requiere 5 fotografías distintas del mismo set (1 principal y 4 secundarias). La composición V7 prohíbe repetir la misma fotografía en el mosaico.</div>' : '')
+    + '<div class="plan-campos">'
+    + '<label>Titular / Gancho (línea 1)<input name="titular_l1" maxlength="70" placeholder="Opcional: escribe un titular fijo o deja vacío para que Gemini lo cree" value="' + esc(c.titular_l1 || '') + '"></label>'
+    + '<label>Subtítulo / Remate (línea 2)<input name="titular_l2" maxlength="40" placeholder="Opcional: remate complementario" value="' + esc(c.titular_l2 || '') + '"></label>'
+    + '</div>'
+    + '<div class="plan-campos">'
+    + '<label>Botón de llamada (CTA)<input name="cta_texto" maxlength="36" placeholder="Escríbenos" value="' + esc(c.cta_texto || 'Escríbenos') + '"></label>'
+    + '<label>WhatsApp en botón<select name="mostrar_whatsapp"><option value="si"' + (c.mostrar_whatsapp !== false ? ' selected' : '') + '>Sí · Con 849-524-5620</option><option value="no"' + (c.mostrar_whatsapp === false ? ' selected' : '') + '>Solo texto del botón CTA</option></select></label>'
+    + '<label>Familia tipográfica titular<select name="tipografia">'
+    + [['playfair','Playfair Display · Serif editorial V7'],['amandine','Amandine · Serif D\u0027 Carela'],['clasica','Marcellus · Serif clásica'],['inter','Inter · Sans limpia comercial'],['moderna','Poppins · Sans geométrica'],['spartan','League Spartan · Sans display']].map(([v,t])=>'<option value="'+v+'"'+((c.tipografia||'playfair')===v?' selected':'')+'>'+t+'</option>').join('')
+    + '</select></label>'
+    + '<label>Etiqueta / Mes temporada fija<input name="etiqueta_texto" maxlength="32" placeholder="Vacío = mes del selector (' + esc(c.mes) + ')" value="' + esc(c.etiqueta_texto || '') + '"></label>'
+    + '</div>'
+    + '</div>';
+
   cuerpo.innerHTML='<div class="plan-seccion-cab"><div><h2>'+(c.baseId?'Otra dirección creativa':'Crear flyers')+'</h2><p class="plan-intro">De una intención concreta a una pieza que puedas revisar.</p></div><span class="plan-respaldo">Foto original conservada</span></div>'
     + (CONT.tarea?estadoTareaContenidoHtml(CONT.tarea):'')
     + (c.incidencia?'<details class="plan-pedido-anterior" open><summary>Pedido anterior: '+esc(c.incidencia.titulo || 'necesita un ajuste')+'</summary><p>'+esc(c.incidencia.mensaje)+'</p>'+(sinOriginal.length?'<p class="cont-aviso">Falta una original en el catálogo para: '+esc(sinOriginal.join(', '))+'. Quita esa categoría o sube una foto original a Fototeca.</p>':'')+'<p>El mes, la intención y el modelo siguen aquí. Ajusta la selección antes de preparar un pedido nuevo.</p></details>':'')
     + '<form class="plan-creador plan-generador" data-ccrear="1"><nav class="plan-pasos" aria-label="Pasos de creación">'+['Intención','Foto y estilo','Entrega'].map((t,i)=>'<button type="button" data-cpaso="'+(i+1)+'"'+(paso===i+1?' aria-current="step"':'')+disabled+'><span>'+(i+1)+'</span>'+t+'</button>').join('')+'</nav>'
     + '<fieldset'+disabled+(paso!==1?' hidden':'')+'><legend>¿A quién quieres atraer?</legend><p class="plan-intro">El objetivo y lo que hace especial tu trabajo guían los ganchos. Cada propuesta explora un argumento distinto.</p><div class="plan-campos"><label>Mes de los flyers<input type="month" name="mes" required value="'+esc(c.mes)+'"></label><label>Ideas por categoría<select name="cantidad">'+[1,2,3,4,6,8].map(n=>'<option value="'+n+'"'+(c.cantidad===n?' selected':'')+'>'+n+' ideas distintas</option>').join('')+'</select></label></div><div class="plan-control-grupo"><strong>Tipo de sesión</strong><div class="agente-redes">'+chips(CONT_CATEGORIAS,'categoria',c.categorias,!!c.baseId)+'</div></div>'
     + '<div class="plan-campos"><label>Qué debe conseguir la pieza<select name="objetivo">'+objetivos.map(([k,t])=>'<option value="'+k+'"'+((c.objetivo||'consultas')===k?' selected':'')+'>'+t+'</option>').join('')+'</select></label><label>A quién le hablas<input name="publico" maxlength="140" placeholder="Ej.: mamás que quieren documentar el primer año" value="'+esc(c.publico||'')+'"></label></div><label>Qué quieres que vean en tu trabajo<input name="diferencial" maxlength="180" placeholder="Ej.: retratos naturales, luz suave y dirección cercana" value="'+esc(c.diferencial||'')+'"></label><label>Dirección del mensaje<textarea name="brief" maxlength="400" rows="3" placeholder="Qué historia quieres contar. Puedes mencionar una ocasión, una emoción o algo que sí se vea en tus fotos.">'+esc(c.brief)+'</textarea></label><details class="plan-opciones"><summary>Frases o enfoques que quieres evitar</summary><label>No usar<input name="evitar" maxlength="120" placeholder="Ej.: momentos mágicos, cupos limitados, clichés" value="'+esc(c.evitar||'')+'"></label></details></fieldset>'
-    + '<fieldset'+disabled+(paso!==2?' hidden':'')+'><legend>La foto manda</legend><p class="plan-intro">Elige una original nítida y una dirección visual. La composición usa tu fotografía completa, sin cambiar rostros ni generar otra persona.</p><label>Dirección visual<select name="estilo_id"><option value="">Composición nueva para estas fotografías</option>'+ref.map(e=>'<option value="'+esc(e.id)+'"'+(e.id===c.estilo_id?' selected':'')+'>'+esc(e.nombre)+(e.origen==='referencia'?' · de tu referencia':'')+'</option>').join('')+'</select></label>'
-    + (referencia?'<section class="plan-ref-compara"><b>Referencia: '+esc(referencia.nombre)+'</b>'+(imagenRef?'<img src="'+esc(imagenRef)+'" alt="Referencia del diseño seleccionado">':'')+'<p class="plan-ayuda">Se toman la jerarquía, las formas, los espacios y el color. Tu original sustituye la foto de la referencia; se adapta al formato elegido.</p>'+lecturaReferenciaHtml(referencia.analisis)+'</section>':'<p class="plan-ayuda">¿Tienes un flyer como referencia? <button type="button" class="btn-linea" data-cirtab="estilos">Analizar referencia</button></p>')
+    + '<fieldset'+disabled+(paso!==2?' hidden':'')+'><legend>La foto manda · 10 Plantillas Oficiales V7</legend>'
+    + '<div class="plan-v7-banner"><div class="plan-v7-banner-info"><span class="plan-v7-pill">CONTRATO V7 ESTRICTO</span><strong style="font-size:14px;color:var(--fg)">10 Plantillas Oficiales del Estudio</strong><p style="font-size:12px;color:var(--mut);line-height:1.5;margin:2px 0 0">Cada propuesta se renderiza sobre tu fotografía real en alta resolución al 100% full-bleed. Sin marcos de arco, sin márgenes sólidos y con rostros siempre protegidos.</p></div>'
+    + '<div class="plan-v7-badges"><span class="cotz-chip on">✓ Foto a sangre 100%</span><span class="cotz-chip on">✓ Sin marcos de arco</span><span class="cotz-chip on">✓ Rostros protegidos</span><span class="cotz-chip on">✓ 4 formatos sociales</span></div></div>'
+    + '<strong>Selecciona una de las 10 plantillas V7:</strong>'
+    + galeriaHtml
+    + personalizaHtml
+    + '<div class="plan-original-cab" style="margin-top:16px"><b>Fotografía original</b><span class="cont-sub">La foto original es el lienzo completo</span></div>'
     + (c.baseId?'<label class="red-chip"><input type="checkbox" name="otra_foto"'+(c.otraFoto?' checked':'')+'> Cambiar también la foto</label>':'') + fotosCrearContenido(c)
-    + (CONT.originalesError?'<p class="cont-aviso">'+esc(CONT.originalesError)+'</p>':'')+'<p class="plan-ayuda">Las miniaturas son solo para elegir. El render usa el archivo original. Si la foto trae un sello o marca de agua, ya no se rechaza por eso: se usa tal cual. La nitidez y la resolución se siguen revisando.</p><div class="plan-modelo-linea"><label>Modelo de Gemini<select name="modelo" required'+(!CONT.modelos?.length?' disabled':'')+'>'+((CONT.modelos||[]).map(m=>'<option value="'+esc(m.id)+'"'+(m.id===c.modelo?' selected':'')+'>'+esc(m.nombre)+'</option>').join('') || '<option>Consultando modelos…</option>')+'</select></label>'+(ROL_ACTUAL==='admin'?'<button type="button" class="btn-linea" data-cmodelodefault="1">Guardar como predeterminado</button>':'')+'</div><details class="plan-opciones"><summary>Disponibilidad por categoría</summary><p class="plan-ayuda">'+CONT_CATEGORIAS.map(([id,t])=>esc(t)+': '+Number(CONT.originales?.[id]||0)).join(' · ')+'</p><p class="plan-ayuda">Son archivos disponibles en el catálogo, pendientes del control de calidad para cada creación.</p><button type="button" class="btn-linea" data-cbiblioteca="1">Subir más originales</button></details></fieldset>'
-    + '<fieldset'+disabled+(paso!==3?' hidden':'')+'><legend>Prepara la entrega</legend><p class="plan-intro">Primero revisas foto, gancho y diseño. La creación manual deja todas las piezas pendientes de tu aprobación.</p><div class="plan-control-grupo"><strong>Tamaños</strong><div class="agente-redes">'+chips([['imagen_4x5','Feed · 4:5'],['imagen_9x16','Historia · 9:16'],['imagen_1x1','Cuadrado · 1:1']],'formato',c.formatos,!!c.baseId)+'</div></div><div class="plan-control-grupo"><strong>Destinos</strong><div class="agente-redes">'+chips(CONT.canales.filter(x=>x.id!=='paquete_grupos').map(x=>[x.id,x.nombre]),'plataforma',c.canales,!!c.baseId)+'</div></div><p class="plan-ayuda">El tamaño 9:16 sale como <b>historia</b> y, además, como <b>Reel</b> en Instagram y en tu Página de Facebook, y como Estado de WhatsApp y TikTok. Los de 4:5 y 1:1 van al feed. WhatsApp usa el número oficial 849-524-5620. No se inventan precios, promociones ni disponibilidad.</p></fieldset>'
+    + (CONT.originalesError?'<p class="cont-aviso">'+esc(CONT.originalesError)+'</p>':'')+'<p class="plan-ayuda">Las miniaturas son solo para elegir. El render usa el archivo original en máxima resolución. Si la foto trae un sello o marca de agua, se respeta tal cual. La nitidez y la resolución se revisan automáticamente.</p><div class="plan-modelo-linea"><label>Modelo de Gemini<select name="modelo" required'+(!CONT.modelos?.length?' disabled':'')+'>'+((CONT.modelos||[]).map(m=>'<option value="'+esc(m.id)+'"'+(m.id===c.modelo?' selected':'')+'>'+esc(m.nombre)+'</option>').join('') || '<option>Consultando modelos…</option>')+'</select></label>'+(ROL_ACTUAL==='admin'?'<button type="button" class="btn-linea" data-cmodelodefault="1">Guardar como predeterminado</button>':'')+'</div><details class="plan-opciones"><summary>Disponibilidad por categoría</summary><p class="plan-ayuda">'+CONT_CATEGORIAS.map(([id,t])=>esc(t)+': '+Number(CONT.originales?.[id]||0)).join(' · ')+'</p><p class="plan-ayuda">Son archivos disponibles en el catálogo, listos para la composición.</p><button type="button" class="btn-linea" data-cbiblioteca="1">Subir más originales</button></details></fieldset>'
+    + '<fieldset'+disabled+(paso!==3?' hidden':'')+'><legend>Formatos y Entrega Social</legend><p class="plan-intro">Primero revisas foto, gancho y diseño. La creación manual deja todas las piezas pendientes de tu aprobación.</p>'
+    + '<div class="plan-control-grupo"><strong>Tamaños sociales V7</strong><div class="agente-redes">'+chips([['imagen_4x5','Feed · 4:5 (1080×1350)'],['imagen_9x16','Historia / Reel / Estado · 9:16 (1080×1920)'],['imagen_1x1','Cuadrado · 1:1 (1080×1080)'],['imagen_16x9','Horizontal · 16:9 (1920×1080)']],'formato',c.formatos,!!c.baseId)+'</div></div>'
+    + '<div class="plan-control-grupo"><strong>Destinos</strong><div class="agente-redes">'+chips(CONT.canales.filter(x=>x.id!=='paquete_grupos').map(x=>[x.id,x.nombre]),'plataforma',c.canales,!!c.baseId)+'</div></div>'
+    + '<div class="plan-v7-banner" style="margin-top:14px"><div class="plan-v7-banner-info"><span class="plan-v7-pill">CONTROL DE CALIDAD V7</span><strong style="font-size:13px;color:var(--fg)">Garantías de renderizado comercial:</strong>'
+    + '<ul style="margin:6px 0 0;padding-left:18px;font-size:12px;line-height:1.6;color:var(--mut)">'
+    + '<li><b>Foto 100% full-bleed a sangre:</b> Tu imagen original es la capa base protegida. Sin marcos de arco ni recortes sólidos.</li>'
+    + '<li><b>Fidelidad estricta V7:</b> Geometría, jerarquía tipográfica y elementos de la plantilla seleccionada.</li>'
+    + '<li><b>Rostros y sujetos protegidos:</b> Titulares y botones nunca invaden caras ni detalles principales.</li>'
+    + '<li><b>Aprobación previa obligatoria:</b> Toda pieza queda en estado «Por aprobar». No se publica nada de forma automática.</li>'
+    + '</ul></div></div>'
+    + '<p class="plan-ayuda">El tamaño 9:16 sale como <b>historia</b> y, además, como <b>Reel</b> en Instagram y en tu Página de Facebook, y como Estado de WhatsApp y TikTok. Los de 4:5 y 1:1 van al feed. WhatsApp usa el número oficial 849-524-5620. No se inventan precios, promociones ni disponibilidad.</p></fieldset>'
     + (c.error || CONT.modelosError?'<p class="cont-aviso" role="alert">'+esc(c.error || CONT.modelosError)+'</p>'+ (CONT.modelosError?'<button type="button" class="btn-linea" data-cmodelosretry="1">Volver a consultar modelos</button>':''):'')
     + '<div class="plan-resumen"><span>Mes<b>'+esc(c.mes)+'</b></span><span>Ideas<b>'+c.cantidad+' × '+c.categorias.size+' categoría'+(c.categorias.size===1?'':'s')+'</b></span><span>Formatos<b>'+c.formatos.size+'</b></span><span>Modelo<b>'+esc(c.modelo || 'Consultando…')+'</b></span></div><div class="plan-footer"><p class="plan-ayuda">'+(c.enviando?'El trabajo continúa en el servidor. Puedes salir de esta vista y volver a consultar su progreso.':'Las propuestas se guardan para revisión. Tú decides cuáles programar.')+'</p><div class="cont-acc">'+(paso>1?'<button type="button" class="btn-linea" data-cpaso="'+(paso-1)+'"'+disabled+'>Atrás</button>':'<button type="button" class="btn-linea" data-cnuevolote="1"'+disabled+'>Empezar de nuevo</button>')+(paso<3?'<button type="button" class="btn-solido" data-cpaso="'+(paso+1)+'"'+disabled+'>Continuar</button>':'<button type="submit" class="btn-solido"'+(c.enviando || !CONT.modelos?.length?' disabled':'')+'>'+(c.enviando?'Preparación en curso…':c.baseId?'Preparar nuevas variaciones':'Preparar propuestas')+'</button>')+'</div></div></form>';
 }
@@ -17158,7 +17316,19 @@ async function reintentaTareaContenido(){
 }
 function briefCrearContenido(c){
   const objetivo={consultas:'Conseguir consultas por WhatsApp',reservas:'Convertir interés en reserva sin inventar disponibilidad',portafolio:'Mostrar el trabajo y la experiencia fotográfica'}[c.objetivo || 'consultas'];
-  return ['Objetivo: '+objetivo,c.publico?'Público: '+c.publico:'',c.diferencial?'Diferencial visible/real: '+c.diferencial:'',c.brief?'Dirección: '+c.brief:'',c.evitar?'Evitar: '+c.evitar:''].filter(Boolean).join('\n').slice(0,800);
+  return [
+    'Objetivo: '+objetivo,
+    c.publico?'Público: '+c.publico:'',
+    c.diferencial?'Diferencial visible/real: '+c.diferencial:'',
+    c.brief?'Dirección del mensaje: '+c.brief:'',
+    c.titular_l1?'Titular deseado (l1): '+c.titular_l1:'',
+    c.titular_l2?'Remate deseado (l2): '+c.titular_l2:'',
+    c.cta_texto?'Llamada CTA: '+c.cta_texto:'',
+    c.mostrar_whatsapp===false?'Sin WhatsApp en botón':'Con WhatsApp oficial (849-524-5620)',
+    c.etiqueta_texto?'Etiqueta / temporada fija: '+c.etiqueta_texto:'',
+    c.tipografia?'Tipografía titular preferida: '+c.tipografia:'',
+    c.evitar?'Evitar: '+c.evitar:''
+  ].filter(Boolean).join('\n').slice(0,1000);
 }
 async function generaLoteContenido(f){
   const c=borradorCrearContenido(); if(c.enviando)return;
@@ -17169,14 +17339,16 @@ async function generaLoteContenido(f){
     c.paso=2;c.error='Falta una original para '+sinOriginal.join(', ')+'. Quita esa categoría o sube una foto original a Fototeca.';
     pintaContenido();return avisa('Faltan originales',c.error);
   }
-  if(c.estilo_id==='v6-mosaico-oferta' && !(c.baseId && !c.otraFoto)){
+  const esMosaico = ['04-mosaico-oferta','v6-mosaico-oferta'].includes(c.estilo_id) || c.estilo_id?.endsWith('mosaico-oferta');
+  if(esMosaico && !(c.baseId && !c.otraFoto)){
     const incompleta=[...c.categorias].find(cat=>!c.fotos?.[cat] || (c.mosaicoFotos?.[cat]||[]).length!==4 || new Set([c.fotos[cat],...(c.mosaicoFotos?.[cat]||[])]).size!==5);
     if(incompleta){c.paso=2;c.error='El mosaico V7 necesita una foto principal y cuatro fotos secundarias distintas del mismo set para '+incompleta+'.';pintaContenido();return avisa('Faltan fotos del mosaico',c.error);}
   }
   c.enviando=true;c.error=null;if(CONT.tab==='crear')pintaContenido();
   let r;
   try {
-    const payload=c.baseId?{action:'contenidoVariaciones',id:c.baseId,cantidad:c.cantidad,otra_foto:c.otraFoto,mes:c.mes,modelo:c.modelo,brief:briefCrearContenido(c),estilo_id:c.estilo_id,fotos_por_categoria:c.fotos,fotos_mosaico_por_categoria:c.mosaicoFotos||{},logos_propios:c.logosPropios||{}}:{action:'contenidoGenera',creativo:true,mes:c.mes,categorias:[...c.categorias],cantidad:c.cantidad,formatos:[...c.formatos],canales:[...c.canales],estilo_id:c.estilo_id,modelo:c.modelo,brief:briefCrearContenido(c),fotos_por_categoria:c.fotos,fotos_mosaico_por_categoria:c.mosaicoFotos||{},logos_propios:c.logosPropios||{}};
+    const estiloIdResolvido = c.estilo_id || '01-editorial-social';
+    const payload=c.baseId?{action:'contenidoVariaciones',id:c.baseId,cantidad:c.cantidad,otra_foto:c.otraFoto,mes:c.mes,modelo:c.modelo,brief:briefCrearContenido(c),estilo_id:estiloIdResolvido,fotos_por_categoria:c.fotos,fotos_mosaico_por_categoria:c.mosaicoFotos||{},logos_propios:c.logosPropios||{}}:{action:'contenidoGenera',creativo:true,mes:c.mes,categorias:[...c.categorias],cantidad:c.cantidad,formatos:[...c.formatos],canales:[...c.canales],estilo_id:estiloIdResolvido,modelo:c.modelo,brief:briefCrearContenido(c),fotos_por_categoria:c.fotos,fotos_mosaico_por_categoria:c.mosaicoFotos||{},logos_propios:c.logosPropios||{}};
     if(!c.solicitud)c.solicitud={idempotency_key:crypto.randomUUID(),payload};
     guardaTareaContenido();
     r=await llamaCont({action:'contenidoTarea',operation:'crear',...c.solicitud});
@@ -17614,21 +17786,21 @@ async function cargaMuestrasDeEstilos(){
   CONT.muestrasErrores ||= {};
   try {
     for (const e of CONT.estilos.filter(x => !CONT.vistas[x.id] && !CONT.muestrasIntentadas.has(x.id)).slice(0, 12)) {
-      if (CONT.tab !== 'estilos' || (CONT.muestraCategoria || 'infantil') !== categoria) break;
+      if (!['estilos','crear'].includes(CONT.tab) || (CONT.muestraCategoria || 'infantil') !== categoria) break;
       CONT.muestrasIntentadas.add(e.id);
       try {
         const r = await llamaCont({ action: 'contenidoEstilos', operation: 'vista', id: e.id, categoria });
-        if ((CONT.muestraCategoria || 'infantil') !== categoria) break;
+        if (!['estilos','crear'].includes(CONT.tab) || (CONT.muestraCategoria || 'infantil') !== categoria) break;
         if (r.ok && r.vista) CONT.vistas[e.id] = r.vista;
         else CONT.muestrasErrores[e.id] = r.error || 'No hay una foto original apta en esta categoría.';
       } catch (error) {
         CONT.muestrasErrores[e.id] = error?.message || 'No se pudo cargar la muestra.';
       }
-      if (CONT.tab === 'estilos' && (CONT.muestraCategoria || 'infantil') === categoria) pintaContenido();
+      if (['estilos','crear'].includes(CONT.tab) && (CONT.muestraCategoria || 'infantil') === categoria) pintaContenido();
     }
   } finally {
     CONT.cargandoMuestras = false;
-    if (CONT.tab === 'estilos' && (CONT.muestraCategoria || 'infantil') !== categoria) void cargaMuestrasDeEstilos();
+    if (['estilos','crear'].includes(CONT.tab) && (CONT.muestraCategoria || 'infantil') !== categoria) void cargaMuestrasDeEstilos();
   }
 }
 function lecturaReferenciaHtml(analisis, abierto = false){
@@ -17671,8 +17843,8 @@ function pintaEstilos(cuerpo){
   if (CONT.estilos.length && !CONT.cargandoMuestras && CONT.tab === 'estilos' && typeof cargaMuestrasDeEstilos === 'function') void cargaMuestrasDeEstilos();
 }
 function abreEditorPlantilla(id, piezaInicialId = ''){
-  const e=CONT.estilos.find(x=>x.id===id&&x.origen==='v6');
-  if(!e||ROL_ACTUAL!=='admin')return;
+  const e=CONT.estilos.find(x=>(x.id===id||x.template_id===id||x.id?.replace(/^v6-/,'')===id?.replace(/^(\d{2}-|v6-)/,''))&&x.origen==='v6');
+  if(!e||(ROL_ACTUAL&&!['admin','supervisor'].includes(ROL_ACTUAL)))return;
   const pActiva=e.personalizacion||{},pBorrador=e.personalizacion_borrador||null,p=pBorrador||pActiva;
   const mapaPorFormato=JSON.parse(JSON.stringify(p.por_formato||{}));
   const seleccion=(nombre,valor,opciones,extra='')=>'<select name="'+nombre+'"'+extra+'>'+opciones.map(([v,t])=>'<option value="'+v+'"'+(String(valor)===String(v)?' selected':'')+'>'+t+'</option>').join('')+'</select>';
@@ -18016,8 +18188,21 @@ function verDataUrlEnGrande(src, nombre){
 async function clicContenido(ev){
   const img = ev.target.closest('img[data-cver]'); if (img) return verImagenContenido(img.dataset.cver);
   const imgE = ev.target.closest('img[data-cvistaestilo]'); if (imgE) return verDataUrlEnGrande(imgE.src, 'estilo-' + imgE.dataset.cvistaestilo + '.jpg');
+  const cardPlantilla = ev.target.closest('[data-celegirplantilla]');
+  if(cardPlantilla && !ev.target.closest('button')){
+    const f=cardPlantilla.closest('form'),c=borradorCrearContenido();if(c.enviando)return;
+    if(f)guardaCrearContenido(f);
+    c.estilo_id=cardPlantilla.dataset.celegirplantilla;
+    return pintaContenido();
+  }
   const b = ev.target.closest('button'); if (!b || b.disabled) return;
   const d = b.dataset;
+  if(d.cseleccionaplantilla){
+    const f=b.closest('form'),c=borradorCrearContenido();if(c.enviando)return;
+    if(f)guardaCrearContenido(f);
+    c.estilo_id=d.cseleccionaplantilla;
+    return pintaContenido();
+  }
   if(d.ctareacorregir)return corrigePedidoContenido(d.ctareacorregir);
   if(d.ctarearetry)return reintentaTareaContenido();
   if(d.ctareaactualiza)return sigueTareaContenido();
@@ -18028,7 +18213,7 @@ async function clicContenido(ev){
   }
   if(d.cvolvercrear){const c=borradorCrearContenido();c.paso=2;return cambiaTabContenido('crear');}
   if (d.cbiblioteca) return cambiaTabContenido('fotos');
-  if (d.cdesdeestilo) { const c = borradorCrearContenido(); c.estilo_id = d.cdesdeestilo; c.baseId = null; return cambiaTabContenido('crear'); }
+  if (d.cdesdeestilo) { const c = borradorCrearContenido(); c.estilo_id = d.cdesdeestilo; c.paso = 2; c.baseId = null; return cambiaTabContenido('crear'); }
   if (d.ceditardiseno) return abreEditorPlantilla(d.ceditardiseno, d.cpieza || '');
   if (d.cmodelodefault) { const f=b.closest('form'); if(f)guardaCrearContenido(f); const c=borradorCrearContenido(); const r=await llamaCont({action:'contenidoAjustes',modelo:c.modelo}); if(!r.ok)return avisa('No se guardó el modelo',r.error); CONT.modelo=c.modelo; return avisa('Modelo predeterminado guardado',c.modelo); }
   if (d.cmodelosretry) { CONT.modelos = null; CONT.modelosError = null; return cargaModelosContenido(); }
