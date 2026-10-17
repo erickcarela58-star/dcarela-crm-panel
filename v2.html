@@ -380,7 +380,7 @@ body.menu-abierto .velo{display:block}
 .estudio-capa-izq{display:flex;align-items:center;gap:8px;min-width:0}
 .estudio-capa-ico{width:24px;height:24px;border-radius:6px;background:var(--hover);display:inline-flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0}
 .estudio-capa-item.on .estudio-capa-ico{background:var(--ok);color:#fff}
-.estudio-insp-tabs{display:grid;grid-template-columns:repeat(5,1fr);gap:4px;background:var(--hover);padding:4px;border-radius:10px;border:1px solid var(--line2);position:sticky;top:0;z-index:4}
+.estudio-insp-tabs{display:grid;grid-template-columns:repeat(5,1fr);gap:4px;background:#fff;padding:4px;border-radius:10px;border:1px solid var(--line2);position:sticky;top:0;z-index:10;box-shadow:0 2px 6px rgba(0,0,0,.05)}
 .estudio-insp-tab{border:0;background:transparent;color:var(--mut);font-size:11px;font-weight:700;padding:6px 4px;border-radius:7px;cursor:pointer;text-align:center;transition:all .15s}
 .estudio-insp-tab.on{background:var(--panel);color:var(--fg);box-shadow:0 1px 4px rgba(0,0,0,.1)}
 .estudio-sec-panel{border:1px solid var(--line2);border-radius:12px;background:var(--bg);padding:12px;display:flex;flex-direction:column;gap:10px}
@@ -18272,9 +18272,31 @@ function abreEditorPlantilla(id, piezaInicialId = ''){
     +'</div>'
     +'<div id="estudioGeminiResultados" style="margin-top:8px;display:none"></div>'
     +'</div>'
+    +'<div class="estudio-bloque-card" style="border-left:3px solid #7c3aed">'
+    +'<div class="estudio-bloque-cab"><span>🖼️ Replicar Foto de Referencia con Gemini (MCP)</span><span class="cotz-est" style="background:#f3e8ff;color:#7c3aed">dcarela_replicar_referencia</span></div>'
+    +'<p class="cont-sub" style="margin:0 0 8px">Gemini analiza una de las 10 fotos/flyers de referencia oficiales del estudio o una imagen externa que subas, extrae tipografía, jerarquía y paleta cromática, asocia la foto original en alta resolución sin marcas de agua y genera la réplica de diseño en alta definición.</p>'
+    +'<label>Elegir referencia oficial del estudio<select name="gemini_ref_selector">'
+    +'<option value="01_editorial_social">01 · Editorial social (Infantil / Retrato suave)</option>'
+    +'<option value="02_editorial_rojo_serif">02 · Editorial rojo serif (XV Años / Eventos)</option>'
+    +'<option value="03_editorial_azul_suave">03 · Editorial azul suave (Infantil / Columna adaptable)</option>'
+    +'<option value="04_mosaico_oferta">04 · Mosaico oferta 5 fotos (Infantil / Set dinámico)</option>'
+    +'<option value="05_spotlight_noir">05 · Spotlight noir (Cumpleaños / Foco cinematográfico)</option>'
+    +'<option value="06_glow_carmesi">06 · Glow carmesí (XV Años / Resplandor moderno)</option>'
+    +'<option value="07_contraste_titular_banda">07 · Contraste titular banda (Cumpleaños / Banda sangrada)</option>'
+    +'<option value="08_tarjeta_cristal">08 · Tarjeta cristal (Maternidad / Frosted glass)</option>'
+    +'<option value="09_spotlight_azul_corporativo">09 · Spotlight azul corporativo (Graduación / Formal)</option>'
+    +'<option value="10_alta_clave_fotografia">10 · Alta clave fotográfica (Infantil / Fondo blanco puro)</option>'
+    +'</select></label>'
+    +'<div style="display:flex;gap:8px;margin-top:6px;flex-wrap:wrap;align-items:center">'
+    +'<button type="button" class="btn-solido" data-cgemini-replica="1" style="background:#7c3aed;color:#fff">✨ Diseñar y replicar con Gemini MCP</button>'
+    +'<label class="btn-linea" style="cursor:pointer;margin:0;font-size:12px;display:inline-flex;align-items:center;gap:4px">📁 Subir flyer externo<input type="file" accept="image/*" id="geminiRefUploadInput" style="display:none"></label>'
+    +'<span id="geminiRefUploadNombre" class="cont-sub" style="font-size:11px"></span>'
+    +'</div>'
+    +'<div id="estudioGeminiReplicaResultados" style="margin-top:10px;display:none"></div>'
+    +'</div>'
     +'<div class="estudio-bloque-card">'
     +'<div class="estudio-bloque-cab"><span>🔌 Servidor MCP Activo (stdio)</span><span class="cont-sub">dcarela-flyers</span></div>'
-    +'<small class="cont-sub" style="display:block;line-height:1.4">Herramientas MCP registradas para Antigravity y Gemini: <code>dcarela_listar_plantillas_v7</code>, <code>dcarela_consultar_fototeca</code>, <code>dcarela_generar_ganchos_gemini</code>, <code>dcarela_recomendar_diseno_foto</code>, <code>dcarela_previsualizar_flyer</code> y <code>dcarela_personalizar_plantilla</code>.</small>'
+    +'<small class="cont-sub" style="display:block;line-height:1.4">Herramientas MCP registradas para Antigravity y Gemini: <code>dcarela_listar_referencias</code>, <code>dcarela_replicar_referencia</code>, <code>dcarela_listar_plantillas_v7</code>, <code>dcarela_consultar_fototeca</code>, <code>dcarela_generar_ganchos_gemini</code>, <code>dcarela_recomendar_diseno_foto</code>, <code>dcarela_previsualizar_flyer</code> y <code>dcarela_personalizar_plantilla</code>.</small>'
     +'</div>'
     +'</div></details>'
     +'</aside>'
@@ -18566,6 +18588,85 @@ function abreEditorPlantilla(id, piezaInicialId = ''){
           +'<p class="cont-sub" style="margin:0;font-size:11.5px">'+esc(r.motivo||'Composición ideal para esta foto.')+'</p>'
           +'</div>';
       }
+      return;
+    }
+    if(b.dataset?.cgeminiReplica){
+      const v=valores(),cajaRes=m.querySelector('#estudioGeminiReplicaResultados');
+      const refId=f.elements.gemini_ref_selector?.value||'01_editorial_social';
+      let customB64=CONT._geminiCustomRefB64||null;
+      if(cajaRes){
+        cajaRes.style.display='block';
+        cajaRes.innerHTML='<div class="cargando-caja" style="padding:14px;text-align:center"><span class="cargando"></span> <b style="color:#7c3aed">Gemini analizando referencia y renderizando réplica en alta definición con fotografía de estudio…</b></div>';
+      }
+      b.disabled=true;
+      const r=await llamaCont({
+        action:'contenidoEstilos',
+        operation:'gemini_replica',
+        referencia_id:refId,
+        imagen_base64:customB64,
+        categoria:v._categoria,
+        formato:v._formato,
+        titular_l1:v._titular_l1||'',
+        titular_l2:v._titular_l2||'',
+      });
+      b.disabled=false;
+      if(!r.ok||!r.replica_vista){
+        if(cajaRes)cajaRes.innerHTML='<p class="cont-aviso">'+esc(r?.error||'No se pudo replicar la referencia.')+'</p>';
+        return;
+      }
+      CONT._ultimaReplicaGemini=r;
+      if(cajaRes){
+        cajaRes.innerHTML='<div style="display:grid;gap:10px;background:#fdf4ff;border:1px solid #e9d5ff;border-radius:8px;padding:12px">'
+          +'<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px">'
+          +'<b style="color:#6b21a8;font-size:13px">💎 Réplica Diseñada con Éxito ('+esc(r.referencia_nombre||r.referencia_id)+')</b>'
+          +'<span class="cotz-est" style="background:#fae8ff;color:#86198f;font-weight:700">Firma D\' Carela | La Romana</span>'
+          +'</div>'
+          +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:6px">'
+          +'<div style="text-align:center;background:#fff;border-radius:6px;padding:8px;border:1px solid #e2e8f0">'
+          +'<div style="font-size:11px;font-weight:700;color:var(--mut);margin-bottom:6px">Foto / Portada de Referencia</div>'
+          +(r.referencia_vista?'<img src="'+r.referencia_vista+'" alt="Referencia" style="max-height:180px;max-width:100%;border-radius:4px;object-fit:contain;box-shadow:0 2px 6px rgba(0,0,0,0.12)">':'<span class="cont-sub">Sin portada</span>')
+          +'</div>'
+          +'<div style="text-align:center;background:#fff;border-radius:6px;padding:8px;border:1px solid #e2e8f0">'
+          +'<div style="font-size:11px;font-weight:700;color:#7c3aed;margin-bottom:6px">✨ Réplica Diseñada D\' Carela V7</div>'
+          +'<img src="'+r.replica_vista+'" alt="Réplica D\' Carela" style="max-height:180px;max-width:100%;border-radius:4px;object-fit:contain;box-shadow:0 2px 6px rgba(0,0,0,0.12)">'
+          +'</div>'
+          +'</div>'
+          +'<div style="background:#fff;padding:8px;border-radius:6px;border:1px solid #e2e8f0;font-size:11.5px;color:var(--txt)">'
+          +'<div><b>Estilo extraído:</b> '+esc(r.analisis_gemini?.estilo_detectado||r.referencia_nombre)+' · <b>Tipografía:</b> '+esc(r.analisis_gemini?.tipografia||r.personalizacion?.tipografia||'Playfair')+' ('+esc(r.analisis_gemini?.peso||'700')+')</div>'
+          +'<div style="margin-top:2px;color:var(--mut)"><b>Titular replicado:</b> «'+esc((r.gancho_utilizado?.l1||'')+' '+(r.gancho_utilizado?.l2||''))+'»</div>'
+          +'<div style="margin-top:2px;color:#16a34a;font-weight:600">✓ Regla cumplida: '+esc(r.analisis_gemini?.reglas_cumplidas||"Firma D' Carela activa, fotografía original sin marcas.")+'</div>'
+          +'</div>'
+          +'<button type="button" class="btn-solido" data-cgemini-cargar-replica="1" style="background:#059669;color:#fff;width:100%;padding:8px;font-weight:700;border-radius:6px">🚀 Cargar réplica en el editor y previsualizar</button>'
+          +'</div>';
+      }
+      return;
+    }
+    if(b.dataset?.cgeminiCargarReplica){
+      const rep=CONT._ultimaReplicaGemini;
+      if(!rep)return;
+      const targetPlantilla=rep.plantilla_id;
+      if(targetPlantilla && targetPlantilla !== idReal){
+        const pzActual=f.elements?.pieza_id?.value||'';
+        CONT._replicaPendienteDeCargar=rep;
+        if(enModulo){CONT.estudioPlantillaId=targetPlantilla;CONT._contenedorEstudio=m;abreEditorPlantilla(targetPlantilla,pzActual);CONT._contenedorEstudio=null;}
+        else abreEditorPlantilla(targetPlantilla,pzActual);
+        return;
+      }
+      const pz=rep.personalizacion||{};
+      if(pz.texto_muestra_l1&&f.elements.texto_muestra_l1)f.elements.texto_muestra_l1.value=pz.texto_muestra_l1;
+      if(pz.texto_muestra_l2&&f.elements.texto_muestra_l2)f.elements.texto_muestra_l2.value=pz.texto_muestra_l2;
+      if(pz.tipografia&&f.elements.tipografia)f.elements.tipografia.value=pz.tipografia;
+      if(pz.peso_titulo&&f.elements.peso_titulo)f.elements.peso_titulo.value=pz.peso_titulo;
+      if(pz.escala_titulo&&f.elements.escala_titulo)fijaEscala('escala_titulo',pz.escala_titulo);
+      if(pz.alineacion&&f.elements.alineacion)f.elements.alineacion.value=pz.alineacion;
+      if(pz.acento&&f.elements.acento)f.elements.acento.value=pz.acento;
+      if(pz.texto&&f.elements.texto)f.elements.texto.value=pz.texto;
+      if(pz.sombra&&f.elements.sombra)f.elements.sombra.value=pz.sombra;
+      if(pz.efecto&&f.elements.efecto)f.elements.efecto.value=pz.efecto;
+      if(pz.color_panel&&f.elements.color_panel)f.elements.color_panel.value=pz.color_panel;
+      if(pz.opacidad_panel&&f.elements.opacidad_panel)f.elements.opacidad_panel.value=pz.opacidad_panel;
+      guardaHistorial();sincronizaUIEstudio();void previsualiza();
+      avisa('Réplica cargada con éxito', 'Se aplicó el diseño, tipografía y composición de la referencia al editor.');
       return;
     }
     if(b.dataset?.ceditorStepTarget){
