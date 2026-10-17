@@ -1,7 +1,7 @@
 {
-  "version": "2026-10-16-creador-flyers-v7-v218",
+  "version": "2026-10-17-motor-referencias-v7-v219",
   "channel": "crm",
-  "released_at": "2026-10-16T21:40:00.000Z",
-  "summary": "Creador y motor de flyers V7 estricto: integración total de los 10 paquetes JSON oficiales del estudio (01-editorial-social a 10-alta-clave-fotografica), galería visual interactiva de 10 plantillas con selector directo y personalización en vivo (titular l1/l2, CTA, WhatsApp 849-524-5620, tipografía V7), renderizado 100% full-bleed a sangre con eliminación de arcos y marcos sólidos, regla estricta de 5 fotos distintas para Plantilla 04 Mosaico y soporte para los 4 formatos sociales (4:5, 9:16, 1:1, 16:9).",
+  "released_at": "2026-10-17T11:44:00.000Z",
+  "summary": "Motor de flyers V7 v219: firma obligatoria «D' Carela Compufoto / La Romana» en las 10 plantillas, colores de velos/acentos/botones derivados automáticamente del color dominante de la foto (fondo o vestuario), análisis espacial de rostros para ubicar columnas en el lado despejado (03), margen en degradado para fotos de corte cerrado (10, 08, 09), titular protagonista con banda carmesí que pasa por detrás del sujeto (07) y sincronización directa entre Paso 2 de Crear flyers y el editor en lienzo.",
   "requiere_puente": "2026-10-15-citas-y-conexion-v49"
 }
