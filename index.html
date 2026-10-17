@@ -380,7 +380,7 @@ body.menu-abierto .velo{display:block}
 .estudio-capa-izq{display:flex;align-items:center;gap:8px;min-width:0}
 .estudio-capa-ico{width:24px;height:24px;border-radius:6px;background:var(--hover);display:inline-flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0}
 .estudio-capa-item.on .estudio-capa-ico{background:var(--ok);color:#fff}
-.estudio-insp-tabs{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;background:var(--hover);padding:4px;border-radius:10px;border:1px solid var(--line2);position:sticky;top:0;z-index:4}
+.estudio-insp-tabs{display:grid;grid-template-columns:repeat(5,1fr);gap:4px;background:var(--hover);padding:4px;border-radius:10px;border:1px solid var(--line2);position:sticky;top:0;z-index:4}
 .estudio-insp-tab{border:0;background:transparent;color:var(--mut);font-size:11px;font-weight:700;padding:6px 4px;border-radius:7px;cursor:pointer;text-align:center;transition:all .15s}
 .estudio-insp-tab.on{background:var(--panel);color:var(--fg);box-shadow:0 1px 4px rgba(0,0,0,.1)}
 .estudio-sec-panel{border:1px solid var(--line2);border-radius:12px;background:var(--bg);padding:12px;display:flex;flex-direction:column;gap:10px}
@@ -17505,7 +17505,7 @@ function pintaAgente(){
     + '<div class="agente-cab"><span class="agente-ico" aria-hidden="true">🤖</span><div class="agente-tit"><b>Automatización</b><small>'
     +   (CONT.activo ? 'Rutina activa · propuestas a las 7:00 y envíos a la hora programada.' : 'En pausa: no propone ni publica nada (tampoco lo ya aprobado).') + '</small></div>'
     +   (admin ? '<label class="agente-sw"><input type="checkbox" data-cactivo="1"' + (CONT.activo ? ' checked' : '') + '><span>' + (CONT.activo ? 'Encendido' : 'En pausa') + '</span></label>' : '') + '</div>'
-    + '<div class="agente-acc"><button type="button" class="btn-solido" data-cprepara="1">Crear flyers</button><button type="button" class="btn-linea" data-cabrirestudio="1">🎨 Abrir Editor de Flyers</button><button type="button" class="btn-linea" data-cirtab="subir">Subir foto o video</button></div>'
+    + '<div class="agente-acc"><button type="button" class="btn-solido" data-cprepara="1">Crear flyers</button><button type="button" class="btn-linea" data-cabrirestudio="1">🎨 Abrir Editor de Flyers</button><button type="button" class="btn-linea" data-cmcpmodal="1" title="Ver conexión MCP activa con Gemini">✨ Gemini MCP</button><button type="button" class="btn-linea" data-cirtab="subir">Subir foto o video</button></div>'
     + '<details class="plan-rutina"' + (CONT.rutinaAbierta ? ' open' : '') + '><summary>Ajustes de la rutina · ' + esc(aut[1]) + '</summary>'
     + '<div class="agente-fila"><span class="agente-rot">Autonomía</span><div class="segmento" role="radiogroup" aria-label="Autonomía del agente">'
     +   CONT_AUTONOMIA.map(([k, t]) => '<button type="button" role="radio" aria-checked="' + (CONT.autonomia === k) + '" class="' + (CONT.autonomia === k ? 'on' : '') + '" data-cautonomia="' + k + '"' + (admin ? '' : ' disabled') + '>' + esc(t) + '</button>').join('')
@@ -17546,6 +17546,31 @@ async function cambiaActivoAgente(b){
 async function clicContAgente(ev){
   const b = ev.target.closest('button'); if (!b || b.disabled) return;
   const d = b.dataset;
+  if(d.cmcpmodal){
+    const m=abreModal('<div class="mtapa"><b>🔌 Conexión MCP Gemini · D\' Carela Compufoto</b><button type="button" data-cerrar aria-label="Cerrar">×</button></div>'
+      +'<div class="caja" style="display:grid;gap:12px;max-width:540px">'
+      +'<div style="display:flex;align-items:center;gap:10px;background:#f0fdf4;border:1px solid #bbf7d0;padding:12px;border-radius:8px">'
+      +'<span style="font-size:24px">✨</span>'
+      +'<div><b style="color:#15803d">Servidor MCP Stdio Activo (dcarela-flyers)</b><div class="cont-sub">Protocolo Model Context Protocol v2024-11-05</div></div>'
+      +'</div>'
+      +'<p class="cont-sub" style="margin:0">El editor y planificador de contenido están conectados al servidor MCP <code>dcarela-flyers</code>, permitiendo a Gemini generar ganchos comerciales, recomendar plantillas según fotos originales y previsualizar composiciones en alta definición.</p>'
+      +'<div class="estudio-bloque-card"><div class="estudio-bloque-cab"><span>🛠️ Herramientas MCP registradas</span></div>'
+      +'<ul style="margin:0;padding-left:18px;font-size:12px;display:grid;gap:6px;color:var(--txt)">'
+      +'<li><b>dcarela_listar_plantillas_v7:</b> Las 10 plantillas oficiales con sus metadatos tipográficos y cromáticos.</li>'
+      +'<li><b>dcarela_consultar_fototeca:</b> Fotos HD del estudio D\' Carela para composición.</li>'
+      +'<li><b>dcarela_generar_ganchos_gemini:</b> Redacción comercial con reglas estrictas (La Romana, sin precios falsos).</li>'
+      +'<li><b>dcarela_recomendar_diseno_foto:</b> Sugerencia de plantilla óptima según iluminación y rostro.</li>'
+      +'<li><b>dcarela_previsualizar_flyer:</b> Renderizado inmediato 4:5, 9:16 o 1:1.</li>'
+      +'<li><b>dcarela_personalizar_plantilla:</b> Ajuste y persistencia de capas de diseño.</li>'
+      +'</ul></div>'
+      +'<div style="display:flex;justify-content:flex-end;gap:8px">'
+      +'<button type="button" class="btn-linea" data-cerrar>Entendido</button>'
+      +'<button type="button" class="btn-solido" data-cmcpabrir="1">🎨 Abrir Editor con Gemini IA</button>'
+      +'</div>'
+      +'</div>');
+    m.querySelector?.('[data-cmcpabrir]')?.addEventListener?.('click',()=>{cierraModal();if(typeof ve==='function')ve('editorflyers');});
+    return;
+  }
   if(d.ctareacorregir)return corrigePedidoContenido(d.ctareacorregir);
   if(d.ctarearetry)return reintentaTareaContenido();
   if(d.ctareaocultar){CONT.tarea=null;if(CONT.crear)CONT.crear.error=null;guardaTareaContenido();return pintaContenido();}
@@ -18018,6 +18043,7 @@ function abreEditorPlantilla(id, piezaInicialId = ''){
     +'<div class="estudio-topbar-izq">'
     +'<span class="estudio-marca-badge">🎨 Estudio de Flyers · '+esc(e.nombre)+'</span>'
     +(pBorrador?'<span class="cotz-est">Borrador activo</span>':'')
+    +'<button type="button" class="btn-linea" data-ceditor-geminiact="1" style="border-color:#38bdf8;color:#0284c7;font-weight:700" title="Asistente de ganchos publicitarios con Gemini IA (MCP)">✨ Gemini IA</button>'
     +(enModulo?'<button type="button" class="btn-linea" data-ceditor-irplan="1">← Planificador</button>':'<button type="button" class="btn-linea" data-ceditor-irmodulo="1" title="Abrir en vista de módulo completo">⤢ Módulo completo</button>')
     +'</div>'
     +'<div class="estudio-topbar-centro">'
@@ -18110,6 +18136,7 @@ function abreEditorPlantilla(id, piezaInicialId = ''){
     +'<button type="button" class="estudio-insp-tab" data-ceditor-tab="a">✏️ Textos</button>'
     +'<button type="button" class="estudio-insp-tab" data-ceditor-tab="b">🔤 Formato</button>'
     +'<button type="button" class="estudio-insp-tab" data-ceditor-tab="c">📐 Posición</button>'
+    +'<button type="button" class="estudio-insp-tab" data-ceditor-tab="gemini" style="color:#0284c7">✨ Gemini</button>'
     +'</nav>'
     +'<details open class="estudio-sec-panel" data-ceditor-sec="a"><summary><b>(a) Texto de muestra, marca/CTA y edición de pieza</b><span>▾</span></summary><div style="display:grid;gap:10px;margin-top:8px">'
     +'<div class="estudio-bloque-card"><div class="estudio-bloque-cab"><span>🔤 Titular y Subtítulo del Flyer</span><span class="cont-sub">Textos en lienzo</span></div>'
@@ -18229,6 +18256,26 @@ function abreEditorPlantilla(id, piezaInicialId = ''){
     +'<label>Color de banda/tarjeta<input type="text" name="color_panel" maxlength="7" placeholder="#RRGGBB (vacío = dominante de la foto)" value="'+esc(p.color_panel||'')+'"></label>'
     +'<label>Opacidad de tarjeta/banda'+seleccion('opacidad_panel',String(p.opacidad_panel||0),[['0','De la plantilla'],['0.45','Translúcido · 45%'],['0.7','Medio · 70%'],['0.88','Sólido · 88%']])+'</label>'
     +'</div></div>'
+    +'</div></details>'
+    +'<details open class="estudio-sec-panel" data-ceditor-sec="gemini" id="estudioSecGemini"><summary><b style="color:#0284c7">(✨) Asistente Gemini IA · Conexión MCP</b><span>▾</span></summary><div style="display:grid;gap:10px;margin-top:8px">'
+    +'<div class="estudio-bloque-card" style="border-left:3px solid #0284c7">'
+    +'<div class="estudio-bloque-cab"><span>✨ Ganchos Comerciales con Gemini</span><span class="cotz-est" style="background:#e0f2fe;color:#0369a1">MCP Stdio Conectado</span></div>'
+    +'<p class="cont-sub" style="margin:0 0 6px">Gemini redacta 3 propuestas de titular (L1), subtítulo (L2) y copy secundario respetando la firma de D\' Carela Compufoto en La Romana y sin inventar precios.</p>'
+    +'<div class="estudio-grid-2">'
+    +'<label>Objetivo publicitario<select name="gemini_objetivo"><option value="consultas">Conseguir consultas por WhatsApp</option><option value="reservas">Convertir interés en reserva</option><option value="portafolio">Mostrar portafolio y calidad</option><option value="emotivo">Conexión familiar y recuerdos</option></select></label>'
+    +'<label>Tono comercial<select name="gemini_tono"><option value="elegante">Elegante y fotográfico</option><option value="calido">Cálido y familiar (Dominicano)</option><option value="directo">Directo a la acción</option><option value="festivo">Festivo y alegre</option></select></label>'
+    +'</div>'
+    +'<label>Idea, ocasión o enfoque breve (opcional)<input name="gemini_enfoque" maxlength="120" placeholder="Ej. Sesión de 1 año con pastel, graduación familiar..."></label>'
+    +'<div style="display:flex;gap:8px;margin-top:6px;flex-wrap:wrap">'
+    +'<button type="button" class="btn-solido" data-cgemini-ganchos="1" style="background:#0284c7">✨ Redactar 3 ganchos con Gemini</button>'
+    +'<button type="button" class="btn-linea" data-cgemini-recomienda="1">🎯 Recomendar plantilla para esta foto</button>'
+    +'</div>'
+    +'<div id="estudioGeminiResultados" style="margin-top:8px;display:none"></div>'
+    +'</div>'
+    +'<div class="estudio-bloque-card">'
+    +'<div class="estudio-bloque-cab"><span>🔌 Servidor MCP Activo (stdio)</span><span class="cont-sub">dcarela-flyers</span></div>'
+    +'<small class="cont-sub" style="display:block;line-height:1.4">Herramientas MCP registradas para Antigravity y Gemini: <code>dcarela_listar_plantillas_v7</code>, <code>dcarela_consultar_fototeca</code>, <code>dcarela_generar_ganchos_gemini</code>, <code>dcarela_recomendar_diseno_foto</code>, <code>dcarela_previsualizar_flyer</code> y <code>dcarela_personalizar_plantilla</code>.</small>'
+    +'</div>'
     +'</div></details>'
     +'</aside>'
     +'</div></form>';
@@ -18440,6 +18487,11 @@ function abreEditorPlantilla(id, piezaInicialId = ''){
       card?.scrollIntoView?.({behavior:'smooth',block:'nearest'});
       return;
     }
+    if(b.dataset?.ceditorGeminiact){
+      m.querySelector?.('[data-ceditor-tab="gemini"]')?.click();
+      m.querySelector?.('#estudioSecGemini')?.scrollIntoView?.({behavior:'smooth',block:'start'});
+      return;
+    }
     if(b.dataset?.ceditorTab){
       const tab=b.dataset.ceditorTab;
       m.querySelectorAll?.('[data-ceditor-tab]')?.forEach?.(x=>x.classList?.toggle?.('on',x.dataset?.ceditorTab===tab));
@@ -18447,6 +18499,73 @@ function abreEditorPlantilla(id, piezaInicialId = ''){
         if(tab==='todo'){sec.style.display='';sec.open=true;}
         else{const coincide=sec.dataset?.ceditorSec===tab||(tab==='c'&&sec.dataset?.ceditorSec==='d');sec.style.display=coincide?'':'none';if(coincide)sec.open=true;}
       });
+      return;
+    }
+    if(b.dataset?.cgeminiGanchos){
+      const v=valores(),cajaRes=m.querySelector('#estudioGeminiResultados');
+      if(cajaRes){cajaRes.style.display='block';cajaRes.innerHTML='<span class="cont-sub"><span class="cargando"></span> Gemini redactando 3 ganchos comerciales vía MCP…</span>';}
+      b.disabled=true;
+      const obj=f.elements.gemini_objetivo?.value||'consultas';
+      const tono=f.elements.gemini_tono?.value||'elegante';
+      const enfoque=f.elements.gemini_enfoque?.value||'';
+      const r=await llamaCont({action:'contenidoEstilos',operation:'gemini_ganchos',categoria:v._categoria,objetivo:obj,tono,enfoque,foto_id:v._foto_id});
+      b.disabled=false;
+      if(!r.ok||!Array.isArray(r.ganchos)||!r.ganchos.length){
+        if(cajaRes)cajaRes.innerHTML='<p class="cont-aviso">'+esc(r?.error||'No se pudieron generar los ganchos comerciales.')+'</p>';
+        return;
+      }
+      CONT._ultimosGanchosGemini=r.ganchos;
+      if(cajaRes){
+        cajaRes.innerHTML='<div style="display:grid;gap:8px">'
+          +r.ganchos.map((g,idx)=>'<div class="estudio-bloque-card" style="border:1px solid #bae6fd;background:#f8fafc;padding:10px;border-radius:8px">'
+            +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">'
+            +'<b style="font-size:12px;color:#0369a1">Propuesta '+(idx+1)+'</b>'
+            +'<button type="button" class="btn-solido" style="font-size:11px;padding:3px 8px;background:#0284c7" data-cgemini-aplicar="'+idx+'">🎨 Aplicar al flyer</button>'
+            +'</div>'
+            +'<div style="font-weight:700;font-size:13px;color:var(--txt)">'+esc(g.l1)+'</div>'
+            +(g.l2?'<div style="font-size:12px;color:var(--mut);margin-top:2px">'+esc(g.l2)+'</div>':'')
+            +(g.copy?'<div style="font-size:11px;color:var(--txt);margin-top:4px;font-style:italic">'+esc(g.copy)+'</div>':'')
+            +'</div>').join('')
+          +'</div>';
+      }
+      return;
+    }
+    if(b.dataset?.cgeminiAplicar!==undefined){
+      const idx=Number(b.dataset.cgeminiAplicar);
+      const prop=CONT._ultimosGanchosGemini?.[idx];
+      if(!prop)return;
+      if(f.elements.texto_muestra_l1)f.elements.texto_muestra_l1.value=prop.l1||'';
+      if(f.elements.texto_muestra_l2)f.elements.texto_muestra_l2.value=prop.l2||'';
+      if(prop.copy&&f.elements.copy_secundario)f.elements.copy_secundario.value=prop.copy;
+      if(f.elements.pieza_id?.value){
+        if(f.elements.pieza_l1)f.elements.pieza_l1.value=prop.l1||'';
+        if(f.elements.pieza_l2)f.elements.pieza_l2.value=prop.l2||'';
+        if(prop.copy&&f.elements.pieza_texto)f.elements.pieza_texto.value=prop.copy;
+      }
+      guardaHistorial();sincronizaUIEstudio();void previsualiza();
+      avisa('Gancho aplicado','Titular y subtítulo actualizados en el flyer.');
+      return;
+    }
+    if(b.dataset?.cgeminiRecomienda){
+      const v=valores(),cajaRes=m.querySelector('#estudioGeminiResultados');
+      if(cajaRes){cajaRes.style.display='block';cajaRes.innerHTML='<span class="cont-sub"><span class="cargando"></span> Analizando foto y recomendando plantilla V7 con Gemini…</span>';}
+      b.disabled=true;
+      const r=await llamaCont({action:'contenidoEstilos',operation:'gemini_recomienda',categoria:v._categoria,foto_id:v._foto_id});
+      b.disabled=false;
+      if(!r.ok||!r.recomendada){
+        if(cajaRes)cajaRes.innerHTML='<p class="cont-aviso">'+esc(r?.error||'No se pudo analizar la foto.')+'</p>';
+        return;
+      }
+      if(cajaRes){
+        const plantillaNom=(listaPlantillasV7.find(x=>x[0]===r.recomendada)?.[2])||r.recomendada;
+        cajaRes.innerHTML='<div class="estudio-bloque-card" style="border:1px solid #bbf7d0;background:#f0fdf4;padding:10px;border-radius:8px">'
+          +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">'
+          +'<b style="color:#15803d;font-size:12.5px">Plantilla recomendada: '+esc(plantillaNom)+'</b>'
+          +'<button type="button" class="btn-solido" style="font-size:11px;padding:3px 8px;background:#16a34a" data-ceditor-plantilla="'+esc(r.recomendada)+'">🚀 Usar esta plantilla</button>'
+          +'</div>'
+          +'<p class="cont-sub" style="margin:0;font-size:11.5px">'+esc(r.motivo||'Composición ideal para esta foto.')+'</p>'
+          +'</div>';
+      }
       return;
     }
     if(b.dataset?.ceditorStepTarget){
