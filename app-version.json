@@ -1,7 +1,7 @@
 {
-  "version": "2026-10-17-motor-referencias-v7-v219",
+  "version": "2026-10-17-estudio-flyers-v7-v220",
   "channel": "crm",
-  "released_at": "2026-10-17T11:44:00.000Z",
-  "summary": "Motor de flyers V7 v219: firma obligatoria «D' Carela Compufoto / La Romana» en las 10 plantillas, colores de velos/acentos/botones derivados automáticamente del color dominante de la foto (fondo o vestuario), análisis espacial de rostros para ubicar columnas en el lado despejado (03), margen en degradado para fotos de corte cerrado (10, 08, 09), titular protagonista con banda carmesí que pasa por detrás del sujeto (07) y sincronización directa entre Paso 2 de Crear flyers y el editor en lienzo.",
+  "released_at": "2026-10-17T14:10:00.000Z",
+  "summary": "Estudio de Flyers V7 v220: módulo independiente en menú lateral (Editor de flyers) con interfaz profesional de 3 columnas (plantillas V7 y capas a la izquierda, lienzo interactivo con barra rápida de formato al centro, e inspector organizado por pestañas a la derecha). Control total de tamaño tipográfico por bloque (titular, subtítulo, botón CTA y firma de marca con controles A-/A+ y deslizadores de 60% a 160%), soporte para tipografías comerciales (Bodoni Moda, Plus Jakarta Sans, DM Serif Display, Playfair, Amandine, Marcellus, Poppins, Spartan, Inter), alineaciones, mayúsculas, interlineado y colores personalizados.",
   "requiere_puente": "2026-10-15-citas-y-conexion-v49"
 }

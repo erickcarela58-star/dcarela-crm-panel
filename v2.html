@@ -334,6 +334,73 @@ body.menu-abierto .velo{display:block}
 .tarjeta-v7-acc{display:flex;gap:6px;margin-top:6px;flex-wrap:wrap;align-items:center;justify-content:space-between}
 .plan-v7-personaliza{border:1px solid var(--line2);border-radius:14px;padding:14px;background:var(--panel);margin:14px 0;display:flex;flex-direction:column;gap:10px}
 .plan-mockup-svg{width:100%;height:100%;display:block}
+.hoja.estudio-hoja{max-width:none;padding:0;height:calc(100vh - 16px);display:flex;flex-direction:column;overflow:hidden}
+#estudioFlyersHost{flex:1;min-height:0;display:flex;flex-direction:column;overflow:hidden}
+#estudioFlyersHost .mtapa{display:none}
+.modal.modal-estudio .caja{width:min(96vw,1560px);max-width:96vw;height:92vh;max-height:92vh;padding:0;display:flex;flex-direction:column;overflow:hidden;border-radius:18px}
+.modal.modal-estudio .mtapa{padding:10px 16px;border-bottom:1px solid var(--line2);margin:0;background:var(--panel)}
+.estudio-flyer-form{display:flex!important;flex-direction:column;flex:1;min-height:0;height:100%;max-height:none!important;overflow:hidden!important;gap:0!important;background:var(--bg)}
+.estudio-topbar{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 16px;background:var(--panel);border-bottom:1px solid var(--line2);flex-wrap:wrap;z-index:5}
+.estudio-topbar-izq,.estudio-topbar-centro,.estudio-topbar-der{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.estudio-marca-badge{display:inline-flex;align-items:center;gap:7px;font-weight:800;font-size:13.5px;color:var(--fg);padding:5px 11px;border-radius:10px;background:linear-gradient(135deg,rgba(10,143,77,.14),rgba(36,111,226,.12));border:1px solid rgba(10,143,77,.28)}
+.estudio-fmt-pills{display:inline-flex;background:var(--hover);padding:3px;border-radius:10px;border:1px solid var(--line2);gap:3px}
+.estudio-fmt-pill{border:0;background:transparent;color:var(--mut);font-size:11.5px;font-weight:700;padding:5px 10px;border-radius:7px;cursor:pointer;transition:all .15s}
+.estudio-fmt-pill.on{background:var(--panel);color:var(--fg);box-shadow:0 1px 4px rgba(0,0,0,.12)}
+.estudio-grid{display:grid;grid-template-columns:300px minmax(340px,1fr) 410px;flex:1;min-height:0;overflow:hidden}
+.estudio-col-izq,.estudio-col-der{background:var(--panel);display:flex;flex-direction:column;min-height:0;overflow-y:auto;padding:12px;gap:12px}
+.estudio-col-izq{border-right:1px solid var(--line2)}
+.estudio-col-der{border-left:1px solid var(--line2)}
+.estudio-col-centro{display:flex;flex-direction:column;min-height:0;overflow:hidden;background:radial-gradient(circle at center,rgba(120,120,140,.12) 1px,transparent 1px) 0 0/18px 18px,var(--bg);position:relative}
+.estudio-quickbar{display:flex;align-items:center;justify-content:center;gap:6px;padding:8px 12px;background:var(--panel);border-bottom:1px solid var(--line2);flex-wrap:wrap;z-index:3}
+.estudio-quick-grupo{display:inline-flex;align-items:center;gap:4px;padding:3px 7px;background:var(--hover);border:1px solid var(--line2);border-radius:8px;font-size:11.5px}
+.estudio-quick-btn{border:1px solid transparent;background:transparent;color:var(--fg);font-weight:700;font-size:11.5px;padding:3px 7px;border-radius:6px;cursor:pointer;line-height:1.2}
+.estudio-quick-btn:hover{background:var(--panel);border-color:var(--line2)}
+.estudio-quick-btn.on{background:var(--ok);color:#fff}
+.estudio-lienzo-wrap{flex:1;min-height:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:14px;overflow:auto;position:relative}
+#editorPlantillaVista.estudio-vista-stage{min-height:320px;width:100%;height:100%;display:flex!important;align-items:center;justify-content:center;background:transparent!important;padding:4px!important;user-select:none;touch-action:none}
+#editorPlantillaVista.estudio-vista-stage img{max-height:calc(100vh - 230px)!important;max-width:100%;width:auto;height:auto;object-fit:contain;border-radius:12px;box-shadow:0 16px 44px rgba(0,0,0,.28);cursor:grab;transition:transform .1s}
+#editorPlantillaVista.estudio-vista-stage img:active{cursor:grabbing}
+.estudio-canvas-pie{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:7px 14px;background:var(--panel);border-top:1px solid var(--line2);font-size:11.5px;color:var(--mut);flex-wrap:wrap}
+.estudio-sec-titulo{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.7px;color:var(--mut);margin:0 0 6px;display:flex;align-items:center;justify-content:space-between}
+.estudio-mini-plantillas{display:grid;grid-template-columns:repeat(2,1fr);gap:7px;max-height:230px;overflow-y:auto;padding-right:2px}
+.estudio-mini-tpl{border:1.5px solid var(--line2);border-radius:10px;padding:6px 8px;background:var(--bg);cursor:pointer;display:flex;align-items:center;gap:7px;text-align:left;transition:all .15s}
+.estudio-mini-tpl:hover{border-color:var(--ok)}
+.estudio-mini-tpl.on{border-color:var(--ok);background:rgba(10,143,77,.08);box-shadow:0 0 0 1px var(--ok)}
+.estudio-mini-num{width:22px;height:22px;border-radius:6px;background:var(--hover);color:var(--fg);font-weight:800;font-size:11px;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0}
+.estudio-mini-tpl.on .estudio-mini-num{background:var(--ok);color:#fff}
+.estudio-mini-nom{font-size:11px;font-weight:700;color:var(--fg);line-height:1.2;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.estudio-fotos-strip{display:grid;grid-template-columns:repeat(4,1fr);gap:5px;max-height:128px;overflow-y:auto;margin-top:6px}
+.estudio-foto-thumb{aspect-ratio:4/5;border:2px solid var(--line2);border-radius:8px;overflow:hidden;cursor:pointer;padding:0;background:var(--hover);position:relative;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:var(--mut)}
+.estudio-foto-thumb img{width:100%;height:100%;object-fit:cover;display:block}
+.estudio-foto-thumb.on{border-color:var(--ok);box-shadow:0 0 0 1px var(--ok)}
+.estudio-capas-lista{display:flex;flex-direction:column;gap:5px}
+.estudio-capa-item{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 10px;border:1.5px solid var(--line2);border-radius:10px;background:var(--bg);cursor:pointer;font-size:12px;font-weight:600;color:var(--fg);text-align:left;transition:all .15s}
+.estudio-capa-item:hover{border-color:var(--ok)}
+.estudio-capa-item.on{border-color:var(--ok);background:rgba(10,143,77,.08)}
+.estudio-capa-izq{display:flex;align-items:center;gap:8px;min-width:0}
+.estudio-capa-ico{width:24px;height:24px;border-radius:6px;background:var(--hover);display:inline-flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0}
+.estudio-capa-item.on .estudio-capa-ico{background:var(--ok);color:#fff}
+.estudio-insp-tabs{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;background:var(--hover);padding:4px;border-radius:10px;border:1px solid var(--line2);position:sticky;top:0;z-index:4}
+.estudio-insp-tab{border:0;background:transparent;color:var(--mut);font-size:11px;font-weight:700;padding:6px 4px;border-radius:7px;cursor:pointer;text-align:center;transition:all .15s}
+.estudio-insp-tab.on{background:var(--panel);color:var(--fg);box-shadow:0 1px 4px rgba(0,0,0,.1)}
+.estudio-sec-panel{border:1px solid var(--line2);border-radius:12px;background:var(--bg);padding:12px;display:flex;flex-direction:column;gap:10px}
+.estudio-sec-panel>summary{cursor:pointer;font-size:12.5px;font-weight:800;color:var(--fg);list-style:none;display:flex;align-items:center;justify-content:space-between}
+.estudio-sec-panel>summary::-webkit-details-marker{display:none}
+.estudio-bloque-card{border:1px solid var(--line2);border-radius:10px;padding:10px;background:var(--panel);display:flex;flex-direction:column;gap:8px}
+.estudio-bloque-cab{display:flex;align-items:center;justify-content:space-between;gap:6px;font-size:12px;font-weight:800;color:var(--fg);border-bottom:1px solid var(--line2);padding-bottom:6px}
+.estudio-size-row{display:flex;align-items:center;gap:6px}
+.estudio-size-row input[type=range]{flex:1;accent-color:var(--ok);cursor:pointer}
+.estudio-size-badge{min-width:44px;text-align:center;font-size:11.5px;font-weight:800;padding:3px 6px;border-radius:6px;background:var(--hover);color:var(--fg)}
+.estudio-grid-2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.estudio-grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.estudio-bloque-card label,.estudio-sec-panel label{display:flex;flex-direction:column;gap:4px;font-size:11.5px;font-weight:600;color:var(--mut)}
+.estudio-bloque-card input:not([type=range]):not([type=color]):not([type=checkbox]):not([type=radio]),.estudio-bloque-card select,.estudio-bloque-card textarea,.estudio-sec-panel input:not([type=range]):not([type=color]):not([type=checkbox]):not([type=radio]),.estudio-sec-panel select,.estudio-sec-panel textarea{width:100%;padding:6px 8px;border:1px solid var(--line2);border-radius:8px;background:var(--panel);color:var(--fg);font-size:12px}
+.estudio-color-row{display:flex;align-items:center;gap:6px}
+.estudio-color-row input[type=color]{width:32px;height:30px;padding:1px;border:1px solid var(--line2);border-radius:7px;background:var(--panel);cursor:pointer;flex-shrink:0}
+.estudio-swatches{display:flex;gap:4px;flex-wrap:wrap;margin-top:2px}
+.estudio-swatch{width:18px;height:18px;border-radius:50%;border:1px solid rgba(128,128,128,.4);cursor:pointer;padding:0}
+@media(max-width:1180px){.estudio-grid{grid-template-columns:250px minmax(280px,1fr) 340px}}
+@media(max-width:920px){.hoja.estudio-hoja{height:auto;overflow:visible}.estudio-grid{grid-template-columns:1fr;overflow:visible}.estudio-col-izq,.estudio-col-der{max-height:none;overflow:visible}}
 .red{border-bottom:1px solid var(--line2);padding:10px 0}
 .red code{font-size:11.5px;word-break:break-all;background:var(--hover);padding:1px 4px;border-radius:4px}
 @media(max-width:640px){.agente-rot{flex-basis:100%}.agente-exp{padding-left:0}.cal-dia{min-height:58px;padding:3px}.cal-chip{font-size:9px;padding:1px 3px}.cal-h{display:none}.cal-ev{display:none}.cal-leyenda{margin-left:0}.cal-cab b{min-width:0}}
@@ -2993,6 +3060,7 @@ const VISTAS = [
   { id:'cotizaciones',  nombre:'Cotizaciones',  fija:true,  icono:ico('<path d="M7 3.500h7.200L19 8.300V19a1.500 1.500 0 01-1.500 1.500h-10A1.500 1.500 0 016 19V5A1.500 1.500 0 017.500 3.500z"/><path d="M14 3.700V8.500h4.800"/><path d="M9 12.500h6M9 15.500h4"/><path d="M9.500 18.200c1.100.7 3.400.7 3.400-.6" stroke-width="0"/>') },
   // Planificador de contenido: el agente de marketing (Instagram, Página de Facebook, TikTok, Estados y paquete para grupos). Antes se llamaba «Contenido» y no se encontraba.
   { id:'contenido',     nombre:'Planificador de contenido', fija:true,  icono:ico('<path d="M13.5 2.5 4.5 14h6l-1 7.5L19.5 10h-6V2.5Z"/>') },
+  { id:'editorflyers',  nombre:'Editor de flyers',          fija:true,  icono:ico('<rect x="3.5" y="3.5" width="17" height="17" rx="3.2"/><path d="M7.5 8.5h9M7.5 12h5.5M7.5 15.5h4"/><circle cx="16.5" cy="14.5" r="2.3"/>') },
   { id:'agenda',        nombre:'Agenda',        fija:true,  icono:ico('<rect x="3.5" y="5" width="17" height="15.5" rx="3.6"/><path d="M3.5 10h17M8 3v3.600M16 3v3.600"/><circle cx="8.500" cy="14" r=".7" fill="currentColor"/><circle cx="12" cy="14" r=".7" fill="currentColor"/><circle cx="15.500" cy="14" r=".7" fill="currentColor"/>') },
   { id:'dashboard',     nombre:'Dashboard',     icono:ico('<rect x="3.500" y="4" width="17" height="16" rx="3.600"/><path d="M8.200 16v-3.400M12 16V8.600M15.800 16v-5.400"/>') },
   { id:'funnel',        nombre:'Funnel · Kanban', icono:ico('<path d="M4.200 5.500h15.600a.7.7 0 01.5 1.200L14.500 12.800v5.900a.7.7 0 01-1 .6l-3-1.500a.7.7 0 01-.4-.6v-4.400L3.700 6.700a.7.7 0 01.5-1.200z"/>') },
@@ -3898,6 +3966,7 @@ function monta(id){
   if (id === 'estados') return montaEstados();
   if (id === 'cotizaciones') return montaCotizaciones();
   if (id === 'contenido') return montaContenido();
+  if (id === 'editorflyers') return montaEditorFlyers();
   if (id === 'planning') return montaPlanificacion();
   if (id === 'plantillas') return montaPlantillasVista();
   if (id === 'campanas') return montaBroadcast();
@@ -17436,7 +17505,7 @@ function pintaAgente(){
     + '<div class="agente-cab"><span class="agente-ico" aria-hidden="true">🤖</span><div class="agente-tit"><b>Automatización</b><small>'
     +   (CONT.activo ? 'Rutina activa · propuestas a las 7:00 y envíos a la hora programada.' : 'En pausa: no propone ni publica nada (tampoco lo ya aprobado).') + '</small></div>'
     +   (admin ? '<label class="agente-sw"><input type="checkbox" data-cactivo="1"' + (CONT.activo ? ' checked' : '') + '><span>' + (CONT.activo ? 'Encendido' : 'En pausa') + '</span></label>' : '') + '</div>'
-    + '<div class="agente-acc"><button type="button" class="btn-solido" data-cprepara="1">Crear flyers</button><button type="button" class="btn-linea" data-cirtab="subir">Subir foto o video</button></div>'
+    + '<div class="agente-acc"><button type="button" class="btn-solido" data-cprepara="1">Crear flyers</button><button type="button" class="btn-linea" data-cabrirestudio="1">🎨 Abrir Editor de Flyers</button><button type="button" class="btn-linea" data-cirtab="subir">Subir foto o video</button></div>'
     + '<details class="plan-rutina"' + (CONT.rutinaAbierta ? ' open' : '') + '><summary>Ajustes de la rutina · ' + esc(aut[1]) + '</summary>'
     + '<div class="agente-fila"><span class="agente-rot">Autonomía</span><div class="segmento" role="radiogroup" aria-label="Autonomía del agente">'
     +   CONT_AUTONOMIA.map(([k, t]) => '<button type="button" role="radio" aria-checked="' + (CONT.autonomia === k) + '" class="' + (CONT.autonomia === k ? 'on' : '') + '" data-cautonomia="' + k + '"' + (admin ? '' : ' disabled') + '>' + esc(t) + '</button>').join('')
@@ -17481,6 +17550,7 @@ async function clicContAgente(ev){
   if(d.ctarearetry)return reintentaTareaContenido();
   if(d.ctareaocultar){CONT.tarea=null;if(CONT.crear)CONT.crear.error=null;guardaTareaContenido();return pintaContenido();}
   if(d.ctareaactualiza)return sigueTareaContenido();
+  if (d.cabrirestudio) return typeof ve === 'function' ? ve('editorflyers') : null;
   if (d.cirtab) return cambiaTabContenido(d.cirtab);
   if (d.cbiblioteca) { if(d.cbibliotecaCategoria)CONT.fototecaCategoria=d.cbibliotecaCategoria;return cambiaTabContenido('fotos'); }
   if (d.cprepara) return cambiaTabContenido('crear');
@@ -17841,14 +17911,87 @@ function pintaEstilos(cuerpo){
     + (admin ? '<details class="plan-estilo-crear"><summary>Crear otra plantilla desde una referencia o con IA</summary>' + formularioEstiloContenido() + '</details>' : '');
   if (CONT.estilos.length && !CONT.cargandoMuestras && CONT.tab === 'estilos' && typeof cargaMuestrasDeEstilos === 'function') void cargaMuestrasDeEstilos();
 }
+async function montaEditorFlyers(){
+  if (!montadas.has('editorflyers')) {
+    montadas.add('editorflyers');
+    hueco('editorflyers', '<div class="hoja estudio-hoja"><div id="estudioFlyersHost" class="on"></div></div>');
+  }
+  const host = $('estudioFlyersHost');
+  if (!host) return;
+  host.classList.add('on');
+  const catalogoBaseV7 = [
+    { id: 'v6-editorial-social', template_id: '01-editorial-social', indice: 1, nombre: 'Editorial social', origen: 'v6', acento: '#FFFFFF', texto: '#FFFFFF', activo: true },
+    { id: 'v6-editorial-rojo-serif', template_id: '02-editorial-rojo-serif', indice: 2, nombre: 'Editorial rojo serif', origen: 'v6', acento: '#C62839', texto: '#C62839', activo: true },
+    { id: 'v6-editorial-azul-suave', template_id: '03-editorial-azul-suave', indice: 3, nombre: 'Editorial azul suave', origen: 'v6', acento: '#123A63', texto: '#123A63', activo: true },
+    { id: 'v6-mosaico-oferta', template_id: '04-mosaico-oferta', indice: 4, nombre: 'Mosaico oferta (5 fotos)', origen: 'v6', acento: '#FFFFFF', texto: '#FFFFFF', activo: true },
+    { id: 'v6-spotlight-noir', template_id: '05-spotlight-noir', indice: 5, nombre: 'Spotlight noir', origen: 'v6', acento: '#F39A27', texto: '#FFFFFF', activo: true },
+    { id: 'v6-glow-carmesi', template_id: '06-glow-carmesi', indice: 6, nombre: 'Glow carmesí', origen: 'v6', acento: '#EE2748', texto: '#FFFFFF', activo: true },
+    { id: 'v6-contraste-titular-banda', template_id: '07-contraste-titular-banda', indice: 7, nombre: 'Contraste titular banda', origen: 'v6', acento: '#DC2547', texto: '#FFFFFF', activo: true },
+    { id: 'v6-tarjeta-cristal', template_id: '08-tarjeta-cristal', indice: 8, nombre: 'Tarjeta cristal', origen: 'v6', acento: '#FFFFFF', texto: '#FFFFFF', activo: true },
+    { id: 'v6-spotlight-azul-corporativo', template_id: '09-spotlight-azul-corporativo', indice: 9, nombre: 'Spotlight azul corporativo', origen: 'v6', acento: '#69B6FF', texto: '#FFFFFF', activo: true },
+    { id: 'v6-alta-clave-fotografia', template_id: '10-alta-clave-fotografica', indice: 10, nombre: 'Alta clave fotográfica', origen: 'v6', acento: '#171724', texto: '#171724', activo: true }
+  ];
+  if (!CONT.estilos || !CONT.estilos.some(x => x.origen === 'v6')) {
+    CONT.estilos = [...(CONT.estilos || []), ...catalogoBaseV7];
+  }
+  const idElegido = CONT.estudioPlantillaId || CONT.crear?.estilo_id || 'v6-editorial-social';
+  const piezaElegida = CONT.estudioPiezaId || '';
+  CONT._contenedorEstudio = host;
+  abreEditorPlantilla(idElegido, piezaElegida);
+  CONT._contenedorEstudio = null;
+  if (!CONT.modelos && !CONT.modelosCargando && typeof cargaModelosContenido === 'function') void cargaModelosContenido();
+  if (!CONT.items?.length && !CONT.cargando && typeof cargaContenido === 'function') void cargaContenido();
+}
 function abreEditorPlantilla(id, piezaInicialId = ''){
-  const e=CONT.estilos.find(x=>(x.id===id||x.template_id===id||x.id?.replace(/^v6-/,'')===id?.replace(/^(\d{2}-|v6-)/,''))&&x.origen==='v6');
-  if(!e||(ROL_ACTUAL&&!['admin','supervisor'].includes(ROL_ACTUAL)))return;
+  const listaPlantillasV7=[
+    ['v6-editorial-social','01','Editorial social','#FFFFFF'],
+    ['v6-editorial-rojo-serif','02','Editorial rojo serif','#C62839'],
+    ['v6-editorial-azul-suave','03','Editorial azul suave','#123A63'],
+    ['v6-mosaico-oferta','04','Mosaico 5 fotos','#FFFFFF'],
+    ['v6-spotlight-noir','05','Spotlight noir','#F39A27'],
+    ['v6-glow-carmesi','06','Glow carmesí','#EE2748'],
+    ['v6-contraste-titular-banda','07','Contraste banda','#DC2547'],
+    ['v6-tarjeta-cristal','08','Tarjeta cristal','#FFFFFF'],
+    ['v6-spotlight-azul-corporativo','09','Spotlight azul','#69B6FF'],
+    ['v6-alta-clave-fotografia','10','Alta clave','#171724']
+  ];
+  let e=(CONT.estilos||[]).find(x=>(x.id===id||x.template_id===id||x.id?.replace(/^v6-/,'')===id?.replace(/^(\d{2}-|v6-)/,''))&&x.origen==='v6');
+  if(!e){
+    const fb=listaPlantillasV7.find(([vid,num])=>vid===id||vid.replace(/^v6-/,'')===String(id||'').replace(/^(\d{2}-|v6-)/,'')||num===String(id||'').padStart(2,'0'))||listaPlantillasV7[0];
+    e={id:fb[0],template_id:fb[1]+'-'+fb[0].slice(3),nombre:fb[2],origen:'v6',acento:fb[3],texto:'#FFFFFF'};
+  }
+  if(ROL_ACTUAL&&!['admin','supervisor'].includes(ROL_ACTUAL))return;
   const idReal=e.id||id,cCrear=CONT.tab==='crear'&&CONT.crear?CONT.crear:null;
+  CONT.estudioPlantillaId=idReal;
   const pActiva=e.personalizacion||{},pBorrador=e.personalizacion_borrador||null,pBase=pBorrador||pActiva;
   const p={...pBase,...(cCrear?.titular_l1?{texto_muestra_l1:cCrear.titular_l1}:{}),...(cCrear?.titular_l2?{texto_muestra_l2:cCrear.titular_l2}:{}),...(cCrear?.cta_texto?{cta_texto:cCrear.cta_texto}:{}),...(cCrear?.mostrar_whatsapp===false?{mostrar_whatsapp:'no'}:{}),...(cCrear?.tipografia&&cCrear.tipografia!=='editorial'?{tipografia:cCrear.tipografia}:{}),...(cCrear?.etiqueta_texto?{etiqueta_texto:cCrear.etiqueta_texto}:{})};
   const mapaPorFormato=JSON.parse(JSON.stringify(p.por_formato||{}));
   const seleccion=(nombre,valor,opciones,extra='')=>'<select name="'+nombre+'"'+extra+'>'+opciones.map(([v,t])=>'<option value="'+v+'"'+(String(valor)===String(v)?' selected':'')+'>'+t+'</option>').join('')+'</select>';
+  const opcionesEscala=(actual,min=0.6,max=1.6)=>{
+    const ops=[];
+    for(let n=Math.round(min*100);n<=Math.round(max*100);n+=5){
+      const val=String(Number((n/100).toFixed(2)));
+      const etq=n===100?'Original (100%)':n<100?'Menor ('+n+'%)':'Mayor ('+n+'%)';
+      ops.push([val,etq]);
+    }
+    const actStr=String(Number(actual||1));
+    if(!ops.some(([v])=>v===actStr))ops.push([actStr,Math.round(Number(actStr)*100)+'%']);
+    return ops;
+  };
+  const controlTamano=(nombre,etiqueta,valorActual,min=0.6,max=1.6)=>{
+    const vNum=Number(valorActual||1)||1;
+    const pct=Math.round(vNum*100)+'%';
+    return '<div class="estudio-size-bloque">'
+      +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px"><span style="font-size:11.5px;font-weight:700;color:var(--fg)">'+etiqueta+'</span><span class="estudio-size-badge" data-ceditor-pct="'+nombre+'">'+pct+'</span></div>'
+      +'<div class="estudio-size-row">'
+      +'<button type="button" class="estudio-quick-btn" data-ceditor-step-target="'+nombre+'" data-ceditor-step="-0.05" title="Reducir tamaño (-5%)">A−</button>'
+      +'<input type="range" data-ceditor-range="'+nombre+'" min="'+min+'" max="'+max+'" step="0.05" value="'+vNum+'" aria-label="'+etiqueta+'">'
+      +'<button type="button" class="estudio-quick-btn" data-ceditor-step-target="'+nombre+'" data-ceditor-step="0.05" title="Aumentar tamaño (+5%)">A+</button>'
+      +'<button type="button" class="estudio-quick-btn" data-ceditor-step-target="'+nombre+'" data-ceditor-step="reset" title="Restaurar 100%">100%</button>'
+      +'</div>'
+      +'<label style="margin-top:4px">Tamaño ('+etiqueta.toLowerCase()+')'+seleccion(nombre,String(vNum),opcionesEscala(vNum,min,max))+'</label>'
+      +'</div>';
+  };
   const piezasEditables=(CONT.items||[]).concat(CONT.diaItems||[]).filter((x,i,arr)=>x&&x.id&&arr.findIndex(y=>y.id===x.id)===i&&!['publicada','publicando','encola','enviada','sin_confirmar'].includes(x.estado));
   const piezaInicial=piezasEditables.find(x=>x.id===piezaInicialId)||null;
   const catCrear=cCrear?.categorias?.size?[...cCrear.categorias][0]:'';
@@ -17860,82 +18003,288 @@ function abreEditorPlantilla(id, piezaInicialId = ''){
     const lista=fotosCat(cat);
     return '<option value="">Automática de la categoría</option>'+lista.map(f=>'<option value="'+esc(f.id)+'"'+(f.id===actual?' selected':'')+'>'+esc(f.id.slice(0,18)+(f.width&&f.height?' · '+f.width+'×'+f.height:''))+'</option>').join('');
   };
-  const m=abreModal('<div class="mtapa"><b>Editar diseño · '+esc(e.nombre)+(pBorrador?' <span class="cotz-est">Borrador cargado</span>':'')+'</b><button type="button" data-cerrar aria-label="Cerrar">×</button></div>'
-    +'<form id="editorPlantilla" class="cont-form" style="max-height:80vh;overflow:auto;display:grid;gap:12px">'
-    +'<p class="cfgnota">Edita con una foto original real. Puedes arrastrar cualquier bloque directamente sobre la vista previa, ajustar tipografías por rol, comparar antes/después y revisar los formatos antes de activar.</p>'
-    +'<div class="fila">'
-    +'<label>Formato'+seleccion('formato',fmtInicial,[['imagen_4x5','Feed 4:5'],['imagen_9x16','Historia 9:16'],['imagen_1x1','Cuadrado 1:1'],['imagen_16x9','Horizontal 16:9']])+'</label>'
+  const tiraFotosHtml=(cat,actual)=>{
+    const lista=fotosCat(cat).slice(0,12);
+    if(!lista.length)return '<small class="cont-sub">Se cargarán las fotos originales de esta categoría al previsualizar.</small>';
+    return '<div class="estudio-fotos-strip">'
+      +'<button type="button" class="estudio-foto-thumb'+(!actual?' on':'')+'" data-ceditor-foto="">Auto</button>'
+      +lista.map((f,i)=>'<button type="button" class="estudio-foto-thumb'+(f.id===actual?' on':'')+'" data-ceditor-foto="'+esc(f.id)+'" title="'+esc(f.id)+'">'+(f.preview?'<img src="'+esc(f.preview)+'" alt="Foto '+(i+1)+'" loading="lazy">':'<span>#'+(i+1)+'</span>')+'</button>').join('')
+      +'</div>';
+  };
+  const enModulo=!!CONT._contenedorEstudio;
+  const htmlEstudio='<div class="mtapa"><b>Estudio de Flyers V7 · '+esc(e.nombre)+(pBorrador?' <span class="cotz-est">Borrador cargado</span>':'')+'</b><button type="button" data-cerrar aria-label="Cerrar">×</button></div>'
+    +'<form id="editorPlantilla" class="cont-form estudio-flyer-form">'
+    +'<header class="estudio-topbar">'
+    +'<div class="estudio-topbar-izq">'
+    +'<span class="estudio-marca-badge">🎨 Estudio de Flyers · '+esc(e.nombre)+'</span>'
+    +(pBorrador?'<span class="cotz-est">Borrador activo</span>':'')
+    +(enModulo?'<button type="button" class="btn-linea" data-ceditor-irplan="1">← Planificador</button>':'<button type="button" class="btn-linea" data-ceditor-irmodulo="1" title="Abrir en vista de módulo completo">⤢ Módulo completo</button>')
+    +'</div>'
+    +'<div class="estudio-topbar-centro">'
+    +'<div class="estudio-fmt-pills" role="group" aria-label="Formato del lienzo">'
+    +[['imagen_4x5','4:5 Feed'],['imagen_9x16','9:16 Historia'],['imagen_1x1','1:1 Cuadrado'],['imagen_16x9','16:9 Horizontal']].map(([fv,ft])=>'<button type="button" class="estudio-fmt-pill'+(fmtInicial===fv?' on':'')+'" data-ceditor-fmtpill="'+fv+'">'+ft+'</button>').join('')
+    +'</div>'
+    +'<label style="display:inline-flex;align-items:center;gap:5px;font-size:11.5px;margin:0">Formato'+seleccion('formato',fmtInicial,[['imagen_4x5','Feed 4:5'],['imagen_9x16','Historia 9:16'],['imagen_1x1','Cuadrado 1:1'],['imagen_16x9','Horizontal 16:9']])+'</label>'
+    +'<label style="display:inline-flex;align-items:center;gap:5px;font-size:11.5px;margin:0">Alcance'+seleccion('alcance_formato','todos',[['todos','Todos los formatos'],['formato','Solo este formato']])+'</label>'
+    +'</div>'
+    +'<div class="estudio-topbar-der">'
+    +'<button type="button" class="btn-linea" data-ceditor-undo="1" disabled>↶ Deshacer</button>'
+    +'<button type="button" class="btn-linea" data-ceditor-reset="1">Restablecer original</button>'
+    +'<button type="button" class="btn-linea" data-ceditor-comparar="1">Comparar antes / después</button>'
+    +'<button type="button" class="btn-linea" data-ceditor-3formatos="1">Revisar 3 formatos</button>'
+    +'<button type="button" class="btn-linea" data-ceditor-borrador="1">Guardar borrador</button>'
+    +'<button class="btn-solido" type="submit">Guardar y activar diseño</button>'
+    +(!enModulo?'<button class="btn-linea" type="button" data-cerrar>Cerrar</button>':'')
+    +'</div>'
+    +'</header>'
+    +'<input type="hidden" name="por_formato_json" value="'+esc(JSON.stringify(mapaPorFormato))+'">'
+    +'<div class="estudio-grid">'
+    +'<aside class="estudio-col-izq">'
+    +'<div>'
+    +'<div class="estudio-sec-titulo"><span>1. Plantillas V7 (10 diseños)</span><span>Activa</span></div>'
+    +'<div class="estudio-mini-plantillas">'
+    +listaPlantillasV7.map(([vid,num,nom])=>{
+      const esActiva=idReal===vid||String(idReal).endsWith(vid.slice(3));
+      return '<button type="button" class="estudio-mini-tpl'+(esActiva?' on':'')+'" data-ceditor-plantilla="'+vid+'"><span class="estudio-mini-num">'+num+'</span><span class="estudio-mini-nom">'+esc(nom)+'</span></button>';
+    }).join('')
+    +'</div>'
+    +'</div>'
+    +'<div>'
+    +'<div class="estudio-sec-titulo"><span>2. Fotografía Original</span><span>100% HD</span></div>'
+    +'<div class="estudio-grid-2">'
     +'<label>Categoría'+seleccion('categoria',catInicial,CONT_CATEGORIAS)+'</label>'
     +'<label>Foto original<select name="foto_id">'+opcionesFotos(catInicial,fotoInicial)+'</select></label>'
-    +'<label>Aplicar posición/escala a'+seleccion('alcance_formato','todos',[['todos','Todos los formatos'],['formato','Solo este formato']])+'</label>'
     +'</div>'
-    +'<div class="cont-acc" style="justify-content:space-between;flex-wrap:wrap">'
-    +'<div class="cont-acc"><button type="button" class="btn-linea" data-ceditor-undo="1" disabled>↶ Deshacer</button><button type="button" class="btn-linea" data-ceditor-reset="1">Restablecer original</button></div>'
-    +'<div class="cont-acc"><button type="button" class="btn-linea" data-ceditor-comparar="1">Comparar antes / después</button><button type="button" class="btn-linea" data-ceditor-3formatos="1">Revisar 3 formatos</button></div>'
+    +'<div id="editorFotosStrip">'+tiraFotosHtml(catInicial,fotoInicial)+'</div>'
     +'</div>'
-    +'<div id="editorPlantillaVista" style="min-height:210px;display:grid;place-items:center;background:var(--bg);border-radius:16px;padding:8px;user-select:none;touch-action:none" title="Arrastra con el ratón para mover el bloque activo"><span class="cont-sub">Preparando muestra…</span></div>'
-    +'<input type="hidden" name="por_formato_json" value="'+esc(JSON.stringify(mapaPorFormato))+'">'
-    +'<details open><summary><b>(a) Texto de muestra, marca/CTA y edición de pieza</b></summary><div style="display:grid;gap:10px;margin-top:8px">'
-    +'<div class="fila"><label>Texto de muestra · línea 1 (no reemplaza ganchos de campaña)<input name="texto_muestra_l1" maxlength="65" value="'+esc(p.texto_muestra_l1||'')+'" placeholder="Usar ejemplo de la categoría"></label><label>Subtítulo de muestra · línea 2<input name="texto_muestra_l2" maxlength="65" value="'+esc(p.texto_muestra_l2||'')+'" placeholder="Usar ejemplo de la categoría"></label><label>Copy secundario (opcional)<input name="copy_secundario" maxlength="80" value="'+esc(p.copy_secundario||'')+'" placeholder="Complemento opcional del subtítulo"></label></div>'
-    +'<div class="fila"><label>Marca / sobrelínea<input name="marca_texto" maxlength="36" value="'+esc(p.marca_texto||'')+'" placeholder="D\' CARELA COMPUFOTO"></label><label>Llamada CTA<input name="cta_texto" maxlength="36" value="'+esc(p.cta_texto||'Escríbenos')+'"></label><label>Teléfono en botón CTA'+seleccion('mostrar_whatsapp',p.mostrar_whatsapp||'si',[['si','Con WhatsApp oficial (· 849-524-5620)'],['no','Solo texto del botón CTA']])+'</label></div>'
-    +'<div class="fila"><label>Etiqueta promo / sello<input name="etiqueta_texto" maxlength="36" value="'+esc(p.etiqueta_texto||'')+'" placeholder="Ej. TEMPORADA ESCOLAR"></label><label>Mes / temporada fijo<input name="mes_texto" maxlength="32" value="'+esc(p.mes_texto||'')+'" placeholder="Vacío = mes automático"></label><label>Redes sociales<input name="redes_texto" maxlength="40" value="'+esc(p.redes_texto||'')+'" placeholder="@dcarela_compufoto"></label><label>Ubicación<input name="ubicacion_texto" maxlength="40" value="'+esc(p.ubicacion_texto||'')+'" placeholder="La Romana"></label></div>'
-    +'<div class="fila"><label>Visibilidad de marca'+seleccion('mostrar_marca',p.mostrar_marca||'visible',[['visible','Marca visible'],['oculto','Ocultar marca']])+'</label><label>Visibilidad de mes / etiqueta'+seleccion('mostrar_mes',p.mostrar_mes||'visible',[['visible','Mes/etiqueta visible'],['oculto','Ocultar mes/etiqueta']])+'</label><label>Visibilidad de ubicación / redes'+seleccion('mostrar_contactos',p.mostrar_contactos||'visible',[['visible','Ubicación/redes visible'],['oculto','Ocultar ubicación/redes']])+'</label></div>'
-    +'<div class="fila" style="align-items:end"><label>Editar texto de una pieza desde aquí<select name="pieza_id"><option value="">(Solo editar la plantilla)</option>'+piezasEditables.map(x=>'<option value="'+esc(x.id)+'"'+(x.id===piezaInicial?.id?' selected':'')+'>'+esc((x.fecha||'')+' · '+(x.titular?.l1||x.gancho||x.id).slice(0,38))+'</option>').join('')+'</select></label>'
+    +'<div>'
+    +'<div class="estudio-sec-titulo"><span>3. Capas de Texto y Diseño</span><span>Clic para editar</span></div>'
+    +'<div class="estudio-capas-lista">'
+    +[['titulo','🔤','Titular principal (Línea 1)','Tamaño, fuente, color y posición'],
+      ['subtitulo','📝','Subtítulo / Remate (Línea 2)','Fuente secundaria, escala y color'],
+      ['cta','🔘','Botón CTA y WhatsApp','Texto, teléfono, escala y estilo'],
+      ['marca','🏷️','Firma D\' Carela · La Romana','Siempre visible arriba · escala y color'],
+      ['periodo','📅','Etiqueta / Mes y Pie','Temporada, redes y ubicación']].map(([blk,icoTxt,tit,sub],idx)=>
+      '<button type="button" class="estudio-capa-item'+(idx===0?' on':'')+'" data-ceditor-capa="'+blk+'">'
+      +'<span class="estudio-capa-izq"><span class="estudio-capa-ico">'+icoTxt+'</span><span><b style="display:block;font-size:12px">'+tit+'</b><small style="font-size:10.5px;color:var(--mut);font-weight:500">'+sub+'</small></span></span>'
+      +'<span style="font-size:11px;color:var(--mut)">Editar →</span></button>'
+    ).join('')
+    +'</div>'
+    +'</div>'
+    +'</aside>'
+    +'<section class="estudio-col-centro">'
+    +'<div class="estudio-quickbar" aria-label="Barra rápida de formato del texto seleccionado">'
+    +'<span class="estudio-quick-grupo"><b id="editorCapaActivaTxt" style="color:var(--ok)">Capa: Titular principal</b></span>'
+    +'<div class="estudio-quick-grupo" title="Tamaño de la capa seleccionada">'
+    +'<span>Tamaño:</span>'
+    +'<button type="button" class="estudio-quick-btn" data-ceditor-qsize="-0.05">A−</button>'
+    +'<strong id="editorQuickSizeBadge" style="min-width:40px;text-align:center">100%</strong>'
+    +'<button type="button" class="estudio-quick-btn" data-ceditor-qsize="0.05">A+</button>'
+    +'<button type="button" class="estudio-quick-btn" data-ceditor-qsize="reset">100%</button>'
+    +'</div>'
+    +'<div class="estudio-quick-grupo" title="Alineación de la capa seleccionada">'
+    +'<span>Alinear:</span>'
+    +'<button type="button" class="estudio-quick-btn" data-ceditor-qalign="start" title="Alinear a la izquierda">⬅ Izq</button>'
+    +'<button type="button" class="estudio-quick-btn" data-ceditor-qalign="middle" title="Centrar texto">↔ Centro</button>'
+    +'<button type="button" class="estudio-quick-btn" data-ceditor-qalign="end" title="Alinear a la derecha">➡ Der</button>'
+    +'</div>'
+    +'<div class="estudio-quick-grupo" title="Mayúsculas o minúsculas de la capa activa">'
+    +'<button type="button" class="estudio-quick-btn" data-ceditor-qcase="si" title="Todo en MAYÚSCULAS">AA Mayús</button>'
+    +'<button type="button" class="estudio-quick-btn" data-ceditor-qcase="no" title="Tipo oración (Normal)">Aa Normal</button>'
+    +'</div>'
+    +'<div class="estudio-quick-grupo">'
+    +'<button type="button" class="estudio-quick-btn" data-ceditor-qcenter="1" title="Devolver este bloque a su posición original (0,0)">⌖ Centrar posición</button>'
+    +'</div>'
+    +'</div>'
+    +'<div class="estudio-lienzo-wrap">'
+    +'<div id="editorPlantillaVista" class="estudio-vista-stage" title="Arrastra con el ratón para mover el bloque activo"><span class="cont-sub">Preparando muestra en alta resolución…</span></div>'
+    +'</div>'
+    +'<footer class="estudio-canvas-pie">'
+    +'<span id="editorCoordTxt">Arrastra sobre la imagen para mover la capa activa · Desplazamiento X: 0% · Y: 0%</span>'
+    +'<span>✓ Rostros protegidos · ✓ Firma D\' Carela Compufoto / La Romana activa</span>'
+    +'</footer>'
+    +'</section>'
+    +'<aside class="estudio-col-der">'
+    +'<nav class="estudio-insp-tabs" aria-label="Secciones del inspector">'
+    +'<button type="button" class="estudio-insp-tab on" data-ceditor-tab="todo">Todo</button>'
+    +'<button type="button" class="estudio-insp-tab" data-ceditor-tab="a">✏️ Textos</button>'
+    +'<button type="button" class="estudio-insp-tab" data-ceditor-tab="b">🔤 Formato</button>'
+    +'<button type="button" class="estudio-insp-tab" data-ceditor-tab="c">📐 Posición</button>'
+    +'</nav>'
+    +'<details open class="estudio-sec-panel" data-ceditor-sec="a"><summary><b>(a) Texto de muestra, marca/CTA y edición de pieza</b><span>▾</span></summary><div style="display:grid;gap:10px;margin-top:8px">'
+    +'<div class="estudio-bloque-card"><div class="estudio-bloque-cab"><span>🔤 Titular y Subtítulo del Flyer</span><span class="cont-sub">Textos en lienzo</span></div>'
+    +'<label>Titular principal · línea 1<input name="texto_muestra_l1" maxlength="65" value="'+esc(p.texto_muestra_l1||'')+'" placeholder="Escribe el titular o deja vacío para ejemplo"></label>'
+    +'<label>Subtítulo / remate · línea 2<input name="texto_muestra_l2" maxlength="65" value="'+esc(p.texto_muestra_l2||'')+'" placeholder="Escribe el subtítulo o deja vacío para ejemplo"></label>'
+    +'<label>Copy secundario adicional (opcional)<input name="copy_secundario" maxlength="80" value="'+esc(p.copy_secundario||'')+'" placeholder="Línea extra debajo del subtítulo"></label>'
+    +'</div>'
+    +'<div class="estudio-bloque-card"><div class="estudio-bloque-cab"><span>🏷️ Firma del Negocio (Arriba)</span><span class="cont-sub">D\' Carela · La Romana</span></div>'
+    +'<div class="estudio-grid-2">'
+    +'<label>Nombre del estudio<input name="marca_texto" maxlength="36" value="'+esc(p.marca_texto||'')+'" placeholder="D\' Carela Compufoto"></label>'
+    +'<label>Ciudad / Ubicación<input name="ubicacion_texto" maxlength="40" value="'+esc(p.ubicacion_texto||'')+'" placeholder="La Romana"></label>'
+    +'</div>'
+    +'<label>Visibilidad de marca'+seleccion('mostrar_marca',p.mostrar_marca||'visible',[['visible','Marca siempre visible (D\' Carela Compufoto / La Romana)'],['oculto','Ocultar marca']])+'</label>'
+    +'</div>'
+    +'<div class="estudio-bloque-card"><div class="estudio-bloque-cab"><span>🔘 Botón de Llamada (CTA)</span><span class="cont-sub">Acción y WhatsApp</span></div>'
+    +'<div class="estudio-grid-2">'
+    +'<label>Texto del botón CTA<input name="cta_texto" maxlength="36" value="'+esc(p.cta_texto||'Escríbenos')+'"></label>'
+    +'<label>Teléfono en botón CTA'+seleccion('mostrar_whatsapp',p.mostrar_whatsapp||'si',[['si','Con WhatsApp (· 849-524-5620)'],['no','Solo texto del botón CTA']])+'</label>'
+    +'</div></div>'
+    +'<div class="estudio-bloque-card"><div class="estudio-bloque-cab"><span>📅 Etiqueta, Temporada y Redes</span></div>'
+    +'<div class="estudio-grid-2">'
+    +'<label>Etiqueta / sello superior<input name="etiqueta_texto" maxlength="36" value="'+esc(p.etiqueta_texto||'')+'" placeholder="Ej. TEMPORADA ESCOLAR"></label>'
+    +'<label>Mes / temporada fijo<input name="mes_texto" maxlength="32" value="'+esc(p.mes_texto||'')+'" placeholder="Vacío = automático"></label>'
+    +'</div>'
+    +'<div class="estudio-grid-3">'
+    +'<label>Redes sociales<input name="redes_texto" maxlength="40" value="'+esc(p.redes_texto||'')+'" placeholder="@dcarela_compufoto"></label>'
+    +'<label>Visibilidad mes'+seleccion('mostrar_mes',p.mostrar_mes||'visible',[['visible','Visible'],['oculto','Oculto']])+'</label>'
+    +'<label>Visibilidad redes'+seleccion('mostrar_contactos',p.mostrar_contactos||'visible',[['visible','Visible'],['oculto','Oculto']])+'</label>'
+    +'</div></div>'
+    +'<div class="estudio-bloque-card"><div class="estudio-bloque-cab"><span>📌 Editar pieza creada del calendario</span></div>'
+    +'<div class="estudio-grid-2" style="align-items:end"><label>Elegir pieza<select name="pieza_id"><option value="">(Solo editar la plantilla)</option>'+piezasEditables.map(x=>'<option value="'+esc(x.id)+'"'+(x.id===piezaInicial?.id?' selected':'')+'>'+esc((x.fecha||'')+' · '+(x.titular?.l1||x.gancho||x.id).slice(0,38))+'</option>').join('')+'</select></label>'
     +'<button type="button" class="btn-linea" data-ceditor-guardapieza="1"'+(piezaInicial?'':' disabled')+'>Guardar texto en la pieza</button></div>'
-    +'<div id="editorPiezaCampos" style="display:'+(piezaInicial?'grid':'none')+';gap:8px"><div class="fila"><label>Titular de la pieza · línea 1<input name="pieza_l1" maxlength="65" value="'+esc(piezaInicial?.titular?.l1||'')+'"></label><label>Línea 2 / remate<input name="pieza_l2" maxlength="40" value="'+esc(piezaInicial?.titular?.l2||'')+'"></label></div><label>Leyenda de la publicación<textarea name="pieza_texto" rows="2" maxlength="3000">'+esc(piezaInicial?.texto||'')+'</textarea></label></div>'
+    +'<div id="editorPiezaCampos" style="display:'+(piezaInicial?'grid':'none')+';gap:8px"><div class="estudio-grid-2"><label>Titular de la pieza · línea 1<input name="pieza_l1" maxlength="65" value="'+esc(piezaInicial?.titular?.l1||'')+'"></label><label>Línea 2 / remate<input name="pieza_l2" maxlength="40" value="'+esc(piezaInicial?.titular?.l2||'')+'"></label></div><label>Leyenda de la publicación<textarea name="pieza_texto" rows="2" maxlength="3000">'+esc(piezaInicial?.texto||'')+'</textarea></label></div>'
+    +'</div>'
     +'</div></details>'
-    +'<details open><summary><b>(b) Tipografía comercial, peso, tamaño, interlineado y color</b></summary><div style="display:grid;gap:10px;margin-top:8px">'
-    +'<div class="fila"><label>Fuente del titular'+seleccion('tipografia',p.tipografia||'editorial',[['editorial','De la plantilla (Playfair / Sans)'],['playfair','Playfair Display · Serif editorial V7'],['amandine','Amandine · Serif D\' Carela'],['clasica','Marcellus · Serif clásica'],['moderna','Poppins · Sans geométrica'],['spartan','League Spartan · Sans display'],['inter','Inter · Sans limpia']])+'</label>'
-    +'<label>Fuente del subtítulo'+seleccion('tipografia_subtitulo',p.tipografia_subtitulo||'original',[['original','De la plantilla (Inter / Playfair)'],['inter','Inter · Sans limpia'],['moderna','Poppins · Sans geométrica'],['playfair','Playfair Display · Serif editorial'],['amandine','Amandine · Serif D\' Carela'],['clasica','Marcellus · Serif clásica'],['spartan','League Spartan · Sans display']])+'</label>'
-    +'<label>Fuente del botón CTA'+seleccion('tipografia_cta',p.tipografia_cta||'original',[['original','De la plantilla'],['inter','Inter'],['moderna','Poppins'],['spartan','League Spartan']])+'</label></div>'
-    +'<div class="fila"><label>Peso del titular'+seleccion('peso_titulo',String(p.peso_titulo||'original'),[['original','De la plantilla (700)'],['300','Ligero · 300'],['400','Regular · 400'],['500','Medio · 500'],['600','Seminegrita · 600'],['700','Negrita · 700'],['800','ExtraBold · 800'],['900','Black · 900']])+'</label>'
-    +'<label>Peso del subtítulo'+seleccion('peso_subtitulo',String(p.peso_subtitulo||'original'),[['original','De la plantilla (400)'],['300','Ligero · 300'],['400','Regular · 400'],['500','Medio · 500'],['600','Seminegrita · 600'],['700','Negrita · 700'],['800','ExtraBold · 800']])+'</label>'
-    +'<label>Interlineado titular'+seleccion('interlineado',String(p.interlineado||0),[['0','De la plantilla (1.04)'],['0.95','Compacto · 0.95'],['1.04','Editorial · 1.04'],['1.15','Cómodo · 1.15'],['1.28','Aireado · 1.28']])+'</label>'
-    +'<label>Interlineado subtítulo'+seleccion('interlineado_subtitulo',String(p.interlineado_subtitulo||0),[['0','De la plantilla (1.18)'],['1.08','Compacto · 1.08'],['1.18','Editorial · 1.18'],['1.28','Cómodo · 1.28'],['1.4','Aireado · 1.40']])+'</label></div>'
-    +'<div class="fila"><label>Tracking titular'+seleccion('tracking_titulo',String(p.tracking_titulo||'original'),[['original','De la plantilla'],['-0.03','Cerrado (-0.03)'],['0','Normal (0)'],['0.04','Abierto (+0.04)'],['0.08','Editorial (+0.08)']])+'</label>'
-    +'<label>Tracking CTA'+seleccion('tracking_cta',String(p.tracking_cta||'original'),[['original','De la plantilla'],['0.06','Suave (+0.06)'],['0.1','Medio (+0.10)'],['0.14','Editorial (+0.14)'],['0.2','Amplio (+0.20)']])+'</label>'
-    +'<label>Caja del titular'+seleccion('mayusculas_titulo',p.mayusculas_titulo||'original',[['original','De la plantilla'],['si','MAYÚSCULAS'],['no','Tipo oración']])+'</label>'
-    +'<label>Caja del subtítulo'+seleccion('mayusculas_subtitulo',p.mayusculas_subtitulo||'original',[['original','De la plantilla (Tipo oración)'],['no','Tipo oración'],['si','MAYÚSCULAS']])+'</label></div>'
-    +'<div class="fila"><label>Tamaño del titular'+seleccion('escala_titulo',String(p.escala_titulo||1),[['0.8','Más pequeño (80%)'],['0.9','Un poco menor (90%)'],['1','Original (100%)'],['1.1','Un poco mayor (110%)'],['1.2','Más grande (120%)'],['1.3','Máximo seguro (130%)']])+'</label>'
-    +'<label>Tamaño del subtítulo'+seleccion('escala_subtitulo',String(p.escala_subtitulo||1),[['0.8','Más pequeño (80%)'],['0.9','Un poco menor (90%)'],['1','Original (100%)'],['1.1','Un poco mayor (110%)'],['1.2','Más grande (120%)'],['1.3','Máximo seguro (130%)']])+'</label>'
-    +'<label>Tamaño del botón CTA'+seleccion('escala_cta',String(p.escala_cta||1),[['0.85','Compacto (85%)'],['1','Original (100%)'],['1.15','Grande (115%)'],['1.25','Destacado (125%)']])+'</label></div>'
-    +'<div class="fila"><label>Color de acento<input type="color" name="acento" value="'+esc(p.acento||e.acento||'#FFFFFF')+'"></label>'
-    +'<label>Color de letra principal<input type="color" name="texto" value="'+esc(p.texto||e.texto||'#FFFFFF')+'"></label>'
-    +'<label>Color subtítulo (opcional)<input type="text" name="color_subtitulo" maxlength="7" placeholder="#RRGGBB (vacío = igual)" value="'+esc(p.color_subtitulo||'')+'"></label></div>'
+    +'<details open class="estudio-sec-panel" data-ceditor-sec="b"><summary><b>(b) Tipografía comercial, peso, tamaño, interlineado y color</b><span>▾</span></summary><div style="display:grid;gap:10px;margin-top:8px">'
+    +'<div class="estudio-bloque-card" data-ceditor-card="titulo"><div class="estudio-bloque-cab"><span>🔤 Formato del Titular Principal (Línea 1)</span></div>'
+    +controlTamano('escala_titulo','Tamaño del titular',p.escala_titulo||1,0.6,1.6)
+    +'<div class="estudio-grid-2">'
+    +'<label>Fuente del titular'+seleccion('tipografia',p.tipografia||'editorial',[['editorial','De la plantilla (Playfair / Sans)'],['playfair','Playfair Display · Serif editorial V7'],['amandine','Amandine · Serif D\' Carela'],['clasica','Marcellus · Serif clásica'],['jakarta','Plus Jakarta Sans · Editorial'],['dm-serif','DM Serif Display · Impacto'],['bodoni','Bodoni Moda · Alta costura'],['moderna','Poppins · Sans geométrica'],['spartan','League Spartan · Sans display'],['inter','Inter · Sans limpia']])+'</label>'
+    +'<label>Peso / grosor titular'+seleccion('peso_titulo',String(p.peso_titulo||'original'),[['original','De la plantilla (700)'],['300','Ligero · 300'],['400','Regular · 400'],['500','Medio · 500'],['600','Seminegrita · 600'],['700','Negrita · 700'],['800','ExtraBold · 800'],['900','Black · 900']])+'</label>'
+    +'</div>'
+    +'<div class="estudio-grid-3">'
+    +'<label>Caja titular'+seleccion('mayusculas_titulo',p.mayusculas_titulo||'original',[['original','De la plantilla'],['si','MAYÚSCULAS (AA)'],['no','Tipo oración (Aa)']])+'</label>'
+    +'<label>Interlineado'+seleccion('interlineado',String(p.interlineado||0),[['0','De la plantilla'],['0.9','Muy compacto · 0.90'],['0.95','Compacto · 0.95'],['1.04','Editorial · 1.04'],['1.15','Cómodo · 1.15'],['1.28','Aireado · 1.28'],['1.4','Amplio · 1.40']])+'</label>'
+    +'<label>Espaciado letras'+seleccion('tracking_titulo',String(p.tracking_titulo||'original'),[['original','De la plantilla'],['-0.05','Muy cerrado (-0.05)'],['-0.03','Cerrado (-0.03)'],['0','Normal (0)'],['0.04','Abierto (+0.04)'],['0.08','Editorial (+0.08)'],['0.14','Amplio (+0.14)']])+'</label>'
+    +'</div></div>'
+    +'<div class="estudio-bloque-card" data-ceditor-card="subtitulo"><div class="estudio-bloque-cab"><span>📝 Formato del Subtítulo (Línea 2)</span></div>'
+    +controlTamano('escala_subtitulo','Tamaño del subtítulo',p.escala_subtitulo||1,0.6,1.6)
+    +'<div class="estudio-grid-2">'
+    +'<label>Fuente del subtítulo'+seleccion('tipografia_subtitulo',p.tipografia_subtitulo||'original',[['original','De la plantilla (Inter / Playfair)'],['inter','Inter · Sans limpia'],['jakarta','Plus Jakarta Sans · Editorial'],['moderna','Poppins · Sans geométrica'],['playfair','Playfair Display · Serif editorial'],['dm-serif','DM Serif Display'],['bodoni','Bodoni Moda'],['amandine','Amandine · Serif D\' Carela'],['clasica','Marcellus · Serif clásica'],['spartan','League Spartan · Sans display']])+'</label>'
+    +'<label>Peso / grosor subtítulo'+seleccion('peso_subtitulo',String(p.peso_subtitulo||'original'),[['original','De la plantilla (400)'],['300','Ligero · 300'],['400','Regular · 400'],['500','Medio · 500'],['600','Seminegrita · 600'],['700','Negrita · 700'],['800','ExtraBold · 800']])+'</label>'
+    +'</div>'
+    +'<div class="estudio-grid-2">'
+    +'<label>Caja del subtítulo'+seleccion('mayusculas_subtitulo',p.mayusculas_subtitulo||'original',[['original','De la plantilla (Tipo oración)'],['no','Tipo oración (Aa)'],['si','MAYÚSCULAS (AA)']])+'</label>'
+    +'<label>Interlineado subtítulo'+seleccion('interlineado_subtitulo',String(p.interlineado_subtitulo||0),[['0','De la plantilla (1.18)'],['0.95','Compacto · 0.95'],['1.08','Ajustado · 1.08'],['1.18','Editorial · 1.18'],['1.28','Cómodo · 1.28'],['1.4','Aireado · 1.40']])+'</label>'
+    +'</div></div>'
+    +'<div class="estudio-bloque-card" data-ceditor-card="cta"><div class="estudio-bloque-cab"><span>🔘 Formato del Botón CTA y Firma</span></div>'
+    +controlTamano('escala_cta','Tamaño del botón CTA',p.escala_cta||1,0.65,1.5)
+    +'<div class="estudio-grid-3">'
+    +'<label>Fuente CTA'+seleccion('tipografia_cta',p.tipografia_cta||'original',[['original','De la plantilla'],['inter','Inter'],['jakarta','Plus Jakarta Sans'],['moderna','Poppins'],['spartan','League Spartan'],['playfair','Playfair Display']])+'</label>'
+    +'<label>Caja CTA'+seleccion('mayusculas_cta',p.mayusculas_cta||'original',[['original','De la plantilla'],['si','MAYÚSCULAS'],['no','Tipo oración']])+'</label>'
+    +'<label>Tracking CTA'+seleccion('tracking_cta',String(p.tracking_cta||'original'),[['original','De la plantilla'],['0','Normal (0)'],['0.06','Suave (+0.06)'],['0.1','Medio (+0.10)'],['0.14','Editorial (+0.14)'],['0.2','Amplio (+0.20)']])+'</label>'
+    +'</div>'
+    +controlTamano('escala_marca','Tamaño de la firma (D\' Carela)',p.escala_marca||1,0.6,1.6)
+    +'</div>'
+    +'<div class="estudio-bloque-card"><div class="estudio-bloque-cab"><span>🎨 Colores de Textos y Acento</span></div>'
+    +'<div class="estudio-grid-2">'
+    +'<label>Color de letra principal<div class="estudio-color-row"><input type="color" name="texto" value="'+esc(p.texto||e.texto||'#FFFFFF')+'"><span class="cont-sub">Titular</span></div></label>'
+    +'<label>Color de acento / botón<div class="estudio-color-row"><input type="color" name="acento" value="'+esc(p.acento||e.acento||'#FFFFFF')+'"><span class="cont-sub">Acento</span></div></label>'
+    +'</div>'
+    +'<div class="estudio-grid-2">'
+    +'<label>Color subtítulo (opcional)<input type="text" name="color_subtitulo" maxlength="7" placeholder="#RRGGBB (vacío = automático)" value="'+esc(p.color_subtitulo||'')+'"></label>'
+    +'<label>Color firma (opcional)<input type="text" name="color_marca" maxlength="7" placeholder="#RRGGBB (vacío = automático)" value="'+esc(p.color_marca||'')+'"></label>'
+    +'</div>'
+    +'<div class="estudio-swatches">'
+    +['#FFFFFF','#FFFDF9','#171724','#123A63','#C62839','#DC2547','#F39A27','#69B6FF','#D4A574'].map(col=>'<button type="button" class="estudio-swatch" style="background:'+col+'" data-ceditor-swatch="'+col+'" title="Usar '+col+' en titular"></button>').join('')
+    +'</div></div>'
     +'</div></details>'
-    +'<details open><summary><b>(c) Orientación, alineación, posición por bloque, márgenes y orden</b></summary><div style="display:grid;gap:10px;margin-top:8px">'
-    +'<div class="fila"><label>Alineación titular'+seleccion('alineacion',p.alineacion||'original',[['original','De la plantilla'],['start','Izquierda'],['middle','Centro'],['end','Derecha']])+'</label>'
-    +'<label>Alineación subtítulo'+seleccion('alineacion_subtitulo',p.alineacion_subtitulo||'original',[['original','Igual que el titular'],['start','Izquierda'],['middle','Centro'],['end','Derecha']])+'</label>'
-    +'<label>Alineación CTA'+seleccion('alineacion_cta',p.alineacion_cta||'original',[['original','De la plantilla'],['start','Izquierda'],['middle','Centro'],['end','Derecha']])+'</label>'
-    +'<label>Giro / orientación'+seleccion('giro_titulo',String(p.giro_titulo||0),[['0','Horizontal (0°)'],['-6','Diagonal arriba (-6°)'],['-3','Suave arriba (-3°)'],['3','Suave abajo (+3°)'],['6','Diagonal abajo (+6°)']])+'</label></div>'
-    +'<div class="fila"><label>Margen seguro'+seleccion('margen',String(p.margen||0),[['0','De la plantilla'],['4','Amplio · 4%'],['6','Seguro · 6%'],['8','Editorial · 8%'],['10','Compacto · 10%']])+'</label>'
-    +'<label>Orden de lectura'+seleccion('orden_lectura',p.orden_lectura||'original',[['original','Original de la plantilla'],['marca_titulo_cta','Marca → Titular → Llamada'],['titulo_marca_cta','Titular → Marca → Llamada'],['titulo_cta_marca','Titular → Llamada → Marca']])+'</label>'
-    +'<label>Arrastrar en vista previa'+seleccion('bloque_arrastre','titulo',[['titulo','Mover bloque del titular'],['subtitulo','Mover subtítulo (línea 2)'],['cta','Mover botón CTA'],['marca','Mover marca / sobrelínea'],['periodo','Mover sello de mes / etiqueta']])+'</label></div>'
-    +'<div class="fila">'
+    +'<details open class="estudio-sec-panel" data-ceditor-sec="c"><summary><b>(c) Orientación, alineación, posición por bloque, márgenes y orden</b><span>▾</span></summary><div style="display:grid;gap:10px;margin-top:8px">'
+    +'<div class="estudio-bloque-card"><div class="estudio-bloque-cab"><span>↔️ Alineación y Orientación por Bloque</span></div>'
+    +'<div class="estudio-grid-2">'
+    +'<label>Alineación titular'+seleccion('alineacion',p.alineacion||'original',[['original','De la plantilla'],['start','⬅ Izquierda'],['middle','↔ Centro'],['end','➡ Derecha']])+'</label>'
+    +'<label>Alineación subtítulo'+seleccion('alineacion_subtitulo',p.alineacion_subtitulo||'original',[['original','Igual que el titular'],['start','⬅ Izquierda'],['middle','↔ Centro'],['end','➡ Derecha']])+'</label>'
+    +'</div>'
+    +'<div class="estudio-grid-3">'
+    +'<label>Alineación CTA'+seleccion('alineacion_cta',p.alineacion_cta||'original',[['original','De la plantilla'],['start','⬅ Izquierda'],['middle','↔ Centro'],['end','➡ Derecha']])+'</label>'
+    +'<label>Alineación firma'+seleccion('alineacion_marca',p.alineacion_marca||'original',[['original','De la plantilla'],['start','⬅ Izquierda'],['middle','↔ Centro'],['end','➡ Derecha']])+'</label>'
+    +'<label>Giro titular'+seleccion('giro_titulo',String(p.giro_titulo||0),[['0','Horizontal (0°)'],['-6','Diagonal (-6°)'],['-3','Suave (-3°)'],['3','Suave (+3°)'],['6','Diagonal (+6°)']])+'</label>'
+    +'</div></div>'
+    +'<div class="estudio-bloque-card"><div class="estudio-bloque-cab"><span>📐 Posición Exacta X / Y (-25% a +25%)</span></div>'
+    +'<div class="estudio-grid-3">'
+    +'<label>Arrastrar en lienzo'+seleccion('bloque_arrastre','titulo',[['titulo','Titular (Línea 1)'],['subtitulo','Subtítulo (Línea 2)'],['cta','Botón CTA'],['marca','Firma D\' Carela'],['periodo','Mes / etiqueta']])+'</label>'
+    +'<label>Margen seguro'+seleccion('margen',String(p.margen||0),[['0','De la plantilla'],['4','Amplio · 4%'],['6','Seguro · 6%'],['8','Editorial · 8%'],['10','Compacto · 10%']])+'</label>'
+    +'<label>Orden de lectura'+seleccion('orden_lectura',p.orden_lectura||'original',[['original','Original'],['marca_titulo_cta','Firma → Titular → CTA'],['titulo_marca_cta','Titular → Firma → CTA'],['titulo_cta_marca','Titular → CTA → Firma']])+'</label>'
+    +'</div>'
+    +'<div class="estudio-grid-2">'
     +'<label>Titular X (%)<input type="number" name="dx_titulo" min="-25" max="25" step="1" value="'+esc(String(p.dx_titulo||0))+'"></label>'
     +'<label>Titular Y (%)<input type="number" name="dy_titulo" min="-25" max="25" step="1" value="'+esc(String(p.dy_titulo||0))+'"></label>'
     +'<label>Subtítulo X (%)<input type="number" name="dx_subtitulo" min="-25" max="25" step="1" value="'+esc(String(p.dx_subtitulo||0))+'"></label>'
     +'<label>Subtítulo Y (%)<input type="number" name="dy_subtitulo" min="-25" max="25" step="1" value="'+esc(String(p.dy_subtitulo||0))+'"></label>'
     +'<label>CTA X (%)<input type="number" name="dx_cta" min="-25" max="25" step="1" value="'+esc(String(p.dx_cta||0))+'"></label>'
-    +'<label>CTA Y (%)<input type="number" name="dy_cta" min="-25" max="25" step="1" value="'+esc(String(p.dy_cta||0))+'"></label></div>'
-    +'<div class="fila">'
+    +'<label>CTA Y (%)<input type="number" name="dy_cta" min="-25" max="25" step="1" value="'+esc(String(p.dy_cta||0))+'"></label>'
     +'<label>Marca X (%)<input type="number" name="dx_marca" min="-25" max="25" step="1" value="'+esc(String(p.dx_marca||0))+'"></label>'
     +'<label>Marca Y (%)<input type="number" name="dy_marca" min="-25" max="25" step="1" value="'+esc(String(p.dy_marca||0))+'"></label>'
     +'<label>Mes/etiqueta X (%)<input type="number" name="dx_periodo" min="-25" max="25" step="1" value="'+esc(String(p.dx_periodo||0))+'"></label>'
-    +'<label>Mes/etiqueta Y (%)<input type="number" name="dy_periodo" min="-25" max="25" step="1" value="'+esc(String(p.dy_periodo||0))+'"></label></div>'
+    +'<label>Mes/etiqueta Y (%)<input type="number" name="dy_periodo" min="-25" max="25" step="1" value="'+esc(String(p.dy_periodo||0))+'"></label>'
+    +'</div></div>'
     +'</div></details>'
-    +'<details><summary><b>(d) Velo, sombra, fondo de tarjeta y efectos de legibilidad</b></summary><div style="display:grid;gap:10px;margin-top:8px">'
-    +'<div class="fila"><label>Intensidad del velo'+seleccion('efecto',p.efecto||'original',[['original','Original'],['suave','Suave'],['intenso','Intenso'],['ninguno','Mínimo legible']])+'</label>'
+    +'<details open class="estudio-sec-panel" data-ceditor-sec="d"><summary><b>(d) Velo, sombra, fondo de tarjeta y efectos de legibilidad</b><span>▾</span></summary><div style="display:grid;gap:10px;margin-top:8px">'
+    +'<div class="estudio-bloque-card">'
+    +'<div class="estudio-grid-2">'
+    +'<label>Intensidad del velo'+seleccion('efecto',p.efecto||'original',[['original','Original (automático del color de la foto)'],['suave','Suave'],['intenso','Intenso'],['ninguno','Mínimo legible']])+'</label>'
     +'<label>Sombra de lectura'+seleccion('sombra',p.sombra||'original',[['original','De la plantilla'],['encendida','Encendida'],['apagada','Apagada']])+'</label>'
-    +'<label>Color de banda/tarjeta<input type="text" name="color_panel" maxlength="7" placeholder="#RRGGBB (vacío = original)" value="'+esc(p.color_panel||'')+'"></label>'
-    +'<label>Opacidad de tarjeta/banda'+seleccion('opacidad_panel',String(p.opacidad_panel||0),[['0','De la plantilla'],['0.45','Translúcido · 45%'],['0.7','Medio · 70%'],['0.88','Sólido · 88%']])+'</label></div>'
+    +'</div>'
+    +'<div class="estudio-grid-2">'
+    +'<label>Color de banda/tarjeta<input type="text" name="color_panel" maxlength="7" placeholder="#RRGGBB (vacío = dominante de la foto)" value="'+esc(p.color_panel||'')+'"></label>'
+    +'<label>Opacidad de tarjeta/banda'+seleccion('opacidad_panel',String(p.opacidad_panel||0),[['0','De la plantilla'],['0.45','Translúcido · 45%'],['0.7','Medio · 70%'],['0.88','Sólido · 88%']])+'</label>'
+    +'</div></div>'
     +'</div></details>'
-    +'<p class="cfgnota">El motor protege rostros y el sello de D\' Carela; si una posición invade el rostro o pierde contraste, la muestra avisa o recoloca dentro del margen seguro.</p>'
-    +'<div class="cont-acc"><button class="btn-solido" type="submit">Guardar y activar diseño</button><button class="btn-linea" type="button" data-ceditor-borrador="1">Guardar borrador</button><button class="btn-linea" type="button" data-cerrar>Cancelar</button></div></form>');
+    +'</aside>'
+    +'</div></form>';
+  let m;
+  if(enModulo){
+    m=CONT._contenedorEstudio;
+    m.classList?.add?.('on');
+    m.innerHTML='<div class="caja estudio-caja-modulo" style="display:flex;flex-direction:column;flex:1;min-height:0;height:100%">'+htmlEstudio+'</div>';
+  }else{
+    m=abreModal(htmlEstudio);
+    m.classList?.add?.('modal-estudio');
+  }
   const f=m.querySelector('#editorPlantilla'),vista=m.querySelector('#editorPlantillaVista'),btnUndo=m.querySelector('[data-ceditor-undo]'),btnComp=m.querySelector('[data-ceditor-comparar]');
   let turno=0,temporizador=null,comparar=false,historial=[],ultimoEstado=null;
-  const CLAVES_FORMATO=['tipografia','tipografia_subtitulo','tipografia_cta','peso_titulo','peso_subtitulo','interlineado','interlineado_subtitulo','tracking_titulo','tracking_cta','mayusculas_titulo','mayusculas_subtitulo','escala_titulo','escala_subtitulo','escala_cta','alineacion','alineacion_subtitulo','alineacion_cta','giro_titulo','dx_titulo','dy_titulo','dx_subtitulo','dy_subtitulo','dx_cta','dy_cta','dx_marca','dy_marca','dx_periodo','dy_periodo','margen','orden_lectura','efecto','sombra','opacidad_panel'];
+  const CLAVES_FORMATO=['tipografia','tipografia_subtitulo','tipografia_cta','peso_titulo','peso_subtitulo','interlineado','interlineado_subtitulo','tracking_titulo','tracking_cta','mayusculas_titulo','mayusculas_subtitulo','mayusculas_cta','escala_titulo','escala_subtitulo','escala_cta','escala_marca','alineacion','alineacion_subtitulo','alineacion_cta','alineacion_marca','giro_titulo','dx_titulo','dy_titulo','dx_subtitulo','dy_subtitulo','dx_cta','dy_cta','dx_marca','dy_marca','dx_periodo','dy_periodo','margen','orden_lectura','efecto','sombra','opacidad_panel'];
   const fmtClave=v=>({imagen_4x5:'4:5',imagen_9x16:'9:16',imagen_1x1:'1:1',imagen_16x9:'16:9'}[v]||'4:5');
+  const mapaEscalaDeCapa={titulo:'escala_titulo',subtitulo:'escala_subtitulo',cta:'escala_cta',marca:'escala_marca',periodo:'escala_marca'};
+  const mapaAlinDeCapa={titulo:'alineacion',subtitulo:'alineacion_subtitulo',cta:'alineacion_cta',marca:'alineacion_marca',periodo:'alineacion'};
+  const mapaMayusDeCapa={titulo:'mayusculas_titulo',subtitulo:'mayusculas_subtitulo',cta:'mayusculas_cta',marca:'mayusculas_titulo',periodo:'mayusculas_titulo'};
+  const nombresCapa={titulo:'Titular principal',subtitulo:'Subtítulo (Línea 2)',cta:'Botón CTA',marca:'Firma D\' Carela',periodo:'Etiqueta / Mes'};
+  const sincronizaUIEstudio=()=>{
+    const capaAct=f.elements?.bloque_arrastre?.value||'titulo';
+    const elTxt=m.querySelector?.('#editorCapaActivaTxt');
+    if(elTxt)elTxt.textContent='Capa: '+(nombresCapa[capaAct]||'Titular');
+    const campoEsc=mapaEscalaDeCapa[capaAct]||'escala_titulo';
+    const valEsc=Number(f.elements?.[campoEsc]?.value||1)||1;
+    const elQBadge=m.querySelector?.('#editorQuickSizeBadge');
+    if(elQBadge)elQBadge.textContent=Math.round(valEsc*100)+'%';
+    for(const k of ['escala_titulo','escala_subtitulo','escala_cta','escala_marca']){
+      const v=Number(f.elements?.[k]?.value||1)||1;
+      const rng=m.querySelector?.('[data-ceditor-range="'+k+'"]');
+      if(rng)rng.value=String(v);
+      const bdg=m.querySelector?.('[data-ceditor-pct="'+k+'"]');
+      if(bdg)bdg.textContent=Math.round(v*100)+'%';
+    }
+    const dx=Number(f.elements?.['dx_'+capaAct]?.value||0)||0;
+    const dy=Number(f.elements?.['dy_'+capaAct]?.value||0)||0;
+    const elCoord=m.querySelector?.('#editorCoordTxt');
+    if(elCoord)elCoord.textContent='Capa activa: '+(nombresCapa[capaAct]||capaAct)+' · Posición X: '+(dx>0?'+'+dx:dx)+'% · Y: '+(dy>0?'+'+dy:dy)+'%';
+    const fmtVal=f.elements?.formato?.value||'imagen_4x5';
+    m.querySelectorAll?.('[data-ceditor-fmtpill]')?.forEach?.(btn=>btn.classList?.toggle?.('on',btn.dataset?.ceditorFmtpill===fmtVal));
+    m.querySelectorAll?.('[data-ceditor-capa]')?.forEach?.(btn=>btn.classList?.toggle?.('on',btn.dataset?.ceditorCapa===capaAct));
+  };
+  const fijaEscala=(campo,nuevoVal)=>{
+    const min=campo==='escala_cta'?0.65:0.6,max=campo==='escala_cta'?1.5:1.6;
+    const limpio=String(Number(Math.max(min,Math.min(max,Math.round(Number(nuevoVal)*20)/20)).toFixed(2)));
+    const sel=f.elements?.[campo];
+    if(sel){
+      if(sel.options&&![...sel.options].some(o=>o.value===limpio)){
+        const opt=typeof document!=='undefined'?document.createElement('option'):null;
+        if(opt){opt.value=limpio;opt.textContent=Math.round(Number(limpio)*100)+'%';sel.appendChild(opt);}
+      }
+      sel.value=limpio;
+    }
+    sincronizaUIEstudio();
+  };
   const sincronizaPorFormato=()=>{
     const d=Object.fromEntries(new FormData(f).entries()),fk=fmtClave(d.formato);
     if(d.alcance_formato==='formato'){
@@ -17943,26 +18292,27 @@ function abreEditorPlantilla(id, piezaInicialId = ''){
     }else{
       delete mapaPorFormato[fk];
     }
-    f.elements.por_formato_json.value=JSON.stringify(mapaPorFormato);
+    if(f.elements.por_formato_json)f.elements.por_formato_json.value=JSON.stringify(mapaPorFormato);
   };
   const cargaFormatoEnControles=(fk)=>{
     const sobre=mapaPorFormato[fk];
     if(!sobre)return;
     for(const k of CLAVES_FORMATO)if(sobre[k]!==undefined&&f.elements[k])f.elements[k].value=String(sobre[k]);
+    sincronizaUIEstudio();
   };
   const valores=()=>{
     sincronizaPorFormato();
     const d=Object.fromEntries(new FormData(f).entries());
     return {
-      acento:d.acento,texto:d.texto,color_subtitulo:d.color_subtitulo||'',color_panel:d.color_panel||'',
+      acento:d.acento,texto:d.texto,color_subtitulo:d.color_subtitulo||'',color_marca:d.color_marca||'',color_panel:d.color_panel||'',
       tipografia:d.tipografia,tipografia_subtitulo:d.tipografia_subtitulo||'original',tipografia_cta:d.tipografia_cta||'original',
       peso_titulo:d.peso_titulo,peso_subtitulo:d.peso_subtitulo||'original',
       interlineado:d.interlineado,interlineado_subtitulo:d.interlineado_subtitulo||'0',
       tracking_titulo:d.tracking_titulo||'original',tracking_cta:d.tracking_cta||'original',
-      mayusculas_titulo:d.mayusculas_titulo||'original',mayusculas_subtitulo:d.mayusculas_subtitulo||'original',
+      mayusculas_titulo:d.mayusculas_titulo||'original',mayusculas_subtitulo:d.mayusculas_subtitulo||'original',mayusculas_cta:d.mayusculas_cta||'original',
       efecto:d.efecto,sombra:d.sombra,opacidad_panel:d.opacidad_panel,
-      alineacion:d.alineacion,alineacion_subtitulo:d.alineacion_subtitulo||'original',alineacion_cta:d.alineacion_cta||'original',
-      escala_titulo:d.escala_titulo,escala_subtitulo:d.escala_subtitulo||'1',escala_cta:d.escala_cta,giro_titulo:d.giro_titulo,
+      alineacion:d.alineacion,alineacion_subtitulo:d.alineacion_subtitulo||'original',alineacion_cta:d.alineacion_cta||'original',alineacion_marca:d.alineacion_marca||'original',
+      escala_titulo:d.escala_titulo,escala_subtitulo:d.escala_subtitulo||'1',escala_cta:d.escala_cta,escala_marca:d.escala_marca||'1',giro_titulo:d.giro_titulo,
       dx_titulo:d.dx_titulo,dy_titulo:d.dy_titulo,
       dx_subtitulo:d.dx_subtitulo||'0',dy_subtitulo:d.dy_subtitulo||'0',
       dx_cta:d.dx_cta,dy_cta:d.dy_cta,
@@ -17992,6 +18342,7 @@ function abreEditorPlantilla(id, piezaInicialId = ''){
     }
     try{Object.assign(mapaPorFormato,JSON.parse(d.por_formato_json||'{}'));}catch{}
     ultimoEstado=s;if(btnUndo)btnUndo.disabled=!historial.length;
+    sincronizaUIEstudio();
   };
   const titularActivo=v=>v._pieza_id&&v._pieza_l1?{l1:v._pieza_l1,l2:v._pieza_l2}:null;
   const previsualiza=async()=>{
@@ -18005,11 +18356,11 @@ function abreEditorPlantilla(id, piezaInicialId = ''){
     }
     if(!r.ok||!r.vista){vista.innerHTML='<p class="cont-aviso" role="status">'+esc(r.error||'No se pudo generar la muestra.')+'</p>';return;}
     if(comparar&&r.vista_antes){
-      vista.innerHTML='<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%;place-items:center">'
-        +'<figure style="margin:0;text-align:center"><figcaption class="cont-sub">Antes (original V7)</figcaption><img src="'+esc(r.vista_antes)+'" alt="Antes" style="max-width:100%;max-height:40vh;border-radius:10px"></figure>'
-        +'<figure style="margin:0;text-align:center"><figcaption class="cont-sub">Después (tu edición)</figcaption><img src="'+esc(r.vista)+'" alt="Después" style="max-width:100%;max-height:40vh;border-radius:10px"></figure></div>';
+      vista.innerHTML='<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;width:100%;place-items:center">'
+        +'<figure style="margin:0;text-align:center"><figcaption class="cont-sub" style="margin-bottom:4px">Antes (original V7)</figcaption><img src="'+esc(r.vista_antes)+'" alt="Antes" style="max-width:100%;max-height:56vh;border-radius:10px"></figure>'
+        +'<figure style="margin:0;text-align:center"><figcaption class="cont-sub" style="margin-bottom:4px">Después (tu edición)</figcaption><img src="'+esc(r.vista)+'" alt="Después" style="max-width:100%;max-height:56vh;border-radius:10px"></figure></div>';
     }else{
-      vista.innerHTML='<img src="'+esc(r.vista)+'" alt="Muestra de la plantilla editada" style="display:block;width:auto;max-width:100%;max-height:44vh;border-radius:12px;cursor:grab">';
+      vista.innerHTML='<img src="'+esc(r.vista)+'" alt="Muestra de la plantilla editada" style="display:block;width:auto;max-width:100%;max-height:66vh;border-radius:12px;cursor:grab">';
     }
   };
   let arrastre=null;
@@ -18029,16 +18380,26 @@ function abreEditorPlantilla(id, piezaInicialId = ''){
     const dy=Math.max(-25,Math.min(25,Math.round(arrastre.dy0+(ev.clientY-arrastre.y0)/arrastre.h*100)));
     if(f.elements['dx_'+arrastre.cual])f.elements['dx_'+arrastre.cual].value=String(dx);
     if(f.elements['dy_'+arrastre.cual])f.elements['dy_'+arrastre.cual].value=String(dy);
+    sincronizaUIEstudio();
   };
   vista.onpointerup=vista.onpointercancel=ev=>{
     if(!arrastre||ev.pointerId!==arrastre.id)return;
     arrastre=null;guardaHistorial();clearTimeout(temporizador);temporizador=setTimeout(previsualiza,120);
   };
   f.oninput=f.onchange=ev=>{
-    if(ev?.target?.name==='formato')cargaFormatoEnControles(fmtClave(ev.target.value));
-    if(ev?.target?.name==='categoria'&&f.elements.foto_id)f.elements.foto_id.value='';
-    if(ev?.target?.name==='pieza_id'){
-      const pz=piezasEditables.find(x=>x.id===ev.target.value),caja=m.querySelector('#editorPiezaCampos'),btnP=m.querySelector('[data-ceditor-guardapieza]');
+    const t=ev?.target;
+    if(t?.dataset?.ceditorRange){
+      fijaEscala(t.dataset.ceditorRange,t.value);
+    }
+    if(t?.name==='formato')cargaFormatoEnControles(fmtClave(t.value));
+    if(t?.name==='categoria'&&f.elements.foto_id){
+      f.elements.foto_id.value='';
+      f.elements.foto_id.innerHTML=opcionesFotos(t.value,'');
+      const strip=m.querySelector?.('#editorFotosStrip');
+      if(strip)strip.innerHTML=tiraFotosHtml(t.value,'');
+    }
+    if(t?.name==='pieza_id'){
+      const pz=piezasEditables.find(x=>x.id===t.value),caja=m.querySelector('#editorPiezaCampos'),btnP=m.querySelector('[data-ceditor-guardapieza]');
       if(caja)caja.style.display=pz?'grid':'none';
       if(btnP)btnP.disabled=!pz;
       if(pz){
@@ -18048,10 +18409,81 @@ function abreEditorPlantilla(id, piezaInicialId = ''){
         if(pz.categoria&&f.elements.categoria)f.elements.categoria.value=pz.categoria;
       }
     }
-    guardaHistorial();clearTimeout(temporizador);temporizador=setTimeout(previsualiza,420);
+    sincronizaUIEstudio();
+    guardaHistorial();clearTimeout(temporizador);temporizador=setTimeout(previsualiza,380);
   };
   m.onclick=async ev=>{
     const b=ev.target.closest('button');if(!b)return;
+    if(b.dataset?.ceditorIrplan){if(typeof ve==='function')ve('contenido');return;}
+    if(b.dataset?.ceditorIrmodulo){cierraModal();CONT.estudioPlantillaId=idReal;CONT.estudioPiezaId=f.elements?.pieza_id?.value||'';if(typeof ve==='function')ve('editorflyers');return;}
+    if(b.dataset?.ceditorPlantilla){
+      const nuevoId=b.dataset.ceditorPlantilla;
+      const pzActual=f.elements?.pieza_id?.value||'';
+      if(enModulo){CONT.estudioPlantillaId=nuevoId;CONT._contenedorEstudio=m;abreEditorPlantilla(nuevoId,pzActual);CONT._contenedorEstudio=null;}
+      else abreEditorPlantilla(nuevoId,pzActual);
+      return;
+    }
+    if(b.dataset?.ceditorFoto!==undefined){
+      if(f.elements?.foto_id)f.elements.foto_id.value=b.dataset.ceditorFoto;
+      m.querySelectorAll?.('[data-ceditor-foto]')?.forEach?.(x=>x.classList?.toggle?.('on',x.dataset?.ceditorFoto===b.dataset.ceditorFoto));
+      guardaHistorial();void previsualiza();return;
+    }
+    if(b.dataset?.ceditorFmtpill){
+      if(f.elements?.formato){f.elements.formato.value=b.dataset.ceditorFmtpill;cargaFormatoEnControles(fmtClave(b.dataset.ceditorFmtpill));}
+      sincronizaUIEstudio();guardaHistorial();void previsualiza();return;
+    }
+    if(b.dataset?.ceditorCapa){
+      const blk=b.dataset.ceditorCapa;
+      if(f.elements?.bloque_arrastre)f.elements.bloque_arrastre.value=blk;
+      sincronizaUIEstudio();
+      const card=m.querySelector?.('[data-ceditor-card="'+(blk==='marca'?'cta':blk)+'"]');
+      card?.scrollIntoView?.({behavior:'smooth',block:'nearest'});
+      return;
+    }
+    if(b.dataset?.ceditorTab){
+      const tab=b.dataset.ceditorTab;
+      m.querySelectorAll?.('[data-ceditor-tab]')?.forEach?.(x=>x.classList?.toggle?.('on',x.dataset?.ceditorTab===tab));
+      m.querySelectorAll?.('[data-ceditor-sec]')?.forEach?.(sec=>{
+        if(tab==='todo'){sec.style.display='';sec.open=true;}
+        else{const coincide=sec.dataset?.ceditorSec===tab||(tab==='c'&&sec.dataset?.ceditorSec==='d');sec.style.display=coincide?'':'none';if(coincide)sec.open=true;}
+      });
+      return;
+    }
+    if(b.dataset?.ceditorStepTarget){
+      const campo=b.dataset.ceditorStepTarget,paso=b.dataset.ceditorStep;
+      const act=Number(f.elements?.[campo]?.value||1)||1;
+      fijaEscala(campo,paso==='reset'?1:act+Number(paso));
+      guardaHistorial();clearTimeout(temporizador);temporizador=setTimeout(previsualiza,260);return;
+    }
+    if(b.dataset?.ceditorQsize){
+      const capaAct=f.elements?.bloque_arrastre?.value||'titulo';
+      const campo=mapaEscalaDeCapa[capaAct]||'escala_titulo';
+      const act=Number(f.elements?.[campo]?.value||1)||1;
+      fijaEscala(campo,b.dataset.ceditorQsize==='reset'?1:act+Number(b.dataset.ceditorQsize));
+      guardaHistorial();clearTimeout(temporizador);temporizador=setTimeout(previsualiza,260);return;
+    }
+    if(b.dataset?.ceditorQalign){
+      const capaAct=f.elements?.bloque_arrastre?.value||'titulo';
+      const campo=mapaAlinDeCapa[capaAct]||'alineacion';
+      if(f.elements?.[campo])f.elements[campo].value=b.dataset.ceditorQalign;
+      sincronizaUIEstudio();guardaHistorial();clearTimeout(temporizador);temporizador=setTimeout(previsualiza,260);return;
+    }
+    if(b.dataset?.ceditorQcase){
+      const capaAct=f.elements?.bloque_arrastre?.value||'titulo';
+      const campo=mapaMayusDeCapa[capaAct]||'mayusculas_titulo';
+      if(f.elements?.[campo])f.elements[campo].value=b.dataset.ceditorQcase;
+      sincronizaUIEstudio();guardaHistorial();clearTimeout(temporizador);temporizador=setTimeout(previsualiza,260);return;
+    }
+    if(b.dataset?.ceditorQcenter){
+      const capaAct=f.elements?.bloque_arrastre?.value||'titulo';
+      if(f.elements?.['dx_'+capaAct])f.elements['dx_'+capaAct].value='0';
+      if(f.elements?.['dy_'+capaAct])f.elements['dy_'+capaAct].value='0';
+      sincronizaUIEstudio();guardaHistorial();void previsualiza();return;
+    }
+    if(b.dataset?.ceditorSwatch){
+      if(f.elements?.texto)f.elements.texto.value=b.dataset.ceditorSwatch;
+      guardaHistorial();clearTimeout(temporizador);temporizador=setTimeout(previsualiza,260);return;
+    }
     if(b.dataset.ceditorUndo){
       const prev=historial.pop();if(prev){aplicaEstado(prev);void previsualiza();}return;
     }
@@ -18060,19 +18492,20 @@ function abreEditorPlantilla(id, piezaInicialId = ''){
       for(const k of Object.keys(mapaPorFormato))delete mapaPorFormato[k];
       f.reset();
       const pon=(k,val)=>{if(f.elements[k])f.elements[k].value=val;};
-      pon('acento',e.acento||'#FFFFFF');pon('texto',e.texto||'#FFFFFF');pon('color_subtitulo','');
+      pon('acento',e.acento||'#FFFFFF');pon('texto',e.texto||'#FFFFFF');pon('color_subtitulo','');pon('color_marca','');
       pon('cta_texto','Escríbenos');pon('mostrar_whatsapp','si');pon('marca_texto','');
       pon('etiqueta_texto','');pon('mes_texto','');pon('redes_texto','');pon('ubicacion_texto','');pon('copy_secundario','');
       pon('mostrar_marca','visible');pon('mostrar_contactos','visible');pon('mostrar_mes','visible');
       pon('texto_muestra_l1','');pon('texto_muestra_l2','');
       pon('tipografia','editorial');pon('tipografia_subtitulo','original');pon('tipografia_cta','original');
       pon('peso_titulo','original');pon('peso_subtitulo','original');pon('interlineado','0');pon('interlineado_subtitulo','0');
-      pon('tracking_titulo','original');pon('tracking_cta','original');pon('mayusculas_titulo','original');pon('mayusculas_subtitulo','original');
-      pon('alineacion','original');pon('alineacion_subtitulo','original');pon('alineacion_cta','original');pon('giro_titulo','0');
-      pon('escala_titulo','1');pon('escala_subtitulo','1');pon('escala_cta','1');
+      pon('tracking_titulo','original');pon('tracking_cta','original');pon('mayusculas_titulo','original');pon('mayusculas_subtitulo','original');pon('mayusculas_cta','original');
+      pon('alineacion','original');pon('alineacion_subtitulo','original');pon('alineacion_cta','original');pon('alineacion_marca','original');pon('giro_titulo','0');
+      pon('escala_titulo','1');pon('escala_subtitulo','1');pon('escala_cta','1');pon('escala_marca','1');
       for(const blk of ['titulo','subtitulo','cta','marca','periodo']){pon('dx_'+blk,'0');pon('dy_'+blk,'0');}
       pon('margen','0');pon('orden_lectura','original');pon('efecto','original');pon('sombra','original');
       pon('color_panel','');pon('opacidad_panel','0');pon('por_formato_json','{}');
+      sincronizaUIEstudio();
       await llamaCont({action:'contenidoEstilos',operation:'personalizar',id:idReal,restablecer:true});
       void previsualiza();return;
     }
@@ -18085,8 +18518,8 @@ function abreEditorPlantilla(id, piezaInicialId = ''){
       const fmts=[['imagen_4x5','Feed 4:5'],['imagen_9x16','Historia 9:16'],['imagen_1x1','Cuadrado 1:1']];
       const sal=await Promise.all(fmts.map(([fmt,etq])=>llamaCont({action:'contenidoEstilos',operation:'vista',id:idReal,categoria:v._categoria,formato:fmt,foto_id:v._foto_id,titular:titularActivo(v),personalizacion:v}).then(r=>({etq,r}))));
       if(n!==turno||!m.classList.contains('on'))return;
-      vista.innerHTML='<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;width:100%;place-items:center">'
-        +sal.map(({etq,r})=>'<figure style="margin:0;text-align:center"><figcaption class="cont-sub">'+esc(etq)+'</figcaption>'+(r.ok&&r.vista?'<img src="'+esc(r.vista)+'" alt="'+esc(etq)+'" style="max-width:100%;max-height:36vh;border-radius:8px">':'<span class="cont-aviso">'+esc(r.error||'Error')+'</span>')+'</figure>').join('')+'</div>';
+      vista.innerHTML='<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;width:100%;place-items:center">'
+        +sal.map(({etq,r})=>'<figure style="margin:0;text-align:center"><figcaption class="cont-sub" style="margin-bottom:4px">'+esc(etq)+'</figcaption>'+(r.ok&&r.vista?'<img src="'+esc(r.vista)+'" alt="'+esc(etq)+'" style="max-width:100%;max-height:52vh;border-radius:10px">':'<span class="cont-aviso">'+esc(r.error||'Error')+'</span>')+'</figure>').join('')+'</div>';
       return;
     }
     if(b.dataset.ceditorBorrador){
@@ -18104,12 +18537,14 @@ function abreEditorPlantilla(id, piezaInicialId = ''){
       avisa('Pieza actualizada','Se recompuso la imagen con el nuevo titular.');void cargaContenido();void previsualiza();
     }
   };
-  f.onsubmit=async ev=>{ev.preventDefault();const v=valores(),boton=f.querySelector('[type=submit]');boton.disabled=true;
-    const r=await llamaCont({action:'contenidoEstilos',operation:'personalizar',id:idReal,personalizacion:v});boton.disabled=false;
+  f.onsubmit=async ev=>{ev.preventDefault();const v=valores(),boton=f.querySelector('[type=submit]');if(boton)boton.disabled=true;
+    const r=await llamaCont({action:'contenidoEstilos',operation:'personalizar',id:idReal,personalizacion:v});if(boton)boton.disabled=false;
     if(!r.ok)return avisa('No se pudo guardar la plantilla',r.error);
     CONT.estilos=r.estilos||CONT.estilos;delete CONT.vistas[idReal];delete CONT.vistas[id];CONT.muestrasIntentadas?.delete(idReal);CONT.muestrasIntentadas?.delete(id);delete CONT.muestrasErrores[idReal];delete CONT.muestrasErrores[id];
     if(cCrear){cCrear.estilo_id=e.template_id||idReal;if(v.cta_texto!==undefined)cCrear.cta_texto=v.cta_texto;cCrear.mostrar_whatsapp=v.mostrar_whatsapp!=='no';if(v.tipografia)cCrear.tipografia=v.tipografia;if(v.etiqueta_texto!==undefined)cCrear.etiqueta_texto=v.etiqueta_texto;if(v.texto_muestra_l1)cCrear.titular_l1=v.texto_muestra_l1;if(v.texto_muestra_l2!==undefined&&v.texto_muestra_l1)cCrear.titular_l2=v.texto_muestra_l2;cCrear.solicitud=null;}
-    cierraModal();pintaContenido();avisa('Diseño guardado','Personalización V2 activa para todos los formatos.');};
+    if(!enModulo)cierraModal();
+    pintaContenido();avisa('Diseño guardado','Personalización V2 activa para todos los formatos.');};
+  sincronizaUIEstudio();
   ultimoEstado=JSON.stringify(valores());
   void previsualiza();
 }
@@ -18218,7 +18653,7 @@ async function clicContenido(ev){
   if(d.cvolvercrear){const c=borradorCrearContenido();c.paso=2;return cambiaTabContenido('crear');}
   if (d.cbiblioteca) return cambiaTabContenido('fotos');
   if (d.cdesdeestilo) { const c = borradorCrearContenido(); c.estilo_id = d.cdesdeestilo; c.paso = 2; c.baseId = null; return cambiaTabContenido('crear'); }
-  if (d.ceditardiseno) { const f = b.closest('form'); if (f && f.dataset?.ccrear) guardaCrearContenido(f); return abreEditorPlantilla(d.ceditardiseno, d.cpieza || ''); }
+  if (d.ceditardiseno) { const f = b.closest('form'); if (f && f.dataset?.ccrear) guardaCrearContenido(f); CONT.estudioPlantillaId = d.ceditardiseno; CONT.estudioPiezaId = d.cpieza || ''; if (typeof ve === 'function' && typeof $ === 'function' && $('lienzo')) return ve('editorflyers'); return abreEditorPlantilla(d.ceditardiseno, d.cpieza || ''); }
   if (d.cmodelodefault) { const f=b.closest('form'); if(f)guardaCrearContenido(f); const c=borradorCrearContenido(); const r=await llamaCont({action:'contenidoAjustes',modelo:c.modelo}); if(!r.ok)return avisa('No se guardó el modelo',r.error); CONT.modelo=c.modelo; return avisa('Modelo predeterminado guardado',c.modelo); }
   if (d.cmodelosretry) { CONT.modelos = null; CONT.modelosError = null; return cargaModelosContenido(); }
   if (d.cnuevolote) { if (CONT.crear?.enviando) return; CONT.crear = null; return cambiaTabContenido('crear'); }
