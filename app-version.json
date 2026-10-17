@@ -1,7 +1,7 @@
 {
-  "version": "2026-10-16-editor-plantillas-v7-v217",
+  "version": "2026-10-16-creador-flyers-v7-v218",
   "channel": "crm",
-  "released_at": "2026-10-16T20:41:00.000Z",
-  "summary": "Nuevo módulo avanzado de edición de plantillas V7: controles independientes de tipografía por rol (Playfair Display, Inter, League Spartan, Poppins, Marcellus, Amandine), jerarquía editorial estricta, arrastre de bloques en lienzo con offsets dx/dy numéricos, conmutadores de visibilidad, tarjeta de cristal esmerilado translúcido, edición de piezas directas, guardado de borrador y comparación antes/después.",
+  "released_at": "2026-10-16T21:40:00.000Z",
+  "summary": "Creador y motor de flyers V7 estricto: integración total de los 10 paquetes JSON oficiales del estudio (01-editorial-social a 10-alta-clave-fotografica), galería visual interactiva de 10 plantillas con selector directo y personalización en vivo (titular l1/l2, CTA, WhatsApp 849-524-5620, tipografía V7), renderizado 100% full-bleed a sangre con eliminación de arcos y marcos sólidos, regla estricta de 5 fotos distintas para Plantilla 04 Mosaico y soporte para los 4 formatos sociales (4:5, 9:16, 1:1, 16:9).",
   "requiere_puente": "2026-10-15-citas-y-conexion-v49"
 }
