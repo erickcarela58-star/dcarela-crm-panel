@@ -689,6 +689,8 @@ img.av{object-fit:cover}
 .globo .pie-globo .fallo{color:var(--bad);font-weight:700}
 .globo .pie-globo .editado-tag{font-style:italic}
 .globo .pie-globo .destacado-tag{color:#ffb400}
+.globo .mreacciones{clear:both;display:flex;justify-content:flex-end;gap:4px;padding-top:4px}
+.globo .mreacciones span{display:inline-flex;align-items:center;min-height:22px;padding:1px 7px;border:1px solid var(--line);border-radius:14px;background:var(--panel);font-size:15px;line-height:1}
 .globo .autor{font-size:11px;font-weight:700;color:var(--ok);margin-bottom:1px}
 .mmedia{display:block;max-width:250px;max-height:320px;width:auto;border-radius:6px;
   margin:1px 0 3px;cursor:zoom-in}
@@ -9983,6 +9985,14 @@ function tipoRealMedio(m, a){
 function cuerpoMensaje(m){
   const a = adjuntoDe(m);
   const t = tipoRealMedio(m, a);
+  if (m.metadata?.vista_unica) {
+    return '<div class="marchivo"><b>Foto o video de vista única</b>'
+      + '<span>Ábrelo desde WhatsApp en el teléfono vinculado. El CRM no guarda ni repite este archivo.</span></div>';
+  }
+  if (t === 'reaction') {
+    const emoji = String(m.metadata?.reaccion?.emoji ?? m.body ?? '').trim();
+    return '<span class="mreaccion-suelta">' + esc(emoji ? 'Reacción a un mensaje anterior: ' + emoji : 'Reacción retirada') + '</span>';
+  }
   const pie = m.body && !/^\[[a-z]+\]$/i.test(m.body) ? '<div class="mpie">' + conTelefonos(esc(m.body)) + '</div>' : '';
   const id = m.media_id || '';
   const bajo = esBajoDemanda(m);
@@ -10170,6 +10180,23 @@ function citaDelMensaje(m){
     + esc(String(texto).slice(0, 140)) + '</div>';
 }
 
+function reaccionesDelHilo(lista){
+  const originales = new Set(lista.filter(m => m.msg_type !== 'reaction').map(m => String(m.wamid || '')).filter(Boolean));
+  const porMensaje = new Map();
+  for (const m of lista) {
+    if (m.msg_type !== 'reaction') continue;
+    const r = m.metadata?.reaccion;
+    const destino = String(r?.wamid || '');
+    if (!destino || !originales.has(destino)) continue;
+    if (!porMensaje.has(destino)) porMensaje.set(destino, new Map());
+    const autor = m.direction === 'out' ? 'Tú' : 'Cliente';
+    const emoji = String(r.emoji || '').trim();
+    if (emoji) porMensaje.get(destino).set(autor, emoji);
+    else porMensaje.get(destino).delete(autor);
+  }
+  return { originales, porMensaje };
+}
+
 function pintaMensajes(){
   const cont = $('mensajes'); if (!cont) return;
   const pegado = cont.scrollHeight - cont.scrollTop - cont.clientHeight < 90;
@@ -10177,8 +10204,10 @@ function pintaMensajes(){
   // Un mensaje eliminado NO desaparece del hilo: se queda, marcado, con quien lo elimino y por
   // que (ver infoEliminado). Antes se filtraba y quien borraba algo no dejaba rastro. La marca
   // vive DENTRO de metadata, no en el primer nivel.
-  const html = MSGS.concat(globosEnviando(sel && (sel.id || sel._id)), globosPendientes(sel && (sel.id || sel._id)))
-    .sort((a, b) => instanteMsg(a) - instanteMsg(b))
+  const ordenados = MSGS.concat(globosEnviando(sel && (sel.id || sel._id)), globosPendientes(sel && (sel.id || sel._id)))
+    .sort((a, b) => instanteMsg(a) - instanteMsg(b));
+  const reacciones = reaccionesDelHilo(ordenados);
+  const html = ordenados.filter(m => !(m.msg_type === 'reaction' && reacciones.originales.has(String(m.metadata?.reaccion?.wamid || ''))))
     .map(m => {
     const t = instanteMsg(m);
     const conFecha = t !== Number.MAX_SAFE_INTEGER;
@@ -10223,13 +10252,16 @@ function pintaMensajes(){
     const destacadoTag = m.metadata?.starred ? '<span class="destacado-tag" title="Destacado">★</span> ' : '';
     const eliminado = infoEliminado(m);
     const avisoElim = eliminado ? avisoDeEliminado(eliminado) : '';
+    const gestos = [...(reacciones.porMensaje.get(String(m.wamid || '')) || new Map())];
+    const pieReacciones = gestos.length ? '<div class="mreacciones">'
+      + gestos.map(([quien, emoji]) => '<span title="' + esc(quien) + '">' + esc(emoji) + '</span>').join('') + '</div>' : '';
     return cabeza + '<div class="globo ' + (sale ? 'sale' : 'entra') + ' ' + (primero ? 'primero' : 'seguido')
       + (marcado ? ' marcado' : '') + (eliminado ? ' eliminado' : '') + '"'
       + ' data-msg="' + esc(idMsg) + '">'
       + '<input type="checkbox" class="msel" data-msel="' + esc(idMsg) + '"' + (marcado ? ' checked' : '') + '>'
       + '<button class="gaccion" aria-label="Opciones del mensaje">⌄</button>'
       + avisoElim + autor + cita + cuerpoMensaje(m)
-      + '<span class="pie-globo">' + destacadoTag + editado + (conFecha ? esc(d.toLocaleTimeString('es-DO',{hour:'2-digit',minute:'2-digit'})) : '') + ticks + '</span>'
+      + '<span class="pie-globo">' + destacadoTag + editado + (conFecha ? esc(d.toLocaleTimeString('es-DO',{hour:'2-digit',minute:'2-digit'})) : '') + ticks + '</span>' + pieReacciones
       + '</div>';
   }).join('') || '<div style="margin:auto;color:var(--mut);font-size:13px">Sin mensajes todavía.</div>';
 
