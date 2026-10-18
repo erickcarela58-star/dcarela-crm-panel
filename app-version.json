@@ -1,7 +1,7 @@
 {
-  "version": "2026-10-18-modulos-contextuales-v228",
+  "version": "2026-10-18-motor-editor-planificador-v229",
   "channel": "crm",
-  "released_at": "2026-10-18T18:16:38.997464Z",
-  "summary": "Planificador organizado en Crear, Revisar, Programar y Resultados. Creador con lienzo amplio e inspector por tarea. Seleccion de plantilla validada y pedidos restaurados sin referencias retiradas.",
+  "released_at": "2026-10-18T20:02:58.923466Z",
+  "summary": "Motor V7 conectado al editor: descargar JPG original, llevar ajustes completos al planificador y preparar propuestas para revision sin publicar. Se conservan foto, mes, textos, tipografias, posiciones y variantes.",
   "requiere_puente": "2026-10-18-diagnostico-citas-v53"
 }
