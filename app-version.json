@@ -1,7 +1,7 @@
 {
-  "version": "2026-10-17-reacciones-y-vista-unica-v224",
+  "version": "2026-10-18-ganchos-y-evidencia-v225",
   "channel": "crm",
-  "released_at": "2026-10-18T02:04:15Z",
-  "summary": "WhatsApp Web: reacciones bajo su mensaje, respuestas citadas y enlaces corregidos; la vista única se indica sin guardar el archivo.",
+  "released_at": "2026-10-18T04:52:02Z",
+  "summary": "Editor: ganchos de Gemini con fuente verificable y estado de IA honesto; publicaciones muestran identificador o límites de confirmación.",
   "requiere_puente": "2026-10-17-reacciones-v50"
 }
