@@ -1,7 +1,7 @@
 {
-  "version": "2026-10-18-motor-editor-planificador-v229",
+  "version": "2026-10-18-editor-vista-viva-v230",
   "channel": "crm",
-  "released_at": "2026-10-18T20:02:58.923466Z",
-  "summary": "Motor V7 conectado al editor: descargar JPG original, llevar ajustes completos al planificador y preparar propuestas para revision sin publicar. Se conservan foto, mes, textos, tipografias, posiciones y variantes.",
+  "released_at": "2026-10-18T22:24:38.665Z",
+  "summary": "Editor de flyers: la ultima vista ya no se borra al editar, los cambios se agrupan en un solo render del motor V7 (evita la sobrecarga de memoria que daba error 500), los errores se muestran con Reintentar y hay una capa En vivo (beta, opcional para administrador) que mueve y escala el texto al instante.",
   "requiere_puente": "2026-10-18-diagnostico-citas-v53"
 }
