@@ -1935,6 +1935,7 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{outline:0}
 .nav a[data-vista="agenda"] svg{--tint:#df766e}
 .nav a[data-vista="cotizaciones"] svg{--tint:#58b5a0}
 .nav a[data-vista="contenido"] svg{--tint:#d98c5f}
+.nav a[data-vista="editorflyers"] svg{--tint:#b67acb}
 .nav a[data-vista="dashboard"] svg{--tint:#8b8bdf}
 .nav a[data-vista="funnel"] svg{--tint:#dfa25c}
 .nav a[data-vista="prospecting"] svg{--tint:#b08ad6}
@@ -13154,8 +13155,11 @@ function renderBridgeControlState(state, explicitError = ''){
   const historyActive = ['requested','running','waiting'].includes(historyStatus);
   const pair = $('bridgePairBtn');
   if (pair) {
+    const sameLinkedPhone = soloDigitos(bridgeControlState.connected_phone) === soloDigitos($('bridgePairPhone')?.value);
+    const retry = sameLinkedPhone && ['disconnected','error'].includes(status)
+      && !['logged_out','connection_replaced'].includes(String(bridgeControlState.last_error_code || ''));
     pair.disabled = !hostOnline || active || connected;
-    pair.textContent = active ? 'Procesando…' : (connected ? 'Ya vinculado' : 'Generar código');
+    pair.textContent = active ? 'Procesando…' : (connected ? 'Ya vinculado' : (retry ? 'Reintentar conexión' : 'Generar código'));
   }
   const activar = $('bridgeActivateBtn');
   if (activar) {
@@ -13174,13 +13178,17 @@ function renderBridgeControlState(state, explicitError = ''){
     history.textContent = historyActive ? 'Sincronizando…' : 'Sincronizar historial';
   }
   const rebuild = $('bridgeRebuildBtn');
-  if (rebuild) rebuild.disabled = !connected || !hostOnline || historyActive;
+  if (rebuild) rebuild.disabled = !hostOnline || historyActive
+    || !bridgeControlState.connected_phone || !['connected','disconnected','error'].includes(status);
   const logout = $('bridgeLogoutBtn');
   if (logout) logout.disabled = !connected && !bridgeControlState.connected_phone;
 
   if ($('bridgeCodeMeta')) $('bridgeCodeMeta').textContent = code
     ? 'Escribe este código en WhatsApp → Dispositivos vinculados.'
-    : (active ? bridgeStatusLabel(status) + '…' : 'Solicita un código nuevo cuando el puente esté en línea.');
+    : (active ? bridgeStatusLabel(status) + '…'
+      : pair?.textContent === 'Reintentar conexión'
+        ? 'Se reutilizará la sesión guardada sin generar otro código ni cambiar la identidad del dispositivo.'
+        : 'Solicita un código nuevo cuando el puente esté en línea.');
   if ($('bridgeHistoryState')) {
     const imported = Number(bridgeControlState.history_sync_imported || 0);
     const duplicates = Number(bridgeControlState.history_sync_duplicates || 0);
@@ -13292,8 +13300,11 @@ async function requestBridgePairing(){
   // Se deja dicho ANTES de que salga el codigo: es lo unico que evita teclearlo donde no va.
   const bonito = phone.replace(/^1(\d{3})(\d{3})(\d{4})$/, '$1-$2-$3');
   const para = $('bridgeCodeFor');
-  if (para) para.innerHTML = '<b>Este código es solo para el ' + esc(bonito) + '</b>'
-    + ' — en cualquier otro teléfono WhatsApp lo rechaza.';
+  const reintento = $('bridgePairBtn')?.textContent === 'Reintentar conexión';
+  if (para) para.innerHTML = reintento
+    ? '<b>Reconectando el ' + esc(bonito) + '</b> con la sesión guardada.'
+    : '<b>Este código es solo para el ' + esc(bonito) + '</b>'
+      + ' — en cualquier otro teléfono WhatsApp lo rechaza.';
   const result = await callBridgeControl('request_pairing', { phone });
   if (result.bridge) renderBridgeControlState(result.bridge, result.ok ? '' : result.error);
   else renderBridgeControlState(bridgeControlState, result.error || 'No se pudo pedir el código.');
@@ -17555,7 +17566,7 @@ async function clicContAgente(ev){
       +'</div>'
       +'<p class="cont-sub" style="margin:0">El editor y planificador de contenido están conectados al servidor MCP <code>dcarela-flyers</code>, permitiendo a Gemini generar ganchos comerciales, recomendar plantillas según fotos originales y previsualizar composiciones en alta definición.</p>'
       +'<div class="estudio-bloque-card"><div class="estudio-bloque-cab"><span>🛠️ Herramientas MCP registradas</span></div>'
-      +'<ul style="margin:0;padding-left:18px;font-size:12px;display:grid;gap:6px;color:var(--txt)">'
+      +'<ul style="margin:0;padding-left:18px;font-size:12px;display:grid;gap:6px;color:var(--fg)">'
       +'<li><b>dcarela_listar_plantillas_v7:</b> Las 10 plantillas oficiales con sus metadatos tipográficos y cromáticos.</li>'
       +'<li><b>dcarela_consultar_fototeca:</b> Fotos HD del estudio D\' Carela para composición.</li>'
       +'<li><b>dcarela_generar_ganchos_gemini:</b> Redacción comercial con reglas estrictas (La Romana, sin precios falsos).</li>'
@@ -18544,9 +18555,9 @@ function abreEditorPlantilla(id, piezaInicialId = ''){
             +'<b style="font-size:12px;color:#0369a1">Propuesta '+(idx+1)+'</b>'
             +'<button type="button" class="btn-solido" style="font-size:11px;padding:3px 8px;background:#0284c7" data-cgemini-aplicar="'+idx+'">🎨 Aplicar al flyer</button>'
             +'</div>'
-            +'<div style="font-weight:700;font-size:13px;color:var(--txt)">'+esc(g.l1)+'</div>'
+          +'<div style="font-weight:700;font-size:13px;color:var(--fg)">'+esc(g.l1)+'</div>'
             +(g.l2?'<div style="font-size:12px;color:var(--mut);margin-top:2px">'+esc(g.l2)+'</div>':'')
-            +(g.copy?'<div style="font-size:11px;color:var(--txt);margin-top:4px;font-style:italic">'+esc(g.copy)+'</div>':'')
+            +(g.copy?'<div style="font-size:11px;color:var(--fg);margin-top:4px;font-style:italic">'+esc(g.copy)+'</div>':'')
             +'</div>').join('')
           +'</div>';
       }
@@ -18631,7 +18642,7 @@ function abreEditorPlantilla(id, piezaInicialId = ''){
           +'<img src="'+r.replica_vista+'" alt="Réplica D\' Carela" style="max-height:180px;max-width:100%;border-radius:4px;object-fit:contain;box-shadow:0 2px 6px rgba(0,0,0,0.12)">'
           +'</div>'
           +'</div>'
-          +'<div style="background:#fff;padding:8px;border-radius:6px;border:1px solid #e2e8f0;font-size:11.5px;color:var(--txt)">'
+          +'<div style="background:#fff;padding:8px;border-radius:6px;border:1px solid #e2e8f0;font-size:11.5px;color:var(--fg)">'
           +'<div><b>Estilo extraído:</b> '+esc(r.analisis_gemini?.estilo_detectado||r.referencia_nombre)+' · <b>Tipografía:</b> '+esc(r.analisis_gemini?.tipografia||r.personalizacion?.tipografia||'Playfair')+' ('+esc(r.analisis_gemini?.peso||'700')+')</div>'
           +'<div style="margin-top:2px;color:var(--mut)"><b>Titular replicado:</b> «'+esc((r.gancho_utilizado?.l1||'')+' '+(r.gancho_utilizado?.l2||''))+'»</div>'
           +'<div style="margin-top:2px;color:#16a34a;font-weight:600">✓ Regla cumplida: '+esc(r.analisis_gemini?.reglas_cumplidas||"Firma D' Carela activa, fotografía original sin marcas.")+'</div>'
