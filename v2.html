@@ -12677,6 +12677,12 @@ function pintaAgenda(){
 function filaCita(fila){
   if (fila && fila.tipo === 'google') return filaGoogle(fila);
   const {c, iso, firme, desvinculada, redOculta: deRedOculta} = fila;
+  // Un seguimiento es una tarea interna, aunque coincida con la hora de la sesion.
+  // No ofrece confirmar/cancelar reserva ni repite el ID del menu de esa sesion.
+  if (fila.tipo === 'recordatorio') return '<div class="agcita" data-agconv="' + esc(c._id) + '">'
+    + '<span class="agh">' + esc(horaAg(iso) || '—') + '</span>'
+    + '<span class="agn"><b>' + esc(nombreDe(c)) + '</b><small>Seguimiento · tarea interna</small></span>'
+    + '<i class="chip">Recordatorio</i></div>';
   return '<div class="agcita" data-agconv="' + esc(c._id) + '">'
     + '<span class="agh">' + esc(horaAg(iso) || '—') + '</span>'
     + '<span class="agn"><b>' + esc(nombreDe(c)) + '</b>'
@@ -15553,7 +15559,7 @@ async function igAgregaArchivos(archivos){
   }
   igPintaPrevia();
 }
-const IG_ESTADO = { pending:'En cola', publishing:'Publicando…', published:'Publicada', failed:'Con error' };
+const IG_ESTADO = { pending:'En cola', publishing:'Publicando…', published:'Publicada', failed:'Con error', unknown:'Confirmación pendiente · revisar Instagram' };
 async function igPintaCola(){
   const cont = $('igCola-lista'); if (!cont) return;
   const r = await llama({ action:'instagram', operation:'list' });
@@ -15566,7 +15572,7 @@ async function igPintaCola(){
     + (x.error ? '<small style="color:var(--bad)">' + esc(x.error) + '</small>' : '')
     + (x.enlace ? '<small><a href="' + esc(x.enlace) + '" target="_blank" rel="noopener">Ver en Instagram</a></small>' : '') + '</span>'
     + '<span>' + (['pending', 'failed'].includes(x.estado) ? '<button class="btn-solido" data-ig-pub="' + esc(x.id) + '">Publicar ahora</button> ' : '')
-    + (x.estado !== 'publishing' ? '<button class="btn-linea" data-ig-quita="' + esc(x.id) + '">Quitar</button>' : '') + '</span></div>').join('') + '</div>'
+    + (!['publishing','unknown'].includes(x.estado) ? '<button class="btn-linea" data-ig-quita="' + esc(x.id) + '">Quitar</button>' : '') + '</span></div>').join('') + '</div>'
     : '<p class="cfgnota">La cola está vacía.</p>';
   cont.querySelectorAll('[data-ig-pub]').forEach(b => b.onclick = () => igPublica(b.dataset.igPub, b));
   cont.querySelectorAll('[data-ig-quita]').forEach(b => b.onclick = async () => {
