@@ -360,6 +360,15 @@ body.menu-abierto .velo{display:block}
 #editorPlantillaVista.estudio-vista-stage{min-height:320px;width:100%;height:100%;display:flex!important;align-items:center;justify-content:center;background:transparent!important;padding:4px!important;user-select:none;touch-action:none}
 #editorPlantillaVista.estudio-vista-stage img{max-height:calc(100vh - 230px)!important;max-width:100%;width:auto;height:auto;object-fit:contain;border-radius:12px;box-shadow:0 16px 44px rgba(0,0,0,.28);cursor:grab;transition:transform .1s}
 #editorPlantillaVista.estudio-vista-stage img:active{cursor:grabbing}
+/* v230: la ultima vista buena nunca se vacia; el estado del motor va en una insignia encima. */
+#editorPlantillaVista.estudio-vista-stage{position:relative}
+.estudio-vista-estado{position:absolute;left:10px;right:10px;top:10px;z-index:3;display:flex;gap:8px;align-items:center;justify-content:space-between;line-height:1.3;padding:6px 8px 6px 12px;border-radius:12px;background:rgba(17,24,39,.78);color:#fff;font-size:11.5px;font-weight:600;box-shadow:0 6px 18px rgba(0,0,0,.22);pointer-events:auto}
+.estudio-vista-estado[hidden]{display:none}
+.estudio-vista-estado[data-tipo="error"]{background:rgba(185,28,28,.92)}
+.estudio-vista-estado button{flex:0 0 auto;border:1px solid rgba(255,255,255,.7);background:transparent;color:#fff;border-radius:999px;padding:2px 10px;font-size:11px;font-weight:700;cursor:pointer}
+.estudio-vista-estado span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.estudio-vista-live{position:absolute;z-index:2;pointer-events:none}
+.estudio-live-toggle{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;font-weight:700;margin:0;cursor:pointer}
 .estudio-canvas-pie{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:7px 14px;background:var(--panel);border-top:1px solid var(--line2);font-size:11.5px;color:var(--mut);flex-wrap:wrap}
 .estudio-sec-titulo{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.7px;color:var(--mut);margin:0 0 6px;display:flex;align-items:center;justify-content:space-between}
 .estudio-mini-plantillas{display:grid;grid-template-columns:repeat(2,1fr);gap:7px;max-height:230px;overflow-y:auto;padding-right:2px}
@@ -18107,6 +18116,110 @@ function abreRevisionEditorV7(pedido){
     }catch(e){estado.textContent=e.message;}finally{b.disabled=false;}
   };
 }
+// v230 — capa EN VIVO del editor (flag editorLiveKonvaV230, solo administrador, apagada por defecto).
+// El motor Sharp/SVG V7 sigue siendo el UNICO render autoritativo (vista, JPG, propuestas). La capa en
+// vivo solo dibuja en el navegador la capa que se esta editando (texto, tamaño, fuente, color, giro y
+// desplazamiento) encima de la ultima vista buena, para que mover o escalar no espere al servidor.
+// La posicion base de cada capa la calcula el motor (con rostros); aqui se ancla donde la persona
+// agarra el texto, asi que es una guia, no una replica exacta del layout V7.
+const EDITOR_LIVE_FLAG = 'editorLiveKonvaV230';
+const KONVA_V230 = { src: 'https://cdn.jsdelivr.net/npm/konva@10.9.0/konva.min.js', integrity: 'sha384-kGDb2kUnEhYjAl3UvL4+8M2sJgvB8pxKW4g0i+VX4pTgboU1nKUgIEywbstD/3CC' };
+function editorLiveActivo(){
+  if (typeof ROL_ACTUAL !== 'undefined' && ROL_ACTUAL !== 'admin') return false;
+  try { return localStorage.getItem(EDITOR_LIVE_FLAG) === '1'; } catch { return false; }
+}
+function fijaEditorLive(on){ try { localStorage.setItem(EDITOR_LIVE_FLAG, on ? '1' : '0'); } catch {} }
+let promesaKonvaV230 = null;
+function cargaKonvaV230(){
+  if (typeof window !== 'undefined' && window.Konva) return Promise.resolve(window.Konva);
+  if (promesaKonvaV230) return promesaKonvaV230;
+  promesaKonvaV230 = new Promise((resolve, reject) => {
+    const s = document.createElement('script');
+    s.src = KONVA_V230.src; s.integrity = KONVA_V230.integrity; s.crossOrigin = 'anonymous'; s.async = true;
+    s.onload = () => window.Konva ? resolve(window.Konva) : reject(new Error('Konva no quedó disponible.'));
+    s.onerror = () => { promesaKonvaV230 = null; reject(new Error('No se pudo cargar Konva (red o integridad).')); };
+    document.head.appendChild(s);
+  });
+  return promesaKonvaV230;
+}
+const FUENTES_LIVE_V230 = { editorial:'Playfair Display', playfair:'Playfair Display', amandine:'Amandine, Playfair Display', clasica:'Marcellus', jakarta:'Plus Jakarta Sans', 'dm-serif':'DM Serif Display', bodoni:'Bodoni Moda', moderna:'Poppins', spartan:'League Spartan', inter:'Inter', original:'Inter' };
+// Tamaño base de cada capa en % del ANCHO de la imagen (la misma unidad que usa la composicion V7).
+const BASE_LIVE_V230 = { titulo:{ tam:7.2, y:72 }, subtitulo:{ tam:3.4, y:81 }, cta:{ tam:2.6, y:89 }, marca:{ tam:2.4, y:6 }, periodo:{ tam:2.2, y:11 } };
+function capaEnVivoV230(vista, form){
+  const anclas = {}, med = [];
+  let stage = null, capa = null, nodo = null, caja = null, host = null, sucia = false, cargando = null;
+  const campo = n => form?.elements?.[n]?.value ?? '';
+  const img = () => vista?.querySelector?.('img');
+  function textoDe(c){
+    if (c === 'titulo') return campo('pieza_id') && campo('pieza_l1') ? campo('pieza_l1') : (campo('texto_muestra_l1') || 'Titular');
+    if (c === 'subtitulo') return campo('pieza_id') && campo('pieza_l2') ? campo('pieza_l2') : (campo('texto_muestra_l2') || 'Subtítulo');
+    if (c === 'cta') return (campo('cta_texto') || 'Escríbenos') + (campo('mostrar_whatsapp') === 'no' ? '' : ' · 849-524-5620');
+    if (c === 'marca') return campo('marca_texto') || "D' Carela Compufoto";
+    return campo('etiqueta_texto') || campo('mes_texto') || 'Mes';
+  }
+  function estiloDe(c){
+    const may = { titulo:'mayusculas_titulo', subtitulo:'mayusculas_subtitulo', cta:'mayusculas_cta' }[c] || 'mayusculas_titulo';
+    const tip = c === 'subtitulo' ? campo('tipografia_subtitulo') : c === 'cta' ? campo('tipografia_cta') : campo('tipografia');
+    const peso = c === 'titulo' ? campo('peso_titulo') : c === 'subtitulo' ? campo('peso_subtitulo') : '';
+    const color = c === 'cta' ? (campo('acento') || '#ffffff') : c === 'subtitulo' ? (campo('color_subtitulo') || campo('texto') || '#ffffff') : c === 'marca' ? (campo('color_marca') || campo('texto') || '#ffffff') : (campo('texto') || '#ffffff');
+    const escala = Number(campo({ titulo:'escala_titulo', subtitulo:'escala_subtitulo', cta:'escala_cta' }[c] || 'escala_marca')) || 1;
+    const alin = campo({ titulo:'alineacion', subtitulo:'alineacion_subtitulo', cta:'alineacion_cta', marca:'alineacion_marca' }[c] || 'alineacion');
+    return { fuente: FUENTES_LIVE_V230[tip] || FUENTES_LIVE_V230.editorial, negrita: !peso || peso === 'original' || Number(peso) >= 600,
+      color: /^#[0-9a-f]{3,8}$/i.test(color) ? color : '#ffffff', escala, mayus: campo(may) === 'si',
+      alin: alin === 'start' ? 'left' : alin === 'end' ? 'right' : 'center', giro: c === 'titulo' ? (Number(campo('giro_titulo')) || 0) : 0 };
+  }
+  function encaja(){
+    const im = img(); if (!im || !host) return null;
+    const rv = vista.getBoundingClientRect(), ri = im.getBoundingClientRect();
+    if (!ri.width || !ri.height) return null;
+    Object.assign(host.style, { left: (ri.left - rv.left) + 'px', top: (ri.top - rv.top) + 'px', width: ri.width + 'px', height: ri.height + 'px' });
+    stage.width(ri.width); stage.height(ri.height);
+    return { w: ri.width, h: ri.height };
+  }
+  function dibuja(){
+    if (!stage || !sucia) return;
+    const t0 = performance.now(), d = encaja(); if (!d) return;
+    const c = campo('bloque_arrastre') || 'titulo', base = BASE_LIVE_V230[c] || BASE_LIVE_V230.titulo, e = estiloDe(c);
+    const a = anclas[c] || { x: 50, y: base.y };
+    const x = (a.x + (Number(campo('dx_' + c)) || 0)) / 100 * d.w, y = (a.y + (Number(campo('dy_' + c)) || 0)) / 100 * d.h;
+    const ancho = d.w * 0.86, txt = textoDe(c);
+    nodo.setAttrs({ text: e.mayus ? txt.toUpperCase() : txt, fontFamily: e.fuente, fontStyle: e.negrita ? 'bold' : 'normal', fontSize: Math.max(8, base.tam / 100 * d.w * e.escala),
+      fill: e.color, align: e.alin, width: ancho, x, y, offsetX: e.alin === 'center' ? ancho / 2 : e.alin === 'right' ? ancho : 0, rotation: e.giro, visible: true });
+    nodo.offsetY(nodo.height() / 2);
+    caja.setAttrs({ x, y, width: ancho + 12, height: nodo.height() + 10, offsetX: nodo.offsetX() + 6, offsetY: nodo.height() / 2 + 5, rotation: e.giro, visible: true });
+    capa.batchDraw();
+    med.push(Math.round((performance.now() - t0) * 10) / 10); if (med.length > 200) med.shift();
+  }
+  async function monta(){
+    if (stage) return true;
+    if (!cargando) cargando = cargaKonvaV230();
+    const K = await cargando;
+    if (stage) return true;
+    host = document.createElement('div'); host.className = 'estudio-vista-live'; host.setAttribute('aria-hidden', 'true');
+    vista.appendChild(host);
+    stage = new K.Stage({ container: host, width: 10, height: 10, listening: false });
+    capa = new K.Layer({ listening: false }); stage.add(capa);
+    caja = new K.Rect({ stroke: '#4e8cff', strokeWidth: 1.5, dash: [6, 4], cornerRadius: 6, fill: 'rgba(78,140,255,.10)', visible: false });
+    nodo = new K.Text({ shadowColor: 'rgba(0,0,0,.55)', shadowBlur: 6, shadowOffsetY: 1, lineHeight: 1.05, wrap: 'word', visible: false });
+    capa.add(caja); capa.add(nodo);
+    return true;
+  }
+  return {
+    // Se llama tras cada cambio de control: dibuja en el mismo frame, sin red.
+    cambio(){ sucia = true; if (stage) { if (host && !host.isConnected) vista.appendChild(host); dibuja(); } else void monta().then(() => { if (host && !host.isConnected) vista.appendChild(host); dibuja(); }).catch(() => {}); },
+    // Al agarrar el texto: la base de la capa queda bajo el puntero (descontando su desplazamiento actual).
+    ancla(ev){
+      const im = img(); if (!im) return; const r = im.getBoundingClientRect(); if (!r.width) return;
+      const c = campo('bloque_arrastre') || 'titulo';
+      anclas[c] = { x: (ev.clientX - r.left) / r.width * 100 - (Number(campo('dx_' + c)) || 0), y: (ev.clientY - r.top) / r.height * 100 - (Number(campo('dy_' + c)) || 0) };
+    },
+    // El motor V7 entrego una vista con todos los cambios: la guia se esconde y la imagen manda.
+    confirmada(){ sucia = false; if (nodo) { nodo.visible(false); caja.visible(false); capa.batchDraw(); } if (host && !host.isConnected) vista.appendChild(host); },
+    destruye(){ try { stage?.destroy(); } catch {} host?.remove?.(); stage = null; },
+    medidas: () => med.slice(),
+    activa: () => !!stage,
+  };
+}
 function abreEditorPlantilla(id, piezaInicialId = ''){
   const listaPlantillasV7=[
     ['v6-editorial-social','01','Editorial social','#FFFFFF'],
@@ -18267,6 +18380,7 @@ function abreEditorPlantilla(id, piezaInicialId = ''){
     +'<div class="estudio-quick-grupo">'
     +'<button type="button" class="estudio-quick-btn" data-ceditor-qcenter="1" title="Devolver este bloque a su posición original (0,0)">⌖ Centrar posición</button>'
     +'</div>'
+    +(ROL_ACTUAL==='admin'?'<div class="estudio-quick-grupo"><label class="estudio-live-toggle" title="Dibuja al instante la capa que editas sobre la última vista del motor V7. El JPG final sigue saliendo del motor V7."><input type="checkbox" data-ceditor-live="1"'+(typeof editorLiveActivo==='function'&&editorLiveActivo()?' checked':'')+'> En vivo (beta)</label></div>':'')
     +'</div>'
     +'<div class="estudio-lienzo-wrap">'
     +'<div id="editorPlantillaVista" class="estudio-vista-stage" title="Arrastra con el ratón para mover el bloque activo"><span class="cont-sub">Preparando muestra en alta resolución…</span></div>'
@@ -18458,6 +18572,10 @@ function abreEditorPlantilla(id, piezaInicialId = ''){
   }
   const f=m.querySelector('#editorPlantilla'),vista=m.querySelector('#editorPlantillaVista'),btnUndo=m.querySelector('[data-ceditor-undo]'),btnComp=m.querySelector('[data-ceditor-comparar]');
   let turno=0,temporizador=null,comparar=false,historial=[],ultimoEstado=null;
+  let enVuelo=false,pendiente=false,ultimaBuena=null,cambios=0;
+  const metricasVista=[];
+  let live=(typeof editorLiveActivo==='function'&&editorLiveActivo()&&typeof capaEnVivoV230==='function')?capaEnVivoV230(vista,f):null;
+  if(typeof window!=='undefined')window.__editorV230={metricasVista,medidasLive:()=>live?live.medidas():[],liveActivo:()=>!!live?.activa()};
   const CLAVES_FORMATO=['tipografia','tipografia_subtitulo','tipografia_cta','peso_titulo','peso_subtitulo','interlineado','interlineado_subtitulo','tracking_titulo','tracking_cta','mayusculas_titulo','mayusculas_subtitulo','mayusculas_cta','escala_titulo','escala_subtitulo','escala_cta','escala_marca','alineacion','alineacion_subtitulo','alineacion_cta','alineacion_marca','giro_titulo','dx_titulo','dy_titulo','dx_subtitulo','dy_subtitulo','dx_cta','dy_cta','dx_marca','dy_marca','dx_periodo','dy_periodo','margen','orden_lectura','efecto','sombra','opacidad_panel'];
   const fmtClave=v=>({imagen_4x5:'4:5',imagen_9x16:'9:16',imagen_1x1:'1:1',imagen_16x9:'16:9'}[v]||'4:5');
   const mapaEscalaDeCapa={titulo:'escala_titulo',subtitulo:'escala_subtitulo',cta:'escala_cta',marca:'escala_marca',periodo:'escala_marca'};
@@ -18560,16 +18678,47 @@ function abreEditorPlantilla(id, piezaInicialId = ''){
     sincronizaUIEstudio();
   };
   const titularActivo=v=>v._pieza_id&&v._pieza_l1?{l1:v._pieza_l1,l2:v._pieza_l2}:(v.texto_muestra_l1||v.texto_muestra_l2?{l1:v.texto_muestra_l1||'',l2:v.texto_muestra_l2||''}:null);
+  // v230: la vista del motor V7 tarda 7-20 s y cada render baja la original completa. Antes cada
+  // tecla o paso de deslizador vaciaba el lienzo («Componiendo…») y lanzaba OTRO render en paralelo;
+  // cinco seguidos llegaron a 21 s y el 18/10 crmApi murio por memoria (1089/1024 MiB → HTTP 500).
+  // Ahora: un solo render en vuelo por editor (los cambios intermedios se agrupan en el siguiente),
+  // la ultima vista buena nunca se borra y un fallo se muestra encima con Reintentar.
+  const pintaEstadoVista=(tipo,texto)=>{
+    if(!vista.querySelector||typeof document==='undefined')return;
+    let b=vista.querySelector('[data-ceditor-estado]');
+    if(!texto){if(b)b.hidden=true;return;}
+    if(!b){b=document.createElement('div');b.className='estudio-vista-estado';b.setAttribute('data-ceditor-estado','1');b.setAttribute('role','status');vista.appendChild(b);}
+    b.hidden=false;b.dataset.tipo=tipo;b.textContent='';b.title=texto;
+    const s=document.createElement('span');s.textContent=texto;b.appendChild(s);
+    if(tipo==='error'){const rb=document.createElement('button');rb.type='button';rb.dataset.ceditorReintentar='1';rb.textContent='Reintentar';b.appendChild(rb);}
+  };
   const previsualiza=async()=>{
-    const n=++turno,v=valores();
-    vista.innerHTML='<span class="cont-sub">Componiendo con la original…</span>';
-    const r=await llamaCont({action:'contenidoEstilos',operation:'vista',id:idReal,categoria:v._categoria,formato:v._formato,foto_id:v._foto_id,titular:titularActivo(v),mes:v._mes,fotos_mosaico_ids:v._fotos_mosaico_ids,comparar,personalizacion:v});
-    if(n!==turno||!m.classList.contains('on'))return;
+    if(enVuelo){pendiente=true;pintaEstadoVista('cola',ultimaBuena?'Cambios en espera · se componen al terminar la vista actual':'');return;}
+    enVuelo=true;pendiente=false;
+    const n=++turno,v=valores(),cambioPedido=cambios,t0=Date.now();
+    if(!ultimaBuena)vista.innerHTML='<span class="cont-sub">Componiendo con la original…</span>';
+    else pintaEstadoVista('ocupado','Actualizando con el motor V7…');
+    let r;
+    try{r=await llamaCont({action:'contenidoEstilos',operation:'vista',id:idReal,categoria:v._categoria,formato:v._formato,foto_id:v._foto_id,titular:titularActivo(v),mes:v._mes,fotos_mosaico_ids:v._fotos_mosaico_ids,comparar,personalizacion:v});}
+    catch(err){r={ok:false,error:err?.message||String(err)};}
+    finally{enVuelo=false;}
+    metricasVista.push({ms:Date.now()-t0,ok:!!(r&&r.ok&&r.vista),status:r?.status||null});if(metricasVista.length>50)metricasVista.shift();
+    if(!m.classList.contains('on'))return;
+    // Llegaron cambios mientras componia: se pide UNA vista nueva con todos; esta solo se pinta si no habia ninguna.
+    if(pendiente&&ultimaBuena){void previsualiza();return;}
+    if(n!==turno)return;
     if(Array.isArray(r.fotos)&&r.fotos.length&&f.elements.foto_id){
       const selActual=v._foto_id||r.foto_id||'';
       f.elements.foto_id.innerHTML='<option value="">Automática de la categoría</option>'+r.fotos.map(x=>'<option value="'+esc(x.id)+'"'+(x.id===selActual?' selected':'')+'>'+esc(x.id.slice(0,18)+(x.width&&x.height?' · '+x.width+'×'+x.height:''))+'</option>').join('');
     }
-    if(!r.ok||!r.vista){vista.innerHTML='<p class="cont-aviso" role="status">'+esc(r.error||'No se pudo generar la muestra.')+'</p>';return;}
+    if(!r.ok||!r.vista){
+      const detalle=(r.error||'No se pudo generar la muestra.')+(r.status?' (HTTP '+r.status+(r.code?' · '+r.code:'')+')':'');
+      if(ultimaBuena)pintaEstadoVista('error','La última vista se conserva. '+detalle);
+      else vista.innerHTML='<p class="cont-aviso" role="status">'+esc(detalle)+' <button type="button" class="btn-linea" data-ceditor-reintentar="1">Reintentar</button></p>';
+      if(pendiente)void previsualiza();
+      return;
+    }
+    ultimaBuena=r.vista;
     if(comparar&&r.vista_antes){
       vista.innerHTML='<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;width:100%;place-items:center">'
         +'<figure style="margin:0;text-align:center"><figcaption class="cont-sub" style="margin-bottom:4px">Antes (original V7)</figcaption><img src="'+esc(r.vista_antes)+'" alt="Antes" style="max-width:100%;max-height:56vh;border-radius:10px"></figure>'
@@ -18577,6 +18726,15 @@ function abreEditorPlantilla(id, piezaInicialId = ''){
     }else{
       vista.innerHTML='<img src="'+esc(r.vista)+'" alt="Muestra de la plantilla editada" style="display:block;width:auto;max-width:100%;max-height:66vh;border-radius:12px;cursor:grab">';
     }
+    if(live){if(cambioPedido===cambios&&!pendiente)live.confirmada();else live.cambio();}
+    if(pendiente)void previsualiza();
+  };
+  // Cambio local: la capa en vivo (si esta activa) se redibuja en el mismo frame; la vista V7 se pide
+  // despues de una pausa (mas larga en vivo: ya hay respuesta inmediata en pantalla).
+  const programaVista=(espera)=>{
+    cambios++;
+    if(live)live.cambio();
+    clearTimeout(temporizador);temporizador=setTimeout(previsualiza,live?Math.max(espera,900):espera);
   };
   let arrastre=null;
   vista.onpointerdown=ev=>{
@@ -18587,6 +18745,7 @@ function abreEditorPlantilla(id, piezaInicialId = ''){
     const cual=['titulo','subtitulo','cta','marca','periodo'].includes(sel)?sel:'titulo';
     arrastre={id:ev.pointerId,x0:ev.clientX,y0:ev.clientY,w:rect.width,h:rect.height,cual,
       dx0:Number(f.elements['dx_'+cual]?.value)||0,dy0:Number(f.elements['dy_'+cual]?.value)||0};
+    if(live)live.ancla(ev);
     try{vista.setPointerCapture(ev.pointerId);}catch{}
   };
   vista.onpointermove=ev=>{
@@ -18596,10 +18755,11 @@ function abreEditorPlantilla(id, piezaInicialId = ''){
     if(f.elements['dx_'+arrastre.cual])f.elements['dx_'+arrastre.cual].value=String(dx);
     if(f.elements['dy_'+arrastre.cual])f.elements['dy_'+arrastre.cual].value=String(dy);
     sincronizaUIEstudio();
+    if(live)live.cambio();
   };
   vista.onpointerup=vista.onpointercancel=ev=>{
     if(!arrastre||ev.pointerId!==arrastre.id)return;
-    arrastre=null;guardaHistorial();clearTimeout(temporizador);temporizador=setTimeout(previsualiza,120);
+    arrastre=null;guardaHistorial();programaVista(120);
   };
   f.oninput=f.onchange=ev=>{
     const t=ev?.target;
@@ -18624,11 +18784,18 @@ function abreEditorPlantilla(id, piezaInicialId = ''){
         if(pz.categoria&&f.elements.categoria)f.elements.categoria.value=pz.categoria;
       }
     }
+    if(t?.dataset?.ceditorLive){
+      if(typeof fijaEditorLive==='function')fijaEditorLive(!!t.checked);
+      if(t.checked&&typeof capaEnVivoV230==='function'){live=live||capaEnVivoV230(vista,f);live.cambio();}
+      else if(live){live.destruye();live=null;}
+      return;
+    }
     sincronizaUIEstudio();
-    guardaHistorial();clearTimeout(temporizador);temporizador=setTimeout(previsualiza,380);
+    guardaHistorial();programaVista(380);
   };
   m.onclick=async ev=>{
     const b=ev.target.closest('button');if(!b)return;
+    if(b.dataset?.ceditorReintentar){pendiente=false;void previsualiza();return;}
     if(b.dataset?.ceditorUsar || b.dataset?.ceditorExportar || b.dataset?.ceditorRevision){
       const pedido=pedidoEditorV7(idReal,valores());
       if(!pedido.foto_id || !pedido.titular.l1)return avisa('Completa el diseño','Elige una original de Fototeca y escribe el titular.');
@@ -18842,26 +19009,26 @@ function abreEditorPlantilla(id, piezaInicialId = ''){
       const campo=b.dataset.ceditorStepTarget,paso=b.dataset.ceditorStep;
       const act=Number(f.elements?.[campo]?.value||1)||1;
       fijaEscala(campo,paso==='reset'?1:act+Number(paso));
-      guardaHistorial();clearTimeout(temporizador);temporizador=setTimeout(previsualiza,260);return;
+      guardaHistorial();programaVista(260);return;
     }
     if(b.dataset?.ceditorQsize){
       const capaAct=f.elements?.bloque_arrastre?.value||'titulo';
       const campo=mapaEscalaDeCapa[capaAct]||'escala_titulo';
       const act=Number(f.elements?.[campo]?.value||1)||1;
       fijaEscala(campo,b.dataset.ceditorQsize==='reset'?1:act+Number(b.dataset.ceditorQsize));
-      guardaHistorial();clearTimeout(temporizador);temporizador=setTimeout(previsualiza,260);return;
+      guardaHistorial();programaVista(260);return;
     }
     if(b.dataset?.ceditorQalign){
       const capaAct=f.elements?.bloque_arrastre?.value||'titulo';
       const campo=mapaAlinDeCapa[capaAct]||'alineacion';
       if(f.elements?.[campo])f.elements[campo].value=b.dataset.ceditorQalign;
-      sincronizaUIEstudio();guardaHistorial();clearTimeout(temporizador);temporizador=setTimeout(previsualiza,260);return;
+      sincronizaUIEstudio();guardaHistorial();programaVista(260);return;
     }
     if(b.dataset?.ceditorQcase){
       const capaAct=f.elements?.bloque_arrastre?.value||'titulo';
       const campo=mapaMayusDeCapa[capaAct]||'mayusculas_titulo';
       if(f.elements?.[campo])f.elements[campo].value=b.dataset.ceditorQcase;
-      sincronizaUIEstudio();guardaHistorial();clearTimeout(temporizador);temporizador=setTimeout(previsualiza,260);return;
+      sincronizaUIEstudio();guardaHistorial();programaVista(260);return;
     }
     if(b.dataset?.ceditorQcenter){
       const capaAct=f.elements?.bloque_arrastre?.value||'titulo';
@@ -18871,7 +19038,7 @@ function abreEditorPlantilla(id, piezaInicialId = ''){
     }
     if(b.dataset?.ceditorSwatch){
       if(f.elements?.texto)f.elements.texto.value=b.dataset.ceditorSwatch;
-      guardaHistorial();clearTimeout(temporizador);temporizador=setTimeout(previsualiza,260);return;
+      guardaHistorial();programaVista(260);return;
     }
     if(b.dataset.ceditorUndo){
       const prev=historial.pop();if(prev){aplicaEstado(prev);void previsualiza();}return;
@@ -18904,7 +19071,9 @@ function abreEditorPlantilla(id, piezaInicialId = ''){
       const n=++turno,v=valores();
       vista.innerHTML='<span class="cont-sub">Renderizando los 3 formatos (4:5 · 9:16 · 1:1) con foto original…</span>';
       const fmts=[['imagen_4x5','Feed 4:5'],['imagen_9x16','Historia 9:16'],['imagen_1x1','Cuadrado 1:1']];
-      const sal=await Promise.all(fmts.map(([fmt,etq])=>llamaCont({action:'contenidoEstilos',operation:'vista',id:idReal,categoria:v._categoria,formato:fmt,foto_id:v._foto_id,titular:titularActivo(v),personalizacion:v}).then(r=>({etq,r}))));
+      // Uno tras otro: tres renders simultaneos de la original completa tambien empujan crmApi a su tope de memoria.
+      const sal=[];
+      for(const [fmt,etq] of fmts)sal.push({etq,r:await llamaCont({action:'contenidoEstilos',operation:'vista',id:idReal,categoria:v._categoria,formato:fmt,foto_id:v._foto_id,titular:titularActivo(v),personalizacion:v}).catch(err=>({ok:false,error:err?.message||String(err)}))});
       if(n!==turno||!m.classList.contains('on'))return;
       vista.innerHTML='<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;width:100%;place-items:center">'
         +sal.map(({etq,r})=>'<figure style="margin:0;text-align:center"><figcaption class="cont-sub" style="margin-bottom:4px">'+esc(etq)+'</figcaption>'+(r.ok&&r.vista?'<img src="'+esc(r.vista)+'" alt="'+esc(etq)+'" style="max-width:100%;max-height:52vh;border-radius:10px">':'<span class="cont-aviso">'+esc(r.error||'Error')+'</span>')+'</figure>').join('')+'</div>';
