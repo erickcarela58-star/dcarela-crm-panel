@@ -17474,8 +17474,8 @@ async function generaLoteContenido(f){
   try {
     const estiloIdResolvido = c.estilo_id || '01-editorial-social';
     const titularFijo = (c.titular_l1 || c.titular_l2) ? { l1: c.titular_l1 || '', l2: c.titular_l2 || '' } : undefined;
-    const persLote = (c.cta_texto || c.mostrar_whatsapp === false || (c.tipografia && c.tipografia !== 'editorial') || c.etiqueta_texto)
-      ? { ...(c.cta_texto ? { cta_texto: c.cta_texto } : {}), mostrar_whatsapp: c.mostrar_whatsapp === false ? 'no' : 'si', ...(c.tipografia && c.tipografia !== 'editorial' ? { tipografia: c.tipografia } : {}), ...(c.etiqueta_texto ? { etiqueta_texto: c.etiqueta_texto, mostrar_mes: 'visible' } : {}) }
+    const persLote = (c.personalizacion_lote || c.cta_texto || c.mostrar_whatsapp === false || (c.tipografia && c.tipografia !== 'editorial') || c.etiqueta_texto)
+      ? { ...(c.personalizacion_lote || {}), ...(c.cta_texto ? { cta_texto: c.cta_texto } : {}), mostrar_whatsapp: c.mostrar_whatsapp === false ? 'no' : 'si', ...(c.tipografia && c.tipografia !== 'editorial' ? { tipografia: c.tipografia } : {}), ...(c.etiqueta_texto ? { etiqueta_texto: c.etiqueta_texto, mostrar_mes: 'visible' } : {}) }
       : undefined;
     const extrasLote = { ...(titularFijo ? { titular_fijo: titularFijo } : {}), ...(persLote ? { personalizacion_lote: persLote } : {}) };
     const payload=c.baseId?{action:'contenidoVariaciones',id:c.baseId,cantidad:c.cantidad,otra_foto:c.otraFoto,mes:c.mes,modelo:c.modelo,brief:briefCrearContenido(c),estilo_id:estiloIdResolvido,fotos_por_categoria:c.fotos,fotos_mosaico_por_categoria:c.mosaicoFotos||{},logos_propios:c.logosPropios||{},...extrasLote}:{action:'contenidoGenera',creativo:true,mes:c.mes,categorias:[...c.categorias],cantidad:c.cantidad,formatos:[...c.formatos],canales:[...c.canales],estilo_id:estiloIdResolvido,modelo:c.modelo,brief:briefCrearContenido(c),fotos_por_categoria:c.fotos,fotos_mosaico_por_categoria:c.mosaicoFotos||{},logos_propios:c.logosPropios||{},...extrasLote};
@@ -18024,7 +18024,7 @@ function organizaEditorFlyers(m){
   if(acciones){
     const opciones=doc.createElement('details');opciones.className='estudio-versiones';
     const resumen=doc.createElement('summary');resumen.textContent='Revisión y versiones';opciones.appendChild(resumen);
-    for(const selector of ['[data-ceditor-undo]','[data-ceditor-reset]','[data-ceditor-comparar]','[data-ceditor-3formatos]']){
+    for(const selector of ['[data-ceditor-undo]','[data-ceditor-reset]','[data-ceditor-comparar]','[data-ceditor-3formatos]','button[type=submit]']){
       const control=acciones.querySelector(selector);if(control)opciones.appendChild(control);
     }
     acciones.prepend(opciones);
@@ -18073,6 +18073,39 @@ async function montaEditorFlyers(){
   if (!CONT.modelos && !CONT.modelosCargando && typeof cargaModelosContenido === 'function') void cargaModelosContenido();
   if (!CONT.items?.length && !CONT.cargando && typeof cargaContenido === 'function') void cargaContenido();
 }
+function pedidoEditorV7(id, v){
+  return {action:'contenidoEditor',id,categoria:v._categoria,formato:v._formato,foto_id:v._foto_id,
+    mes:v._mes, titular:v._pieza_id&&v._pieza_l1?{l1:v._pieza_l1,l2:v._pieza_l2||''}:{l1:v.texto_muestra_l1||'',l2:v.texto_muestra_l2||''},
+    personalizacion:JSON.parse(JSON.stringify(v)),fotos_mosaico_ids:v._fotos_mosaico_ids||[]};
+}
+function llevaEditorAPlanificador(pedido){
+  const c=borradorCrearContenido();
+  Object.assign(c,{estilo_id:normalizaPlantillaContenido(pedido.id,CONT.estilos),mes:pedido.mes,
+    categorias:new Set([pedido.categoria]),formatos:new Set([pedido.formato]),fotos:{...(c.fotos||{}),[pedido.categoria]:pedido.foto_id},
+    personalizacion_lote:JSON.parse(JSON.stringify(pedido.personalizacion)),titular_l1:pedido.titular.l1,titular_l2:pedido.titular.l2,
+    mosaicoFotos:{...(c.mosaicoFotos||{}),[pedido.categoria]:pedido.fotos_mosaico_ids},
+    cta_texto:pedido.personalizacion.cta_texto||'',mostrar_whatsapp:pedido.personalizacion.mostrar_whatsapp!=='no',
+    tipografia:pedido.personalizacion.tipografia||'editorial',etiqueta_texto:pedido.personalizacion.etiqueta_texto||'',
+    baseId:null,solicitud:null,error:null,paso:3});
+  CONT.filtroMes=pedido.mes;guardaTareaContenido();return c;
+}
+function abreRevisionEditorV7(pedido){
+  const hoy=CONT.hoy||new Date().toISOString().slice(0,10),fecha=hoy.startsWith(pedido.mes)?hoy:pedido.mes+'-01';
+  const m=abreModal('<form data-editor-revision><h2>Preparar publicación</h2><p class="bajada">Se compone con el motor V7 y se guarda en Revisar. No se publica ni se activa automáticamente.</p>'
+    +'<div class="estudio-grid-2"><label>Fecha<input type="date" name="fecha" value="'+esc(fecha)+'" required></label><label>Hora<select name="hora" required>'+contHoras('18:30')+'</select></label></div>'
+    +'<label>Texto de la publicación<textarea name="texto" rows="4" maxlength="2200" required>'+esc(pedido.titular.l1+'\n'+pedido.titular.l2+'\nEscríbenos al 849-524-5620 · @dcarela_compufoto')+'</textarea></label>'
+    +'<fieldset><legend>Destinos para revisión</legend>'+[['instagram','Instagram'],['facebook','Facebook'],['whatsapp_estado','Estado de WhatsApp'],['tiktok','TikTok']].map(([id,t])=>'<label style="display:flex;gap:8px"><input type="checkbox" name="canal" value="'+id+'"'+(id==='instagram'?' checked':'')+'>'+t+'</label>').join('')+'</fieldset>'
+    +'<p data-editor-revision-estado role="status"></p><div class="acciones"><button type="button" class="btn-linea" data-cerrar>Cancelar</button><button type="submit" class="btn-solido">Guardar en revisión</button></div></form>');
+  const f=m.querySelector('form');
+  f.onsubmit=async ev=>{ev.preventDefault();const b=f.querySelector('[type=submit]'),estado=f.querySelector('[data-editor-revision-estado]'),v=Object.fromEntries(new FormData(f).entries());
+    b.disabled=true;estado.textContent='Componiendo con tu original y guardando para revisión…';
+    try{
+      const r=await llamaCont({...pedido,operation:'preparar',fecha:v.fecha,hora:v.hora,texto:v.texto,canales:[...f.querySelectorAll('[name=canal]:checked')].map(x=>x.value)});
+      if(!r.ok)throw new Error(r.error||'No se pudo preparar el diseño.');
+      CONT.filtroMes=pedido.mes;CONT.tab='porAprobar';cierraModal();if(typeof ve==='function')ve('contenido');void cargaContenido();avisa('Guardado en revisión','El motor V7 compuso '+r.ids.length+' propuesta(s). No se publicó contenido.');
+    }catch(e){estado.textContent=e.message;}finally{b.disabled=false;}
+  };
+}
 function abreEditorPlantilla(id, piezaInicialId = ''){
   const listaPlantillasV7=[
     ['v6-editorial-social','01','Editorial social','#FFFFFF'],
@@ -18094,8 +18127,9 @@ function abreEditorPlantilla(id, piezaInicialId = ''){
   if(ROL_ACTUAL&&!['admin','supervisor'].includes(ROL_ACTUAL))return;
   const idReal=e.id||id,cCrear=CONT.tab==='crear'&&CONT.crear?CONT.crear:null;
   CONT.estudioPlantillaId=idReal;
-  const pActiva=e.personalizacion||{},pBorrador=e.personalizacion_borrador||null,pBase=pBorrador||pActiva;
-  const p={...pBase,...(cCrear?.titular_l1?{texto_muestra_l1:cCrear.titular_l1}:{}),...(cCrear?.titular_l2?{texto_muestra_l2:cCrear.titular_l2}:{}),...(cCrear?.cta_texto?{cta_texto:cCrear.cta_texto}:{}),...(cCrear?.mostrar_whatsapp===false?{mostrar_whatsapp:'no'}:{}),...(cCrear?.tipografia&&cCrear.tipografia!=='editorial'?{tipografia:cCrear.tipografia}:{}),...(cCrear?.etiqueta_texto?{etiqueta_texto:cCrear.etiqueta_texto}:{})};
+  const piezaGuardada=(CONT.items||[]).concat(CONT.diaItems||[]).find(x=>x.id===piezaInicialId);
+  const pActiva=piezaGuardada?.documento_editor?.personalizacion||e.personalizacion||{},pBorrador=e.personalizacion_borrador||null,pBase=piezaGuardada?.documento_editor?.personalizacion||pBorrador||pActiva;
+  const p={...pBase,...(cCrear?.personalizacion_lote||{}),...(cCrear?.titular_l1?{texto_muestra_l1:cCrear.titular_l1}:{}),...(cCrear?.titular_l2?{texto_muestra_l2:cCrear.titular_l2}:{}),...(cCrear?.cta_texto?{cta_texto:cCrear.cta_texto}:{}),...(cCrear?.mostrar_whatsapp===false?{mostrar_whatsapp:'no'}:{}),...(cCrear?.tipografia&&cCrear.tipografia!=='editorial'?{tipografia:cCrear.tipografia}:{}),...(cCrear?.etiqueta_texto?{etiqueta_texto:cCrear.etiqueta_texto}:{})};
   const mapaPorFormato=JSON.parse(JSON.stringify(p.por_formato||{}));
   const seleccion=(nombre,valor,opciones,extra='')=>'<select name="'+nombre+'"'+extra+'>'+opciones.map(([v,t])=>'<option value="'+v+'"'+(String(valor)===String(v)?' selected':'')+'>'+t+'</option>').join('')+'</select>';
   const opcionesEscala=(actual,min=0.6,max=1.6)=>{
@@ -18128,7 +18162,7 @@ function abreEditorPlantilla(id, piezaInicialId = ''){
   const catCrear=cCrear?.categorias?.size?[...cCrear.categorias][0]:'';
   const catInicial=piezaInicial?.categoria||catCrear||CONT.muestraCategoria||'infantil';
   const fotoInicial=piezaInicial?.foto_id||(cCrear?.fotos?.[catInicial]||'');
-  const fmtInicial=piezaInicial?.formato&&['imagen_4x5','imagen_9x16','imagen_1x1','imagen_16x9'].includes(piezaInicial.formato)?piezaInicial.formato:'imagen_4x5';
+  const fmtInicial=piezaInicial?.formato||[...(cCrear?.formatos||[])][0]||'imagen_4x5';
   const fotosCat=(cat)=>((CONT.fotosCreativas||[]).filter(f=>!f.categoria||f.categoria===cat));
   const opcionesFotos=(cat,actual)=>{
     const lista=fotosCat(cat);
@@ -18165,10 +18199,14 @@ function abreEditorPlantilla(id, piezaInicialId = ''){
     +'<button type="button" class="btn-linea" data-ceditor-comparar="1">Comparar antes / después</button>'
     +'<button type="button" class="btn-linea" data-ceditor-3formatos="1">Revisar 3 formatos</button>'
     +'<button type="button" class="btn-linea" data-ceditor-borrador="1">Guardar borrador</button>'
+    +'<button type="button" class="btn-linea" data-ceditor-usar="1">Usar en planificador</button>'
+    +'<button type="button" class="btn-linea" data-ceditor-exportar="1">Descargar JPG</button>'
+    +'<button type="button" class="btn-solido" data-ceditor-revision="1">Preparar publicación</button>'
     +'<button class="btn-solido" type="submit">Guardar y activar diseño</button>'
     +(!enModulo?'<button class="btn-linea" type="button" data-cerrar>Cerrar</button>':'')
     +'</div>'
     +'</header>'
+    +'<label style="margin:8px 16px;max-width:200px">Mes del contenido<input type="month" name="mes_editor" value="'+esc(cCrear?.mes||piezaInicial?.mes_objetivo||periodoListaContenido().mes)+'"></label>'
     +'<input type="hidden" name="por_formato_json" value="'+esc(JSON.stringify(mapaPorFormato))+'">'
     +'<div class="estudio-grid">'
     +'<aside class="estudio-col-izq">'
@@ -18500,7 +18538,7 @@ function abreEditorPlantilla(id, piezaInicialId = ''){
       mostrar_marca:d.mostrar_marca||'visible',mostrar_contactos:d.mostrar_contactos||'visible',mostrar_mes:d.mostrar_mes||'visible',
       texto_muestra_l1:d.texto_muestra_l1,texto_muestra_l2:d.texto_muestra_l2,
       por_formato_json:d.por_formato_json,
-      _categoria:d.categoria,_formato:d.formato,_foto_id:d.foto_id||'',
+      _categoria:d.categoria,_formato:d.formato,_foto_id:d.foto_id||'',_mes:d.mes_editor||periodoListaContenido().mes,_fotos_mosaico_ids:piezaGuardada?.documento_editor?.fotos_mosaico_ids||cCrear?.mosaicoFotos?.[d.categoria]||[],
       _pieza_id:d.pieza_id||'',_pieza_l1:d.pieza_l1||'',_pieza_l2:d.pieza_l2||'',_pieza_texto:d.pieza_texto||''
     };
   };
@@ -18523,7 +18561,7 @@ function abreEditorPlantilla(id, piezaInicialId = ''){
   const previsualiza=async()=>{
     const n=++turno,v=valores();
     vista.innerHTML='<span class="cont-sub">Componiendo con la original…</span>';
-    const r=await llamaCont({action:'contenidoEstilos',operation:'vista',id:idReal,categoria:v._categoria,formato:v._formato,foto_id:v._foto_id,titular:titularActivo(v),comparar,personalizacion:v});
+    const r=await llamaCont({action:'contenidoEstilos',operation:'vista',id:idReal,categoria:v._categoria,formato:v._formato,foto_id:v._foto_id,titular:titularActivo(v),mes:v._mes,fotos_mosaico_ids:v._fotos_mosaico_ids,comparar,personalizacion:v});
     if(n!==turno||!m.classList.contains('on'))return;
     if(Array.isArray(r.fotos)&&r.fotos.length&&f.elements.foto_id){
       const selActual=v._foto_id||r.foto_id||'';
@@ -18589,6 +18627,16 @@ function abreEditorPlantilla(id, piezaInicialId = ''){
   };
   m.onclick=async ev=>{
     const b=ev.target.closest('button');if(!b)return;
+    if(b.dataset?.ceditorUsar || b.dataset?.ceditorExportar || b.dataset?.ceditorRevision){
+      const pedido=pedidoEditorV7(idReal,valores());
+      if(!pedido.foto_id || !pedido.titular.l1)return avisa('Completa el diseño','Elige una original de Fototeca y escribe el titular.');
+      if(b.dataset.ceditorUsar){llevaEditorAPlanificador(pedido);CONT.tab='crear';if(typeof ve==='function')ve('contenido');return;}
+      if(b.dataset.ceditorRevision){abreRevisionEditorV7(pedido);return;}
+      b.disabled=true;
+      try{const r=await llamaCont({...pedido,operation:'exportar'});if(!r.ok)throw new Error(r.error||'No se pudo exportar el diseño.');
+        const bytes=Uint8Array.from(atob(r.imagen_b64),c=>c.charCodeAt(0));descargaComoArchivo(new Blob([bytes],{type:r.mime}),r.nombre);
+      }catch(e){avisa('No se pudo descargar',e.message);}finally{b.disabled=false;}return;
+    }
     if(b.dataset?.ceditorIrplan){if(typeof ve==='function')ve('contenido');return;}
     if(b.dataset?.ceditorIrmodulo){cierraModal();CONT.estudioPlantillaId=idReal;CONT.estudioPiezaId=f.elements?.pieza_id?.value||'';if(typeof ve==='function')ve('editorflyers');return;}
     if(b.dataset?.ceditorPlantilla){
@@ -18845,7 +18893,6 @@ function abreEditorPlantilla(id, piezaInicialId = ''){
       pon('margen','0');pon('orden_lectura','original');pon('efecto','original');pon('sombra','original');
       pon('color_panel','');pon('opacidad_panel','0');pon('por_formato_json','{}');
       sincronizaUIEstudio();
-      await llamaCont({action:'contenidoEstilos',operation:'personalizar',id:idReal,restablecer:true});
       void previsualiza();return;
     }
     if(b.dataset.ceditorComparar){
@@ -18870,7 +18917,7 @@ function abreEditorPlantilla(id, piezaInicialId = ''){
     if(b.dataset.ceditorGuardapieza){
       const v=valores();if(!v._pieza_id)return;
       b.disabled=true;
-      const r=await llama({action:'contenidoEdita',id:v._pieza_id,l1:v._pieza_l1,l2:v._pieza_l2,texto:v._pieza_texto,estilo_id:idReal});
+      const r=await llama({action:'contenidoEdita',id:v._pieza_id,titular:{l1:v._pieza_l1,l2:v._pieza_l2},texto:v._pieza_texto,estilo_id:idReal,foto_id:v._foto_id,personalizacion:v});
       b.disabled=false;
       if(!r.ok)return avisa('No se pudo actualizar la pieza',r.error);
       avisa('Pieza actualizada','Se recompuso la imagen con el nuevo titular.');void cargaContenido();void previsualiza();
@@ -18880,7 +18927,7 @@ function abreEditorPlantilla(id, piezaInicialId = ''){
     const r=await llamaCont({action:'contenidoEstilos',operation:'personalizar',id:idReal,personalizacion:v});if(boton)boton.disabled=false;
     if(!r.ok)return avisa('No se pudo guardar la plantilla',r.error);
     CONT.estilos=r.estilos||CONT.estilos;delete CONT.vistas[idReal];delete CONT.vistas[id];CONT.muestrasIntentadas?.delete(idReal);CONT.muestrasIntentadas?.delete(id);delete CONT.muestrasErrores[idReal];delete CONT.muestrasErrores[id];
-    if(cCrear){cCrear.estilo_id=e.template_id||idReal;if(v.cta_texto!==undefined)cCrear.cta_texto=v.cta_texto;cCrear.mostrar_whatsapp=v.mostrar_whatsapp!=='no';if(v.tipografia)cCrear.tipografia=v.tipografia;if(v.etiqueta_texto!==undefined)cCrear.etiqueta_texto=v.etiqueta_texto;if(v.texto_muestra_l1)cCrear.titular_l1=v.texto_muestra_l1;if(v.texto_muestra_l2!==undefined&&v.texto_muestra_l1)cCrear.titular_l2=v.texto_muestra_l2;cCrear.solicitud=null;}
+    if(cCrear){cCrear.personalizacion_lote=JSON.parse(JSON.stringify(v));cCrear.mes=v._mes;cCrear.fotos={...(cCrear.fotos||{}),[v._categoria]:v._foto_id};cCrear.estilo_id=e.template_id||idReal;if(v.cta_texto!==undefined)cCrear.cta_texto=v.cta_texto;cCrear.mostrar_whatsapp=v.mostrar_whatsapp!=='no';if(v.tipografia)cCrear.tipografia=v.tipografia;if(v.etiqueta_texto!==undefined)cCrear.etiqueta_texto=v.etiqueta_texto;if(v.texto_muestra_l1)cCrear.titular_l1=v.texto_muestra_l1;if(v.texto_muestra_l2!==undefined&&v.texto_muestra_l1)cCrear.titular_l2=v.texto_muestra_l2;cCrear.solicitud=null;}
     if(!enModulo)cierraModal();
     pintaContenido();avisa('Diseño guardado','Personalización V2 activa para todos los formatos.');};
   if(CONT._replicaPendienteDeCargar){
