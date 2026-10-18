@@ -1,7 +1,7 @@
 {
-  "version": "2026-10-18-contexto-bot-y-originales-v226",
+  "version": "2026-10-18-estabilidad-chat-y-publicacion-v227",
   "channel": "crm",
-  "released_at": "2026-10-18T08:48:00Z",
-  "summary": "Bot de Fotos: una imagen o un «ok» ya no se guardan como fecha ni personas. Planificador: si la categoría no tiene original servible lo dice y no ofrece un reintento inútil.",
-  "requiere_puente": "2026-10-18-contexto-respuestas-v52"
+  "released_at": "2026-10-18T17:47:57.808638Z",
+  "summary": "Agenda distingue seguimientos de sesiones. Las respuestas con archivos conservan la cita. Instagram bloquea reenvios cuando falta confirmar el resultado. Diagnostico seguro de identidad en el puente.",
+  "requiere_puente": "2026-10-18-diagnostico-citas-v53"
 }
