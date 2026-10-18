@@ -18167,6 +18167,7 @@ function abreEditorPlantilla(id, piezaInicialId = ''){
   const fotosCat=(cat)=>((CONT.fotosCreativas||[]).filter(f=>!f.categoria||f.categoria===cat));
   const opcionesFotos=(cat,actual)=>{
     const lista=fotosCat(cat);
+    if(actual && !lista.some(f=>f.id===actual))lista.unshift({id:actual});
     return '<option value="">Automática de la categoría</option>'+lista.map(f=>'<option value="'+esc(f.id)+'"'+(f.id===actual?' selected':'')+'>'+esc(f.id.slice(0,18)+(f.width&&f.height?' · '+f.width+'×'+f.height:''))+'</option>').join('');
   };
   const tiraFotosHtml=(cat,actual)=>{
