@@ -2847,7 +2847,16 @@ input[type="checkbox"],input[type="radio"]{accent-color:var(--accent)}
   @media(max-width:760px){body.chat-abierto .conversacion{animation:panelDesliza .26s var(--curva) both}}
   details>summary::after,details>summary::before{transition:transform .26s var(--curva)}
 }
+/* Espacios de trabajo: flujo editorial y un solo inspector contextual. */
+.plan-hoja #contTabs{display:block}.plan-flujo{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:0;border:1px solid var(--line2);border-radius:14px;overflow:hidden;background:var(--panel)}
+.plan-flujo button{display:flex;align-items:center;gap:10px;border:0;border-right:1px solid var(--line2);background:transparent;color:var(--mut);padding:16px 18px;text-align:left;cursor:pointer}.plan-flujo button:last-child{border-right:0}.plan-flujo button[aria-current]{color:var(--fg);background:var(--hover);box-shadow:inset 0 -3px var(--accent)}.plan-flujo button>span{font-size:11px;letter-spacing:.08em}.plan-flujo b{font-size:14px}.plan-flujo small{margin-left:auto}
+.plan-contexto{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 0}.plan-biblioteca summary,.plan-automatizacion>summary,.estudio-versiones>summary,.estudio-rapidos>summary{cursor:pointer;font-size:12px;color:var(--mut);padding:8px 0}.plan-biblioteca>div{display:flex;flex-wrap:wrap;gap:6px;padding:8px 0}.plan-contexto .plan-periodo{margin-left:auto}.plan-mesa-acciones{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:4px 0 16px}.plan-mesa-acciones>div{flex:1 1 260px}.plan-mesa-acciones b{display:block;font-size:17px}.plan-mesa-acciones small{display:block;color:var(--mut);margin-top:5px;max-width:520px;line-height:1.5}.plan-automatizacion{border-top:1px solid var(--line2);margin-bottom:14px}.plan-automatizacion .agente{margin:8px 0}.plan-muestra-pendiente{padding:28px 18px;display:flex;flex-direction:column;justify-content:center;gap:12px;height:100%;min-height:180px;background:var(--hover);color:var(--mut);text-align:center}.plan-muestra-pendiente span{font-size:12px;line-height:1.5}
+.estudio-grid{grid-template-columns:minmax(0,1fr) minmax(310px,360px)}.estudio-col-der{padding:16px;gap:12px}.estudio-col-centro{background:var(--bg)}.estudio-recursos{display:grid;gap:20px}.estudio-insp-tabs{flex-wrap:wrap;gap:4px;position:sticky;top:-16px;background:var(--panel);padding:12px 0;z-index:4}.estudio-insp-tab{flex:1 1 auto;font-size:12px}.estudio-marca-badge{background:transparent;border:0;padding:0;font-size:15px}.estudio-topbar{padding:14px 18px}.estudio-topbar-izq>[data-ceditor-geminiact]{display:none}.estudio-topbar-centro label[hidden]{display:none!important}.estudio-versiones{position:relative}.estudio-versiones>summary{padding:8px 10px;border:1px solid var(--line2);border-radius:8px;color:var(--fg)}.estudio-versiones[open]{display:flex;flex-wrap:wrap;gap:6px;max-width:360px}.estudio-versiones>button{margin-top:6px}.estudio-rapidos{background:var(--panel);border-bottom:1px solid var(--line2)}.estudio-rapidos>summary{padding:10px 16px}.estudio-rapidos .estudio-quickbar{border:0;justify-content:flex-start}.estudio-sec-panel>summary{font-size:12px;line-height:1.6}.estudio-mini-plantillas{max-height:280px}
+@media(max-width:900px){.plan-flujo{grid-template-columns:repeat(2,minmax(0,1fr))}.plan-flujo button{padding:13px 12px;border-bottom:1px solid var(--line2)}.plan-contexto{align-items:flex-start;flex-wrap:wrap}.estudio-grid{display:flex;flex-direction:column;overflow:visible}.estudio-col-centro{order:0;min-height:55vh;overflow:visible}.estudio-col-der{order:1;max-height:none;overflow:visible}.hoja.estudio-hoja{height:auto;overflow:visible}.estudio-flyer-form{height:auto;overflow:visible!important}.estudio-topbar{position:static}.estudio-col-der .estudio-insp-tabs{position:static}.estudio-topbar-der{width:100%}.estudio-lienzo-wrap{min-height:400px}.plan-mesa-acciones>button{flex:1 1 auto}}
+
+
 @media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+
 </style>
 </head>
 <body>
@@ -17147,8 +17156,8 @@ function cableaLotes(){
 // hora; los Estados, por la PC del negocio. Marketplace y los grupos no se pueden publicar desde un programa: el «paquete del día» lo publica la persona.
 let CONT = { items: [], conteo: {}, calendario: [], canales: [], activos: [], activo: true, tab: null, grupos: [], propias: [], quitadas: [], cargando: false, abiertos: new Set(),
   autonomia: 'manual', cantidad: 0, tiktok: null, estilos: [], tendencias: null, amandine: true, gen: null, mes: null, mesItems: null, dia: null, diaItems: null, vistas: {}, nuevosIA: [], ref: null, subida: null };
-const CONT_TABS = [['calendario', 'Calendario'], ['porAprobar', 'Revisión'], ['estilos', 'Plantillas'], ['fotos', 'Fototeca']];
-const CONT_VISTAS = [['programadas', 'Programadas'], ['publicadas', 'Publicadas'], ['tendencias', 'Ideas y tendencias'], ['redes', 'Conexiones'], ['paquete', 'Paquete de grupos'], ['fechas', 'Fechas del negocio'], ['subir', 'Nueva publicación']];
+const CONT_TABS = [['crear', 'Crear'], ['porAprobar', 'Revisar'], ['calendario', 'Programar'], ['publicadas', 'Resultados']];
+const CONT_VISTAS = [['estilos', 'Plantillas'], ['fotos', 'Fototeca'], ['programadas', 'Cola y pendientes'], ['tendencias', 'Ideas y tendencias'], ['redes', 'Conexiones'], ['paquete', 'Paquete de grupos'], ['fechas', 'Fechas del negocio']];
 const CONT_ESTADOS = { propuesta: 'Por aprobar', aprobada: 'Aprobada', publicando: 'Enviando…', encola: 'Procesando en el canal', enviada: 'Enviada · esperando confirmación', sin_confirmar: 'Sin confirmación', publicada: 'Registrada como publicada', fallida: 'Falló', rechazada: 'Rechazada', vencida: 'Vencida', lista: 'Lista para subir' };
 const CONT_CORTO = { instagram: 'IG', facebook: 'FB', whatsapp_estado: 'Estado', tiktok: 'TikTok', paquete_grupos: 'Grupos' };
 const CONT_AUTONOMIA = [
@@ -17164,6 +17173,15 @@ function hoyContenidoLocal(){ return new Intl.DateTimeFormat('en-CA',{timeZone:'
 function periodoListaContenido(){
   const mes = CONT.filtroMes || (CONT.hoy || hoyContenidoLocal()).slice(0,7), [a,m] = mes.split('-').map(Number);
   return { mes, desde: mes+'-01', hasta: mes+'-'+new Date(Date.UTC(a,m,0)).getUTCDate() };
+}
+function normalizaPlantillaContenido(id, estilos = []){
+  const slugs = ['editorial-social','editorial-rojo-serif','editorial-azul-suave','mosaico-oferta','spotlight-noir','glow-carmesi','contraste-titular-banda','tarjeta-cristal','spotlight-azul-corporativo','alta-clave-fotografica'];
+  const value = String(id || '').trim().toLowerCase();
+  const indice = slugs.findIndex((slug,i) => [slug,'v6-'+slug,String(i+1),String(i+1).padStart(2,'0'),String(i+1).padStart(2,'0')+'-'+slug].includes(value)
+    || (i === 9 && ['alta-clave-fotografia','v6-alta-clave-fotografia'].includes(value)));
+  if (indice >= 0) return String(indice+1).padStart(2,'0')+'-'+slugs[indice];
+  const estilo = estilos.find(e => e.activo !== false && [e.id,e.template_id].includes(id));
+  return estilo ? estilo.id : null;
 }
 function borradorCrearContenido(){
   const c = CONT.crear || (CONT.crear = {
@@ -17190,6 +17208,9 @@ function borradorCrearContenido(){
     paso: 1
   });
   if (!c.estilo_id) c.estilo_id = '01-editorial-social';
+  const plantillaValida = normalizaPlantillaContenido(c.estilo_id || '01-editorial-social', CONT.estilos || []);
+  c.avisoPlantilla = plantillaValida ? null : 'La plantilla del pedido anterior ya no está disponible. Elige una de las tarjetas antes de continuar.';
+  if (plantillaValida) c.estilo_id = plantillaValida;
   return c;
 }
 async function cargaModelosContenido(){
@@ -17274,25 +17295,6 @@ function pintaCrearContenido(cuerpo){
       sel.replace(/^\d{2}-/, '') === id1.replace(/^\d{2}-/, '');
   };
 
-  const svgMockup = (indNum) => {
-    const ind = Number(indNum) || 1;
-    const upper = [2, 3, 4, 7, 10].includes(ind);
-    const bg = ind === 10 ? '#F4F1EA' : ind === 3 ? '#DCEAF7' : ind === 2 ? '#F5EFEA' : ind === 9 ? '#0C1E38' : ind === 5 ? '#0B0C10' : '#18181C';
-    const fg = ind === 10 ? '#171724' : ind === 3 ? '#123A63' : ind === 2 ? '#C62839' : '#FFFFFF';
-    const ctaBg = ind === 2 ? '#C62839' : ind === 5 ? '#F39A27' : ind === 6 ? '#EE2748' : ind === 9 ? '#69B6FF' : ind === 10 ? '#171724' : '#FFFFFF';
-    const ctaFg = [2, 5, 6, 10].includes(ind) ? '#FFFFFF' : ind === 9 ? '#0A2540' : ind === 3 ? '#123A63' : '#18181C';
-    return '<svg viewBox="0 0 108 135" class="plan-mockup-svg" style="width:100%;height:100%;display:block;background:'+bg+'" xmlns="http://www.w3.org/2000/svg">'
-      + '<rect width="108" height="135" fill="'+bg+'"/>'
-      + (ind === 4 ? '<rect x="0" y="0" width="23" height="66" fill="#27272a" stroke="#fff" stroke-width="1.2"/><rect x="0" y="68" width="23" height="67" fill="#3f3f46" stroke="#fff" stroke-width="1.2"/><rect x="85" y="0" width="23" height="66" fill="#3f3f46" stroke="#fff" stroke-width="1.2"/><rect x="85" y="68" width="23" height="67" fill="#27272a" stroke="#fff" stroke-width="1.2"/>' : '')
-      + (ind === 6 ? '<ellipse cx="54" cy="112" rx="48" ry="24" fill="#9E1128" opacity="0.78"/>' : '')
-      + (ind === 7 ? '<rect x="8" y="34" width="44" height="9" rx="1.5" fill="#DC2547"/>' : '')
-      + (ind === 8 ? '<rect x="8" y="84" width="92" height="42" rx="7" fill="rgba(255,255,255,0.22)" stroke="rgba(255,255,255,0.65)" stroke-width="0.9"/>' : '')
-      + (upper
-        ? '<text x="10" y="24" fill="'+fg+'" font-size="6.8" font-family="'+(ind===2?'serif':'sans-serif')+'" font-weight="800">RETRATO</text><text x="10" y="33" fill="'+fg+'" font-size="6.8" font-family="'+(ind===2?'serif':'sans-serif')+'" font-weight="800">DE ESTUDIO</text><rect x="10" y="48" width="38" height="10" rx="5" fill="'+ctaBg+'"/><text x="29" y="54.5" fill="'+ctaFg+'" font-size="3.5" font-family="sans-serif" font-weight="700" text-anchor="middle">RESERVA</text>'
-        : '<text x="'+(ind===9?'10':'54')+'" y="96" fill="'+fg+'" font-size="7.2" font-family="'+([1,5].includes(ind)?'serif':'sans-serif')+'" font-weight="800" text-anchor="'+(ind===9?'start':'middle')+'">RETRATO</text><text x="'+(ind===9?'10':'54')+'" y="105" fill="'+(ind===9?'#69B6FF':fg)+'" font-size="5" font-family="sans-serif" font-weight="600" text-anchor="'+(ind===9?'start':'middle')+'">EN ESTUDIO</text><rect x="'+(ind===9?'62':'34')+'" y="111" width="38" height="10" rx="5" fill="'+ctaBg+'"/><text x="'+(ind===9?'81':'53')+'" y="117.5" fill="'+ctaFg+'" font-size="3.5" font-family="sans-serif" font-weight="700" text-anchor="middle">RESERVA</text>')
-      + '</svg>';
-  };
-
   const galeriaHtml = '<div class="galeria-v7">' + plantillasV7Lista.map(meta => {
     const estiloObj = (CONT.estilos||[]).find(e => e.id === meta.id || e.template_id === meta.id || e.id === meta.altId || e.template_id === meta.altId || e.indice === Number(meta.indice));
     const sel = selCheck(meta);
@@ -17302,7 +17304,7 @@ function pintaCrearContenido(cuerpo){
       ? '<img src="' + esc(vista) + '" alt="' + esc(meta.nombre) + '" loading="lazy">'
       : refImg
         ? '<img src="' + esc(refImg) + '" alt="' + esc(meta.nombre) + '" loading="lazy">'
-        : svgMockup(meta.indice, meta.acento);
+        : '<div class="plan-muestra-pendiente"><b>Muestra con tu original</b><span>Abre el lienzo para ver esta plantilla con una fotografía real.</span></div>';
     return '<div class="tarjeta-v7' + (sel ? ' seleccionada' : '') + '" data-celegirplantilla="' + esc(meta.id) + '">'
       + '<input type="radio" name="estilo_id" value="' + esc(meta.id) + '"' + (sel ? ' checked' : '') + ' style="display:none">'
       + '<div class="tarjeta-v7-vista">'
@@ -17345,6 +17347,7 @@ function pintaCrearContenido(cuerpo){
   cuerpo.innerHTML='<div class="plan-seccion-cab"><div><h2>'+(c.baseId?'Otra dirección creativa':'Crear flyers')+'</h2><p class="plan-intro">De una intención concreta a una pieza que puedas revisar.</p></div><span class="plan-respaldo">Foto original conservada</span></div>'
     + (CONT.tarea?estadoTareaContenidoHtml(CONT.tarea):'')
     + (c.incidencia?'<details class="plan-pedido-anterior" open><summary>Pedido anterior: '+esc(c.incidencia.titulo || 'necesita un ajuste')+'</summary><p>'+esc(c.incidencia.mensaje)+'</p>'+(sinOriginal.length?'<p class="cont-aviso">Falta una original en el catálogo para: '+esc(sinOriginal.join(', '))+'. Quita esa categoría o sube una foto original a Fototeca.</p>':'')+'<p>El mes, la intención y el modelo siguen aquí. Ajusta la selección antes de preparar un pedido nuevo.</p></details>':'')
+    + (c.avisoPlantilla ? '<p class="cont-aviso" role="alert">'+esc(c.avisoPlantilla)+'</p>' : '')
     + '<form class="plan-creador plan-generador" data-ccrear="1"><nav class="plan-pasos" aria-label="Pasos de creación">'+['Intención','Foto y estilo','Entrega'].map((t,i)=>'<button type="button" data-cpaso="'+(i+1)+'"'+(paso===i+1?' aria-current="step"':'')+disabled+'><span>'+(i+1)+'</span>'+t+'</button>').join('')+'</nav>'
     + '<fieldset'+disabled+(paso!==1?' hidden':'')+'><legend>¿A quién quieres atraer?</legend><p class="plan-intro">El objetivo y lo que hace especial tu trabajo guían los ganchos. Cada propuesta explora un argumento distinto.</p><div class="plan-campos"><label>Mes de los flyers<input type="month" name="mes" required value="'+esc(c.mes)+'"></label><label>Ideas por categoría<select name="cantidad">'+[1,2,3,4,6,8].map(n=>'<option value="'+n+'"'+(c.cantidad===n?' selected':'')+'>'+n+' ideas distintas</option>').join('')+'</select></label></div><div class="plan-control-grupo"><strong>Tipo de sesión</strong><div class="agente-redes">'+chips(CONT_CATEGORIAS,'categoria',c.categorias,!!c.baseId)+'</div></div>'
     + '<div class="plan-campos"><label>Qué debe conseguir la pieza<select name="objetivo">'+objetivos.map(([k,t])=>'<option value="'+k+'"'+((c.objetivo||'consultas')===k?' selected':'')+'>'+t+'</option>').join('')+'</select></label><label>A quién le hablas<input name="publico" maxlength="140" placeholder="Ej.: mamás que quieren documentar el primer año" value="'+esc(c.publico||'')+'"></label></div><label>Qué quieres que vean en tu trabajo<input name="diferencial" maxlength="180" placeholder="Ej.: retratos naturales, luz suave y dirección cercana" value="'+esc(c.diferencial||'')+'"></label><label>Dirección del mensaje<textarea name="brief" maxlength="400" rows="3" placeholder="Qué historia quieres contar. Puedes mencionar una ocasión, una emoción o algo que sí se vea en tus fotos.">'+esc(c.brief)+'</textarea></label><details class="plan-opciones"><summary>Frases o enfoques que quieres evitar</summary><label>No usar<input name="evitar" maxlength="120" placeholder="Ej.: momentos mágicos, cupos limitados, clichés" value="'+esc(c.evitar||'')+'"></label></details></fieldset>'
@@ -17449,6 +17452,12 @@ function briefCrearContenido(c){
 async function generaLoteContenido(f){
   const c=borradorCrearContenido(); if(c.enviando)return;
   guardaCrearContenido(f);
+  const plantillaValida = normalizaPlantillaContenido(c.estilo_id || '01-editorial-social', CONT.estilos || []);
+  if (!plantillaValida) { c.paso=2;c.error=c.avisoPlantilla || 'Elige una plantilla disponible.';pintaContenido();return avisa('Elige una plantilla',c.error); }
+  c.estilo_id = plantillaValida;
+  // Un pedido restaurado puede contener el ID retirado aunque la tarjeta actual ya
+  // sea valida. Reutilizar esa solicitud repetiria el mismo error con otra apariencia.
+  if (c.solicitud && normalizaPlantillaContenido(c.solicitud.payload?.estilo_id, CONT.estilos || []) !== plantillaValida) c.solicitud=null;
   if(!c.categorias.size || !c.formatos.size || !c.canales.size || !c.modelo)return avisa('Elige categoría, formato, plataforma y modelo');
   const sinOriginal=categoriasSinOriginalCrear(c);
   if(sinOriginal.length){
@@ -17479,12 +17488,18 @@ async function generaLoteContenido(f){
   finally{c.enviando=!!CONT.tarea && !['fallida','completada'].includes(CONT.tarea.estado);if(CONT.tab==='crear')pintaContenido();}
 }
 
+function navegacionContenidoHtml(cuenta){
+  return '<nav class="plan-flujo" aria-label="Flujo de publicaciones">' + CONT_TABS.map(([id,t],i) =>
+    '<button type="button" data-ctab="'+id+'"'+(CONT.tab===id?' aria-current="step"':'')+'><span>'+String(i+1).padStart(2,'0')+'</span><b>'+esc(t)+'</b>'+(cuenta[id] != null?'<small>'+cuenta[id]+'</small>':'')+'</button>').join('')+'</nav>'
+    + '<div class="plan-contexto"><details class="plan-biblioteca"><summary>Biblioteca y conexiones</summary><div>'+CONT_VISTAS.map(([id,t])=>'<button type="button" class="btn-linea" data-ctab="'+id+'"'+(CONT.tab===id?' aria-current="page"':'')+'>'+esc(t)+'</button>').join('')+'</div></details>'
+    + '<label class="plan-vistas plan-periodo"><span>Mes de trabajo</span><input type="month" data-cmeslista="1" aria-label="Mes del contenido" value="'+esc(periodoListaContenido().mes)+'"></label></div>';
+}
 function montaContenido(){
   if (!montadas.has('contenido')) {
     montadas.add('contenido');
     hueco('contenido', '<div class="hoja plan-hoja"><header class="plan-cabecera"><div class="plan-cabecera-titulo"><svg class="plan-rayo" viewBox="0 0 24 24" aria-hidden="true"><path d="M13.5 2.5 4.5 14h6l-1 7.5L19.5 10h-6V2.5Z"/></svg><h1>Planificador de contenido</h1></div>'
       + '<p class="bajada">Tus publicaciones, fotos y plantillas en un solo lugar.</p></header>'
-      + '<div id="contAgente"></div><div class="cont-tabs" id="contTabs"></div><div id="contCuerpo"></div></div>');
+      + '<div id="contAgente"></div><div class="cont-tabs" id="contTabs"></div><main id="contCuerpo" aria-label="Contenido del paso actual"></main></div>');
     $('contTabs').addEventListener('click', ev => { const b = ev.target.closest('[data-ctab]'); if (b) cambiaTabContenido(b.dataset.ctab); });
     $('contTabs').addEventListener('change', ev => { if (ev.target.matches('[data-cvista]') && ev.target.value) cambiaTabContenido(ev.target.value); if (ev.target.matches('[data-cmeslista]') && ev.target.value) { CONT.filtroMes = ev.target.value; CONT.mes = ev.target.value; void cargaContenido(); } });
     $('contAgente').addEventListener('click', clicContAgente);
@@ -17533,7 +17548,7 @@ function pintaContenido(){
   const n = e => CONT.items.filter(x => x.estado === e).length;
   const cuenta = { porAprobar: CONT.items.filter(x => x.estado === 'propuesta' && x.tiene_imagen).length, programadas: ['aprobada','publicando','encola','enviada','sin_confirmar','lista'].reduce((s,k) => s + n(k), 0), publicadas: n('publicada'), paquete: CONT.items.filter(x => x.canal === 'paquete_grupos' && x.estado === 'lista').length,
     fechas: CONT.calendario.length, tendencias: CONT.tendencias ? (CONT.tendencias.ideas || []).length : 0, estilos: CONT.estilos.filter(e => e.activo).length };
-  $('contTabs').innerHTML = CONT_TABS.map(([k, t]) => '<button type="button" class="cotz-chip' + (CONT.tab === k ? ' on' : '') + '" data-ctab="' + k + '">' + esc(t) + (cuenta[k] != null ? '<small>' + cuenta[k] + '</small>' : '') + '</button>').join('') + '<label class="plan-vistas"><span>Otras vistas</span><select data-cvista="1" aria-label="Otras vistas del planificador"><option value="">Elegir…</option>' + CONT_VISTAS.map(([k,t]) => '<option value="' + k + '"' + (CONT.tab === k ? ' selected' : '') + '>' + esc(t) + '</option>').join('') + '</select></label><label class="plan-vistas plan-periodo"><span>Mes</span><input type="month" data-cmeslista="1" aria-label="Mes del contenido" value="' + esc(periodoListaContenido().mes) + '"></label>';
+  $('contTabs').innerHTML = navegacionContenidoHtml(cuenta);
   const vistas = { crear: pintaCrearContenido, fotos: pintaFotosContenido, calendario: pintaCalendario, tendencias: pintaTendencias, subir: pintaSubir, estilos: pintaEstilos, redes: pintaRedes, paquete: pintaPaquete, fechas: pintaFechasNicho };
   if (vistas[CONT.tab]) return vistas[CONT.tab](cuerpo);
   const filtro = { porAprobar: x => x.estado === 'propuesta', programadas: x => ['aprobada', 'publicando', 'encola', 'enviada', 'sin_confirmar', 'lista', 'fallida', 'vencida'].includes(x.estado) && x.canal !== 'paquete_grupos', publicadas: x => x.estado === 'publicada' }[CONT.tab];
@@ -17554,11 +17569,11 @@ function pintaAgente(){
   const proximas = CONT.items.filter(x => ['aprobada', 'publicando'].includes(x.estado)).slice(0, 4);
   const porAprobar = CONT.items.filter(x => x.estado === 'propuesta' && x.tiene_imagen).length;
   const aut = CONT_AUTONOMIA.find(a => a[0] === CONT.autonomia) || CONT_AUTONOMIA[0];
-  el.innerHTML = (CONT.tarea && CONT.tab!=='crear'?estadoTareaContenidoHtml(CONT.tarea):'')+'<section class="agente' + (CONT.activo ? '' : ' apagado') + '">'
+  el.innerHTML = (CONT.tarea && CONT.tab!=='crear'?estadoTareaContenidoHtml(CONT.tarea):'')+'<div class="plan-mesa-acciones"><div><b>Tu próxima publicación</b><small>Crea un flyer o prepara una foto o video. Cada entrega tiene su revisión y resultado.</small></div><button type="button" class="btn-solido" data-cprepara="1">Crear flyers</button><button type="button" class="btn-linea" data-cirtab="subir">Subir foto o video</button><button type="button" class="btn-linea" data-cabrirestudio="1">Abrir creador</button></div><details class="plan-automatizacion"><summary>Rutina y automatización · '+esc(aut[1])+'</summary><section class="agente' + (CONT.activo ? '' : ' apagado') + '">'
     + '<div class="agente-cab"><span class="agente-ico" aria-hidden="true">🤖</span><div class="agente-tit"><b>Automatización</b><small>'
-    +   (CONT.activo ? 'Rutina activa · propuestas a las 7:00 y envíos a la hora programada.' : 'En pausa: no propone ni publica nada (tampoco lo ya aprobado).') + '</small></div>'
+    +   (CONT.activo ? 'Configurada para las 7:00. Consulta cada resultado para comprobar su ejecución.' : 'En pausa: no propone ni publica nada (tampoco lo ya aprobado).') + '</small></div>'
     +   (admin ? '<label class="agente-sw"><input type="checkbox" data-cactivo="1"' + (CONT.activo ? ' checked' : '') + '><span>' + (CONT.activo ? 'Encendido' : 'En pausa') + '</span></label>' : '') + '</div>'
-    + '<div class="agente-acc"><button type="button" class="btn-solido" data-cprepara="1">Crear flyers</button><button type="button" class="btn-linea" data-cabrirestudio="1">🎨 Abrir Editor de Flyers</button><button type="button" class="btn-linea" data-cmcpmodal="1" title="Consultar modelos disponibles de Gemini">✨ Estado de IA</button><button type="button" class="btn-linea" data-cirtab="subir">Subir foto o video</button></div>'
+    + '<div class="agente-acc"><button type="button" class="btn-linea" data-cmcpmodal="1" title="Consultar modelos disponibles de Gemini">Estado de IA y modelos</button></div>'
     + '<details class="plan-rutina"' + (CONT.rutinaAbierta ? ' open' : '') + '><summary>Ajustes de la rutina · ' + esc(aut[1]) + '</summary>'
     + '<div class="agente-fila"><span class="agente-rot">Autonomía</span><div class="segmento" role="radiogroup" aria-label="Autonomía del agente">'
     +   CONT_AUTONOMIA.map(([k, t]) => '<button type="button" role="radio" aria-checked="' + (CONT.autonomia === k) + '" class="' + (CONT.autonomia === k ? 'on' : '') + '" data-cautonomia="' + k + '"' + (admin ? '' : ' disabled') + '>' + esc(t) + '</button>').join('')
@@ -17580,7 +17595,7 @@ function pintaAgente(){
       ? proximas.map(x => '<button type="button" class="prox" data-cirdia="' + esc(x.fecha) + '">' + esc(contDia(x.fecha) + ' · ' + contHora12(x.hora) + ' · ' + (CONT_CORTO[x.canal] || x.canal_nombre)) + '</button>').join('')
       : '<span class="cont-sub">Nada aprobado todavía' + (porAprobar ? ': tienes ' + porAprobar + ' por aprobar.' : '.') + '</span>') + '</div>'
     + (CONT.amandine ? '' : '<p class="cont-aviso" style="margin:8px 0 0">El servidor todavía no tiene la letra Amandine: los flyers salen con Marcellus hasta que la PC ejecute DCARELA-HACER-TODO (copia la letra y despliega).</p>')
-    + '</details></section>';
+    + '</details></section></details>';
 }
 function cambioContAgente(ev){
   const t = ev.target;
@@ -17990,6 +18005,42 @@ function pintaEstilos(cuerpo){
     + '<div class="plan-seccion-cab"><h3>Tus plantillas</h3><label class="plan-vistas">Categoría de la muestra<select data-cmuestracategoria="1" aria-label="Categoría de la muestra">'+CONT_CATEGORIAS.map(([id,t])=>'<option value="'+id+'"'+(CONT.muestraCategoria===id?' selected':'')+'>'+esc(t)+'</option>').join('')+'</select></label></div><div class="estilos">' + CONT.estilos.map(tarjeta).join('') + '</div>'
     + (admin ? '<details class="plan-estilo-crear"><summary>Crear otra plantilla desde una referencia o con IA</summary>' + formularioEstiloContenido() + '</details>' : '');
   if (CONT.estilos.length && !CONT.cargandoMuestras && CONT.tab === 'estilos' && typeof cargaMuestrasDeEstilos === 'function') void cargaMuestrasDeEstilos();
+}
+function organizaEditorFlyers(m){
+  const doc=m?.ownerDocument, izquierda=m?.querySelector?.('.estudio-col-izq'), derecha=m?.querySelector?.('.estudio-col-der');
+  if (!doc || !izquierda || !derecha) return;
+  const nav=derecha.querySelector('.estudio-insp-tabs');
+  if (!nav) return;
+  const recursos=doc.createElement('section');
+  recursos.className='estudio-recursos';recursos.dataset.ceditorSec='recursos';
+  while(izquierda.firstChild) recursos.appendChild(izquierda.firstChild);
+  derecha.insertBefore(recursos,nav.nextSibling);izquierda.remove();
+  nav.querySelector('[data-ceditor-tab="todo"]')?.remove();
+  const boton=doc.createElement('button');boton.type='button';boton.className='estudio-insp-tab';
+  boton.dataset.ceditorTab='recursos';boton.textContent='Foto y plantilla';nav.prepend(boton);
+  const nombres={a:'Textos',b:'Tipografía',c:'Composición',gemini:'Asistente IA'};
+  nav.querySelectorAll('[data-ceditor-tab]').forEach(b=>{if(nombres[b.dataset.ceditorTab])b.textContent=nombres[b.dataset.ceditorTab];});
+  const acciones=m.querySelector('.estudio-topbar-der');
+  if(acciones){
+    const opciones=doc.createElement('details');opciones.className='estudio-versiones';
+    const resumen=doc.createElement('summary');resumen.textContent='Revisión y versiones';opciones.appendChild(resumen);
+    for(const selector of ['[data-ceditor-undo]','[data-ceditor-reset]','[data-ceditor-comparar]','[data-ceditor-3formatos]']){
+      const control=acciones.querySelector(selector);if(control)opciones.appendChild(control);
+    }
+    acciones.prepend(opciones);
+  }
+  const alcance=m.querySelector('[name="alcance_formato"]')?.closest('label');
+  if(alcance) recursos.prepend(alcance);
+  const duplicado=m.querySelector('[name="formato"]')?.closest('label');
+  if(duplicado) duplicado.hidden=true;
+  const rapidos=m.querySelector('.estudio-quickbar');
+  if(rapidos){
+    const grupo=doc.createElement('details');grupo.className='estudio-rapidos';
+    const resumen=doc.createElement('summary');resumen.textContent='Ajustes rápidos de la capa';grupo.appendChild(resumen);
+    rapidos.replaceWith(grupo);grupo.appendChild(rapidos);
+  }
+  const elegida=nav.querySelector('[data-ceditor-tab="'+(CONT.editorSeccion||'recursos')+'"]')||boton;
+  elegida.click();
 }
 async function montaEditorFlyers(){
   if (!montadas.has('editorflyers')) {
@@ -18559,6 +18610,7 @@ function abreEditorPlantilla(id, piezaInicialId = ''){
     if(b.dataset?.ceditorCapa){
       const blk=b.dataset.ceditorCapa;
       if(f.elements?.bloque_arrastre)f.elements.bloque_arrastre.value=blk;
+      m.querySelector?.('[data-ceditor-tab="b"]')?.click();
       sincronizaUIEstudio();
       const card=m.querySelector?.('[data-ceditor-card="'+(blk==='marca'?'cta':blk)+'"]');
       card?.scrollIntoView?.({behavior:'smooth',block:'nearest'});
@@ -18571,6 +18623,7 @@ function abreEditorPlantilla(id, piezaInicialId = ''){
     }
     if(b.dataset?.ceditorTab){
       const tab=b.dataset.ceditorTab;
+      CONT.editorSeccion=tab;
       m.querySelectorAll?.('[data-ceditor-tab]')?.forEach?.(x=>x.classList?.toggle?.('on',x.dataset?.ceditorTab===tab));
       m.querySelectorAll?.('[data-ceditor-sec]')?.forEach?.(sec=>{
         if(tab==='todo'){sec.style.display='';sec.open=true;}
@@ -18858,6 +18911,7 @@ function abreEditorPlantilla(id, piezaInicialId = ''){
     if(pz.color_panel&&f.elements.color_panel)f.elements.color_panel.value=pz.color_panel;
     if(pz.opacidad_panel&&f.elements.opacidad_panel)f.elements.opacidad_panel.value=pz.opacidad_panel;
   }
+  if (typeof organizaEditorFlyers === 'function') organizaEditorFlyers(m);
   sincronizaUIEstudio();
   ultimoEstado=JSON.stringify(valores());
   void previsualiza();
