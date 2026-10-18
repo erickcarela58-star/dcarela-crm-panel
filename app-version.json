@@ -1,7 +1,7 @@
 {
-  "version": "2026-10-18-ganchos-y-evidencia-v225",
+  "version": "2026-10-18-contexto-bot-y-originales-v226",
   "channel": "crm",
-  "released_at": "2026-10-18T04:52:02Z",
-  "summary": "Editor: ganchos de Gemini con fuente verificable y estado de IA honesto; publicaciones muestran identificador o límites de confirmación.",
-  "requiere_puente": "2026-10-17-reacciones-v50"
+  "released_at": "2026-10-18T08:48:00Z",
+  "summary": "Bot de Fotos: una imagen o un «ok» ya no se guardan como fecha ni personas. Planificador: si la categoría no tiene original servible lo dice y no ofrece un reintento inútil.",
+  "requiere_puente": "2026-10-18-contexto-respuestas-v52"
 }
