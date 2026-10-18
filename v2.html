@@ -17143,7 +17143,7 @@ let CONT = { items: [], conteo: {}, calendario: [], canales: [], activos: [], ac
   autonomia: 'manual', cantidad: 0, tiktok: null, estilos: [], tendencias: null, amandine: true, gen: null, mes: null, mesItems: null, dia: null, diaItems: null, vistas: {}, nuevosIA: [], ref: null, subida: null };
 const CONT_TABS = [['calendario', 'Calendario'], ['porAprobar', 'Revisión'], ['estilos', 'Plantillas'], ['fotos', 'Fototeca']];
 const CONT_VISTAS = [['programadas', 'Programadas'], ['publicadas', 'Publicadas'], ['tendencias', 'Ideas y tendencias'], ['redes', 'Conexiones'], ['paquete', 'Paquete de grupos'], ['fechas', 'Fechas del negocio'], ['subir', 'Nueva publicación']];
-const CONT_ESTADOS = { propuesta: 'Por aprobar', aprobada: 'Aprobada', publicando: 'Enviando…', encola: 'Procesando en el canal', enviada: 'Enviada · esperando confirmación', sin_confirmar: 'Sin confirmación', publicada: 'Publicada · confirmada', fallida: 'Falló', rechazada: 'Rechazada', vencida: 'Vencida', lista: 'Lista para subir' };
+const CONT_ESTADOS = { propuesta: 'Por aprobar', aprobada: 'Aprobada', publicando: 'Enviando…', encola: 'Procesando en el canal', enviada: 'Enviada · esperando confirmación', sin_confirmar: 'Sin confirmación', publicada: 'Registrada como publicada', fallida: 'Falló', rechazada: 'Rechazada', vencida: 'Vencida', lista: 'Lista para subir' };
 const CONT_CORTO = { instagram: 'IG', facebook: 'FB', whatsapp_estado: 'Estado', tiktok: 'TikTok', paquete_grupos: 'Grupos' };
 const CONT_AUTONOMIA = [
   ['manual', 'Manual', 'Te propone y tú apruebas todo (aquí o por WhatsApp).'],
@@ -17548,7 +17548,7 @@ function pintaAgente(){
     + '<div class="agente-cab"><span class="agente-ico" aria-hidden="true">🤖</span><div class="agente-tit"><b>Automatización</b><small>'
     +   (CONT.activo ? 'Rutina activa · propuestas a las 7:00 y envíos a la hora programada.' : 'En pausa: no propone ni publica nada (tampoco lo ya aprobado).') + '</small></div>'
     +   (admin ? '<label class="agente-sw"><input type="checkbox" data-cactivo="1"' + (CONT.activo ? ' checked' : '') + '><span>' + (CONT.activo ? 'Encendido' : 'En pausa') + '</span></label>' : '') + '</div>'
-    + '<div class="agente-acc"><button type="button" class="btn-solido" data-cprepara="1">Crear flyers</button><button type="button" class="btn-linea" data-cabrirestudio="1">🎨 Abrir Editor de Flyers</button><button type="button" class="btn-linea" data-cmcpmodal="1" title="Ver conexión MCP activa con Gemini">✨ Gemini MCP</button><button type="button" class="btn-linea" data-cirtab="subir">Subir foto o video</button></div>'
+    + '<div class="agente-acc"><button type="button" class="btn-solido" data-cprepara="1">Crear flyers</button><button type="button" class="btn-linea" data-cabrirestudio="1">🎨 Abrir Editor de Flyers</button><button type="button" class="btn-linea" data-cmcpmodal="1" title="Consultar modelos disponibles de Gemini">✨ Estado de IA</button><button type="button" class="btn-linea" data-cirtab="subir">Subir foto o video</button></div>'
     + '<details class="plan-rutina"' + (CONT.rutinaAbierta ? ' open' : '') + '><summary>Ajustes de la rutina · ' + esc(aut[1]) + '</summary>'
     + '<div class="agente-fila"><span class="agente-rot">Autonomía</span><div class="segmento" role="radiogroup" aria-label="Autonomía del agente">'
     +   CONT_AUTONOMIA.map(([k, t]) => '<button type="button" role="radio" aria-checked="' + (CONT.autonomia === k) + '" class="' + (CONT.autonomia === k ? 'on' : '') + '" data-cautonomia="' + k + '"' + (admin ? '' : ' disabled') + '>' + esc(t) + '</button>').join('')
@@ -17590,28 +17590,22 @@ async function clicContAgente(ev){
   const b = ev.target.closest('button'); if (!b || b.disabled) return;
   const d = b.dataset;
   if(d.cmcpmodal){
-    const m=abreModal('<div class="mtapa"><b>🔌 Conexión MCP Gemini · D\' Carela Compufoto</b><button type="button" data-cerrar aria-label="Cerrar">×</button></div>'
+    const m=abreModal('<div class="mtapa"><b>Estado de IA y render de flyers</b><button type="button" data-cerrar aria-label="Cerrar">×</button></div>'
       +'<div class="caja" style="display:grid;gap:12px;max-width:540px">'
-      +'<div style="display:flex;align-items:center;gap:10px;background:#f0fdf4;border:1px solid #bbf7d0;padding:12px;border-radius:8px">'
-      +'<span style="font-size:24px">✨</span>'
-      +'<div><b style="color:#15803d">Servidor MCP Stdio Activo (dcarela-flyers)</b><div class="cont-sub">Protocolo Model Context Protocol v2024-11-05</div></div>'
-      +'</div>'
-      +'<p class="cont-sub" style="margin:0">El editor y planificador de contenido están conectados al servidor MCP <code>dcarela-flyers</code>, permitiendo a Gemini generar ganchos comerciales, recomendar plantillas según fotos originales y previsualizar composiciones en alta definición.</p>'
-      +'<div class="estudio-bloque-card"><div class="estudio-bloque-cab"><span>🛠️ Herramientas MCP registradas</span></div>'
-      +'<ul style="margin:0;padding-left:18px;font-size:12px;display:grid;gap:6px;color:var(--fg)">'
-      +'<li><b>dcarela_listar_plantillas_v7:</b> Las 10 plantillas oficiales con sus metadatos tipográficos y cromáticos.</li>'
-      +'<li><b>dcarela_consultar_fototeca:</b> Fotos HD del estudio D\' Carela para composición.</li>'
-      +'<li><b>dcarela_generar_ganchos_gemini:</b> Redacción comercial con reglas estrictas (La Romana, sin precios falsos).</li>'
-      +'<li><b>dcarela_recomendar_diseno_foto:</b> Sugerencia de plantilla óptima según iluminación y rostro.</li>'
-      +'<li><b>dcarela_previsualizar_flyer:</b> Renderizado inmediato 4:5, 9:16 o 1:1.</li>'
-      +'<li><b>dcarela_personalizar_plantilla:</b> Ajuste y persistencia de capas de diseño.</li>'
-      +'</ul></div>'
+      +'<div id="contEstadoIa" class="estudio-bloque-card" role="status">Consultando los modelos disponibles de Gemini…</div>'
+      +'<p class="cont-sub" style="margin:0">El CRM web solicita ganchos a la API de Gemini y compone los flyers con su motor de render. El servidor MCP <code>dcarela-flyers</code> es una herramienta local para agentes compatibles; esta pantalla no comprueba que esté ejecutándose.</p>'
+      +'<p class="cont-sub" style="margin:0">Un modelo disponible no confirma que una generación haya terminado. El resultado de cada solicitud debe mostrar la fuente real; si Gemini falla, no se mostrarán frases prefijadas como si fueran su respuesta.</p>'
       +'<div style="display:flex;justify-content:flex-end;gap:8px">'
       +'<button type="button" class="btn-linea" data-cerrar>Entendido</button>'
-      +'<button type="button" class="btn-solido" data-cmcpabrir="1">🎨 Abrir Editor con Gemini IA</button>'
+      +'<button type="button" class="btn-solido" data-cmcpabrir="1">Abrir Editor de Flyers</button>'
       +'</div>'
       +'</div>');
     m.querySelector?.('[data-cmcpabrir]')?.addEventListener?.('click',()=>{cierraModal();if(typeof ve==='function')ve('editorflyers');});
+    let r;try{r=await llamaCont({action:'contenidoModelos'});}catch(e){r={ok:false,error:e.message};}
+    const estado=m.querySelector?.('#contEstadoIa');
+    if(estado) estado.innerHTML=r.ok
+      ? '<b>Gemini: '+(r.modelos?.length?'modelos disponibles':'sin modelos disponibles')+'</b><div class="cont-sub">Modelo configurado: '+esc(r.modelo||'sin configurar')+' · modelos compatibles: '+Number(r.modelos?.length||0)+'. Esta consulta no genera un flyer.</div>'
+      : '<b>No se pudo consultar Gemini</b><div class="cont-sub">'+esc(r.error||'Revisa la conexión en Canales.')+'</div>';
     return;
   }
   if(d.ctareacorregir)return corrigePedidoContenido(d.ctareacorregir);
@@ -17752,6 +17746,14 @@ function tarjetaContenido(x, admin){
   if (x.estilo_id && contNombreEstilo(x.estilo_id)) marcas.push('<span class="cont-marca">' + esc(contNombreEstilo(x.estilo_id)) + '</span>');
   if (x.tiene_imagen && x.origen !== 'propia') marcas.push(x.foto_hd ? '<span class="cont-marca hd">Foto original en alta</span>' : '<span class="cont-marca baja" title="Se usó la foto de la web (más chica). Sube las originales con DCARELA-HACER-TODO.">Foto de la web</span>');
   const aviso = x.estado === 'lista' && x.canal !== 'paquete_grupos' ? (x.aviso_lista || 'Lista para subir a mano: descárgala y súbela desde la app.') : '';
+  const enlaceCanal=String(x.resultado?.enlace||x.resultado?.permalink||'');
+  const enlaceSeguro=/^https:\/\/(?:www\.)?(?:instagram\.com|facebook\.com)\//i.test(enlaceCanal)?enlaceCanal.split(/[?#]/)[0]:'';
+  const idCanal=String(x.resultado?.ig_media_id||x.resultado?.post_id||'').slice(0,100);
+  const evidencia=x.estado!=='publicada'?'':x.canal==='whatsapp_estado'
+    ? '<div class="cont-sub">Estado recibido por el puente. Comprueba su visibilidad desde el teléfono; este registro no prueba la vista de todos los contactos.</div>'
+    : enlaceSeguro?'<div class="cont-sub"><a href="'+esc(enlaceSeguro)+'" target="_blank" rel="noopener noreferrer">Abrir publicación en '+esc(x.canal_nombre)+'</a>'+(idCanal?' · ID '+esc(idCanal):'')+'</div>'
+    : idCanal?'<div class="cont-sub">ID del proveedor: '+esc(idCanal)+' · enlace no disponible para comprobarlo aquí.</div>'
+    : '<div class="cont-aviso">El CRM la registró como publicada, pero esta ficha no trae ID ni enlace del proveedor. Verifica el canal antes de repetirla.</div>';
   return '<div class="cont' + (x.miniatura ? '' : ' cont-sin-imagen') + '">' + (x.miniatura ? '<img class="cont-mini" src="' + esc(x.miniatura) + '" alt="Vista previa" data-cver="' + esc(x.id) + '">' : '')
     + '<div class="cont-cuerpo"><div class="cont-cab"><b>' + esc(contDia(x.fecha) + ' · ' + contHora12(x.hora)) + '</b><span class="cotz-est ' + (x.estado === 'publicada' || x.estado === 'aprobada' ? 'aprobada' : x.estado === 'fallida' || x.estado === 'rechazada' || x.estado === 'vencida' ? 'rechazada' : '') + '">' + esc(x.estado === 'lista' && x.canal === 'paquete_grupos' ? 'Lista para grupos' : (CONT_ESTADOS[x.estado] || x.estado)) + '</span>'
     + '<span>' + esc(x.canal_nombre) + '</span>' + (x.evento_nombre ? '<span class="cont-sub">· ' + esc(x.evento_nombre) + '</span>' : '') + '</div>'
@@ -17760,7 +17762,7 @@ function tarjetaContenido(x, admin){
     + (x.mes_objetivo ? '<small class="cont-sub">Mes elegido: ' + esc(x.mes_objetivo) + (x.enfoque ? ' · ' + esc(x.enfoque) : '') + '</small>' : '')
     + (abierto ? '' : '<div class="cont-texto">' + esc(x.texto) + '</div>') + form
     + (x.error ? '<div class="cont-aviso">' + esc(x.error) + '</div>' : '') + ((x.avisos || []).length ? '<div class="cont-aviso">' + esc(x.avisos.join(' · ')) + '</div>' : '')
-    + (x.confirmacion ? '<div class="cont-sub">' + esc(x.confirmacion) + '</div>' : '')
+    + (x.confirmacion ? '<div class="cont-sub">' + esc(x.confirmacion) + '</div>' : '')+evidencia
     + (aviso ? '<div class="cont-aviso">' + esc(aviso) + '</div>' : '')
     + ((x.resultado && x.resultado.aviso) ? '<div class="cont-sub">' + esc(x.resultado.aviso) + '</div>' : '')
     + '<div class="cont-acc">' + acc.slice(0, 2).join('') + (acc.length > 2 ? '<details class="plan-acciones"><summary>Opciones</summary><div class="cont-acc">' + acc.slice(2).join('') + '</div></details>' : '') + '</div></div></div>';
@@ -18086,7 +18088,7 @@ function abreEditorPlantilla(id, piezaInicialId = ''){
     +'<div class="estudio-topbar-izq">'
     +'<span class="estudio-marca-badge">🎨 Estudio de Flyers · '+esc(e.nombre)+'</span>'
     +(pBorrador?'<span class="cotz-est">Borrador activo</span>':'')
-    +'<button type="button" class="btn-linea" data-ceditor-geminiact="1" style="border-color:#38bdf8;color:#0284c7;font-weight:700" title="Asistente de ganchos publicitarios con Gemini IA (MCP)">✨ Gemini IA</button>'
+    +'<button type="button" class="btn-linea" data-ceditor-geminiact="1" style="border-color:#38bdf8;color:#0284c7;font-weight:700" title="Ganchos por API de Gemini y herramientas locales de diseño">✨ Asistente de diseño</button>'
     +(enModulo?'<button type="button" class="btn-linea" data-ceditor-irplan="1">← Planificador</button>':'<button type="button" class="btn-linea" data-ceditor-irmodulo="1" title="Abrir en vista de módulo completo">⤢ Módulo completo</button>')
     +'</div>'
     +'<div class="estudio-topbar-centro">'
@@ -18300,9 +18302,9 @@ function abreEditorPlantilla(id, piezaInicialId = ''){
     +'<label>Opacidad de tarjeta/banda'+seleccion('opacidad_panel',String(p.opacidad_panel||0),[['0','De la plantilla'],['0.45','Translúcido · 45%'],['0.7','Medio · 70%'],['0.88','Sólido · 88%']])+'</label>'
     +'</div></div>'
     +'</div></details>'
-    +'<details open class="estudio-sec-panel" data-ceditor-sec="gemini" id="estudioSecGemini"><summary><b style="color:#0284c7">(✨) Asistente Gemini IA · Conexión MCP</b><span>▾</span></summary><div style="display:grid;gap:10px;margin-top:8px">'
+    +'<details open class="estudio-sec-panel" data-ceditor-sec="gemini" id="estudioSecGemini"><summary><b style="color:#0284c7">(✨) Ganchos con IA y diseño local</b><span>▾</span></summary><div style="display:grid;gap:10px;margin-top:8px">'
     +'<div class="estudio-bloque-card" style="border-left:3px solid #0284c7">'
-    +'<div class="estudio-bloque-cab"><span>✨ Ganchos Comerciales con Gemini</span><span class="cotz-est" style="background:#e0f2fe;color:#0369a1">MCP Stdio Conectado</span></div>'
+    +'<div class="estudio-bloque-cab"><span>✨ Ganchos comerciales con Gemini</span><span class="cotz-est" style="background:#e0f2fe;color:#0369a1">API · se verifica al solicitar</span></div>'
     +'<p class="cont-sub" style="margin:0 0 6px">Gemini redacta 3 propuestas de titular (L1), subtítulo (L2) y copy secundario respetando la firma de D\' Carela Compufoto en La Romana y sin inventar precios.</p>'
     +'<div class="estudio-grid-2">'
     +'<label>Objetivo publicitario<select name="gemini_objetivo"><option value="consultas">Conseguir consultas por WhatsApp</option><option value="reservas">Convertir interés en reserva</option><option value="portafolio">Mostrar portafolio y calidad</option><option value="emotivo">Conexión familiar y recuerdos</option></select></label>'
@@ -18316,8 +18318,8 @@ function abreEditorPlantilla(id, piezaInicialId = ''){
     +'<div id="estudioGeminiResultados" style="margin-top:8px;display:none"></div>'
     +'</div>'
     +'<div class="estudio-bloque-card" style="border-left:3px solid #7c3aed">'
-    +'<div class="estudio-bloque-cab"><span>🖼️ Replicar Foto de Referencia con Gemini (MCP)</span><span class="cotz-est" style="background:#f3e8ff;color:#7c3aed">dcarela_replicar_referencia</span></div>'
-    +'<p class="cont-sub" style="margin:0 0 8px">Gemini analiza una de las 10 fotos/flyers de referencia oficiales del estudio o una imagen externa que subas, extrae tipografía, jerarquía y paleta cromática, asocia la foto original en alta resolución sin marcas de agua y genera la réplica de diseño en alta definición.</p>'
+    +'<div class="estudio-bloque-cab"><span>🖼️ Recrear diseño de referencia</span><span class="cotz-est" style="background:#f3e8ff;color:#7c3aed">Render local</span></div>'
+    +'<p class="cont-sub" style="margin:0 0 8px">Las referencias del catálogo aplican su geometría y estilo con el motor local. Una referencia externa requiere el análisis de IA por separado; el render conserva la fotografía original y su logo si lo tiene.</p>'
     +'<label>Elegir referencia oficial del estudio<select name="gemini_ref_selector">'
     +'<option value="01_editorial_social">01 · Editorial social (Maternidad / Retrato elegante)</option>'
     +'<option value="02_editorial_rojo_serif">02 · Editorial rojo serif (Retrato editorial / Cumpleaños)</option>'
@@ -18331,15 +18333,15 @@ function abreEditorPlantilla(id, piezaInicialId = ''){
     +'<option value="10_alta_clave_fotografia">10 · Alta clave fotográfica (Infantil / Luz pura alta clave)</option>'
     +'</select></label>'
     +'<div style="display:flex;gap:8px;margin-top:6px;flex-wrap:wrap;align-items:center">'
-    +'<button type="button" class="btn-solido" data-cgemini-replica="1" style="background:#7c3aed;color:#fff">✨ Diseñar y replicar con Gemini MCP</button>'
+    +'<button type="button" class="btn-solido" data-cgemini-replica="1" style="background:#7c3aed;color:#fff">Recrear diseño</button>'
     +'<label class="btn-linea" style="cursor:pointer;margin:0;font-size:12px;display:inline-flex;align-items:center;gap:4px">📁 Subir flyer externo<input type="file" accept="image/*" id="geminiRefUploadInput" style="display:none"></label>'
     +'<span id="geminiRefUploadNombre" class="cont-sub" style="font-size:11px"></span>'
     +'</div>'
     +'<div id="estudioGeminiReplicaResultados" style="margin-top:10px;display:none"></div>'
     +'</div>'
     +'<div class="estudio-bloque-card">'
-    +'<div class="estudio-bloque-cab"><span>🔌 Servidor MCP Activo (stdio)</span><span class="cont-sub">dcarela-flyers</span></div>'
-    +'<small class="cont-sub" style="display:block;line-height:1.4">Herramientas MCP registradas para Antigravity y Gemini: <code>dcarela_listar_referencias</code>, <code>dcarela_replicar_referencia</code>, <code>dcarela_listar_plantillas_v7</code>, <code>dcarela_consultar_fototeca</code>, <code>dcarela_generar_ganchos_gemini</code>, <code>dcarela_recomendar_diseno_foto</code>, <code>dcarela_previsualizar_flyer</code> y <code>dcarela_personalizar_plantilla</code>.</small>'
+    +'<div class="estudio-bloque-cab"><span>MCP local opcional</span><span class="cont-sub">dcarela-flyers</span></div>'
+    +'<small class="cont-sub" style="display:block;line-height:1.4">El servidor MCP stdio se ejecuta fuera del navegador. Abrir este editor no comprueba su conexión; aquí se usan la API web y el render del CRM.</small>'
     +'</div>'
     +'</div></details>'
     +'</aside>'
@@ -18568,7 +18570,7 @@ function abreEditorPlantilla(id, piezaInicialId = ''){
     }
     if(b.dataset?.cgeminiGanchos){
       const v=valores(),cajaRes=m.querySelector('#estudioGeminiResultados');
-      if(cajaRes){cajaRes.style.display='block';cajaRes.innerHTML='<span class="cont-sub"><span class="cargando"></span> Gemini redactando 3 ganchos comerciales vía MCP…</span>';}
+      if(cajaRes){cajaRes.style.display='block';cajaRes.innerHTML='<span class="cont-sub"><span class="cargando"></span> Solicitando tres ganchos a Gemini…</span>';}
       b.disabled=true;
       const obj=f.elements.gemini_objetivo?.value||'consultas';
       const tono=f.elements.gemini_tono?.value||'elegante';
@@ -18581,7 +18583,7 @@ function abreEditorPlantilla(id, piezaInicialId = ''){
       }
       CONT._ultimosGanchosGemini=r.ganchos;
       if(cajaRes){
-        cajaRes.innerHTML='<div style="display:grid;gap:8px">'
+        cajaRes.innerHTML='<p class="cont-sub">Fuente: '+esc(r.fuente||'no indicada')+' · Modelo: '+esc(r.modelo||'no indicado')+'</p><div style="display:grid;gap:8px">'
           +r.ganchos.map((g,idx)=>'<div class="estudio-bloque-card" style="border:1px solid #bae6fd;background:#f8fafc;padding:10px;border-radius:8px">'
             +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">'
             +'<b style="font-size:12px;color:#0369a1">Propuesta '+(idx+1)+'</b>'
@@ -18613,7 +18615,7 @@ function abreEditorPlantilla(id, piezaInicialId = ''){
     }
     if(b.dataset?.cgeminiRecomienda){
       const v=valores(),cajaRes=m.querySelector('#estudioGeminiResultados');
-      if(cajaRes){cajaRes.style.display='block';cajaRes.innerHTML='<span class="cont-sub"><span class="cargando"></span> Analizando foto y recomendando plantilla V7 con Gemini…</span>';}
+      if(cajaRes){cajaRes.style.display='block';cajaRes.innerHTML='<span class="cont-sub"><span class="cargando"></span> Aplicando reglas locales de plantilla V7…</span>';}
       b.disabled=true;
       const r=await llamaCont({action:'contenidoEstilos',operation:'gemini_recomienda',categoria:v._categoria,foto_id:v._foto_id});
       b.disabled=false;
@@ -18639,7 +18641,7 @@ function abreEditorPlantilla(id, piezaInicialId = ''){
       let customB64=CONT._geminiCustomRefB64||null;
       if(cajaRes){
         cajaRes.style.display='block';
-        cajaRes.innerHTML='<div class="cargando-caja" style="padding:14px;text-align:center"><span class="cargando"></span> <b style="color:#7c3aed">Gemini analizando referencia y renderizando réplica en alta definición con fotografía de estudio…</b></div>';
+        cajaRes.innerHTML='<div class="cargando-caja" style="padding:14px;text-align:center"><span class="cargando"></span> <b style="color:#7c3aed">Aplicando la geometría de la referencia y renderizando una muestra…</b></div>';
       }
       b.disabled=true;
       const r=await llamaCont({
