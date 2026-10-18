@@ -1,7 +1,7 @@
 {
-  "version": "2026-10-18-estabilidad-chat-y-publicacion-v227",
+  "version": "2026-10-18-modulos-contextuales-v228",
   "channel": "crm",
-  "released_at": "2026-10-18T17:47:57.808638Z",
-  "summary": "Agenda distingue seguimientos de sesiones. Las respuestas con archivos conservan la cita. Instagram bloquea reenvios cuando falta confirmar el resultado. Diagnostico seguro de identidad en el puente.",
+  "released_at": "2026-10-18T18:16:38.997464Z",
+  "summary": "Planificador organizado en Crear, Revisar, Programar y Resultados. Creador con lienzo amplio e inspector por tarea. Seleccion de plantilla validada y pedidos restaurados sin referencias retiradas.",
   "requiere_puente": "2026-10-18-diagnostico-citas-v53"
 }
