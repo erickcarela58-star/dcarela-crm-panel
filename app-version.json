@@ -1,7 +1,7 @@
 {
-  "version": "2026-10-17-estudio-flyers-mcp-replica-v222",
+  "version": "2026-10-17-whatsapp-web-reconexion-v223",
   "channel": "crm",
-  "released_at": "2026-10-17T16:15:00.000Z",
-  "summary": "Replicación de fotos y flyers de referencia con Gemini y MCP para D' Carela Compufoto. Nuevas herramientas MCP dcarela_listar_referencias y dcarela_replicar_referencia para analizar portadas oficiales o subidas, extraer estilo y tipografía, enlazar la fotografía de estudio original en alta resolución y renderizar la réplica en alta definición respetando las reglas comerciales estrictas. Nueva tarjeta interactiva en el Asistente ✨ Gemini IA del editor con selector de las 10 referencias, subida de archivos, comparación side-by-side y carga en 1 clic al lienzo.",
+  "released_at": "2026-10-18T01:55:28Z",
+  "summary": "WhatsApp Web: Reintentar conexión conserva la identidad de una sesión guardada y Reconstruir vínculo queda disponible cuando el canal está desconectado. No cambia chats ni mensajes.",
   "requiere_puente": "2026-10-15-citas-y-conexion-v49"
 }
