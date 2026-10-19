@@ -18120,8 +18120,11 @@ function abreRevisionEditorV7(pedido){
 // El motor Sharp/SVG V7 sigue siendo el UNICO render autoritativo (vista, JPG, propuestas). La capa en
 // vivo solo dibuja en el navegador la capa que se esta editando (texto, tamaño, fuente, color, giro y
 // desplazamiento) encima de la ultima vista buena, para que mover o escalar no espere al servidor.
-// La posicion base de cada capa la calcula el motor (con rostros); aqui se ancla donde la persona
-// agarra el texto, asi que es una guia, no una replica exacta del layout V7.
+// v231: la posicion base de cada capa es la CAJA que el motor dibujo en la ultima vista buena
+// (rol, x/y/w/h, tamaño, alineacion, letra; ya encogida y esquivando rostros). La guia suma solo lo que
+// la persona cambio desde esa vista (desplazamiento y escala), asi que con cero cambios coincide con
+// el render. Sin caja del motor (otro formato/foto, plantilla sin composicion) vuelve a la guia
+// aproximada: base fija + punto donde se agarra el texto.
 const EDITOR_LIVE_FLAG = 'editorLiveKonvaV230';
 const KONVA_V230 = { src: 'https://cdn.jsdelivr.net/npm/konva@10.9.0/konva.min.js', integrity: 'sha384-kGDb2kUnEhYjAl3UvL4+8M2sJgvB8pxKW4g0i+VX4pTgboU1nKUgIEywbstD/3CC' };
 function editorLiveActivo(){
@@ -18145,11 +18148,28 @@ function cargaKonvaV230(){
 const FUENTES_LIVE_V230 = { editorial:'Playfair Display', playfair:'Playfair Display', amandine:'Amandine, Playfair Display', clasica:'Marcellus', jakarta:'Plus Jakarta Sans', 'dm-serif':'DM Serif Display', bodoni:'Bodoni Moda', moderna:'Poppins', spartan:'League Spartan', inter:'Inter', original:'Inter' };
 // Tamaño base de cada capa en % del ANCHO de la imagen (la misma unidad que usa la composicion V7).
 const BASE_LIVE_V230 = { titulo:{ tam:7.2, y:72 }, subtitulo:{ tam:3.4, y:81 }, cta:{ tam:2.6, y:89 }, marca:{ tam:2.4, y:6 }, periodo:{ tam:2.2, y:11 } };
+// Capa del editor → rol del motor V7 (contenido-store.aplicaPersonalizacionCapa usa el mismo reparto).
+const ROLES_MOTOR_V231 = { titulo:['titulo1'], subtitulo:['titulo2'], cta:['cta'], marca:['marca'], periodo:['periodo','zona'] };
+const ALIN_MOTOR_V231 = { start:'left', middle:'center', end:'right' };
+// Desplazamiento y escala EFECTIVOS que el servidor aplica a cada capa: el subtitulo hereda el
+// movimiento del titular y, si su escala propia es 1, la escala del titular; la etiqueta no escala.
+function ajusteMotorV231(c, leer){
+  const n = k => Number(leer(k)) || 0, esc = k => Number(leer(k)) || 1;
+  if (c === 'subtitulo') { const s = esc('escala_subtitulo'); return { dx: n('dx_titulo') + n('dx_subtitulo'), dy: n('dy_titulo') + n('dy_subtitulo'), esc: s !== 1 ? s : esc('escala_titulo') }; }
+  return { dx: n('dx_' + c), dy: n('dy_' + c), esc: c === 'periodo' ? 1 : esc({ titulo:'escala_titulo', cta:'escala_cta', marca:'escala_marca' }[c]) };
+}
 function capaEnVivoV230(vista, form){
   const anclas = {}, med = [];
-  let stage = null, capa = null, nodo = null, caja = null, host = null, sucia = false, cargando = null;
+  let stage = null, capa = null, nodo = null, caja = null, host = null, sucia = false, cargando = null, motor = null;
   const campo = n => form?.elements?.[n]?.value ?? '';
-  const img = () => vista?.querySelector?.('img');
+  // En «comparar» hay dos imagenes (Antes/Después): la guia va sobre la ultima, la editada.
+  const img = () => { const t = vista?.querySelectorAll?.('img'); return t?.length ? t[t.length - 1] : vista?.querySelector?.('img'); };
+  // Caja del motor para la capa, solo si la ultima vista buena es del mismo formato, categoria y foto
+  // (con foto «automática» el panel selecciona despues la que eligio el servidor: valen las dos).
+  function cajaMotor(c){
+    if (!motor || motor.formato !== campo('formato') || motor.categoria !== campo('categoria') || !motor.fotos.includes(campo('foto_id'))) return null;
+    return (ROLES_MOTOR_V231[c] || []).map(r => motor.cajas.find(b => b.rol === r)).find(Boolean) || null;
+  }
   function textoDe(c){
     if (c === 'titulo') return campo('pieza_id') && campo('pieza_l1') ? campo('pieza_l1') : (campo('texto_muestra_l1') || 'Titular');
     if (c === 'subtitulo') return campo('pieza_id') && campo('pieza_l2') ? campo('pieza_l2') : (campo('texto_muestra_l2') || 'Subtítulo');
@@ -18180,6 +18200,8 @@ function capaEnVivoV230(vista, form){
     if (!stage || !sucia) return;
     const t0 = performance.now(), d = encaja(); if (!d) return;
     const c = campo('bloque_arrastre') || 'titulo', base = BASE_LIVE_V230[c] || BASE_LIVE_V230.titulo, e = estiloDe(c);
+    const b = cajaMotor(c);
+    if (b) { dibujaSobreCaja(c, b, e, d); med.push(Math.round((performance.now() - t0) * 10) / 10); if (med.length > 200) med.shift(); return; }
     const a = anclas[c] || { x: 50, y: base.y };
     const x = (a.x + (Number(campo('dx_' + c)) || 0)) / 100 * d.w, y = (a.y + (Number(campo('dy_' + c)) || 0)) / 100 * d.h;
     const ancho = d.w * 0.86, txt = textoDe(c);
@@ -18189,6 +18211,30 @@ function capaEnVivoV230(vista, form){
     caja.setAttrs({ x, y, width: ancho + 12, height: nodo.height() + 10, offsetX: nodo.offsetX() + 6, offsetY: nodo.height() / 2 + 5, rotation: e.giro, visible: true });
     capa.batchDraw();
     med.push(Math.round((performance.now() - t0) * 10) / 10); if (med.length > 200) med.shift();
+  }
+  // Guia anclada a la caja del motor: con los mismos valores que pidieron esa vista cae encima del
+  // rotulo renderizado; despues solo se suma el cambio de desplazamiento/escala desde entonces.
+  function dibujaSobreCaja(c, b, e, d){
+    const ahora = ajusteMotorV231(c, campo), antes = motor.ajustes[c] || ahora;
+    const ratio = ahora.esc / (antes.esc || 1), ddx = ahora.dx - antes.dx, ddy = ahora.dy - antes.dy;
+    const tip = c === 'subtitulo' ? campo('tipografia_subtitulo') : c === 'cta' ? campo('tipografia_cta') : (c === 'titulo' ? campo('tipografia') : '');
+    const peso = c === 'titulo' ? campo('peso_titulo') : c === 'subtitulo' ? campo('peso_subtitulo') : '';
+    const may = campo({ titulo:'mayusculas_titulo', subtitulo:'mayusculas_subtitulo', cta:'mayusculas_cta' }[c] || '');
+    const alinCampo = campo({ titulo:'alineacion', subtitulo:'alineacion_subtitulo', cta:'alineacion_cta', marca:'alineacion_marca' }[c] || '');
+    const alin = ALIN_MOTOR_V231[alinCampo] || ALIN_MOTOR_V231[b.alineacion] || 'left';
+    const giroCampo = (c === 'titulo' || c === 'subtitulo') ? campo('giro_titulo') : '';
+    const w = b.w / 100 * d.w * ratio, h = b.h / 100 * d.h * ratio;
+    const izq = (b.x + ddx) / 100 * d.w, x = alin === 'center' ? izq + b.w / 100 * d.w / 2 : alin === 'right' ? izq + b.w / 100 * d.w : izq;
+    const y = (b.y + ddy) / 100 * d.h, ancho = Math.max(w * 1.06, 24), txt = textoDe(c);
+    const mayus = may === 'si' || (may !== 'no' && b.mayusculas);
+    nodo.setAttrs({ text: mayus ? txt.toLocaleUpperCase('es') : txt,
+      fontFamily: (tip && tip !== 'original' && FUENTES_LIVE_V230[tip]) || b.familia || e.fuente,
+      fontStyle: (peso && peso !== 'original' ? Number(peso) >= 600 : Number(b.peso) >= 600) ? 'bold' : 'normal',
+      fontSize: Math.max(8, b.size / 100 * d.w * ratio), fill: e.color, align: alin, width: ancho, x, y, offsetY: 0,
+      offsetX: alin === 'center' ? ancho / 2 : alin === 'right' ? ancho : 0,
+      rotation: giroCampo !== '' && Number.isFinite(Number(giroCampo)) ? Number(giroCampo) : (b.giro || 0), visible: true });
+    caja.setAttrs({ x, y, width: w + 12, height: h + 10, offsetX: alin === 'center' ? (w + 12) / 2 : alin === 'right' ? w + 6 : 6, offsetY: 5, rotation: nodo.rotation(), visible: true });
+    capa.batchDraw();
   }
   async function monta(){
     if (stage) return true;
@@ -18211,12 +18257,24 @@ function capaEnVivoV230(vista, form){
     ancla(ev){
       const im = img(); if (!im) return; const r = im.getBoundingClientRect(); if (!r.width) return;
       const c = campo('bloque_arrastre') || 'titulo';
+      if (cajaMotor(c)) return; // con caja del motor la posicion ya es la real: agarrar no la mueve
       anclas[c] = { x: (ev.clientX - r.left) / r.width * 100 - (Number(campo('dx_' + c)) || 0), y: (ev.clientY - r.top) / r.height * 100 - (Number(campo('dy_' + c)) || 0) };
     },
     // El motor V7 entrego una vista con todos los cambios: la guia se esconde y la imagen manda.
     confirmada(){ sucia = false; if (nodo) { nodo.visible(false); caja.visible(false); capa.batchDraw(); } if (host && !host.isConnected) vista.appendChild(host); },
+    // Cajas que el motor devolvio con una vista buena y los valores (`valores()` del editor) que la
+    // pidieron; `fotoReal` es la original que eligio el servidor cuando la foto era automatica.
+    motor(cajas, pedido, fotoReal){
+      if (!Array.isArray(cajas) || !cajas.length || !pedido) { motor = null; return; }
+      const leer = k => pedido[k] ?? pedido['_' + k];
+      motor = { cajas: cajas.filter(b => b && Number.isFinite(b.x) && Number.isFinite(b.y) && b.w > 0 && b.size > 0),
+        formato: String(leer('formato') ?? ''), categoria: String(leer('categoria') ?? ''),
+        fotos: [...new Set([String(leer('foto_id') ?? ''), ...(fotoReal ? [String(fotoReal)] : [])])],
+        ajustes: Object.fromEntries(Object.keys(ROLES_MOTOR_V231).map(c => [c, ajusteMotorV231(c, leer)])) };
+    },
     destruye(){ try { stage?.destroy(); } catch {} host?.remove?.(); stage = null; },
     medidas: () => med.slice(),
+    cajasMotor: () => motor ? motor.cajas.slice() : [],
     activa: () => !!stage,
   };
 }
@@ -18572,10 +18630,10 @@ function abreEditorPlantilla(id, piezaInicialId = ''){
   }
   const f=m.querySelector('#editorPlantilla'),vista=m.querySelector('#editorPlantillaVista'),btnUndo=m.querySelector('[data-ceditor-undo]'),btnComp=m.querySelector('[data-ceditor-comparar]');
   let turno=0,temporizador=null,comparar=false,historial=[],ultimoEstado=null;
-  let enVuelo=false,pendiente=false,ultimaBuena=null,cambios=0;
+  let enVuelo=false,pendiente=false,ultimaBuena=null,ultimoMotor=null,cambios=0;
   const metricasVista=[];
   let live=(typeof editorLiveActivo==='function'&&editorLiveActivo()&&typeof capaEnVivoV230==='function')?capaEnVivoV230(vista,f):null;
-  if(typeof window!=='undefined')window.__editorV230={metricasVista,medidasLive:()=>live?live.medidas():[],liveActivo:()=>!!live?.activa()};
+  if(typeof window!=='undefined')window.__editorV230={metricasVista,medidasLive:()=>live?live.medidas():[],liveActivo:()=>!!live?.activa(),cajasMotor:()=>live?live.cajasMotor():(ultimoMotor?.[0]||[])};
   const CLAVES_FORMATO=['tipografia','tipografia_subtitulo','tipografia_cta','peso_titulo','peso_subtitulo','interlineado','interlineado_subtitulo','tracking_titulo','tracking_cta','mayusculas_titulo','mayusculas_subtitulo','mayusculas_cta','escala_titulo','escala_subtitulo','escala_cta','escala_marca','alineacion','alineacion_subtitulo','alineacion_cta','alineacion_marca','giro_titulo','dx_titulo','dy_titulo','dx_subtitulo','dy_subtitulo','dx_cta','dy_cta','dx_marca','dy_marca','dx_periodo','dy_periodo','margen','orden_lectura','efecto','sombra','opacidad_panel'];
   const fmtClave=v=>({imagen_4x5:'4:5',imagen_9x16:'9:16',imagen_1x1:'1:1',imagen_16x9:'16:9'}[v]||'4:5');
   const mapaEscalaDeCapa={titulo:'escala_titulo',subtitulo:'escala_subtitulo',cta:'escala_cta',marca:'escala_marca',periodo:'escala_marca'};
@@ -18718,7 +18776,7 @@ function abreEditorPlantilla(id, piezaInicialId = ''){
       if(pendiente)void previsualiza();
       return;
     }
-    ultimaBuena=r.vista;
+    ultimaBuena=r.vista;ultimoMotor=[r.cajas,v,r.foto_id];
     if(comparar&&r.vista_antes){
       vista.innerHTML='<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;width:100%;place-items:center">'
         +'<figure style="margin:0;text-align:center"><figcaption class="cont-sub" style="margin-bottom:4px">Antes (original V7)</figcaption><img src="'+esc(r.vista_antes)+'" alt="Antes" style="max-width:100%;max-height:56vh;border-radius:10px"></figure>'
@@ -18726,7 +18784,7 @@ function abreEditorPlantilla(id, piezaInicialId = ''){
     }else{
       vista.innerHTML='<img src="'+esc(r.vista)+'" alt="Muestra de la plantilla editada" style="display:block;width:auto;max-width:100%;max-height:66vh;border-radius:12px;cursor:grab">';
     }
-    if(live){if(cambioPedido===cambios&&!pendiente)live.confirmada();else live.cambio();}
+    if(live){live.motor(...ultimoMotor);if(cambioPedido===cambios&&!pendiente)live.confirmada();else live.cambio();}
     if(pendiente)void previsualiza();
   };
   // Cambio local: la capa en vivo (si esta activa) se redibuja en el mismo frame; la vista V7 se pide
@@ -18786,7 +18844,7 @@ function abreEditorPlantilla(id, piezaInicialId = ''){
     }
     if(t?.dataset?.ceditorLive){
       if(typeof fijaEditorLive==='function')fijaEditorLive(!!t.checked);
-      if(t.checked&&typeof capaEnVivoV230==='function'){live=live||capaEnVivoV230(vista,f);live.cambio();}
+      if(t.checked&&typeof capaEnVivoV230==='function'){live=live||capaEnVivoV230(vista,f);if(ultimoMotor)live.motor(...ultimoMotor);live.cambio();}
       else if(live){live.destruye();live=null;}
       return;
     }
