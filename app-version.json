@@ -1,7 +1,7 @@
 {
-  "version": "2026-10-19-editor-campanas-v236",
+  "version": "2026-10-19-editor-estetica-v237",
   "channel": "crm",
-  "released_at": "2026-10-20T03:06:44.500Z",
-  "summary": "Editor de flyers con la nueva estetica (catalogo de plantillas con vista real, barra de herramientas e inspector), la guia En vivo escribe el texto real, campañas recuperables tras recargar con ritmo antibloqueo compartido y una promocion cada 72 h, Estados aceptan videos MP4, y Aprobar todo aprueba todas las propuestas.",
+  "released_at": "2026-10-20T03:32:20.674Z",
+  "summary": "Editor de flyers con la estetica de la referencia: titulo y acciones arriba, catalogo de plantillas con miniaturas reales y buscador, barra de herramientas con iconos, lienzo limpio e inspector Elemento compacto (texto, fuente, tamano, color, alineacion y espaciado).",
   "requiere_puente": "2026-10-18-diagnostico-citas-v53"
 }
