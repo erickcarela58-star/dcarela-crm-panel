@@ -1,7 +1,7 @@
 {
-  "version": "2026-10-18-editor-guia-cajas-v231",
+  "version": "2026-10-19-editor-campanas-v236",
   "channel": "crm",
-  "released_at": "2026-10-19T03:06:00.000Z",
-  "summary": "Editor de flyers: la capa En vivo (beta, opcional para administrador) ahora se coloca exactamente sobre el texto que dibuja el motor V7 y sigue al instante lo que mueves o escalas, en vez de una posicion aproximada.",
+  "released_at": "2026-10-20T03:06:44.500Z",
+  "summary": "Editor de flyers con la nueva estetica (catalogo de plantillas con vista real, barra de herramientas e inspector), la guia En vivo escribe el texto real, campañas recuperables tras recargar con ritmo antibloqueo compartido y una promocion cada 72 h, Estados aceptan videos MP4, y Aprobar todo aprueba todas las propuestas.",
   "requiere_puente": "2026-10-18-diagnostico-citas-v53"
 }
