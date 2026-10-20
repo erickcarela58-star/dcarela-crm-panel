@@ -18337,7 +18337,7 @@ async function miniaturasCatalogoEditor(m){
   const lee=()=>({categoria:f.elements?.categoria?.value||'',foto:f.elements?.foto_id?.value||m.dataset?.fotoMotor||''});
   const inicio=lee();
   tarjetas.forEach(t=>pinta(t,CONT.miniCatalogo[t.dataset.ceditorPlantilla+'|'+inicio.foto]||''));
-  if(!m.dataset.miniEscucha){m.dataset.miniEscucha='1';f.addEventListener?.('change',ev=>{if(['foto_id','categoria'].includes(ev.target?.name))setTimeout(()=>miniaturasCatalogoEditor(m),400);});}
+  if(!f.dataset?.miniEscucha){if(f.dataset)f.dataset.miniEscucha='1';f.addEventListener?.('change',ev=>{if(['foto_id','categoria'].includes(ev.target?.name))setTimeout(()=>miniaturasCatalogoEditor(m),400);});}
   await new Promise(r=>setTimeout(r,1500));
   for(const t of tarjetas){
     if(m.dataset.miniTurno!==turno||!t.isConnected)return;
@@ -18375,8 +18375,12 @@ const CAMPOS_ELEMENTO_V237={
 const ROLES_CAJA_V237={titulo:'titulo1',subtitulo:'titulo2',cta:'cta',marca:'marca',periodo:'periodo'};
 function pielReferenciaEditor(m){
   const doc=m?.ownerDocument,f=m?.querySelector?.('#editorPlantilla');
-  if(!doc||!f||m.dataset.piel237==='1')return;
-  m.dataset.piel237='1';
+  // El editor se repinta DENTRO del mismo contenedor (p. ej. al elegir otra plantilla): la marca va en el contenido
+  // pintado, no en el contenedor, o desde el segundo repintado la piel no se volvía a montar.
+  if(!doc||!f||f.dataset.piel237==='1')return;
+  f.dataset.piel237='1';
+  // Los oyentes se cuelgan del contenido pintado: al repintar mueren con él y no se acumulan en el contenedor.
+  const raiz=f.parentElement||m;
   const nodo=(tag,clase,html)=>{const n=doc.createElement(tag);if(clase)n.className=clase;if(html!=null)n.innerHTML=html;return n;};
   const izq=m.querySelector('.estudio-topbar-izq'),der=m.querySelector('.estudio-topbar-der'),centro=m.querySelector('.estudio-topbar-centro');
   // 1 · Encabezado: título y subtítulo como el resto del CRM; el nombre de la plantilla queda como etiqueta pequeña.
@@ -18391,7 +18395,7 @@ function pielReferenciaEditor(m){
       const b=m.querySelector(sel);if(b&&!b.closest('.estudio-quickbar'))lista.appendChild(b);
     }
     // Deshacer vivía dentro de «Revisión y versiones»: se rescata para la barra antes de quitar ese menú.
-    const deshacer=m.querySelector('[data-ceditor-undo]');if(deshacer)m.__undo237=deshacer;
+    const deshacer=m.querySelector('[data-ceditor-undo]');if(deshacer)f.__undo237=deshacer;
     m.querySelector('.estudio-versiones')?.remove();
     const borrador=der.querySelector('[data-ceditor-borrador]'),jpg=der.querySelector('[data-ceditor-exportar]');
     if(jpg){jpg.classList.remove('btn-linea');jpg.classList.add('btn-solido');}
@@ -18416,7 +18420,7 @@ function pielReferenciaEditor(m){
       const marca=()=>{const on=pills.querySelector('.estudio-fmt-pill.on');if(on)sel.value=on.dataset.ceditorFmtpill;};marca();
       sel.addEventListener('change',ev=>{ev.stopPropagation();pills.querySelector('[data-ceditor-fmtpill="'+sel.value+'"]')?.click();setTimeout(marca,0);});
       sel.addEventListener('input',ev=>ev.stopPropagation());
-      m.addEventListener('click',ev=>{if(ev.target.closest?.('[data-ceditor-fmtpill]'))setTimeout(marca,0);});
+      raiz.addEventListener('click',ev=>{if(ev.target.closest?.('[data-ceditor-fmtpill]'))setTimeout(marca,0);});
       g.append(sel);herramientas.after(g);
     }
     const icono=(sel,ico,titulo)=>{const b=barra.querySelector(sel);if(b){b.title=b.title||titulo;b.setAttribute('aria-label',titulo);b.innerHTML=ico;}};
@@ -18429,7 +18433,7 @@ function pielReferenciaEditor(m){
     // Los interruptores beta (En vivo / Mosaico editable) van al pie del lienzo: la barra queda solo con herramientas.
     const pie=m.querySelector('.estudio-canvas-pie');
     if(pie)barra.querySelectorAll('.estudio-live-toggle').forEach(t=>{const g=t.closest('.estudio-quick-grupo');pie.appendChild(t);if(g&&!g.children.length)g.remove();});
-    const undo=m.__undo237||m.querySelector('[data-ceditor-undo]');
+    const undo=f.__undo237||m.querySelector('[data-ceditor-undo]');
     if(undo){undo.innerHTML=ICO_V237.deshacer;undo.title='Deshacer';undo.setAttribute('aria-label','Deshacer');undo.classList.add('estudio-quick-btn');const g=nodo('div','estudio-quick-grupo estudio-undo237');g.appendChild(undo);barra.appendChild(g);}
   }
   // 4 · El mes y el alcance por formato viven en «Diseño», no encima del lienzo.
@@ -18506,7 +18510,7 @@ function pielReferenciaEditor(m){
     });
     // Cualquier cambio del campo original (barra rápida, deshacer, otra pestaña, arrastre) se refleja aquí.
     f.addEventListener('input',()=>m.__refrescaElemento237?.());f.addEventListener('change',()=>m.__refrescaElemento237?.());
-    m.addEventListener('click',ev=>{if(ev.target.closest?.('[data-ceditor-capa],[data-ceditor-undo],[data-ceditor-reset],[data-ceditor-qsize],[data-ceditor-qalign],[data-ceditor-qcase]'))setTimeout(()=>m.__refrescaElemento237?.(),0);});
+    raiz.addEventListener('click',ev=>{if(ev.target.closest?.('[data-ceditor-capa],[data-ceditor-undo],[data-ceditor-reset],[data-ceditor-qsize],[data-ceditor-qalign],[data-ceditor-qcase]'))setTimeout(()=>m.__refrescaElemento237?.(),0);});
     m.__refrescaElemento237();
   }
 }
