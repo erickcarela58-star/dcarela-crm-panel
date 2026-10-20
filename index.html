@@ -3585,7 +3585,14 @@ async function llama(cuerpo, opciones = {}){
     return { ok:false, error: e?.message || String(e), abortado: nombre === 'AbortError',
       tiempo: nombre === 'TimeoutError', red: nombre !== 'AbortError' && nombre !== 'TimeoutError' };
   }
-  const j = await r.json().catch(() => ({}));
+  // v238: un cuerpo que no se puede leer entero (la conexión se cortó a mitad, p. ej. al recargar la app por versión
+  // nueva) ya no se toma por un éxito vacío. Antes salía «No se pudo generar la muestra» sin causa. Vacío sigue = {}.
+  let texto = '', cortada = false;
+  try { texto = await r.text(); } catch { cortada = true; }
+  let j = {};
+  if (texto) { try { j = JSON.parse(texto); } catch { cortada = true; } }
+  if (cortada && r.ok) return { ok:false, incompleta:true, status: r.status, retryable:true,
+    error:'La respuesta del servidor llegó incompleta (la conexión se cortó a mitad). Vuelve a intentarlo.' };
   // El codigo viaja con el error: los rechazos del puente se distinguen por el (otra linea,
   // desconectado, PC sin latido, pausa, modo seguro), no por el texto. El asistente usa ademas
   // el estado HTTP, el codigo del proveedor de IA y si el servidor dice que se puede reintentar.
@@ -19173,7 +19180,7 @@ function estudioV238(m,api){
     const b=$q('[data-e238-estado]');if(!b)return;
     if(S.intercambio){b.dataset.tipo='aviso';b.innerHTML='<span>Toca la foto con la que quieres intercambiar</span><button type="button" data-e238="cancelaInter">Cancelar</button>';return;}
     if(S.error){b.dataset.tipo='error';b.innerHTML='<span>'+esc(S.error)+'</span><button type="button" data-ceditor-reintentar="1">Reintentar</button>';return;}
-    if(S.ocupado){b.dataset.tipo='ocupado';b.innerHTML='<span class="e238-giro"></span><span>Componiendo con el motor V7…</span>';return;}
+    if(S.ocupado){b.dataset.tipo='ocupado';b.innerHTML='<span class="e238-giro"></span><span>'+esc(S.textoOcupado||'Componiendo con el motor V7…')+'</span>';return;}
     b.dataset.tipo='ok';b.innerHTML=I.check+'<span>Vista exacta del motor V7</span>';
   }
   function avisaV238(texto){const b=el('div','e238-toast',esc(texto));b.setAttribute('role','status');$q('.e238-centro').appendChild(b);setTimeout(()=>b.remove(),3800);}
@@ -19482,14 +19489,14 @@ function estudioV238(m,api){
   };
   doc.addEventListener('keydown',teclas);
   // ───── Del motor ─────
-  api.alEstado=(tipo,texto)=>{if(tipo==='ocupado'){S.ocupado=true;S.error='';}else if(tipo==='error'){S.error=texto||'No se pudo componer la vista.';S.ocupado=false;}pintaEstado();};
+  api.alEstado=(tipo,texto)=>{if(tipo==='ocupado'){S.ocupado=true;S.error='';S.textoOcupado=texto||'';}else if(tipo==='error'){S.error=texto||'No se pudo componer la vista.';S.ocupado=false;}pintaEstado();};
   api.alVista=async(r,v,{pendiente}={})=>{
     const c=r.capas_editor;
     // Las imágenes nuevas se cargan antes de cambiar de capas: así no parpadea nada.
     await Promise.all([c?.base,c?.fondo?.src,c?.cristal?.src,...(c?.roles||[]).map(x=>x.src),...((coleccion()?.fotos)||[]).map(x=>api.imagenDe(x.original_id))].filter(Boolean).map(carga));
     if(!root.isConnected||api.cerrado())return;
     const nuevaFoto=S.r?.foto_id!==r.foto_id;
-    S.r=r;S.pedido=v;S.ocupado=!!pendiente;S.error='';
+    S.r=r;S.pedido=v;S.ocupado=!!pendiente;S.error='';S.textoOcupado='';
     if(coleccion()&&S.layoutAplicado===null)S.layoutAplicado='?';
     dibuja();if(!insp.contains(doc.activeElement))pintaInspector();pintaBotones();pintaBiblioteca();
     if(nuevaFoto||!S.minisHechas){S.minisHechas=true;pintaPlantillas();void cargaMiniaturas();}
@@ -20640,10 +20647,12 @@ function abreEditorPlantilla(id, piezaInicialId = ''){
     // v234: con collage en este formato la vista lo dibuja; con el mosaico editable abierto pide también la capa de textos.
     // v238: el estudio pide siempre las capas (lienzo sin rótulos + cada rótulo recortado) para editarlas en local.
     const colPedido=leeMapaCollageV234(v.collage_por_formato_json)[v._formato]||null;
-    try{r=await llamaCont({action:'contenidoEstilos',operation:'vista',id:idReal,categoria:v._categoria,formato:v._formato,foto_id:v._foto_id,titular:titularActivo(v),mes:v._mes,fotos_mosaico_ids:v._fotos_mosaico_ids,comparar,personalizacion:v,...(colPedido?{collage:colPedido,con_capas:!!coll}:{}),...(f.__api238?.montado?{con_capas:true}:{})});}
+    const pideVista=()=>llamaCont({action:'contenidoEstilos',operation:'vista',id:idReal,categoria:v._categoria,formato:v._formato,foto_id:v._foto_id,titular:titularActivo(v),mes:v._mes,fotos_mosaico_ids:v._fotos_mosaico_ids,comparar,personalizacion:v,...(colPedido?{collage:colPedido,con_capas:!!coll}:{}),...(f.__api238?.montado?{con_capas:true}:{})});
+    // v238: si la respuesta llegó cortada se pide UNA vez más, sin abrir otra vista en paralelo (sigue en vuelo).
+    try{r=await pideVista();if(r?.incompleta&&!editorCerrado){if(ultimaBuena)pintaEstadoVista('ocupado','La respuesta llegó cortada · reintentando…');f.__api238?.alEstado?.('ocupado','La respuesta llegó cortada · reintentando…');r=await pideVista();}}
     catch(err){r={ok:false,error:err?.message||String(err)};}
     finally{enVuelo=false;}
-    metricasVista.push({ms:Date.now()-t0,ok:!!(r&&r.ok&&r.vista),status:r?.status||null});if(metricasVista.length>50)metricasVista.shift();
+    metricasVista.push({ms:Date.now()-t0,ok:!!(r&&r.ok&&r.vista),status:r?.status||null,...(r?.incompleta?{incompleta:true}:{})});if(metricasVista.length>50)metricasVista.shift();
     if(editorCerrado||f.isConnected===false||!m.classList.contains('on'))return;
     // Llegaron cambios mientras componia: se pide UNA vista nueva con todos; esta solo se pinta si no habia ninguna.
     if(pendiente&&ultimaBuena){void previsualiza();return;}
@@ -20655,7 +20664,7 @@ function abreEditorPlantilla(id, piezaInicialId = ''){
       f.elements.foto_id.innerHTML='<option value="">Automática de la categoría</option>'+r.fotos.map(x=>'<option value="'+esc(x.id)+'"'+(x.id===selActual?' selected':'')+'>'+esc(x.id.slice(0,18)+(x.width&&x.height?' · '+x.width+'×'+x.height:''))+'</option>').join('');
     }
     if(!r.ok||!r.vista){
-      const detalle=(r.error||'No se pudo generar la muestra.')+(r.status?' (HTTP '+r.status+(r.code?' · '+r.code:'')+')':'');
+      const detalle=(r.error||'No se pudo generar la muestra.')+(r.status&&!r.incompleta?' (HTTP '+r.status+(r.code?' · '+r.code:'')+')':'');
       if(ultimaBuena)pintaEstadoVista('error','La última vista se conserva. '+detalle);
       else vista.innerHTML='<p class="cont-aviso" role="status">'+esc(detalle)+' <button type="button" class="btn-linea" data-ceditor-reintentar="1">Reintentar</button></p>';
       f.__api238?.alEstado?.('error',(ultimaBuena?'La última vista se conserva. ':'')+detalle);
