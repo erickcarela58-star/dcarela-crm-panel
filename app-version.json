@@ -1,7 +1,7 @@
 {
-  "version": "2026-10-20-editor-estetica-v237b",
+  "version": "2026-10-20-editor-mosaico-smart-v238",
   "channel": "crm",
-  "released_at": "2026-10-20T03:39:36.082Z",
-  "summary": "Editor de flyers con la estetica de la referencia: titulo y acciones arriba, catalogo de plantillas con miniaturas reales y buscador, barra de herramientas con iconos, lienzo limpio e inspector Elemento compacto (texto, fuente, tamano, color, alineacion y espaciado).",
+  "released_at": "2026-10-20T04:50:14.000Z",
+  "summary": "Editor de flyers Mosaico Smart: interfaz de la referencia con lienzo editable (capas exactas del motor V7), mosaico de 1 a 9 fotos con distribuciones sugeridas, borde/sombra/opacidad por foto, recorte, bloqueo, intercambio, deshacer y rehacer.",
   "requiere_puente": "2026-10-18-diagnostico-citas-v53"
 }
