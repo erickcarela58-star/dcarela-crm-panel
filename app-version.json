@@ -1,7 +1,7 @@
 {
-  "version": "2026-10-20-editor-mosaico-smart-v238",
+  "version": "2026-10-20-editor-mosaico-smart-v238b",
   "channel": "crm",
-  "released_at": "2026-10-20T04:50:14.000Z",
+  "released_at": "2026-10-20T05:24:31.206Z",
   "summary": "Editor de flyers Mosaico Smart: interfaz de la referencia con lienzo editable (capas exactas del motor V7), mosaico de 1 a 9 fotos con distribuciones sugeridas, borde/sombra/opacidad por foto, recorte, bloqueo, intercambio, deshacer y rehacer.",
   "requiere_puente": "2026-10-18-diagnostico-citas-v53"
 }
