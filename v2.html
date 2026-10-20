@@ -3088,6 +3088,109 @@ input[type="checkbox"],input[type="radio"]{accent-color:var(--accent)}
   .e238-acor-cuerpo label{display:grid;gap:5px;font-size:12px;font-weight:600}.e238-acor-cuerpo .estudio-bloque-card{border-radius:12px}
   .e238-acor-cuerpo details.estudio-sec-panel{border:0;padding:0;background:none;box-shadow:none}
   @media (max-width:1280px){.e238-cuerpo{grid-template-columns:250px minmax(0,1fr) 312px}.e238-tool{min-width:64px}.e238-cab p{display:none}}
+/* v239 · Planificador de contenido (referencia 2 del dueño). Solo escritorio; mismos datos y acciones del planificador. */
+  .plan239{--e-bg:linear-gradient(160deg,#eef1fb 0%,#f6f3fd 55%,#eef6fb 100%);--e-card:#fff;--e-borde:#e5e9f2;--e-txt:#0f172a;--e-mut:#64748b;--e-acc:#2563eb;--e-acc2:#1d4ed8;--e-suave:#eef3ff;--e-lienzo:#f3f5fa;--e-sombra:0 1px 2px rgba(15,23,42,.04),0 8px 24px rgba(15,23,42,.06);
+    --k-pendiente:#f59e0b;--k-programada:#2563eb;--k-procesando:#8b5cf6;--k-incierta:#d97706;--k-confirmada:#16a34a;--k-error:#dc2626;--k-manual:#0891b2;--k-rechazada:#94a3b8;
+    background:var(--e-bg)!important;max-width:none!important;padding:14px 16px 18px!important;color:var(--e-txt)}
+  :root[data-tema="oscuro"] .plan239{--e-bg:#0b1216;--e-card:#141e24;--e-borde:#23313a;--e-txt:#e9edef;--e-mut:#9aa8b6;--e-suave:#172a3d;--e-lienzo:#0f171c;--e-sombra:0 1px 2px rgba(0,0,0,.3),0 8px 24px rgba(0,0,0,.25)}
+  .plan239>.plan-cabecera,.plan239 #contTabs,.plan239 #contAgente.p239-agente-oculto{display:none!important}
+  .plan239 *{box-sizing:border-box}
+  .p239-card{background:var(--e-card);border:1px solid var(--e-borde);border-radius:16px;box-shadow:var(--e-sombra)}
+  .p239-cabecera{display:grid;gap:12px;margin-bottom:12px}
+  .p239-titulo{display:flex;align-items:center;gap:14px;padding:14px 18px}
+  .p239-titulo-ico{width:54px;height:54px;border-radius:14px;display:grid;place-items:center;background:linear-gradient(135deg,#fce7f3,#ede9fe);color:#db2777;flex:none}
+  .p239-titulo-txt{flex:1;min-width:0}.p239-titulo h1{margin:0;font-size:27px;font-weight:800;letter-spacing:-.02em;color:var(--e-txt)}.p239-titulo p{margin:4px 0 0;color:var(--e-mut);font-size:14px}
+  .p239-titulo-acc{display:flex;align-items:center;gap:12px;flex:none}
+  .p239-ia{display:flex;align-items:center;gap:10px;height:54px;padding:0 16px;border:1px solid var(--e-borde);border-radius:14px;background:var(--e-card);color:var(--e-acc);cursor:pointer;font:inherit;text-align:left}
+  .p239-ia span{display:grid}.p239-ia b{color:var(--e-txt);font-size:13.5px}.p239-ia small{color:var(--e-mut);font-size:11.5px}.p239-ia:hover{background:var(--e-suave)}
+  .p239-crear{position:relative}
+  .p239-btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;min-height:38px;padding:0 14px;border-radius:11px;border:1px solid var(--e-borde);background:var(--e-card);color:var(--e-txt);font:inherit;font-weight:650;font-size:13px;cursor:pointer;white-space:nowrap}
+  .p239-btn:hover:not(:disabled){border-color:#c7d2fe;background:var(--e-suave)}.p239-btn:disabled{opacity:.5;cursor:not-allowed}
+  .p239-prim{background:var(--e-acc);border-color:var(--e-acc);color:#fff}.p239-prim:hover:not(:disabled){background:var(--e-acc2);border-color:var(--e-acc2);color:#fff}
+  .p239-grande{height:54px;padding:0 20px;font-size:15.5px;border-radius:14px}.p239-chico{min-height:32px;padding:0 10px;font-size:12px}
+  .p239-menu{position:absolute;right:0;top:calc(100% + 6px);z-index:30;min-width:270px;padding:6px;background:var(--e-card);border:1px solid var(--e-borde);border-radius:12px;box-shadow:0 14px 34px rgba(15,23,42,.18);display:grid}
+  .p239-menu[hidden]{display:none}.p239-menu button{display:grid;text-align:left;padding:8px 10px;border:0;background:none;border-radius:8px;font:inherit;color:var(--e-txt);cursor:pointer}
+  .p239-menu button:hover{background:var(--e-suave)}.p239-menu b{font-size:13px}.p239-menu small{color:var(--e-mut);font-size:11.5px}
+  .p239-pasos{display:flex;align-items:center;gap:6px;padding:12px 16px}
+  .p239-paso{display:flex;align-items:center;gap:10px;padding:6px 8px;border:0;background:none;border-radius:12px;cursor:pointer;font:inherit;color:var(--e-txt);text-align:left;flex:none}
+  .p239-paso:hover{background:var(--e-suave)}.p239-paso span:last-child{display:grid}.p239-paso b{font-size:13.5px}.p239-paso small{color:var(--e-mut);font-size:11.5px}
+  .p239-paso b i{font-style:normal;background:var(--k-pendiente);color:#fff;border-radius:9px;padding:0 6px;font-size:11px;margin-left:4px}
+  .p239-num{width:38px;height:38px;border-radius:50%;display:grid;place-items:center;background:var(--e-lienzo);color:var(--e-mut);font-weight:750;font-size:15px;flex:none;border:1px solid var(--e-borde)}
+  .p239-paso.on .p239-num{background:var(--e-acc);color:#fff;border-color:var(--e-acc)}.p239-paso.on b{color:var(--e-acc)}.p239-paso.hecho .p239-num{background:var(--e-suave);color:var(--e-acc);border-color:#c7d2fe}
+  .p239-guion{flex:1;height:2px;min-width:14px;background:var(--e-borde);border-radius:2px}
+  .p239-cuerpo{display:grid;gap:12px}
+  .p239-fila{display:grid;grid-template-columns:minmax(330px,1.1fr) minmax(300px,1fr) minmax(320px,1.05fr);gap:12px;align-items:stretch}
+  .p239-card-cab{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:14px 16px 10px;flex-wrap:wrap}
+  .p239-card-cab h2{margin:0;font-size:16px;font-weight:750;display:flex;align-items:center;gap:8px;color:var(--e-txt)}.p239-card-cab h2 svg{color:var(--e-acc)}
+  .p239-nav{display:flex;gap:6px}.p239-ico{width:34px;height:34px;display:inline-grid;place-items:center;padding:0;border:1px solid var(--e-borde);border-radius:9px;background:var(--e-card);color:var(--e-txt);cursor:pointer}
+  .p239-ico:hover:not(:disabled){background:var(--e-suave);color:var(--e-acc)}.p239-ico:disabled{opacity:.35;cursor:default}
+  .p239-cal,.p239-vista,.p239-publicacion{display:flex;flex-direction:column;min-width:0}
+  .p239-cal-cab{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:0 16px 10px}.p239-cal-cab b{font-size:18px;font-weight:700}
+  .p239-seg{display:flex;padding:3px;border-radius:10px;background:var(--e-lienzo);gap:2px}.p239-seg button{border:0;background:none;padding:6px 12px;border-radius:8px;font:inherit;font-size:12px;font-weight:650;color:var(--e-mut);cursor:pointer}
+  .p239-seg button.on{background:var(--e-acc);color:#fff}
+  .p239-sem,.p239-dias{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;padding:0 12px}.p239-sem span{text-align:center;font-size:11.5px;font-weight:650;color:var(--e-mut);padding:4px 0}
+  .p239-dia{min-height:54px;display:grid;justify-items:center;align-content:center;gap:4px;border:1px solid transparent;border-radius:10px;background:none;font:inherit;color:var(--e-txt);cursor:pointer;padding:4px 2px}
+  .p239-dias.semana .p239-dia{min-height:110px}.p239-dia:hover:not(:disabled){background:var(--e-suave)}.p239-dia.fuera{opacity:.32;cursor:default}
+  .p239-dia.hoy .p239-dnum{color:var(--e-acc);font-weight:800}.p239-dia.on{background:var(--e-acc);color:#fff}.p239-dia.on .p239-dnum{color:#fff}.p239-dia.on em{color:#fff}
+  .p239-dnum{font-size:14px;font-weight:650}.p239-dpuntos{display:flex;align-items:center;gap:2px}.p239-dpuntos em{font-style:normal;font-size:11px;color:var(--e-mut);margin-left:2px}
+  .p239-punto{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--k-pendiente);flex:none}
+  .p239-punto.k-pendiente{background:var(--k-pendiente)}.p239-punto.k-programada{background:var(--k-programada)}.p239-punto.k-procesando{background:var(--k-procesando)}.p239-punto.k-incierta{background:var(--k-incierta)}
+  .p239-punto.k-confirmada{background:var(--k-confirmada)}.p239-punto.k-error{background:var(--k-error)}.p239-punto.k-manual{background:var(--k-manual)}.p239-punto.k-rechazada{background:var(--k-rechazada)}
+  .p239-dia.on .p239-punto{box-shadow:0 0 0 1.5px #fff}
+  .p239-leyenda{display:flex;flex-wrap:wrap;gap:6px 14px;padding:12px 16px 14px;margin-top:auto;font-size:12px;color:var(--e-mut)}.p239-leyenda span{display:inline-flex;align-items:center;gap:6px}
+  .p239-lista-dias{list-style:none;margin:0;padding:0 12px;display:grid;gap:6px;max-height:330px;overflow:auto}
+  .p239-lista-dias button{width:100%;display:grid;grid-template-columns:96px 1fr;gap:8px;text-align:left;padding:8px 10px;border:1px solid var(--e-borde);border-radius:10px;background:var(--e-card);font:inherit;font-size:12px;color:var(--e-txt);cursor:pointer}
+  .p239-lista-dias button.on{border-color:var(--e-acc);background:var(--e-suave)}.p239-lista-dias .p239-punto{margin-right:5px}
+  .p239-imagen{position:relative;margin:0 16px;border-radius:12px;overflow:hidden;background:var(--e-lienzo);aspect-ratio:4/5;max-height:360px;display:grid;place-items:center;color:var(--e-mut);font-size:13px}
+  .p239-imagen.vertical{aspect-ratio:9/16}.p239-imagen.horizontal{aspect-ratio:16/9}
+  .p239-imagen img{width:100%;height:100%;object-fit:cover;display:block;cursor:zoom-in}
+  .p239-chip-est{position:absolute;left:10px;top:10px;padding:4px 10px;border-radius:999px;background:rgba(255,255,255,.94);font-size:11.5px;font-weight:700;color:#0f172a;box-shadow:0 2px 8px rgba(0,0,0,.15)}
+  .p239-tiras{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;padding:10px 16px 0}
+  .p239-tira{position:relative;aspect-ratio:1;border-radius:10px;overflow:hidden;border:2px solid transparent;padding:0;background:var(--e-lienzo);cursor:pointer;color:var(--e-mut);font-size:11px}
+  .p239-tira img{width:100%;height:100%;object-fit:cover;display:block}.p239-tira.on{border-color:var(--e-acc)}
+  .p239-tira b{position:absolute;inset:0;display:grid;place-items:center;background:rgba(15,23,42,.55);color:#fff;font-size:20px}
+  .p239-tip{display:flex;gap:8px;align-items:flex-start;margin:12px 16px 16px;padding:10px 12px;border-radius:10px;background:var(--e-suave);font-size:12px;line-height:1.45;color:var(--e-txt)}.p239-tip svg{color:var(--e-acc);flex:none;margin-top:1px}
+  .p239-tip.k-error{background:#fef2f2}.p239-tip.k-incierta{background:#fffbeb}.p239-tip.k-confirmada{background:#f0fdf4}
+  .p239-redes{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;padding:0 16px}
+  .p239-red-tab{position:relative;display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px 4px;border:1px solid var(--e-borde);border-radius:11px;background:var(--e-card);font:inherit;font-size:11.5px;font-weight:650;color:var(--e-txt);cursor:pointer}
+  .p239-red-tab.on{border-color:var(--e-acc);background:var(--e-suave);box-shadow:inset 0 -2px 0 var(--e-acc)}.p239-red-tab:disabled{opacity:.38;cursor:not-allowed}
+  .p239-red-tab .p239-punto{position:absolute;top:6px;right:6px}
+  .p239-form{display:grid;gap:8px;padding:12px 16px 16px}
+  .p239-etq{display:flex;align-items:center;justify-content:space-between;gap:6px;font-size:13px;font-weight:700;color:var(--e-txt)}.p239-etq svg{color:var(--e-acc)}.p239-etq small{color:var(--e-mut);font-weight:500}
+  .p239-campo{display:grid;gap:6px}.p239-form textarea{width:100%;border:1px solid var(--e-borde);border-radius:11px;background:var(--e-card);color:var(--e-txt);font:inherit;font-size:13px;line-height:1.5;padding:10px 12px;resize:vertical}
+  .p239-form textarea[readonly]{background:var(--e-lienzo)}
+  .p239-etiquetas{display:flex;flex-wrap:wrap;gap:6px}.p239-etiquetas span{padding:3px 9px;border-radius:999px;background:var(--e-suave);color:var(--e-acc);font-size:11.5px;font-weight:650}
+  .p239-dos{display:grid;grid-template-columns:1fr 1fr;gap:8px}.p239-dos input,.p239-dos select{height:38px;border:1px solid var(--e-borde);border-radius:10px;background:var(--e-card);color:var(--e-txt);font:inherit;padding:0 10px}
+  .p239-estado{display:flex;gap:10px;align-items:flex-start;padding:9px 12px;border:1px solid var(--e-borde);border-radius:11px}.p239-estado .p239-punto{margin-top:4px}.p239-estado span{display:grid}.p239-estado small{color:var(--e-mut);font-size:11.5px}
+  .p239-aviso{padding:8px 10px;border-radius:9px;background:#fef2f2;color:#991b1b;font-size:12px}
+  .p239-acc{display:flex;flex-wrap:wrap;gap:8px;margin-top:4px}.p239-nota{color:var(--e-mut);font-size:11.5px}
+  .p239-vacio{padding:26px 16px;text-align:center;color:var(--e-mut);font-size:13px}
+  .p239-cola .p239-card-cab{border-bottom:1px solid var(--e-borde);padding-bottom:12px}
+  .p239-colas{display:flex;gap:2px;flex-wrap:wrap}.p239-colas button{border:0;background:none;padding:8px 10px;border-bottom:2px solid transparent;font:inherit;font-size:12.5px;font-weight:650;color:var(--e-mut);cursor:pointer}
+  .p239-colas button.on{color:var(--e-acc);border-bottom-color:var(--e-acc)}
+  .p239-cola-acc{display:flex;gap:8px}.p239-busca,.p239-filtrar{display:flex;align-items:center;gap:6px;height:36px;padding:0 10px;border:1px solid var(--e-borde);border-radius:10px;color:var(--e-mut)}
+  .p239-busca input,.p239-filtrar select{border:0;background:none;font:inherit;font-size:12.5px;color:var(--e-txt);outline:none}.p239-busca input{width:180px}
+  .p239-resumen{display:flex;flex-wrap:wrap;gap:8px 18px;align-items:center;padding:10px 16px;border-bottom:1px solid var(--e-borde);font-size:12.5px}.p239-resumen small{color:var(--e-mut);flex-basis:100%}
+  .p239-masivo{display:flex;align-items:center;gap:8px;padding:8px 16px;background:var(--e-suave);font-size:12.5px}
+  .p239-link{border:0;background:none;color:var(--e-acc);font:inherit;font-size:12.5px;font-weight:650;cursor:pointer}
+  .p239-tabla{display:grid;padding:0 8px 8px}
+  .p239-tr{display:grid;grid-template-columns:34px minmax(240px,2.4fr) 110px 120px 170px 150px 128px;align-items:center;gap:10px;padding:8px 8px;border-bottom:1px solid var(--e-borde);font-size:12.5px}
+  .p239-tr.on{background:var(--e-suave);border-radius:10px}.p239-th{font-size:12px;font-weight:700;color:var(--e-mut);padding-top:10px}
+  .p239-contenido{display:flex;align-items:center;gap:10px;border:0;background:none;padding:0;font:inherit;color:var(--e-txt);text-align:left;cursor:pointer;min-width:0}
+  .p239-contenido img,.p239-sinmini{width:46px;height:46px;border-radius:9px;object-fit:cover;flex:none;background:var(--e-lienzo)}
+  .p239-contenido span{display:grid;min-width:0}.p239-contenido b{font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.p239-contenido small{color:var(--e-mut);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .p239-iconos{display:flex;gap:4px}.p239-icono-red{position:relative;display:inline-grid}.p239-icono-red .p239-punto{position:absolute;right:-2px;bottom:-2px;width:8px;height:8px;box-shadow:0 0 0 1.5px var(--e-card)}
+  .p239-fecha,.p239-origen{display:grid}.p239-fecha small,.p239-origen small{color:var(--e-mut)}
+  .p239-pill{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;font-size:11.5px;font-weight:700;background:var(--e-lienzo)}
+  .p239-pill.k-pendiente{background:#fff7ed;color:#c2410c}.p239-pill.k-programada{background:#eff6ff;color:#1d4ed8}.p239-pill.k-procesando{background:#f5f3ff;color:#6d28d9}.p239-pill.k-incierta{background:#fffbeb;color:#b45309}
+  .p239-pill.k-confirmada{background:#f0fdf4;color:#15803d}.p239-pill.k-error{background:#fef2f2;color:#b91c1c}.p239-pill.k-manual{background:#ecfeff;color:#0e7490}.p239-pill.k-rechazada{background:var(--e-lienzo);color:var(--e-mut)}
+  :root[data-tema="oscuro"] .p239-pill,:root[data-tema="oscuro"] .p239-tip{background:var(--e-suave)!important;color:var(--e-txt)!important}
+  .p239-filacc{display:flex;gap:4px;align-items:center}.p239-mas{position:relative}.p239-mas summary{list-style:none}.p239-mas summary::-webkit-details-marker{display:none}
+  .p239-menu-fila{min-width:190px}.p239-menu-fila button{display:block;font-size:12.5px}
+  .p239-dialogo{position:fixed;inset:0;z-index:60;display:grid;place-items:center;background:rgba(15,23,42,.4)}.p239-dialogo[hidden]{display:none}
+  .p239-telefono{width:min(380px,92vw);max-height:90vh;overflow:auto;padding:12px}.p239-telefono header{display:flex;align-items:center;gap:8px;margin-bottom:8px}.p239-telefono header small{margin-left:auto;color:var(--e-mut)}
+  .p239-telefono img{width:100%;border-radius:8px;display:block}.p239-telefono p{font-size:13px;line-height:1.5;margin:10px 2px}.p239-hash{color:var(--e-acc)}
+  @media (max-width:1320px){.p239-fila{grid-template-columns:1fr 1fr}.p239-cal{grid-column:1/-1}.p239-tr{grid-template-columns:30px minmax(200px,2fr) 96px 104px 150px 120px 120px}}
 /* v237 · menú «Más acciones» e inspector «Elemento»: en cualquier ancho (en móvil los botones movidos siguen a mano). */
   .estudio-mas237{display:block;position:relative}
   .estudio-mas237>summary{list-style:none;cursor:pointer}
@@ -17907,6 +18010,8 @@ function pintaContenido(){
   const cuenta = { porAprobar: CONT.items.filter(x => x.estado === 'propuesta' && x.tiene_imagen).length, programadas: ['aprobada','publicando','encola','enviada','sin_confirmar','lista'].reduce((s,k) => s + n(k), 0), publicadas: n('publicada'), paquete: CONT.items.filter(x => x.canal === 'paquete_grupos' && x.estado === 'lista').length,
     fechas: CONT.calendario.length, tendencias: CONT.tendencias ? (CONT.tendencias.ideas || []).length : 0, estilos: CONT.estilos.filter(e => e.activo).length };
   $('contTabs').innerHTML = navegacionContenidoHtml(cuenta);
+  // v239: en escritorio, cabecera y pasos de la referencia 2; en Revisar/Programar/Publicar/Analizar, el tablero.
+  if (typeof planificadorV239 === 'function' && planificadorV239(cuerpo)) return;
   const vistas = { crear: pintaCrearContenido, fotos: pintaFotosContenido, calendario: pintaCalendario, tendencias: pintaTendencias, subir: pintaSubir, estilos: pintaEstilos, redes: pintaRedes, paquete: pintaPaquete, fechas: pintaFechasNicho };
   if (vistas[CONT.tab]) return vistas[CONT.tab](cuerpo);
   const filtro = { porAprobar: x => x.estado === 'propuesta', programadas: x => ['aprobada', 'publicando', 'encola', 'enviada', 'sin_confirmar', 'lista', 'fallida', 'vencida'].includes(x.estado) && x.canal !== 'paquete_grupos', publicadas: x => x.estado === 'publicada' }[CONT.tab];
@@ -17925,6 +18030,320 @@ function pintaContenido(){
     + avisoCruces
     + (listas.length ? '<div class="cont-lista">' + listas.map(x => tarjetaContenido(x, ROL_ACTUAL === 'admin', cruces.porId.get(x.id) || 0)).join('') + '</div>' : '<div class="plan-vacio">No hay piezas listas para revisar.</div>')
     + (bloqueadas.length ? '<details class="plan-bloqueadas"><summary>' + bloqueadas.length + ' pendientes de foto original</summary><p class="cont-sub">Estas piezas no se pueden aprobar hasta tener una foto en alta calidad.</p><button type="button" class="btn-linea" data-cbiblioteca="1">Subir originales a la fototeca</button><div class="cont-lista">' + bloqueadas.map(x => tarjetaContenido(x, ROL_ACTUAL === 'admin', 0)).join('') + '</div></details>' : '');
+}
+
+// ───────────── v239 · Planificador de contenido (referencia 2 del dueño) ─────────────
+// Cabecera con «Sugerencias con IA» y «Crear contenido», los 5 pasos Planificar → Revisar → Programar → Publicar →
+// Analizar y, en los 4 últimos, un tablero: calendario, vista previa, publicación en redes y cola de contenido. Usa los
+// MISMOS datos (CONT.items del mes de trabajo) y las MISMAS acciones del planificador (aprobar, rechazar, guardar,
+// publicar, comprobar envío, descargar): nada nuevo llega al servidor. Los estados se cuentan con honestidad: una pieza
+// solo es «Publicada y confirmada» si trae ID, enlace o verificación del proveedor. Solo escritorio (≥ 901 px);
+// `localStorage.planificadorV239 = '0'` vuelve al planificador anterior.
+const PLAN239_FLAG = 'planificadorV239';
+function planificador239Activo(){
+  try { if (localStorage.getItem(PLAN239_FLAG) === '0') return false; } catch {}
+  return !(typeof window !== 'undefined' && typeof window.matchMedia === 'function' && !window.matchMedia('(min-width: 901px)').matches);
+}
+const PASOS_V239 = [['crear', 'Planificar', 'Crea y organiza tu contenido'], ['porAprobar', 'Revisar', 'Valida antes de programar'], ['calendario', 'Programar', 'Define fecha y hora'], ['programadas', 'Publicar', 'Salen solas a su hora'], ['publicadas', 'Analizar', 'Comprueba los resultados']];
+const TABLERO_V239 = new Set(['porAprobar', 'calendario', 'programadas', 'publicadas']);
+const FILTRO_DE_PASO_V239 = { porAprobar: 'pendientes', calendario: 'todo', programadas: 'programadas', publicadas: 'publicadas' };
+const CANALES_V239 = [['instagram', 'Instagram'], ['facebook', 'Facebook'], ['whatsapp_estado', 'Estado WhatsApp'], ['tiktok', 'TikTok']];
+const LIMITE_TEXTO_V239 = { instagram: 2200, facebook: 5000, whatsapp_estado: 700, tiktok: 2200 };
+const COLAS_V239 = [['todo', 'Todo'], ['pendientes', 'Pendientes'], ['programadas', 'Programadas'], ['proceso', 'En proceso'], ['publicadas', 'Publicadas'], ['errores', 'Con error']];
+const EN_COLA_V239 = { todo: () => true, pendientes: (k) => k === 'pendiente', programadas: (k) => k === 'programada' || k === 'manual', proceso: (k) => k === 'procesando' || k === 'incierta', publicadas: (k) => k === 'confirmada', errores: (k) => k === 'error' || k === 'rechazada' };
+const LEYENDA_V239 = [['pendiente', 'Pendiente'], ['programada', 'Programada'], ['procesando', 'Procesándose'], ['incierta', 'Sin confirmar'], ['confirmada', 'Publicada'], ['error', 'Error']];
+// Lo más urgente primero: el estado de una pieza con varias redes es el de la red que más atención pide.
+const URGENCIA_V239 = ['error', 'incierta', 'procesando', 'pendiente', 'programada', 'manual', 'confirmada', 'rechazada'];
+const ORIGEN_V239 = { auto: 'Agente de contenido', editor: 'Editor de flyers', propia: 'Subida por ti', tendencia: 'Idea de tendencia', creativo: 'Creador de contenido' };
+function evidenciaV239(x){
+  const r = x?.resultado || {}, enlace = String(r.enlace || r.permalink || '');
+  return { enlace: /^https:\/\/(?:www\.)?(?:instagram\.com|facebook\.com)\//i.test(enlace) ? enlace.split(/[?#]/)[0] : '',
+    id: String(r.ig_media_id || r.instagram_media_id || r.instagram_historia_id || r.post_id || r.facebook_historia_id || r.facebook_reel_id || r.facebook_video_id || '').slice(0, 100),
+    verificada: !!(x?.confirmada_at && r.verificacion_canal) };
+}
+// Estado honesto de una pieza: nunca «publicada» solo porque el canal aceptó o puso en cola la solicitud.
+function estadoHonestoV239(x){
+  const destinos = Array.isArray(x?.resultado?.destinos) ? x.resultado.destinos : [];
+  if (destinos.some((d) => d.estado === 'publicada') && destinos.some((d) => d.estado === 'fallida')) return { k: 'incierta', t: 'Entrega parcial', d: 'Algún destino salió y otro no: revisa cada red antes de repetir.' };
+  switch (x?.estado) {
+    case 'propuesta': return { k: 'pendiente', t: 'Pendiente de revisión', d: x.tiene_imagen ? 'Revísala y apruébala para programarla.' : 'Necesita una foto original en alta antes de poder aprobarse.' };
+    case 'aprobada': return { k: 'programada', t: 'Programada', d: 'Sale sola el ' + contDia(x.fecha) + ' a las ' + contHora12(x.hora) + '.' };
+    case 'lista': return { k: 'manual', t: 'Lista para subir a mano', d: x.aviso_lista || 'Descárgala y súbela desde la app del canal.' };
+    case 'publicando': case 'encola': return { k: 'procesando', t: 'Procesándose', d: 'El canal aún no confirma la publicación. Todavía no cuenta como publicada.' };
+    case 'enviada': case 'sin_confirmar': return { k: 'incierta', t: 'Resultado incierto', d: 'Se envió, pero el canal no confirmó. Usa «Comprobar envío» antes de repetirla.' };
+    case 'publicada': {
+      if (x.canal === 'whatsapp_estado') return { k: 'confirmada', t: 'Publicada · acuse del puente', d: 'El puente de WhatsApp recibió el estado. Este registro no prueba que lo vean todos tus contactos.' };
+      const e = evidenciaV239(x);
+      return e.enlace || e.id || e.verificada ? { k: 'confirmada', t: 'Publicada y confirmada', d: e.id ? 'ID del proveedor: ' + e.id : 'El canal confirmó la publicación.' }
+        : { k: 'incierta', t: 'Registrada sin evidencia', d: 'El CRM la registró como publicada, pero no trae ID ni enlace del proveedor: verifica el canal antes de repetirla.' };
+    }
+    case 'fallida': return { k: 'error', t: 'Error al publicar', d: x.error || 'El canal rechazó la publicación.' };
+    case 'vencida': return { k: 'error', t: 'Vencida sin publicar', d: 'Pasó su hora sin salir. Reprográmala o reinténtala.' };
+    case 'rechazada': return { k: 'rechazada', t: 'Rechazada', d: 'Descartada en revisión.' };
+  }
+  return { k: 'pendiente', t: CONT_ESTADOS[x?.estado] || String(x?.estado || ''), d: '' };
+}
+// Las versiones por red de una misma pieza (mismo pedido/flyer) van juntas.
+const claveGrupoV239 = (x) => x.generacion_id || [x.titular?.l1 || x.gancho || x.id, x.fecha, x.hora, x.formato].join('|');
+function gruposV239(items){
+  const mapa = new Map();
+  for (const x of items) { const k = claveGrupoV239(x); if (!mapa.has(k)) mapa.set(k, []); mapa.get(k).push(x); }
+  return [...mapa.entries()].map(([clave, piezas]) => {
+    const orden = CANALES_V239.map(([c]) => c);
+    piezas.sort((a, b) => orden.indexOf(a.canal) - orden.indexOf(b.canal));
+    const estados = piezas.map(estadoHonestoV239);
+    const k = URGENCIA_V239.find((u) => estados.some((e) => e.k === u)) || estados[0].k;
+    const principal = piezas.find((p) => p.miniatura) || piezas[0];
+    return { clave, piezas, principal, estado: estados.find((e) => e.k === k), k, fecha: principal.fecha, hora: principal.hora };
+  }).sort((a, b) => String(a.fecha + a.hora).localeCompare(String(b.fecha + b.hora)));
+}
+function iconoRedV239(canal, tam = 18){
+  const s = (fondo, cuerpo) => '<svg class="p239-red" width="' + tam + '" height="' + tam + '" viewBox="0 0 24 24" aria-hidden="true"><rect width="24" height="24" rx="6" fill="' + fondo + '"/>' + cuerpo + '</svg>';
+  if (canal === 'instagram') return s('#E1306C', '<rect x="6" y="6" width="12" height="12" rx="3.5" fill="none" stroke="#fff" stroke-width="1.8"/><circle cx="12" cy="12" r="2.8" fill="none" stroke="#fff" stroke-width="1.8"/><circle cx="15.6" cy="8.4" r="1" fill="#fff"/>');
+  if (canal === 'facebook') return s('#1877F2', '<path d="M13.2 19v-6h2l.3-2.3h-2.3V9.3c0-.7.2-1.1 1.1-1.1h1.2V6.1c-.2 0-1-.1-1.8-.1-1.8 0-3 1.1-3 3.1v1.6H8.8V13h1.9v6z" fill="#fff"/>');
+  if (canal === 'whatsapp_estado') return s('#25D366', '<path d="M12 5.5a6.5 6.5 0 00-5.6 9.8L5.5 18.5l3.3-.9A6.5 6.5 0 1012 5.5z" fill="none" stroke="#fff" stroke-width="1.6"/><path d="M9.6 9.3c.2-.4.4-.4.6-.4h.4c.1 0 .3 0 .4.3l.6 1.4c0 .1.1.3 0 .4l-.3.4c-.1.1-.2.2-.1.4.4.7 1 1.3 1.8 1.7.2.1.3 0 .4-.1l.4-.5c.1-.1.3-.2.4-.1l1.3.6c.2.1.3.2.3.3 0 .5-.2 1-.6 1.2-.5.3-1.2.3-2-.1-1.2-.5-2.2-1.4-2.9-2.6-.4-.7-.5-1.5-.1-2.2z" fill="#fff"/>');
+  if (canal === 'tiktok') return s('#111111', '<path d="M13.6 6h1.9c.2 1.3 1 2.2 2.4 2.4v1.9c-.9 0-1.7-.3-2.4-.8v4.1a3.6 3.6 0 11-3.6-3.6h.4v2a1.6 1.6 0 101.3 1.6z" fill="#fff"/>');
+  return s('#64748b', '<circle cx="12" cy="12" r="4" fill="#fff"/>');
+}
+const ICO_V239 = (() => { const s = (d, w = 20) => '<svg width="' + w + '" height="' + w + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + d + '</svg>'; return {
+  calendario: s('<rect x="3" y="5" width="18" height="16" rx="2.5"/><path d="M3 10h18M8 3v4M16 3v4"/>', 28), calChico: s('<rect x="3" y="5" width="18" height="16" rx="2.5"/><path d="M3 10h18M8 3v4M16 3v4"/>'),
+  ojo: s('<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>'), enviar: s('<path d="M22 2L11 13M22 2l-7 20-4-9-9-4z"/>'),
+  ia: s('<path d="M5 19l9-9M13 5l1.5-3 1.5 3 3 1.5-3 1.5-1.5 3-1.5-3-3-1.5zM19 13l.8 1.7 1.7.8-1.7.8L19 18l-.8-1.7-1.7-.8 1.7-.8z"/>', 24), mas: s('<circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/>'),
+  flecha: s('<path d="M6 9l6 6 6-6"/>', 16), izq: s('<path d="M15 6l-6 6 6 6"/>', 16), der: s('<path d="M9 6l6 6-6 6"/>', 16), cola: s('<path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/>', 22),
+  lapiz: s('<path d="M4 20h4L19 9l-4-4L4 16z"/>', 16), puntos: s('<circle cx="12" cy="5" r="1.2"/><circle cx="12" cy="12" r="1.2"/><circle cx="12" cy="19" r="1.2"/>', 16), buscar: s('<circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/>', 16),
+  filtro: s('<path d="M3 5h18l-7 8v6l-4-2v-4z"/>', 16), reloj: s('<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>', 16), tip: s('<path d="M9 18h6M10 21h4M12 3a6 6 0 00-4 10.5c.6.6 1 1.4 1 2.5h6c0-1.1.4-1.9 1-2.5A6 6 0 0012 3z"/>', 16) }; })();
+function planificadorV239(cuerpo){
+  const hoja = cuerpo?.closest?.('.plan-hoja');
+  if (!hoja || !planificador239Activo()) { hoja?.classList?.remove('plan239'); document.getElementById('cont239')?.remove(); return false; }
+  hoja.classList.add('plan239');
+  const P = CONT.p239 || (CONT.p239 = { dia: null, sel: null, canal: null, vista: 'mes', filtro: null, filtroPaso: null, busca: '', red: '', marcadas: new Set(), agente: false, menu: false, sucio: false });
+  if (P.filtroPaso !== CONT.tab) { P.filtroPaso = CONT.tab; P.filtro = FILTRO_DE_PASO_V239[CONT.tab] || P.filtro || 'todo'; P.sel = null; }
+  let cab = document.getElementById('cont239');
+  if (!cab) {
+    cab = document.createElement('div'); cab.id = 'cont239'; cab.className = 'p239-cabecera';
+    hoja.insertBefore(cab, hoja.firstChild);
+    cab.addEventListener('click', clicCabeceraV239);
+  }
+  const agente = document.getElementById('contAgente');
+  if (agente) agente.classList.toggle('p239-agente-oculto', !P.agente);
+  cab.innerHTML = cabeceraV239(P);
+  if (!TABLERO_V239.has(CONT.tab)) { cuerpo.classList.remove('p239-cuerpo'); return false; }
+  cuerpo.classList.add('p239-cuerpo');
+  if (!cuerpo.dataset.p239) {
+    cuerpo.dataset.p239 = '1';
+    cuerpo.addEventListener('click', clicTableroV239);
+    cuerpo.addEventListener('input', (ev) => { const f = ev.target.closest('[data-cform]'); if (f && f.closest('.p239-publicacion')) marcaSucioV239(f); if (ev.target.matches?.('[data-p239busca]')) { P.busca = ev.target.value; pintaColaV239(); } });
+    cuerpo.addEventListener('change', (ev) => { if (ev.target.matches?.('[data-p239red]')) { P.red = ev.target.value; pintaColaV239(); } if (ev.target.matches?.('[data-p239marca]')) { const k = ev.target.dataset.p239marca; if (ev.target.checked) P.marcadas.add(k); else P.marcadas.delete(k); pintaColaV239(); } if (ev.target.matches?.('[data-p239marcatodo]')) { for (const g of colaFiltradaV239()) { if (ev.target.checked) P.marcadas.add(g.clave); else P.marcadas.delete(g.clave); } pintaColaV239(); } });
+  }
+  const grupos = gruposV239(CONT.items || []);
+  const mes = periodoListaContenido().mes;
+  if (!P.dia || P.dia.slice(0, 7) !== mes) { const hoy = CONT.hoy || ''; P.dia = hoy.startsWith(mes) ? hoy : (grupos[0]?.fecha || mes + '-01'); }
+  // Sin selección válida: la primera de la cola del paso (lo que toca revisar/publicar), luego la del día elegido.
+  if (!grupos.some((g) => g.clave === P.sel)) { const cola = colaFiltradaV239().filter((g) => g.k !== 'rechazada'), delDia = grupos.filter((g) => g.fecha === P.dia && g.k !== 'rechazada'); const g = cola[0] || delDia[0] || grupos.find((y) => y.fecha >= P.dia) || grupos[0]; P.sel = g?.clave || null; P.canal = null; if (g) P.dia = g.fecha; }
+  cuerpo.innerHTML = '<div class="p239-fila">'
+    + '<section class="p239-card p239-cal" aria-label="Calendario de contenido">' + calendarioV239(grupos, mes, P) + '</section>'
+    + '<section class="p239-card p239-vista" aria-label="Vista previa del contenido" data-p239previa></section>'
+    + '<section class="p239-card p239-publicacion" aria-label="Publicación en redes" data-p239pub></section></div>'
+    + '<section class="p239-card p239-cola" aria-label="Cola de contenido" data-p239cola></section>'
+    + '<div class="p239-dialogo" data-p239dialogo hidden></div>';
+  pintaSeleccionV239();
+  pintaColaV239();
+  return true;
+}
+function cabeceraV239(P){
+  const admin = ROL_ACTUAL === 'admin', actual = PASOS_V239.findIndex(([id]) => id === CONT.tab);
+  // Mismo criterio que la cola: publicaciones (una pieza en varias redes cuenta una vez) con algo por aprobar.
+  const pendientes = gruposV239(CONT.items || []).filter((g) => g.piezas.some((x) => x.estado === 'propuesta' && x.tiene_imagen)).length;
+  return '<header class="p239-card p239-titulo"><span class="p239-titulo-ico">' + ICO_V239.calendario + '</span><div class="p239-titulo-txt"><h1>Planificador de contenido</h1><p>Organiza tus publicaciones, fotos y videos en un solo lugar.</p></div>'
+    + '<div class="p239-titulo-acc"><button type="button" class="p239-ia" data-p239="ia">' + ICO_V239.ia + '<span><b>Sugerencias con IA</b><small>Ideas de contenido para tu negocio</small></span></button>'
+    + '<div class="p239-crear"><button type="button" class="p239-btn p239-prim p239-grande" data-p239="menu" aria-haspopup="menu" aria-expanded="' + !!P.menu + '">' + ICO_V239.mas + '<span>Crear contenido</span>' + ICO_V239.flecha + '</button>'
+    + '<div class="p239-menu" role="menu"' + (P.menu ? '' : ' hidden') + '>'
+    + [['crear', 'Crear con el agente', 'Ideas, textos y flyers con tus fotos'], ['editor', 'Editor de flyers', 'Diseña una pieza a mano'], ['subir', 'Subir foto o video', 'Tu propio contenido, a la fecha que elijas'], ['agente', P.agente ? 'Ocultar agente automático' : 'Agente automático', 'Rutina, autonomía y redes del agente'],
+      ['estilos', 'Plantillas', ''], ['fotos', 'Fototeca', ''], ['redes', 'Conexiones', ''], ['paquete', 'Paquete de grupos', ''], ['fechas', 'Fechas del negocio', '']]
+      .map(([k, t, d]) => '<button type="button" role="menuitem" data-p239crear="' + k + '"><b>' + esc(t) + '</b>' + (d ? '<small>' + esc(d) + '</small>' : '') + '</button>').join('')
+    + '</div></div></div></header>'
+    + '<nav class="p239-card p239-pasos" aria-label="Flujo de publicación">' + PASOS_V239.map(([id, t, d], i) => '<button type="button" data-ctab="' + id + '" class="p239-paso' + (i === actual ? ' on' : '') + (i < actual ? ' hecho' : '') + '"' + (i === actual ? ' aria-current="step"' : '') + '>'
+      + '<span class="p239-num">' + (i + 1) + '</span><span><b>' + esc(t) + (id === 'porAprobar' && pendientes ? ' <i>' + pendientes + '</i>' : '') + '</b><small>' + esc(d) + '</small></span></button>').join('<span class="p239-guion" aria-hidden="true"></span>')
+    + (admin ? '' : '') + '</nav>';
+}
+function calendarioV239(grupos, mes, P){
+  const [y, m] = mes.split('-').map(Number), nombre = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'][m - 1] + ' de ' + y;
+  const porDia = {}; for (const g of grupos) for (const x of g.piezas) (porDia[x.fecha] ||= []).push(estadoHonestoV239(x).k);
+  const hoy = CONT.hoy || '', vistas = [['mes', 'Mes'], ['semana', 'Semana'], ['lista', 'Lista']];
+  let cuerpo = '';
+  if (P.vista === 'lista') {
+    const dias = [...new Set(grupos.map((g) => g.fecha))];
+    cuerpo = dias.length ? '<ol class="p239-lista-dias">' + dias.map((f) => '<li><button type="button" data-p239dia="' + f + '" class="' + (f === P.dia ? 'on' : '') + '"><b>' + esc(contDia(f)) + '</b><span>' + grupos.filter((g) => g.fecha === f).map((g) => '<i class="p239-punto k-' + g.k + '"></i>' + esc(contHora12(g.hora)) + ' · ' + esc(g.principal.gancho || g.principal.titular?.l1 || 'Pieza')).join('<br>') + '</span></button></li>').join('') + '</ol>' : '<p class="p239-vacio">Nada programado este mes.</p>';
+  } else {
+    let dias = [];
+    if (P.vista === 'semana') {
+      const base = new Date((P.dia || mes + '-01') + 'T12:00:00Z'), lunes = new Date(base); lunes.setUTCDate(base.getUTCDate() - ((base.getUTCDay() + 6) % 7));
+      for (let i = 0; i < 7; i++) { const d = new Date(lunes); d.setUTCDate(lunes.getUTCDate() + i); dias.push(d.toISOString().slice(0, 10)); }
+    } else {
+      const primero = new Date(Date.UTC(y, m - 1, 1)), vacios = (primero.getUTCDay() + 6) % 7, total = new Date(Date.UTC(y, m, 0)).getUTCDate();
+      for (let i = vacios; i > 0; i--) { const d = new Date(Date.UTC(y, m - 1, 1 - i)); dias.push(d.toISOString().slice(0, 10)); }
+      for (let d = 1; d <= total; d++) dias.push(mes + '-' + String(d).padStart(2, '0'));
+      while (dias.length % 7) { const d = new Date(dias[dias.length - 1] + 'T12:00:00Z'); d.setUTCDate(d.getUTCDate() + 1); dias.push(d.toISOString().slice(0, 10)); }
+    }
+    cuerpo = '<div class="p239-sem">' + ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'].map((t) => '<span>' + t + '</span>').join('') + '</div><div class="p239-dias' + (P.vista === 'semana' ? ' semana' : '') + '">'
+      + dias.map((f) => { const ks = porDia[f] || [], fuera = f.slice(0, 7) !== mes, tipos = URGENCIA_V239.filter((u) => ks.includes(u)).slice(0, 3);
+        return '<button type="button" class="p239-dia' + (fuera ? ' fuera' : '') + (f === P.dia ? ' on' : '') + (f === hoy ? ' hoy' : '') + '" data-p239dia="' + f + '"' + (fuera ? ' disabled' : '') + ' aria-label="' + esc(contDia(f) + (ks.length ? ' · ' + ks.length + ' publicaciones' : '')) + '">'
+          + '<span class="p239-dnum">' + Number(f.slice(8)) + '</span>' + (ks.length ? '<span class="p239-dpuntos">' + tipos.map((k) => '<i class="p239-punto k-' + k + '"></i>').join('') + '<em>' + ks.length + '</em></span>' : '') + '</button>'; }).join('') + '</div>';
+  }
+  return '<header class="p239-card-cab"><h2>' + ICO_V239.calChico + 'Calendario de contenido</h2><div class="p239-nav"><button type="button" class="p239-btn p239-chico" data-p239mes="0">Hoy</button><button type="button" class="p239-ico" data-p239mes="-1" aria-label="Mes anterior">' + ICO_V239.izq + '</button><button type="button" class="p239-ico" data-p239mes="1" aria-label="Mes siguiente">' + ICO_V239.der + '</button></div></header>'
+    + '<div class="p239-cal-cab"><b>' + esc(nombre.charAt(0).toUpperCase() + nombre.slice(1)) + '</b><div class="p239-seg" role="group" aria-label="Vista del calendario">' + vistas.map(([k, t]) => '<button type="button" data-p239vista="' + k + '" class="' + (P.vista === k ? 'on' : '') + '" aria-pressed="' + (P.vista === k) + '">' + t + '</button>').join('') + '</div></div>'
+    + cuerpo + '<div class="p239-leyenda">' + LEYENDA_V239.map(([k, t]) => '<span><i class="p239-punto k-' + k + '"></i>' + t + '</span>').join('') + '</div>';
+}
+function grupoSelV239(){ const P = CONT.p239; return gruposV239(CONT.items || []).find((g) => g.clave === P?.sel) || null; }
+function piezaSelV239(g){ const P = CONT.p239; return g ? (g.piezas.find((x) => x.canal === P.canal) || g.piezas.find((x) => x.estado === 'propuesta') || g.piezas[0]) : null; }
+function pintaSeleccionV239(){
+  const P = CONT.p239, vista = document.querySelector('[data-p239previa]'), pub = document.querySelector('[data-p239pub]');
+  if (!vista || !pub) return;
+  const grupos = gruposV239(CONT.items || []), g = grupos.find((x) => x.clave === P.sel), x = piezaSelV239(g);
+  P.sucio = false;
+  if (!g) {
+    vista.innerHTML = '<header class="p239-card-cab"><h2>' + ICO_V239.ojo + 'Vista previa del contenido</h2></header><div class="p239-vacio">Elige un día con publicaciones o crea contenido nuevo.</div>';
+    pub.innerHTML = '<header class="p239-card-cab"><h2>' + ICO_V239.enviar + 'Publicación en redes</h2></header><div class="p239-vacio">Sin publicación elegida.</div>';
+    return;
+  }
+  const delDia = grupos.filter((y) => y.fecha === g.fecha), i = grupos.indexOf(g);
+  const est = estadoHonestoV239(x), ev = evidenciaV239(x);
+  vista.innerHTML = '<header class="p239-card-cab"><h2>' + ICO_V239.ojo + 'Vista previa del contenido</h2><div class="p239-nav"><button type="button" class="p239-ico" data-p239paso="-1" aria-label="Publicación anterior"' + (i <= 0 ? ' disabled' : '') + '>' + ICO_V239.izq + '</button><button type="button" class="p239-ico" data-p239paso="1" aria-label="Publicación siguiente"' + (i >= grupos.length - 1 ? ' disabled' : '') + '>' + ICO_V239.der + '</button></div></header>'
+    + '<div class="p239-imagen' + (x.formato === 'imagen_9x16' ? ' vertical' : x.formato === 'imagen_16x9' ? ' horizontal' : '') + '">' + (x.miniatura ? '<img src="' + esc(x.miniatura) + '" alt="Vista previa de la publicación" data-cver="' + esc(x.id) + '" title="Ver en grande">' : '<span>' + (x.tipo_media === 'video' ? 'Video · ' + Number(x.video_duracion || 0).toFixed(1) + ' s' : x.tiene_imagen ? 'Vista no disponible en esta lista' : 'Sin imagen todavía') + '</span>')
+    + '<span class="p239-chip-est k-' + est.k + '">' + esc(est.t) + '</span></div>'
+    + '<div class="p239-tiras">' + delDia.slice(0, 4).map((y, n) => { const mini = y.principal.miniatura; return '<button type="button" class="p239-tira' + (y.clave === g.clave ? ' on' : '') + '" data-p239sel="' + esc(y.clave) + '" aria-label="' + esc(contHora12(y.hora) + ' · ' + (y.principal.gancho || y.principal.titular?.l1 || 'Pieza')) + '">' + (mini ? '<img alt="" src="' + esc(mini) + '">' : '<span>' + esc(contHora12(y.hora)) + '</span>') + (n === 3 && delDia.length > 4 ? '<b>+' + (delDia.length - 4) + '</b>' : '') + '</button>'; }).join('') + '</div>'
+    + '<div class="p239-tip k-' + est.k + '">' + ICO_V239.tip + '<span><b>' + esc(est.t) + '.</b> ' + esc(est.d) + (ev.enlace ? ' <a href="' + esc(ev.enlace) + '" target="_blank" rel="noopener noreferrer">Abrir en ' + esc(x.canal_nombre) + '</a>' : '') + '</span></div>';
+  pub.innerHTML = publicacionV239(g, x);
+}
+function publicacionV239(g, x){
+  const admin = ROL_ACTUAL === 'admin', est = estadoHonestoV239(x);
+  const editable = !['publicada', 'publicando', 'encola', 'enviada', 'sin_confirmar'].includes(x.estado) && x.canal !== 'paquete_grupos';
+  const limite = LIMITE_TEXTO_V239[x.canal] || 2200, etiquetas = [...new Set(String(x.texto || '').match(/#[\p{L}\p{N}_]+/gu) || [])].slice(0, 8);
+  const pendientes = g.piezas.filter((p) => p.estado === 'propuesta' && p.tiene_imagen);
+  const acc = [];
+  if (admin && x.estado === 'propuesta' && x.tiene_imagen) acc.push('<button type="button" class="p239-btn p239-prim" data-caprueba="' + esc(x.id) + '" data-p239programa="1">' + ICO_V239.calChico + 'Aprobar y programar</button>');
+  if (admin && pendientes.length > 1) acc.push('<button type="button" class="p239-btn" data-p239apruebagrupo="1">Aprobar las ' + pendientes.length + ' redes</button>');
+  if (admin && ['aprobada', 'fallida', 'vencida'].includes(x.estado)) acc.push('<button type="button" class="p239-btn" data-cpublica="' + esc(x.id) + '">' + (x.estado === 'aprobada' ? 'Publicar ahora' : 'Reintentar ahora') + '</button>');
+  if (admin && ['publicando', 'encola', 'enviada', 'sin_confirmar'].includes(x.estado)) acc.push('<button type="button" class="p239-btn p239-prim" data-ccomprueba="' + esc(x.id) + '" title="Consulta el resultado sin volver a publicar">Comprobar envío</button>');
+  if (x.estado === 'lista' && x.tiene_imagen) acc.push('<button type="button" class="p239-btn p239-prim" data-cdescarga="' + esc(x.id) + '">Descargar</button>', '<button type="button" class="p239-btn" data-ccopia="' + esc(x.id) + '">Copiar texto</button>');
+  return '<header class="p239-card-cab"><h2>' + ICO_V239.enviar + 'Publicación en redes</h2></header>'
+    + '<div class="p239-redes" role="tablist" aria-label="Red de la publicación">' + CANALES_V239.map(([c, t]) => { const p = g.piezas.find((y) => y.canal === c);
+      return '<button type="button" role="tab" class="p239-red-tab' + (p && p.id === x.id ? ' on' : '') + '"' + (p ? ' data-p239canal="' + c + '"' : ' disabled title="Esta pieza no va a ' + esc(t) + '"') + ' aria-selected="' + !!(p && p.id === x.id) + '">' + iconoRedV239(c) + '<span>' + esc(t) + '</span>' + (p ? '<i class="p239-punto k-' + estadoHonestoV239(p).k + '"></i>' : '') + '</button>'; }).join('') + '</div>'
+    + '<form class="p239-form" data-cform="' + esc(x.id) + '">'
+    + '<label class="p239-campo"><span class="p239-etq">Texto de la publicación <small data-p239cuenta>' + String(x.texto || '').length + '/' + limite + '</small></span><textarea name="texto" rows="6" maxlength="' + limite + '"' + (editable ? '' : ' readonly') + ' data-p239limite="' + limite + '">' + esc(x.texto || '') + '</textarea></label>'
+    + (etiquetas.length ? '<div class="p239-etiquetas">' + etiquetas.map((h) => '<span>' + esc(h) + '</span>').join('') + '</div>' : '')
+    + '<div class="p239-etq">' + ICO_V239.calChico + 'Fecha y hora de publicación</div><div class="p239-dos"><input type="date" name="fecha" value="' + esc(x.fecha) + '" aria-label="Fecha"' + (editable ? '' : ' disabled') + '><select name="hora" aria-label="Hora"' + (editable ? '' : ' disabled') + '>' + contHoras(x.hora) + '</select></div>'
+    + '<div class="p239-etq">Estado</div><div class="p239-estado k-' + est.k + '"><i class="p239-punto k-' + est.k + '"></i><span><b>' + esc(est.t) + '</b><small>' + esc(est.d) + '</small></span></div>'
+    + (x.error && est.k !== 'error' ? '<div class="p239-aviso">' + esc(x.error) + '</div>' : '')
+    + '<div class="p239-acc">' + (editable ? '<button type="submit" class="p239-btn" data-p239guardar disabled>Guardar cambios</button>' : '') + '<button type="button" class="p239-btn" data-p239prueba="1">' + ICO_V239.ojo + 'Probar publicación</button>' + acc.join('') + '</div>'
+    + (editable ? '<small class="p239-nota" data-p239nota>' + (x.estado === 'aprobada' ? 'Si cambias el texto o la hora, vuelve a «Pendiente de revisión».' : 'Los cambios se guardan sin publicar nada.') + '</small>' : '<small class="p239-nota">En proceso o publicada: no se edita para no duplicarla.</small>')
+    + '</form>';
+}
+function marcaSucioV239(f){
+  const id = f.dataset.cform, x = (CONT.items || []).find((y) => y.id === id); if (!x) return;
+  const v = Object.fromEntries(new FormData(f).entries()), sucio = v.texto !== (x.texto || '') || v.fecha !== x.fecha || v.hora !== x.hora;
+  CONT.p239.sucio = sucio;
+  const t = f.querySelector('textarea'), c = f.querySelector('[data-p239cuenta]'); if (t && c) c.textContent = t.value.length + '/' + t.dataset.p239limite;
+  const g = f.querySelector('[data-p239guardar]'); if (g) g.disabled = !sucio;
+  f.querySelectorAll('[data-p239programa],[data-p239apruebagrupo],[data-cpublica]').forEach((b) => { b.disabled = sucio; b.title = sucio ? 'Guarda los cambios antes' : ''; });
+}
+function colaFiltradaV239(){
+  const P = CONT.p239, q = String(P.busca || '').trim().toLocaleLowerCase('es');
+  return gruposV239(CONT.items || []).filter((g) => (EN_COLA_V239[P.filtro] || EN_COLA_V239.todo)(g.k)
+    && (!P.red || g.piezas.some((x) => x.canal === P.red))
+    && (!q || g.piezas.some((x) => [x.gancho, x.titular?.l1, x.titular?.l2, x.texto, x.canal_nombre].join(' ').toLocaleLowerCase('es').includes(q))));
+}
+function pintaColaV239(){
+  const P = CONT.p239, el = document.querySelector('[data-p239cola]'); if (!el) return;
+  const todos = gruposV239(CONT.items || []), lista = colaFiltradaV239(), admin = ROL_ACTUAL === 'admin';
+  const cuenta = (k) => todos.filter((g) => (EN_COLA_V239[k] || EN_COLA_V239.todo)(g.k)).length;
+  const marcadas = todos.filter((g) => P.marcadas.has(g.clave)), aprobables = marcadas.flatMap((g) => g.piezas.filter((x) => x.estado === 'propuesta' && x.tiene_imagen)), rechazables = marcadas.flatMap((g) => g.piezas.filter((x) => ['propuesta', 'aprobada', 'fallida', 'lista'].includes(x.estado)));
+  const resumen = P.filtro === 'publicadas' || P.filtro === 'errores' ? '<div class="p239-resumen"><span><b>' + todos.filter((g) => g.k === 'confirmada').length + '</b> confirmadas por el canal</span><span><b>' + todos.filter((g) => g.k === 'incierta').length + '</b> sin confirmar</span><span><b>' + todos.filter((g) => g.k === 'error').length + '</b> con error</span><small>Alcance e interacción: aún no se leen de las redes; no se muestran cifras inventadas.</small></div>' : '';
+  el.innerHTML = '<header class="p239-card-cab"><h2>' + ICO_V239.cola + 'Cola de contenido</h2>'
+    + '<div class="p239-colas" role="tablist">' + COLAS_V239.map(([k, t]) => '<button type="button" role="tab" data-p239filtro="' + k + '" class="' + (P.filtro === k ? 'on' : '') + '" aria-selected="' + (P.filtro === k) + '">' + t + ' (' + cuenta(k) + ')</button>').join('') + '</div>'
+    + '<div class="p239-cola-acc"><label class="p239-busca">' + ICO_V239.buscar + '<input type="search" data-p239busca placeholder="Buscar contenido…" value="' + esc(P.busca || '') + '" aria-label="Buscar contenido"></label>'
+    + '<label class="p239-filtrar">' + ICO_V239.filtro + '<select data-p239red aria-label="Filtrar por red"><option value="">Todas las redes</option>' + CANALES_V239.map(([c, t]) => '<option value="' + c + '"' + (P.red === c ? ' selected' : '') + '>' + t + '</option>').join('') + '</select></label></div></header>'
+    + resumen
+    + (admin && marcadas.length ? '<div class="p239-masivo"><b>' + marcadas.length + ' seleccionada' + (marcadas.length > 1 ? 's' : '') + '</b>' + (aprobables.length ? '<button type="button" class="p239-btn p239-prim p239-chico" data-p239masivo="aprobar">Aprobar ' + aprobables.length + ' pieza' + (aprobables.length > 1 ? 's' : '') + '</button>' : '') + (rechazables.length ? '<button type="button" class="p239-btn p239-chico" data-p239masivo="rechazar">Rechazar ' + rechazables.length + '</button>' : '') + '<button type="button" class="p239-link" data-p239masivo="limpiar">Quitar selección</button></div>' : '')
+    + (lista.length ? '<div class="p239-tabla" role="table" aria-label="Publicaciones"><div class="p239-tr p239-th" role="row">' + (admin ? '<span role="columnheader"><input type="checkbox" data-p239marcatodo aria-label="Seleccionar todas"' + (lista.every((g) => P.marcadas.has(g.clave)) ? ' checked' : '') + '></span>' : '<span></span>') + '<span role="columnheader">Contenido</span><span role="columnheader">Redes</span><span role="columnheader">Fecha y hora</span><span role="columnheader">Estado</span><span role="columnheader">Origen</span><span role="columnheader">Acciones</span></div>'
+      + lista.map((g) => { const x = g.principal, tit = x.gancho || x.titular?.l1 || (x.origen === 'propia' ? 'Contenido propio' : 'Publicación');
+        return '<div class="p239-tr' + (g.clave === P.sel ? ' on' : '') + '" role="row">' + (admin ? '<span role="cell"><input type="checkbox" data-p239marca="' + esc(g.clave) + '" aria-label="Seleccionar ' + esc(tit) + '"' + (P.marcadas.has(g.clave) ? ' checked' : '') + '></span>' : '<span></span>')
+          + '<button type="button" class="p239-contenido" role="cell" data-p239sel="' + esc(g.clave) + '">' + (x.miniatura ? '<img alt="" src="' + esc(x.miniatura) + '">' : '<span class="p239-sinmini"></span>') + '<span><b>' + esc(tit) + '</b><small>' + esc(String(x.texto || '').replace(/\s+/g, ' ').slice(0, 70)) + '</small></span></button>'
+          + '<span role="cell" class="p239-iconos">' + g.piezas.map((p) => '<span class="p239-icono-red" title="' + esc(p.canal_nombre + ' · ' + estadoHonestoV239(p).t) + '">' + iconoRedV239(p.canal, 22) + '<i class="p239-punto k-' + estadoHonestoV239(p).k + '"></i></span>').join('') + '</span>'
+          + '<span role="cell" class="p239-fecha"><b>' + esc(contDia(g.fecha)) + '</b><small>' + esc(contHora12(g.hora)) + '</small></span>'
+          + '<span role="cell"><span class="p239-pill k-' + g.k + '"><i class="p239-punto k-' + g.k + '"></i>' + esc(g.estado.t) + '</span></span>'
+          + '<span role="cell" class="p239-origen"><b>' + esc(ORIGEN_V239[x.origen] || 'Planificador') + '</b><small>' + esc(x.aprobada_por ? 'Aprobó ' + String(x.aprobada_por).split('@')[0] : x.auto ? 'Programada por el agente' : '') + '</small></span>'
+          + '<span role="cell" class="p239-filacc"><button type="button" class="p239-ico" data-p239sel="' + esc(g.clave) + '" aria-label="Ver">' + ICO_V239.ojo + '</button><button type="button" class="p239-ico" data-p239edita="' + esc(g.clave) + '" aria-label="Editar texto y hora">' + ICO_V239.lapiz + '</button>'
+          + '<details class="p239-mas"><summary class="p239-ico" aria-label="Más acciones">' + ICO_V239.puntos + '</summary><div class="p239-menu p239-menu-fila">' + accionesFilaV239(x, admin) + '</div></details></span></div>'; }).join('') + '</div>'
+      : '<div class="p239-vacio">' + (P.busca || P.red ? 'Nada coincide con la búsqueda.' : 'No hay publicaciones en esta cola este mes.') + '</div>');
+}
+function accionesFilaV239(x, admin){
+  const b = (attrs, t) => '<button type="button" ' + attrs + '>' + esc(t) + '</button>', editable = !['publicada', 'publicando', 'encola', 'enviada', 'sin_confirmar'].includes(x.estado);
+  const out = [];
+  if (x.tiene_imagen) out.push(b('data-cver="' + esc(x.id) + '"', 'Ver en grande'));
+  if (admin && editable && x.estilo_id && (CONT.estilos || []).some((e) => e.id === x.estilo_id && e.origen === 'v6')) out.push(b('data-ceditardiseno="' + esc(x.estilo_id) + '" data-cpieza="' + esc(x.id) + '"', 'Editar diseño'));
+  if (editable && x.tiene_imagen && x.origen !== 'propia') out.push(b('data-cvariaciones="' + esc(x.id) + '"', 'Variaciones'));
+  if (x.tiene_imagen) out.push(b('data-cdescarga="' + esc(x.id) + '"', 'Descargar'));
+  if (admin && ['publicando', 'encola', 'enviada', 'sin_confirmar'].includes(x.estado)) out.push(b('data-ccomprueba="' + esc(x.id) + '"', 'Comprobar envío'));
+  if (admin && ['propuesta', 'aprobada', 'fallida', 'lista'].includes(x.estado)) out.push(b('data-crechaza="' + esc(x.id) + '"', 'Rechazar'));
+  out.push(b('data-ccopia="' + esc(x.id) + '"', 'Copiar texto'));
+  return out.join('');
+}
+function vistaRedV239(x){
+  const d = document.querySelector('[data-p239dialogo]'); if (!d || !x) return;
+  const red = x.canal_nombre || 'la red', texto = String(x.texto || ''), corto = x.canal === 'instagram' && texto.length > 125 ? texto.slice(0, 125) + '… más' : texto;
+  d.innerHTML = '<div class="p239-card p239-telefono" role="dialog" aria-modal="true" aria-label="Así se verá en ' + esc(red) + '"><header>' + iconoRedV239(x.canal, 22) + '<b>dcarela_compufoto</b><small>' + esc(red) + '</small></header>'
+    + (x.miniatura ? '<img alt="" src="' + esc(x.miniatura) + '">' : '<div class="p239-vacio">Sin imagen</div>')
+    + '<p>' + esc(corto).replace(/(#[\p{L}\p{N}_]+)/gu, '<span class="p239-hash">$1</span>').replace(/\n/g, '<br>') + '</p>'
+    + '<small class="p239-nota">Vista local aproximada. No se envía nada ni se consulta la red.</small><div class="p239-acc"><button type="button" class="p239-btn" data-p239cierra="1">Cerrar</button></div></div>';
+  d.hidden = false;
+}
+async function clicCabeceraV239(ev){
+  const P = CONT.p239, b = ev.target.closest('button'); if (!b) return;
+  if (b.dataset.ctab) { P.menu = false; return cambiaTabContenido(b.dataset.ctab); }
+  if (b.dataset.p239 === 'menu') { P.menu = !P.menu; return pintaContenido(); }
+  if (b.dataset.p239 === 'ia') { P.menu = false; return cambiaTabContenido('tendencias'); }
+  const k = b.dataset.p239crear; if (!k) return;
+  P.menu = false;
+  if (k === 'editor') { if (typeof ve === 'function') return ve('editorflyers'); return; }
+  if (k === 'agente') { P.agente = !P.agente; return pintaContenido(); }
+  return cambiaTabContenido(k);
+}
+async function clicTableroV239(ev){
+  const P = CONT.p239, b = ev.target.closest('button, input[type=checkbox]'); if (!b) return;
+  const d = b.dataset;
+  if (d.p239dia) { P.dia = d.p239dia; const g = gruposV239(CONT.items || []).find((y) => y.fecha === d.p239dia); if (g) { P.sel = g.clave; P.canal = null; } return pintaContenido(); }
+  if (d.p239mes !== undefined) { const actual = periodoListaContenido().mes; CONT.filtroMes = d.p239mes === '0' ? contMesHoy() : contSumaMes(actual, Number(d.p239mes)); CONT.mes = CONT.filtroMes; P.dia = d.p239mes === '0' ? (CONT.hoy || null) : null; P.sel = null; return cargaContenido(); }
+  if (d.p239vista) { P.vista = d.p239vista; return pintaContenido(); }
+  if (d.p239sel) { if (P.sucio && !await confirmaAqui('Tienes cambios sin guardar en esta publicación. ¿Descartarlos?', { si: 'Descartar' })) return; P.sel = d.p239sel; P.canal = null; const g = grupoSelV239(); if (g) P.dia = g.fecha; return pintaContenido(); }
+  if (d.p239edita) { P.sel = d.p239edita; P.canal = null; const g = grupoSelV239(); if (g) P.dia = g.fecha; pintaContenido(); document.querySelector('.p239-publicacion textarea:not([readonly])')?.focus(); return; }
+  if (d.p239paso) { const grupos = gruposV239(CONT.items || []), i = grupos.findIndex((g) => g.clave === P.sel), g = grupos[i + Number(d.p239paso)]; if (g) { P.sel = g.clave; P.canal = null; P.dia = g.fecha; pintaContenido(); } return; }
+  if (d.p239canal) { if (P.sucio && !await confirmaAqui('Tienes cambios sin guardar. ¿Descartarlos?', { si: 'Descartar' })) return; P.canal = d.p239canal; return pintaSeleccionV239(); }
+  if (d.p239filtro) { P.filtro = d.p239filtro; return pintaColaV239(); }
+  if (d.p239prueba) { const g = grupoSelV239(); return vistaRedV239(piezaSelV239(g)); }
+  if (d.p239cierra) { const dl = document.querySelector('[data-p239dialogo]'); if (dl) dl.hidden = true; return; }
+  if (d.p239apruebagrupo) {
+    const g = grupoSelV239(), ids = (g?.piezas || []).filter((x) => x.estado === 'propuesta' && x.tiene_imagen).map((x) => x.id); if (!ids.length) return;
+    if (!await confirmaAqui('Se aprueban ' + ids.length + ' publicaciones (' + g.piezas.filter((x) => ids.includes(x.id)).map((x) => x.canal_nombre).join(', ') + ') y salen solas el ' + contDia(g.fecha) + ' a las ' + contHora12(g.hora) + '.', { si: 'Aprobar y programar' })) return;
+    const r = await llama({ action: 'contenidoAprueba', ids }); if (!r.ok) return avisa('No se pudo aprobar', r.error);
+    avisa('Programadas', r.hechas.length + ' aprobadas' + (r.omitidas?.length ? ' · ' + r.omitidas.length + ' no se pudieron: ' + r.omitidas.map((o) => o.motivo).join('; ') : '')); return cargaContenido();
+  }
+  if (d.p239masivo) {
+    const marcadas = gruposV239(CONT.items || []).filter((g) => P.marcadas.has(g.clave));
+    if (d.p239masivo === 'limpiar') { P.marcadas.clear(); return pintaColaV239(); }
+    if (d.p239masivo === 'aprobar') {
+      const ids = marcadas.flatMap((g) => g.piezas.filter((x) => x.estado === 'propuesta' && x.tiene_imagen).map((x) => x.id)); if (!ids.length) return;
+      if (!await confirmaAqui('Se aprueban ' + ids.length + ' publicaciones y salen solas a su hora. ¿Seguimos?', { si: 'Aprobar' })) return;
+      const r = await llama({ action: 'contenidoAprueba', ids }); if (!r.ok) return avisa('No se pudo aprobar', r.error);
+      P.marcadas.clear(); avisa('Aprobadas', r.hechas.length + ' programadas' + (r.omitidas?.length ? ' · ' + r.omitidas.length + ' omitidas' : '')); return cargaContenido();
+    }
+    if (d.p239masivo === 'rechazar') {
+      const ids = marcadas.flatMap((g) => g.piezas.filter((x) => ['propuesta', 'aprobada', 'fallida', 'lista'].includes(x.estado)).map((x) => x.id)); if (!ids.length) return;
+      if (!await confirmaAqui('Se rechazan ' + ids.length + ' publicaciones. No se borran: quedan como rechazadas.', { si: 'Rechazar' })) return;
+      const r = await llama({ action: 'contenidoRechaza', ids }); if (!r.ok) return avisa('No se pudo rechazar', r.error);
+      P.marcadas.clear(); return cargaContenido();
+    }
+  }
 }
 
 // ---- la tarjeta del agente: estado, autonomía, cuántos creativos, en qué redes y las acciones ----
