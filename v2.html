@@ -17,6 +17,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="CRM">
 <script src="./mosaicos-catalogo.js"></script>
+<script src="./mosaicos-smart.js"></script>
 <script src="./crm-config.js"></script>
 <script src="./firebase-config.js"></script>
 <!-- opus-recorder graba OGG/Opus de verdad por WASM. MediaRecorder no sirve aqui: en
@@ -2996,6 +2997,12 @@ input[type="checkbox"],input[type="radio"]{accent-color:var(--accent)}
 .ayuda-nota{font-size:12.5px;color:var(--mut);margin:6px 0 0}
 .mod-video{display:block;width:100%;border-radius:12px;background:#000}
 @media(max-width:760px){.ayuda-pop{left:12px;top:60px}}
+/* Mosaico Smart Albums (25/10/2026): ajustes de zona de texto, espacio y margen en el panel de distribuciones. */
+.e255-ajustes{display:flex;align-items:center;gap:10px 14px;flex-wrap:wrap;margin:8px 0 4px;font-size:12px;font-weight:600;color:var(--e-mut,var(--mut))}
+.e255-ajustes label{display:flex;align-items:center;gap:6px}.e255-ajustes input[type=range]{width:96px}
+.e255-seg{display:flex;border:1px solid var(--e-borde,var(--line2));border-radius:9px;overflow:hidden}
+.e255-seg button{border:0;background:transparent;padding:5px 10px;font:600 12px var(--tipo);color:var(--e-txt,var(--fg));cursor:pointer}
+.e255-seg button.on{background:var(--e-acc,var(--accent));color:#fff}
 /* Ficha: tarjeta del cliente y actividad reciente (referencia del dueño 25/10/2026). Los títulos de los bloques, a la izquierda. */
 #ficha .grupo>summary{justify-content:flex-start}
 #ficha .grupo>summary .nota{margin-left:auto}
@@ -20222,7 +20229,12 @@ function firmaCollageV238(c){
 }
 // Distribuciones del mosaico para n fotos (la primera es la principal) en un lienzo de proporción `aspecto` (ancho/alto).
 // Todo en % del lienzo. Cada una deja la foto principal más grande o al frente.
-function disenosMosaicoV238(n,aspecto){
+// Ajustes del mosaico (zona para el texto, espacio, margen): preferencia de este navegador; sin almacenamiento, los de fábrica.
+function opcionesMosaicoV255(){ let o={}; try { o=JSON.parse(localStorage.getItem('crm_mosaico_opciones')||'{}')||{}; } catch { o={}; } return typeof DcarelaSmart!=='undefined'?DcarelaSmart.opcionesDe(o):o; }
+function guardaOpcionesMosaicoV255(o){ try { localStorage.setItem('crm_mosaico_opciones', JSON.stringify(o)); } catch { /* sin almacenamiento: solo esta vez */ } }
+// Proporción (ancho/alto) de cada original, en el orden del collage. Sin medidas, retrato 4:5.
+function proporcionesMosaicoV255(ids){ return (ids||[]).map(id=>{ const f=(typeof CONT!=='undefined'?CONT.fotosCreativas||[]:[]).find(x=>x.id===id); return f&&f.width>0&&f.height>0?f.width/f.height:0.8; }); }
+function disenosMosaicoV238(n,aspecto,props){
   const r3=v=>Math.round(v*1000)/1000,k=Math.max(0,n-1),g=1.2,out=[];
   const m=(x,y,w,h,extra={})=>({marco:{x:r3(x),y:r3(y),w:r3(w),h:r3(h)},rotacion:0,radio:0,borde:null,sombra:0,...extra});
   const polaroid={borde:{grosor:.9,color:'#FFFFFF'},sombra:.7,radio:.8};
@@ -20256,7 +20268,10 @@ function disenosMosaicoV238(n,aspecto){
     out.push({id:'centro',nombre:'Principal al centro',marcos:a});}
   // El mosaico de la plantilla 04: la principal a sangre y hasta cuatro paneles laterales.
   if(n<=5)out.push({id:'v7',nombre:'Paneles V7',marcos:[m(0,0,100,100,{z:0}),...PANELES_MOSAICO_V234.slice(0,k).map((p,i)=>m(p.x,p.y,p.w,p.h,{z:i+1}))]});
-  return typeof DcarelaMosaicos !== 'undefined' ? [...DcarelaMosaicos.catalogo(n,aspecto),...out] : out;
+  // Smart Albums (propuesta 14 §4.3): marcos con la proporción real de cada foto, zona para el texto y espacios; van primero.
+  const smart = typeof DcarelaSmart !== 'undefined' ? DcarelaSmart.catalogo(n,aspecto,{...opcionesMosaicoV255(),proporciones:props}) : [];
+  const anteriores = typeof DcarelaMosaicos !== 'undefined' ? DcarelaMosaicos.catalogo(n,aspecto).map(d=>smart.length?{...d,familia:'Anteriores'}:d) : [];
+  return [...smart,...anteriores,...out];
 }
 function cajaFotoCompletaV253(nat,w,h){
   const nw=Number(nat?.width),nh=Number(nat?.height);
@@ -20266,7 +20281,8 @@ function cajaFotoCompletaV253(nat,w,h){
 }
 function miniDisenoV238(d,aspecto,fotos=[]){
   const h=Math.round(100/aspecto);
-  return '<svg viewBox="0 0 100 '+h+'" aria-hidden="true"><rect width="100" height="'+h+'" rx="3" fill="currentColor" opacity=".08"/>'+d.marcos.map((x,i)=>{const mk=x.marco,X=mk.x,Y=mk.y*h/100,W=mk.w,H=mk.h*h/100;
+  const zona=d.zona&&d.zona!=='ninguna'?'<rect x="6" y="'+(d.zona==='arriba'?(h*0.05).toFixed(1):(h*0.74).toFixed(1))+'" width="88" height="'+(h*0.2).toFixed(1)+'" rx="2" fill="none" stroke="currentColor" stroke-dasharray="2 1.5" opacity=".45"/>':'';
+  return '<svg viewBox="0 0 100 '+h+'" aria-hidden="true"><rect width="100" height="'+h+'" rx="3" fill="currentColor" opacity=".08"/>'+zona+d.marcos.map((x,i)=>{const mk=x.marco,X=mk.x,Y=mk.y*h/100,W=mk.w,H=mk.h*h/100;
     const src=String(fotos[i]||''),segura=/^(https?:\/\/|data:image\/(png|jpeg|webp);base64,|\/(?!\/))/.test(src)?src.replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])):'';
     if(segura)return '<rect x="'+X.toFixed(1)+'" y="'+Y.toFixed(1)+'" width="'+W.toFixed(1)+'" height="'+H.toFixed(1)+'" fill="#f0f3f8"/>'+'<image href="'+segura+'" x="'+X.toFixed(1)+'" y="'+Y.toFixed(1)+'" width="'+W.toFixed(1)+'" height="'+H.toFixed(1)+'" preserveAspectRatio="xMidYMid '+(d.ajuste==='completa'?'meet':'slice')+'"/>';
     return '<rect x="'+X.toFixed(1)+'" y="'+Y.toFixed(1)+'" width="'+W.toFixed(1)+'" height="'+H.toFixed(1)+'" rx="1.5" fill="'+(i?'#93c5fd':'#2563eb')+'" stroke="#fff" stroke-width="'+(x.borde?1.6:.6)+'" transform="rotate('+(x.rotacion||0)+' '+(X+W/2).toFixed(1)+' '+(Y+H/2).toFixed(1)+')"/>';}).join('')+'</svg>';
@@ -20878,7 +20894,7 @@ function estudioV238(m,api){
   const firmaLayout=c=>firmaCollageV238({fotos:(c?.fotos||[]).filter(x=>!x.bloqueada).map(x=>({...x,encuadre:null}))});
   const tocadoAMano=c=>!!c&&S.layoutAplicado!==firmaLayout(c);
   function aplicaLayout(c,id){
-    const F=FMT(),lista=disenosMosaicoV238(c.fotos.length,F.w/F.h),d=lista.find(x=>x.id===id)||lista[0];
+    const F=FMT(),lista=disenosMosaicoV238(c.fotos.length,F.w/F.h,proporcionesMosaicoV255(ordenMosaico(c).map(fo=>fo.original_id))),d=lista.find(x=>x.id===id)||lista[0];
     ordenMosaico(c).forEach((fo,i)=>{if(fo.bloqueada)return;const mk=d.marcos[i];if(!mk)return;
       Object.assign(fo,{marco:{...mk.marco},rotacion:mk.rotacion||0,radio:mk.radio||0,borde:mk.borde?{...mk.borde}:null,sombra:mk.sombra||0,z:mk.z??i,encuadre:null});if(d.ajuste==='completa')fo.ajuste='completa';else delete fo.ajuste;acotaFotoCollageV234(fo);});
     S.layout=d.id;if(d.ajuste==='completa')c.diseno_id=d.id;else delete c.diseno_id;return c;
@@ -20900,9 +20916,11 @@ function estudioV238(m,api){
   }
   async function reorganizaMosaico(){
     const c=coleccion()||virtual();if(!c||c.fotos.length<2)return avisaV238('Elige al menos dos fotos para reorganizar el collage.');
-    const F=FMT(),lista=disenosMosaicoV238(c.fotos.length,F.w/F.h).filter(d=>d.ajuste==='completa');
-    if(!lista.length)return avisaV238('No hay una distribución segura para estas fotos.');
-    const actual=S.layout||c.diseno_id||'',i=lista.findIndex(d=>d.id===actual),siguiente=lista[(i+1+lista.length)%lista.length]||lista[0];
+    const F=FMT(),todas=disenosMosaicoV238(c.fotos.length,F.w/F.h,proporcionesMosaicoV255(ordenMosaico(c).map(fo=>fo.original_id))).filter(d=>d.ajuste==='completa');
+    if(!todas.length)return avisaV238('No hay una distribución segura para estas fotos.');
+    // «Probar otra distribución»: la siguiente de la MISMA familia (Smart, Destacadas, Álbum…); si no hay otra, la siguiente de todas.
+    const actual=S.layout||c.diseno_id||'',fam=todas.find(d=>d.id===actual)?.familia,misma=todas.filter(d=>d.familia===fam),lista=misma.length>1?misma:todas;
+    const i=lista.findIndex(d=>d.id===actual),siguiente=lista[(i+1+lista.length)%lista.length]||lista[0];
     await eligeDiseno(siguiente.id);
   }
   async function agregaFotos(ids){
@@ -21039,12 +21057,16 @@ function estudioV238(m,api){
     }
   });
   function abreMosaico(){
-    const c=coleccion()||virtual(),ids=S.elegidas.length>=2?[...S.elegidas]:ordenMosaico(c||{fotos:[]}).filter(Boolean).map(f=>f.original_id),n=ids.length,F=FMT();
-    const lista=disenosMosaicoV238(n,F.w/F.h),originales=ids.map(id=>api.imagenDe(id));
+    const c=coleccion()||virtual(),ids0=S.elegidas.length>=2?[...S.elegidas]:ordenMosaico(c||{fotos:[]}).filter(Boolean).map(f=>f.original_id),n=ids0.length,F=FMT();
+    // Mismo orden que eligeDiseno: la principal primero (así cada marco recibe la foto para la que se calculó).
+    const pri=principalId(),ids=ids0.includes(pri)?[pri,...ids0.filter(x=>x!==pri)]:ids0,opM=opcionesMosaicoV255();
+    const lista=disenosMosaicoV238(n,F.w/F.h,proporcionesMosaicoV255(ids)),originales=ids.map(id=>api.imagenDe(id));
     pop.innerHTML='<header><b>'+I.mosaico+' Plantillas de mosaico</b><button type="button" class="e238-ico" data-e238="cierraPop" aria-label="Cerrar">×</button></header>'
       +(n<2?'<p class="e238-ayuda">Elige de 2 a 9 fotos en la Biblioteca. Las plantillas nuevas muestran cada foto completa, sin ampliarla ni cortarla para llenar un marco.</p>'
         :'<p class="e238-ayuda">'+lista.filter(d=>d.ajuste==='completa').length+' distribuciones sin recorte para tus '+n+' fotos. Las fotos bloqueadas conservan su posición. Puedes deshacer cualquier cambio.</p>'
-           +'<div class="e253-filtros"><input class="e238-in" data-mosaico-busca aria-label="Buscar plantilla de mosaico" placeholder="Buscar distribución…"><select class="e238-in" data-mosaico-familia aria-label="Familia de mosaicos"><option value="">Todas las familias</option><option>Álbum</option><option>Rejillas</option><option>Destacadas</option><option value="editorial">Con recorte · anteriores</option></select><button type="button" class="e238-btn e238-prim" data-e238="reorganizarMosaico">Reorganizar collage</button></div>'
+           +'<div class="e253-filtros"><input class="e238-in" data-mosaico-busca aria-label="Buscar plantilla de mosaico" placeholder="Buscar distribución…"><select class="e238-in" data-mosaico-familia aria-label="Familia de mosaicos"><option value="">Todas las familias</option><option>Smart</option><option>Destacadas</option><option>Tiras</option><option>Álbum</option><option>Clásicos</option><option>Anteriores</option><option>Rejillas</option><option value="editorial">Con recorte · v238</option></select><button type="button" class="e238-btn e238-prim" data-e238="reorganizarMosaico">Probar otra distribución</button></div>'
+           +'<div class="e255-ajustes" role="group" aria-label="Ajustes del mosaico"><span>Texto</span><div class="e255-seg">'+[['abajo','Abajo'],['arriba','Arriba'],['ninguna','Sin zona']].map(([v,t])=>'<button type="button" data-mosaico-zona="'+v+'" aria-pressed="'+(opM.zona===v)+'" class="'+(opM.zona===v?'on':'')+'">'+t+'</button>').join('')+'</div>'
+           +'<label>Espacio<input type="range" min="0" max="5" step="0.5" value="'+opM.espacio+'" data-mosaico-op="espacio" aria-label="Espacio entre fotos"></label><label>Margen<input type="range" min="0" max="10" step="1" value="'+opM.margen+'" data-mosaico-op="margen" aria-label="Margen del lienzo"></label></div>'
           +'<p class="e238-nota" data-mosaico-cuenta aria-live="polite"></p><div class="e238-disenos" data-mosaico-grid></div>'
           +'<div class="e253-paginas"><button type="button" class="e238-btn" data-mosaico-prev>Anterior</button><button type="button" class="e238-btn" data-mosaico-next>Siguiente</button></div>')
       +'<p class="e238-nota">Foto completa conserva la proporción y puede dejar aire dentro del marco. No modifica la original. Se conservan los textos y efectos que ya tengas en el diseño.</p>';
@@ -21056,7 +21078,13 @@ function estudioV238(m,api){
         grid.innerHTML=filtradas.slice(pagina*12,pagina*12+12).map(d=>'<button type="button" class="e238-diseno-op'+(d.id===(c?.diseno_id||S.layout)&&coleccion()&&S.elegidas.length<2?' on':'')+'" data-e238-layout="'+d.id+'" title="'+esc(d.nombre)+' · '+(d.ajuste==='completa'?'Fotos completas':'Con recorte')+'">'+miniDisenoV238(d,F.w/F.h,originales)+'<span>'+esc(d.nombre)+'</span><small>'+(d.ajuste==='completa'?'Foto completa':'Con recorte')+'</small></button>').join('')||'<p class="e238-ayuda">No hay plantillas con ese filtro.</p>';
         cuenta.textContent=filtradas.length+' opciones · página '+(pagina+1)+' de '+paginas;prev.disabled=pagina===0;next.disabled=pagina>=paginas-1;pop.scrollTop=0;
       };
-      buscar.oninput=familia.onchange=()=>{pagina=0;pinta();};prev.onclick=()=>{if(pagina>0){pagina--;pinta();}};next.onclick=()=>{pagina++;pinta();};pinta();
+      buscar.oninput=familia.onchange=()=>{S.mosaicoFiltro={busca:buscar.value,familia:familia.value};pagina=0;pinta();};prev.onclick=()=>{if(pagina>0){pagina--;pinta();}};next.onclick=()=>{pagina++;pinta();};
+      if(S.mosaicoFiltro){buscar.value=S.mosaicoFiltro.busca||'';familia.value=S.mosaicoFiltro.familia||'';}
+      // Zona de texto, espacio y margen: se guardan y las miniaturas se recalculan al momento (la elegida se aplica al pulsarla).
+      const cambiaOp=(k,v)=>{guardaOpcionesMosaicoV255({...opcionesMosaicoV255(),[k]:v});abreMosaico();};
+      pop.querySelectorAll('[data-mosaico-zona]').forEach(b=>b.onclick=()=>cambiaOp('zona',b.dataset.mosaicoZona));
+      pop.querySelectorAll('[data-mosaico-op]').forEach(r=>r.onchange=()=>cambiaOp(r.dataset.mosaicoOp,Number(r.value)));
+      pinta();
     }
     pop.hidden=false;pop.scrollTop=0;root.querySelector('[data-e238-tool="mosaico"]')?.classList.add('on');
   }
