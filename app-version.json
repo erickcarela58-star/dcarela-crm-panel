@@ -1,7 +1,7 @@
 {
-  "version": "2026-10-25-crm-release-v320",
+  "version": "2026-10-25-crm-release-v321",
   "channel": "crm",
-  "released_at": "2026-10-25T16:21:00Z",
-  "summary": "Planificador: ZIP de la selección sin publicar, carruseles numerados y Variaciones desde la fila y el detalle. Crear: varias plantillas y varias fotos por lote, con la frase escrita según cada foto y pantalla de proceso idea por idea. Campañas con resumen de revisión. Catálogo de mosaicos servido junto al panel.",
+  "released_at": "2026-10-25T16:56:38Z",
+  "summary": "Cotizaciones del chat: las fotos se cobran por tamaño, el cuadro 8.5x11 de los combos se reconoce, el cambio de cuadro cobra solo la diferencia y administración puede dar un descuento especial que sale en el ticket. Incluye todo lo de v320.",
   "requiere_puente": "2026-10-18-diagnostico-citas-v53"
 }
