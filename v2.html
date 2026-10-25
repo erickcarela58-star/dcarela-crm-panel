@@ -2543,13 +2543,31 @@ input[type="checkbox"],input[type="radio"]{accent-color:var(--accent)}
 .campanas-hoja #bcSalida .bc-destino-acciones{border-top:1px solid var(--line);padding-top:10px}
 @media(min-width:1100px){
   #vista-campanas .campanas-hoja:has(#bcSalida .propuesta){display:grid;grid-template-columns:minmax(300px,350px) minmax(0,1fr);gap:0 20px;align-items:start}
-  #vista-campanas .campanas-hoja:has(#bcSalida .propuesta)>h1,#vista-campanas .campanas-hoja:has(#bcSalida .propuesta)>.bajada,#vista-campanas .campanas-hoja:has(#bcSalida .propuesta)>.bc-pasos,#vista-campanas .campanas-hoja:has(#bcSalida .propuesta)>#mkAgente,#vista-campanas .campanas-hoja:has(#bcSalida .propuesta)>.grupo{grid-column:1/-1}
+  #vista-campanas .campanas-hoja:has(#bcSalida .propuesta)>h1,#vista-campanas .campanas-hoja:has(#bcSalida .propuesta)>.bajada,#vista-campanas .campanas-hoja:has(#bcSalida .propuesta)>.bc-pasos,#vista-campanas .campanas-hoja:has(#bcSalida .propuesta)>.bc-snapshot,#vista-campanas .campanas-hoja:has(#bcSalida .propuesta)>#mkAgente,#vista-campanas .campanas-hoja:has(#bcSalida .propuesta)>.grupo{grid-column:1/-1}
   #vista-campanas .campanas-hoja:has(#bcSalida .propuesta)>.prompt{grid-column:1;max-width:none;min-width:0;padding:20px}
   #vista-campanas .campanas-hoja:has(#bcSalida .propuesta)>#bcSalida{grid-column:2;min-width:0}
   #vista-campanas .campanas-hoja:has(#bcSalida .propuesta)>.prompt .par{grid-template-columns:1fr}
 }
-.campanas-hoja #mkAgente{margin-top:28px}
-@media(max-width:700px){.campanas-hoja #bcSalida .propuesta .cuerpo{grid-template-columns:1fr}}
+  .campanas-hoja #mkAgente{margin-top:28px}
+  @media(max-width:700px){.campanas-hoja #bcSalida .propuesta .cuerpo{grid-template-columns:1fr}}
+  /* v320 · cierre visual: pasos, resumen y cola se leen como una herramienta, no como un formulario largo. */
+  .campanas-hoja>h1{display:flex;align-items:center;gap:10px;letter-spacing:-.04em}
+  .campanas-hoja>h1:before{content:'↗';display:grid;place-items:center;width:34px;height:34px;border-radius:11px;background:var(--accent);color:#fff;font-size:20px;box-shadow:0 5px 14px rgba(74,134,232,.24)}
+  .campanas-hoja .bc-pasos{position:sticky;top:8px;z-index:8;padding:8px;border:1px solid var(--line);border-radius:16px;background:color-mix(in srgb,var(--vidrio-fuerte) 88%,transparent);backdrop-filter:blur(22px);box-shadow:var(--sombra-suave)}
+  .campanas-hoja .bc-pasos span{flex:1 1 160px;text-align:center;transition:background .15s var(--curva),color .15s var(--curva),border-color .15s var(--curva)}
+  .campanas-hoja .bc-snapshot{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin:0 0 14px}
+  .campanas-hoja .bc-snapshot[hidden]{display:none}
+  .campanas-hoja .bc-metrica{padding:12px 14px;border:1px solid var(--line);border-radius:14px;background:var(--vidrio-fuerte);box-shadow:var(--sombra-suave)}
+  .campanas-hoja .bc-metrica b{display:block;font-size:22px;letter-spacing:-.04em}.campanas-hoja .bc-metrica span{display:block;margin-top:2px;color:var(--mut);font-size:11px;line-height:1.35}
+  .campanas-hoja .bc-metrica.ok b{color:var(--ok)}.campanas-hoja .bc-metrica.warn b{color:var(--warn)}.campanas-hoja .bc-metrica.bad b{color:var(--bad)}
+  .campanas-hoja .prompt{border-top:3px solid var(--accent)}
+  @media(max-width:760px){.campanas-hoja .bc-snapshot{grid-template-columns:repeat(2,minmax(0,1fr))}.campanas-hoja .bc-pasos{position:static}}
+  .plan239{border:1px solid color-mix(in srgb,var(--e-acc) 12%,var(--e-borde));border-radius:22px;box-shadow:0 18px 48px rgba(37,99,235,.08)}
+  .plan239 .p239-cabecera{position:sticky;top:8px;z-index:7;padding:6px 0;background:color-mix(in srgb,var(--e-bg) 88%,transparent);backdrop-filter:blur(18px)}
+  .plan239 .p239-titulo{border-color:#c7d2fe;background:linear-gradient(135deg,var(--e-card),var(--e-suave))}
+  .plan239 .p239-card{transition:box-shadow .18s ease,transform .18s ease}.plan239 .p239-card:hover{box-shadow:0 10px 28px rgba(15,23,42,.10);transform:translateY(-1px)}
+  .plan239 .p239-card-cab h2{letter-spacing:-.025em}.plan239 .p239-masivo{position:sticky;bottom:10px;z-index:6;border:1px solid #c7d2fe;border-radius:14px;box-shadow:0 10px 24px rgba(37,99,235,.12)}
+  @media(max-width:900px){.plan239 .p239-cabecera{position:static}.plan239 .p239-titulo{padding:12px}.plan239 .p239-titulo h1{font-size:23px}}
 .mk-card{padding:20px 22px 18px;border-radius:var(--r3);min-width:0}
 .mk-card.decidida{opacity:.72}
 .mk-cab{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:0 0 10px}
@@ -3003,6 +3021,9 @@ input[type="checkbox"],input[type="radio"]{accent-color:var(--accent)}
   .e238{display:flex;flex-direction:column;gap:12px;padding:14px 16px 16px;height:auto;min-height:calc(100dvh - 72px);box-sizing:border-box;color:var(--e-txt);font-size:13px;line-height:1.4}
   #vista-editorflyers{height:100%;min-height:0;overflow:auto}#vista-editorflyers .hoja.estudio-hoja{min-height:100%;height:auto;overflow:visible}#estudioFlyersHost{height:auto;min-height:100%}#estudioFlyersHost>.estudio-flyer-form{height:auto;min-height:100%;overflow:visible}
   .e238 *{box-sizing:border-box}
+  .e238.e238-enfoque{position:fixed!important;inset:0!important;z-index:100000!important;width:100vw!important;height:100dvh!important;min-height:0!important;overflow:auto!important;padding:8px!important;gap:8px!important;background:var(--e-bg)!important}
+  .e238.e238-enfoque .e238-cab{padding:8px 12px}
+  .e238.e238-enfoque .e238-cuerpo{min-height:380px}
   @media(max-width:1400px){.e238-cab-ico{display:none}.e238-cab-txt{flex:1 1 100%}.e238-cab h1{font-size:20px}.e238-cab{gap:8px;padding:10px 12px}.e238-cab-acc{margin-left:0}.e238-cab-acc .e238-btn{height:36px;padding:0 12px;font-size:12px}}
   .g242-presets{display:grid;grid-template-columns:repeat(6,1fr);gap:7px;margin:12px 0}.g242-presets button{height:30px;border:1px solid var(--e-borde);border-radius:6px;cursor:pointer;box-shadow:inset 0 0 0 1px #ffffff50}
   .g242-tipos{display:grid;grid-template-columns:repeat(5,1fr);gap:3px;margin:12px 0}.g242-tipos button{display:grid;justify-items:center;gap:2px;border:1px solid var(--e-borde);border-radius:7px;background:var(--e-card);color:var(--e-txt);padding:6px 0;cursor:pointer}.g242-tipos b{font-size:21px;line-height:1}.g242-tipos small{font-size:9px}.g242-tipos .on{border-color:var(--e-acc);color:var(--e-acc);background:var(--e-suave)}
@@ -3107,6 +3128,12 @@ input[type="checkbox"],input[type="radio"]{accent-color:var(--accent)}
   .e238-insp,.e238-diseno{flex:1;min-height:0;overflow:auto;padding:2px 14px 16px;scrollbar-width:thin}.e238-insp[hidden],.e238-diseno[hidden]{display:none}
   .e238-sec{padding:12px 0;border-bottom:1px solid var(--e-borde)}.e238-sec:last-child{border-bottom:0}
   .e238-sec>h3{display:flex;align-items:center;gap:7px;margin:0 0 10px;font-size:13px;font-weight:750;color:var(--e-txt)}
+  .e238-detalle{margin:12px 0 4px;border:1px solid var(--e-borde);border-radius:12px;background:var(--e-card);overflow:hidden}
+  .e238-detalle>summary{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:11px 12px;color:var(--e-txt);font-size:12.5px;font-weight:700;cursor:pointer;list-style:none}
+  .e238-detalle>summary::-webkit-details-marker{display:none}.e238-detalle>summary::after{content:'⌄';font-size:18px;line-height:1;color:var(--e-mut);transition:transform .15s ease}
+  .e238-detalle[open]>summary::after{transform:rotate(180deg)}.e238-detalle[open]>summary{border-bottom:1px solid var(--e-borde);background:var(--e-suave)}
+  .e238-detalle>.e238-sec{margin:0 12px}.e238-detalle>.e238-sec:last-child{border-bottom:0}
+  .e238-detalle .e238-fila2{grid-template-columns:minmax(0,1fr)}
   .e238-elem{display:flex;align-items:center;gap:10px;padding:8px 10px;border:1px solid var(--e-borde);border-radius:11px;background:var(--e-suave)}
   .e238-elem>span:nth-child(2){flex:1;min-width:0;display:grid}.e238-elem small{color:var(--e-mut);font-size:11px}.e238-elem img{width:38px;height:38px;border-radius:8px;object-fit:cover}
   .e238-elem-ico{width:34px;height:34px;display:grid;place-items:center;border-radius:9px;background:var(--e-card);color:var(--e-acc)}
@@ -3368,7 +3395,8 @@ input[type="checkbox"],input[type="radio"]{accent-color:var(--accent)}
   @media (max-width:1100px){.c240-plantillas{grid-template-columns:repeat(3,minmax(0,1fr))}.c240-objetivos,.c240-formatos,.c240-redes{grid-template-columns:repeat(2,1fr)}.c240-resumen{gap:12px;flex-wrap:wrap}}
   @media (max-width:720px){.c240-dos{grid-template-columns:1fr}.c240-pie{flex-wrap:wrap}}
   .plan239 .plan-job{background:var(--e-card);border:1px solid var(--e-borde);border-radius:16px;box-shadow:var(--e-sombra);padding:14px 16px}
-  @media (max-width:1320px){.p239-fila{grid-template-columns:1fr 1fr}.p239-cal{grid-column:1/-1}.p239-tr{grid-template-columns:30px minmax(200px,2fr) 96px 104px 150px 120px 120px}}
+  @media (max-width:1320px){.p239-fila{grid-template-columns:repeat(2,minmax(0,1fr))}.p239-publicacion{grid-column:1/-1}.p239-tr{grid-template-columns:30px minmax(0,1.5fr) 84px 96px minmax(110px,1fr) 100px 84px}}
+  @media (max-width:900px){.p239-fila{grid-template-columns:minmax(0,1fr)}.p239-publicacion{grid-column:auto}.p239-dia{min-height:46px}}
   /* v240 · editor: chips que caben, columna sin barra a la vista, plantillas con foto fija y pestaña Diseño nativa. */
   .e238-chips{flex-wrap:wrap;overflow:visible}.e238-chip{height:28px;padding:0 10px;font-size:11.5px}
   .e238-izq{scrollbar-width:none}.e238-izq::-webkit-scrollbar{display:none}
@@ -18769,6 +18797,7 @@ function publicacionV239(g, x){
   if (admin && ['aprobada', 'fallida', 'vencida'].includes(x.estado)) acc.push('<button type="button" class="p239-btn" data-cpublica="' + esc(x.id) + '">' + (x.estado === 'aprobada' ? 'Publicar ahora' : 'Reintentar ahora') + '</button>');
   if (admin && ['publicando', 'encola', 'enviada', 'sin_confirmar'].includes(x.estado)) acc.push('<button type="button" class="p239-btn p239-prim" data-ccomprueba="' + esc(x.id) + '" title="Consulta el resultado sin volver a publicar">Comprobar envío</button>');
   if (x.estado === 'lista' && x.tiene_imagen) acc.push('<button type="button" class="p239-btn p239-prim" data-cdescarga="' + esc(x.id) + '">Descargar</button>', '<button type="button" class="p239-btn" data-ccopia="' + esc(x.id) + '">Copiar texto</button>');
+  if (editable && x.tiene_imagen && x.origen !== 'propia') acc.push('<button type="button" class="p239-btn" data-cvariaciones="' + esc(x.id) + '" title="Nuevos ganchos, enfoques y composiciones">Variaciones</button>');
   return '<header class="p239-card-cab"><h2>' + ICO_V239.enviar + 'Publicación en redes</h2></header>'
     + '<div class="p239-redes" role="tablist" aria-label="Red de la publicación">' + CANALES_V239.map(([c, t]) => { const p = g.piezas.find((y) => y.canal === c);
       return '<button type="button" role="tab" class="p239-red-tab' + (p && p.id === x.id ? ' on' : '') + '"' + (p ? ' data-p239canal="' + c + '"' : ' disabled title="Esta pieza no va a ' + esc(t) + '"') + ' aria-selected="' + !!(p && p.id === x.id) + '">' + iconoRedV239(c) + '<span>' + esc(t) + '</span>' + (p ? '<i class="p239-punto k-' + estadoHonestoV239(p).k + '"></i>' : '') + '</button>'; }).join('') + '</div>'
@@ -18815,7 +18844,7 @@ function pintaColaV239(){
     + '<div class="p239-cola-acc"><label class="p239-busca">' + ICO_V239.buscar + '<input type="search" data-p239busca placeholder="Buscar contenido…" value="' + esc(P.busca || '') + '" aria-label="Buscar contenido"></label>'
     + '<label class="p239-filtrar">' + ICO_V239.filtro + '<select data-p239red aria-label="Filtrar por red"><option value="">Todas las redes</option>' + CANALES_V239.map(([c, t]) => '<option value="' + c + '"' + (P.red === c ? ' selected' : '') + '>' + t + '</option>').join('') + '</select></label></div></header>'
     + resumen
-    + (admin && marcadas.length ? '<div class="p239-masivo"><b>' + marcadas.length + ' seleccionada' + (marcadas.length > 1 ? 's' : '') + '</b>' + (aprobables.length ? '<button type="button" class="p239-btn p239-prim p239-chico" data-p239masivo="aprobar">Aprobar ' + aprobables.length + ' pieza' + (aprobables.length > 1 ? 's' : '') + '</button>' : '') + (rechazables.length ? '<button type="button" class="p239-btn p239-chico" data-p239masivo="rechazar">Rechazar ' + rechazables.length + '</button>' : '') + '<button type="button" class="p239-link" data-p239masivo="limpiar">Quitar selección</button></div>' : '')
+     + (admin && marcadas.length ? '<div class="p239-masivo"><b>' + marcadas.length + ' seleccionada' + (marcadas.length > 1 ? 's' : '') + '</b>' + (aprobables.length ? '<button type="button" class="p239-btn p239-prim p239-chico" data-p239masivo="aprobar">Aprobar ' + aprobables.length + ' pieza' + (aprobables.length > 1 ? 's' : '') + '</button>' : '') + (rechazables.length ? '<button type="button" class="p239-btn p239-chico" data-p239masivo="rechazar">Rechazar ' + rechazables.length + '</button>' : '') + '<button type="button" class="p239-btn p239-chico" data-p239masivo="zip">Descargar ZIP</button><button type="button" class="p239-link" data-p239masivo="limpiar">Quitar selección</button></div>' : '')
     + (lista.length ? '<div class="p239-tabla" role="table" aria-label="Publicaciones"><div class="p239-tr p239-th" role="row">' + (admin ? '<span role="columnheader"><input type="checkbox" data-p239marcatodo aria-label="Seleccionar todas"' + (lista.every((g) => P.marcadas.has(g.clave)) ? ' checked' : '') + '></span>' : '<span></span>') + '<span role="columnheader">Contenido</span><span role="columnheader">Redes</span><span role="columnheader">Fecha y hora</span><span role="columnheader">Estado</span><span role="columnheader">Origen</span><span role="columnheader">Acciones</span></div>'
       + lista.map((g) => { const x = g.principal, tit = x.gancho || x.titular?.l1 || (x.origen === 'propia' ? 'Contenido propio' : 'Publicación');
         return '<div class="p239-tr' + (g.clave === P.sel ? ' on' : '') + '" role="row">' + (admin ? '<span role="cell"><input type="checkbox" data-p239marca="' + esc(g.clave) + '" aria-label="Seleccionar ' + esc(tit) + '"' + (P.marcadas.has(g.clave) ? ' checked' : '') + '></span>' : '<span></span>')
@@ -18891,6 +18920,13 @@ async function clicTableroV239(ev){
     let url=null;try{const u=new URL(resultado?.video_url);if(resultado?.ok&&['http:','https:'].includes(u.protocol))url=u.href;}catch{}
     return vistaRedV239({...vista,video_loading:false,video_url:url,video_error:!url}); }
   if (d.p239cierra) { P.previewTurn=(P.previewTurn||0)+1;const dl = document.querySelector('[data-p239dialogo]'); if (dl){const v=dl.querySelector('video');if(typeof v?.pause==='function')v.pause();dl.hidden = true;} return; }
+  if (d.cvariaciones) {
+    const pieza = (CONT.items || []).find(x => x.id === d.cvariaciones);
+    if (!pieza || !pieza.tiene_imagen || pieza.origen === 'propia') return avisa('Variaciones no disponibles', 'Solo se pueden crear para piezas con imagen que no sean contenido propio.');
+    if (pieza.formato === 'imagen_16x9') return avisa('Variaciones no disponibles en 16:9', 'Las variaciones automáticas usan originales verticales. Para otra versión horizontal, abre la pieza en el Editor de flyers con una original horizontal.');
+    CONT.crear = { baseId: pieza.id, mes: pieza.mes_objetivo || pieza.fecha.slice(0, 7), cantidad: 3, categorias: new Set([pieza.categoria]), formatos: new Set([pieza.formato]), canales: new Set([pieza.canal]), estilo_id: pieza.estilo_referencia_id || '', modelo: CONT.modelo || 'gemini-4-argon', brief: '', otraFoto: false };
+    return cambiaTabContenido('crear');
+  }
   if (d.p239apruebagrupo) {
     const g = grupoSelV239(), ids = (g?.piezas || []).filter((x) => x.estado === 'propuesta' && x.tiene_imagen).map((x) => x.id); if (!ids.length) return;
     if(ids.some(tieneBorradorPublicacionV250))return avisa('Hay borradores sin guardar','Guarda o descarta los borradores de estas redes antes de aprobar.');
@@ -18913,6 +18949,20 @@ async function clicTableroV239(ev){
       if (!await confirmaAqui('Se rechazan ' + ids.length + ' publicaciones. No se borran: quedan como rechazadas.', { si: 'Rechazar' })) return;
       const r = await llama({ action: 'contenidoRechaza', ids }); if (!r.ok) return avisa('No se pudo rechazar', r.error);
       P.marcadas.clear(); return cargaContenido();
+    }
+    if (d.p239masivo === 'zip') {
+      const ids = marcadas.flatMap((g) => g.piezas.filter((x) => x.tiene_imagen && x.tipo_media !== 'video').map((x) => x.id));
+      if (!ids.length) return avisa('Sin imágenes', 'Las publicaciones seleccionadas no tienen imágenes descargables.');
+      if (ids.length > 12) return avisa('Demasiadas publicaciones', 'El ZIP admite hasta 12 publicaciones seleccionadas.');
+      if (!await confirmaAqui('Se preparará un ZIP con ' + ids.length + ' publicación(es). No se publica nada. ¿Descargar?', { si: 'Preparar ZIP' })) return;
+      b.disabled = true;
+      let r; try { r = await llama({ action: 'contenidoImagenLote', ids }); } catch { r = { ok: false, error: 'Se interrumpió la descarga.' }; }
+      b.disabled = false;
+      if (!r?.ok || !r.zip_b64) return avisa('No se pudo preparar el ZIP', r?.error || 'Respuesta incompleta.');
+      const bytes = Uint8Array.from(atob(r.zip_b64), (c) => c.charCodeAt(0));
+      descargaComoArchivo(new Blob([bytes], { type: r.mime || 'application/zip' }), r.nombre || 'dcarela-contenido-seleccionado.zip');
+      avisa('ZIP listo', (r.archivos || []).length + ' archivo(s) descargados.');
+      return;
     }
   }
 }
@@ -19988,7 +20038,7 @@ function estudioV238(m,api){
     +'<div class="e238-barra-der"><span class="e238-fmt" data-e238-fmt title="Formato del lienzo"></span>'
     +'<select data-e238="zoom" aria-label="Zoom del lienzo"><option value="ajustar">Ajustar página</option><option value="documento">Ver carrusel completo</option>'+[25,33,50,58,67,75,100].map(z=>'<option value="'+(z/100)+'">'+z+'%</option>').join('')+'</select>'
     +'<button type="button" class="e238-btn e238-peq" data-e238="biblioteca" aria-expanded="true" title="Ocultar biblioteca de plantillas y fotos">'+I.biblioteca+'<span>Biblioteca</span></button>'
-    +'<button type="button" class="e238-ico" data-e238="pantalla" title="Pantalla completa" aria-label="Pantalla completa">'+I.pantalla+'</button>'
+    +'<button type="button" class="e238-ico" data-e238="pantalla" title="Pantalla completa" aria-label="Pantalla completa" aria-pressed="false">'+I.pantalla+'</button>'
     +'<button type="button" class="e238-ico" data-e238="rejilla" title="Guías de tercios" aria-label="Guías de tercios">'+I.rejilla+'</button>'
     +'<button type="button" class="e238-ico" data-e238="compacto" title="Compactar todos los módulos" aria-label="Compactar todos los módulos" aria-pressed="false">'+I.compactar+'</button></div>'
     +'</nav>'
@@ -20676,7 +20726,7 @@ function estudioV238(m,api){
     clearTimeout(S.gradTimer);S.gradTimer=setTimeout(programaDibujo,80);
   });
   const terminaGrad242=()=>{if(!dragGrad242)return;S.gradPistaMoviendo=false;const d=dragGrad242;dragGrad242=null;if(d.movio)guardaGrad242(leeGrad242());else pintaGrad242();};
-  insp.addEventListener('toggle',ev=>{if(ev.target.matches('[data-gavanzado]'))S.gradAvanzado=ev.target.open;},true);
+  insp.addEventListener('toggle',ev=>{if(ev.target.matches('[data-gavanzado]'))S.gradAvanzado=ev.target.open;if(ev.target.matches('[data-texto-avanzado]'))S.textoAvanzado=ev.target.open;},true);
   insp.addEventListener('pointerup',terminaGrad242);insp.addEventListener('pointercancel',terminaGrad242);
   insp.addEventListener('click',ev=>{
     if(accionGrad242(ev.target.closest('[data-gpreset],[data-gtipo],[data-gadd],[data-gquitar],[data-gdibujar],[data-guncolor]')||{}))return;
@@ -20744,7 +20794,7 @@ function estudioV238(m,api){
     const s=normalizaAcabadoV244(raw),a=tipo==='forma'?'data-forma-campo':'data-texto-acabado',select=(k,t,ops)=>'<label class="e238-campo"><span>'+t+'</span><select class="e238-in" '+a+'="'+k+'" aria-label="'+t+'">'+ops.map(([v,n])=>'<option value="'+v+'"'+(s[k]===v?' selected':'')+'>'+n+'</option>').join('')+'</select></label>',control=(k,t,type,min,max,step)=>'<label class="e238-campo"><span>'+t+'</span><input class="e238-in" '+a+'="'+k+'" aria-label="'+t+'" type="'+type+'" '+(type==='checkbox'?(s[k]?'checked':''):'value="'+s[k]+'"')+(min!==undefined?' min="'+min+'" max="'+max+'" step="'+step+'"':'')+'></label>';
     return '<section class="e238-sec"><h3>Trazo y resplandor</h3>'+select('trazo_estilo','Estilo del trazo',[['continuo','Continuo'],['puntos','Punteado'],['guiones','Discontinuo'],['largo','Guiones largos'],['guion_punto','Guion y punto'],['doble_punto','Guion y dos puntos']])+select('extremo','Extremos del trazo',[['round','Redondos'],['butt','Planos'],['square','Cuadrados']])+select('union','Unión de las esquinas',[['round','Redondeada'],['miter','En punta'],['bevel','Biselada']])+(tipo==='texto'?control('solo_trazo','Solo contorno, sin relleno','checkbox')+'<div class="e238-fila2">'+control('trazo_color','Color del contorno','color')+control('trazo_ancho','Grosor del contorno (%)','number',0,8,.1)+'</div>':'')+control('resplandor','Activar resplandor exterior','checkbox')+'<div class="e238-fila2">'+control('resplandor_color','Color del resplandor','color')+control('resplandor_tamano','Tamaño del resplandor (%)','number',0,10,.1)+control('resplandor_intensidad','Intensidad del resplandor','range',0,1,.01)+control('resplandor_extension','Extensión del resplandor (%)','number',0,5,.1)+'</div></section>';
   }
-  function efectosTexto244(){const rol=S.sel?.rol;if(!rol||S.sel?.tipo!=='rol')return;let d={};try{d=JSON.parse(leer('estilos_texto_json')||'{}');}catch{}insp.insertAdjacentHTML('beforeend',controlesAcabado244(d[rol],'texto')+'<section class="e238-sec"><h3>Estilos de texto</h3><div class="e238-acciones">'+[['plantilla','De la plantilla'],['editorial','Editorial dorado'],['contorno','Contorno'],['neon','Neón rosa'],['hielo','Resplandor blanco']].map(([k,t])=>'<button type="button" class="e238-btn e238-peq" data-estilo-texto="'+k+'">'+t+'</button>').join('')+'</div><p class="e238-ayuda">Conserva la tipografía de la plantilla y ajusta su acabado por capa.</p></section>');}
+  function efectosTexto244(){const rol=S.sel?.rol;if(!rol||S.sel?.tipo!=='rol')return;let d={};try{d=JSON.parse(leer('estilos_texto_json')||'{}');}catch{}insp.insertAdjacentHTML('beforeend','<details class="e238-detalle" data-texto-avanzado'+(S.textoAvanzado?' open':'')+'><summary title="Contorno, resplandor y estilos de texto">Acabados avanzados</summary>'+controlesAcabado244(d[rol],'texto')+'<section class="e238-sec"><h3>Estilos de texto</h3><div class="e238-acciones">'+[['plantilla','De la plantilla'],['editorial','Editorial dorado'],['contorno','Contorno'],['neon','Neón rosa'],['hielo','Resplandor blanco']].map(([k,t])=>'<button type="button" class="e238-btn e238-peq" data-estilo-texto="'+k+'">'+t+'</button>').join('')+'</div><p class="e238-ayuda">Conserva la tipografía de la plantilla y ajusta su acabado por capa.</p></section></details>');}
   function pintaSujeto243(){const s=sujeto243();insp.innerHTML=sec('Seleccionar sujeto','<p class="e238-ayuda">La máscara conserva la original. Permite colocar títulos, formas y degradado detrás de la persona.</p><button type="button" class="e238-btn e238-prim" data-sujeto-accion="seleccionar"'+(S.sujetoOcupado?' disabled':'')+'>'+(S.sujetoOcupado?'Seleccionando sujeto…':'Seleccionar sujeto con IA local')+'</button><p role="status" class="e238-ayuda">'+esc(S.sujetoError||'')+'</p>'+(S.sujetoVista?'<div class="e243-transparencia"><img src="'+esc(S.sujetoVista)+'" alt="Recorte real del sujeto" style="max-width:100%;max-height:180px;object-fit:contain"></div>':''))+(s?sec('Máscara no destructiva','<label class="e238-campo"><span>Activar máscara</span><input type="checkbox" data-sujeto-campo="activo"'+(s.activo?' checked':'')+'></label><label class="e238-campo"><span>Suavizar borde</span><input type="range" min="0" max="10" step=".1" data-sujeto-campo="suavidad" value="'+s.suavidad+'"></label><div class="e238-fila"><span>Espacio alrededor del sujeto (%)</span><div class="e238-rango"><input type="range" min="0" max="8" step=".25" data-sujeto-campo="separacion" value="'+(Number(s.separacion)||0)+'" aria-label="Espacio alrededor del sujeto"><input type="number" class="e238-num" min="0" max="8" step=".25" data-sujeto-campo="separacion" value="'+(Number(s.separacion)||0)+'" aria-label="Espacio alrededor del sujeto en porcentaje"></div></div><p class="e238-ayuda">Suaviza la transición de la foto alrededor del sujeto. Si un texto queda cerca, muévelo con sus controles.</p><p class="e238-ayuda">Elementos detrás del sujeto:</p>'+[['titulo1','Titular'],['titulo2','Subtítulo'],['cta','Llamada'],['marca','Marca'],['degradado','Degradado']].map(([k,t])=>'<label class="e238-campo"><span>'+t+'</span><input type="checkbox" data-sujeto-campo="detras" data-sujeto-rol="'+k+'"'+(s.detras.includes(k)?' checked':'')+'></label>').join('')+'<div class="e238-acciones"><button type="button" class="e238-btn" data-sujeto-accion="sumar">＋ Restaurar máscara</button><button type="button" class="e238-btn" data-sujeto-accion="quitar">− Borrar máscara</button><button type="button" class="e238-btn" data-sujeto-accion="terminar">Terminar pincel</button><button type="button" class="e238-btn" data-sujeto-accion="limpiar">Quitar correcciones</button></div><label class="e238-campo"><span>Tamaño del pincel (%)</span><input type="range" min=".2" max="10" step=".2" value="'+(S.pincelRadio||2)+'" data-pincel-radio></label><p class="e238-ayuda">'+(S.pincelModo?'Pincel '+S.pincelModo+' activo. Pinta sobre el lienzo.':'Elige restaurar o borrar para corregir el borde.')+'</p>'):'');}
   function nodoTextoLibre245(t,W,H){
     const w=W*t.w/100,h=H*t.h/100,anchor=t.alineacion==='middle'?'center':t.alineacion==='end'?'right':'left';
@@ -21148,7 +21198,7 @@ function estudioV238(m,api){
     if(a==='comparar'){S.comparando=true;abreLegado('Antes (plantilla) / después (tu edición)','.estudio-topbar [data-ceditor-comparar]');return;}
     if(a==='formatos3'){abreLegado('Tu diseño en 3 formatos','.estudio-topbar [data-ceditor-3formatos]');return;}
     if(a==='volver'){legado.hidden=true;if(S.comparando){S.comparando=false;m.querySelector('.estudio-topbar [data-ceditor-comparar]')?.click();}else api.previsualiza();return;}
-    if(a==='pantalla'){try{if(doc.fullscreenElement)await doc.exitFullscreen();else await caja.requestFullscreen();}catch{avisaV238('El navegador no permitió la pantalla completa.');}setTimeout(programaDibujo,200);return;}
+    if(a==='pantalla'){const activa=root.classList.toggle('e238-enfoque');b.setAttribute('aria-pressed',String(activa));b.setAttribute('aria-label',activa?'Salir del modo de enfoque':'Pantalla completa');b.title=activa?'Salir del modo de enfoque':'Pantalla completa';ajustaEspacioV248();programaDibujo();return;}
     if(a==='rejilla'){S.rejilla=!S.rejilla;pintaBotones();dibuja();return;}
     if(a==='biblioteca'){const plegada=root.classList.toggle('e238-biblioteca-plegada');b.setAttribute('aria-expanded',String(!plegada));b.title=(plegada?'Mostrar':'Ocultar')+' biblioteca de plantillas y fotos';ajustaEspacioV248();programaDibujo();return;}
     if(a==='compacto'){S.compacto=!S.compacto;root.classList.toggle('compacto',S.compacto);pintaBotones();try{win.localStorage?.setItem('dcarela-editor-compacto-v246',S.compacto?'1':'0');}catch{};return;}
@@ -21227,6 +21277,7 @@ function estudioV238(m,api){
   }
   const teclas=ev=>{
     if(!root.isConnected||api.cerrado()){doc.removeEventListener('keydown',teclas);return;}
+    if(ev.key==='Escape'&&root.classList.contains('e238-enfoque')){ev.preventDefault();root.classList.remove('e238-enfoque');const b=$q('[data-e238="pantalla"]');if(b){b.setAttribute('aria-pressed','false');b.setAttribute('aria-label','Pantalla completa');b.title='Pantalla completa';}ajustaEspacioV248();programaDibujo();return;}
     const t=ev.target,escribe=t&&(t.isContentEditable||/^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName));
     if((ev.ctrlKey||ev.metaKey)&&!escribe&&(ev.key==='z'||ev.key==='Z')){ev.preventDefault();if(ev.shiftKey)api.rehacer();else api.deshacer();trasHistorial();return;}
     if((ev.ctrlKey||ev.metaKey)&&!escribe&&(ev.key==='y'||ev.key==='Y')){ev.preventDefault();api.rehacer();trasHistorial();return;}
@@ -24066,7 +24117,12 @@ function montaBroadcast(){
     '<div class="hoja campanas-hoja"><h1>Campañas</h1>'
     + '<p class="bajada">Escribe una vez y sale a muchos. Primero se simula: verás exactamente '
     +   'a quién le llegaría antes de que salga nada.</p>'
-    + '<nav class="bc-pasos" aria-label="Pasos de campaña"><span>1 · Preparar</span><span>2 · Revisar candidatos</span><span>3 · Confirmar envío</span></nav>'
+     + '<nav class="bc-pasos" aria-label="Pasos de campaña"><span>1 · Preparar</span><span>2 · Revisar candidatos</span><span>3 · Confirmar envío</span></nav>'
+     + '<div id="bcSnapshot" class="bc-snapshot" hidden aria-live="polite">'
+     + '<div class="bc-metrica ok"><b data-bcmetrica="seleccionados">0</b><span>seleccionados para revisar</span></div>'
+     + '<div class="bc-metrica"><b data-bcmetrica="revisados">0</b><span>conversaciones revisadas</span></div>'
+     + '<div class="bc-metrica warn"><b data-bcmetrica="excluidos">0</b><span>fuera por permisos o contexto</span></div>'
+     + '<div class="bc-metrica bad"><b data-bcmetrica="recientes">0</b><span>protegidos por promoción reciente</span></div></div>'
     + '<div class="prompt">'
     +   '<div class="mk-sugerido" id="bcSugerido" hidden><b>Texto sugerido por el agente</b>'
     +     '<p class="mk-sug-texto"></p>'
@@ -24176,7 +24232,7 @@ function montaBroadcast(){
     const plantilla = $('bcModo').value === 'template';
     $('bcLibre').hidden = plantilla;
     $('bcPlantilla').hidden = !plantilla;
-    AUDIENCIA = null; $('bcSalida').innerHTML = '';
+    AUDIENCIA = null; $('bcSalida').innerHTML = ''; pintaResumenCampana(null);
     if (plantilla) await llenaPlantillasBc();
   };
   $('bcSimular').onclick = simulaBroadcast;
@@ -24587,6 +24643,13 @@ function nuevoIdCampana(){
 }
 
 let SIMULACION_BROADCAST = 0;
+function pintaResumenCampana(audiencia){
+  const box=$('bcSnapshot'); if(!box)return;
+  if(!audiencia){box.hidden=true;return;}
+  box.hidden=false;
+  const valores={seleccionados:(audiencia.targets||[]).filter(t=>!audiencia.excluidosManuales?.has(String(t.id))).length,revisados:Number(audiencia.scanned||0),excluidos:Number(audiencia.skippedOptOut||0)+Number(audiencia.excluidosPorContexto||0),recientes:Number(audiencia.skippedRecent||0)};
+  box.querySelectorAll('[data-bcmetrica]').forEach(e=>{e.textContent=String(valores[e.dataset.bcmetrica]||0);});
+}
 async function simulaBroadcast(){
   if (AUDIENCIA?.enviando || AUDIENCIA?.puenteEnviando || AUDIENCIA?.reanalizando) return;
   const cuerpo = cuerpoBc(true);
@@ -24625,6 +24688,7 @@ async function simulaBroadcast(){
   // Queda fuera por defecto; el dueño puede abrir el chat y reincluirlo conscientemente.
   const contextoViejo = new Set(r.targets.filter(t => t.contexto_desactualizado === true).map(t => String(t.id)));
   const audiencia = AUDIENCIA = { ...r, excluidosManuales:contextoViejo, campanaKey: nuevoIdCampana(), revision };
+  pintaResumenCampana(audiencia);
   const revisionVigente=()=>vistaVigente() && AUDIENCIA===audiencia;
   const bloqueaReanalisis=activo=>{
     audiencia.reanalizando=activo;
@@ -24658,7 +24722,7 @@ async function simulaBroadcast(){
            + destinos.map(t => '<div class="bc-destino' + (contextoViejo.has(String(t.id)) ? ' atenuado' : '') + '" data-bcid="' + esc(t.id) + '" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:9px 0;border-bottom:1px solid var(--line)">'
              + '<div class="bc-destino-contexto"><div class="bc-destino-cab"><strong>' + esc(t.name || t.phone) + '</strong>'
              + '<span class="bc-destino-etapa">' + esc([t.etapa,t.categoria].filter(Boolean).join(' · ') || 'Sin categoría') + '</span></div>'
-             + (t.resumen ? '<div class="bc-destino-resumen"><span>Resumen</span>' + esc(t.resumen) + '</div>' : '')
+             + (t.resumen ? '<div class="bc-destino-resumen"><span>Resumen breve · verifica el chat</span>' + esc(t.resumen) + (String(t.resumen).length >= 240 ? '…' : '') + '</div>' : '')
              + (t.ultimo_cliente && t.ultimo_cliente !== t.resumen ? '<div class="bc-destino-ultimo"><span>Último mensaje del cliente</span>' + esc(t.ultimo_cliente) + '</div>' : '')
              + (contextoViejo.has(String(t.id)) ? '<div class="bc-destino-aviso">Fuera por defecto: el cliente escribió después del último análisis. Revisa su chat antes de reincluirlo.</div><div class="nota" data-bcanalisis="' + esc(t.id) + '"></div>' : '') + '</div>'
              + '<div class="bc-destino-acciones"><button type="button" class="btn-linea" data-bcabre="' + esc(t.id) + '">Ver chat</button>'
@@ -24718,6 +24782,7 @@ async function simulaBroadcast(){
       quitar.setAttribute('aria-label', excluidos.has(id) ? 'Reincluir destinatario' : 'Quitar destinatario');
       quitar.closest('[data-bcid]')?.classList.toggle('atenuado', excluidos.has(id));
       const quedan = (AUDIENCIA.targets || []).filter(t => !excluidos.has(String(t.id))).length;
+      pintaResumenCampana(AUDIENCIA);
       $('bcCuenta').textContent = quedan + (quedan === 1 ? ' contacto seleccionado' : ' contactos seleccionados');
       if ($('bcEnviar')) { $('bcEnviar').disabled = !quedan; $('bcEnviar').textContent = 'Enviar a ' + quedan; }
       if ($('bcPuente')) $('bcPuente').disabled = !quedan;
@@ -27339,8 +27404,13 @@ function pintaContexto(){
 }
 
 // ---- Hilos ----------------------------------------------------------------
+let cargaHilosSeq = 0;
 async function cargaHilos(){
-  const r = await llama({ action:'assistantThreads', operation:'list', archived: ASIS.archivados });
+  const seq = ++cargaHilosSeq;
+  const archivados = ASIS.archivados;
+  const r = await llama({ action:'assistantThreads', operation:'list', archived: archivados });
+  // Dos recargas o un cambio Activas/Archivadas pueden terminar fuera de orden.
+  if (seq !== cargaHilosSeq || archivados !== ASIS.archivados) return;
   ASIS.cargados = true;
   if (!r.ok) { ASIS.errorHilos = traduceErrorAsistente(r); pintaHilos(); return; }
   ASIS.errorHilos = null;
@@ -27437,8 +27507,10 @@ function nuevoHilo(c){
   $('pedido')?.focus();
 }
 
+let abreHiloSeq = 0;
 async function abreHilo(id){
   if (!id) return;
+  const seq = ++abreHiloSeq;
   if (planEnCurso) detenAsistente();
   guardaBorradorActual();
   ASIS.actual = ASIS.hilos.find(h => h.id === id) || { id, title:'…' };
@@ -27447,7 +27519,7 @@ async function abreHilo(id){
   restauraBorrador();
   pintaContexto(); pintaHilo(); pintaHilos(); cierraCajon();
   const r = await llama({ action:'assistantThreads', operation:'get', thread_id:id });
-  if (ASIS.actual?.id !== id) return;            // se abrio otro mientras tanto
+  if (seq !== abreHiloSeq || ASIS.actual?.id !== id) return; // se abrió otra carga mientras tanto
   ASIS.cargandoTurnos = false;
   if (!r.ok) { ASIS.errorCarga = traduceErrorAsistente(r); pintaHilo(); return; }
   ASIS.actual = r.thread; ASIS.turnos = r.turns || []; ASIS.hayMas = r.has_more === true;
@@ -27484,6 +27556,8 @@ async function cambiaContacto(){
   if (h?.id && !h.turn_count) {
     const r = await llama({ action:'assistantThreads', operation:'set_contact', thread_id:h.id, conversation_id:id });
     if (r.ok) { actualizaHilo(r.thread); pintaContexto(); pintaHilos(); return; }
+    // El fallo del hilo anterior no debe reemplazar una tarea que se abrió mientras esperaba.
+    if (ASIS.actual?.id !== h.id) return;
   }
   nuevoHilo(c);
 }
@@ -27750,6 +27824,12 @@ async function aseguraHilo(){
   if (cuerpo.scope === 'contact') cuerpo.conversation_id = h.conversation_id;
   const r = await llama(cuerpo);
   if (!r.ok) return r;
+  // Crear el hilo no debe volver a abrirlo si el usuario cambió de tarea durante la espera.
+  // La creación puede haber quedado guardada; se ofrece en la lista sin enviarle el turno.
+  if (ASIS.actual !== h) {
+    if (r.thread?.id) { actualizaHilo(r.thread); pintaHilos(); }
+    return { ok:false, cambiado:true };
+  }
   try { localStorage.removeItem('crm2_asis_borrador:nuevo'); } catch (e) { /* nada */ }
   ASIS.actual = r.thread;
   actualizaHilo(r.thread);
@@ -27826,15 +27906,25 @@ async function apruebaPropuesta(turnId, propId){
 // (otra pestaña o doble clic ya lo decidio) enseña lo guardado en vez de un error.
 async function decidePropuesta(turnId, propId, decision, extra = {}){
   const { p } = localiza(turnId, propId);
-  if (!p || p._enCurso || !ASIS.actual?.id) return null;
+  const hiloId = ASIS.actual?.id;
+  const turnos = ASIS.turnos;
+  if (!p || p._enCurso || !hiloId) return null;
   p._enCurso = true; p._error = null;
   pintaHilo();
-  const cuerpo = { action:'assistantDecide', thread_id: ASIS.actual.id, turn_id: turnId, proposal_id: propId, decision };
+  const cuerpo = { action:'assistantDecide', thread_id: hiloId, turn_id: turnId, proposal_id: propId, decision };
   if (extra.edits) cuerpo.edits = extra.edits;
   if (extra.confirmation) cuerpo.confirmation = extra.confirmation;
-  const r = await llama(cuerpo);
+  let r;
+  try { r = await llama(cuerpo); }
+  catch (e) { r = { ok:false, error:e?.message || String(e) }; }
   p._enCurso = false;
-  if (!r.ok) {
+  // El dueño puede abrir otro hilo mientras el servidor decide. El resultado pertenece al
+  // hilo original: al volver se leerá del servidor, nunca se inserta en el hilo visible nuevo.
+  if (ASIS.actual?.id !== hiloId || ASIS.turnos !== turnos) {
+    if (r?.ok && r.thread?.id === hiloId) actualizaHilo(r.thread);
+    return null;
+  }
+  if (!r?.ok) {
     if (r.status === 409 && r.detail?.proposal) { Object.assign(p, r.detail.proposal); pintaHilo(); return p; }
     p._error = traduceErrorAsistente(r).texto;
     pintaHilo();
