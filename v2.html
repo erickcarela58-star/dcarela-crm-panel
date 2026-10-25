@@ -2020,6 +2020,71 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{outline:0}
 .nav a[data-vista="estados"] svg{--tint:#df7a92}
 .nav a[data-vista="hoy"] svg{--tint:#e0a94e}
 .nav a[data-vista="agenda"] svg{--tint:#df766e}
+.nav a[data-vista="combos"] svg{--tint:#7c6fd6}
+/* --- Productos / Combos y catálogo PDF (referencia del dueño 25/10/2026) --- */
+#vista-combos{overflow:auto}
+.cmb{flex:1;min-width:0;padding:22px 26px 32px;display:flex;flex-direction:column;gap:16px}
+.cmb-cab{display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+.cmb-logo{width:56px;height:56px;border-radius:16px;display:grid;place-items:center;background:rgba(74,134,232,.14);color:var(--accent);flex:none}
+.cmb-cab h2{margin:0;font-size:26px;font-weight:800;letter-spacing:-.02em;color:var(--fg)}
+.cmb-cab p{margin:3px 0 0;color:var(--mut);font-size:14px}
+.cmb-cabacc{margin-left:auto;display:flex;gap:10px;flex-wrap:wrap}
+.cmb-cabacc button,.cmb-controles button,.cmb-acc button{display:inline-flex;align-items:center;gap:7px}
+.cmb-tabs{display:flex;gap:6px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.cmb-tabs button{border:0;background:transparent;padding:12px 18px;font:600 14.5px var(--tipo);color:var(--mut);cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-1px}
+.cmb-tabs button.on{color:var(--accent-fuerte);border-bottom-color:var(--accent)}
+.cmb-caja{background:var(--panel);border:1px solid var(--line);border-radius:var(--r3);box-shadow:var(--sombra-suave);padding:16px 18px;display:grid;gap:12px;align-content:start}
+.cmb-dos{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(320px,.95fr);gap:16px;align-items:start}
+.cmb-cabcaja{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.cmb-cabcaja h3{margin:0;font-size:18px;font-weight:800;color:var(--fg)}.cmb-cabcaja p{margin:2px 0 0;color:var(--mut);font-size:13px}
+.cmb-barra input,.cmb-barra select,.cmb-plantilla select,.cmb-controles select{height:40px;border:1px solid var(--line2);border-radius:12px;padding:0 12px;background:var(--campo);font:500 14px var(--tipo);color:var(--fg)}
+.cmb-barra input{margin-left:auto;min-width:180px;flex:0 1 220px}
+.cmb-cuenta{margin-left:6px;font-size:12px;font-weight:700;padding:2px 9px;border-radius:999px;background:var(--accent-suave);color:var(--accent-fuerte);vertical-align:middle}
+.cmb-filtro{margin:0;font-size:13px;color:var(--mut);display:flex;align-items:center;gap:8px}
+.cmb-fila{display:grid;grid-template-columns:132px minmax(0,1fr) 128px;gap:16px;padding:14px;border:1px solid var(--line);border-radius:16px;align-items:start}
+.cmb-fila.inactivo{opacity:.62}
+.cmb-mini{width:132px;aspect-ratio:4/3;border-radius:12px;overflow:hidden;background:var(--accent-suave);display:grid;place-items:center;color:var(--accent)}
+.cmb-mini img{width:100%;height:100%;object-fit:cover}
+.cmb-tit{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.cmb-tit b{font-size:16px;color:var(--fg)}
+.cmb-dest{font-size:11.5px;font-weight:700;padding:3px 9px;border-radius:999px;background:#e5487f;color:#fff}
+.cmb-info p{margin:3px 0 6px;color:var(--mut);font-size:13px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.cmb-info ul{list-style:none;margin:0;padding:0;display:grid;gap:3px;font-size:13px;color:var(--fg)}
+.cmb-info li{display:flex;align-items:center;gap:7px}.cmb-info li svg{color:var(--ok);flex:none}.cmb-info li.mas{color:var(--mut);padding-left:20px}
+.cmb-lado{display:grid;gap:8px;justify-items:end;text-align:right}
+.cmb-precio{font-size:20px;font-weight:800;color:#d23c6c}
+.cmb-estado{font-size:12px;font-weight:700;padding:4px 10px;border-radius:999px}
+.cmb-estado.on,.cmb-estado.ok{background:rgba(63,143,90,.14);color:var(--ok)}.cmb-estado.off,.cmb-estado.gris{background:var(--segmento);color:var(--mut)}
+.cmb-estado.mal{background:rgba(200,82,74,.14);color:var(--bad)}.cmb-estado.aviso{background:rgba(176,112,47,.15);color:var(--warn)}
+.cmb-acc{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+.cmb-lado .cmb-acc{flex-direction:column;align-items:stretch;width:100%}.cmb-lado .cmb-acc button{justify-content:center}
+.cmb-chico{padding:6px 11px!important;font-size:12.5px!important;min-height:0!important}
+.cmb-previa{position:sticky;top:0}
+.cmb-pdfico{width:42px;height:42px;border-radius:12px;display:grid;place-items:center;background:rgba(229,72,127,.14);color:#d23c6c}
+.cmb-plantilla{margin-left:auto;display:flex;align-items:center;gap:8px;font-size:12.5px;font-weight:700;color:var(--mut)}
+.cmb-hoja{position:relative;background:var(--segmento);border-radius:14px;padding:12px;max-height:72vh;overflow:auto;text-align:center}
+.cmb-hoja img{display:inline-block;max-width:none;border-radius:6px;box-shadow:0 8px 24px rgba(20,30,60,.16)}
+.cmb-esqueleto{aspect-ratio:1240/1754;border-radius:8px;background:linear-gradient(110deg,var(--line) 30%,var(--hover) 50%,var(--line) 70%);background-size:200% 100%;animation:c240brillo 1.4s linear infinite}
+.cmb-dibujando{position:absolute;top:18px;right:18px;font-size:12px;font-weight:700;padding:4px 10px;border-radius:999px;background:var(--panel);box-shadow:var(--sombra-suave)}
+.cmb-controles{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.cmb-controles .btn-solido{margin-left:auto}
+.cmb-zoom{display:flex;align-items:center;border:1px solid var(--line2);border-radius:12px;overflow:hidden}
+.cmb-zoom button{border:0;background:transparent;width:38px;height:38px;font-size:18px;cursor:pointer;color:var(--fg)}.cmb-zoom span{min-width:52px;text-align:center;font-weight:600;font-size:13.5px}
+.cmb-cats{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:14px}
+.cmb-cat{text-align:left;cursor:pointer;font:inherit;color:inherit}.cmb-cat b{font-size:16px}.cmb-cat span{color:var(--mut);font-size:13px}.cmb-cat small{color:var(--accent-fuerte);font-weight:700}
+.cmb-cat.on{outline:2px solid var(--accent)}
+.cmb-ajustes label{display:grid;gap:5px;font-size:12.5px;font-weight:700;color:var(--mut)}
+.cmb-ajustes input{height:40px;border:1px solid var(--line2);border-radius:12px;padding:0 12px;background:var(--campo);font:500 14px var(--tipo);color:var(--fg)}
+.cmb-ajustes small{font-weight:500}
+.cmb-portada>span{font-size:12.5px;font-weight:700;color:var(--mut)}
+.cmb-fotos{display:grid;grid-template-columns:repeat(auto-fill,minmax(72px,1fr));gap:8px;max-height:240px;overflow:auto;padding:2px}
+.cmb-fotos button{aspect-ratio:1;border:2px solid transparent;border-radius:10px;overflow:hidden;padding:0;background:var(--segmento);cursor:pointer;font:600 12px var(--tipo);color:var(--mut)}
+.cmb-fotos button.on{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-suave)}.cmb-fotos img{width:100%;height:100%;object-fit:cover;display:block}
+.cmb-tabla{overflow:auto}.cmb-tabla table{width:100%;border-collapse:collapse;font-size:13.5px}
+.cmb-tabla th{text-align:left;color:var(--mut);font-size:12px;font-weight:700;padding:8px 10px;border-bottom:1px solid var(--line)}
+.cmb-tabla td{padding:10px;border-bottom:1px solid var(--line);vertical-align:top}.cmb-tabla td small{display:block;color:var(--mut);font-size:11.5px}
+.cmb-vacio{justify-items:center;text-align:center;padding:40px 20px}.cmb-vacio h3{margin:6px 0 0}.cmb-vacio p{margin:0;color:var(--mut)}
+.cmb-form textarea{width:100%}.cmb-activo{display:flex;align-items:center;gap:8px;font-size:13.5px}.cmb-borrar{margin-right:auto;color:var(--bad)!important}
+@media (max-width:1180px){.cmb-dos{grid-template-columns:1fr}.cmb-previa{position:static}}
+@media (max-width:760px){.cmb{padding:16px}.cmb-fila{grid-template-columns:84px minmax(0,1fr)}.cmb-mini{width:84px}.cmb-lado{grid-column:1/-1;justify-items:start;text-align:left}.cmb-acc{justify-content:flex-start}}
 .nav a[data-vista="cotizaciones"] svg{--tint:#58b5a0}
 .nav a[data-vista="contenido"] svg{--tint:#d98c5f}
 .nav a[data-vista="editorflyers"] svg{--tint:#b67acb}
@@ -3744,6 +3809,8 @@ const VISTAS = [
   { id:'anuncios',      nombre:'Anuncios',       icono:ico('<path d="M3.500 10v4a1 1 0 001 1H7l9 4V5L7 9H4.500a1 1 0 00-1 1z"/><path d="M7.500 15l1 4.200a.9.9 0 00.9.700h1.100a.9.9 0 00.9-1.100L11 16.700"/><path d="M19.200 9.200a3.700 3.700 0 010 5.600"/>') },
   { id:'campanas',      nombre:'Campañas',      icono:ico('<path d="M20.500 3.500L10.200 13.800"/><path d="M20.500 3.500l-6.600 17-3.700-6.700L3.500 10.100z"/>') },
   { id:'plantillas',    nombre:'Plantillas',    icono:ico('<path d="M7 3h6.600L19 8.400V18a3 3 0 01-3 3H7a3 3 0 01-3-3V6a3 3 0 013-3z"/><path d="M13.400 3.200V8.600H19"/><path d="M8 13h7M8 16.500h4.600"/>') },
+  // Los combos que se venden y el catálogo PDF para mandar a clientes (25/10/2026).
+  { id:'combos',        nombre:'Productos / Combos', icono:ico('<rect x="3.500" y="3.500" width="7" height="7" rx="1.800"/><rect x="13.500" y="3.500" width="7" height="7" rx="1.800"/><rect x="3.500" y="13.500" width="7" height="7" rx="1.800"/><path d="M17 13.500v7M13.500 17h7"/>') },
   { id:'reminders',     nombre:'Tareas', icono:ico('<path d="M6.300 16.200V11a5.700 5.700 0 0111.400 0v5.200l1.600 2.300H4.700z"/><path d="M10 21a2.200 2.200 0 004 0"/>') },
   { id:'canales',       nombre:'Canales',        icono:ico('<circle cx="6.200" cy="12" r="2.500"/><circle cx="17.800" cy="6.200" r="2.500"/><circle cx="17.800" cy="17.800" r="2.500"/><path d="M8.400 10.800l7.200-3.500M8.400 13.200l7.200 3.500"/>') },
   { id:'config',        nombre:'Configuración',  icono:ico('<path d="M18.65 9.24L18.94 10.10L20.93 10.26L20.93 13.74L18.94 13.90L18.65 14.76L18.25 15.57L19.55 17.09L17.09 19.55L15.57 18.25L14.76 18.65L13.90 18.94L13.74 20.93L10.26 20.93L10.10 18.94L9.24 18.65L8.43 18.25L6.91 19.55L4.45 17.09L5.75 15.57L5.35 14.76L5.06 13.90L3.07 13.74L3.07 10.26L5.06 10.10L5.35 9.24L5.75 8.43L4.45 6.91L6.91 4.45L8.43 5.75L9.24 5.35L10.10 5.06L10.26 3.07L13.74 3.07L13.90 5.06L14.76 5.35L15.57 5.75L17.09 4.45L19.55 6.91L18.25 8.43Z"/><circle cx="12" cy="12" r="2.9"/>') },
@@ -4648,6 +4715,7 @@ function monta(id){
   if (id === 'editorflyers') return montaEditorFlyers();
   if (id === 'planning') return montaPlanificacion();
   if (id === 'plantillas') return montaPlantillasVista();
+  if (id === 'combos') return montaCombos();
   if (id === 'campanas') return montaBroadcast();
   if (id === 'limpieza') return montaLimpieza();
   if (id === 'anuncios') return montaAnuncios();
@@ -23605,6 +23673,233 @@ async function guardaFormContenido(f){
 let COTZ = { lista: [], conteo: {}, filtro: 'activas', q: '', sel: new Set(), cargando: false };
 const COTZ_FILTROS = [['activas', 'Todas'], ['enviada', 'Enviadas'], ['aprobada', 'Aprobadas'], ['en_caja', 'En la Caja'], ['facturada', 'Facturadas'], ['rechazada', 'Rechazadas'], ['anulada', 'Anuladas'], ['catalogo', 'Catálogo de la Caja']];
 const cotzDinero = n => 'RD$' + Number(n || 0).toLocaleString('es-DO', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+// ---- Productos / Combos y catálogo PDF (referencia del dueño 25/10/2026) ----
+// Los combos se guardan en el servidor (crm_combos, acción «combos»); el catálogo A4 lo dibuja el servidor y aquí solo se ve
+// la página elegida y se descarga el PDF. Nada se envía a clientes desde esta vista.
+const CMB = { datos: null, cargando: false, error: '', pestana: 'combos', q: '', estado: 'todos', categoria: '', pagina: 1,
+  vista: null, vistaCargando: false, vistaError: '', zoom: 100, borrador: null, fotos: null, ultimaVista: 0 };
+const CMB_ICO = {
+  combo: '<svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 7 12 3 4 7l8 4 8-4z"/><path d="M4 7v10l8 4 8-4V7"/><path d="M12 11v10"/></svg>',
+  ok: '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 5 5 9-10"/></svg>',
+  pdf: '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M12 17v-6M9 14l3 3 3-3"/></svg>',
+  lapiz: '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16z"/></svg>',
+  copia: '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V5a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3"/></svg>',
+};
+const cmbDinero = n => 'RD$ ' + Math.round(Number(n) || 0).toLocaleString('en-US');
+const cmbCategoria = id => ((CMB.datos?.categorias || []).find(([x]) => x === id) || [, id || 'Otros'])[1];
+async function cmbCarga(){
+  CMB.cargando = true; cmbPinta();
+  const r = await llama({ action:'combos', operation:'lista' });
+  CMB.cargando = false;
+  CMB.error = r.ok ? '' : (r.error || 'No se pudieron leer los combos.');
+  if (r.ok) { CMB.datos = r; if (!CMB.borrador) CMB.borrador = { ...r.ajustes }; }
+  cmbPinta();
+  if (r.ok && r.combos.length) cmbVista();
+  if (r.ok && !CMB.fotos) cmbFotos();
+}
+async function cmbFotos(){
+  const r = await llama({ action:'combos', operation:'fotos' });
+  CMB.fotos = r.ok ? r.fotos : [];
+  cmbPinta();
+}
+// La página del catálogo, dibujada en el servidor. Las peticiones se encadenan: solo cuenta la última.
+async function cmbVista(){
+  const turno = ++CMB.ultimaVista;
+  CMB.vistaCargando = true; cmbPintaVista();
+  const r = await llama({ action:'combos', operation:'vista', pagina: CMB.pagina, ajustes: CMB.borrador || undefined, categoria: CMB.categoria || undefined });
+  if (turno !== CMB.ultimaVista) return;
+  CMB.vistaCargando = false;
+  CMB.vistaError = r.ok ? '' : (r.error || 'No se pudo dibujar el catálogo.');
+  if (r.ok) { CMB.vista = r; CMB.pagina = r.pagina; }
+  cmbPintaVista();
+}
+async function cmbDescarga(boton){
+  if (boton) boton.disabled = true;
+  const r = await llama({ action:'combos', operation:'pdf', ajustes: CMB.borrador || undefined, categoria: CMB.categoria || undefined });
+  if (boton) boton.disabled = false;
+  if (!r.ok) return avisa('No se pudo armar el PDF', r.error);
+  const bytes = Uint8Array.from(atob(r.pdf_b64), c => c.charCodeAt(0));
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([bytes], { type: 'application/pdf' }));
+  a.download = r.nombre || 'catalogo-combos.pdf'; a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+  avisa('Catálogo descargado', r.paginas + (r.paginas === 1 ? ' página' : ' páginas') + ' · ' + r.combos + ' combos. No se envió a nadie.');
+}
+function cmbFiltrados(){
+  const q = CMB.q.trim().toLowerCase();
+  return (CMB.datos?.combos || []).filter(c => (CMB.estado === 'todos' || (CMB.estado === 'activos') === (c.activo !== false))
+    && (!CMB.categoria || c.categoria === CMB.categoria)
+    && (!q || [c.nombre, c.descripcion, ...(c.items || [])].some(v => String(v || '').toLowerCase().includes(q))));
+}
+function cmbFoto(id){ return (CMB.fotos || []).find(f => f.id === id)?.preview || ''; }
+function cmbFila(c, editar){
+  const foto = cmbFoto(c.foto_id);
+  return '<article class="cmb-fila' + (c.activo === false ? ' inactivo' : '') + '">'
+    + '<div class="cmb-mini">' + (foto ? '<img src="' + esc(foto) + '" alt="" loading="lazy">' : CMB_ICO.combo) + '</div>'
+    + '<div class="cmb-info"><div class="cmb-tit"><b>' + esc(c.nombre) + '</b>' + (c.destacado ? '<span class="cmb-dest">' + esc(c.destacado) + '</span>' : '') + '</div>'
+    +   (c.descripcion ? '<p>' + esc(c.descripcion) + '</p>' : '<p>' + esc(cmbCategoria(c.categoria)) + '</p>')
+    +   '<ul>' + (c.items || []).slice(0, 5).map(i => '<li>' + CMB_ICO.ok + esc(i) + '</li>').join('') + ((c.items || []).length > 5 ? '<li class="mas">y ' + ((c.items || []).length - 5) + ' más</li>' : '') + '</ul></div>'
+    + '<div class="cmb-lado"><b class="cmb-precio">' + esc(cmbDinero(c.precio)) + '</b>'
+    +   '<span class="cmb-estado ' + (c.activo === false ? 'off' : 'on') + '">' + (c.activo === false ? 'Inactivo' : 'Activo') + '</span>'
+    +   (editar ? '<div class="cmb-acc"><button type="button" class="btn-solido cmb-chico" data-cmbedita="' + esc(c.id) + '">' + CMB_ICO.lapiz + 'Editar</button>'
+      + '<button type="button" class="btn-linea cmb-chico" data-cmbduplica="' + esc(c.id) + '">' + CMB_ICO.copia + 'Duplicar</button>'
+      + '<button type="button" class="btn-linea cmb-chico" data-cmbactiva="' + esc(c.id) + '">' + (c.activo === false ? 'Activar' : 'Desactivar') + '</button></div>' : '')
+    + '</div></article>';
+}
+function cmbVistaHtml(){
+  const v = CMB.vista;
+  return '<section class="cmb-caja cmb-previa"><header class="cmb-cabcaja"><span class="cmb-pdfico">' + CMB_ICO.pdf + '</span><div><h3>Vista previa del PDF</h3><p>Así se verá tu catálogo comercial</p></div>'
+    + '<label class="cmb-plantilla">Plantilla<select data-cmbplantilla="1">' + (CMB.datos?.plantillas || []).map(t => '<option value="' + esc(t.id) + '"' + (CMB.borrador?.plantilla === t.id ? ' selected' : '') + '>' + esc(t.nombre) + '</option>').join('') + '</select></label></header>'
+    + '<div class="cmb-hoja" id="cmbHoja" aria-busy="' + CMB.vistaCargando + '">' + (CMB.vistaError ? '<p class="aviso">' + esc(CMB.vistaError) + '</p>'
+      : v ? '<img src="data:image/png;base64,' + v.png_b64 + '" alt="Página ' + v.pagina + ' del catálogo" style="width:' + CMB.zoom + '%">' : '<div class="cmb-esqueleto"></div>')
+    + (CMB.vistaCargando ? '<span class="cmb-dibujando">Dibujando…</span>' : '') + '</div>'
+    + '<footer class="cmb-controles"><select data-cmbpagina="1" aria-label="Página">' + Array.from({ length: v?.total || 1 }, (_, i) => '<option value="' + (i + 1) + '"' + (i + 1 === CMB.pagina ? ' selected' : '') + '>' + (i ? 'Página ' + (i + 1) : 'Portada') + '</option>').join('') + '</select>'
+    + '<div class="cmb-zoom"><button type="button" data-cmbzoom="-25" aria-label="Alejar">−</button><span>' + CMB.zoom + '%</span><button type="button" data-cmbzoom="25" aria-label="Acercar">+</button></div>'
+    + '<button type="button" class="btn-solido" data-cmbpdf="1">' + CMB_ICO.pdf + 'Descargar PDF</button></footer>'
+    + (CMB.categoria ? '<p class="bajada">Solo ' + esc(cmbCategoria(CMB.categoria)) + '. Quita el filtro de categoría para el catálogo completo.</p>' : '') + '</section>';
+}
+// El hueco de la vista previa, compartido por las pestañas Combos y Catálogo PDF (un solo id en el panel).
+function cmbPrevia(){ return '<div id="cmbPreviaHueco">' + cmbVistaHtml() + '</div>'; }
+function cmbPintaVista(){ const c = $('cmbPreviaHueco'); if (c) c.innerHTML = cmbVistaHtml(); }
+function cmbPinta(){
+  const v = $('vista-combos'); if (!v) return;
+  const d = CMB.datos, editar = !!d?.puede_editar;
+  const tab = (id, nombre) => '<button type="button" role="tab" class="' + (CMB.pestana === id ? 'on' : '') + '" aria-selected="' + (CMB.pestana === id) + '" data-cmbtab="' + id + '">' + nombre + '</button>';
+  let cuerpo = '';
+  if (CMB.error) cuerpo = '<p class="aviso">' + esc(CMB.error) + '</p>';
+  else if (!d) cuerpo = '<p class="bajada">Cargando combos…</p>';
+  else if (!d.combos.length) cuerpo = '<div class="cmb-caja cmb-vacio"><span class="cmb-logo">' + CMB_ICO.combo + '</span><h3>Todavía no hay combos</h3>'
+    + '<p>Empieza con los ' + d.web_pendientes + ' combos de la página web y edítalos aquí, o crea uno nuevo.</p>'
+    + (editar ? '<div class="cmb-acc">' + (d.web_pendientes ? '<button type="button" class="btn-solido" data-cmbimporta="1">Importar ' + d.web_pendientes + ' combos de la web</button>' : '')
+      + '<button type="button" class="btn-linea" data-cmbnuevo="1">Nuevo combo</button></div>' : '<p class="bajada">Pide a administración que los cargue.</p>') + '</div>';
+  else if (CMB.pestana === 'combos') {
+    const lista = cmbFiltrados();
+    cuerpo = '<div class="cmb-dos"><section class="cmb-caja"><header class="cmb-cabcaja cmb-barra"><div><h3>Lista de combos <span class="cmb-cuenta">' + d.combos.length + ' combos</span></h3><p>Crea y administra tus paquetes de productos y servicios</p></div>'
+      + '<input type="search" data-cmbbuscar="1" placeholder="Buscar combos…" aria-label="Buscar combos" value="' + esc(CMB.q) + '">'
+      + '<select data-cmbestado="1" aria-label="Estado"><option value="todos">Todos los estados</option><option value="activos"' + (CMB.estado === 'activos' ? ' selected' : '') + '>Activos</option><option value="inactivos"' + (CMB.estado === 'inactivos' ? ' selected' : '') + '>Inactivos</option></select></header>'
+      + (CMB.categoria ? '<p class="cmb-filtro">Categoría: <b>' + esc(cmbCategoria(CMB.categoria)) + '</b> <button type="button" class="btn-linea cmb-chico" data-cmbcat="">Quitar filtro</button></p>' : '')
+      + (lista.length ? lista.map(c => cmbFila(c, editar)).join('') : '<p class="bajada">Ningún combo con estos filtros.</p>')
+      + (editar && d.web_pendientes ? '<p class="bajada">Hay ' + d.web_pendientes + ' combos de la web sin importar. <button type="button" class="btn-linea cmb-chico" data-cmbimporta="1">Importarlos</button></p>' : '')
+      + '</section>' + cmbPrevia() + '</div>';
+  } else if (CMB.pestana === 'categorias') {
+    cuerpo = '<div class="cmb-cats">' + d.categorias.map(([id, nombre]) => {
+      const de = d.combos.filter(c => c.categoria === id), activos = de.filter(c => c.activo !== false).length;
+      const desde = de.length ? Math.min(...de.map(c => Number(c.precio) || 0)) : 0;
+      return '<button type="button" class="cmb-caja cmb-cat' + (CMB.categoria === id ? ' on' : '') + '" data-cmbcat="' + esc(id) + '"><b>' + esc(nombre) + '</b><span>' + activos + ' activos de ' + de.length + '</span>'
+        + (de.length ? '<small>Desde ' + esc(cmbDinero(desde)) + '</small>' : '<small>Sin combos</small>') + '</button>';
+    }).join('') + '</div>';
+  } else if (CMB.pestana === 'catalogo') {
+    const a = CMB.borrador || {};
+    const campo = (nombre, clave, max, ayuda) => '<label>' + nombre + '<input data-cmbaj="' + clave + '" maxlength="' + max + '" value="' + esc(a[clave] || '') + '"' + (editar ? '' : ' disabled') + '>' + (ayuda ? '<small>' + ayuda + '</small>' : '') + '</label>';
+    const portadas = (CMB.fotos || []).slice(0, 60);
+    cuerpo = '<div class="cmb-dos"><section class="cmb-caja cmb-ajustes"><header class="cmb-cabcaja"><div><h3>Catálogo PDF</h3><p>Lo que dice la portada y cómo te escriben. Los cambios se ven al momento en la vista previa.</p></div></header>'
+      + campo('Título', 'titulo', 32, 'Va en letra grande en la portada.') + campo('Subtítulo', 'subtitulo', 48) + campo('Frase de arriba', 'lema', 48) + campo('WhatsApp', 'whatsapp', 20, 'El número que sale en el pie.')
+      + '<div class="cmb-portada"><span>Foto de portada</span><div class="cmb-fotos">' + (CMB.fotos ? portadas.map(f => '<button type="button" class="' + (a.portada_foto_id === f.id ? 'on' : '') + '" data-cmbportada="' + esc(f.id) + '"' + (editar ? '' : ' disabled') + ' aria-label="Usar esta foto de portada"><img src="' + esc(f.preview || '') + '" alt="" loading="lazy"></button>').join('') || '<p class="bajada">No hay originales en la biblioteca.</p>' : '<p class="bajada">Cargando originales…</p>') + '</div></div>'
+      + (editar ? '<div class="cmb-acc"><button type="button" class="btn-solido" data-cmbguardaaj="1">Guardar catálogo</button><button type="button" class="btn-linea" data-cmbdeshaceaj="1">Deshacer cambios</button></div>' : '')
+      + '</section>' + cmbPrevia() + '</div>';
+  } else if (CMB.pestana === 'precios') {
+    const filas = d.combos.map(c => {
+      const caja = c.web_clave && d.caja ? d.caja[c.web_clave] : null;
+      const dif = caja?.precio != null ? Math.round(Number(c.precio) - Number(caja.precio)) : null;
+      const estado = !c.web_clave ? ['Creado aquí', 'gris'] : !caja || caja.precio == null ? ['Sin combo en la Caja', 'mal'] : dif === 0 ? ['Igual que la Caja', 'ok'] : ['Difiere de la Caja', 'aviso'];
+      return '<tr><td><b>' + esc(c.nombre) + '</b><small>' + esc(cmbCategoria(c.categoria)) + '</small></td><td>' + esc(cmbDinero(c.precio)) + '</td>'
+        + '<td>' + (caja?.precio != null ? esc(cmbDinero(caja.precio)) + '<small>' + esc(caja.nombre || '') + '</small>' : '—') + '</td>'
+        + '<td>' + (dif ? (dif > 0 ? '+' : '−') + esc(cmbDinero(Math.abs(dif))) : '—') + '</td><td><span class="cmb-estado ' + estado[1] + '">' + estado[0] + '</span></td></tr>';
+    }).join('');
+    cuerpo = '<section class="cmb-caja"><header class="cmb-cabcaja"><div><h3>Precios</h3><p>El catálogo usa tus precios. Las cotizaciones del chat cobran lo que dice la Caja; aquí ves dónde no coinciden.</p></div></header>'
+      + (d.aviso_caja ? '<p class="aviso">' + esc(d.aviso_caja) + '</p>' : '')
+      + '<div class="cmb-tabla"><table><thead><tr><th>Combo</th><th>Catálogo</th><th>Caja</th><th>Diferencia</th><th>Estado</th></tr></thead><tbody>' + filas + '</tbody></table></div></section>';
+  }
+  const foco = document.activeElement?.dataset?.cmbbuscar ? document.activeElement.selectionStart : null;
+  v.innerHTML = '<div class="cmb">'
+    + '<header class="cmb-cab"><span class="cmb-logo">' + CMB_ICO.combo + '</span><div><h2>Combos y PDF comercial</h2><p>Gestiona tus combos de productos, crea tu catálogo y genera PDFs comerciales</p></div>'
+    + '<div class="cmb-cabacc">' + (d?.combos?.length ? '<button type="button" class="btn-linea" data-cmbpdf="1">' + CMB_ICO.pdf + 'Descargar catálogo</button>' : '')
+    + (editar ? '<button type="button" class="btn-solido" data-cmbnuevo="1">+ Nuevo combo</button>' : '') + '</div></header>'
+    + '<nav class="cmb-tabs" role="tablist">' + tab('combos', 'Combos') + tab('categorias', 'Categorías') + tab('catalogo', 'Catálogo PDF') + tab('precios', 'Precios') + '</nav>'
+    + cuerpo + '</div>';
+  if (foco != null) { const b = v.querySelector('[data-cmbbuscar]'); if (b) { b.focus(); b.setSelectionRange(foco, foco); } }
+}
+// Crear o editar un combo. La foto sale de las originales de la biblioteca (las mismas del planificador).
+function cmbEditor(id){
+  const c = id ? (CMB.datos?.combos || []).find(x => x.id === id) : { categoria: CMB.categoria || 'xv', activo: true, items: [] };
+  if (!c) return;
+  const cats = CMB.datos?.categorias || [];
+  abreModal('<div class="mtapa"><b>' + (id ? 'Editar combo' : 'Nuevo combo') + '</b><button class="cerrarm" data-cerrar>×</button></div>'
+    + '<div class="mcuerpo cmb-form"><div class="par"><div class="campo"><label>Nombre</label><input id="cmbNombre" maxlength="60" value="' + esc(c.nombre || '') + '"></div>'
+    + '<div class="campo"><label>Precio (RD$)</label><input id="cmbPrecio" type="number" min="1" step="1" value="' + esc(c.precio || '') + '"></div></div>'
+    + '<div class="par"><div class="campo"><label>Categoría</label><select id="cmbCat">' + cats.map(([v, t]) => '<option value="' + esc(v) + '"' + (c.categoria === v ? ' selected' : '') + '>' + esc(t) + '</option>').join('') + '</select></div>'
+    + '<div class="campo"><label>Etiqueta destacada (opcional)</label><input id="cmbDest" maxlength="20" placeholder="Más vendido" value="' + esc(c.destacado || '') + '"></div></div>'
+    + '<div class="campo"><label>Descripción corta</label><input id="cmbDesc" maxlength="160" value="' + esc(c.descripcion || '') + '"></div>'
+    + '<div class="campo"><label>Qué incluye <span style="text-transform:none;letter-spacing:0">(una cosa por línea, hasta 12)</span></label><textarea id="cmbItems" rows="6">' + esc((c.items || []).join('\n')) + '</textarea></div>'
+    + '<div class="campo"><label>Foto</label><div class="cmb-fotos" id="cmbFotos">' + (CMB.fotos ? '' : '<p class="bajada">Cargando originales…</p>') + '</div></div>'
+    + '<label class="cmb-activo"><input type="checkbox" id="cmbActivo"' + (c.activo !== false ? ' checked' : '') + '> Activo (sale en el catálogo)</label></div>'
+    + '<div class="mpatas">' + (id && ROL_ACTUAL === 'admin' ? '<button class="btn-linea cmb-borrar" id="cmbBorrar">Eliminar</button>' : '') + '<button class="btn-linea" data-cerrar>Cancelar</button><button class="btn-solido" id="cmbGuardar">Guardar combo</button></div>');
+  $('modal').querySelectorAll('[data-cerrar]').forEach(b => { b.onclick = cierraModal; });
+  let foto = c.foto_id || null;
+  const pintaFotos = () => {
+    const cont = $('cmbFotos'); if (!cont || !CMB.fotos) return;
+    const cat = $('cmbCat').value;
+    const lista = [...CMB.fotos.filter(f => f.categoria === cat), ...CMB.fotos.filter(f => f.categoria !== cat)].slice(0, 60);
+    cont.innerHTML = '<button type="button" class="' + (!foto ? 'on' : '') + ' cmb-sinfoto" data-cmbfoto="">Sin foto</button>'
+      + lista.map(f => '<button type="button" class="' + (foto === f.id ? 'on' : '') + '" data-cmbfoto="' + esc(f.id) + '" aria-label="Elegir esta foto"><img src="' + esc(f.preview || '') + '" alt="" loading="lazy"></button>').join('');
+  };
+  pintaFotos();
+  if (!CMB.fotos) cmbFotos().then(pintaFotos);
+  $('cmbCat').onchange = pintaFotos;
+  $('cmbFotos').onclick = ev => { const b = ev.target.closest('[data-cmbfoto]'); if (!b) return; foto = b.dataset.cmbfoto || null; pintaFotos(); };
+  $('cmbGuardar').onclick = async ev => {
+    const boton = ev.currentTarget; boton.disabled = true;
+    const nombre = $('cmbNombre').value;
+    const r = await llama({ action:'combos', operation:'guarda', combo: { ...(id ? { id } : {}), nombre, precio: Number($('cmbPrecio').value), categoria: $('cmbCat').value,
+      destacado: $('cmbDest').value, descripcion: $('cmbDesc').value, items: $('cmbItems').value.split('\n'), foto_id: foto, activo: $('cmbActivo').checked, orden: c.orden } });
+    boton.disabled = false;
+    if (!r.ok) return avisa('No se pudo guardar', r.error);
+    cierraModal(); avisa(id ? 'Combo actualizado' : 'Combo creado', nombre); cmbCarga();
+  };
+  if ($('cmbBorrar')) $('cmbBorrar').onclick = async () => {
+    if (!await confirmaAqui('¿Eliminar «' + (c.nombre || 'este combo') + '»? No se puede deshacer. Si solo quieres que no salga en el catálogo, desactívalo.', { si: 'Eliminar' })) return;
+    const r = await llama({ action:'combos', operation:'elimina', id });
+    if (!r.ok) return avisa('No se pudo eliminar', r.error);
+    cierraModal(); avisa('Combo eliminado', c.nombre || ''); cmbCarga();
+  };
+}
+function montaCombos(){
+  if (montadas.has('combos')) { cmbCarga(); return; }
+  montadas.add('combos');
+  const v = hueco('combos', '');
+  v.addEventListener('click', async ev => {
+    const t = ev.target;
+    const tabB = t.closest('[data-cmbtab]'); if (tabB) { CMB.pestana = tabB.dataset.cmbtab; cmbPinta(); if (['combos', 'catalogo'].includes(CMB.pestana) && !CMB.vista && CMB.datos?.combos?.length) cmbVista(); return; }
+    if (t.closest('[data-cmbnuevo]')) return cmbEditor(null);
+    const ed = t.closest('[data-cmbedita]'); if (ed) return cmbEditor(ed.dataset.cmbedita);
+    const du = t.closest('[data-cmbduplica]');
+    if (du) { du.disabled = true; const r = await llama({ action:'combos', operation:'duplica', id: du.dataset.cmbduplica }); if (!r.ok) { du.disabled = false; return avisa('No se pudo duplicar', r.error); } avisa('Combo duplicado', 'La copia queda para que la ajustes.'); return cmbCarga(); }
+    const ac = t.closest('[data-cmbactiva]');
+    if (ac) { const c = CMB.datos.combos.find(x => x.id === ac.dataset.cmbactiva); ac.disabled = true;
+      const r = await llama({ action:'combos', operation:'guarda', combo: { ...c, activo: c.activo === false } }); if (!r.ok) { ac.disabled = false; return avisa('No se pudo cambiar', r.error); } return cmbCarga(); }
+    if (t.closest('[data-cmbimporta]')) { const b = t.closest('[data-cmbimporta]'); b.disabled = true; const r = await llama({ action:'combos', operation:'importa_web' }); if (!r.ok) { b.disabled = false; return avisa('No se pudo importar', r.error); } avisa('Combos importados', r.creados + ' combos de la web. Revísalos y ponles foto.'); return cmbCarga(); }
+    const cat = t.closest('[data-cmbcat]'); if (cat) { CMB.categoria = cat.dataset.cmbcat; CMB.pagina = 1; if (CMB.categoria) CMB.pestana = 'combos'; cmbPinta(); return cmbVista(); }
+    if (t.closest('[data-cmbpdf]')) return cmbDescarga(t.closest('[data-cmbpdf]'));
+    const z = t.closest('[data-cmbzoom]'); if (z) { CMB.zoom = Math.min(150, Math.max(50, CMB.zoom + Number(z.dataset.cmbzoom))); return cmbPintaVista(); }
+    const po = t.closest('[data-cmbportada]'); if (po) { CMB.borrador = { ...CMB.borrador, portada_foto_id: po.dataset.cmbportada }; CMB.pagina = 1; cmbPinta(); return cmbVista(); }
+    if (t.closest('[data-cmbguardaaj]')) { const r = await llama({ action:'combos', operation:'ajustes', ajustes: CMB.borrador }); if (!r.ok) return avisa('No se pudo guardar', r.error); CMB.datos.ajustes = r.ajustes; CMB.borrador = { ...r.ajustes }; avisa('Catálogo guardado', 'La próxima descarga sale así.'); return cmbPinta(); }
+    if (t.closest('[data-cmbdeshaceaj]')) { CMB.borrador = { ...CMB.datos.ajustes }; cmbPinta(); return cmbVista(); }
+  });
+  let espera = null;
+  v.addEventListener('input', ev => {
+    const d = ev.target.dataset;
+    if (d.cmbbuscar) { CMB.q = ev.target.value; return cmbPinta(); }
+    if (d.cmbaj) { CMB.borrador = { ...CMB.borrador, [d.cmbaj]: ev.target.value }; clearTimeout(espera); espera = setTimeout(cmbVista, 600); }
+  });
+  v.addEventListener('change', ev => {
+    const d = ev.target.dataset;
+    if (d.cmbestado) { CMB.estado = ev.target.value; return cmbPinta(); }
+    if (d.cmbpagina) { CMB.pagina = Number(ev.target.value) || 1; return cmbVista(); }
+    if (d.cmbplantilla) { CMB.borrador = { ...CMB.borrador, plantilla: ev.target.value }; return cmbVista(); }
+  });
+  cmbCarga();
+}
+
 function montaCotizaciones(){
   if (!montadas.has('cotizaciones')) {
     montadas.add('cotizaciones');
