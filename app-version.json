@@ -1,7 +1,7 @@
 {
-  "version": "2026-10-25-crm-release-v322",
+  "version": "2026-10-25-crm-release-v323",
   "channel": "crm",
-  "released_at": "2026-10-25T17:33:12Z",
-  "summary": "Estados: galería «Mis estados» con el estado real de cada uno (en cola, enviado, visto, no salió), vistas, programados del planificador, filtros y páginas; «De tus contactos» sigue a un clic. Incluye el arreglo de cotizaciones de v321.",
+  "released_at": "2026-10-25T18:32:39Z",
+  "summary": "Productos / Combos: combos editables, categorías, precios frente a la Caja y catálogo PDF descargable con vista previa. Incluye la galería de Estados (v322) y el arreglo de cotizaciones (v321).",
   "requiere_puente": "2026-10-18-diagnostico-citas-v53"
 }
