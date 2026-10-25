@@ -1,7 +1,7 @@
 {
-  "version": "2026-10-20-planificador-v239",
+  "version": "2026-10-24-crm-release-v319",
   "channel": "crm",
-  "released_at": "2026-10-20T05:54:54.000Z",
-  "summary": "Planificador de contenido con la estructura de la referencia: pasos Planificar, Revisar, Programar, Publicar y Analizar; calendario con estados, vista previa, publicación por red y cola de contenido con estados honestos (publicada solo con confirmación del proveedor). Incluye el editor Mosaico Smart.",
+  "released_at": "2026-10-25T00:54:12Z",
+  "summary": "Publicación local validada: Campañas con revisión de candidatas y contexto, Planificador con estados honestos y cabecera renovada, editor individual con exportación JPG/PNG/PDF y flujo de revisión. Smart Albums y mosaicos quedan fuera de este release.",
   "requiere_puente": "2026-10-18-diagnostico-citas-v53"
 }
