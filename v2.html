@@ -2320,6 +2320,7 @@ input[type="checkbox"],input[type="radio"]{accent-color:var(--accent)}
 .cotop input{width:auto;margin-right:8px}
 .cotop small{display:block;color:var(--mut);font-size:11.5px;margin-top:3px}
 .cot3{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.cotdesc{display:grid;grid-template-columns:1fr 84px;gap:8px}
 .mas>button{color:var(--mut)}
 
 /* Todos los iconos con el mismo trazo. */
@@ -26482,7 +26483,8 @@ function abreRecordatorio(c, { editarReserva = false } = {}){
 // Cotizacion a la medida desde el chat. El calculo lo hace el SERVIDOR (cotizador-core.js: combo mas parecido, fotos digitales a 500 la primera
 // y 250 las demas, piezas impresas que se quitan para compensar, ajuste a un presupuesto): aqui solo se pide lo que quiere el cliente, se ven las
 // opciones, se edita el mensaje y se manda por el canal del chat. Despues queda registrada en crm_quotes (lo que luego puede leer la Caja).
-// Un descuento NO se calcula aqui ni en el servidor: lo decide el administrador.
+// El bot nunca da descuentos. Un administrador o supervisor puede poner aqui un descuento especial (monto o %): el servidor lo aplica a cada opcion
+// como renglon aparte y rechaza el de cualquier otro rol.
 // COPIA de TABLA_BASE (firebase-functions/src/cotizador-core.js): los tamaños que maneja la Caja. test/v2-cotizar.test.js exige que sean los mismos.
 const COT_TAMS_IMPRESA = ['cualquiera', '2x2', '2x3', '4x6', '5x7', '6x8', '8x11', '8x12', '9x13', '11x14', '11x17', '13x19', '16x20', '17x22'];
 const COT_TAMS_CUADRO = ['', '4x6', '5x7', '6x8', '8x11', '9x13', '11x14', '11x17', '13x19', '16x20', '17x22'];
@@ -26498,6 +26500,7 @@ function categoriaParaCotizar(c){
 }
 function abreCotizador(c){
   if (!c) return avisa('Abre una conversación primero');
+  const puedeDescontar = ['admin', 'supervisor'].includes(ROL_ACTUAL);
   const op = (lista, sel0) => lista.map(x => { const [v, t] = Array.isArray(x) ? x : [x, x || 'Cualquiera'];
     return '<option value="' + esc(v) + '"' + (v === sel0 ? ' selected' : '') + '>' + esc(t === '2x2' ? '2x2 · 8 fotos por impresión' : t) + '</option>'; }).join('');
   const ventanaAbierta = canalDe(c) === 'whatsapp_qr' || !!redSocial(c)
@@ -26506,11 +26509,14 @@ function abreCotizador(c){
     + '<div class="mcuerpo">'
     + '<div class="par"><div class="campo"><label>Tipo de sesión</label><select id="cotCat">' + op(COT_CATS, categoriaParaCotizar(c)) + '</select></div>'
     +   '<div class="campo"><label>Presupuesto del cliente (opcional)</label><input type="number" min="0" id="cotPres" placeholder="RD$"></div></div>'
+    + (puedeDescontar ? '<div class="par"><div class="campo"><label>Descuento especial (opcional)</label><div class="cotdesc"><input type="number" min="0" step="any" id="cotDescV" placeholder="0" aria-label="Valor del descuento">'
+      + '<select id="cotDescT" aria-label="Tipo de descuento"><option value="monto">RD$</option><option value="porcentaje">%</option></select></div></div>'
+      + '<div class="campo"><p class="hint" style="margin:22px 0 0">Se resta de cada opción y sale en el ticket como renglón aparte. Hasta 90 %.</p></div></div>' : '')
     + '<div class="par"><div class="campo"><label>Fotos digitales</label><input type="number" min="0" id="cotDig" value="0"></div>'
     +   '<div class="campo"><label>Llaveros (micas) · tazas · fondos digitales</label><div class="cot3"><input type="number" min="0" id="cotLla" value="0" title="Micas para llaveros de dos caras" aria-label="Llaveros de dos caras">'
     +   '<input type="number" min="0" id="cotTaz" value="0" title="Tazas"><input type="number" min="0" id="cotFon" value="0" title="Fondos digitales"></div></div></div>'
     // Fotos impresas y cuadros: una fila por tamaño (3 fotos 5x7 + 2 fotos 8x11; dos cuadros de tamaños distintos…).
-    + '<div class="campo"><label>Fotos impresas adicionales</label><div id="cotImpFilas"></div><button type="button" class="tplchip" id="cotImpMas">+ otro tamaño</button></div>'
+    + '<div class="campo"><label>Fotos impresas (por tamaño)</label><div id="cotImpFilas"></div><button type="button" class="tplchip" id="cotImpMas">+ otro tamaño</button></div>'
     + '<div class="campo"><label>Cuadros</label><div id="cotCuaFilas"></div><button type="button" class="tplchip" id="cotCuaMas">+ otro tamaño</button></div>'
     + '<div class="hint" id="cotDependencias" role="status" aria-live="polite" style="margin:6px 0 12px"></div>'
     + '<div class="pdfs" style="margin:6px 0 10px"><button class="tplchip" id="cotLee">Leer lo que pidió el cliente</button>'
@@ -26548,8 +26554,10 @@ function abreCotizador(c){
     const impresas = {}; const cuadros = [];
     for (const { n: cuantas, t } of leeFilas('cotImpFilas')) if (cuantas) impresas[t || 'cualquiera'] = (impresas[t || 'cualquiera'] || 0) + cuantas;
     for (const { n: cuantos, t } of leeFilas('cotCuaFilas')) for (let i = 0; i < cuantos; i++) cuadros.push(t || null);
+    const descV = puedeDescontar ? Number($('cotDescV').value) : 0;
     return { categoria: $('cotCat').value || null, digitales: n('cotDig'), impresas, cuadros,
-      llaveros: n('cotLla'), tazas: n('cotTaz'), fondos: n('cotFon'), presupuesto: n('cotPres') || null };
+      llaveros: n('cotLla'), tazas: n('cotTaz'), fondos: n('cotFon'), presupuesto: n('cotPres') || null,
+      ...(descV > 0 ? { descuento: { tipo: $('cotDescT').value, valor: descV } } : {}) };
   };
   function actualizaDependencias(){
     const p = pedidoDelForm(); const porTam = {};
@@ -26559,7 +26567,7 @@ function abreCotizador(c){
     $('cotDependencias').textContent = partes.length ? 'Se incluyen automáticamente: ' + partes.join(' · ') + '. El cuadro o la mica y su impresión son artículos separados; si el combo ya los incluye, se cuentan dentro del paquete.' : 'Cada cuadro incluye su impresión automáticamente. Cada impresión 2x2 cubre hasta cuatro llaveros de dos caras.';
     if (ultimo) { ultimo = null; $('cotEnviar').disabled = true; $('cotOpciones').innerHTML = ''; $('cotMsgCampo').hidden = true; $('cotAviso').hidden = false; $('cotAviso').textContent = 'Cambiaste el pedido. Vuelve a calcular la cotización.'; }
   }
-  for (const id of ['cotCat', 'cotPres', 'cotDig', 'cotLla', 'cotTaz', 'cotFon', 'cotImpFilas', 'cotCuaFilas']) $(id).addEventListener('input', actualizaDependencias);
+  for (const id of ['cotCat', 'cotPres', 'cotDig', 'cotLla', 'cotTaz', 'cotFon', 'cotImpFilas', 'cotCuaFilas', ...(puedeDescontar ? ['cotDescV', 'cotDescT'] : [])]) $(id).addEventListener('input', actualizaDependencias);
   actualizaDependencias();
   const llenaForm = p => {
     if (!p) return;
@@ -26575,6 +26583,7 @@ function abreCotizador(c){
     else agregaFila('cotCuaFilas', COT_TAMS_CUADRO, 0, '');
     $('cotLla').value = p.llaveros || 0; $('cotTaz').value = p.tazas || 0; $('cotFon').value = p.fondos || 0;
     if (p.presupuesto) $('cotPres').value = p.presupuesto;
+    if (puedeDescontar && p.descuento) { $('cotDescV').value = p.descuento.valor; $('cotDescT').value = p.descuento.tipo; }
     // «Leer lo que pidió» acaba de calcular: refrescar el resumen sin invalidar esa respuesta.
     const calculada = ultimo; ultimo = null; actualizaDependencias(); ultimo = calculada;
   };
@@ -26586,6 +26595,7 @@ function abreCotizador(c){
     const ops = r.opciones || [];
     $('cotOpciones').innerHTML = ops.map((o, i) => '<label class="cotop' + (i === 0 ? ' on' : '') + '"><input type="radio" name="cotOp" value="' + i + '"' + (i === 0 ? ' checked' : '') + '>'
       + '<b>' + esc(o.titulo) + '</b> — <b>RD$' + Math.round(o.total).toLocaleString('en-US') + '</b>'
+      + (o.descuento ? ' <small style="display:inline"><s>RD$' + Math.round(o.total_sin_descuento).toLocaleString('en-US') + '</s> −RD$' + Math.round(o.descuento).toLocaleString('en-US') + ' de descuento</small>' : '')
       + (o.dentroPresupuesto === true ? ' <small style="display:inline;color:var(--ok)">✓ dentro de su presupuesto</small>'
         : o.diferenciaPresupuesto > 0 ? ' <small style="display:inline">+RD$' + Math.round(o.diferenciaPresupuesto).toLocaleString('en-US') + ' sobre su presupuesto</small>' : '')
       + '<small>' + esc((o.lineas || []).join(' · ')) + '</small>'
@@ -26633,7 +26643,10 @@ function abreCotizador(c){
   $('cotLee').onclick = async ev => {
     const texto = MSGS.filter(m => m.direction === 'in' && m.body).slice(-6).map(m => m.body).join('. ');
     if (!texto.trim()) return avisa('Todavía no hay mensajes del cliente');
+    const conDescuento = pedidoDelForm().descuento;
     const r = await calcula({ text: texto }, ev.currentTarget);
+    // El texto del cliente nunca trae descuento: si la persona ya lo puso, se recalcula con él en cuanto se llena el formulario.
+    if (r && r.pedido && conDescuento) { llenaForm(r.pedido); return calcula({ pedido: pedidoDelForm() }, ev.currentTarget); }
     if (r && r.pedido) llenaForm(r.pedido);
     else if (r) avisa('No entendí qué pide', 'Llena las piezas a mano.');
   };
