@@ -1,7 +1,7 @@
 {
-  "version": "2026-10-25-crm-release-v324",
+  "version": "2026-10-25-crm-release-v325",
   "channel": "crm",
-  "released_at": "2026-10-25T18:42:37Z",
-  "summary": "Conversaciones: la ficha abre con la tarjeta del cliente (canal, etapa, copiar y abrir en WhatsApp) y Actividad reciente. Incluye Productos / Combos (v323), la galería de Estados (v322) y el arreglo de cotizaciones (v321).",
+  "released_at": "2026-10-25T22:18:29Z",
+  "summary": "Editor de flyers: mosaico tipo Smart Albums (cada foto completa con su proporción real, zona para el texto, espacio, margen y más familias de distribución). Incluye v321 a v324.",
   "requiere_puente": "2026-10-18-diagnostico-citas-v53"
 }
