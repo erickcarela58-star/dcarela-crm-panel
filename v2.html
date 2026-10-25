@@ -2996,6 +2996,31 @@ input[type="checkbox"],input[type="radio"]{accent-color:var(--accent)}
 .ayuda-nota{font-size:12.5px;color:var(--mut);margin:6px 0 0}
 .mod-video{display:block;width:100%;border-radius:12px;background:#000}
 @media(max-width:760px){.ayuda-pop{left:12px;top:60px}}
+/* Ficha: tarjeta del cliente y actividad reciente (referencia del dueño 25/10/2026). Los títulos de los bloques, a la izquierda. */
+#ficha .grupo>summary{justify-content:flex-start}
+#ficha .grupo>summary .nota{margin-left:auto}
+#ficha .grupo>summary:not(:has(.nota))::after{margin-left:auto}
+.fc-cliente{display:grid;gap:8px;padding:14px;margin-bottom:12px;border:1px solid var(--line);border-radius:var(--r2);background:var(--panel)}
+.fc-cab{display:flex;align-items:center;gap:12px}
+.fc-avatar{width:52px;height:52px;border-radius:50%;display:grid;place-items:center;flex:none;background:linear-gradient(135deg,#4a86e8,#7c6fd6);color:#fff;font-weight:800;font-size:18px;box-shadow:0 0 0 3px var(--panel),0 0 0 5px #25d366}
+.fc-nombre{display:grid;gap:3px;min-width:0;flex:1}.fc-nombre b{font-size:16px;color:var(--fg);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fc-chips{display:flex;gap:6px;flex-wrap:wrap}
+.fc-canal{white-space:nowrap;font-size:11.5px;font-weight:700;padding:2px 8px;border-radius:999px;background:rgba(37,211,102,.15);color:#15803d}
+.fc-canal.instagram{background:rgba(225,48,108,.13);color:#c2185b}.fc-canal.messenger{background:rgba(24,119,242,.13);color:#1565c0}
+.fc-etapa{font-size:11.5px;font-weight:700;padding:3px 9px;border-radius:999px;background:var(--accent-suave);color:var(--accent-fuerte);text-transform:capitalize;white-space:nowrap}
+.fc-fila{display:flex;align-items:center;flex-wrap:wrap;gap:6px 8px;font-size:13.5px;color:var(--fg);min-width:0}
+.fc-ico{color:var(--mut);display:grid;place-items:center;flex:none}
+.fc-txt{flex:1 1 130px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.fc-mini{border:1px solid var(--line2);background:transparent;border-radius:8px;padding:3px 8px;font:600 11.5px var(--tipo);color:var(--mut);cursor:pointer}
+.fc-mini:hover{color:var(--fg);background:var(--hover)}
+.fc-enlace{font-size:12px;font-weight:700;padding:4px 10px;border-radius:999px;text-decoration:none;white-space:nowrap}
+.fc-enlace.wa{background:rgba(37,211,102,.15);color:#15803d}.fc-enlace.ig{background:rgba(225,48,108,.13);color:#c2185b}
+.fc-actividad{list-style:none;margin:0;padding:0;display:grid;gap:10px}
+.fc-actividad li{display:flex;gap:10px;font-size:13px;color:var(--fg)}
+.fc-actividad b{font-weight:600}.fc-actividad i{font-style:normal;color:var(--accent-fuerte);font-weight:700}
+.fc-actividad small{display:block;color:var(--mut);font-size:12px}
+.fc-punto{width:9px;height:9px;border-radius:50%;background:var(--accent);margin-top:5px;flex:none}
+.fc-actividad li.futuro .fc-punto{background:transparent;border:2px solid var(--morado)}
 /* Ficha del lead modular: asa de arrastre, panel «Personalizar» y bloques ocultos de verdad. */
 #ficha details.grupo[hidden]{display:none}
 #ficha .asa{cursor:grab;color:var(--mut);margin-right:6px;font-size:13px;opacity:.55;user-select:none}
@@ -11644,6 +11669,55 @@ function valorCampoFicha(el){
   return el.value;
 }
 
+// Tarjeta del cliente arriba de la ficha (referencia del dueño 25/10/2026): quién es, por dónde escribe y cómo contactarle sin buscar.
+// Solo enseña lo que la ficha de verdad tiene; un dato que no existe no se inventa ni deja una fila vacía.
+const FC_ICO = {
+  tel: '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2"/></svg>',
+  ig: '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor"/></svg>',
+  mail: '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg>',
+  lugar: '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s7-6 7-11a7 7 0 0 0-14 0c0 5 7 11 7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>',
+  pastel: '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 21h16M5 21v-7h14v7M12 14V9M9 9h6"/><path d="M12 6c-1-1-1-2 0-3 1 1 1 2 0 3z"/></svg>',
+};
+function tarjetaClienteFicha(c){
+  const nombre = nombreReal(c) || 'Sin nombre';
+  const iniciales = nombre.split(/\s+/).filter(Boolean).slice(0, 2).map(p => p[0]).join('').toUpperCase() || '?';
+  const red = redSocial(c);
+  const tel = red ? '' : String(c.wa_phone || '').replace(/\D/g, '');
+  const usuario = String(c.ig_username || c.instagram_username || c.username || '').replace(/^@/, '').trim();
+  const fila = (icono, texto, accion) => '<div class="fc-fila"><span class="fc-ico" aria-hidden="true">' + icono + '</span><span class="fc-txt">' + texto + '</span>' + (accion || '') + '</div>';
+  const filas = [];
+  if (tel) filas.push(fila(FC_ICO.tel, '+' + esc(tel), '<button type="button" class="fc-mini" data-fccopia="+' + esc(tel) + '" aria-label="Copiar número">Copiar</button>'
+    + '<a class="fc-enlace wa" href="https://wa.me/' + esc(tel) + '" target="_blank" rel="noopener noreferrer">Abrir en WhatsApp</a>'));
+  if (/^[\w.]{1,30}$/.test(usuario)) filas.push(fila(FC_ICO.ig, '@' + esc(usuario), '<a class="fc-enlace ig" href="https://instagram.com/' + encodeURIComponent(usuario) + '" target="_blank" rel="noopener noreferrer">Ver perfil</a>'));
+  if (c.email) filas.push(fila(FC_ICO.mail, esc(c.email), '<button type="button" class="fc-mini" data-fccopia="' + esc(c.email) + '" aria-label="Copiar correo">Copiar</button>'));
+  if (c.city || c.ciudad) filas.push(fila(FC_ICO.lugar, esc(c.city || c.ciudad)));
+  if (c.birthday || c.fecha_nacimiento) filas.push(fila(FC_ICO.pastel, esc(c.birthday || c.fecha_nacimiento)));
+  const canal = red || (canalDe(c) === 'whatsapp_qr' ? 'WhatsApp · 2.º número' : 'WhatsApp');
+  return '<section class="fc-cliente" aria-label="Información del cliente"><div class="fc-cab"><span class="fc-avatar" aria-hidden="true">' + esc(iniciales) + '</span>'
+    + '<div class="fc-nombre"><b title="' + esc(nombre) + '">' + esc(nombre) + '</b><span class="fc-chips"><span class="fc-canal ' + (red ? red.toLowerCase() : 'whatsapp') + '">' + esc(canal) + '</span>'
+    + '<span class="fc-etapa">' + esc(String(c.lifecycle_stage || 'nuevo').replace(/_/g, ' ')) + '</span></span></div></div>' + filas.join('') + '</section>';
+}
+// Actividad reciente: las fechas que la ficha ya guarda, de la más nueva a la más vieja. Sale de la conversación (no de los mensajes cargados,
+// que al abrir la ficha todavía pueden ser los del cliente anterior). Lo que está por venir (sesión, seguimiento) se marca como programado.
+const ACTIVIDAD_FICHA = [['last_customer_reply_at', 'Escribió el cliente'], ['last_quote_at', 'Se le envió una cotización'], ['last_marketing_sent_at', 'Recibió una campaña'],
+  ['last_auto_template_at', 'Salió una plantilla automática'], ['pos_ultima_compra_at', 'Compró en la Caja'], ['scheduled_at', 'Sesión agendada'],
+  ['follow_up_at', 'Seguimiento'], ['marketing_opt_out_at', 'Pidió no recibir promociones'], ['first_seen_at', 'Primer contacto'], ['created_at', 'Ficha creada']];
+function actividadFicha(c, ahora = Date.now()){
+  const vistos = new Set();
+  return ACTIVIDAD_FICHA.map(([campo, texto]) => ({ campo, texto, t: instanteRD(c[campo]).getTime() }))
+    .filter(e => Number.isFinite(e.t) && !vistos.has(e.t) && vistos.add(e.t))
+    .map(e => ({ ...e, futuro: e.t > ahora, extra: e.campo === 'last_quote_at' && Number(c.last_quote_total_centavos) > 0 ? 'RD$' + Math.round(Number(c.last_quote_total_centavos) / 100).toLocaleString('en-US') : '' }))
+    .sort((a, b) => b.t - a.t).slice(0, 7);
+}
+function grupoActividadFicha(c){
+  const lista = actividadFicha(c);
+  return '<details class="grupo" open><summary>Actividad reciente</summary><div class="dentro">'
+    + (lista.length ? '<ol class="fc-actividad">' + lista.map(e => '<li class="' + (e.futuro ? 'futuro' : '') + '"><span class="fc-punto" aria-hidden="true"></span><span><b>' + esc(e.texto) + (e.futuro ? ' · programado' : '') + '</b>'
+      + (e.extra ? ' <i>' + esc(e.extra) + '</i>' : '') + '<small>' + esc(esCuando(new Date(e.t).toISOString())) + '</small></span></li>').join('') + '</ol>'
+      : '<p class="aviso" style="margin:0">Todavía no hay actividad registrada en esta ficha.</p>')
+    + '</div></details>';
+}
+
 function pintaFicha(c){
   const categorias = '<option value="">—</option>' + CATEGORIAS.map(v =>
     '<option value="' + esc(v) + '"' + (c.interested_category === v ? ' selected' : '') + '>' + esc(v) + '</option>').join('');
@@ -11653,6 +11727,7 @@ function pintaFicha(c){
     '<div class="cabeza"><b>Ficha del lead</b>'
     + '<button id="cerrarFicha" style="color:var(--mut);font-size:17px">×</button></div>'
     + '<div class="cuerpo">'
+    + tarjetaClienteFicha(c)
     + '<button class="btn-linea" style="width:100%;margin-bottom:12px" id="irAlPlan" title="Las herramientas operativas viven en Planificación: escribe ahí lo que necesitas y aprueba lo que propone.">Abrir Planificación</button>'
 
     + grupoAnalisisFicha(c)
@@ -11696,6 +11771,8 @@ function pintaFicha(c){
     // El historial y los archivos estaban solo dentro del hilo, mezclados con la
     // conversacion. Buscar "la foto del vestido que mando en junio" obligaba a subir por
     // cuatro meses de mensajes.
+    + grupoActividadFicha(c)
+
     + '<details class="grupo"><summary>Historial y archivos</summary><div class="dentro">'
     +   '<div id="fichaHistorial"></div>'
     + '</div></details>'
@@ -11774,6 +11851,11 @@ function pintaFicha(c){
     f.classList.toggle('on', oculta);
   };
   $('irAlPlan').onclick = () => ve('planning');
+  // Copiar el número o el correo de la tarjeta del cliente.
+  $('ficha').querySelectorAll('[data-fccopia]').forEach(b => { b.onclick = async () => {
+    try { await navigator.clipboard.writeText(b.dataset.fccopia); avisa('Copiado', b.dataset.fccopia); }
+    catch { avisa('No se pudo copiar', 'Selecciónalo y cópialo a mano.'); }
+  }; });
   // Guardado al salir del campo: un cambio por peticion, con el motivo visible si falla.
   $('ficha').querySelectorAll('[data-c]').forEach(el => {
     let valorConfirmado = el.type === 'checkbox' ? el.checked : el.value;
@@ -25926,7 +26008,7 @@ function fechaCorta(v){
 // guarda en este navegador (localStorage); sin almacenamiento, la ficha se ve con los valores de fabrica.
 const MODULOS_FICHA = [
   ['analisis', 'Análisis con IA', /^an[aá]lisis con ia/i], ['caja', 'Cliente de caja', /^cliente de caja/i], ['datos', 'Datos del lead', /^datos del lead/i],
-  ['etiquetas', 'Etiquetas', /^etiquetas/i], ['notas', 'Notas internas', /^notas internas/i], ['historial', 'Historial y archivos', /^historial y archivos/i],
+  ['etiquetas', 'Etiquetas', /^etiquetas/i], ['notas', 'Notas internas', /^notas internas/i], ['actividad', 'Actividad reciente', /^actividad reciente/i], ['historial', 'Historial y archivos', /^historial y archivos/i],
   ['resumen', 'Resumen y próximo paso', /^resumen y pr[oó]ximo paso/i], ['trato', 'Datos del trato', /^datos del trato/i],
   ['seleccion', 'Selección visual', /^selecci[oó]n visual/i], ['automatizacion', 'Automatización', /^automatizaci[oó]n/i], ['ignorar', 'Ignorar en el CRM', /^ignorar|^ignorada/i],
 ];
