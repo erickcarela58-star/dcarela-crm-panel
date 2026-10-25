@@ -1,7 +1,7 @@
 {
-  "version": "2026-10-25-crm-release-v321",
+  "version": "2026-10-25-crm-release-v322",
   "channel": "crm",
-  "released_at": "2026-10-25T16:56:38Z",
-  "summary": "Cotizaciones del chat: las fotos se cobran por tamaño, el cuadro 8.5x11 de los combos se reconoce, el cambio de cuadro cobra solo la diferencia y administración puede dar un descuento especial que sale en el ticket. Incluye todo lo de v320.",
+  "released_at": "2026-10-25T17:33:12Z",
+  "summary": "Estados: galería «Mis estados» con el estado real de cada uno (en cola, enviado, visto, no salió), vistas, programados del planificador, filtros y páginas; «De tus contactos» sigue a un clic. Incluye el arreglo de cotizaciones de v321.",
   "requiere_puente": "2026-10-18-diagnostico-citas-v53"
 }
