@@ -1,7 +1,7 @@
 {
-  "version": "2026-10-25-crm-release-v323",
+  "version": "2026-10-25-crm-release-v324",
   "channel": "crm",
-  "released_at": "2026-10-25T18:32:39Z",
-  "summary": "Productos / Combos: combos editables, categorías, precios frente a la Caja y catálogo PDF descargable con vista previa. Incluye la galería de Estados (v322) y el arreglo de cotizaciones (v321).",
+  "released_at": "2026-10-25T18:42:37Z",
+  "summary": "Conversaciones: la ficha abre con la tarjeta del cliente (canal, etapa, copiar y abrir en WhatsApp) y Actividad reciente. Incluye Productos / Combos (v323), la galería de Estados (v322) y el arreglo de cotizaciones (v321).",
   "requiere_puente": "2026-10-18-diagnostico-citas-v53"
 }
