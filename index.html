@@ -2062,6 +2062,14 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{outline:0}
 .cmb-previa{position:sticky;top:0}
 .cmb-pdfico{width:42px;height:42px;border-radius:12px;display:grid;place-items:center;background:rgba(229,72,127,.14);color:#d23c6c}
 .cmb-plantilla{margin-left:auto;display:flex;align-items:center;gap:8px;font-size:12.5px;font-weight:700;color:var(--mut)}
+.cmb-cc-chips{display:flex;flex-wrap:wrap;gap:8px}
+.cmb-cc-chip{border:1px solid var(--line);background:var(--panel);border-radius:999px;padding:8px 14px;font:600 14px var(--tipo);color:var(--ink);cursor:pointer}
+.cmb-cc-chip small{color:var(--mut);font-weight:500;margin-left:4px}.cmb-cc-chip.on{background:var(--accent);border-color:var(--accent);color:#fff}.cmb-cc-chip.on small{color:#fff}
+.cmb-cc-acc{display:flex;flex-wrap:wrap;gap:8px}
+.cmb-cc-paginas{position:relative;display:grid;grid-auto-flow:column;grid-auto-columns:minmax(180px,220px);gap:12px;overflow-x:auto;padding:4px 2px 10px;min-height:120px}
+.cmb-cc-paginas img{width:100%;border-radius:10px;box-shadow:var(--sombra-suave);background:#fff}
+.cmb-cc-flyer{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 0;border-top:1px solid var(--line)}
+.cmb-cc-flyer span{display:block;color:var(--mut);font-size:13px}
 .cmb-hoja{position:relative;background:var(--segmento);border-radius:14px;padding:12px;max-height:72vh;overflow:auto;text-align:center}
 .cmb-hoja img{display:inline-block;max-width:none;border-radius:6px;box-shadow:0 8px 24px rgba(20,30,60,.16)}
 .cmb-esqueleto{aspect-ratio:1240/1754;border-radius:8px;background:linear-gradient(110deg,var(--line) 30%,var(--hover) 50%,var(--line) 70%);background-size:200% 100%;animation:c240brillo 1.4s linear infinite}
@@ -20801,7 +20809,7 @@ function estudioV238(m,api){
     if(S.multi.length>1){const ns=nodosSeleccion245();tr.setAttrs({keepRatio:false,rotateEnabled:true,resizeEnabled:true,enabledAnchors:['top-left','top-center','top-right','middle-left','middle-right','bottom-left','bottom-center','bottom-right'],rotationSnaps:[0],borderDash:[]});tr.nodes(ns.map(x=>x.n));tr.moveToTop();ocultaFlotante();return;}
     if(S.sel?.tipo==='panorama'){const n=LT.findOne('#pan-'+S.sel.id);tr.setAttrs({keepRatio:false,rotateEnabled:true,resizeEnabled:true,enabledAnchors:['top-left','top-center','top-right','middle-left','middle-right','bottom-left','bottom-center','bottom-right']});tr.nodes(n?[n]:[]);tr.moveToTop();ocultaFlotante();return;}
     if(['sujeto','formas'].includes(S.sel?.tipo)){tr.nodes([]);ocultaFlotante();return;}
-     if(S.sel?.tipo==='textoLibre'){const n=LT.findOne('#textoLibre-'+S.sel.id),s=textosLibres245().find(x=>x.id===S.sel.id);tr.setAttrs({keepRatio:false,rotateEnabled:true,resizeEnabled:true,enabledAnchors:['top-left','top-center','top-right','middle-left','middle-right','bottom-left','bottom-center','bottom-right']});tr.nodes(n&&!s?.bloqueada?[n]:[]);tr.moveToTop();ocultaFlotante();return;}
+     if(S.sel?.tipo==='textoLibre'){const n=LT.findOne('#textoLibre-'+S.sel.id),s=textosLibres245().find(x=>x.id===S.sel.id);tr.setAttrs({keepRatio:false,rotateEnabled:true,resizeEnabled:true,enabledAnchors:['top-left','top-center','top-right','middle-left','middle-right','bottom-left','bottom-center','bottom-right']});tr.nodes(n&&!s?.bloqueada?[n]:[]);tr.moveToTop();if(n)posFlotante(n);else ocultaFlotante();return;}
      if(S.sel?.tipo==='forma'){const n=LT.findOne('#forma-'+S.sel.id),s=formas243().find(x=>x.id===S.sel.id);tr.setAttrs({keepRatio:false,rotateEnabled:true,resizeEnabled:true,enabledAnchors:['top-left','top-center','top-right','middle-left','middle-right','bottom-left','bottom-center','bottom-right']});tr.nodes(n&&!s?.bloqueada?[n]:[]);tr.moveToTop();
       if(n&&s?.tipo==='rectangulo'&&!s.bloqueada){
         const W=S.anchoDocumento||anchoTrabajo(),H=altoTrabajo(),w=W*s.w/100,h=H*s.h/100,min=Math.min(w,h),radios=normalizaRadiosFormasV246(s.radios,s.radio||0),g=new K.Group({name:'formaguia',x:n.x(),y:n.y(),rotation:n.rotation(),offsetX:w/2,offsetY:h/2});
@@ -20819,7 +20827,7 @@ function estudioV238(m,api){
         }
         LU.add(g);
       }
-      ocultaFlotante();return;}
+      if(n)posFlotante(n);else ocultaFlotante();return;}
     if(S.sel?.tipo==='degradado'){tr.nodes([]);ocultaFlotante();return;}
     if(S.sel?.tipo==='logo'){const g=LT.findOne('#logo-editor');tr.setAttrs({keepRatio:true,enabledAnchors:['top-left','top-right','bottom-left','bottom-right'],rotateEnabled:false,resizeEnabled:true,borderDash:[]});tr.nodes(g?[g]:[]);tr.moveToTop();ocultaFlotante();return;}
     const n=S.sel?(S.sel.tipo==='rol'?LT.findOne('#rol-'+S.sel.rol):LF.findOne('#foto-'+S.sel.slot)):null;
@@ -20942,8 +20950,10 @@ function estudioV238(m,api){
     S.elegidas=S.elegidas.filter(x=>!nuevas.includes(x));S.sel={tipo:'foto',slot:c.fotos.at(-1).slot};cambioFormulario(60);pintaBiblioteca();
   }
   function quitaFoto(slot){
-    const c=coleccion();if(!c)return;const fo=c.fotos.find(x=>x.slot===slot);if(!fo)return;
+    // Con el mosaico aún en su distribución automática no hay colección guardada: se materializa primero (antes «Quitar» no hacía nada).
+    const c=coleccion()||materializa();if(!c)return;const fo=c.fotos.find(x=>x.slot===slot);if(!fo)return;
     if(fo.rol==='principal')return avisaV238('La foto principal no se quita: elige otra como principal primero.');
+    api.guardaHistorial();
     const manual=tocadoAMano(c);c.fotos=c.fotos.filter(x=>x!==fo);
     ordenZ(c.fotos).forEach((x,i)=>{x.z=i;});
     if(!manual)aplicaLayout(c,S.layout);
@@ -20965,7 +20975,7 @@ function estudioV238(m,api){
     api.escribeCollage(c);S.sel={tipo:'foto',slot:b};cambioFormulario(60);
   }
   function accionFoto(a,slot){
-    if(a==='recortar'){if(fo.ajuste==='completa')return avisaV238('Foto completa: cambia Ajuste a Rellenar para recortar.');S.recorte=S.recorte===slot?null:slot;if(S.recorte)modoLocal();dibuja();pintaInspector();return;}
+    if(a==='recortar'){const fo=(coleccion()||virtual())?.fotos.find(x=>x.slot===slot);if(!fo)return;if(fo.ajuste==='completa')return avisaV238('Foto completa: cambia Ajuste a Rellenar para recortar.');S.recorte=S.recorte===slot?null:slot;if(S.recorte)modoLocal();dibuja();pintaInspector();return;}
     if(a==='intercambiar'){S.intercambio=slot;pintaEstado();return;}
     if(a==='quitar')return quitaFoto(slot);
     const c=coleccion()||materializa();if(!c)return;const fo=c.fotos.find(x=>x.slot===slot);if(!fo)return;
@@ -20993,8 +21003,14 @@ function estudioV238(m,api){
     if(S.sel.tipo==='foto'){const fo=(coleccion()||virtual())?.fotos.find(z=>z.slot===S.sel.slot);if(!fo){flot.hidden=true;return;}
       html=bt('recortar','recortar','Recortar / reencuadrar')+bt('intercambiar','intercambiar','Intercambiar con otra foto')+bt('frente','frente','Traer adelante')+bt('atras','atras','Enviar atrás')
         +bt('bloquear',fo.bloqueada?'candado':'abierto',fo.bloqueada?'Desbloquear':'Bloquear')+(fo.rol!=='principal'?bt('quitar','eliminar','Quitar del mosaico','peligro'):'');}
-    else{const M=CAMPOS_ROL_V238[S.sel.rol];html=bt('texto','texto','Editar texto')+bt('centrar','centrar','Devolver a su posición')+(M.ver?bt('ocultar','ojoNo','Ocultar'):'');}
+    else if(S.sel.tipo==='forma'||S.sel.tipo==='textoLibre')html=bt('frente','frente','Traer adelante')+bt('fondo','atras','Enviar atrás')+bt('duplicar','foto','Duplicar')+bt('eliminar','eliminar','Eliminar','peligro');
+    else if(S.sel.tipo==='rol'&&CAMPOS_ROL_V238[S.sel.rol]){const M=CAMPOS_ROL_V238[S.sel.rol];html=bt('texto','texto','Editar texto')+bt('centrar','centrar','Devolver a su posición')+(M.ver?bt('ocultar','ojoNo','Ocultar'):'');}
+    else{flot.hidden=true;return;}
     flot.innerHTML=html;flot.style.left=x+'px';flot.style.top=y+'px';flot.hidden=false;
+    // La barra se centra sobre la capa pero nunca se sale del recuadro del lienzo (corta lo que sobra: la papelera quedaba fuera).
+    const rb=flot.getBoundingClientRect();let dx=0;
+    if(rb.right>rc.right-8)dx=rc.right-8-rb.right;if(rb.left+dx<rc.left+8)dx=rc.left+8-rb.left;
+    if(dx)flot.style.left=(x+dx)+'px';
   }
   function pintaEstado(tipo,texto){
     if(tipo==='error'){S.error=texto;S.ocupado=false;}
@@ -21699,6 +21715,7 @@ function estudioV238(m,api){
     const tab=ev.target.closest('[data-e238-tab]');if(tab){cambiaTab(tab.dataset.e238Tab);return;}
     const fl=ev.target.closest('[data-e238-flot]');if(fl){const a=fl.dataset.e238Flot;
       if(S.sel?.tipo==='foto')accionFoto(a,S.sel.slot);
+      else if(S.sel?.tipo==='forma'||S.sel?.tipo==='textoLibre'){api.guardaHistorial();modificaCapas245(a);}
       else if(S.sel?.tipo==='rol'){const M=CAMPOS_ROL_V238[S.sel.rol];if(a==='texto'){cambiaTab('editar');insp.querySelector('[data-i="texto"]')?.focus();}if(a==='centrar'){ponCampoV238(campo(M.dx),0);ponCampoV238(campo(M.dy),0);cambioFormulario(100);}if(a==='ocultar'){empuja(campo(M.ver),'oculto');S.sel=null;dibuja();pintaInspector();}}
       return;}
     const dis=ev.target.closest('[data-e238-layout]');if(dis){void eligeDiseno(dis.dataset.e238Layout,S.elegidas.length>=2?[...S.elegidas]:null);return;}
@@ -21734,7 +21751,14 @@ function estudioV238(m,api){
     if((ev.ctrlKey||ev.metaKey)&&!escribe&&(ev.key==='y'||ev.key==='Y')){ev.preventDefault();api.rehacer();trasHistorial();return;}
     if(escribe||!S.sel||!stage)return;
     if(ev.key==='Escape'){S.recorte=null;S.intercambio=null;selecciona(null);dibuja();return;}
-    if(S.sel.tipo==='forma'){const a=formas243(),s=a.find(x=>x.id===S.sel.id);if(!s)return;if(ev.key==='Delete'||ev.key==='Backspace'){ev.preventDefault();a.splice(a.indexOf(s),1);S.sel={tipo:'formas'};escribeFormas243(a);pintaInspector();return;}const d={ArrowLeft:[-1,0],ArrowRight:[1,0],ArrowUp:[0,-1],ArrowDown:[0,1]}[ev.key];if(d&&!s.bloqueada){ev.preventDefault();s.x+=d[0]*(ev.shiftKey?10:1)/anchoTrabajo()*100;s.y+=d[1]*(ev.shiftKey?10:1)/altoTrabajo()*100;escribeFormas243(a);}return;}
+    // Supr / Retroceso con varias capas elegidas: las quita todas (formas, textos libres y fotos que no son la principal).
+    if((ev.key==='Delete'||ev.key==='Backspace')&&S.multi.length>1){ev.preventDefault();api.guardaHistorial();modificaCapas245('eliminar');return;}
+    if(S.sel.tipo==='textoLibre'){const a=textosLibres245(),t=a.find(x=>x.id===S.sel.id);if(!t)return;
+      if(ev.key==='Delete'||ev.key==='Backspace'){ev.preventDefault();api.guardaHistorial();a.splice(a.indexOf(t),1);S.sel=null;escribeTextosLibres245(a);pintaInspector();return;}
+      const d={ArrowLeft:[-1,0],ArrowRight:[1,0],ArrowUp:[0,-1],ArrowDown:[0,1]}[ev.key];
+      if(d&&!t.bloqueada){ev.preventDefault();t.x+=d[0]*(ev.shiftKey?10:1)/anchoTrabajo()*100;t.y+=d[1]*(ev.shiftKey?10:1)/altoTrabajo()*100;escribeTextosLibres245(a,false);clearTimeout(S.finTecla);S.finTecla=setTimeout(()=>cambioFormulario(150),500);}
+      return;}
+    if(S.sel.tipo==='forma'){const a=formas243(),s=a.find(x=>x.id===S.sel.id);if(!s)return;if(ev.key==='Delete'||ev.key==='Backspace'){ev.preventDefault();api.guardaHistorial();a.splice(a.indexOf(s),1);S.sel={tipo:'formas'};escribeFormas243(a);pintaInspector();return;}const d={ArrowLeft:[-1,0],ArrowRight:[1,0],ArrowUp:[0,-1],ArrowDown:[0,1]}[ev.key];if(d&&!s.bloqueada){ev.preventDefault();s.x+=d[0]*(ev.shiftKey?10:1)/anchoTrabajo()*100;s.y+=d[1]*(ev.shiftKey?10:1)/altoTrabajo()*100;escribeFormas243(a);}return;}
     if(S.sel.tipo==='panorama'){if(ev.key==='Delete'||ev.key==='Backspace'){ev.preventDefault();const d=mesas.documento();d.compartido.fotos=d.compartido.fotos.filter(f=>f.slot!==S.sel.id);S.sel=null;mesas.guarda();cambioFormulario(100);}return;}
     if(['sujeto','formas'].includes(S.sel.tipo))return;
     if(S.sel.tipo==='degradado'){
@@ -23812,7 +23836,13 @@ const cotzDinero = n => 'RD$' + Number(n || 0).toLocaleString('es-DO', { minimum
 // Los combos se guardan en el servidor (crm_combos, acción «combos»); el catálogo A4 lo dibuja el servidor y aquí solo se ve
 // la página elegida y se descarga el PDF. Nada se envía a clientes desde esta vista.
 const CMB = { datos: null, cargando: false, error: '', pestana: 'combos', q: '', estado: 'todos', categoria: '', pagina: 1,
-  vista: null, vistaCargando: false, vistaError: '', zoom: 100, borrador: null, fotos: null, ultimaVista: 0 };
+  vista: null, vistaCargando: false, vistaError: '', zoom: 100, borrador: null, fotos: null, ultimaVista: 0,
+  cc: { cat: 'infantiles', suc: 'central', datos: null, cargando: false, error: '', turno: 0 } };
+// Cada catálogo sale para una sucursal: sus botones abren el WhatsApp de esa sucursal (Ajustes: whatsapp / whatsapp_plaza).
+const CMB_SUC = [['central', 'La Central', 'whatsapp'], ['plaza', 'Plaza Artesanal', 'whatsapp_plaza']];
+// Catálogos por categoría (pedido del dueño 25/10/2026): [id del catálogo, nombre, categorías de crm_combos que entran].
+const CMB_CC = [['infantiles', 'Infantiles', ['infantil']], ['cumpleanos', 'Cumpleaños', ['cumpleanos']], ['graduacion', 'Graduación', ['graduacion']],
+  ['embarazo', 'Embarazo', ['embarazadas']], ['bodas', 'Bodas', ['bodas', 'boda']]];
 const CMB_ICO = {
   combo: '<svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 7 12 3 4 7l8 4 8-4z"/><path d="M4 7v10l8 4 8-4V7"/><path d="M12 11v10"/></svg>',
   ok: '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 5 5 9-10"/></svg>',
@@ -23893,6 +23923,53 @@ function cmbVistaHtml(){
     + '<button type="button" class="btn-solido" data-cmbpdf="1">' + CMB_ICO.pdf + 'Descargar PDF</button></footer>'
     + (CMB.categoria ? '<p class="bajada">Solo ' + esc(cmbCategoria(CMB.categoria)) + '. Quita el filtro de categoría para el catálogo completo.</p>' : '') + '</section>';
 }
+// Las páginas del catálogo de una categoría, dibujadas en el servidor. Solo cuenta la última petición.
+async function cmbCcVista(){
+  const turno = ++CMB.cc.turno;
+  CMB.cc.cargando = true; CMB.cc.error = ''; cmbPinta();
+  const r = await llama({ action:'combos', operation:'catalogo_categoria', categoria: CMB.cc.cat, sucursal: CMB.cc.suc, formato:'vista' });
+  if (turno !== CMB.cc.turno) return;
+  CMB.cc.cargando = false; CMB.cc.error = r.ok ? '' : (r.error || 'No se pudo dibujar el catálogo.'); CMB.cc.datos = r.ok ? r : null;
+  cmbPinta();
+}
+function cmbBaja(contenido, tipo, nombre){
+  const datos = typeof contenido === 'string' && tipo !== 'text/html' ? Uint8Array.from(atob(contenido), c => c.charCodeAt(0)) : contenido;
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([datos], { type: tipo })); a.download = nombre; a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+}
+async function cmbCcBaja(boton, pedido){
+  boton.disabled = true;
+  const r = await llama({ action:'combos', ...pedido });
+  boton.disabled = false;
+  if (!r.ok) return avisa('No se pudo descargar', r.error);
+  if (r.pdf_b64) return cmbBaja(r.pdf_b64, 'application/pdf', r.nombre);
+  if (r.imagen_b64) return cmbBaja(r.imagen_b64, r.tipo, r.nombre);
+  if (r.html != null) return cmbBaja(r.html, 'text/html', r.nombre);
+}
+function cmbCcHtml(){
+  const d = CMB.datos, cc = CMB.cc, v = cc.datos, suc = CMB_SUC.find(([id]) => id === cc.suc) || CMB_SUC[0], sinNumero = !String(d?.ajustes?.[suc[2]] || '').replace(/\D/g, '');
+  const cuantos = crm => (d?.combos || []).filter(c => c.activo !== false && crm.includes(c.categoria) && Number(c.precio) > 0).length;
+  const chips = CMB_CC.map(([id, nombre, crm]) => '<button type="button" class="cmb-cc-chip' + (cc.cat === id ? ' on' : '') + '" aria-pressed="' + (cc.cat === id) + '" data-cmbcc="' + id + '">' + esc(nombre) + ' <small>' + cuantos(crm) + '</small></button>').join('');
+  const flyer = (nombre, detalle, attr) => '<div class="cmb-cc-flyer"><div><b>' + esc(nombre) + '</b><span>' + esc(detalle) + '</span></div><button type="button" class="btn-linea cmb-chico" ' + attr + '>Flyer JPG</button></div>';
+  return '<section class="cmb-caja"><header class="cmb-cabcaja"><div><h3>Catálogos por categoría</h3><p>Un catálogo por categoría, solo con sus combos. Cada combo lleva su botón «Quiero este combo», que abre WhatsApp con el combo y su referencia ya escritos. El número no se ve en ninguna página.</p></div></header>'
+    + '<div class="cmb-cc-chips" role="group" aria-label="Categoría del catálogo">' + chips + '</div>'
+    + '<div class="cmb-cc-chips" role="group" aria-label="Sucursal">' + CMB_SUC.map(([id, nombre]) => '<button type="button" class="cmb-cc-chip' + (cc.suc === id ? ' on' : '') + '" aria-pressed="' + (cc.suc === id) + '" data-cmbsuc="' + id + '">WhatsApp ' + esc(nombre) + '</button>').join('') + '</div>'
+    + (sinNumero ? '<p class="aviso">Pon el WhatsApp de ' + esc(suc[1]) + ' en la pestaña «Catálogo PDF» para que los botones del catálogo funcionen.</p>' : '')
+    + (cc.error ? '<p class="aviso">' + esc(cc.error) + '</p>' : '')
+    + '<div class="cmb-cc-acc"><button type="button" class="btn-solido" data-cmbccpdf="1"' + (sinNumero ? ' disabled' : '') + '>' + CMB_ICO.pdf + 'Descargar catálogo PDF</button>'
+    + '<button type="button" class="btn-linea" data-cmbccweb="1"' + (sinNumero ? ' disabled' : '') + '>Descargar versión web animada</button></div>'
+    + '<div class="cmb-cc-paginas" aria-busy="' + cc.cargando + '">' + (v ? v.paginas.map((p, i) => '<img src="data:image/jpeg;base64,' + p + '" alt="Página ' + (i + 1) + ' del catálogo">').join('') : cc.cargando ? '<div class="cmb-esqueleto"></div>' : '')
+    + (cc.cargando ? '<span class="cmb-dibujando">Dibujando…</span>' : '') + '</div>'
+    + (v ? '<p class="bajada">' + v.paginas.length + ' páginas · ' + v.botones + ' botones de WhatsApp · lo demás de cada combo se explica en el chat</p>' : '')
+    + '</section>'
+    + '<section class="cmb-caja"><header class="cmb-cabcaja"><div><h3>Flyers de un solo combo</h3><p>Una imagen por combo (1080 × 1350), sin teléfono, para mandarla suelta o subirla a estados.</p></div></header>'
+    + (!v ? '<p class="bajada">' + (cc.cargando ? 'Cargando…' : 'Elige una categoría.') + '</p>'
+      : v.combos.length ? v.combos.map(c => flyer(c.nombre, (c.desde ? 'Desde ' : '') + cmbDinero(c.precio) + ' · ' + c.ref + (c.foto_id ? '' : ' · foto del portafolio'),
+        c.id ? 'data-cmbflyer="' + esc(c.id) + '"' : 'data-cmbflyerref="' + esc(c.ref) + '"')).join('')
+      : flyer('Cobertura a la medida', 'Sin combos en el CRM: «Consultar precio y contenido»', 'data-cmbflyercat="' + esc(cc.cat) + '"'))
+    + '</section>';
+}
 // El hueco de la vista previa, compartido por las pestañas Combos y Catálogo PDF (un solo id en el panel).
 function cmbPrevia(){ return '<div id="cmbPreviaHueco">' + cmbVistaHtml() + '</div>'; }
 function cmbPintaVista(){ const c = $('cmbPreviaHueco'); if (c) c.innerHTML = cmbVistaHtml(); }
@@ -23916,6 +23993,8 @@ function cmbPinta(){
       + (lista.length ? lista.map(c => cmbFila(c, editar)).join('') : '<p class="bajada">Ningún combo con estos filtros.</p>')
       + (editar && d.web_pendientes ? '<p class="bajada">Hay ' + d.web_pendientes + ' combos de la web sin importar. <button type="button" class="btn-linea cmb-chico" data-cmbimporta="1">Importarlos</button></p>' : '')
       + '</section>' + cmbPrevia() + '</div>';
+  } else if (CMB.pestana === 'porcategoria') {
+    cuerpo = '<div class="cmb-dos">' + cmbCcHtml() + '</div>';
   } else if (CMB.pestana === 'categorias') {
     cuerpo = '<div class="cmb-cats">' + d.categorias.map(([id, nombre]) => {
       const de = d.combos.filter(c => c.categoria === id), activos = de.filter(c => c.activo !== false).length;
@@ -23928,7 +24007,7 @@ function cmbPinta(){
     const campo = (nombre, clave, max, ayuda) => '<label>' + nombre + '<input data-cmbaj="' + clave + '" maxlength="' + max + '" value="' + esc(a[clave] || '') + '"' + (editar ? '' : ' disabled') + '>' + (ayuda ? '<small>' + ayuda + '</small>' : '') + '</label>';
     const portadas = (CMB.fotos || []).slice(0, 60);
     cuerpo = '<div class="cmb-dos"><section class="cmb-caja cmb-ajustes"><header class="cmb-cabcaja"><div><h3>Catálogo PDF</h3><p>Lo que dice la portada y cómo te escriben. Los cambios se ven al momento en la vista previa.</p></div></header>'
-      + campo('Título', 'titulo', 32, 'Va en letra grande en la portada.') + campo('Subtítulo', 'subtitulo', 48) + campo('Frase de arriba', 'lema', 48) + campo('WhatsApp', 'whatsapp', 20, 'El número que sale en el pie.')
+      + campo('Título', 'titulo', 32, 'Va en letra grande en la portada.') + campo('Subtítulo', 'subtitulo', 48) + campo('Frase de arriba', 'lema', 48) + campo('WhatsApp La Central', 'whatsapp', 20, 'El número que sale en el pie y en los botones del catálogo de La Central.') + campo('WhatsApp Plaza Artesanal', 'whatsapp_plaza', 20, 'El de los botones del catálogo de la Plaza Artesanal.')
       + '<div class="cmb-portada"><span>Foto de portada</span><div class="cmb-fotos">' + (CMB.fotos ? portadas.map(f => '<button type="button" class="' + (a.portada_foto_id === f.id ? 'on' : '') + '" data-cmbportada="' + esc(f.id) + '"' + (editar ? '' : ' disabled') + ' aria-label="Usar esta foto de portada"><img src="' + esc(f.preview || '') + '" alt="" loading="lazy"></button>').join('') || '<p class="bajada">No hay originales en la biblioteca.</p>' : '<p class="bajada">Cargando originales…</p>') + '</div></div>'
       + (editar ? '<div class="cmb-acc"><button type="button" class="btn-solido" data-cmbguardaaj="1">Guardar catálogo</button><button type="button" class="btn-linea" data-cmbdeshaceaj="1">Deshacer cambios</button></div>' : '')
       + '</section>' + cmbPrevia() + '</div>';
@@ -23950,7 +24029,7 @@ function cmbPinta(){
     + '<header class="cmb-cab"><span class="cmb-logo">' + CMB_ICO.combo + '</span><div><h2>Combos y PDF comercial</h2><p>Gestiona tus combos de productos, crea tu catálogo y genera PDFs comerciales</p></div>'
     + '<div class="cmb-cabacc">' + (d?.combos?.length ? '<button type="button" class="btn-linea" data-cmbpdf="1">' + CMB_ICO.pdf + 'Descargar catálogo</button>' : '')
     + (editar ? '<button type="button" class="btn-solido" data-cmbnuevo="1">+ Nuevo combo</button>' : '') + '</div></header>'
-    + '<nav class="cmb-tabs" role="tablist">' + tab('combos', 'Combos') + tab('categorias', 'Categorías') + tab('catalogo', 'Catálogo PDF') + tab('precios', 'Precios') + '</nav>'
+    + '<nav class="cmb-tabs" role="tablist">' + tab('combos', 'Combos') + tab('porcategoria', 'Catálogos por categoría') + tab('categorias', 'Categorías') + tab('catalogo', 'Catálogo PDF') + tab('precios', 'Precios') + '</nav>'
     + cuerpo + '</div>';
   if (foco != null) { const b = v.querySelector('[data-cmbbuscar]'); if (b) { b.focus(); b.setSelectionRange(foco, foco); } }
 }
@@ -24004,7 +24083,16 @@ function montaCombos(){
   const v = hueco('combos', '');
   v.addEventListener('click', async ev => {
     const t = ev.target;
-    const tabB = t.closest('[data-cmbtab]'); if (tabB) { CMB.pestana = tabB.dataset.cmbtab; cmbPinta(); if (['combos', 'catalogo'].includes(CMB.pestana) && !CMB.vista && CMB.datos?.combos?.length) cmbVista(); return; }
+    const tabB = t.closest('[data-cmbtab]'); if (tabB) { CMB.pestana = tabB.dataset.cmbtab; cmbPinta(); if (['combos', 'catalogo'].includes(CMB.pestana) && !CMB.vista && CMB.datos?.combos?.length) cmbVista();
+      if (CMB.pestana === 'porcategoria' && !CMB.cc.datos && !CMB.cc.cargando) cmbCcVista(); return; }
+    const cc = t.closest('[data-cmbcc]'); if (cc) { CMB.cc.cat = cc.dataset.cmbcc; CMB.cc.datos = null; return cmbCcVista(); }
+    const su = t.closest('[data-cmbsuc]'); if (su) { CMB.cc.suc = su.dataset.cmbsuc; CMB.cc.datos = null; return cmbCcVista(); }
+    if (t.closest('[data-cmbccpdf]')) return cmbCcBaja(t.closest('[data-cmbccpdf]'), { operation:'catalogo_categoria', categoria: CMB.cc.cat, sucursal: CMB.cc.suc, formato:'pdf' });
+    if (t.closest('[data-cmbccweb]')) return cmbCcBaja(t.closest('[data-cmbccweb]'), { operation:'catalogo_categoria', categoria: CMB.cc.cat, sucursal: CMB.cc.suc, formato:'web' });
+    const fly = t.closest('[data-cmbflyer]'); if (fly) return cmbCcBaja(fly, { operation:'flyer_combo', id: fly.dataset.cmbflyer });
+    // Los combos de boda vienen de la página web (sin id del CRM): su flyer se pide por la referencia.
+    const flyr = t.closest('[data-cmbflyerref]'); if (flyr) return cmbCcBaja(flyr, { operation:'flyer_combo', categoria: CMB.cc.cat, ref: flyr.dataset.cmbflyerref });
+    const flyc = t.closest('[data-cmbflyercat]'); if (flyc) return cmbCcBaja(flyc, { operation:'flyer_combo', categoria: flyc.dataset.cmbflyercat });
     if (t.closest('[data-cmbnuevo]')) return cmbEditor(null);
     const ed = t.closest('[data-cmbedita]'); if (ed) return cmbEditor(ed.dataset.cmbedita);
     const du = t.closest('[data-cmbduplica]');
