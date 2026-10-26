@@ -1,7 +1,7 @@
 {
-  "version": "2026-10-26-crm-release-v339",
+  "version": "2026-10-26-crm-release-v340",
   "channel": "crm",
-  "released_at": "2026-10-26T17:34:24Z",
-  "summary": "Cotizar: artículos comunes (descripción, cantidad y precio) y descuento sobre la suma para admin/supervisor; revisión por partidas (v336). Entregas: colaboradores por TELÉFONO, aviso por WhatsApp con código y cierre al responder «LISTO código». Bot: atiende los chats NUEVOS desde hoy. Campañas: «Promoción de la semana» con los combos reales, solo como propuesta que el dueño prepara y confirma; Preparar seguro (v337).",
-  "requiere_puente": "2026-10-18-diagnostico-citas-v53"
+  "released_at": "2026-10-26T18:01:21Z",
+  "summary": "Estados: ya se pueden ELIMINAR desde el panel los tuyos (del CRM y del teléfono); el puente v55 los retira de WhatsApp. Entregas: si no pones una lista propia, la tarea de producción va a las personas de Configuración › Tareas. Cobros automáticos encendidos. Incluye v339.",
+  "requiere_puente": "2026-10-26-borra-estados-v55"
 }
