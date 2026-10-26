@@ -2472,6 +2472,11 @@ input[type="checkbox"],input[type="radio"]{accent-color:var(--accent)}
 .cotop.on{border-color:var(--ink);box-shadow:0 0 0 1px var(--ink)}
 .cotop input{width:auto;margin-right:8px}
 .cotop small{display:block;color:var(--mut);font-size:11.5px;margin-top:3px}
+.cot-desc-suma{display:flex;flex-wrap:wrap;align-items:center;gap:8px;border:1px dashed var(--line2);border-radius:12px;padding:8px 12px;margin:4px 0 10px}
+.cot-desc-suma[hidden]{display:none}
+.cot-desc-suma b{font-size:12.5px;flex:1 1 100%}
+.cot-desc-suma input{width:110px}
+.cot-desc-suma select{width:auto}
 .cot3{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
 .cotdesc{display:grid;grid-template-columns:1fr 84px;gap:8px}
 .mas>button{color:var(--mut)}
@@ -6753,7 +6758,7 @@ function pintaEntrega(c){
   const e = c?.entrega; if (!e || !ENTREGA_NOMBRES[e.estado]) { caja.hidden = true; caja.innerHTML = ''; return; }
   const vence = Date.parse(e.vence_digitales_at || ''), vencida = e.estado === 'digitales_pendientes' && vence < Date.now();
   const quedan = Number.isFinite(vence) ? Math.ceil((vence - Date.now()) / 86400000) : null;
-  const yo = String(auth?.currentUser?.email || '').toLowerCase(), esColab = (e.colaboradores || []).includes(yo), jefe = ['admin', 'supervisor'].includes(ROL_ACTUAL);
+  const jefe = ['admin', 'supervisor', 'agent'].includes(ROL_ACTUAL), esColab = false;
   const boton = e.estado === 'digitales_pendientes' ? (ROL_ACTUAL === 'admin' ? '<button type="button" class="btn-solido" data-entrega="digitales">Fotos digitales entregadas</button>' : '<small>Lo confirma el dueño.</small>')
     : e.estado === 'en_produccion' ? (jefe || esColab ? '<button type="button" class="btn-solido" data-entrega="produccion">Producción completada</button>' : '<small>Lo marca un colaborador designado.</small>')
     : e.estado === 'listo' ? (jefe || esColab ? '<button type="button" class="btn-solido" data-entrega="entregado">Trabajo entregado</button>' : '')
@@ -6762,7 +6767,8 @@ function pintaEntrega(c){
   caja.className = 'entrega-caja est-' + e.estado + (vencida ? ' vencida' : '');
   caja.innerHTML = '<b>Entrega · ' + esc(ENTREGA_NOMBRES[e.estado]) + '</b>'
     + (e.estado === 'digitales_pendientes' ? '<span>' + (vencida ? 'Venció el plazo de 3 días' : quedan != null ? 'Plazo: ' + (quedan <= 1 ? 'hoy o mañana' : quedan + ' días') : '') + ' · a tu nombre</span>' : '')
-    + (e.estado === 'en_produccion' ? '<span>Con ' + esc((e.colaboradores || []).join(', ') || 'el equipo') + (ROL_ACTUAL === 'admin' ? ' · <button type="button" class="btn-linea cmb-chico" data-entrega-colabs="1">Colaboradores</button>' : '') + '</span>' : '')
+    + (e.estado === 'digitales_pendientes' && e.requiere_produccion && ROL_ACTUAL === 'admin' ? '<span>Después de las digitales habrá producción · <button type="button" class="btn-linea cmb-chico" data-entrega-colabs="1">Configurar colaboradores</button></span>' : '')
+    + (e.estado === 'en_produccion' ? '<span>Con ' + esc((e.colaboradores || []).map(telefonoLegible).join(', ') || 'el equipo') + (e.codigo ? ' · código ' + esc(e.codigo) : '') + (ROL_ACTUAL === 'admin' ? ' · <button type="button" class="btn-linea cmb-chico" data-entrega-colabs="1">Colaboradores</button>' : '') + '</span>' : '')
     + (e.estado !== 'entregado' ? '<span class="entrega-nota">La encuesta de satisfacción espera a la entrega.</span>' : '')
     + boton;
 }
@@ -6771,17 +6777,21 @@ async function avanzaEntrega(paso){
   const textos = { digitales: '¿Ya entregaste las fotos digitales de ' + nombreDe(c) + '?' + (c.entrega?.requiere_produccion ? ' Pasará a producción con los colaboradores.' : ''), produccion: '¿Los impresos / cuadros de ' + nombreDe(c) + ' están terminados?', entregado: '¿Se entregó todo el trabajo a ' + nombreDe(c) + '? Después de esto puede salir la encuesta.' };
   if (!await confirmaAqui(textos[paso])) return;
   const r = await llama({ action: 'entregaAvanza', conversation_id: c.id || c._id, paso });
-  if (!r?.ok) return avisa('No se pudo marcar', r?.error || '');
+  if (!r?.ok) {
+    avisa('No se pudo marcar', r?.error || '');
+    if (paso === 'digitales' && r?.code === 'sin_colaboradores') await editaColaboradores();
+    return;
+  }
   c.entrega = r.entrega; pintaEntrega(c); pintaChats();
-  avisa('Entrega', ENTREGA_NOMBRES[r.entrega.estado]);
+  avisa('Entrega', ENTREGA_NOMBRES[r.entrega.estado] + (r.avisados ? ' · se avisó por WhatsApp a ' + r.avisados.enviados + ' colaborador(es) con el código ' + (r.entrega.codigo || '') : ''));
 }
 async function editaColaboradores(){
   const r0 = await llama({ action: 'entregasColaboradoresLee' });
-  const actual = (r0?.colaboradores || []).join(', ');
-  abreModal('<div class="mtapa"><b>Colaboradores de producción</b><button class="cerrarm" data-cerrar>×</button></div><div class="mcuerpo"><p class="bajada">Correos del equipo que reciben las entregas con impresos o cuadros cuando confirmas las fotos digitales. Separados por comas.</p>'
-    + '<input id="entColabs" style="width:100%" value="' + esc(actual) + '" placeholder="ana@ejemplo.com, luis@ejemplo.com"></div><div class="mpatas"><button class="btn-linea" data-cerrar>Cancelar</button><button class="btn-solido" id="entColabsGuarda">Guardar</button></div>');
+  const actual = (r0?.colaboradores || []).map(telefonoLegible).join(', ');
+  abreModal('<div class="mtapa"><b>Colaboradores de producción</b><button class="cerrarm" data-cerrar>×</button></div><div class="mcuerpo"><p class="bajada">Teléfonos del equipo que reciben por WhatsApp la tarea de los impresos o cuadros cuando confirmas las fotos digitales. Cuando terminan, responden «LISTO» y el código. Separados por comas.</p>'
+    + '<input id="entColabs" style="width:100%" value="' + esc(actual) + '" placeholder="809-555-1234, 829-555-6789"></div><div class="mpatas"><button class="btn-linea" data-cerrar>Cancelar</button><button class="btn-solido" id="entColabsGuarda">Guardar</button></div>');
   $('modal').querySelectorAll('[data-cerrar]').forEach(b => { b.onclick = cierraModal; });
-  $('entColabsGuarda').onclick = async () => { const r = await llama({ action: 'entregasColaboradores', lista: $('entColabs').value }); if (!r?.ok) return avisa('No se guardó', r?.error || ''); cierraModal(); avisa('Colaboradores', (r.colaboradores || []).join(', ') || 'Ninguno'); };
+  $('entColabsGuarda').onclick = async () => { const r = await llama({ action: 'entregasColaboradores', lista: $('entColabs').value }); if (!r?.ok) return avisa('No se guardó', r?.error || ''); cierraModal(); avisa('Colaboradores', (r.colaboradores || []).map(telefonoLegible).join(', ') || 'Ninguno'); };
 }
 function pintaChats(){
   const cont = $('chats'); if (!cont) return;
@@ -13046,7 +13056,7 @@ async function pintaTablero(id){
 // en crm_planning_tasks, como hacia la primera version, devolvia siempre vacio.
 // ---- Tareas del equipo ------------------------------------------------------------------------------------------------------------------
 // El servidor (equipo-tareas-store.js) decide cuando avisar y preguntar; aqui solo se ponen, se ven y se cierran. Los avisos van por WhatsApp, dentro del horario de cada persona.
-const TAR = { tareas: [], personas: [], plantilla: null, hechas: false, cargado: false };
+const TAR = { tareas: [], personas: [], plantilla: null, avisosRevision: null, hechas: false, cargado: false };
 const DIAS_TAR = [['1', 'L'], ['2', 'M'], ['3', 'X'], ['4', 'J'], ['5', 'V'], ['6', 'S'], ['0', 'D']];
 const hoyRD = () => new Date().toLocaleDateString('en-CA', { timeZone: 'America/Santo_Domingo' });
 const nombreDePersona = id => (TAR.personas.find(x => x.id === id) || {}).nombre || 'Sin asignar';
@@ -13155,7 +13165,7 @@ function sincronizaPersonasTarea(sel, personas){
 async function cargaTareasEquipo(){
   const r = await llama({ action: 'tareasLista', estados: TAR.hechas ? ['completada'] : ['pendiente'] });
   if (!r.ok) { const a = $('tarAviso'); if (a) a.innerHTML = '<p class="aviso">No se pudieron leer las tareas: ' + esc(r.error || 'error') + '</p>'; return; }
-  TAR.tareas = r.tareas || []; TAR.personas = r.personas || []; TAR.plantilla = r.plantilla_aprobada; TAR.cargado = true;
+  TAR.tareas = r.tareas || []; TAR.personas = r.personas || []; TAR.plantilla = r.plantilla_aprobada; TAR.avisosRevision = r.avisos_revision || null; TAR.cargado = true;
   pintaTareasEquipo();
 }
 function estadoAvisoTarea(t){
@@ -13173,9 +13183,11 @@ function pintaTareasEquipo(){
   const sel = $('tarPersona');
   sincronizaPersonasTarea(sel, TAR.personas);
   const aviso = $('tarAviso');
-  if (aviso) aviso.innerHTML = TAR.plantilla === false
+  if (aviso) aviso.innerHTML = (TAR.avisosRevision && (TAR.avisosRevision.total_muestra || TAR.avisosRevision.parcial)
+    ? '<p class="aviso" style="margin:0 0 12px"><b>Avisos por revisar:</b> ' + esc(TAR.avisosRevision.total_muestra) + (TAR.avisosRevision.parcial ? ' en una muestra parcial' : '') + '. No se pudo confirmar el resultado; comprueba el chat del colaborador antes de intentar otro aviso. No se reenviarán solos.</p>' : '')
+    + (TAR.plantilla === false
     ? '<p class="aviso" style="margin:0 0 12px">La plantilla de Meta para avisar a tu equipo <b>fuera de las 24 horas</b> todavía no está aprobada. Hasta entonces solo recibe el aviso quien te haya escrito en las últimas 24 horas; el resto espera y se reintenta solo. '
-      + 'Créala en <b>Campañas</b> (propuesta «Crear la plantilla dcarela_tarea_equipo») o con «crear N» por WhatsApp.</p>' : '';
+      + 'Créala en <b>Campañas</b> (propuesta «Crear la plantilla dcarela_tarea_equipo») o con «crear N» por WhatsApp.</p>' : '');
   const hoy = hoyRD();
   const grupos = TAR.hechas ? [['Completadas', 'ok', TAR.tareas]] : [
     ['Vencidas', 'vencida', TAR.tareas.filter(t => t.fecha_limite && t.fecha_limite < hoy)],
@@ -25084,7 +25096,7 @@ async function descartaOlvidados(lista){
 // Nunca envia nada: «Preparar» abre el formulario o el compositor de Estados con todo puesto, y ahi
 // sigue la simulacion / la confirmacion con la cifra de siempre.
 // ---- Agente de marketing: piezas puras
-const MK_TIPOS = { seguimiento: 'Seguimiento', conversion: 'A fotografía', reactivacion: 'Reactivación', temporada: 'Temporada', demanda: 'Demanda', fidelizacion: 'Fidelización', plantilla: 'Plantilla de Meta' };
+const MK_TIPOS = { seguimiento: 'Seguimiento', conversion: 'A fotografía', reactivacion: 'Reactivación', temporada: 'Temporada', demanda: 'Demanda', fidelizacion: 'Fidelización', plantilla: 'Plantilla de Meta', promocion: 'Promoción de la semana' };
 const MK_CANALES = { estado: 'Estado de WhatsApp', plantilla: 'Plantilla aprobada', libre: 'Mensaje libre' };
 const MK_PRIORIDADES = { alta: 'Prioridad alta', media: 'Prioridad media', baja: 'Prioridad baja' };
 function cuantoHace(iso, ahora = Date.now()){
@@ -25254,7 +25266,7 @@ async function preparaPropuesta(p, linea){
     const area = $('stcTexto');
     if (area) { area.value = texto; area.dispatchEvent(new Event('input')); }
     avisa('Estado preparado', 'Revisa el texto y elige a quién; antes de publicar te dice cuántos lo verán.');
-    return;
+    return true;
   }
   const poner = (id, v) => { const e = $(id); if (e) e.value = v; };
   poner('bcProposito', a.proposito || 'followup');
@@ -25276,7 +25288,9 @@ async function preparaPropuesta(p, linea){
     sug.querySelector('.mk-sug-nota').hidden = libre;
   }
   document.querySelector('#vista-campanas .prompt')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  await simulaBroadcast();
+  const simulacion = await simulaBroadcast();
+  if (!simulacion?.ok) { MK.preparada = null; return false; }
+  return true;
 }
 
 function cableaMarketing(){
@@ -25305,8 +25319,18 @@ function cableaMarketing(){
     const p = MK.propuestas.find(x => x.id === id);
     if (!p) return;
     if (acc === 'linea') { chatsDeLineaMarketing(p, b.dataset.linea === 'puente' ? 'puente' : 'oficial'); return; }
-    if (acc === 'preparar') { if (await decideMarketing(id, 'aceptar')) await preparaPropuesta(p); return; }
-    if (acc === 'preparar5644') { if (await decideMarketing(id, 'aceptar')) await preparaPropuesta(p, 'puente'); return; }
+    if (acc === 'preparar' || acc === 'preparar5644') {
+      b.disabled = true;
+      const preparada = await preparaPropuesta(p, acc === 'preparar5644' ? 'puente' : undefined);
+      if (preparada && !await decideMarketing(id, 'aceptar')) {
+        AUDIENCIA = null; MK.preparada = null;
+        const salida = $('bcSalida');
+        if (salida) { salida.onclick = null; salida.innerHTML = '<p class="aviso">No se guardó la decisión. Vuelve a preparar la propuesta y a revisar los destinatarios.</p>'; }
+        avisa('No se preparó la propuesta', 'No se guardó la decisión; vuelve a preparar y revisar la audiencia.');
+      }
+      b.disabled = false;
+      return;
+    }
     if (acc === 'meta') {
       const a = p.accion || {};
       b.disabled = true; b.textContent = 'Enviando…';
@@ -26050,6 +26074,7 @@ async function simulaBroadcast(){
     if ($('bcEnviar')) $('bcEnviar').onclick = () => { if (puedeEnviar()) return enviaBroadcast(); };
     $('bcPuente').onclick = () => { if (puedeEnviar()) return enviaPorPuente(); };
   }
+  return { ok: r.found > 0, encontrados: r.found };
 }
 
 // Campana por el SEGUNDO numero. v2 solo difundia por el oficial, asi que la linea de Fotos
@@ -27717,6 +27742,19 @@ function categoriaParaCotizar(c){
   if (/embaraz|matern/.test(t)) return 'embarazadas';
   return '';
 }
+// La Caja puede cambiar mientras se redacta. La segunda lectura debe confirmar
+// también las partidas, no solo un total que por casualidad siga siendo igual.
+function revalidaOpcionCotV335(vista, respuesta, indice){
+  if (!respuesta?.ok || !Array.isArray(respuesta.opciones) || !respuesta.opciones[indice])
+    return { ok:false, motivo:'No se pudieron comprobar los precios actuales de la Caja. No se envió nada.' };
+  const actual=respuesta.opciones[indice];
+  const firma=o=>JSON.stringify({ tipo:o?.tipo, titulo:o?.titulo, total:o?.total,
+    incompleta:!!o?.incompleta, porConfirmar:o?.porConfirmar || [],
+    partidas:(o?.partidas || []).map(p=>[p.tipo,p.descripcion,p.cantidad,p.precio_unitario,p.total,p.producto_id]) });
+  if (!vista || !Number.isFinite(Number(vista.total)) || !Number.isFinite(Number(actual.total)) || firma(vista)!==firma(actual))
+    return { ok:false, motivo:'La cotización o sus partidas cambiaron en la Caja. Revísala y elige otra vez antes de enviar.', actualizada:respuesta };
+  return { ok:true };
+}
 function abreCotizador(c){
   if (!c) return avisa('Abre una conversación primero');
   const puedeDescontar = ['admin', 'supervisor'].includes(ROL_ACTUAL);
@@ -27734,13 +27772,24 @@ function abreCotizador(c){
     + '<div class="par"><div class="campo"><label>Fotos digitales</label><input type="number" min="0" id="cotDig" value="0"></div>'
     +   '<div class="campo"><label>Llaveros (micas) · tazas · fondos digitales</label><div class="cot3"><input type="number" min="0" id="cotLla" value="0" title="Micas para llaveros de dos caras" aria-label="Llaveros de dos caras">'
     +   '<input type="number" min="0" id="cotTaz" value="0" title="Tazas"><input type="number" min="0" id="cotFon" value="0" title="Fondos digitales"></div></div></div>'
+    + '<div class="campo"><label>Artículos frecuentes</label><div class="pdfs" id="cotAtajos">'
+    +   '<button type="button" class="tplchip" data-cot-atajo="digital">+ 1 digital</button>'
+    +   '<button type="button" class="tplchip" data-cot-atajo="impresa">+ 1 foto 5x7</button>'
+    +   '<button type="button" class="tplchip" data-cot-atajo="cuadro">+ 1 cuadro 8x11</button>'
+    +   '<button type="button" class="tplchip" data-cot-atajo="llavero">+ 1 llavero</button>'
+    +   '<button type="button" class="tplchip" data-cot-atajo="taza">+ 1 taza</button></div>'
+    +   '<p class="hint">Los atajos solo agregan cantidades. Calcular consulta la Caja de esta sucursal; una pieza sin precio queda por confirmar.</p></div>'
+    // Dueño 27/10/2026: artículos comunes (como el «Producto común» de la Caja): descripción, cantidad y precio puestos a mano; se suman a cada opción.
+    + '<div class="campo"><label>Artículos comunes (descripción, cantidad y precio)</label><div id="cotComFilas"></div><button type="button" class="tplchip" id="cotComMas">+ artículo común</button></div>'
     // Fotos impresas y cuadros: una fila por tamaño (3 fotos 5x7 + 2 fotos 8x11; dos cuadros de tamaños distintos…).
     + '<div class="campo"><label>Fotos impresas (por tamaño)</label><div id="cotImpFilas"></div><button type="button" class="tplchip" id="cotImpMas">+ otro tamaño</button></div>'
     + '<div class="campo"><label>Cuadros</label><div id="cotCuaFilas"></div><button type="button" class="tplchip" id="cotCuaMas">+ otro tamaño</button></div>'
     + '<div class="hint" id="cotDependencias" role="status" aria-live="polite" style="margin:6px 0 12px"></div>'
     + '<div class="pdfs" style="margin:6px 0 10px"><button class="tplchip" id="cotLee">Leer lo que pidió el cliente</button>'
     +   '<button class="btn-solido" id="cotCalcula">Calcular</button></div>'
-    + '<p class="aviso" id="cotAviso" hidden></p><div id="cotOpciones"></div><p class="hint" id="cotPrecios" hidden style="margin:6px 0 0"></p>'
+    + '<p class="aviso" id="cotAviso" hidden></p><div id="cotOpciones"></div>'
+    + (puedeDescontar ? '<div class="cot-desc-suma" id="cotDescSuma" hidden><b>Descuento sobre la suma</b><input type="number" min="0" step="any" id="cotDescSumaV" placeholder="0" aria-label="Descuento sobre el total"><select id="cotDescSumaT" aria-label="Tipo de descuento"><option value="monto">RD$</option><option value="porcentaje">%</option></select><button type="button" class="btn-linea" id="cotDescSumaAplica">Aplicar y recalcular</button></div>' : '')
+    + '<p class="hint" id="cotPrecios" hidden style="margin:6px 0 0"></p>'
     + '<div class="campo" id="cotMsgCampo" hidden><label>Cómo se la mandas</label>'
     +   '<select id="cotFormato"><option value="imagen">Imagen tipo ticket (la opción elegida)</option><option value="texto">Mensaje de texto</option><option value="ambos">Imagen y mensaje de texto</option></select>'
     +   '<div id="cotTextoBloque" hidden style="margin-top:8px"><label>Mensaje para el cliente <span style="text-transform:none;letter-spacing:0">(puedes editarlo)</span></label>'
@@ -27763,12 +27812,35 @@ function abreCotizador(c){
     fila.querySelector('.cx').onclick = () => { if ($(contId).children.length > 1) fila.remove(); else fila.querySelector('.cn').value = 0; actualizaDependencias(); };
     $(contId).appendChild(fila);
   };
+  const agregaComun = (desc = '', cant = 1, precio = '') => {
+    const fila = document.createElement('div');
+    fila.className = 'cotcomun'; fila.style.cssText = 'display:flex;gap:6px;margin-bottom:6px';
+    fila.innerHTML = '<input class="cd" maxlength="80" placeholder="Ej.: marco dorado, edición especial…" value="' + esc(desc) + '" style="flex:1" aria-label="Descripción">'
+      + '<input type="number" min="1" class="cc" value="' + (cant || 1) + '" style="width:64px" aria-label="Cantidad">'
+      + '<input type="number" min="0" step="any" class="cp" placeholder="RD$" value="' + esc(String(precio)) + '" style="width:100px" aria-label="Precio">'
+      + '<button type="button" class="cx" aria-label="Quitar este artículo" style="border:0;background:transparent;color:var(--mut);font-size:18px;cursor:pointer">×</button>';
+    fila.querySelector('.cx').onclick = () => { fila.remove(); actualizaDependencias(); };
+    $('cotComFilas').appendChild(fila);
+  };
+  const leeComunes = () => [...$('cotComFilas').querySelectorAll('.cotcomun')].map(f => ({ descripcion: f.querySelector('.cd').value.trim(), cantidad: Math.max(1, Math.floor(Number(f.querySelector('.cc').value) || 1)), precio: Number(f.querySelector('.cp').value) || 0 }))
+    .filter(x => x.descripcion && x.precio > 0);
   const leeFilas = contId => [...$(contId).querySelectorAll('.cotfila')]
     .map(f => ({ n: Math.max(0, Math.floor(Number(f.querySelector('.cn').value) || 0)), t: f.querySelector('.ct').value }));
   agregaFila('cotImpFilas', COT_TAMS_IMPRESA, 0, 'cualquiera');
   agregaFila('cotCuaFilas', COT_TAMS_CUADRO, 0, '');
   $('cotImpMas').onclick = () => agregaFila('cotImpFilas', COT_TAMS_IMPRESA, 0, '5x7');
   $('cotCuaMas').onclick = () => agregaFila('cotCuaFilas', COT_TAMS_CUADRO, 0, '11x14');
+  $('cotComMas').onclick = () => agregaComun();
+  if ($('cotDescSumaAplica')) $('cotDescSumaAplica').onclick = () => { $('cotDescV').value = $('cotDescSumaV').value; $('cotDescT').value = $('cotDescSumaT').value; actualizaDependencias(); $('cotCalcula').click(); };
+  $('cotAtajos').onclick = ev => {
+    const atajo=ev.target.closest('[data-cot-atajo]'); if (!atajo) return;
+    const tipo=atajo.dataset.cotAtajo;
+    const id={ digital:'cotDig', llavero:'cotLla', taza:'cotTaz' }[tipo];
+    if (id) $(id).value=Math.max(0,Math.floor(Number($(id).value)||0))+1;
+    else if (tipo==='impresa') agregaFila('cotImpFilas',COT_TAMS_IMPRESA,1,'5x7');
+    else if (tipo==='cuadro') agregaFila('cotCuaFilas',COT_TAMS_CUADRO,1,'8x11');
+    actualizaDependencias();
+  };
   const pedidoDelForm = () => {
     const impresas = {}; const cuadros = [];
     for (const { n: cuantas, t } of leeFilas('cotImpFilas')) if (cuantas) impresas[t || 'cualquiera'] = (impresas[t || 'cualquiera'] || 0) + cuantas;
@@ -27776,7 +27848,8 @@ function abreCotizador(c){
     const descV = puedeDescontar ? Number($('cotDescV').value) : 0;
     return { categoria: $('cotCat').value || null, digitales: n('cotDig'), impresas, cuadros,
       llaveros: n('cotLla'), tazas: n('cotTaz'), fondos: n('cotFon'), presupuesto: n('cotPres') || null,
-      ...(descV > 0 ? { descuento: { tipo: $('cotDescT').value, valor: descV } } : {}) };
+      ...(descV > 0 ? { descuento: { tipo: $('cotDescT').value, valor: descV } } : {}),
+      ...(leeComunes().length ? { comunes: leeComunes() } : {}) };
   };
   function actualizaDependencias(){
     const p = pedidoDelForm(); const porTam = {};
@@ -27784,9 +27857,9 @@ function abreCotizador(c){
     const partes = Object.entries(porTam).map(([tam, cantidad]) => cantidad + (cantidad === 1 ? ' impresión' : ' impresiones') + ' ' + tam + ' para cuadro');
     if (p.llaveros) { const pliegos = Math.ceil(p.llaveros / 4); partes.push(pliegos + (pliegos === 1 ? ' impresión' : ' impresiones') + ' 2x2 para ' + p.llaveros + ' llavero' + (p.llaveros === 1 ? '' : 's') + ' de dos caras (8 fotos por impresión)'); }
     $('cotDependencias').textContent = partes.length ? 'Se incluyen automáticamente: ' + partes.join(' · ') + '. El cuadro o la mica y su impresión son artículos separados; si el combo ya los incluye, se cuentan dentro del paquete.' : 'Cada cuadro incluye su impresión automáticamente. Cada impresión 2x2 cubre hasta cuatro llaveros de dos caras.';
-    if (ultimo) { ultimo = null; $('cotEnviar').disabled = true; $('cotOpciones').innerHTML = ''; $('cotMsgCampo').hidden = true; $('cotAviso').hidden = false; $('cotAviso').textContent = 'Cambiaste el pedido. Vuelve a calcular la cotización.'; }
+    if (ultimo) { ultimo = null; if ($('cotDescSuma')) $('cotDescSuma').hidden = true; $('cotEnviar').disabled = true; $('cotOpciones').innerHTML = ''; $('cotMsgCampo').hidden = true; $('cotAviso').hidden = false; $('cotAviso').textContent = 'Cambiaste el pedido. Vuelve a calcular la cotización.'; }
   }
-  for (const id of ['cotCat', 'cotPres', 'cotDig', 'cotLla', 'cotTaz', 'cotFon', 'cotImpFilas', 'cotCuaFilas', ...(puedeDescontar ? ['cotDescV', 'cotDescT'] : [])]) $(id).addEventListener('input', actualizaDependencias);
+  for (const id of ['cotCat', 'cotPres', 'cotDig', 'cotLla', 'cotTaz', 'cotFon', 'cotImpFilas', 'cotCuaFilas', 'cotComFilas', ...(puedeDescontar ? ['cotDescV', 'cotDescT'] : [])]) $(id).addEventListener('input', actualizaDependencias);
   actualizaDependencias();
   const llenaForm = p => {
     if (!p) return;
@@ -27803,6 +27876,8 @@ function abreCotizador(c){
     $('cotLla').value = p.llaveros || 0; $('cotTaz').value = p.tazas || 0; $('cotFon').value = p.fondos || 0;
     if (p.presupuesto) $('cotPres').value = p.presupuesto;
     if (puedeDescontar && p.descuento) { $('cotDescV').value = p.descuento.valor; $('cotDescT').value = p.descuento.tipo; }
+    $('cotComFilas').innerHTML = '';
+    for (const x of Array.isArray(p.comunes) ? p.comunes : []) agregaComun(x.descripcion, x.cantidad, x.precio);
     // «Leer lo que pidió» acaba de calcular: refrescar el resumen sin invalidar esa respuesta.
     const calculada = ultimo; ultimo = null; actualizaDependencias(); ultimo = calculada;
   };
@@ -27812,6 +27887,7 @@ function abreCotizador(c){
     const aviso = $('cotAviso');
     aviso.hidden = !r.aviso; aviso.textContent = r.aviso || '';
     const ops = r.opciones || [];
+    if ($('cotDescSuma')) { $('cotDescSuma').hidden = !ops.length; $('cotDescSumaV').value = $('cotDescV').value || ''; $('cotDescSumaT').value = $('cotDescT').value || 'monto'; }
     $('cotOpciones').innerHTML = ops.map((o, i) => '<label class="cotop' + (i === 0 ? ' on' : '') + '"><input type="radio" name="cotOp" value="' + i + '"' + (i === 0 ? ' checked' : '') + '>'
       + '<b>' + esc(o.titulo) + '</b> — <b>RD$' + Math.round(o.total).toLocaleString('en-US') + '</b>'
       + (o.descuento ? ' <small style="display:inline"><s>RD$' + Math.round(o.total_sin_descuento).toLocaleString('en-US') + '</s> −RD$' + Math.round(o.descuento).toLocaleString('en-US') + ' de descuento</small>' : '')
@@ -27884,30 +27960,38 @@ function abreCotizador(c){
     const manda = cuerpo => llama(porPuente ? { action:'bridgeQueue', conversation_id: conv, ...cuerpo }
       : { action: cuerpo.media_b64 ? 'send' : 'sendText', conversation_id: conv, ...cuerpo });
     // 0) Los precios pueden haber cambiado en la Caja desde que se calculo: se recalcula con los de AHORA y, si el total elegido ya no es el mismo, no sale nada con el precio viejo.
-    const vista = ultimo.opciones[elegida]?.total;
+    const vista = ultimo.opciones[elegida];
     const ahora = await llama({ action:'cotizar', conversation_id: conv, pedido: ultimo.pedido });
-    const nuevo = ahora.ok && ahora.opciones ? ahora.opciones[elegida]?.total : null;
-    if (typeof vista === 'number' && typeof nuevo === 'number' && Math.abs(nuevo - vista) >= 1) {
-      boton.disabled = false; pinta(ahora);
-      return avisa('El precio cambió en la Caja', 'Era RD$' + Math.round(vista).toLocaleString('en-US') + ' y ahora es RD$' + Math.round(nuevo).toLocaleString('en-US') + '. Revisa las opciones y vuelve a elegir.');
+    const revision = revalidaOpcionCotV335(vista, ahora, elegida);
+    if (!revision.ok) {
+      boton.disabled = false;
+      if (revision.actualizada) pinta(revision.actualizada);
+      return avisa(revision.actualizada ? 'El precio cambió en la Caja' : 'No se pudo comprobar la Caja', revision.motivo);
     }
+    const revisionActual = ahora.revisiones?.[elegida];
+    if (typeof revisionActual !== 'string' || !revisionActual)
+      return avisa('No se pudo comprobar la Caja', 'El servidor no confirmó la revisión de esta opción. No se envió nada; actualiza el CRM y vuelve a calcular.');
     // 1) El ticket (imagen): lo dibuja el servidor con la opcion elegida; el pie lleva el folio.
     if (formato !== 'texto') {
-      const img = await llama({ action:'cotizacionImagen', conversation_id: conv, pedido: ultimo.pedido, opcion: elegida, total_visto: ultimo.opciones[elegida]?.total });
+      const img = await llama({ action:'cotizacionImagen', conversation_id: conv, pedido: ultimo.pedido, opcion: elegida, total_visto: ultimo.opciones[elegida]?.total, revision_vista: revisionActual });
       if (!img.ok) { boton.disabled = false; return avisa('No se pudo armar la imagen', img.error); }
       const pie = 'Aquí está tu cotización (' + img.folio + '). ¿Te la reservo con tu fecha?';
       const r1 = await manda({ media_kind:'image', media_b64: img.png_b64, media_mime: img.mime, media_filename: 'cotizacion-' + img.folio + '.png', body: pie });
-      if (!r1.ok) { boton.disabled = false; return avisa('No se pudo enviar', traduceErrorMeta(r1.error, r1.code)); }
+      // Un error de red no demuestra que el proveedor rechazó la imagen. No habilitar
+      // un segundo envío desde este modal: podría duplicar la cotización.
+      if (!r1.ok) return avisa('Envío sin confirmar', 'Revisa el chat antes de preparar otra cotización. ' + traduceErrorMeta(r1.error, r1.code));
       if (porPuente) apuntaEnviando({ conv, tipo:'image', body: pie, mime: img.mime, datos: img.png_b64 });
     }
     // 2) El mensaje de texto (si se pidio texto o ambos)
     if (formato !== 'imagen') {
       const env = await manda({ body: texto });
-      if (!env.ok) { boton.disabled = false; return avisa(formato === 'ambos' ? 'La imagen salió, pero el texto no' : 'No se pudo enviar', traduceErrorMeta(env.error, env.code)); }
+      if (!env.ok) return avisa('Envío sin confirmar', (formato === 'ambos'
+        ? 'La imagen fue aceptada para envío; el texto no quedó confirmado. Revisa el chat antes de preparar otra cotización. '
+        : 'Revisa el chat antes de preparar otra cotización. ') + traduceErrorMeta(env.error, env.code));
       if (porPuente) apuntaEnviando({ conv, tipo:'text', body: texto });
     }
     // Registrar despues de enviar: si el registro falla, el cliente ya la recibio y se dice aparte.
-    const g = await llama({ action:'cotizacionGuarda', conversation_id: conv, pedido: ultimo.pedido, opcion: elegida, total_visto: ultimo.opciones[elegida]?.total, formato, texto: formato === 'imagen' ? '' : texto });
+    const g = await llama({ action:'cotizacionGuarda', conversation_id: conv, pedido: ultimo.pedido, opcion: elegida, total_visto: ultimo.opciones[elegida]?.total, revision_vista: revisionActual, formato, texto: formato === 'imagen' ? '' : texto });
     cierraModal();
     if (g.ok) { if (g.etapa) c.lifecycle_stage = g.etapa; avisa('Cotización enviada', nombreDe(c) + ' · RD$' + Math.round(g.total).toLocaleString('en-US')); }
     else avisa('Se envió, pero no quedó registrada', g.error);
