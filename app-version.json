@@ -1,7 +1,7 @@
 {
-  "version": "2026-10-25-crm-release-v325",
+  "version": "2026-10-25-crm-release-v326",
   "channel": "crm",
-  "released_at": "2026-10-25T22:18:29Z",
-  "summary": "Editor de flyers: mosaico tipo Smart Albums (cada foto completa con su proporción real, zona para el texto, espacio, margen y más familias de distribución). Incluye v321 a v324.",
+  "released_at": "2026-10-26T00:49:26Z",
+  "summary": "Editor de flyers: el lienzo del mosaico es editable por defecto para administración (arrastrar, redimensionar y girar cada foto). Incluye el mosaico Smart Albums (v325) y v321 a v324.",
   "requiere_puente": "2026-10-18-diagnostico-citas-v53"
 }
