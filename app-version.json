@@ -1,7 +1,7 @@
 {
-  "version": "2026-10-26-crm-release-v332",
+  "version": "2026-10-26-crm-release-v333",
   "channel": "crm",
-  "released_at": "2026-10-26T09:14:46Z",
-  "summary": "Editor de flyers estilo Photoshop: herramientas agrupadas con submenú e íconos nuevos; Ajustar con ajustes de color reales (brillo, contraste, saturación, calidez, B/N); Seleccionar sujeto funciona (modelo de retrato dentro del servidor) y crea la capa Sujeto enlazada; la plantilla 07 pasa la banda por detrás del sujeto; Intercambiar con una sola foto reemplaza desde la Biblioteca; zoom con Ctrl + rueda, Ctrl +/−/0/1 y mano con la barra espaciadora; Mosaico deja elegir las fotos; recreador en un diálogo amplio. Catálogos: la web de Bodas ya muestra sus 13 combos.",
+  "released_at": "2026-10-26T12:39:52Z",
+  "summary": "Entregas después de la sesión: al confirmar la sesión se abre la entrega de las fotos digitales a nombre del dueño con plazo de 3 días; con impresos o cuadros pasa a los colaboradores designados y luego se habilita «Trabajo entregado». La encuesta de satisfacción espera a la entrega. Estados: aro verde en la foto de quien tiene estado y quién vio tus estados publicados desde el teléfono. Guía para conectar TikTok. Chat: letra y sombra como WhatsApp Web y sonido de mensaje más fuerte (tono WhatsApp).",
   "requiere_puente": "2026-10-18-diagnostico-citas-v53"
 }
