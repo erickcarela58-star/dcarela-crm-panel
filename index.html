@@ -548,6 +548,15 @@ body.menu-abierto .velo{display:block}
 /* El distintivo va pegado al avatar, arriba a la derecha: se ve por donde escribe sin
    tener que abrir el chat, que es cuando importa saberlo. */
 .avwrap{position:relative;flex:0 0 auto;line-height:0}
+.entrega-caja{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;padding:6px 10px;border-radius:10px;background:var(--panel,#fff);border:1px solid var(--line,#e5e7eb);font-size:12.5px}
+.entrega-caja b{font-weight:700}.entrega-caja span{color:var(--mut,#667781)}.entrega-caja .entrega-nota{font-size:11.5px}
+.entrega-caja.est-digitales_pendientes{border-color:#f59e0b}.entrega-caja.vencida{border-color:#ef4444;background:rgba(239,68,68,.07)}.entrega-caja.vencida span:first-of-type{color:#dc2626;font-weight:650}
+.entrega-caja.est-en_produccion{border-color:#3b82f6}.entrega-caja.est-listo{border-color:#10b981}.entrega-caja.est-entregado{opacity:.75}
+/* v332: aro de estado en la foto, como WhatsApp (verde: sin ver; gris: visto) */
+.avwrap.st-aro-chat{border-radius:50%;box-shadow:0 0 0 2px var(--panel),0 0 0 4px #25d366;cursor:pointer}
+.guia-tiktok{margin:8px 0 4px;padding:8px 12px;border:1px solid var(--line);border-radius:10px}.guia-tiktok summary{cursor:pointer;font-weight:650}.guia-tiktok ol{margin:8px 0;padding-left:20px;display:grid;gap:6px}.guia-tiktok code{word-break:break-all}
+.st-telefono{width:100%;border:0;background:none;text-align:left;font:inherit;cursor:pointer}.st-av-tel{display:grid;place-items:center;width:44px;height:44px;border-radius:50%;background:var(--ok,#25d366);color:#fff;flex:none}
+.avwrap.st-aro-chat.visto{box-shadow:0 0 0 2px var(--panel),0 0 0 4px #aebac1}
 img.av{object-fit:cover}
 .canalpin{position:absolute;top:-2px;right:-3px;width:17px;height:17px;border-radius:50%;
   display:flex;align-items:center;justify-content:center;line-height:1;color:#fff;
@@ -692,6 +701,9 @@ img.av{object-fit:cover}
 .globo.primero{margin-top:9px}
 .globo.entra{align-self:flex-start;background:var(--in);border-radius:0 var(--r) var(--r) var(--r)}
 .globo.sale{align-self:flex-end;background:var(--out);border-radius:var(--r) 0 var(--r) var(--r)}
+/* v332: mismo cuerpo de letra que WhatsApp Web (14,2 px) y sombra también en oscuro: se leían tenues */
+.globo{font-size:14.2px;line-height:19px}
+:root[data-tema="oscuro"] .globo{box-shadow:0 1px .5px rgba(0,0,0,.45);color:#e9edef}
 .globo.seguido{border-radius:var(--r)}
 /* Selección múltiple para reenviar: una casilla dentro del globo, sin mover el layout
    sale/entra que ya reparte los mensajes a izquierda o derecha. */
@@ -4671,8 +4683,11 @@ function pintaCuentas(){
    (p. ej. de 10 pm a 7 am, pasando la medianoche) o «silenciar 1 hora». Dentro del «No molestar» no suena nada ni sale la notificacion del sistema; el globito dentro del
    CRM y el contador siguen. Las llamadas NO se silencian. Se guarda en este navegador (localStorage): es una comodidad de quien lo usa, no un dato del negocio. */
 const AVISOS_CLAVE = 'dcarela-avisos-v1';
-const AVISOS_BASE = { sonido:{ whatsapp_cloud:'suave', whatsapp_qr:'suave', instagram:'doble', facebook:'doble' }, noMolestar:{ activo:false, desde:'22:00', hasta:'07:00' }, hasta:0 };
-const TONOS_AVISO = { suave:[[880, .12]], doble:[[880, .1], [1175, .14]], campana:[[1319, .18], [988, .3]], ninguno:[] };
+const AVISOS_BASE = { sonido:{ whatsapp_cloud:'whatsapp', whatsapp_qr:'whatsapp', instagram:'doble', facebook:'doble' }, noMolestar:{ activo:false, desde:'22:00', hasta:'07:00' }, hasta:0 };
+// v332: el dueño lo oía muy bajo (seno a 0,18). Ahora la ganancia es 0,5 con forma triangular, que se oye más en altavoces de
+// portátil, y el tono «WhatsApp» (dos notas cortas que suben) es el predeterminado de los dos números.
+const TONOS_AVISO = { whatsapp:[[1046, .07], [1568, .12]], suave:[[880, .14]], doble:[[880, .1], [1175, .14]], campana:[[1319, .18], [988, .3]], ninguno:[] };
+const VOLUMEN_AVISO = .5;
 function leeAvisos(){
   let v = null;
   try { v = JSON.parse(localStorage.getItem(AVISOS_CLAVE) || 'null'); } catch (e) { v = null; }
@@ -4698,8 +4713,8 @@ function suenaTono(nombre){
     let t = ac.currentTime + .02;
     for (const [hz, dur] of notas) {
       const o = ac.createOscillator(), g = ac.createGain();
-      o.type = 'sine'; o.frequency.value = hz;
-      g.gain.setValueAtTime(.0001, t); g.gain.exponentialRampToValueAtTime(.18, t + .02); g.gain.exponentialRampToValueAtTime(.0001, t + dur);
+      o.type = 'triangle'; o.frequency.value = hz;
+      g.gain.setValueAtTime(.0001, t); g.gain.exponentialRampToValueAtTime(VOLUMEN_AVISO, t + .015); g.gain.exponentialRampToValueAtTime(.0001, t + dur);
       o.connect(g); g.connect(ac.destination); o.start(t); o.stop(t + dur + .02);
       t += dur + .03;
     }
@@ -4708,7 +4723,7 @@ function suenaTono(nombre){
 function pintaAvisosLocal(){
   const cont = $('avisosLocal'); if (!cont) return;
   const a = leeAvisos();
-  const opciones = (actual) => [['suave', 'Suave'], ['doble', 'Doble'], ['campana', 'Campana'], ['ninguno', 'Sin sonido']]
+  const opciones = (actual) => [['whatsapp', 'WhatsApp'], ['suave', 'Suave'], ['doble', 'Doble'], ['campana', 'Campana'], ['ninguno', 'Sin sonido']]
     .map(([id, t]) => '<option value="' + id + '"' + (id === actual ? ' selected' : '') + '>' + t + '</option>').join('');
   const silencio = avisosSilenciados();
   cont.innerHTML = '<div class="cx-ia" style="align-items:flex-start;flex-direction:column;gap:12px">'
@@ -4985,6 +5000,17 @@ function stGrupos(){
   }).sort((a, b) => String(b.ultimo.posted_at || '').localeCompare(String(a.ultimo.posted_at || '')));
 }
 
+// v332: quién tiene un estado vivo (para el aro de su foto en la lista de chats y la ficha, como en WhatsApp):
+// teléfono → true si le queda alguno sin ver.
+function stConEstado(){
+  const m = new Map();
+  try { for (const g of stGrupos()) m.set(g.tel, g.pendientes > 0); } catch {}
+  return m;
+}
+function aroEstado(c, conEstado){
+  const tel = soloDigitos(c?.wa_phone), hay = tel && conEstado.has(tel);
+  return hay ? ' st-aro-chat' + (conEstado.get(tel) ? '' : ' visto') + '" data-aro-estado="' + esc(tel) + '" title="Tiene estado: tócalo para verlo' : '';
+}
 // Los tuyos que siguen vivos: publicados y de hace menos de un día.
 function stMios(){
   const ahora = Date.now();
@@ -5047,7 +5073,7 @@ function pintaEstados(){
   let usados = 0;
   const tanda = lista => { const t = lista.slice(0, Math.max(0, limite - usados)); usados += t.length; return t; };
   const r = tanda(recientes), v = tanda(vistos);
-  cont.innerHTML = stFilaMia()
+  cont.innerHTML = stFilaMia() + stFilaTelefono()
     + (r.length ? '<div class="st-sec">Recientes</div>' + r.map(stFila).join('') : '')
     + (v.length ? '<div class="st-sec">Vistos</div>' + v.map(stFila).join('') : '')
     + (usados < grupos.length ? '<button class="st-vermas" data-stvermas>Mostrar más · ' + (grupos.length - usados) + '</button>' : '')
@@ -5060,6 +5086,31 @@ function pintaEstados(){
   stAdelanta(recientes.slice(0, ST_ADELANTO_LISTA).map(g => g.lista.find(e => !stVisto(e))).filter(Boolean));
 }
 
+// v332: los estados que el dueño publica desde el teléfono o WhatsApp Web no pasan por el CRM, pero el puente sí guarda
+// quién los vio (crm_status_views). Sin esta fila esas vistas no se veían en ningún sitio. Últimas 24 h, por estado.
+function stVistasTelefono(){
+  const mios = new Set((ST.mios || []).map(p => String(p.wamid || '')).filter(Boolean)), ahora = Date.now(), porEstado = [];
+  for (const [wamid, lista] of (ST.vistas || new Map())) {
+    if (!wamid || mios.has(wamid)) continue;
+    const recientes = lista.filter(x => ahora - Date.parse(String(x.viewed_at || '')) < ST_DIA_MS);
+    if (recientes.length) porEstado.push({ wamid, vistas: recientes.sort((a, b) => String(b.viewed_at || '').localeCompare(String(a.viewed_at || ''))) });
+  }
+  return porEstado.sort((a, b) => String(b.vistas[0].viewed_at).localeCompare(String(a.vistas[0].viewed_at)));
+}
+function stFilaTelefono(){
+  const e = stVistasTelefono(); if (!e.length) return '';
+  const total = new Set(e.flatMap(x => x.vistas.map(v => soloDigitos(v.wa_phone)))).size;
+  return '<button class="st-fila st-telefono" data-st-telefono="1"><span class="st-av-tel">' + ST_ICO.reloj + '</span><span class="st-texto"><b>Publicados desde el teléfono</b><i>'
+    + e.length + (e.length === 1 ? ' estado' : ' estados') + ' · visto por ' + total + (total === 1 ? ' persona' : ' personas') + '</i></span></button>';
+}
+function stHojaTelefono(){
+  const e = stVistasTelefono();
+  abreModal('<div class="mtapa"><b>Quién vio tus estados del teléfono</b><button class="cerrarm" data-cerrar>×</button></div>'
+    + '<p class="bajada">Estados publicados desde el teléfono o WhatsApp Web (no pasan por el CRM, por eso no hay vista previa). Últimas 24 horas.</p>'
+    + e.map((x, i) => '<div class="st-sec">Estado ' + (e.length - i) + ' · ' + x.vistas.length + ' vistas</div>' + x.vistas.map(v => { const tel = soloDigitos(v.wa_phone);
+      return '<div class="st-fila">' + stAvatar(tel, null) + '<span class="st-texto"><b>' + esc(stNombre(tel, null)) + '</b><i>' + esc(stCuando(v.viewed_at)) + '</i></span></div>'; }).join('')).join(''));
+  resuelveAvatares();
+}
 // Los cambios llegan en ráfagas (un snapshot por documento que se actualiza): se juntan en un
 // solo pintado en vez de rehacer la lista por cada uno.
 let ST_PINTA_T = 0;
@@ -5138,6 +5189,7 @@ async function stLeeLista(){
     ST.feed = filasDeEstados(await r.json(), ST.feed);
     ST.listaLigera = true; ST.leidoEn = Date.now();
     pintaEstadosPronto();
+    if (typeof pintaChats === 'function') pintaChats();
   } catch (err) {
     console.warn('estados de contactos', err?.message || err);
     // Si la lectura ligera no se puede, se cae a la escucha completa de siempre: mas lenta, pero funciona.
@@ -5196,6 +5248,7 @@ function escuchaVistasEstados(){
     }
     ST.vistas = m;
     stPintaAbajo();
+    pintaEstadosPronto();
   }, err => console.warn('vistas de estados', err?.code || err));
 }
 
@@ -5413,6 +5466,7 @@ function stgEventos(g){
 
 function montaEstados(){
   escuchaEstados();
+  escuchaVistasEstados();
   // Al volver a la vista la lista se pone al dia (hace mas de 15 s que no se lee).
   if (ST.leidoEn && Date.now() - ST.leidoEn > 15000) stLeeLista();
   if (montadas.has('estados')) { pintaEstados(); if ($('vista-estados')?.classList.contains('stg-on')) stgCarga(false); return; }
@@ -5452,6 +5506,7 @@ function montaEstados(){
     const mio = ev.target.closest('[data-stmio]');
     if (mio) return mio.dataset.stmio === 'ver' ? stAbreMios() : stCompositor('texto');
     if (ev.target.closest('[data-stvermas]')) { ST.mostrar = (ST.mostrar || ST_TANDA) + ST_TANDA; return pintaEstados(); }
+    if (ev.target.closest('[data-st-telefono]')) return stHojaTelefono();
     const fila = ev.target.closest('[data-sttel]');
     if (fila) stAbreContacto(fila.dataset.sttel);
   });
@@ -6146,7 +6201,13 @@ function montaConversaciones(){
     filtro = b.dataset.filtro; pintaChats();
   });
   arrastraFiltros($('filtros'));
+  // v332: los aros de estado de la lista necesitan saber quién tiene estado, sin entrar en Estados: lectura ligera al
+  // empezar y cada 5 minutos (la misma consulta de la vista Estados; se repinta la lista al llegar).
+  setTimeout(() => { if (!ST.escuchando) stLeeLista(); }, 4000);
+  setInterval(() => { if (!ST.escuchando && !document.hidden) stLeeLista(); }, 300000);
   $('chats').addEventListener('click', ev => {
+    const aro = ev.target.closest('[data-aro-estado]');
+    if (aro) { ev.stopPropagation(); const tel = aro.dataset.aroEstado; ve('estados'); setTimeout(() => stAbreContacto(tel), 350); return; }
     const pin = ev.target.closest('[data-chat-pin]');
     if (pin) {
       ev.stopPropagation();
@@ -6682,6 +6743,44 @@ function saltaAlMensaje(id){
   setTimeout(() => globo.classList.remove('resaltado'), 1400);
 }
 
+// ENTREGA de la sesión (26/10/2026, firebase-functions/src/entregas-core.js): digitales a nombre del dueño con plazo de 3 días → producción con
+// los colaboradores si lleva impresos o cuadros → «Trabajo entregado». La encuesta no sale hasta entonces.
+const ENTREGA_NOMBRES = { digitales_pendientes: 'Fotos digitales pendientes', en_produccion: 'En producción (impresos / cuadros)', listo: 'Lista para entregar', entregado: 'Trabajo entregado' };
+function pintaEntrega(c){
+  const caja = $('entregaCaja'); if (!caja) return;
+  const e = c?.entrega; if (!e || !ENTREGA_NOMBRES[e.estado]) { caja.hidden = true; caja.innerHTML = ''; return; }
+  const vence = Date.parse(e.vence_digitales_at || ''), vencida = e.estado === 'digitales_pendientes' && vence < Date.now();
+  const quedan = Number.isFinite(vence) ? Math.ceil((vence - Date.now()) / 86400000) : null;
+  const yo = String(auth?.currentUser?.email || '').toLowerCase(), esColab = (e.colaboradores || []).includes(yo), jefe = ['admin', 'supervisor'].includes(ROL_ACTUAL);
+  const boton = e.estado === 'digitales_pendientes' ? (ROL_ACTUAL === 'admin' ? '<button type="button" class="btn-solido" data-entrega="digitales">Fotos digitales entregadas</button>' : '<small>Lo confirma el dueño.</small>')
+    : e.estado === 'en_produccion' ? (jefe || esColab ? '<button type="button" class="btn-solido" data-entrega="produccion">Producción completada</button>' : '<small>Lo marca un colaborador designado.</small>')
+    : e.estado === 'listo' ? (jefe || esColab ? '<button type="button" class="btn-solido" data-entrega="entregado">Trabajo entregado</button>' : '')
+    : '<small>Entregado el ' + esc(fechaLocal(e.entregado_at || '').replace('T', ' ')) + '</small>';
+  caja.hidden = false;
+  caja.className = 'entrega-caja est-' + e.estado + (vencida ? ' vencida' : '');
+  caja.innerHTML = '<b>Entrega · ' + esc(ENTREGA_NOMBRES[e.estado]) + '</b>'
+    + (e.estado === 'digitales_pendientes' ? '<span>' + (vencida ? 'Venció el plazo de 3 días' : quedan != null ? 'Plazo: ' + (quedan <= 1 ? 'hoy o mañana' : quedan + ' días') : '') + ' · a tu nombre</span>' : '')
+    + (e.estado === 'en_produccion' ? '<span>Con ' + esc((e.colaboradores || []).join(', ') || 'el equipo') + (ROL_ACTUAL === 'admin' ? ' · <button type="button" class="btn-linea cmb-chico" data-entrega-colabs="1">Colaboradores</button>' : '') + '</span>' : '')
+    + (e.estado !== 'entregado' ? '<span class="entrega-nota">La encuesta de satisfacción espera a la entrega.</span>' : '')
+    + boton;
+}
+async function avanzaEntrega(paso){
+  const c = sel; if (!c) return;
+  const textos = { digitales: '¿Ya entregaste las fotos digitales de ' + nombreDe(c) + '?' + (c.entrega?.requiere_produccion ? ' Pasará a producción con los colaboradores.' : ''), produccion: '¿Los impresos / cuadros de ' + nombreDe(c) + ' están terminados?', entregado: '¿Se entregó todo el trabajo a ' + nombreDe(c) + '? Después de esto puede salir la encuesta.' };
+  if (!await confirmaAqui(textos[paso])) return;
+  const r = await llama({ action: 'entregaAvanza', conversation_id: c.id || c._id, paso });
+  if (!r?.ok) return avisa('No se pudo marcar', r?.error || '');
+  c.entrega = r.entrega; pintaEntrega(c); pintaChats();
+  avisa('Entrega', ENTREGA_NOMBRES[r.entrega.estado]);
+}
+async function editaColaboradores(){
+  const r0 = await llama({ action: 'entregasColaboradoresLee' });
+  const actual = (r0?.colaboradores || []).join(', ');
+  abreModal('<div class="mtapa"><b>Colaboradores de producción</b><button class="cerrarm" data-cerrar>×</button></div><div class="mcuerpo"><p class="bajada">Correos del equipo que reciben las entregas con impresos o cuadros cuando confirmas las fotos digitales. Separados por comas.</p>'
+    + '<input id="entColabs" style="width:100%" value="' + esc(actual) + '" placeholder="ana@ejemplo.com, luis@ejemplo.com"></div><div class="mpatas"><button class="btn-linea" data-cerrar>Cancelar</button><button class="btn-solido" id="entColabsGuarda">Guardar</button></div>');
+  $('modal').querySelectorAll('[data-cerrar]').forEach(b => { b.onclick = cierraModal; });
+  $('entColabsGuarda').onclick = async () => { const r = await llama({ action: 'entregasColaboradores', lista: $('entColabs').value }); if (!r?.ok) return avisa('No se guardó', r?.error || ''); cierraModal(); avisa('Colaboradores', (r.colaboradores || []).join(', ') || 'Ninguno'); };
+}
 function pintaChats(){
   const cont = $('chats'); if (!cont) return;
   // Las cuentas cuentan lo MISMO que se ve. Un filtro que dice 12 y abre 8 se lee como
@@ -6769,6 +6868,7 @@ function pintaChats(){
       + ($('buscaChat')?.value.trim() ? 'Ninguna conversación coincide.' : 'No hay conversaciones con este filtro.') + '</div>';
     return;
   }
+  const conEstado = stConEstado();
   cont.innerHTML = arriba + filas.map(c => {
     const n = nombreDe(c), sinLeer = Number(c.unread || 0) > 0;
     const marcas = [];
@@ -6783,7 +6883,7 @@ function pintaChats(){
     return '<div class="chat' + (sel && sel._id === c._id ? ' on' : '') + (sinLeer ? ' sinleer' : '')
       + '" data-conv="' + esc(c._id) + '">'
       + '<button class="marcar' + (LOTE.has(c._id) ? ' on' : '') + '" aria-label="Seleccionar"></button>'
-      + '<div class="avwrap">' + avatarDe(c, n)
+      + '<div class="avwrap' + aroEstado(c, conEstado) + '">' + avatarDe(c, n)
       +   '<span class="canalpin" title="' + esc(canal.nombre) + '" '
       +     'style="background:' + canal.color + '">' + canal.logo + '</span></div>'
       + '<div class="cuerpo">'
@@ -7059,6 +7159,7 @@ function abre(c){
     +     '<div class="etiquetas-menu"><b>Etiquetas del contacto</b><div class="etiquetas-lista" id="chatEtiquetasLista"></div>'
     +       '<input id="chatEtiquetaNueva" maxlength="40" placeholder="Añadir etiqueta y Enter" aria-label="Nueva etiqueta"></div></details>'
     +   '<button id="btnSesionRealizada" class="sesion-realizada" type="button">Confirmar sesión realizada</button>'
+    +   '<div class="entrega-caja" id="entregaCaja" hidden></div>'
     + '</div>'
     + '<div class="barra-busca" id="barraBusca" hidden><input id="busChat" placeholder="Buscar en esta conversación…" autocomplete="off">'
     +   '<span id="busCuenta" title="Se busca en los mensajes cargados de este chat"></span><button id="busPrev" aria-label="Anterior">↑</button><button id="busSig" aria-label="Siguiente">↓</button><button id="busX" aria-label="Cerrar búsqueda">×</button></div>'
@@ -7261,6 +7362,7 @@ function pintaFlujoChat(){
     boton.title = realizada && sel.attended_at ? 'Confirmada el ' + fechaLocal(sel.attended_at).replace('T', ' ') :
       'Marca la sesión como realizada y mueve la etapa a Cliente. No envía mensajes.';
   }
+  if (typeof pintaEntrega === 'function') pintaEntrega(sel);
   const menu = $('chatEtiquetas');
   // Un snapshot de mensajes puede llegar mientras se escribe una etiqueta: no se borra el texto.
   if (menu?.contains(document.activeElement)) return;
@@ -7535,6 +7637,8 @@ function cableaChat(c){
     nuevaEtiqueta.value = '';
     guardaEtiquetasChat([...etiquetasVisiblesDe(sel), etiqueta]);
   };
+  const cajaEntrega = $('entregaCaja');
+  if (cajaEntrega) cajaEntrega.onclick = ev => { const b = ev.target.closest('[data-entrega]'); if (b) return avanzaEntrega(b.dataset.entrega); if (ev.target.closest('[data-entrega-colabs]')) return editaColaboradores(); };
   const sesionRealizada = $('btnSesionRealizada');
   if (sesionRealizada) sesionRealizada.onclick = async () => {
     const actual = sel;
@@ -7555,6 +7659,7 @@ function cableaChat(c){
     actual.session_status = r.session_status;
     actual.attended_at = r.attended_at;
     actual.lifecycle_stage = r.lifecycle_stage;
+    if (r.entrega) actual.entrega = r.entrega;
     if (sel === actual) {
       pintaFlujoChat(); refrescaFichaDeFlujo(); pintaChats(); pintaCuentas();
       if (typeof pintaHoy === 'function' && $('hoyCont')) pintaHoy();
@@ -23749,6 +23854,14 @@ function pintaRedes(cuerpo){
         + '<div class="cont-acc" style="margin-top:8px">' + (t.app_configurada ? '<button type="button" class="btn-solido" data-ctiktokconecta="1">' + (t.conectado ? 'Volver a conectar TikTok' : 'Conectar TikTok') + '</button>' : '')
         + (t.conectado ? '<button type="button" class="btn-linea" data-ctiktokquita="1">Desconectar</button>' : '') + '</div>'
         + (t.ultimo_error ? '<div class="cont-aviso">' + esc(t.ultimo_error) + '</div>' : '') : '')
+    // v332: guía corta para conectar TikTok (pedido del dueño 26/10).
+    + (t.conectado ? '' : '<details class="guia-tiktok"' + (t.app_configurada ? '' : ' open') + '><summary>Guía para conectar TikTok (5 pasos, unos 10 minutos)</summary><ol>'
+      + '<li>Entra en <b>developers.tiktok.com</b> con la cuenta de TikTok del estudio → <b>Manage apps</b> → <b>Connect an app</b>. Ponle de nombre «D’ Carela CRM».</li>'
+      + '<li>En la app, pulsa <b>Add products</b> y añade <b>Login Kit</b> y <b>Content Posting API</b>. En Content Posting API deja activado <b>Upload</b> (borradores).</li>'
+      + '<li>En <b>Login Kit</b> pega esta dirección como <b>Redirect URI</b>: <code>' + esc(t.vuelta || '(aparece aquí cuando abras esta pestaña con sesión de administrador)') + '</code>. Permisos: <b>user.info.basic</b> y <b>video.upload</b>.</li>'
+      + '<li>Mientras TikTok revisa la app (unos días), entra en <b>Sandbox</b> → <b>Target users</b> y añade tu propia cuenta: así ya funciona contigo.</li>'
+      + '<li>Copia el <b>Client key</b> y el <b>Client secret</b> de la app, pégalos arriba, pulsa <b>Guardar datos de la app</b> y después <b>Conectar TikTok</b>. Acepta en TikTok y vuelve aquí: debe decir «Conectado».</li>'
+      + '</ol><p class="cont-sub">Lo que sale: cada flyer 9:16 llega como <b>borrador</b> a la bandeja de TikTok; le pones la música y lo publicas desde el teléfono.</p></details>')
     + fila('Marketplace y grupos de Facebook', no('Lo publicas tú'), 'Facebook no tiene una forma oficial de publicar en Marketplace ni en grupos desde un programa (Marketplace nunca tuvo API y Meta cerró la de grupos en 2024). '
       + 'Por eso el agente arma el «paquete del día» (flyer + texto) y tú lo publicas en dos toques; lo hacemos así para no arriesgar la cuenta.');
 }
