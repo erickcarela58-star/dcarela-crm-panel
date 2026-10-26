@@ -1,7 +1,7 @@
 {
-  "version": "2026-10-25-crm-release-v327",
+  "version": "2026-10-26-crm-release-v328",
   "channel": "crm",
-  "released_at": "2026-10-26T00:55:57Z",
-  "summary": "Editor de flyers: guías inteligentes al arrastrar fotos del mosaico (se imantan a bordes y centros; Alt arrastra libre). Incluye el lienzo editable (v326), el mosaico Smart Albums (v325) y v321 a v324.",
+  "released_at": "2026-10-26T04:08:25Z",
+  "summary": "Catálogos por categoría en Productos / Combos: PDF con botón de WhatsApp por combo (La Central o Plaza Artesanal), flyer de un combo y versión web animada; fotos recientes del CRM y bodas con los combos de la web. Editor de flyers: los botones de eliminar funcionan con el mosaico sin tocar y la papelera ya no queda fuera del lienzo.",
   "requiere_puente": "2026-10-18-diagnostico-citas-v53"
 }
