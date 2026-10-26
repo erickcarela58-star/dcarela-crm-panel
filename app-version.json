@@ -1,7 +1,7 @@
 {
-  "version": "2026-10-25-crm-release-v326",
+  "version": "2026-10-25-crm-release-v327",
   "channel": "crm",
-  "released_at": "2026-10-26T00:49:26Z",
-  "summary": "Editor de flyers: el lienzo del mosaico es editable por defecto para administración (arrastrar, redimensionar y girar cada foto). Incluye el mosaico Smart Albums (v325) y v321 a v324.",
+  "released_at": "2026-10-26T00:55:57Z",
+  "summary": "Editor de flyers: guías inteligentes al arrastrar fotos del mosaico (se imantan a bordes y centros; Alt arrastra libre). Incluye el lienzo editable (v326), el mosaico Smart Albums (v325) y v321 a v324.",
   "requiere_puente": "2026-10-18-diagnostico-citas-v53"
 }
