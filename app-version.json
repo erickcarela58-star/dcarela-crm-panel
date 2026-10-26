@@ -1,7 +1,7 @@
 {
-  "version": "2026-10-26-crm-release-v333",
+  "version": "2026-10-26-crm-release-v334",
   "channel": "crm",
-  "released_at": "2026-10-26T12:39:52Z",
-  "summary": "Entregas después de la sesión: al confirmar la sesión se abre la entrega de las fotos digitales a nombre del dueño con plazo de 3 días; con impresos o cuadros pasa a los colaboradores designados y luego se habilita «Trabajo entregado». La encuesta de satisfacción espera a la entrega. Estados: aro verde en la foto de quien tiene estado y quién vio tus estados publicados desde el teléfono. Guía para conectar TikTok. Chat: letra y sombra como WhatsApp Web y sonido de mensaje más fuerte (tono WhatsApp).",
+  "released_at": "2026-10-26T12:53:45Z",
+  "summary": "Cobros automáticos no invasivos en Clientes de caja: APAGADOS hasta que el dueño los encienda; vista previa de a quién y qué se le escribiría (solo deudores con compra en los últimos 4 meses, máximo 3 recordatorios amables separados 7 días). Incluye lo de v333: entregas después de la sesión, aros de estados, vistas de estados del teléfono, guía de TikTok y chat más legible.",
   "requiere_puente": "2026-10-18-diagnostico-citas-v53"
 }
