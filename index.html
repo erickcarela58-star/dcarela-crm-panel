@@ -22141,6 +22141,15 @@ function geometriaCollageV234(foto, nat, W, H){
   const vl = Math.max(0, Math.round(x)), vt = Math.max(0, Math.round(y));
   return { destino, ventana: { left: vl, top: vt, width: Math.max(1, Math.min(ancho - vl, Math.round(vw))), height: Math.max(1, Math.min(alto - vt, Math.round(vh))) } };
 }
+// El imán de las guías: de los bordes y el centro de la caja (izquierda, centro, derecha; arriba, medio, abajo), el que quede
+// más cerca de una línea objetivo a menos de `umbral` se pega a ella. Devuelve el desplazamiento y las líneas a dibujar. Puro.
+function imanCollageV255(caja, xs, ys, umbral){
+  const eje = (pos, objetivos) => { let mejor = null;
+    for (const p of pos) for (const t of objetivos) { const dlt = t - p; if (Math.abs(dlt) <= umbral && (!mejor || Math.abs(dlt) < Math.abs(mejor.dlt))) mejor = { dlt, t }; }
+    return mejor; };
+  const mx = eje([caja.x, caja.x + caja.w / 2, caja.x + caja.w], xs), my = eje([caja.y, caja.y + caja.h / 2, caja.y + caja.h], ys);
+  return { dx: mx ? mx.dlt : 0, dy: my ? my.dlt : 0, guiasX: mx ? [mx.t] : [], guiasY: my ? [my.t] : [] };
+}
 // Lienzo local del collage. `op`: leer() → collage del formato actual; escribir(collage, {fin}) lo guarda en el
 // formulario (fin=true: entra en el historial y pide la vista V7); imagenDe(id) → URL web de la original (solo se
 // muestra: nada se exporta desde este lienzo); alElegir(slot). Editar no hace ninguna petición de red.
@@ -22174,6 +22183,18 @@ function editorCollageV234(vista, op){
     ctx.beginPath(); ctx.moveTo(r, 0); ctx.lineTo(w - r, 0); ctx.arcTo(w, 0, w, r, r); ctx.lineTo(w, h - r); ctx.arcTo(w, h, w - r, h, r);
     ctx.lineTo(r, h); ctx.arcTo(0, h, 0, h - r, r); ctx.lineTo(0, r); ctx.arcTo(0, 0, r, 0, r); ctx.closePath();
   }
+  function quitaGuiasCollage(){ if (!capaFotos) return; capaFotos.find('.guia-collage').forEach((n) => n.destroy()); capaFotos.batchDraw(); }
+  function guiasCollage(g, w, h, d, libre){
+    quitaGuiasCollage(); if (libre) return;
+    const xs = [0, d.w / 2, d.w], ys = [0, d.h / 2, d.h];
+    capaFotos.find('.foto-collage').forEach((o) => { if (o === g) return; const r = o.getClientRect({ relativeTo: capaFotos, skipShadow: true });
+      xs.push(r.x, r.x + r.width / 2, r.x + r.width); ys.push(r.y, r.y + r.height / 2, r.y + r.height); });
+    const im = imanCollageV255({ x: g.x() - w / 2, y: g.y() - h / 2, w, h }, xs, ys, 6);
+    g.x(g.x() + im.dx); g.y(g.y() + im.dy);
+    for (const x of im.guiasX) capaFotos.add(new K.Line({ name: 'guia-collage', points: [x, 0, x, d.h], stroke: '#ff2d8a', strokeWidth: 1, dash: [4, 4], listening: false }));
+    for (const y of im.guiasY) capaFotos.add(new K.Line({ name: 'guia-collage', points: [0, y, d.w, y], stroke: '#ff2d8a', strokeWidth: 1, dash: [4, 4], listening: false }));
+    capaFotos.batchDraw();
+  }
   function nodoFoto(f, d){
     const { left, top, width: w, height: h } = geometriaCollageV234({ ...f, encuadre: null }, null, d.w, d.h).destino;
     const radio = f.radio ? Math.min(w / 2, h / 2, w * f.radio / 100) : 0;
@@ -22191,7 +22212,9 @@ function editorCollageV234(vista, op){
     }
     g.add(new K.Rect({ width: w, height: h, fill: 'rgba(0,0,0,0)', stroke: sel === f.slot ? '#4e8cff' : 'rgba(255,255,255,.6)', strokeWidth: sel === f.slot ? 2 : 1, dash: f.bloqueada ? [4, 4] : [6, 4] }));
     g.on('mousedown touchstart', () => elige(f.slot));
-    g.on('dragend', () => cambia(f.slot, { marco: { ...f.marco, x: (g.x() - w / 2) / d.w * 100, y: (g.y() - h / 2) / d.h * 100 } }, true));
+    // Guías inteligentes (propuesta 14 §4.5): al arrastrar se imanta a bordes y centro del lienzo y de las demás fotos. Alt = libre.
+    g.on('dragmove', (ev) => guiasCollage(g, w, h, d, ev?.evt?.altKey));
+    g.on('dragend', () => { quitaGuiasCollage(); cambia(f.slot, { marco: { ...f.marco, x: (g.x() - w / 2) / d.w * 100, y: (g.y() - h / 2) / d.h * 100 } }, true); });
     g.on('transformend', () => {
       const nw = w * g.scaleX(), nh = h * g.scaleY();
       cambia(f.slot, { marco: { x: (g.x() - nw / 2) / d.w * 100, y: (g.y() - nh / 2) / d.h * 100, w: nw / d.w * 100, h: nh / d.h * 100 }, rotacion: g.rotation() }, true);
