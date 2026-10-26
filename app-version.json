@@ -1,7 +1,7 @@
 {
-  "version": "2026-10-26-crm-release-v334",
+  "version": "2026-10-26-crm-release-v339",
   "channel": "crm",
-  "released_at": "2026-10-26T12:53:45Z",
-  "summary": "Cobros automáticos no invasivos en Clientes de caja: APAGADOS hasta que el dueño los encienda; vista previa de a quién y qué se le escribiría (solo deudores con compra en los últimos 4 meses, máximo 3 recordatorios amables separados 7 días). Incluye lo de v333: entregas después de la sesión, aros de estados, vistas de estados del teléfono, guía de TikTok y chat más legible.",
+  "released_at": "2026-10-26T17:34:24Z",
+  "summary": "Cotizar: artículos comunes (descripción, cantidad y precio) y descuento sobre la suma para admin/supervisor; revisión por partidas (v336). Entregas: colaboradores por TELÉFONO, aviso por WhatsApp con código y cierre al responder «LISTO código». Bot: atiende los chats NUEVOS desde hoy. Campañas: «Promoción de la semana» con los combos reales, solo como propuesta que el dueño prepara y confirma; Preparar seguro (v337).",
   "requiere_puente": "2026-10-18-diagnostico-citas-v53"
 }
