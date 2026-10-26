@@ -4936,7 +4936,7 @@ const ST_FUENTES = [
 const ST_DURACION_MS = 6000;
 const ST_DIA_MS = 24 * 3600000;
 
-const ST = { feed: [], vistas: new Map(), mios: [], vistos: new Set(), escuchando: false,
+const ST = { feed: [], vistas: new Map(), mios: [], borrados: new Set(), vistos: new Set(), escuchando: false,
   sel: '', visor: null, comp: null };
 // La audiencia de fotografía elegida en el modal, para preseleccionarla al abrir el compositor.
 // Aparte de ST porque stCompositor la lee UNA vez y la borra; no es parte del estado del Estado.
@@ -5021,7 +5021,7 @@ function aroEstado(c, conEstado){
 // Los tuyos que siguen vivos: publicados y de hace menos de un día.
 function stMios(){
   const ahora = Date.now();
-  return ST.mios.filter(p => p.status === 'sent' && ahora - Date.parse(String(p.sent_at || '')) < ST_DIA_MS)
+  return ST.mios.filter(p => p.status === 'sent' && !p.deleted_at && !p.delete_requested_at && !ST.borrados.has(p.wamid) && ahora - Date.parse(String(p.sent_at || '')) < ST_DIA_MS)
     .sort((a, b) => String(a.sent_at || '').localeCompare(String(b.sent_at || '')));
 }
 
@@ -5098,7 +5098,7 @@ function pintaEstados(){
 function stVistasTelefono(){
   const mios = new Set((ST.mios || []).map(p => String(p.wamid || '')).filter(Boolean)), ahora = Date.now(), porEstado = [];
   for (const [wamid, lista] of (ST.vistas || new Map())) {
-    if (!wamid || mios.has(wamid)) continue;
+    if (!wamid || mios.has(wamid) || ST.borrados.has(wamid)) continue;
     const recientes = lista.filter(x => ahora - Date.parse(String(x.viewed_at || '')) < ST_DIA_MS);
     if (recientes.length) porEstado.push({ wamid, vistas: recientes.sort((a, b) => String(b.viewed_at || '').localeCompare(String(a.viewed_at || ''))) });
   }
@@ -5114,8 +5114,9 @@ function stHojaTelefono(){
   const e = stVistasTelefono();
   abreModal('<div class="mtapa"><b>Quién vio tus estados del teléfono</b><button class="cerrarm" data-cerrar>×</button></div>'
     + '<div class="mcuerpo"><p class="bajada">Estados publicados desde el teléfono o WhatsApp Web (no pasan por el CRM, por eso no hay vista previa). Últimas 24 horas.</p>'
-    + e.map((x, i) => '<div class="st-sec">Estado ' + (e.length - i) + ' · ' + x.vistas.length + ' vistas</div>' + x.vistas.map(v => { const tel = soloDigitos(v.wa_phone);
+    + e.map((x, i) => '<div class="st-sec">Estado ' + (e.length - i) + ' · ' + x.vistas.length + ' vistas <button type="button" class="btn-linea" data-st-borra="' + esc(x.wamid) + '" style="float:right;padding:2px 10px">Eliminar</button></div>' + x.vistas.map(v => { const tel = soloDigitos(v.wa_phone);
       return '<div class="st-fila">' + stAvatar(tel, null) + '<span class="st-texto"><b>' + esc(stNombre(tel, null)) + '</b><i>' + esc(stCuando(v.viewed_at)) + '</i></span></div>'; }).join('')).join('') + '</div>');
+  $('modal').querySelectorAll('[data-st-borra]').forEach(b => { b.onclick = async () => { cierraModal(); await stBorraEstado(b.dataset.stBorra); }; });
   resuelveAvatares();
 }
 // Los cambios llegan en ráfagas (un snapshot por documento que se actualiza): se juntan en un
@@ -5306,6 +5307,7 @@ async function stgCarga(forzar){
   STG.cargando = false; STG.leidoEn = Date.now();
   STG.error = pub.ok ? '' : (pub.error || 'No se pudo leer el historial de estados.');
   STG.publicados = pub.ok ? (pub.data || []) : [];
+  for (const w of (pub.ok && pub.borrados) || []) ST.borrados.add(w);
   STG.errorProg = cont.ok ? '' : (cont.error || 'No se pudo leer el planificador.');
   STG.programados = cont.ok ? (cont.items || []).filter(x => x.canal === 'whatsapp_estado' && !['publicada', 'rechazada'].includes(x.estado)) : [];
   stgPinta();
@@ -5626,6 +5628,18 @@ function stAbreContacto(tel){
   stVisor({ modo: 'ajenos', grupos: orden, gi, i: i < 0 ? 0 : i });
 }
 
+// Borrar un estado propio, del CRM o del teléfono (dueño 26/10/2026: «en los estados no los puedo eliminar desde el mismo panel»).
+// Lo retira el puente con un «eliminar» de WhatsApp; aquí se oculta en cuanto el servidor lo acepta.
+async function stBorraEstado(wamid){
+  if (!wamid) return avisa('No se puede borrar', 'Ese estado todavía no tiene identificador de WhatsApp.');
+  if (!await confirmaAqui('¿Eliminar este estado para todos? WhatsApp lo retira también de quienes ya lo tienen.', { si: 'Eliminar' })) return;
+  const r = await llama({ action: 'statusDelete', wamid });
+  if (!r?.ok) return avisa('No se borró el estado', r?.error || '');
+  ST.borrados.add(wamid);
+  for (const p of ST.mios || []) if (p.wamid === wamid) p.delete_requested_at = new Date().toISOString();
+  pintaEstadosPronto();
+  avisa('Estado eliminado', 'WhatsApp lo retira de ' + (r.destinatarios || 0) + ' contacto(s).');
+}
 function stAbreMios(){
   const mios = stMios();
   if (!mios.length) return stCompositor('texto');
@@ -5648,6 +5662,7 @@ function stVisor(estado){
     + '<div class="st-col"><div class="st-barras" id="stBarras"></div>'
     +   '<div class="st-quien"><button class="st-ctl" data-st="cerrar" aria-label="Volver">' + ST_ICO.atras + '</button>'
     +     '<span id="stQuienAv"></span><span class="st-quien-t"><b id="stQuienN"></b><i id="stQuienT"></i></span>'
+    +     '<button class="st-ctl" data-st="borrar" id="stBorrar" hidden aria-label="Eliminar este estado" title="Eliminar este estado">✕ Eliminar</button>'
     +     '<button class="st-ctl" data-st="pausa" id="stPausa" aria-label="Pausar">' + ST_ICO.pausa + '</button></div>'
     +   '<div class="st-escena" id="stEscena"></div>'
     +   '<div class="st-pie" id="stPie"></div>'
@@ -5669,6 +5684,7 @@ function stVisor(estado){
     else if (q === 'enviar') stResponde();
     else if (q === 'vistas') stHoja(true);
     else if (q === 'cierrahoja') stHoja(false);
+    else if (q === 'borrar') { const e = stActual(); stCierraVisor(true); void stBorraEstado(e && e.wamid); }
   });
   document.addEventListener('keydown', stTeclas);
   stMuestra();
@@ -5704,6 +5720,7 @@ function stMuestra(){
   $('stBarras').innerHTML = lista.map((x, k) => '<span class="st-b"><i style="width:' + (k < v.i ? 100 : 0) + '%"></i></span>').join('');
   $('stQuienAv').innerHTML = mio ? stAvatarPropio() : stAvatar(v.grupos[v.gi].tel, e);
   $('stQuienN').textContent = mio ? 'Mi estado' : stNombre(v.grupos[v.gi].tel, e);
+  $('stBorrar').hidden = !(mio && e.wamid && ['admin', 'supervisor'].includes(ROL_ACTUAL));
   $('stQuienT').textContent = stCuando(mio ? e.sent_at : e.posted_at);
   const escena = $('stEscena');
   const pie = $('stPie');
@@ -6788,7 +6805,10 @@ async function avanzaEntrega(paso){
 async function editaColaboradores(){
   const r0 = await llama({ action: 'entregasColaboradoresLee' });
   const actual = (r0?.colaboradores || []).map(telefonoLegible).join(', ');
-  abreModal('<div class="mtapa"><b>Colaboradores de producción</b><button class="cerrarm" data-cerrar>×</button></div><div class="mcuerpo"><p class="bajada">Teléfonos del equipo que reciben por WhatsApp la tarea de los impresos o cuadros cuando confirmas las fotos digitales. Cuando terminan, responden «LISTO» y el código. Separados por comas.</p>'
+  // Sin lista propia se usa el equipo de Configuración > Tareas (menos el dueño).
+  const equipo = (r0?.equipo || []).map(p => p.nombre + ' (' + telefonoLegible(p.telefono) + ')').join(', ');
+  const notaEquipo = equipo ? '<p class="hint">Si lo dejas vacío, la reciben las personas de <b>Tareas</b>: ' + esc(equipo) + '.</p>' : '<p class="hint">Si lo dejas vacío, se usan las personas con teléfono de <b>Configuración › Tareas</b>.</p>';
+  abreModal('<div class="mtapa"><b>Colaboradores de producción</b><button class="cerrarm" data-cerrar>×</button></div><div class="mcuerpo"><p class="bajada">Teléfonos del equipo que reciben por WhatsApp la tarea de los impresos o cuadros cuando confirmas las fotos digitales. Cuando terminan, responden «LISTO» y el código. Separados por comas.</p>' + notaEquipo
     + '<input id="entColabs" style="width:100%" value="' + esc(actual) + '" placeholder="809-555-1234, 829-555-6789"></div><div class="mpatas"><button class="btn-linea" data-cerrar>Cancelar</button><button class="btn-solido" id="entColabsGuarda">Guardar</button></div>');
   $('modal').querySelectorAll('[data-cerrar]').forEach(b => { b.onclick = cierraModal; });
   $('entColabsGuarda').onclick = async () => { const r = await llama({ action: 'entregasColaboradores', lista: $('entColabs').value }); if (!r?.ok) return avisa('No se guardó', r?.error || ''); cierraModal(); avisa('Colaboradores', (r.colaboradores || []).map(telefonoLegible).join(', ') || 'Ninguno'); };
