@@ -22094,7 +22094,9 @@ function capaEnVivoV230(vista, form){
 const EDITOR_COLLAGE_FLAG = 'editorCollageV234';
 function editorCollageActivo(){
   if (typeof ROL_ACTUAL !== 'undefined' && ROL_ACTUAL !== 'admin') return false;
-  try { return localStorage.getItem(EDITOR_COLLAGE_FLAG) === '1'; } catch { return false; }
+  // 25/10/2026 (propuesta 14 §4.5: «el lienzo debe ser realmente editable»): encendido por defecto para administración;
+  // solo se apaga si alguien desmarca «Mosaico editable» (queda '0' en este navegador).
+  try { return localStorage.getItem(EDITOR_COLLAGE_FLAG) !== '0'; } catch { return true; }
 }
 function fijaEditorCollage(on){ try { localStorage.setItem(EDITOR_COLLAGE_FLAG, on ? '1' : '0'); } catch {} }
 // Paneles del mosaico V7: copia de panelesMosaico() (firebase-functions/src/contenido-plantillas-v6.js); una prueba las compara.
