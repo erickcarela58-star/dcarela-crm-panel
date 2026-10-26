@@ -5108,9 +5108,9 @@ function stFilaTelefono(){
 function stHojaTelefono(){
   const e = stVistasTelefono();
   abreModal('<div class="mtapa"><b>Quién vio tus estados del teléfono</b><button class="cerrarm" data-cerrar>×</button></div>'
-    + '<p class="bajada">Estados publicados desde el teléfono o WhatsApp Web (no pasan por el CRM, por eso no hay vista previa). Últimas 24 horas.</p>'
+    + '<div class="mcuerpo"><p class="bajada">Estados publicados desde el teléfono o WhatsApp Web (no pasan por el CRM, por eso no hay vista previa). Últimas 24 horas.</p>'
     + e.map((x, i) => '<div class="st-sec">Estado ' + (e.length - i) + ' · ' + x.vistas.length + ' vistas</div>' + x.vistas.map(v => { const tel = soloDigitos(v.wa_phone);
-      return '<div class="st-fila">' + stAvatar(tel, null) + '<span class="st-texto"><b>' + esc(stNombre(tel, null)) + '</b><i>' + esc(stCuando(v.viewed_at)) + '</i></span></div>'; }).join('')).join(''));
+      return '<div class="st-fila">' + stAvatar(tel, null) + '<span class="st-texto"><b>' + esc(stNombre(tel, null)) + '</b><i>' + esc(stCuando(v.viewed_at)) + '</i></span></div>'; }).join('')).join('') + '</div>');
   resuelveAvatares();
 }
 // Los cambios llegan en ráfagas (un snapshot por documento que se actualiza): se juntan en un
