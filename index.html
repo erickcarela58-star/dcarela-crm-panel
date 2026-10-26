@@ -3015,6 +3015,8 @@ input[type="checkbox"],input[type="radio"]{accent-color:var(--accent)}
 #ficha .grupo>summary{justify-content:flex-start}
 #ficha .grupo>summary .nota{margin-left:auto}
 #ficha .grupo>summary:not(:has(.nota))::after{margin-left:auto}
+.fc-catalogo{display:flex;gap:10px;align-items:flex-start;padding:12px 14px;margin-bottom:12px;border-radius:14px;background:color-mix(in srgb,var(--accent) 10%,var(--panel));border:1px solid color-mix(in srgb,var(--accent) 35%,transparent)}
+.fc-catalogo[hidden]{display:none}.fc-catalogo b{display:block;font-size:13px}.fc-catalogo span:not(.fc-ico){display:block;font-weight:700;font-size:15px}.fc-catalogo small{color:var(--mut);font-size:12px}
 .fc-cliente{display:grid;gap:8px;padding:14px;margin-bottom:12px;border:1px solid var(--line);border-radius:var(--r2);background:var(--panel)}
 .fc-cab{display:flex;align-items:center;gap:12px}
 .fc-avatar{width:52px;height:52px;border-radius:50%;display:grid;place-items:center;flex:none;background:linear-gradient(135deg,#4a86e8,#7c6fd6);color:#fff;font-weight:800;font-size:18px;box-shadow:0 0 0 3px var(--panel),0 0 0 5px #25d366}
@@ -3227,6 +3229,8 @@ input[type="checkbox"],input[type="radio"]{accent-color:var(--accent)}
    .e238-tool svg{width:18px;height:18px}.e238-tool:hover{background:var(--e-suave)}.e238-tool.on{background:var(--e-suave);color:var(--e-acc);border-color:#c7d2fe}
   .e238-barra-der{display:flex;flex-wrap:wrap;grid-column:1/-1;justify-self:end;align-items:center;gap:6px;padding-top:6px;border-top:1px solid var(--e-borde);flex:none;max-width:100%;box-sizing:border-box;margin-left:auto}
   .e238-barra-der select{height:38px;border-radius:10px;border:1px solid var(--e-borde);background:var(--e-card);color:var(--e-txt);padding:0 8px;font:inherit;font-weight:600;max-width:150px}
+  .e238-modo{height:34px;background:var(--e-suave);border-color:#bfdbfe;color:var(--e-acc)}
+  .e238-modo[aria-pressed="true"]{background:var(--e-acc);border-color:var(--e-acc);color:#fff}
   .e238{--editor-alto:clamp(380px,calc(100dvh - 290px),1100px);--editor-pie:50px}
   .e238-cuerpo{flex:0 0 auto;height:var(--editor-alto);min-height:380px;display:grid;grid-template-columns:clamp(210px,19vw,272px) minmax(0,1fr) clamp(264px,23vw,324px);gap:12px}
   .e238-izq{display:flex;flex-direction:column;gap:12px;min-height:0;overflow:auto;padding:0 2px 2px 0;scrollbar-width:thin}
@@ -3324,6 +3328,59 @@ input[type="checkbox"],input[type="radio"]{accent-color:var(--accent)}
   .e238-acciones{display:grid;grid-template-columns:repeat(auto-fit,minmax(90px,1fr));gap:6px;margin-top:6px}
   .e238-dos{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:6px}.e238-dos label{display:grid;gap:4px;font-size:11.5px;font-weight:650;color:var(--e-mut)}
   .e238-alinear{display:flex;gap:4px;margin:10px 0}.e238-alinear .e238-ico{flex:1;width:auto;height:34px}
+  /* v331 · barra de herramientas vertical (estilo Photoshop) entre la biblioteca y el lienzo */
+  .e238.e331-con-riel .e238-cuerpo{grid-template-columns:clamp(210px,19vw,272px) 64px minmax(0,1fr) clamp(264px,23vw,324px)}
+  .e238.e331-con-riel.e238-biblioteca-plegada .e238-cuerpo{grid-template-columns:64px minmax(0,1fr) clamp(250px,23vw,324px)}
+  @media (max-width:1280px){.e238.e331-con-riel .e238-cuerpo{grid-template-columns:220px 64px minmax(0,1fr) 250px}.e238.e331-con-riel.e238-biblioteca-plegada .e238-cuerpo{grid-template-columns:64px minmax(0,1fr) 250px}}
+  .e331-riel{display:flex;flex-direction:column;min-height:0;padding:6px 4px;border-radius:14px;background:#1f2329;box-shadow:0 8px 24px rgba(15,23,42,.18);overflow-y:auto;overflow-x:hidden;scrollbar-width:none}
+  .e331-riel::-webkit-scrollbar{display:none}
+  .e238 .e331-riel .e238-herr{display:flex;flex-direction:column;flex-wrap:nowrap;align-items:stretch;gap:1px;flex:none;max-width:none;min-width:0;overflow:visible;padding:0}
+  .e238 .e331-riel .e238-tool{min-width:0;width:100%;height:43px;padding:3px 2px;gap:2px;border:0;border-radius:9px;color:#c4cbd6;font-size:9.5px;font-weight:600;line-height:1.1}
+  .e238 .e331-riel .e238-tool span{max-width:56px;text-align:center;white-space:normal;overflow-wrap:anywhere}
+  .e238 .e331-riel .e238-tool svg{width:18px;height:18px}
+  .e238 .e331-riel .e238-tool:hover{background:rgba(255,255,255,.09);color:#fff}
+  .e238 .e331-riel .e238-tool.on{background:var(--e-acc);color:#fff}
+  .e238 .e331-riel .e238-tool:focus-visible{outline:2px solid #93c5fd;outline-offset:-2px}
+  .e331-riel [data-e238-tool="capas"],.e331-riel [data-e238-tool="degradado"],.e331-riel [data-e238-tool="logo"]{margin-top:5px;position:relative}
+  .e331-riel [data-e238-tool="capas"]::before,.e331-riel [data-e238-tool="degradado"]::before,.e331-riel [data-e238-tool="logo"]::before{content:"";position:absolute;top:-4px;left:10px;right:10px;height:1px;background:rgba(255,255,255,.14)}
+  .e238.compacto .e331-riel .e238-tool{height:38px}
+  .e238.e331-con-riel .e238-barra{display:flex;flex-wrap:nowrap;align-items:center;gap:8px;min-height:0;padding:6px 10px}
+  .e238.e331-con-riel .e238-barra-der{grid-column:auto;width:auto;flex:1 1 auto;min-width:0;flex-wrap:nowrap;justify-content:flex-start;margin-left:0;padding-top:0;border-top:0;overflow-x:auto;scrollbar-width:none}
+  .e238.e331-con-riel .e238-barra-der select{height:34px}
+  .e238.e331-con-riel .e238-fmt{display:inline-flex;flex-wrap:nowrap;gap:6px;flex:none}
+  .e238.e331-con-riel .e238-barra-der>*{flex:none}
+  /* Pantallas bajas: solo íconos, como la barra de Photoshop (el nombre sale al pasar el ratón: title y aria-label). */
+  @media (max-height:820px){.e238 .e331-riel .e238-tool{height:34px}.e238 .e331-riel .e238-tool span{display:none}}
+  @media (max-height:820px){.e238 .e331-riel .e238-tool svg{width:18px;height:18px}}
+  .e238-escena.e332-mano,.e238-escena.e332-mano *{cursor:grab!important}.e238-escena.e332-moviendo,.e238-escena.e332-moviendo *{cursor:grabbing!important}
+  /* v332 · grupos de herramientas con submenú, como Photoshop */
+  .e238 .e331-riel{overflow:visible}
+  .e238 .e331-riel .e238-herr.e332-oculta{display:none}
+  .e332-grupos{position:relative;display:flex;flex-direction:column;gap:1px}
+  .e238 .e331-riel .e332-tool{position:relative}
+  .e332-tri{position:absolute;right:5px;bottom:5px;width:0;height:0;border-left:5px solid transparent;border-bottom:5px solid currentColor;opacity:.75;cursor:pointer}
+  .e332-tri::after{content:"";position:absolute;right:-6px;bottom:-6px;width:16px;height:16px}
+  .e332-sep{display:block;height:1px;margin:4px 10px;background:rgba(255,255,255,.14)}
+  .e332-flot{position:absolute;left:calc(100% + 10px);z-index:40;min-width:196px;padding:5px;border-radius:12px;background:#1f2329;box-shadow:0 14px 34px rgba(15,23,42,.35);display:grid;gap:1px}
+  .e332-flot[hidden]{display:none}
+  .e332-flot button{display:flex;align-items:center;gap:10px;padding:7px 10px;border:0;border-radius:8px;background:none;color:#e5e7eb;font:inherit;font-size:12.5px;font-weight:550;text-align:left;cursor:pointer}
+  .e332-flot button:hover,.e332-flot button:focus-visible{background:rgba(255,255,255,.1);outline:none;color:#fff}
+  .e238-menu button svg{width:16px;height:16px;flex:none}
+  /* v332 · recreador como diálogo amplio */
+  .e238-pop.e332-modal{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);width:min(1060px,94vw);max-height:90vh;overflow:auto;z-index:60;padding:18px 20px;box-shadow:0 30px 80px rgba(15,23,42,.35),0 0 0 100vmax rgba(15,23,42,.35)}
+  .e332-pasos{display:flex;gap:18px;list-style:none;margin:6px 0 10px;padding:0;font-size:12.5px;font-weight:650;color:var(--e-mut)}.e332-pasos b{display:inline-grid;place-items:center;width:20px;height:20px;margin-right:6px;border-radius:50%;background:var(--e-acc);color:#fff;font-size:11px}
+  .e332-minis{display:flex;gap:8px;overflow-x:auto;padding:2px 2px 8px;scrollbar-width:thin}
+  .e332-mini{flex:none;width:96px;display:grid;gap:4px;padding:4px;border:1px solid var(--e-borde);border-radius:10px;background:var(--e-card);color:var(--e-txt);font:inherit;font-size:10.5px;font-weight:600;cursor:pointer;text-align:center}
+  .e332-mini img{width:100%;aspect-ratio:4/5;object-fit:cover;border-radius:7px;display:block;background:var(--e-lienzo)}
+  .e332-mini.on{border-color:var(--e-acc);box-shadow:0 0 0 2px var(--e-suave);color:var(--e-acc)}
+  .e332-minis-fotos .e332-mini{width:80px}
+  .e238-pop.e332-modal .e249-compara img{height:min(46vh,420px)}
+  .e238-pop.e332-modal .e238-dos{display:none}
+  .e331-mosfotos{display:grid;grid-template-columns:repeat(auto-fill,minmax(72px,1fr));gap:8px;margin:8px 0 10px;max-height:300px;overflow:auto}
+  .e331-presets{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;margin:2px 0 10px}
+  .e331-preset{display:grid;gap:3px;justify-items:center;padding:4px 2px 5px;border:1px solid var(--e-borde);border-radius:10px;background:var(--e-card);color:var(--e-txt);font:inherit;font-size:11px;font-weight:600;cursor:pointer}
+  .e331-preset i{display:block;width:100%;aspect-ratio:1;border-radius:7px;overflow:hidden;background:var(--e-lienzo)}.e331-preset img{width:100%;height:100%;object-fit:cover;display:block}
+  .e331-preset:hover{border-color:var(--e-acc)}.e331-preset.on{border-color:var(--e-acc);box-shadow:0 0 0 2px var(--e-suave);color:var(--e-acc)}
   .e238-switch{display:flex;align-items:center;gap:10px;font-size:12.5px;font-weight:600;cursor:pointer}.e238-switch input{position:absolute;opacity:0}
   .e238-switch span{width:36px;height:20px;border-radius:10px;background:#cbd5e1;position:relative;flex:none;transition:background .15s}.e238-switch span::after{content:'';position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;background:#fff;transition:left .15s}
   .e238-switch input:checked+span{background:var(--e-acc)}.e238-switch input:checked+span::after{left:18px}.e238-switch input:focus-visible+span{outline:2px solid var(--e-acc);outline-offset:2px}
@@ -3390,6 +3447,21 @@ input[type="checkbox"],input[type="radio"]{accent-color:var(--accent)}
     .e238-tool{min-width:58px;height:40px;padding:0 3px;font-size:10px}
     .e238-tool svg{width:16px;height:16px}
     .e238-barra-der{width:100%;margin-left:0;justify-content:flex-start;border-top:0;padding-top:2px}
+    .e238-barra-der select{height:32px}
+  }
+  /* Espacio de trabajo: conservar todas las herramientas en una sola tira
+     desplazable cuando el CRM reduce el ancho útil del lienzo. */
+  @media (min-width:901px) and (max-width:1179px){
+    .e238-cab{flex-wrap:nowrap;gap:8px;padding:8px 12px}
+    .e238-cab-txt{flex:1 1 170px;min-width:135px}
+    .e238-cab h1{font-size:19px}
+    .e238-cab-acc{width:auto;flex-wrap:nowrap;gap:6px;margin-left:auto}
+    .e238-cab-acc .e238-btn:not(.e238-prim){width:36px;padding:0}
+    .e238-cab-acc .e238-btn:not(.e238-prim) span{display:none}
+    .e238-barra{display:grid;grid-template-columns:auto minmax(0,1fr);gap:4px 8px;min-height:0;padding:5px 8px}
+    .e238-herr{flex-wrap:nowrap;overflow-x:auto;overflow-y:hidden;scrollbar-width:thin;scrollbar-color:#94a3b8 transparent;max-width:100%;min-width:0;padding-bottom:3px}
+    .e238-tool{min-width:58px;height:40px;padding:0 3px;font-size:10px}
+    .e238-barra-der{width:100%;grid-column:1/-1;margin-left:0;justify-content:flex-start;border-top:1px solid var(--e-borde);padding-top:4px}
     .e238-barra-der select{height:32px}
   }
 /* v239 · Planificador de contenido (referencia 2 del dueño). Solo escritorio; mismos datos y acciones del planificador. */
@@ -4335,6 +4407,7 @@ function aplicaMensajes(s, idConv){
     .sort((a,b) => instanteMsg(a) - instanteMsg(b));
   actualizaEstadoSincronizacion();
   pintaMensajes();
+  pintaComboCatalogo();
 }
 async function sondeaMensajes(idConv){
   if (escuchaMsgId !== idConv) return;
@@ -8763,76 +8836,56 @@ async function abreRapidas(){
 }
 
 /* ---- Biblioteca de combos ------------------------------------------------ */
-// El catalogo no vive en el CRM: se lee de la pagina publica, que es la que el
-// negocio actualiza. Asi el precio que se le manda al cliente es exactamente el que
-// ve en la web, sin una segunda lista que se quede vieja sin que nadie lo note.
+// El selector del chat usa la misma fuente que Productos / Combos (crm_combos).
+// Antes leía combos.html y /pdf/: esa copia podía quedarse atrás de los combos que
+// ya estaban editados en el CRM. Los flyers 1 a 1 y los PDF se piden a crmApi, que
+// aplica la misma referencia, precio, foto y sucursal que los catálogos actuales.
+const COMBO_CATEGORIAS = { xv:'XV', infantil:'Infantiles', graduacion:'Graduación',
+  cumpleanos:'Cumpleaños', embarazadas:'Embarazo', bodas:'Bodas' };
+const COMBO_CATALOGO_CAT = { infantil:'infantiles', cumpleanos:'cumpleanos', graduacion:'graduacion', embarazadas:'embarazo', bodas:'bodas' };
+const COMBO_PDFS = [
+  { cat:'infantiles', label:'Infantiles' }, { cat:'cumpleanos', label:'Cumpleaños' },
+  { cat:'graduacion', label:'Graduación' }, { cat:'embarazo', label:'Embarazo' },
+  { cat:'bodas', label:'Bodas' },
+];
 const COMBO_PAGINA = CFG.publicCatalogUrl || 'https://dcarelacompufoto.com/combos.html';
 const COMBO_IMG = 'https://dcarelacompufoto.com/combos-img/';
-const COMBO_PDF = 'https://dcarelacompufoto.com/pdf/';
-const COMBO_CATEGORIAS = { xv:'XV', infantil:'Infantil', graduacion:'Graduación',
-  cumpleanos:'Cumpleaños', embarazadas:'Embarazadas' };
-const COMBO_PDFS = [
-  { cat:'xv', label:'XV', n:5 }, { cat:'infantil', label:'Infantil', n:8 },
-  { cat:'graduacion', label:'Graduación', n:3 }, { cat:'cumpleanos', label:'Cumpleaños', n:15 },
-  { cat:'embarazadas', label:'Embarazadas', n:8 },
-];
-let COMBOS = null;
-
-function combosSlug(cat, nombre){
+const COMBO_REF_PREF = { xv:'XV', infantil:'INF', graduacion:'GRA', cumpleanos:'CUM', embarazadas:'EMB', bodas:'BOD' };
+function comboSlugLegacy(cat, nombre){
   return cat + '-' + String(nombre || '').toLowerCase().replace(/[^a-z0-9\s-]/g,'')
     .trim().replace(/\s+/g,'-').replace(/-+/g,'-');
 }
+function comboRefLegacy(cat, nombre){
+  const slug = String(nombre || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase()
+    .replace(/[^A-Z0-9]+/g, '-').replace(/^-|-$/g, '');
+  return (COMBO_REF_PREF[cat] || 'COM') + '-' + slug;
+}
+let COMBOS = null;
+
 async function cargaCombos(forzar){
   if (COMBOS && !forzar) return COMBOS;
-  const r = await fetch(COMBO_PAGINA, { cache: forzar ? 'reload' : 'default' });
-  if (!r.ok) throw new Error('catálogo HTTP ' + r.status);
-  const doc = new DOMParser().parseFromString(await r.text(), 'text/html');
-  const filas = [];
-  for (const sec of doc.querySelectorAll('section.sec[id]')) {
-    const cat = String(sec.id || '').toLowerCase();
-    if (!COMBO_CATEGORIAS[cat]) continue;
-    for (const card of sec.querySelectorAll('article.combo')) {
-      const nombre = String(card.querySelector('.cname')?.textContent || '').trim();
-      if (!nombre) continue;
-      const precioTxt = String(card.querySelector('.cprice b')?.textContent
-        || card.querySelector('.cprice')?.textContent || '').trim();
-      filas.push({
-        cat, catLabel: COMBO_CATEGORIAS[cat], nombre,
-        precio: precioTxt ? (precioTxt.startsWith('RD$') ? precioTxt : 'RD$' + precioTxt) : '',
-        digital: String(card.querySelector('.cinc-total')?.textContent || '').trim(),
-        items: [...card.querySelectorAll('.cinc li')].map(n => String(n.textContent||'').trim()).filter(Boolean),
-        incluyeLabel: String(card.querySelector('.incbox .il')?.textContent || 'Incluye').trim(),
-        incluye: String(card.querySelector('.incbox .iv')?.textContent || '').trim(),
-        acento: String(card.dataset.accent || '').trim(),
-        insignia: String(card.querySelector('.badge')?.textContent || '').trim(),
-        nota: String(card.querySelector('.cinc-note')?.textContent || '').trim(),
-        imagenCruda: card.querySelector('.ph')?.dataset.bg
-          ? new URL(card.querySelector('.ph').dataset.bg, COMBO_PAGINA).href : '',
-        tarjeta: COMBO_IMG + combosSlug(cat, nombre) + '.png',
-      });
-    }
-  }
-  COMBOS = filas;
-  return filas;
+  const r = await llama({ action:'combos', operation:'lista' });
+  if (!r?.ok) throw new Error(r?.error || 'No se pudo leer el catálogo de combos.');
+  COMBOS = (r.combos || []).filter(c => c && c.activo !== false).map(c => {
+    const cat = String(c.categoria || '').toLowerCase();
+    const items = Array.isArray(c.items) ? c.items.map(x => String(x || '').trim()).filter(Boolean) : [];
+    const precio = Number(c.precio);
+    return {
+      id: c.id || null, cat, catalogoCat: COMBO_CATALOGO_CAT[cat] || null,
+      catLabel: COMBO_CATEGORIAS[cat] || cat || 'Otros', nombre: String(c.nombre || '').trim(),
+      precio: Number.isFinite(precio) && precio > 0 ? 'RD$' + precio.toLocaleString('en-US') : '',
+      precioNumero: Number.isFinite(precio) && precio > 0 ? precio : null,
+      digital: items[0] || '', items, incluyeLabel: 'Incluye', incluye: String(c.descripcion || '').trim(),
+      fotoId: c.foto_id || null, ref: c.ref || comboRefLegacy(cat, c.nombre),
+    };
+  }).filter(c => c.nombre);
+  return COMBOS;
 }
-/* ---- Tarjeta del combo y vestidos ---------------------------------------- */
-// La tarjeta NO se dibuja aqui: se extrae de la web, que ya publica una por combo en
-// /combos-img/<slug>.png. Son las buenas -- 1080x1350, con la marca, el precio y el
-// ITBIS. Van sin telefono a proposito: la tarjeta se manda DENTRO de este chat, donde
-// quien la recibe ya esta escribiendo al estudio, y el numero grabado en 39 PNG caduca
-// solo (ya paso una vez).
+/* ---- Flyer del combo y vestidos ------------------------------------------ */
+// Para las categorías del catálogo nuevo el flyer lo genera crmApi a partir de crm_combos.
+// Solo XV conserva el PNG público heredado hasta que entre en el generador nuevo. Ningún
+// PDF del chat depende ya de /pdf/: esos se sustituyen por catalogo_categoria.
 //
-// Las genera carela-compufoto-publish/scripts/generar_tarjetas_combo.mjs leyendo el MISMO
-// combos.html que lee esta funcion, y catalog-v33.test.js exige que exista una tarjeta
-// para cada uno de los 39 nombres usando este mismo combosSlug(). Si se cambia la regla
-// del slug de aqui abajo, esa prueba y el generador avisan.
-//
-// El panel de texto de la tarjeta va encajado abajo y su alto lo decide el contenido: se
-// eligio asi para no taparle la cara ni el vestuario al sujeto, que es lo que vende.
-//
-// Redibujarlas aqui seria mantener un segundo diseño que se separa del real en cuanto
-// alguien toque la web.
-
 // Los vestidos viven en la misma pagina, en .dress-block. Son la pregunta que mas repite
 // una clienta de XV despues de ver el precio, y hasta ahora habia que buscarlos a mano.
 let VESTIDOS = null;
@@ -8912,14 +8965,14 @@ async function abreCombos(){
     return;
   }
   const cuerpo = $('modal').querySelector('.mcuerpo');
-  cuerpo.innerHTML = '<div class="campo"><input id="cbBusca" placeholder="Buscar combo…"></div>'
-    + '<div class="seccion" style="margin:12px 0 6px">Catálogo en PDF</div>'
-    + '<div class="pdfs">' + COMBO_PDFS.map(p =>
-        '<button class="tplchip" data-pdf="' + p.cat + '">' + esc(p.label) + ' · ' + p.n + '</button>').join('')
+   cuerpo.innerHTML = '<div class="campo"><input id="cbBusca" placeholder="Buscar combo…"></div>'
+     + '<div class="seccion" style="margin:12px 0 6px">Catálogo PDF vigente</div>'
+     + '<div class="pdfs">' + COMBO_PDFS.map(p =>
+         '<button class="tplchip" data-pdf="' + p.cat + '">' + esc(p.label) + '</button>').join('')
     + '</div>'
     + '<div class="seccion" style="margin:14px 0 6px">Vestidos</div>'
     + '<div class="pdfs"><button class="tplchip" data-vestidos>Enviar los vestidos disponibles</button></div>'
-    + '<div class="seccion" style="margin:14px 0 6px">Combos con su tarjeta</div><div id="cbLista"></div>';
+     + '<div class="seccion" style="margin:14px 0 6px">Combos 1 a 1 del CRM</div><div id="cbLista"></div>';
 
   const pinta = () => {
     const q = ($('cbBusca').value || '').trim().toLowerCase();
@@ -8948,17 +9001,25 @@ async function adjuntaCombo(c, boton){
   const antes = boton.innerHTML;
   boton.disabled = true; boton.textContent = 'Preparando…';
   try {
-    // La tarjeta publicada del combo. Si por lo que sea no esta, se cae a la foto del
-    // catalogo antes que dejar al agente sin nada que mandar -- pero se avisa, porque una
-    // foto suelta no lleva el precio ni lo que incluye.
-    let url = c.tarjeta, r = await fetch(url, { cache:'no-cache' });
-    if (!r.ok && c.imagenCruda) {
-      url = c.imagenCruda; r = await fetch(url, { cache:'no-cache' });
-      if (r.ok) avisa('Sin tarjeta publicada', 'Va la foto del catálogo, sin el detalle del combo.');
+    // Para las categorías nuevas el flyer sale del mismo combo del CRM que alimenta
+    // el PDF. Así precio, foto, referencia y botones no pueden venir de dos listas.
+    let blob, ref = c.ref || '';
+    if (c.id && c.catalogoCat) {
+      const r = await llama({ action:'combos', operation:'flyer_combo', id:c.id, formato:'jpg' });
+      if (!r?.ok || !r.imagen_b64) throw new Error(r?.error || 'no se pudo generar el flyer 1 a 1');
+      ref = r.ref || ref;
+      const bytes = Uint8Array.from(atob(r.imagen_b64), x => x.charCodeAt(0));
+      blob = new Blob([bytes], { type: r.tipo || 'image/jpeg' });
+    } else if (c.cat === 'xv') {
+      // XV todavía no forma parte de los cinco catálogos nuevos. Conservamos su
+      // tarjeta pública como respaldo, pero la lista y el texto ya vienen del CRM.
+      const url = COMBO_IMG + comboSlugLegacy(c.cat, c.nombre) + '.png';
+      const r = await fetch(url, { cache:'no-cache' });
+      if (!r.ok) throw new Error('flyer 1 a 1 HTTP ' + r.status);
+      blob = await r.blob();
+    } else {
+      throw new Error('este combo todavía no tiene flyer 1 a 1 de su catálogo');
     }
-    if (!r.ok) throw new Error('imagen HTTP ' + r.status);
-    const blob = await r.blob();
-    const ext = url.split('.').pop().split('?')[0] || 'png';
     const datos = await leeBase64(blob);
     // Los combos salen con botones: el cliente toca en vez de escribir, y su respuesta
     // vuelve identificada -- se sabe QUE combo le intereso, no un "si" suelto que hay
@@ -8968,13 +9029,14 @@ async function adjuntaCombo(c, boton){
     // vestidos son de sesiones XV, y ofrecerlos en un combo de graduacion seria prometer
     // algo que no existe.
     const esXV = c.cat === 'xv';
+    const contexto = ref ? ':' + ref : '';
     COLA.push({ tipo:'image', mime: blob.type || 'image/jpeg',
-      nombre: c.nombre + ' - DCarela.' + ext,
+      nombre: c.nombre + ' - DCarela.jpg',
       datos,
       botones: [
-        { id: 'combo_interesa:' + c.cat, titulo: 'Me interesa' },
+        { id: 'combo_interesa:' + c.cat + contexto, titulo: 'Me interesa' },
         esXV ? { id: 'combo_vestidos', titulo: 'Ver vestidos' }
-             : { id: 'combo_fecha:' + c.cat, titulo: 'Ver disponibilidad' },
+             : { id: 'combo_fecha:' + c.cat + contexto, titulo: 'Ver disponibilidad' },
         { id: 'combo_otros',             titulo: 'Ver otros combos' },
       ] });
     pintaCola();
@@ -8995,20 +9057,20 @@ async function adjuntaPdfCombos(cat, boton){
   const antes = boton.textContent;
   boton.disabled = true; boton.textContent = 'Preparando…';
   try {
-    const url = COMBO_PDF + 'combos-' + cat + '.pdf';
-    const r = await fetch(url, { cache:'force-cache' });
-    if (!r.ok) throw new Error('PDF HTTP ' + r.status);
-    const blob = await r.blob();
+    // Reemplaza los PDF estáticos antiguos por el catálogo vigente del CRM y usa
+    // automáticamente el número de la conversación: central u offline/QR Plaza.
+    const sucursal = canalDe(sel) === 'whatsapp_qr' ? 'plaza' : 'central';
+    const r = await llama({ action:'combos', operation:'catalogo_categoria', categoria:cat, sucursal, formato:'pdf' });
+    if (!r?.ok || !r.pdf_b64) throw new Error(r?.error || 'no se pudo preparar el PDF vigente');
+    const bytes = Uint8Array.from(atob(r.pdf_b64), c => c.charCodeAt(0));
     const datos = await new Promise((res, rej) => {
       const l = new FileReader();
       l.onload = () => res(String(l.result).split(',')[1] || '');
-      // Sin onerror la promesa no se resuelve NUNCA si la lectura falla, y el envio
-      // se queda colgado con el boton deshabilitado y sin decir nada.
-      l.onerror = () => rej(new Error('no se pudo leer el archivo'));
-      l.readAsDataURL(blob);
+      l.onerror = () => rej(new Error('no se pudo leer el PDF'));
+      l.readAsDataURL(new Blob([bytes], { type:'application/pdf' }));
     });
     COLA.push({ tipo:'document', mime:'application/pdf',
-      nombre:'Combos ' + p.label + ' - DCarela.pdf', datos });
+      nombre:r.nombre || ('Combos ' + p.label + ' - DCarela.pdf'), datos });
     pintaCola();
     const caja = $('texto');
     if (!caja.value.trim()) {
@@ -11693,6 +11755,26 @@ const FC_ICO = {
   lugar: '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s7-6 7-11a7 7 0 0 0-14 0c0 5 7 11 7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>',
   pastel: '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 21h16M5 21v-7h14v7M12 14V9M9 9h6"/><path d="M12 6c-1-1-1-2 0-3 1 1 1 2 0 3z"/></svg>',
 };
+// El combo que el cliente eligió en un catálogo (Productos / Combos → Catálogos por categoría): el botón del PDF o de la web
+// manda «…quiero información del combo X. Referencia: INF-…». Se busca en sus mensajes de ESTA conversación, del más nuevo al
+// más viejo, y en el último recibido (que puede venir cortado); no se guarda nada ni se cuenta como venta.
+const REF_CATALOGO = /(?:catálogo de ([^\n.]{2,30}?) de D[’'] ?Carela[^\n]*?)?combo ([^\n]{2,90}?)\.\s*Referencia:\s*((?:INF|CUM|GRA|EMB|BOD)-[A-Z0-9-]{2,70})/i;
+function comboDelCatalogo(c, msgs = []){
+  const textos = msgs.filter(m => m.direction === 'in').map(m => [String(m.body || ''), instanteMsg(m)]).reverse();
+  textos.push([String(c?.last_inbound_preview || ''), NaN]);
+  for (const [t, cuando] of textos) {
+    const m = REF_CATALOGO.exec(t);
+    if (m) return { categoria: m[1] || '', combo: m[2].trim(), ref: m[3].toUpperCase(), cuando: Number.isFinite(cuando) && cuando !== Number.MAX_SAFE_INTEGER ? cuando : null };
+  }
+  return null;
+}
+function pintaComboCatalogo(){
+  const caja = $('fichaCatalogo'); if (!caja || !sel) return;
+  const x = comboDelCatalogo(sel, MSGS);
+  caja.hidden = !x;
+  caja.innerHTML = x ? '<span class="fc-ico" aria-hidden="true">' + CMB_ICO.combo + '</span><div><b>Eligió en el catálogo' + (x.categoria ? ' de ' + esc(x.categoria) : '') + '</b>'
+    + '<span>' + esc(x.combo) + '</span><small>Referencia ' + esc(x.ref) + (x.cuando ? ' · ' + esc(new Date(x.cuando).toLocaleDateString('es-DO', { day:'numeric', month:'short' })) : '') + '</small></div>' : '';
+}
 function tarjetaClienteFicha(c){
   const nombre = nombreReal(c) || 'Sin nombre';
   const iniciales = nombre.split(/\s+/).filter(Boolean).slice(0, 2).map(p => p[0]).join('').toUpperCase() || '?';
@@ -11743,6 +11825,7 @@ function pintaFicha(c){
     + '<button id="cerrarFicha" style="color:var(--mut);font-size:17px">×</button></div>'
     + '<div class="cuerpo">'
     + tarjetaClienteFicha(c)
+    + '<div class="fc-catalogo" id="fichaCatalogo" hidden></div>'
     + '<button class="btn-linea" style="width:100%;margin-bottom:12px" id="irAlPlan" title="Las herramientas operativas viven en Planificación: escribe ahí lo que necesitas y aprueba lo que propone.">Abrir Planificación</button>'
 
     + grupoAnalisisFicha(c)
@@ -11855,6 +11938,7 @@ function pintaFicha(c){
   cableaHistorial(c);
   cableaAnalisisFicha(c);
   cableaCajaFicha(c);
+  pintaComboCatalogo();
   cableaIgnorarFicha(c);
   personalizaFicha();
   $('cerrarFicha').onclick = () => { $('ficha').classList.remove('on'); $('ficha').style.display = 'none'; };
@@ -20229,6 +20313,73 @@ function acabadoCollageV238(foto, W, dw) {
     sombra: s > 0 ? { blur: Math.max(2, Math.round(W * 0.016)), dy: Math.round(W * 0.006), alfa: Math.round(0.6 * s * 100) / 100 } : null,
   };
 }
+// COPIA IDÉNTICA de contenido-collage.filtroCss: los ajustes de color de una foto como `ctx.filter` (el motor aplica las mismas matrices).
+function filtroCssFotoV331(a) {
+  if (!a) return '';
+  const p = [];
+  if (a.brillo) p.push('brightness(' + (1 + a.brillo / 100) + ')');
+  if (a.contraste) p.push('contrast(' + (1 + a.contraste / 100) + ')');
+  if (a.saturacion) p.push('saturate(' + (1 + a.saturacion / 100) + ')');
+  if (a.sepia) p.push('sepia(' + a.sepia / 100 + ')');
+  if (a.bn) p.push('grayscale(1)');
+  return p.join(' ');
+}
+// Los mismos topes que contenido-collage.normalizaAjustes; null si la foto queda sin ajustes.
+function acotaAjustesFotoV331(a) {
+  if (!a || typeof a !== 'object') return null;
+  const n = (v, lo, hi) => { const x = Number(v); return Number.isFinite(x) ? Math.round(Math.min(hi, Math.max(lo, x))) || 0 : 0; };
+  const r = { brillo: n(a.brillo, -50, 50), contraste: n(a.contraste, -50, 50), saturacion: n(a.saturacion, -100, 100), sepia: n(a.sepia, 0, 100), bn: a.bn === true };
+  return r.brillo || r.contraste || r.saturacion || r.sepia || r.bn ? r : null;
+}
+// v332 · barra de herramientas agrupada como Photoshop: el primer miembro es el que se ve; el resto sale en el submenú. En
+// «Formas» cada tipo de forma es un miembro (tercer valor) y deja lista esa forma para dibujar.
+const GRUPOS_HERRAMIENTAS_V332 = [
+  { miembros: [['seleccionar', 'Seleccionar'], ['sujeto', 'Seleccionar sujeto']] },
+  { miembros: [['foto', 'Agregar foto'], ['mosaico', 'Mosaico']] },
+  { miembros: [['texto', 'Texto'], ['textoLibre', 'Texto libre']], sep: true },
+  { miembros: [['formas', 'Formas'], ['formas', 'Rectángulo', 'rectangulo'], ['formas', 'Elipse', 'elipse'], ['formas', 'Línea', 'linea'], ['formas', 'Flecha', 'flecha'],
+    ['formas', 'Triángulo', 'triangulo'], ['formas', 'Polígono', 'poligono'], ['formas', 'Estrella', 'estrella'], ['formas', 'Corazón', 'corazon'], ['formas', 'Rombo', 'rombo'], ['formas', 'Cruz', 'cruz']] },
+  { miembros: [['degradado', 'Degradado']] },
+  { miembros: [['ajustar', 'Ajustar color'], ['efectos', 'Efectos']], sep: true },
+];
+// Íconos de línea propios (no son recursos de Adobe): mismo trazo, 24 × 24, color del texto.
+const ICONOS_HERRAMIENTAS_V332 = (() => {
+  const i = (c) => '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + c + '</svg>';
+  return {
+    seleccionar: i('<path d="M5 3l12 7-5.2 1.3L9.5 17z"/><path d="M14.5 15.5l4 4M12 3v2M3 12h2"/>'),
+    sujeto: i('<path d="M4 8V5a1 1 0 0 1 1-1h3M16 4h3a1 1 0 0 1 1 1v3M20 16v3a1 1 0 0 1-1 1h-3M8 20H5a1 1 0 0 1-1-1v-3"/><circle cx="12" cy="9" r="2.6"/><path d="M7.5 17.5c.8-2.6 2.5-4 4.5-4s3.7 1.4 4.5 4"/>'),
+    foto: i('<rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="9" cy="10" r="1.6"/><path d="M21 16l-5-5-8 8"/>'),
+    mosaico: i('<rect x="3" y="3" width="8" height="10" rx="1.2"/><rect x="13" y="3" width="8" height="6" rx="1.2"/><rect x="13" y="11" width="8" height="10" rx="1.2"/><rect x="3" y="15" width="8" height="6" rx="1.2"/>'),
+    texto: i('<path d="M5 6V4h14v2M12 4v16M9 20h6"/>'),
+    textoLibre: i('<rect x="3" y="3" width="18" height="18" rx="2" stroke-dasharray="3 2.4"/><path d="M8 9V8h8v1M12 8v8M10.5 16h3"/>'),
+    formas: i('<rect x="3" y="10" width="11" height="11" rx="1.5"/><circle cx="15.5" cy="8.5" r="5.5"/>'),
+    degradado: i('<rect x="3" y="3" width="18" height="18" rx="2"/><path d="M7 3v18M11 3v18" opacity=".55"/><path d="M15 3v18" opacity=".3"/>'),
+    ajustar: i('<circle cx="12" cy="12" r="8.5"/><path d="M12 3.5v17A8.5 8.5 0 0 0 12 3.5z" fill="currentColor"/>'),
+    efectos: i('<path d="M4 17l3-10h3M5 12h4"/><path d="M13 9l6 8M19 9l-6 8"/>'),
+    recrear: i('<path d="M4 20l10-10M14 4l1 2 2 1-2 1-1 2-1-2-2-1 2-1zM19 11l.7 1.3 1.3.7-1.3.7-.7 1.3-.7-1.3-1.3-.7 1.3-.7z"/>'),
+    logo: i('<circle cx="12" cy="12" r="8.5"/><path d="M8.5 12.5l2.3 2.3 4.7-5"/>'),
+    'forma-rectangulo': i('<rect x="4" y="6" width="16" height="12" rx="1.5"/>'),
+    'forma-elipse': i('<ellipse cx="12" cy="12" rx="8.5" ry="6.5"/>'),
+    'forma-linea': i('<path d="M5 19L19 5"/>'),
+    'forma-flecha': i('<path d="M4 12h15M14 7l5 5-5 5"/>'),
+    'forma-triangulo': i('<path d="M12 4l9 16H3z"/>'),
+    'forma-poligono': i('<path d="M12 3l8 4.5v9L12 21l-8-4.5v-9z"/>'),
+    'forma-estrella': i('<path d="M12 3.5l2.6 5.4 5.9.8-4.3 4.1 1 5.8L12 16.9l-5.2 2.7 1-5.8-4.3-4.1 5.9-.8z"/>'),
+    'forma-corazon': i('<path d="M12 20s-7.5-4.6-7.5-10A4.3 4.3 0 0 1 12 7.6 4.3 4.3 0 0 1 19.5 10c0 5.4-7.5 10-7.5 10z"/>'),
+    'forma-rombo': i('<path d="M12 3l8 9-8 9-8-9z"/>'),
+    'forma-cruz': i('<path d="M12 4v16M4 12h16"/>'),
+  };
+})();
+// Ajustes rápidos de la herramienta «Ajustar» (como los preajustes de Photoshop/Lightroom).
+const PRESETS_AJUSTE_V331 = {
+  original: null,
+  vivo: { contraste: 12, saturacion: 30 },
+  luminoso: { brillo: 12, contraste: 5 },
+  suave: { brillo: 6, contraste: -15, saturacion: -15 },
+  calido: { sepia: 25, saturacion: 10 },
+  vintage: { sepia: 45, contraste: -10, brillo: 4 },
+  bn: { bn: true, contraste: 12 },
+};
 // Firma comparable de un collage (lo que dibuja): sin ella, el collage del campo y el que devolvió el motor difieren solo en forma.
 function firmaCollageV238(c){
   if(!c?.fotos?.length)return '';
@@ -20365,7 +20516,7 @@ function acabadoSvgV244(svg,p,w,id='acabado'){
 function svgFormasV244(raw,w,h,detras){const formas=normalizaFormasV244(raw).filter(s=>!s.oculta&&(detras===undefined||s.detras===detras));if(!formas.length)return null;return `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}">`+formas.map((s,i)=>{const sw=w*s.w/100,sh=h*s.h/100;const A={normalizaAcabadoV244,guionesV244,cuerpo:acabadoSvgV244},dash=A.guionesV244(s.trazo_estilo,w*s.grosor/100);return A.cuerpo(`<defs><linearGradient id="forma${i}" x2="1" y2="1"><stop stop-color="${s.relleno==='none'?'#000000':s.relleno}"/><stop offset="1" stop-color="${s.color2}"/></linearGradient></defs><path transform="translate(${w*s.x/100} ${h*s.y/100}) rotate(${s.giro} ${sw/2} ${sh/2})" d="${trazadoFormaV243(s,sw,sh)}" fill="${s.tipo==='linea'||s.relleno==='none'?'none':s.degradado?'url(#forma'+i+')':s.relleno}" stroke="${s.trazo}" stroke-width="${w*s.grosor/100}" stroke-linecap="${s.extremo}" stroke-linejoin="${s.union}" ${dash.length?`stroke-dasharray="${dash.join(' ')}"`:''} opacity="${s.opacidad}"/>`,{...s,trazo_ancho:0,solo_trazo:false},w,'resplandorForma'+i);}).join('')+'</svg>';}
 function normalizaNombresCapasV245(raw){let d=raw;if(!raw)return {};try{if(typeof d==='string')d=JSON.parse(d);}catch{return {};}if(!d||typeof d!=='object'||Array.isArray(d))return {};const o={};for(const [k,v] of Object.entries(d).slice(0,120)){const key=String(k).replace(/[^a-zA-Z0-9:_-]/g,'').slice(0,100),name=String(v??'').replace(/[<>]/g,'').trim().slice(0,60);if(key&&name)o[key]=name;}return o;}
 function normalizaEstadosCapasV245(raw){let d=raw;if(!raw)return {};try{if(typeof d==='string')d=JSON.parse(d);}catch{return {};}if(!d||typeof d!=='object'||Array.isArray(d))return {};const o={};for(const [k,v] of Object.entries(d).slice(0,120)){const key=String(k).replace(/[^a-zA-Z0-9:_-]/g,'').slice(0,100);if(key&&v&&typeof v==='object')o[key]={bloqueada:v.bloqueada===true,oculta:v.oculta===true};}return o;}
-const claveCapaV245=sel=>sel?.tipo==='rol'?'rol:'+sel.rol:sel?.tipo==='foto'?'foto:'+sel.slot:sel?.tipo==='forma'?'forma:'+sel.id:sel?.tipo||'';
+const claveCapaV245=sel=>sel?.tipo==='rol'?'rol:'+sel.rol:sel?.tipo==='foto'?'foto:'+sel.slot:sel?.tipo==='forma'?'forma:'+sel.id:sel?.tipo==='textoLibre'?'textoLibre:'+sel.id:sel?.tipo||'';
 function mesasEditorV243(root,f,api,redibuja){
   const doc=f.ownerDocument,escena=root.querySelector('[data-e238-escena]');
   const campo=f.elements.mesas_editor_json||doc.createElement('input');campo.type='hidden';campo.name='mesas_editor_json';campo.value=campo.value||api.valores().mesas_editor_json||'';f.appendChild(campo);
@@ -20463,9 +20614,9 @@ function estudioV238(m,api){
     +'<span class="e238-cab-ico">'+I.editor+'</span>'
     +'<div class="e238-cab-txt"><h1>Editor de flyers</h1><p>Flyers y carruseles · fotos, texto y capas editables</p></div>'
     +'<div class="e238-cab-acc">'
-    +'<button type="submit" class="e238-btn" data-e238-actualizar="1">'+I.estrella+'<span>Actualizar plantilla</span></button>'
-    +'<button type="button" class="e238-btn" data-ceditor-borrador="1">'+I.guardar+'<span>Guardar borrador</span></button>'
-    +'<button type="button" class="e238-btn" data-e238="vistaprevia">'+I.ojo+'<span>Vista previa</span></button>'
+    +'<button type="submit" class="e238-btn" data-e238-actualizar="1" aria-label="Actualizar plantilla" title="Actualizar plantilla">'+I.estrella+'<span>Actualizar plantilla</span></button>'
+    +'<button type="button" class="e238-btn" data-ceditor-borrador="1" aria-label="Guardar borrador" title="Guardar borrador">'+I.guardar+'<span>Guardar borrador</span></button>'
+    +'<button type="button" class="e238-btn" data-e238="vistaprevia" aria-label="Vista previa" title="Vista previa">'+I.ojo+'<span>Vista previa</span></button>'
     +'<div class="e238-split"><button type="button" class="e238-btn e238-prim" data-e238="guardadescarga">'+I.descargar+'<span>Guardar y descargar</span></button><button type="button" class="e238-btn e238-prim e238-split-flecha" data-e238="menu" aria-haspopup="menu" aria-expanded="false" aria-label="Más acciones">'+I.flecha+'</button>'
      +'<div class="e238-menu" data-e238-menu hidden role="menu">'
      +'<button type="button" role="menuitem" data-ceditor-exportar="1">'+I.descargar+'Solo descargar JPG</button>'
@@ -20485,7 +20636,7 @@ function estudioV238(m,api){
     +'<div class="e238-barra-der"><span class="e238-fmt" data-e238-fmt title="Formato del lienzo"></span>'
     +'<select data-e238="zoom" aria-label="Zoom del lienzo"><option value="ajustar">Ajustar página</option><option value="documento">Ver carrusel completo</option>'+[25,33,50,58,67,75,100].map(z=>'<option value="'+(z/100)+'">'+z+'%</option>').join('')+'</select>'
     +'<button type="button" class="e238-btn e238-peq" data-e238="biblioteca" aria-expanded="true" title="Ocultar biblioteca de plantillas y fotos">'+I.biblioteca+'<span>Biblioteca</span></button>'
-    +'<button type="button" class="e238-ico" data-e238="pantalla" title="Pantalla completa" aria-label="Pantalla completa" aria-pressed="false">'+I.pantalla+'</button>'
+    +'<button type="button" class="e238-btn e238-peq e238-modo" data-e238="pantalla" title="Ampliar el lienzo y ocultar el menú del CRM" aria-label="Ampliar lienzo" aria-pressed="false">'+I.pantalla+'<span>Ampliar lienzo</span></button>'
     +'<button type="button" class="e238-ico" data-e238="rejilla" title="Guías de tercios" aria-label="Guías de tercios">'+I.rejilla+'</button>'
     +'<button type="button" class="e238-ico" data-e238="compacto" title="Compactar todos los módulos" aria-label="Compactar todos los módulos" aria-pressed="false">'+I.compactar+'</button></div>'
     +'</nav>'
@@ -20516,6 +20667,38 @@ function estudioV238(m,api){
     +'</div>';
   f.prepend(root);
   const $q=s=>root.querySelector(s);
+  // v331 · estilo Photoshop: las herramientas van en una barra vertical junto al lienzo y la de arriba queda para deshacer,
+  // formato, zoom y vista (ya no se desplaza de lado en pantallas medianas). Se mueve el MISMO nodo: botones y manejo iguales.
+  {const herr=$q('.e238-herr'),riel=root.ownerDocument.createElement('nav');riel.className='e331-riel';riel.setAttribute('aria-label','Herramientas del editor');
+    riel.append(herr);$q('.e238-cuerpo').insertBefore(riel,$q('.e238-centro'));root.classList.add('e331-con-riel');
+    // En pantallas medianas (≤1180 px) el lienzo manda: la biblioteca empieza plegada y se abre con «Biblioteca» o «Agregar foto».
+    if((root.ownerDocument.defaultView?.innerWidth||1440)<=1180){root.classList.add('e238-biblioteca-plegada');$q('[data-e238="biblioteca"]')?.setAttribute('aria-expanded','false');}}
+  // v332 · herramientas agrupadas como en Photoshop (pedido del dueño 26/10): cada grupo muestra su herramienta activa con un
+  // triangulito; el triangulito, el clic derecho o mantener pulsado abren las demás del grupo. Capas (pestaña), Recrear flyer y
+  // Logo PNG (menú «Más acciones») y Fondo (pestaña Diseño) salen de la barra. Los botones de siempre quedan ocultos dentro.
+  {const riel=$q('.e331-riel'),herr=$q('.e238-herr');herr.hidden=true;herr.classList.add('e332-oculta');
+    const G=GRUPOS_HERRAMIENTAS_V332,cont=root.ownerDocument.createElement('div');cont.className='e332-grupos';
+    cont.innerHTML=G.map((g,i)=>(g.sep?'<span class="e332-sep" aria-hidden="true"></span>':'')+'<div class="e332-grupo" data-e332-grupo="'+i+'"><button type="button" class="e238-tool e332-tool'+(i===0?' on':'')+'" data-e238-tool="'+g.miembros[0][0]+'" title="'+g.miembros[0][1]+(g.miembros.length>1?' (clic derecho: más)':'')+'" aria-label="'+g.miembros[0][1]+'">'+ICONOS_HERRAMIENTAS_V332[g.miembros[0][0]]+'<span>'+g.miembros[0][1]+'</span>'+(g.miembros.length>1?'<i class="e332-tri" data-e332-abre aria-hidden="true"></i>':'')+'</button></div>').join('')
+      +'<div class="e332-flot" data-e332-flot hidden role="menu"></div>';
+    riel.append(cont);
+    const flot=cont.querySelector('[data-e332-flot]');let pulsado=0;
+    const abre=i=>{const g=G[i],b=cont.querySelector('[data-e332-grupo="'+i+'"]');flot.innerHTML=g.miembros.map(([k,t,extra])=>'<button type="button" role="menuitem" data-e332-miembro="'+k+'"'+(extra?' data-e332-extra="'+extra+'"':'')+' data-e332-de="'+i+'">'+(ICONOS_HERRAMIENTAS_V332[extra?'forma-'+extra:k]||ICONOS_HERRAMIENTAS_V332[k])+'<span>'+t+'</span></button>').join('');
+      flot.style.top=(b.offsetTop)+'px';flot.hidden=false;flot.querySelector('button')?.focus({preventScroll:true});};
+    const cierra=()=>{flot.hidden=true;};
+    cont.addEventListener('click',ev=>{
+      const m=ev.target.closest('[data-e332-miembro]');
+      if(m){ev.stopPropagation();cierra();const i=Number(m.dataset.e332De),k=m.dataset.e332Miembro,ex=m.dataset.e332Extra,b=cont.querySelector('[data-e332-grupo="'+i+'"] .e332-tool'),txt=m.querySelector('span').textContent;
+        b.dataset.e238Tool=k;b.title=txt+' (clic derecho: más)';b.setAttribute('aria-label',txt);b.innerHTML=(ICONOS_HERRAMIENTAS_V332[ex?'forma-'+ex:k]||ICONOS_HERRAMIENTAS_V332[k])+'<span>'+txt+'</span><i class="e332-tri" data-e332-abre aria-hidden="true"></i>';
+        herramienta(k);if(ex){S.formaDibujar=ex;S.textoLibreDibujar=false;S.pincelModo=null;S.gradDibujar=false;S.sel={tipo:'formas'};dibuja();pintaInspector();avisaV238('Arrastra sobre el lienzo para crear la forma.');}return;}
+      if(ev.target.closest('[data-e332-abre]')){ev.stopPropagation();const i=Number(ev.target.closest('[data-e332-grupo]').dataset.e332Grupo);if(flot.hidden)abre(i);else cierra();}
+    },true);
+    cont.addEventListener('contextmenu',ev=>{const g=ev.target.closest('[data-e332-grupo]');if(!g||G[Number(g.dataset.e332Grupo)].miembros.length<2)return;ev.preventDefault();abre(Number(g.dataset.e332Grupo));});
+    cont.addEventListener('pointerdown',ev=>{const g=ev.target.closest('[data-e332-grupo]');if(!g||G[Number(g.dataset.e332Grupo)].miembros.length<2)return;clearTimeout(pulsado);pulsado=setTimeout(()=>abre(Number(g.dataset.e332Grupo)),450);});
+    cont.addEventListener('pointerup',()=>clearTimeout(pulsado));cont.addEventListener('pointerleave',()=>clearTimeout(pulsado));
+    root.addEventListener('click',ev=>{if(!flot.hidden&&!ev.target.closest('.e332-grupos'))cierra();});
+    root.addEventListener('keydown',ev=>{if(ev.key==='Escape'&&!flot.hidden){ev.stopPropagation();cierra();}},true);
+    // Lo que sale de la barra queda a mano en «Más acciones».
+    $q('[data-e238-menu]')?.insertAdjacentHTML('afterbegin','<button type="button" role="menuitem" data-e238-tool="recrear">'+ICONOS_HERRAMIENTAS_V332.recrear+'Recrear flyer desde referencia…</button><button type="button" role="menuitem" data-e238-tool="logo">'+ICONOS_HERRAMIENTAS_V332.logo+'Añadir logo PNG…</button><hr>');}
   root.classList.toggle('compacto',S.compacto);
   $q('[data-e238="compacto"]')?.setAttribute('aria-pressed',String(S.compacto));
   const mesas=mesasEditorV243(root,f,api,()=>programaDibujo());
@@ -20538,6 +20721,12 @@ function estudioV238(m,api){
   const programaDibujo=()=>{if(raf)return;raf=(win?.requestAnimationFrame||setTimeout)(()=>{raf=0;dibuja();});};
   const escena=$q('[data-e238-escena]');
   const escala=()=>{const F=FMT(),r=escena.getBoundingClientRect(),aw=Math.max(80,r.width-80),ah=Math.max(80,r.height-80),ajuste=Math.min(aw/F.w,ah/F.h);return S.zoom==='documento'?Math.min(aw/(F.w*(mesas.documento()?.paginas.length||1)),ah/F.h):S.zoom==='ajustar'?ajuste:(Number(S.zoom)||ajuste);};
+  // Cambia el zoom manteniendo quieto el punto bajo el puntero (o el centro de la vista).
+  function fijaZoomV332(z,px,py){
+    const r=escena.getBoundingClientRect(),cx=(px??r.left+r.width/2)-r.left,cy=(py??r.top+r.height/2)-r.top,ox=cx+escena.scrollLeft,oy=cy+escena.scrollTop,antes=escala();
+    S.zoom=Math.round(clamp(z,.1,4)*1000)/1000;dibuja();const k=escala()/antes;escena.scrollLeft=ox*k-cx;escena.scrollTop=oy*k-cy;
+    const sel=$q('[data-e238="zoom"]');if(sel&&![...sel.options].some(o=>Number(o.value)===S.zoom))sel.value='';
+  }
   function ajustaEspacioV248(){
     const cuerpo=$q('.e238-cuerpo');if(!cuerpo||!root.isConnected)return;
     const alto=Math.max(380,Math.floor((win.innerHeight||900)-cuerpo.getBoundingClientRect().top-16));
@@ -20573,7 +20762,7 @@ function estudioV238(m,api){
      const g=new K.Group({x:cx+(ahora.dx-antes.dx)/100*W,y:cy+(ahora.dy-antes.dy)/100*H,offsetX:w/2,offsetY:h/2,scaleX:s,scaleY:s,rotation:rot,draggable:!capaBloqueada245({tipo:'rol',rol:c.rol}),name:'rol',id:'rol-'+c.rol});
     g.setAttr('base',{cx,cy,w,h});
     const M=CAMPOS_ROL_V238[c.rol];
-    if(M.ver&&leer(M.ver)==='oculto')g.visible(false);
+    if(capaOculta245({tipo:'rol',rol:c.rol}))g.visible(false);
     if(provisional(c.rol)){
       const caja=(S.r?.cajas||[]).find(b=>b.rol===c.rol);
       const tip=M.fuente?leer(M.fuente):'',peso=M.peso?leer(M.peso):'',color=M.color?leer(M.color):'';
@@ -20618,6 +20807,7 @@ function estudioV238(m,api){
   }
   // Cambio hecho por el lienzo o el inspector en campos del formulario: historial, vista del motor y repintado.
   function cambioFormulario(espera=200){api.sincroniza();mesas.guarda();api.guardaHistorial();api.programaVista(espera);dibuja();pintaInspector();pintaBotones();}
+  const conFiltroV331=css=>function(ctx,shape){const n=ctx._context,antes=n.filter;n.filter=css;shape._sceneFunc(ctx);n.filter=antes||'none';};
   function nodoFoto(fo,W,H,visible){
     const {left,top,width:w,height:h}=geometriaCollageV234({...fo,encuadre:null},null,W,H).destino;
     const g=new K.Group({x:left+w/2,y:top+h/2,width:w,height:h,offsetX:w/2,offsetY:h/2,rotation:fo.rotacion||0,draggable:!fo.bloqueada&&S.recorte!==fo.slot,name:'foto',id:'foto-'+fo.slot,opacity:visible?1:0});
@@ -20636,7 +20826,9 @@ function estudioV238(m,api){
         g.add(fantasma);
       }
       g.add(new K.Image({image:im,name:'recortada',x:fo.voltear?w-box.left:box.left,y:box.top,width:box.width,height:box.height,scaleX:fo.voltear?-1:1,crop:{x:v.left,y:v.top,width:v.width,height:v.height},
-        cornerRadius:ac.radioPx,opacity:ac.opacidad,...(ac.sombra?{shadowColor:'#000',shadowBlur:ac.sombra.blur,shadowOffsetY:ac.sombra.dy,shadowOpacity:ac.sombra.alfa}:{}),listening:S.recorte!==fo.slot}));
+        cornerRadius:ac.radioPx,opacity:ac.opacidad,...(ac.sombra?{shadowColor:'#000',shadowBlur:ac.sombra.blur,shadowOffsetY:ac.sombra.dy,shadowOpacity:ac.sombra.alfa}:{}),listening:S.recorte!==fo.slot,
+        // Ajustes de color: ctx.filter al dibujar (no lee píxeles, así sirve con fotos de otro dominio); el motor aplica lo mismo.
+        ...(fo.ajustes?{sceneFunc:conFiltroV331(filtroCssFotoV331(fo.ajustes))}:{})}));
     }else g.add(new K.Rect({width:w,height:h,fill:'#c9d0dc',cornerRadius:ac.radioPx}));
     if(ac.borde)g.add(new K.Rect({x:ac.borde.px/2,y:ac.borde.px/2,width:Math.max(1,w-ac.borde.px),height:Math.max(1,h-ac.borde.px),stroke:ac.borde.color,strokeWidth:ac.borde.px,cornerRadius:ac.radioPx,listening:false}));
     if(S.recorte===fo.slot)g.add(new K.Rect({width:w,height:h,stroke:'#2563eb',strokeWidth:2,listening:false}));
@@ -20893,6 +21085,14 @@ function estudioV238(m,api){
     if(typeof ResizeObserver!=='undefined'){const ro=new ResizeObserver(()=>{if(!root.isConnected){ro.disconnect();return;}ajustaEspacioV248();if(['ajustar','documento'].includes(S.zoom))programaDibujo();else posFlotante(null);});ro.observe(escena);ro.observe($q('.e238-cab'));ro.observe($q('.e238-barra'));}
     if(typeof MutationObserver!=='undefined'){const mo=new MutationObserver(()=>{if(!root.isConnected){mo.disconnect();return;}programaDibujo();});mo.observe(doc.documentElement,{attributes:true,attributeFilter:['data-tema']});}
     escena.addEventListener('scroll',()=>posFlotante(null));
+    // Ctrl/⌘ (o Alt) + rueda y el pellizco del panel táctil (llega como rueda con Ctrl): zoom hacia el puntero. Sin tecla, la rueda
+    // desplaza como siempre y, en modo recorte, la rueda sobre la foto sigue cambiando su encuadre.
+    escena.addEventListener('wheel',ev=>{if(!(ev.ctrlKey||ev.metaKey||ev.altKey))return;ev.preventDefault();ev.stopPropagation();
+      fijaZoomV332(escala()*Math.exp(-ev.deltaY*(ev.deltaMode===1?.05:.0022)),ev.clientX,ev.clientY);},{passive:false,capture:true});
+    // Mano (espacio + arrastrar): mueve la vista sin tocar las capas.
+    escena.addEventListener('mousedown',ev=>{if(!S.mano)return;ev.preventDefault();ev.stopPropagation();const x0=ev.clientX,y0=ev.clientY,l0=escena.scrollLeft,t0=escena.scrollTop;escena.classList.add('e332-moviendo');
+      const mueve=e=>{escena.scrollLeft=l0-(e.clientX-x0);escena.scrollTop=t0-(e.clientY-y0);},suelta=()=>{escena.classList.remove('e332-moviendo');win.removeEventListener('mousemove',mueve);win.removeEventListener('mouseup',suelta);};
+      win.addEventListener('mousemove',mueve);win.addEventListener('mouseup',suelta);},true);
     if(doc.fonts?.ready)doc.fonts.ready.then(()=>programaDibujo());
     dibuja();
   }
@@ -20967,6 +21167,15 @@ function estudioV238(m,api){
     const p=c.fotos.find(x=>x.rol==='principal');if(p)api.ponFotoPrincipal(p.original_id);
     api.escribeCollage(c);cambioFormulario(60);pintaBiblioteca();
   }
+  // Pone otra original en el marco de `slot` (mismo marco, encuadre automático). Si es la principal, también el campo foto_id.
+  function reemplazaFotoV332(slot,id){
+    S.reemplazo=null;const c=coleccion();api.guardaHistorial();
+    if(!c){ponCampoV238(campo('sujeto_editor_json'),'');S.sujetoVista=null;empuja(campo('foto_id'),id);pintaEstado();pintaBiblioteca();return;}
+    const fo=c.fotos.find(x=>x.slot===slot);if(!fo){pintaEstado();return;}
+    if(fo.rol!=='principal'&&c.fotos.some(x=>x!==fo&&x.original_id===id))return avisaV238('Esa foto ya está en el diseño.');
+    fo.original_id=id;fo.encuadre=null;api.escribeCollage(c);if(fo.rol==='principal'){api.ponFotoPrincipal(id);ponCampoV238(campo('sujeto_editor_json'),'');S.sujetoVista=null;}
+    pintaEstado();pintaBiblioteca();cambioFormulario(60);
+  }
   function intercambia(a,b){
     const c=coleccion()||materializa();S.intercambio=null;if(!c)return;const A=c.fotos.find(x=>x.slot===a),B=c.fotos.find(x=>x.slot===b);if(!A||!B)return;
     [A.original_id,B.original_id]=[B.original_id,A.original_id];A.encuadre=B.encuadre=null;
@@ -20976,7 +21185,8 @@ function estudioV238(m,api){
   }
   function accionFoto(a,slot){
     if(a==='recortar'){const fo=(coleccion()||virtual())?.fotos.find(x=>x.slot===slot);if(!fo)return;if(fo.ajuste==='completa')return avisaV238('Foto completa: cambia Ajuste a Rellenar para recortar.');S.recorte=S.recorte===slot?null:slot;if(S.recorte)modoLocal();dibuja();pintaInspector();return;}
-    if(a==='intercambiar'){S.intercambio=slot;pintaEstado();return;}
+    // Con una sola foto no hay con quién intercambiar (antes quedaba esperando sin salida): se elige en la Biblioteca la que va en su lugar.
+    if(a==='intercambiar'){if(((coleccion()||virtual())?.fotos||[]).length<2){S.reemplazo=slot;S.intercambio=null;if(root.classList.contains('e238-biblioteca-plegada'))$q('[data-e238="biblioteca"]')?.click();S.bib='categoria';pintaBiblioteca();pintaEstado();return;}S.intercambio=slot;pintaEstado();return;}
     if(a==='quitar')return quitaFoto(slot);
     const c=coleccion()||materializa();if(!c)return;const fo=c.fotos.find(x=>x.slot===slot);if(!fo)return;
     if(a==='frente')fo.z=Math.max(...c.fotos.map(x=>x.z||0))+1;
@@ -21015,6 +21225,7 @@ function estudioV238(m,api){
   function pintaEstado(tipo,texto){
     if(tipo==='error'){S.error=texto;S.ocupado=false;}
     const b=$q('[data-e238-estado]');if(!b)return;
+    if(S.reemplazo){b.dataset.tipo='aviso';b.innerHTML='<span>Toca en la Biblioteca la foto que va en su lugar</span><button type="button" data-e238="cancelaInter">Cancelar</button>';return;}
     if(S.intercambio){b.dataset.tipo='aviso';b.innerHTML='<span>Toca la foto con la que quieres intercambiar</span><button type="button" data-e238="cancelaInter">Cancelar</button>';return;}
     if(S.error){b.dataset.tipo='error';b.innerHTML='<span>'+esc(S.error)+'</span><button type="button" data-ceditor-reintentar="1">Reintentar</button>';return;}
     if(S.ocupado){b.dataset.tipo='ocupado';b.innerHTML='<span class="e238-giro"></span><span>'+esc(S.textoOcupado||'Componiendo con el motor V7…')+'</span>';return;}
@@ -21027,13 +21238,13 @@ function estudioV238(m,api){
       d.onclick=ev=>{const b=ev.target.closest('[data-r]');if(!b)return;d.hidden=true;d.onclick=null;res(b.dataset.r==='1');};d.querySelector('[data-r="1"]').focus();});
   }
   const pop=$q('[data-e238-pop]');
-  function cierraPop(){pop.hidden=true;delete pop.dataset.recreador;pop.removeAttribute('role');pop.removeAttribute('aria-label');root.querySelector('[data-e238-tool="mosaico"]')?.classList.remove('on');}
+  function cierraPop(){pop.hidden=true;delete pop.dataset.recreador;pop.classList.remove('e332-modal');pop.removeAttribute('role');pop.removeAttribute('aria-label');root.querySelector('[data-e238-tool="mosaico"]')?.classList.remove('on');}
   function abreRecreador249(){
     if(mesas.activo())return avisaV238('En un carrusel, cambia la plantilla de cada mesa. La comparación de referencias se abre sobre un flyer individual.');
     const lista=api.lista||[];
     S.recrea249||={id:api.idReal,foto:leer('foto_id')||S.r?.foto_id||'',ocupado:false,error:'',resultado:null};
     if(!lista.some(([id])=>id===S.recrea249.id))S.recrea249.id=lista[0]?.[0];
-    pop.dataset.recreador='1';pop.setAttribute('role','dialog');pop.setAttribute('aria-label','Recrear flyer desde referencia');pintaRecreador249();
+    pop.dataset.recreador='1';pop.classList.add('e332-modal');pop.setAttribute('role','dialog');pop.setAttribute('aria-label','Recrear flyer desde referencia');pintaRecreador249();
   }
   function pintaRecreador249(){
     const d=S.recrea249,meta=(api.lista||[]).find(([id])=>id===d.id),fotos=api.fotosCategoria()||[];
@@ -21043,6 +21254,10 @@ function estudioV238(m,api){
       +'<p class="e238-ayuda">El diseño viene de la referencia; la fotografía es la original que elijas. Compara antes de aplicarlo.</p>'
       +'<div class="e238-dos"><label>Referencia del estudio<select class="e238-in" data-recrea-ref aria-label="Referencia del estudio"'+(d.ocupado?' disabled':'')+'>'+(api.lista||[]).map(([id,num,nom])=>'<option value="'+id+'"'+(id===d.id?' selected':'')+'>'+esc(num+' · '+nom)+'</option>').join('')+'</select></label>'
       +'<label>Tu fotografía original<select class="e238-in" data-recrea-foto aria-label="Foto para recrear"'+(d.ocupado?' disabled':'')+'><option value="">Selecciona una foto</option>'+fotos.map((f,i)=>'<option value="'+esc(f.id)+'"'+(f.id===d.foto?' selected':'')+'>'+esc(f.caption||f.nombre||('Foto '+(i+1)+' · original'))+'</option>').join('')+'</select></label></div>'
+      // v332: el recreador como diálogo amplio en 3 pasos, con miniaturas (antes, dos select y vistas de 220 px encima del lienzo).
+      +'<ol class="e332-pasos"><li><b>1</b> Elige la referencia</li><li><b>2</b> Elige tu foto</li><li><b>3</b> Compara y aplica</li></ol>'
+      +'<div class="e332-minis" role="group" aria-label="Referencias del estudio">'+(api.lista||[]).map(([id,num,nom])=>'<button type="button" class="e332-mini'+(id===d.id?' on':'')+'" data-recrea-elige-ref="'+id+'" aria-pressed="'+(id===d.id)+'"'+(d.ocupado?' disabled':'')+'><img loading="lazy" alt="" src="plantillas/'+num+'.webp"><span>'+esc(num+' · '+nom)+'</span></button>').join('')+'</div>'
+      +'<div class="e332-minis e332-minis-fotos" role="group" aria-label="Tus originales">'+(fotos.length?fotos.map((f,i)=>{const src=f.preview||api.imagenDe?.(f.id);return '<button type="button" class="e332-mini'+(f.id===d.foto?' on':'')+'" data-recrea-elige-foto="'+esc(f.id)+'" aria-pressed="'+(f.id===d.foto)+'"'+(d.ocupado?' disabled':'')+'>'+(src?'<img loading="lazy" alt="" src="'+esc(src)+'">':'')+'<span>Foto '+(i+1)+'</span></button>';}).join(''):'<p class="e238-ayuda">No hay originales en esta categoría.</p>')+'</div>'
       +'<div class="e249-compara"><figure><figcaption>Referencia de composición</figcaption><img src="plantillas/'+meta?.[1]+'.webp" alt="Referencia '+esc(meta?.[2]||'')+'"></figure><figure><figcaption>Resultado con tu original</figcaption>'+(d.resultado?'<img src="'+esc(d.resultado.replica_vista)+'" alt="Flyer recreado con la fotografía seleccionada">':'<div class="e249-vacio">'+(d.ocupado?'Componiendo con tu fotografía…':'Genera una comparación para revisar el resultado.')+'</div>')+'</figure></div>'
       +(d.error?'<p class="e249-error" role="alert">'+esc(d.error)+'</p>':'')
       +'<p class="e238-ayuda">Catálogo: geometría y render local. Subir una referencia externa usa el análisis de IA del planificador; son recorridos distintos.</p>'
@@ -21054,6 +21269,8 @@ function estudioV238(m,api){
     d[ev.target.hasAttribute('data-recrea-ref')?'id':'foto']=ev.target.value;d.resultado=null;d.error='';pintaRecreador249();
   });
   pop.addEventListener('click',async ev=>{
+    const mini=ev.target.closest('[data-recrea-elige-ref],[data-recrea-elige-foto]');
+    if(mini&&pop.dataset.recreador==='1'){ev.stopPropagation();const d=S.recrea249;if(d.ocupado)return;if(mini.dataset.recreaEligeRef)d.id=mini.dataset.recreaEligeRef;else d.foto=mini.dataset.recreaEligeFoto;d.resultado=null;d.error='';pintaRecreador249();return;}
     const b=ev.target.closest('[data-recrea-accion]');if(!b)return;ev.preventDefault();ev.stopPropagation();
     const d=S.recrea249,a=b.dataset.recreaAccion;if(d.ocupado)return;
     if(a==='externa'){cierraPop();CONT.estiloModo='referencia';CONT.estiloCrearAbierto=true;CONT.tab='estilos';ve('contenido');return;}
@@ -21073,12 +21290,15 @@ function estudioV238(m,api){
     }
   });
   function abreMosaico(){
+    // Sin 2 fotos elegidas el panel ya no queda vacío: la principal viene marcada y se eligen las demás aquí mismo.
+    if(!S.elegidas.length&&principalId()&&(coleccion()||virtual())?.fotos.length<2)S.elegidas=[principalId()];
     const c=coleccion()||virtual(),ids0=S.elegidas.length>=2?[...S.elegidas]:ordenMosaico(c||{fotos:[]}).filter(Boolean).map(f=>f.original_id),n=ids0.length,F=FMT();
     // Mismo orden que eligeDiseno: la principal primero (así cada marco recibe la foto para la que se calculó).
     const pri=principalId(),ids=ids0.includes(pri)?[pri,...ids0.filter(x=>x!==pri)]:ids0,opM=opcionesMosaicoV255();
     const lista=disenosMosaicoV238(n,F.w/F.h,proporcionesMosaicoV255(ids)),originales=ids.map(id=>api.imagenDe(id));
     pop.innerHTML='<header><b>'+I.mosaico+' Plantillas de mosaico</b><button type="button" class="e238-ico" data-e238="cierraPop" aria-label="Cerrar">×</button></header>'
-      +(n<2?'<p class="e238-ayuda">Elige de 2 a 9 fotos en la Biblioteca. Las plantillas nuevas muestran cada foto completa, sin ampliarla ni cortarla para llenar un marco.</p>'
+      +(n<2?'<p class="e238-ayuda">Toca de 2 a 9 fotos para ver las distribuciones. Cada foto se muestra completa, sin ampliarla ni cortarla para llenar un marco.</p>'
+          +'<div class="e331-mosfotos" role="group" aria-label="Fotos para el mosaico">'+(fotosBiblioteca().slice(0,30).map(x=>{const k=S.elegidas.indexOf(x.id),src=x.preview||api.imagenDe(x.id);return '<button type="button" class="e238-foto'+(k>=0?' sel':'')+'" data-mosaico-foto="'+esc(x.id)+'" aria-pressed="'+(k>=0)+'">'+(src?'<img alt="" loading="lazy" src="'+esc(src)+'">':'<span>'+esc(x.id.slice(0,6))+'</span>')+(k>=0?'<b class="e238-n">'+(k+1)+'</b>':'')+'</button>';}).join('')||'<p class="e238-ayuda">No hay fotos de esta categoría. Súbelas en la Biblioteca.</p>')+'</div>'
         :'<p class="e238-ayuda">'+lista.filter(d=>d.ajuste==='completa').length+' distribuciones sin recorte para tus '+n+' fotos. Las fotos bloqueadas conservan su posición. Puedes deshacer cualquier cambio.</p>'
            +'<div class="e253-filtros"><input class="e238-in" data-mosaico-busca aria-label="Buscar plantilla de mosaico" placeholder="Buscar distribución…"><select class="e238-in" data-mosaico-familia aria-label="Familia de mosaicos"><option value="">Todas las familias</option><option>Smart</option><option>Destacadas</option><option>Tiras</option><option>Álbum</option><option>Clásicos</option><option>Anteriores</option><option>Rejillas</option><option value="editorial">Con recorte · v238</option></select><button type="button" class="e238-btn e238-prim" data-e238="reorganizarMosaico">Probar otra distribución</button></div>'
            +'<div class="e255-ajustes" role="group" aria-label="Ajustes del mosaico"><span>Texto</span><div class="e255-seg">'+[['abajo','Abajo'],['arriba','Arriba'],['ninguna','Sin zona']].map(([v,t])=>'<button type="button" data-mosaico-zona="'+v+'" aria-pressed="'+(opM.zona===v)+'" class="'+(opM.zona===v?'on':'')+'">'+t+'</button>').join('')+'</div>'
@@ -21086,6 +21306,8 @@ function estudioV238(m,api){
           +'<p class="e238-nota" data-mosaico-cuenta aria-live="polite"></p><div class="e238-disenos" data-mosaico-grid></div>'
           +'<div class="e253-paginas"><button type="button" class="e238-btn" data-mosaico-prev>Anterior</button><button type="button" class="e238-btn" data-mosaico-next>Siguiente</button></div>')
       +'<p class="e238-nota">Foto completa conserva la proporción y puede dejar aire dentro del marco. No modifica la original. Se conservan los textos y efectos que ya tengas en el diseño.</p>';
+    pop.querySelectorAll('[data-mosaico-foto]').forEach(b=>b.onclick=()=>{const id=b.dataset.mosaicoFoto,i=S.elegidas.indexOf(id);
+      if(i>=0)S.elegidas.splice(i,1);else if(S.elegidas.length<9)S.elegidas.push(id);pintaBiblioteca();abreMosaico();});
     if(n>=2){
       let pagina=0;const buscar=pop.querySelector('[data-mosaico-busca]'),familia=pop.querySelector('[data-mosaico-familia]'),grid=pop.querySelector('[data-mosaico-grid]'),cuenta=pop.querySelector('[data-mosaico-cuenta]'),prev=pop.querySelector('[data-mosaico-prev]'),next=pop.querySelector('[data-mosaico-next]');
       const norm=s=>String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
@@ -21112,6 +21334,14 @@ function estudioV238(m,api){
     insp.hidden=t==='diseno';diseno.hidden=t!=='diseno';if(t!=='diseno')pintaInspector();else pintaDiseno();
   }
   const rango=(id,etq,min,max,paso,val0,sufijo='',val=paso<1?Math.round(Number(val0)*100)/100:val0)=>'<div class="e238-fila"><span>'+etq+'</span><div class="e238-rango"><input type="range" data-i="'+id+'" min="'+min+'" max="'+max+'" step="'+paso+'" value="'+val+'" aria-label="'+esc(etq)+'"><input type="number" class="e238-num" data-i="'+id+'" min="'+min+'" max="'+max+'" step="'+paso+'" value="'+val+'" aria-label="'+esc(etq)+(sufijo?' ('+sufijo+')':'')+'"></div></div>';
+  // «Ajustar» (v331): preajustes y deslizadores de color de la foto elegida. Se ven al momento en el lienzo y salen igual en el JPG.
+  const ajustesFotoV331=fo=>{const a=fo.ajustes||{},act=JSON.stringify(acotaAjustesFotoV331(a));
+    const r=(k,etq,min,max)=>'<div class="e238-fila"><span>'+etq+'</span><div class="e238-rango"><input type="range" data-ajuste="'+k+'" min="'+min+'" max="'+max+'" step="1" value="'+(Number(a[k])||0)+'" aria-label="'+etq+'"><input type="number" class="e238-num" data-ajuste="'+k+'" min="'+min+'" max="'+max+'" step="1" value="'+(Number(a[k])||0)+'" aria-label="'+etq+' (%)"></div></div>';
+    return '<section class="e238-sec" data-sec-ajustes><h3>'+I.ajustar+'Ajustes de color</h3><div class="e331-presets" role="group" aria-label="Ajustes rápidos">'
+      +[['original','Original'],['vivo','Vivo'],['luminoso','Luminoso'],['suave','Suave'],['calido','Cálido'],['vintage','Vintage'],['bn','B/N']].map(([k,t])=>'<button type="button" class="e331-preset'+(JSON.stringify(PRESETS_AJUSTE_V331[k])===act?' on':'')+'" data-ajuste-preset="'+k+'" aria-pressed="'+(JSON.stringify(PRESETS_AJUSTE_V331[k])===act)+'"><i style="filter:'+(filtroCssFotoV331(PRESETS_AJUSTE_V331[k])||'none')+'">'+(api.imagenDe(fo.original_id)?'<img alt="" src="'+esc(api.imagenDe(fo.original_id))+'">':'')+'</i><span>'+t+'</span></button>').join('')+'</div>'
+      +r('brillo','Brillo',-50,50)+r('contraste','Contraste',-50,50)+r('saturacion','Saturación',-100,100)+r('sepia','Calidez (sepia)',0,100)
+      +'<label class="e238-switch"><input type="checkbox" data-ajuste="bn"'+(a.bn?' checked':'')+'><span></span>Blanco y negro</label>'
+      +'<p class="e238-ayuda">No toca la original: se aplica al exportar.</p></section>';};
   const opcionesDe=n=>{const s=campo(n);return s&&s.tagName==='SELECT'?[...s.options].map(o=>'<option value="'+esc(o.value)+'"'+(o.value===s.value?' selected':'')+'>'+esc(o.textContent)+'</option>').join(''):'';};
   const etqOpcion=v=>v==='0'||v==='original'?'Auto':v;
   // Un select del formulario como deslizador por sus opciones (interlineado y espaciado tienen valores discretos).
@@ -21236,10 +21466,20 @@ function estudioV238(m,api){
   function escribeTextosLibres245(arr,fin=true){ponCampoV238(campo('textos_libres_json'),JSON.stringify(arr));if(fin)cambioFormulario(150);else dibuja();}
   function escribeOrdenCapas245(arr,fin=true){ponCampoV238(campo('orden_capas_json'),JSON.stringify([...new Set(arr)]));if(fin)cambioFormulario(120);else dibuja();}
   function normalizaTextoLibre245(t,i=0){return {id:String(t.id||'texto-'+i).replace(/[^a-zA-Z0-9_-]/g,'').slice(0,60)||'texto-'+i,nombre:String(t.nombre||'Texto libre').replace(/[<>]/g,'').slice(0,60),texto:String(t.texto||'Texto libre').slice(0,500),x:Number(t.x)||10,y:Number(t.y)||10,w:Number(t.w)||40,h:Number(t.h)||12,tamano:Number(t.tamano)||4,color:/^#[0-9a-f]{6}$/i.test(t.color)?t.color:'#FFFFFF',fuente:['Arial','Verdana','Georgia','Times New Roman','Courier New','Playfair Display','Poppins','DM Serif Display','Marcellus','Bodoni Moda','League Spartan','Inter','Plus Jakarta Sans'].includes(t.fuente)?t.fuente:'Arial',peso:Number(t.peso)||500,alineacion:['start','middle','end'].includes(t.alineacion)?t.alineacion:'start',giro:Number(t.giro)||0,opacidad:Number.isFinite(Number(t.opacidad))?Number(t.opacidad):1,trazo:t.trazo==='none'||/^#[0-9a-f]{6}$/i.test(t.trazo)?t.trazo:'none',trazo_ancho:Number(t.trazo_ancho)||.2,interlineado:Number.isFinite(Number(t.interlineado))?Math.min(2.5,Math.max(.7,Number(t.interlineado))):1.12,tracking:Number.isFinite(Number(t.tracking))?Math.min(30,Math.max(-10,Number(t.tracking))):0,sombra:!!t.sombra,grupo:String(t.grupo||'').replace(/[^a-zA-Z0-9_-]/g,'').slice(0,40),bloqueada:!!t.bloqueada,oculta:!!t.oculta};}
+  // Color inicial de un texto libre nuevo que se lea sobre lo que tiene debajo: se mide el tono en la vista del motor de la
+  // página activa (misma procedencia que el panel; x, y, w, h en % de esa página). Si no se puede medir, blanco con contorno y sombra: se lee sobre cualquier fondo.
+  function colorTextoNuevoV331(x,y,w,h){
+    try{const im=LF?.findOne('.base')?.image(),iw=im?.naturalWidth||im?.width,ih=im?.naturalHeight||im?.height;if(!iw||!ih)throw 0;
+      const cv=doc.createElement('canvas');cv.width=cv.height=12;const cx=cv.getContext('2d');
+      cx.drawImage(im,iw*Math.max(0,x)/100,ih*Math.max(0,y)/100,Math.max(1,iw*w/100),Math.max(1,ih*h/100),0,0,12,12);
+      const d=cx.getImageData(0,0,12,12).data;let l=0;for(let i=0;i<d.length;i+=4)l+=.2126*d[i]+.7152*d[i+1]+.0722*d[i+2];l/=d.length/4;
+      return l>150?{color:'#111827'}:{color:'#FFFFFF',sombra:true};
+    }catch{return {color:'#FFFFFF',sombra:true,trazo:'#111827',trazo_ancho:.15};}
+  }
   function textoLibreSel245(){return textosLibres245().find(x=>x.id===S.sel?.id)||null;}
   function pintaTextoLibre245(){
     const t=textoLibreSel245();
-    if(!t){insp.innerHTML=sec('Texto libre','<p class="e238-ayuda">Selecciona una caja de texto libre o usa la herramienta Texto libre.</p>');return;}
+    if(!t){insp.innerHTML=sec('Texto libre','<p class="e238-ayuda">'+(S.textoLibreDibujar?'Arrastra sobre el lienzo para dibujar la caja de texto. Después escribe el texto aquí.':'Selecciona una caja de texto libre o usa la herramienta Texto libre.')+'</p>');return;}
     const ctl=(k,n,type='number',min=0,max=100,step=1)=>'<label class="e238-campo"><span>'+n+'</span><input class="e238-in" data-texto-libre="'+k+'" type="'+type+'" value="'+esc(t[k]??'')+'" '+(type!=='text'?'min="'+min+'" max="'+max+'" step="'+step+'"':'')+'></label>';
     const sel=(k,n,ops)=>'<label class="e238-campo"><span>'+n+'</span><select class="e238-in" data-texto-libre="'+k+'">'+ops.map(([v,l])=>'<option value="'+v+'"'+(String(t[k])===String(v)?' selected':'')+'>'+l+'</option>').join('')+'</select></label>';
     insp.innerHTML=sec('Texto libre','<p class="e238-ayuda">Caja independiente: se exporta con el mismo documento y puede duplicarse, agruparse y ordenarse.</p>'
@@ -21294,7 +21534,7 @@ function estudioV238(m,api){
     const hit=new K.Rect({name:'herr243',x:S.formaDibujar||S.textoLibreDibujar?-(S.offsetMesa||0):0,width:S.formaDibujar||S.textoLibreDibujar?(S.anchoDocumento||W):W,height:H,fill:'rgba(0,0,0,.001)'});let inicio=null,trazo=null,guia=null;
     hit.on('mousedown touchstart',ev=>{ev.cancelBubble=true;api.guardaHistorial();S.arrastrando=true;inicio=punteroTrabajo();if(S.pincelModo){trazo={modo:S.pincelModo,radio:S.pincelRadio||2,puntos:[clamp(inicio.x/W*100,0,100),clamp(inicio.y/H*100,0,100)]};}guia=new K.Line({name:'herr243',points:[],stroke:S.pincelModo==='quitar'?'#ef4444':'#22c55e',strokeWidth:S.pincelModo?2*(S.pincelRadio||2)*W/100:2,lineCap:'round',opacity:.6,listening:false});LU.add(guia);});
     hit.on('mousemove touchmove',()=>{if(!inicio)return;const p=punteroTrabajo();if(trazo){trazo.puntos.push(clamp(p.x/W*100,0,100),clamp(p.y/H*100,0,100));guia.points(trazo.puntos.map((n,i)=>n/100*(i%2?H:W)));}else guia.points([inicio.x,inicio.y,p.x,inicio.y,p.x,p.y,inicio.x,p.y,inicio.x,inicio.y]);LU.batchDraw();});
-     hit.on('mouseup touchend touchcancel mouseleave',()=>{if(!inicio)return;const p=punteroTrabajo()||inicio;S.arrastrando=false;if(trazo){const s=sujeto243();if(s){s.trazos.push(trazo);ponCampoV238(campo('sujeto_editor_json'),JSON.stringify(s));cambioFormulario(100);}}else if(S.textoLibreDibujar&&Math.abs(p.x-inicio.x)>3&&Math.abs(p.y-inicio.y)>3){const id='t'+Date.now(),a=textosLibres245();a.push(normalizaTextoLibre245({id,nombre:'Texto libre',texto:'Texto libre',x:(Math.min(inicio.x,p.x)+(S.offsetMesa||0))/(S.anchoDocumento||W)*100,y:Math.min(inicio.y,p.y)/H*100,w:Math.max(4,Math.abs(p.x-inicio.x)/(S.anchoDocumento||W)*100),h:Math.max(4,Math.abs(p.y-inicio.y)/H*100),tamano:4,color:'#FFFFFF'}));S.textoLibreDibujar=false;S.sel={tipo:'textoLibre',id};escribeTextosLibres245(a);}else if((S.formaDibujar==='linea'&&(Math.abs(p.x-inicio.x)>3||Math.abs(p.y-inicio.y)>3))||(Math.abs(p.x-inicio.x)>3&&Math.abs(p.y-inicio.y)>3)){const id='f'+Date.now(),a=formas243();a.push({id,nombre:tiposFormas243.find(x=>x[0]===S.formaDibujar)?.[1]||'Forma',tipo:S.formaDibujar,x:(Math.min(inicio.x,p.x)+(S.offsetMesa||0))/(S.anchoDocumento||W)*100,y:Math.min(inicio.y,p.y)/H*100,w:Math.abs(p.x-inicio.x)/(S.anchoDocumento||W)*100,h:Math.max(1,Math.abs(p.y-inicio.y))/H*100,giro:0,relleno:'#2563EB',color2:'#EC4899',trazo:S.formaDibujar==='linea'?'#2563EB':'none',grosor:.4,opacidad:1,radio:0,lados:5,interior:45});S.formaDibujar=null;S.sel={tipo:'forma',id};escribeFormas243(a);}inicio=null;trazo=null;dibuja();pintaInspector();});LU.add(hit);
+     hit.on('mouseup touchend touchcancel mouseleave',()=>{if(!inicio)return;const p=punteroTrabajo()||inicio;S.arrastrando=false;if(trazo){const s=sujeto243();if(s){s.trazos.push(trazo);ponCampoV238(campo('sujeto_editor_json'),JSON.stringify(s));cambioFormulario(100);}}else if(S.textoLibreDibujar&&Math.abs(p.x-inicio.x)>3&&Math.abs(p.y-inicio.y)>3){const id='t'+Date.now(),a=textosLibres245();a.push(normalizaTextoLibre245({id,nombre:'Texto libre',texto:'Texto libre',x:(Math.min(inicio.x,p.x)+(S.offsetMesa||0))/(S.anchoDocumento||W)*100,y:Math.min(inicio.y,p.y)/H*100,w:Math.max(4,Math.abs(p.x-inicio.x)/(S.anchoDocumento||W)*100),h:Math.max(4,Math.abs(p.y-inicio.y)/H*100),tamano:4,...colorTextoNuevoV331(Math.min(inicio.x,p.x)/W*100,Math.min(inicio.y,p.y)/H*100,Math.abs(p.x-inicio.x)/W*100,Math.abs(p.y-inicio.y)/H*100)}));S.textoLibreDibujar=false;S.sel={tipo:'textoLibre',id};escribeTextosLibres245(a);}else if((S.formaDibujar==='linea'&&(Math.abs(p.x-inicio.x)>3||Math.abs(p.y-inicio.y)>3))||(Math.abs(p.x-inicio.x)>3&&Math.abs(p.y-inicio.y)>3)){const id='f'+Date.now(),a=formas243();a.push({id,nombre:tiposFormas243.find(x=>x[0]===S.formaDibujar)?.[1]||'Forma',tipo:S.formaDibujar,x:(Math.min(inicio.x,p.x)+(S.offsetMesa||0))/(S.anchoDocumento||W)*100,y:Math.min(inicio.y,p.y)/H*100,w:Math.abs(p.x-inicio.x)/(S.anchoDocumento||W)*100,h:Math.max(1,Math.abs(p.y-inicio.y))/H*100,giro:0,relleno:'#2563EB',color2:'#EC4899',trazo:S.formaDibujar==='linea'?'#2563EB':'none',grosor:.4,opacidad:1,radio:0,lados:5,interior:45});S.formaDibujar=null;S.sel={tipo:'forma',id};escribeFormas243(a);}inicio=null;trazo=null;dibuja();pintaInspector();});LU.add(hit);
   }
   root.addEventListener('click',async ev=>{
     const b=ev.target.closest('[data-forma-tipo],[data-forma-sel],[data-forma-accion],[data-sujeto-accion]');if(!b)return;
@@ -21355,6 +21595,7 @@ function estudioV238(m,api){
         +sec('Acabado',rango('radio','Esquinas',0,20,0.5,fo.radio||0)+rango('grosor','Borde',0,4,0.1,fo.borde?.grosor||0)
           +'<div class="e238-fila"><span>Color borde</span><div class="e238-color"><input type="color" data-i="bordecolor" value="'+esc(fo.borde?.color||'#FFFFFF')+'" aria-label="Color del borde"><span class="e238-ayuda">'+esc(fo.borde?.color||'#FFFFFF')+'</span></div></div>'
           +rango('sombra','Sombra',0,1,0.05,fo.sombra||0)+rango('opacidad','Opacidad',0.2,1,0.05,fo.opacidad??1))
+        +ajustesFotoV331(fo)
         +sec('Posición y capa','<div class="e238-acciones"><button type="button" class="e238-accion" data-capa-accion="duplicar">'+I.foto+'<span>Duplicar foto</span></button><button type="button" class="e238-accion" data-a="frente">'+I.frente+'<span>Traer adelante</span></button><button type="button" class="e238-accion" data-a="atras">'+I.atras+'<span>Enviar atrás</span></button><button type="button" class="e238-accion" data-a="bloquear">'+(fo.bloqueada?I.candado:I.abierto)+'<span>'+(fo.bloqueada?'Desbloquear':'Bloquear')+'</span></button>'+(fo.rol!=='principal'?'<button type="button" class="e238-accion peligro" data-a="quitar">'+I.eliminar+'<span>Quitar</span></button>':'')+'</div>'
           +'<div class="e238-alinear">'+[['al-izq','alIzq','Alinear a la izquierda'],['al-ch','alCentroH','Centrar horizontal'],['al-der','alDer','Alinear a la derecha'],['al-arr','alArriba','Alinear arriba'],['al-cv','alCentroV','Centrar vertical'],['al-aba','alAbajo','Alinear abajo']].map(([a,ic,t])=>'<button type="button" class="e238-ico" data-a="'+a+'" title="'+t+'" aria-label="'+t+'">'+I[ic]+'</button>').join('')+'</div>'
           +'<label class="e238-switch"><input type="checkbox" data-i="bloqueo"'+(fo.bloqueada?' checked':'')+'><span></span>Bloquear foto en el lienzo</label>');
@@ -21439,15 +21680,18 @@ function estudioV238(m,api){
      if(c)api.escribeCollage(c);ponCampoV238(campo('formas_editor_json'),JSON.stringify(forms));ponCampoV238(campo('textos_libres_json'),JSON.stringify(texts));S.multi=copias.length>1?copias:[];S.sel=copias.at(-1)||null;cambioFormulario(100);
   }
   function pintaSeleccionMultiple245(){const sels=capasOperablesSeleccionadas245();insp.innerHTML=sec('Selección múltiple','<p class="e238-ayuda">'+sels.length+' capas seleccionadas. Las acciones se aplican a formas y fotos; los objetos bloqueados no se mueven, pero sí pueden ocultarse.</p><div class="e238-acciones">'+[['al-izq','Alinear izquierda'],['al-ch','Centrar horizontal'],['al-der','Alinear derecha'],['al-arr','Alinear arriba'],['al-cv','Centrar vertical'],['al-aba','Alinear abajo'],['dist-h','Distribuir horizontal'],['dist-v','Distribuir vertical']].map(([k,t])=>'<button type="button" class="e238-btn e238-peq" data-capa-accion="'+k+'">'+t+'</button>').join('')+'</div><div class="e238-acciones"><button type="button" class="e238-btn e238-peq" data-capa-accion="agrupar">Agrupar</button><button type="button" class="e238-btn e238-peq" data-capa-accion="desagrupar">Desagrupar</button><button type="button" class="e238-btn e238-peq" data-capa-accion="frente">Traer delante</button><button type="button" class="e238-btn e238-peq" data-capa-accion="fondo">Enviar atrás</button><button type="button" class="e238-btn e238-peq" data-capa-accion="duplicar">Duplicar selección</button><button type="button" class="e238-btn e238-peq" data-capa-accion="eliminar">Quitar</button></div>');}
-  function itemsCapas245(){const c=coleccion()||virtual(),items=[];if(leer('logo_ruta'))items.push({sel:{tipo:'logo'},ico:I.foto,fallback:'Logo PNG'});for(const rr of ((mismoFormato()?S.r?.capas_editor?.roles:null)||[]))items.push({sel:{tipo:'rol',rol:rr.rol},ico:I.texto,fallback:NOMBRE_ROL_V238[rr.rol]});items.push({sel:{tipo:'degradado'},ico:I.fondo,fallback:'Degradado'});for(const t of textosLibres245().slice().reverse())items.push({sel:{tipo:'textoLibre',id:t.id},ico:I.texto,fallback:t.nombre||'Texto libre'});for(const s of formas243().slice().reverse())items.push({sel:{tipo:'forma',id:s.id},ico:'◇',fallback:s.nombre||'Forma'});for(const fo of ordenZ(c?.fotos||[]).reverse())items.push({sel:{tipo:'foto',slot:fo.slot},ico:api.imagenDe(fo.original_id)?'<img src="'+esc(api.imagenDe(fo.original_id))+'" alt="">':I.foto,fallback:fo.nombre||(fo.rol==='principal'?'Foto principal':'Foto del mosaico')});const orden=ordenCapas245(),pos=new Map(orden.map((k,i)=>[k,i]));return items.sort((a,b)=>(pos.get(claveCapaV245(a.sel))??10000)-(pos.get(claveCapaV245(b.sel))??10000));}
+  function itemsCapas245(){const c=coleccion()||virtual(),items=[];if(leer('logo_ruta'))items.push({sel:{tipo:'logo'},ico:I.foto,fallback:'Logo PNG'});const roles=((mismoFormato()?S.r?.capas_editor?.roles:null)||[]).map(r=>r.rol);for(const k of Object.keys(estadosCapas245()))if(k.startsWith('rol:')&&estadosCapas245()[k].oculta&&CAMPOS_ROL_V238[k.slice(4)]&&!roles.includes(k.slice(4)))roles.push(k.slice(4));for(const rol of roles)items.push({sel:{tipo:'rol',rol},ico:I.texto,fallback:NOMBRE_ROL_V238[rol]});items.push({sel:{tipo:'degradado'},ico:I.fondo,fallback:'Degradado'});for(const t of textosLibres245().slice().reverse())items.push({sel:{tipo:'textoLibre',id:t.id},ico:I.texto,fallback:t.nombre||'Texto libre'});for(const s of formas243().slice().reverse())items.push({sel:{tipo:'forma',id:s.id},ico:'◇',fallback:s.nombre||'Forma'});for(const fo of ordenZ(c?.fotos||[]).reverse())items.push({sel:{tipo:'foto',slot:fo.slot},ico:api.imagenDe(fo.original_id)?'<img src="'+esc(api.imagenDe(fo.original_id))+'" alt="">':I.foto,fallback:fo.nombre||(fo.rol==='principal'?'Foto principal':'Foto del mosaico')});const orden=ordenCapas245(),pos=new Map(orden.map((k,i)=>[k,i]));const lista=items.sort((a,b)=>(pos.get(claveCapaV245(a.sel))??10000)-(pos.get(claveCapaV245(b.sel))??10000));
+    // v332: el sujeto recortado es una capa propia, enlazada a la foto principal (va justo encima de ella; su ojo activa o apaga la máscara).
+    const su=sujeto243();if(su?.ruta){const i=lista.findIndex(x=>x.sel.tipo==='foto'&&(c?.fotos||[]).find(f=>f.slot===x.sel.slot)?.rol==='principal');lista.splice(i<0?lista.length:i,0,{sel:{tipo:'sujeto'},ico:S.sujetoVista?'<img src="'+esc(S.sujetoVista)+'" alt="">':I.sujeto||I.foto,fallback:'Sujeto · enlazado a la foto',enlace:true});}
+    return lista;}
   function reordenaCapaGlobal245(a){const items=itemsCapas245(),seleccionadas=S.multi.length?S.multi:(S.sel?[S.sel]:[]),claves=seleccionadas.map(claveCapaV245),orden=items.map(x=>claveCapaV245(x.sel)),elegidas=orden.filter(k=>claves.includes(k));if(!elegidas.length)return avisaV238('Selecciona una capa para cambiar su orden.');let nuevo=orden.slice();if(a==='capa-frente')nuevo=[...orden.filter(k=>!claves.includes(k)),...elegidas];else if(a==='capa-fondo')nuevo=[...elegidas,...orden.filter(k=>!claves.includes(k))];else{const indices=elegidas.map(k=>nuevo.indexOf(k)).filter(i=>i>=0),primero=Math.min(...indices),ultimo=Math.max(...indices);if(a==='capa-subir'&&primero>0){const anterior=nuevo[primero-1];nuevo.splice(primero-1,0,...elegidas);nuevo.splice(ultimo+1,1);}else if(a==='capa-bajar'&&ultimo<nuevo.length-1){const siguiente=nuevo[ultimo+1];nuevo.splice(primero,elegidas.length);nuevo.splice(nuevo.indexOf(siguiente)+1,0,...elegidas);}}escribeOrdenCapas245(nuevo);}
-  function capaOculta245(sel){if(sel?.tipo==='forma'||sel?.tipo==='foto'||sel?.tipo==='textoLibre')return !!itemCapa245(sel)?.oculta;if(sel?.tipo==='rol'){const M=CAMPOS_ROL_V238[sel.rol];return !!M.ver&&leer(M.ver)==='oculto';}if(sel?.tipo==='logo')return leer('logo_mostrar')==='no';if(sel?.tipo==='degradado')return leer('degradado_modo')==='ninguno';return false;}
+  function capaOculta245(sel){if(sel?.tipo==='forma'||sel?.tipo==='foto'||sel?.tipo==='textoLibre')return !!itemCapa245(sel)?.oculta;if(sel?.tipo==='rol'){const M=CAMPOS_ROL_V238[sel.rol];return (!!M?.ver&&leer(M.ver)==='oculto')||!!estadoCapa245(sel).oculta;}if(sel?.tipo==='logo')return leer('logo_mostrar')==='no';if(sel?.tipo==='degradado')return leer('degradado_modo')==='ninguno';if(sel?.tipo==='sujeto'){try{return JSON.parse(leer('sujeto_editor_json')||'null')?.activo===false;}catch{return false;}}return false;}
   function capaBloqueada245(sel){if(sel?.tipo==='forma'||sel?.tipo==='foto'||sel?.tipo==='textoLibre')return !!itemCapa245(sel)?.bloqueada;return !!estadoCapa245(sel).bloqueada;}
-  function alternaCapa245(sel,a){const ocultar=a==='ocultar'||a==='mostrar',bloquear=a==='bloquear'||a==='desbloquear',valorOculta=a==='ocultar',valorBloqueada=a==='bloquear';if(sel.tipo==='forma'||sel.tipo==='foto'||sel.tipo==='textoLibre'){const forms=formas243(),texts=typeof textosLibres245==='function'?textosLibres245():[],c=coleccion()||virtual(),x=itemCapa245(sel,forms,c);if(!x)return;x[ocultar?'oculta':'bloqueada']=ocultar?valorOculta:valorBloqueada;if(sel.tipo==='forma')ponCampoV238(campo('formas_editor_json'),JSON.stringify(forms));else if(sel.tipo==='textoLibre')ponCampoV238(campo('textos_libres_json'),JSON.stringify(texts));else if(c)api.escribeCollage(c);}else if(sel.tipo==='rol'){const M=CAMPOS_ROL_V238[sel.rol];if(ocultar&&M.ver)empuja(campo(M.ver),valorOculta?'oculto':'visible');else guardaEstadoCapa245(sel,{[bloquear?'bloqueada':'oculta']:bloquear?valorBloqueada:valorOculta});}else if(sel.tipo==='logo'&&ocultar)ponCampoV238(campo('logo_mostrar'),valorOculta?'no':'si');else if(sel.tipo==='degradado'&&ocultar)ponCampoV238(campo('degradado_modo'),valorOculta?'ninguno':'personalizado');else guardaEstadoCapa245(sel,{[bloquear?'bloqueada':'oculta']:bloquear?valorBloqueada:valorOculta});cambioFormulario(100);}
+  function alternaCapa245(sel,a){const ocultar=a==='ocultar'||a==='mostrar',bloquear=a==='bloquear'||a==='desbloquear',valorOculta=a==='ocultar',valorBloqueada=a==='bloquear';if(sel.tipo==='forma'||sel.tipo==='foto'||sel.tipo==='textoLibre'){const forms=formas243(),texts=typeof textosLibres245==='function'?textosLibres245():[],c=coleccion()||virtual(),x=itemCapa245(sel,forms,c);if(!x)return;x[ocultar?'oculta':'bloqueada']=ocultar?valorOculta:valorBloqueada;if(sel.tipo==='forma')ponCampoV238(campo('formas_editor_json'),JSON.stringify(forms));else if(sel.tipo==='textoLibre')ponCampoV238(campo('textos_libres_json'),JSON.stringify(texts));else if(c)api.escribeCollage(c);}else if(sel.tipo==='rol'){const M=CAMPOS_ROL_V238[sel.rol];if(ocultar&&M.ver)empuja(campo(M.ver),valorOculta?'oculto':'visible');else guardaEstadoCapa245(sel,{[bloquear?'bloqueada':'oculta']:bloquear?valorBloqueada:valorOculta});}else if(sel.tipo==='logo'&&ocultar)ponCampoV238(campo('logo_mostrar'),valorOculta?'no':'si');else if(sel.tipo==='degradado'&&ocultar)ponCampoV238(campo('degradado_modo'),valorOculta?'ninguno':'personalizado');else if(sel.tipo==='sujeto'&&ocultar){let su=null;try{su=JSON.parse(leer('sujeto_editor_json')||'null');}catch{}if(su){su.activo=!valorOculta;ponCampoV238(campo('sujeto_editor_json'),JSON.stringify(su));}}else guardaEstadoCapa245(sel,{[bloquear?'bloqueada':'oculta']:bloquear?valorBloqueada:valorOculta});cambioFormulario(100);}
   function pintaCapas(){
      const items=itemsCapas245();
     const seleccionadas=new Set((S.multi.length?S.multi:(S.sel?[S.sel]:[])).map(claveCapaV245));
-    const fila=o=>{const sel=o.sel,k=claveCapaV245(sel),vis=!capaOculta245(sel),lock=capaBloqueada245(sel),grupo=grupoCapa245(sel);return '<li class="e238-capa'+(seleccionadas.has(k)?' on':'')+'" data-capa="'+esc(JSON.stringify(sel))+'"><span class="e238-capa-ico">'+o.ico+'</span><input class="e238-in e238-capa-nombre" data-capa-nombre="'+esc(JSON.stringify(sel))+'" aria-label="Nombre de capa" value="'+esc(nombreCapa245(sel,o.fallback))+'">'+(grupo?'<small class="e238-ayuda" title="Grupo '+esc(grupo)+'">◆</small>':'')+'<button type="button" class="e238-ico" data-capa-accion="'+(vis?'ocultar':'mostrar')+'" aria-label="'+(vis?'Ocultar':'Mostrar')+'">'+(vis?I.ojo:I.ojoNo)+'</button><button type="button" class="e238-ico" data-capa-accion="'+(lock?'desbloquear':'bloquear')+'" aria-label="'+(lock?'Desbloquear':'Bloquear')+'">'+(lock?I.candado:I.abierto)+'</button></li>';};
+    const fila=o=>{const sel=o.sel,k=claveCapaV245(sel),vis=!capaOculta245(sel),lock=capaBloqueada245(sel),grupo=grupoCapa245(sel);return '<li class="e238-capa'+(seleccionadas.has(k)?' on':'')+'" data-capa="'+esc(JSON.stringify(sel))+'"><span class="e238-capa-ico">'+o.ico+'</span><input class="e238-in e238-capa-nombre" data-capa-nombre="'+esc(JSON.stringify(sel))+'" aria-label="Nombre de capa" value="'+esc(nombreCapa245(sel,o.fallback))+'">'+(grupo?'<small class="e238-ayuda" title="Grupo '+esc(grupo)+'">◆</small>':'')+(o.enlace?'<small class="e332-enlace" title="Enlazado a la foto principal: se mueve y recorta con ella">🔗</small>':'')+'<button type="button" class="e238-ico" data-capa-accion="'+(vis?'ocultar':'mostrar')+'" aria-label="'+(vis?'Ocultar':'Mostrar')+'">'+(vis?I.ojo:I.ojoNo)+'</button><button type="button" class="e238-ico" data-capa-accion="'+(lock?'desbloquear':'bloquear')+'" aria-label="'+(lock?'Desbloquear':'Bloquear')+'">'+(lock?I.candado:I.abierto)+'</button></li>';};
      const acciones='<div class="e238-acciones"><button type="button" class="e238-btn e238-peq" data-capa-accion="capa-fondo">Enviar al fondo</button><button type="button" class="e238-btn e238-peq" data-capa-accion="capa-subir">Subir</button><button type="button" class="e238-btn e238-peq" data-capa-accion="capa-bajar">Bajar</button><button type="button" class="e238-btn e238-peq" data-capa-accion="capa-frente">Traer al frente</button></div>'+(S.multi.length>1?'<div class="e238-acciones"><button type="button" class="e238-btn e238-peq" data-capa-accion="agrupar">Agrupar</button><button type="button" class="e238-btn e238-peq" data-capa-accion="desagrupar">Desagrupar</button><button type="button" class="e238-btn e238-peq" data-capa-accion="duplicar">Duplicar selección</button><button type="button" class="e238-btn e238-peq" data-capa-accion="al-izq">Alinear izquierda</button><button type="button" class="e238-btn e238-peq" data-capa-accion="al-ch">Centrar horizontal</button><button type="button" class="e238-btn e238-peq" data-capa-accion="al-der">Alinear derecha</button><button type="button" class="e238-btn e238-peq" data-capa-accion="al-arr">Alinear arriba</button><button type="button" class="e238-btn e238-peq" data-capa-accion="al-cv">Centrar vertical</button><button type="button" class="e238-btn e238-peq" data-capa-accion="al-aba">Alinear abajo</button><button type="button" class="e238-btn e238-peq" data-capa-accion="dist-h">Distribuir horizontal</button><button type="button" class="e238-btn e238-peq" data-capa-accion="dist-v">Distribuir vertical</button></div>':'');
      insp.innerHTML=sec('Capas del diseño',acciones+'<p class="e238-ayuda">Mayús/Ctrl/Cmd + clic selecciona varias capas. La lista conserva el orden global del documento.</p><ul class="e238-capas">'+items.map(fila).join('')+'</ul>');
   }
@@ -21464,6 +21708,9 @@ function estudioV238(m,api){
     if(controlGrad242(t,fin))return;
     if(t.dataset.extra){if(t.dataset.extra.startsWith('degradado_')&&t.dataset.extra!=='degradado_modo'){ponCampoV238(campo('degradado_modo'),'personalizado');const s=insp.querySelector('[data-extra="degradado_modo"]');if(s)s.value='personalizado';}empuja(campo(t.dataset.extra),t.value,fin?'change':'input');dibuja();return;}
     if(t.dataset.logoarchivo){if(fin)void subeLogoV241(t);return;}
+    if(t.dataset.ajuste){const slot=fotoSel(),fo=(coleccion()||virtual())?.fotos.find(x=>x.slot===slot);if(!fo)return;const k=t.dataset.ajuste;
+      if(t.type!=='checkbox')insp.querySelectorAll('[data-ajuste="'+k+'"]').forEach(x=>{if(x!==t)x.value=t.value;});
+      if(!fin)modoLocal();cambiaFoto(slot,{ajustes:{...(fo.ajustes||{}),[k]:t.type==='checkbox'?t.checked:Number(t.value)}},fin);return;}
     const id=t.dataset.i;if(!id)return;const v=t.type==='checkbox'?t.checked:t.value;
     if(t.type==='range'||t.classList.contains('e238-num'))insp.querySelectorAll('[data-i="'+id+'"]').forEach(x=>{if(x!==t)x.value=v;});
     const rol=rolSel(),slot=fotoSel();
@@ -21493,6 +21740,8 @@ function estudioV238(m,api){
   insp.addEventListener('input',ev=>{ev.stopPropagation();if(ev.target.matches('[data-capa-nombre]'))return;if(ev.target.type!=='checkbox')controlInspector(ev.target,false);});
   insp.addEventListener('change',ev=>{if(ev.target.matches('[data-capa-nombre]')){ev.stopPropagation();let sel=null;try{sel=JSON.parse(ev.target.dataset.capaNombre);}catch{}if(sel)guardaNombreCapa245(sel,ev.target.value);return;}ev.stopPropagation();controlInspector(ev.target,true);});
   insp.addEventListener('click',ev=>{
+    const pa=ev.target.closest('[data-ajuste-preset]');
+    if(pa){ev.stopPropagation();const slot=fotoSel();if(slot){modoLocal();cambiaFoto(slot,{ajustes:PRESETS_AJUSTE_V331[pa.dataset.ajustePreset]||null},true);}return;}
     const ca=ev.target.closest('[data-capa-accion]');
      if(ca){ev.stopPropagation();const a=ca.dataset.capaAccion;if(['capa-fondo','capa-subir','capa-bajar','capa-frente'].includes(a)){reordenaCapaGlobal245(a);return;}if(['ocultar','mostrar','bloquear','desbloquear'].includes(a)){const li=ca.closest('[data-capa]');let sel=null;try{sel=JSON.parse(li?.dataset.capa||'null');}catch{}if(sel)alternaCapa245(sel,a);}else modificaCapas245(a);return;}
     const capa=ev.target.closest('[data-capa]'),b=ev.target.closest('[data-a]');
@@ -21608,8 +21857,9 @@ function estudioV238(m,api){
   }
   const bib=$q('.e238-izq');
   bib.addEventListener('click',ev=>{const t=ev.target.closest('[data-e238-foto]');if(!t)return;const id=t.dataset.e238Foto,i=S.elegidas.indexOf(id);
+    if(S.reemplazo){reemplazaFotoV332(S.reemplazo,id);return;}
     if(i>=0)S.elegidas.splice(i,1);else if(S.elegidas.length<9)S.elegidas.push(id);else avisaV238('Puedes elegir hasta 9 fotos.');pintaBiblioteca();});
-  bib.addEventListener('dblclick',ev=>{const t=ev.target.closest('[data-e238-foto]');if(!t)return;S.elegidas=S.elegidas.filter(x=>x!==t.dataset.e238Foto);empuja(campo('foto_id'),t.dataset.e238Foto);pintaBiblioteca();});
+  bib.addEventListener('dblclick',ev=>{const t=ev.target.closest('[data-e238-foto]');if(!t)return;S.elegidas=S.elegidas.filter(x=>x!==t.dataset.e238Foto);if(t.dataset.e238Foto!==leer('foto_id')){ponCampoV238(campo('sujeto_editor_json'),'');S.sujetoVista=null;}empuja(campo('foto_id'),t.dataset.e238Foto);pintaBiblioteca();});
   bib.addEventListener('dragstart',ev=>{const t=ev.target.closest('[data-e238-foto]');if(!t)return;ev.dataTransfer.setData('text/e238-foto',t.dataset.e238Foto);ev.dataTransfer.effectAllowed='copy';});
   bib.addEventListener('change',ev=>{if(ev.target.dataset?.e238==='categoria'){ev.stopPropagation();S.elegidas=[];empuja(campo('categoria'),ev.target.value);pintaBiblioteca();pintaPlantillas();}});
   // ───── Barra, encabezado y teclado ─────
@@ -21665,7 +21915,7 @@ function estudioV238(m,api){
     if(a==='comparar'){S.comparando=true;abreLegado('Antes (plantilla) / después (tu edición)','.estudio-topbar [data-ceditor-comparar]');return;}
     if(a==='formatos3'){abreLegado('Tu diseño en 3 formatos','.estudio-topbar [data-ceditor-3formatos]');return;}
     if(a==='volver'){legado.hidden=true;if(S.comparando){S.comparando=false;m.querySelector('.estudio-topbar [data-ceditor-comparar]')?.click();}else api.previsualiza();return;}
-    if(a==='pantalla'){const activa=root.classList.toggle('e238-enfoque');b.setAttribute('aria-pressed',String(activa));b.setAttribute('aria-label',activa?'Salir del modo de enfoque':'Pantalla completa');b.title=activa?'Salir del modo de enfoque':'Pantalla completa';ajustaEspacioV248();programaDibujo();return;}
+    if(a==='pantalla'){const activa=root.classList.toggle('e238-enfoque');b.setAttribute('aria-pressed',String(activa));b.setAttribute('aria-label',activa?'Volver al CRM':'Ampliar lienzo');b.title=activa?'Volver al CRM (Esc)':'Ampliar el lienzo y ocultar el menú del CRM';b.querySelector('span').textContent=activa?'Volver al CRM':'Ampliar lienzo';ajustaEspacioV248();programaDibujo();return;}
     if(a==='rejilla'){S.rejilla=!S.rejilla;pintaBotones();dibuja();return;}
     if(a==='biblioteca'){const plegada=root.classList.toggle('e238-biblioteca-plegada');b.setAttribute('aria-expanded',String(!plegada));b.title=(plegada?'Mostrar':'Ocultar')+' biblioteca de plantillas y fotos';ajustaEspacioV248();programaDibujo();return;}
     if(a==='compacto'){S.compacto=!S.compacto;root.classList.toggle('compacto',S.compacto);pintaBotones();try{win.localStorage?.setItem('dcarela-editor-compacto-v246',S.compacto?'1':'0');}catch{};return;}
@@ -21682,22 +21932,29 @@ function estudioV238(m,api){
     if(a==='limpiaSel'){S.elegidas=[];pintaBiblioteca();return;}
     if(a==='reorganizarMosaico'){void reorganizaMosaico();return;}
     if(a==='cierraPop'){cierraPop();return;}
-    if(a==='cancelaInter'){S.intercambio=null;pintaEstado();return;}
+    if(a==='cancelaInter'){S.intercambio=null;S.reemplazo=null;pintaEstado();return;}
   }
+  // Lleva un bloque a la vista desplazando SOLO su panel (scrollIntoView movía también la página entera y escondía la barra).
+  function verEnPanelV331(el){if(!el)return;let c=el.parentElement;while(c&&c!==root&&!(c.scrollHeight>c.clientHeight+2&&/(auto|scroll)/.test(getComputedStyle(c).overflowY)))c=c.parentElement;
+    if(!c||c===root)return;c.scrollTo({top:c.scrollTop+el.getBoundingClientRect().top-c.getBoundingClientRect().top-8,behavior:'smooth'});}
   function herramienta(t){
     root.querySelectorAll('[data-e238-tool]').forEach(b=>b.classList.toggle('on',b.dataset.e238Tool===t&&t!=='mosaico'));
     if(t!=='mosaico')cierraPop();
+    // Las herramientas que editan algo muestran su panel en «Editar» aunque estuviera abierta otra pestaña.
+    if(!['capas','recrear','mosaico','fondo'].includes(t)&&S.tab!=='editar')cambiaTab('editar');
      if(t==='formas'||t==='sujeto'){selecciona({tipo:t});return;}
      if(t==='textoLibre'){S.textoLibreDibujar=true;S.formaDibujar=null;S.pincelModo=null;S.multi=[];S.sel={tipo:'textoLibre'};dibuja();pintaInspector();avisaV238('Arrastra sobre el lienzo para crear una caja de texto libre.');return;}
     if(t==='degradado'||t==='logo'){selecciona({tipo:t});return;}
-    if(t==='seleccionar'){S.recorte=null;S.intercambio=null;selecciona(null);dibuja();return;}
-    if(t==='foto'){if(S.elegidas.length)return void agregaFotos([...S.elegidas]);S.bib='categoria';pintaBiblioteca();$q('.e238-fotos')?.scrollIntoView({block:'nearest',behavior:'smooth'});avisaV238('Toca las fotos que quieras en la Biblioteca y pulsa «Añadir al diseño» (o arrástralas a un marco).');return;}
+    if(t==='seleccionar'){S.recorte=null;S.intercambio=null;S.reemplazo=null;selecciona(null);dibuja();return;}
+    if(t==='foto'){if(S.elegidas.length)return void agregaFotos([...S.elegidas]);if(root.classList.contains('e238-biblioteca-plegada'))$q('[data-e238="biblioteca"]')?.click();S.bib='categoria';pintaBiblioteca();verEnPanelV331($q('.e238-fotos'));avisaV238('Toca las fotos que quieras en la Biblioteca y pulsa «Añadir al diseño» (o arrástralas a un marco).');return;}
     if(t==='texto'){cambiaTab('editar');selecciona({tipo:'rol',rol:'titulo1'});setTimeout(()=>insp.querySelector('[data-i="texto"]')?.focus(),30);return;}
     if(t==='capas'){cambiaTab('capas');return;}
     if(t==='recrear'){abreRecreador249();return;}
-    if(t==='fondo'||(t==='efectos'&&!S.sel)){cambiaTab('diseno');const d=[...diseno.querySelectorAll('details')].find(x=>x.querySelector('summary')?.textContent==='Fondo y legibilidad');if(d){d.open=true;d.scrollIntoView({block:'start',behavior:'smooth'});}return;}
-    if(t==='efectos'){cambiaTab('editar');setTimeout(()=>insp.querySelector('.e238-tiles,[data-i="sombra"]')?.scrollIntoView({block:'center',behavior:'smooth'}),30);return;}
-    if(t==='ajustar'){const slot=fotoSel()||(coleccion()||virtual())?.fotos.find(x=>x.rol==='principal')?.slot;if(!slot)return;S.sel={tipo:'foto',slot};accionFoto('recortar',slot);return;}
+    if(t==='efectos'&&!S.sel){selecciona({tipo:'rol',rol:'titulo1'});setTimeout(()=>verEnPanelV331([...insp.querySelectorAll('h3')].find(h=>/Efectos/.test(h.textContent))),30);return;}
+    if(t==='fondo'){cambiaTab('diseno');const d=[...diseno.querySelectorAll('details')].find(x=>x.querySelector('summary')?.textContent==='Fondo y legibilidad');if(d){d.open=true;verEnPanelV331(d);}return;}
+    if(t==='efectos'){cambiaTab('editar');setTimeout(()=>verEnPanelV331(insp.querySelector('.e238-tiles,[data-i="sombra"]')),30);return;}
+    // Ajustar = ajustes de color de la foto elegida (o de la principal); el recorte sigue en «Recorte y encuadre» y con doble clic.
+    if(t==='ajustar'){const slot=fotoSel()||(coleccion()||virtual())?.fotos.find(x=>x.rol==='principal')?.slot;if(!slot)return avisaV238('Añade una foto al diseño para ajustarla.');selecciona({tipo:'foto',slot});setTimeout(()=>verEnPanelV331(insp.querySelector('[data-sec-ajustes]')),30);return;}
     if(t==='mosaico'){if(pop.hidden)abreMosaico();else cierraPop();}
   }
   // Exportar, preparar o llevar al planificador piden un titular escrito: el que se ve vacío es el de ejemplo de la plantilla.
@@ -21745,12 +22002,16 @@ function estudioV238(m,api){
   }
   const teclas=ev=>{
     if(!root.isConnected||api.cerrado()){doc.removeEventListener('keydown',teclas);return;}
-    if(ev.key==='Escape'&&root.classList.contains('e238-enfoque')){ev.preventDefault();root.classList.remove('e238-enfoque');const b=$q('[data-e238="pantalla"]');if(b){b.setAttribute('aria-pressed','false');b.setAttribute('aria-label','Pantalla completa');b.title='Pantalla completa';}ajustaEspacioV248();programaDibujo();return;}
+    if(ev.key==='Escape'&&root.classList.contains('e238-enfoque')){ev.preventDefault();root.classList.remove('e238-enfoque');const b=$q('[data-e238="pantalla"]');if(b){b.setAttribute('aria-pressed','false');b.setAttribute('aria-label','Ampliar lienzo');b.title='Ampliar el lienzo y ocultar el menú del CRM';b.querySelector('span').textContent='Ampliar lienzo';}ajustaEspacioV248();programaDibujo();return;}
     const t=ev.target,escribe=t&&(t.isContentEditable||/^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName));
     if((ev.ctrlKey||ev.metaKey)&&!escribe&&(ev.key==='z'||ev.key==='Z')){ev.preventDefault();if(ev.shiftKey)api.rehacer();else api.deshacer();trasHistorial();return;}
     if((ev.ctrlKey||ev.metaKey)&&!escribe&&(ev.key==='y'||ev.key==='Y')){ev.preventDefault();api.rehacer();trasHistorial();return;}
+    // Zoom como Photoshop: Ctrl/⌘ + y − acercan y alejan (hacia el centro), Ctrl/⌘ 0 ajusta a la página y Ctrl/⌘ 1 es el 100 %.
+    if((ev.ctrlKey||ev.metaKey)&&!escribe&&['+','=','-','_','0','1'].includes(ev.key)&&stage){ev.preventDefault();if(ev.key==='0'){S.zoom='ajustar';dibuja();}else if(ev.key==='1')fijaZoomV332(1);else fijaZoomV332(escala()*(ev.key==='-'||ev.key==='_'?1/1.25:1.25));return;}
+    // Barra espaciadora (sin escribir): mano para mover la vista con el ratón.
+    if(ev.code==='Space'&&!escribe&&stage){ev.preventDefault();if(!S.mano){S.mano=true;escena.classList.add('e332-mano');}return;}
     if(escribe||!S.sel||!stage)return;
-    if(ev.key==='Escape'){S.recorte=null;S.intercambio=null;selecciona(null);dibuja();return;}
+    if(ev.key==='Escape'){S.recorte=null;S.intercambio=null;S.reemplazo=null;selecciona(null);dibuja();return;}
     // Supr / Retroceso con varias capas elegidas: las quita todas (formas, textos libres y fotos que no son la principal).
     if((ev.key==='Delete'||ev.key==='Backspace')&&S.multi.length>1){ev.preventDefault();api.guardaHistorial();modificaCapas245('eliminar');return;}
     if(S.sel.tipo==='textoLibre'){const a=textosLibres245(),t=a.find(x=>x.id===S.sel.id);if(!t)return;
@@ -21778,6 +22039,8 @@ function estudioV238(m,api){
       dibuja();clearTimeout(S.finTecla);S.finTecla=setTimeout(()=>cambioFormulario(150),500);}
   };
   doc.addEventListener('keydown',teclas);
+  const sueltaMano=ev=>{if(!root.isConnected){doc.removeEventListener('keyup',sueltaMano);return;}if(ev.code==='Space'&&S.mano){S.mano=false;escena.classList.remove('e332-mano','e332-moviendo');}};
+  doc.addEventListener('keyup',sueltaMano);
   // ───── Del motor ─────
   api.alEstado=(tipo,texto)=>{if(tipo==='ocupado'){S.ocupado=true;S.error='';S.textoOcupado=texto||'';}else if(tipo==='error'){S.error=texto||'No se pudo componer la vista.';S.ocupado=false;}pintaEstado();};
   api.alVista=async(r,v,{pendiente}={})=>{
@@ -22144,6 +22407,10 @@ function acotaFotoCollageV234(f){
   const g = f.borde ? r(n(f.borde.grosor, 0, 4, 0), 2) : 0;
   f.borde = g > 0 ? { grosor: g, color: /^#[0-9a-f]{6}$/i.test(String(f.borde.color || '')) ? String(f.borde.color).toUpperCase() : '#FFFFFF' } : null;
   f.sombra = r(n(f.sombra, 0, 1, 0), 2); f.opacidad = r(n(f.opacidad, 0.2, 1, 1), 2);
+  // v331: ajustes de color con los topes de contenido-collage.normalizaAjustes (y de acotaAjustesFotoV331); sin ninguno, fuera.
+  const a = f.ajustes && typeof f.ajustes === 'object' ? f.ajustes : {}, e = (v, lo, hi) => Math.round(n(v, lo, hi, 0)) || 0;
+  const aj = { brillo: e(a.brillo, -50, 50), contraste: e(a.contraste, -50, 50), saturacion: e(a.saturacion, -100, 100), sepia: e(a.sepia, 0, 100), bn: a.bn === true };
+  if (aj.brillo || aj.contraste || aj.saturacion || aj.sepia || aj.bn) f.ajustes = aj; else delete f.ajustes;
   return f;
 }
 // COPIA IDÉNTICA de contenido-collage.geometria (firebase-functions/src/contenido-collage.js): una prueba compara las dos.
@@ -22910,7 +23177,7 @@ function abreEditorPlantilla(id, piezaInicialId = ''){
       redes_texto:d.redes_texto||'',ubicacion_texto:d.ubicacion_texto||'',copy_secundario:d.copy_secundario||'',
       mostrar_marca:d.mostrar_marca||'visible',mostrar_contactos:d.mostrar_contactos||'visible',mostrar_mes:d.mostrar_mes||'visible',
        texto_muestra_l1:d.texto_muestra_l1,texto_muestra_l2:d.texto_muestra_l2,
-       por_formato_json:d.por_formato_json,collage_por_formato_json:d.collage_por_formato_json||'',mesas_editor_json:d.mesas_editor_json||'',estilos_texto_json:d.estilos_texto_json||'',sujeto_editor_json:d.sujeto_editor_json||'',formas_editor_json:d.formas_editor_json||'',textos_libres_json:d.textos_libres_json||'',orden_capas_json:d.orden_capas_json||'',
+       por_formato_json:d.por_formato_json,collage_por_formato_json:d.collage_por_formato_json||'',mesas_editor_json:d.mesas_editor_json||'',estilos_texto_json:d.estilos_texto_json||'',sujeto_editor_json:d.sujeto_editor_json||'',formas_editor_json:d.formas_editor_json||'',textos_libres_json:d.textos_libres_json||'',orden_capas_json:d.orden_capas_json||'',nombres_capas_json:d.nombres_capas_json||'{}',capas_estado_json:d.capas_estado_json||'{}',
       ...Object.fromEntries(Object.entries(d).filter(([k])=>k.startsWith('degradado_')||k.startsWith('logo_'))),
       _categoria:d.categoria,_formato:d.formato,_foto_id:d.foto_id||'',_mes:d.mes_editor||periodoListaContenido().mes,_fotos_mosaico_ids:usaMosaicoV233?(piezaGuardada?.documento_editor?.fotos_mosaico_ids||cCrear?.mosaicoFotos?.[d.categoria]||[]):[],
       _pieza_id:d.pieza_id||'',_pieza_l1:d.pieza_l1||'',_pieza_l2:d.pieza_l2||'',_pieza_texto:d.pieza_texto||''
@@ -23835,7 +24102,7 @@ const cotzDinero = n => 'RD$' + Number(n || 0).toLocaleString('es-DO', { minimum
 // ---- Productos / Combos y catálogo PDF (referencia del dueño 25/10/2026) ----
 // Los combos se guardan en el servidor (crm_combos, acción «combos»); el catálogo A4 lo dibuja el servidor y aquí solo se ve
 // la página elegida y se descarga el PDF. Nada se envía a clientes desde esta vista.
-const CMB = { datos: null, cargando: false, error: '', pestana: 'combos', q: '', estado: 'todos', categoria: '', pagina: 1,
+const CMB = { datos: null, cargando: false, error: '', pestana: 'combos', q: '', estado: 'todos', categoria: '', sucursal: 'central', pagina: 1,
   vista: null, vistaCargando: false, vistaError: '', zoom: 100, borrador: null, fotos: null, ultimaVista: 0,
   cc: { cat: 'infantiles', suc: 'central', datos: null, cargando: false, error: '', turno: 0 } };
 // Cada catálogo sale para una sucursal: sus botones abren el WhatsApp de esa sucursal (Ajustes: whatsapp / whatsapp_plaza).
@@ -23854,12 +24121,11 @@ const cmbDinero = n => 'RD$ ' + Math.round(Number(n) || 0).toLocaleString('en-US
 const cmbCategoria = id => ((CMB.datos?.categorias || []).find(([x]) => x === id) || [, id || 'Otros'])[1];
 async function cmbCarga(){
   CMB.cargando = true; cmbPinta();
-  const r = await llama({ action:'combos', operation:'lista' });
+  const r = await llama({ action:'combos', operation:'lista', sucursal: CMB.sucursal });
   CMB.cargando = false;
   CMB.error = r.ok ? '' : (r.error || 'No se pudieron leer los combos.');
   if (r.ok) { CMB.datos = r; if (!CMB.borrador) CMB.borrador = { ...r.ajustes }; }
   cmbPinta();
-  if (r.ok && r.combos.length) cmbVista();
   if (r.ok && !CMB.fotos) cmbFotos();
 }
 async function cmbFotos(){
@@ -23897,8 +24163,15 @@ function cmbFiltrados(){
     && (!q || [c.nombre, c.descripcion, ...(c.items || [])].some(v => String(v || '').toLowerCase().includes(q))));
 }
 function cmbFoto(id){ return (CMB.fotos || []).find(f => f.id === id)?.preview || ''; }
+// v332: un combo sin foto propia muestra una original real de su categoría (una distinta por combo), no el cubo gris.
+function cmbFotoDe(c){
+  const propia = cmbFoto(c.foto_id); if (propia) return propia;
+  const de = (CMB.fotos || []).filter(f => f.categoria === c.categoria && f.preview); if (!de.length) return '';
+  const hermanos = (CMB.datos?.combos || []).filter(x => x.categoria === c.categoria && !cmbFoto(x.foto_id));
+  return de[Math.max(0, hermanos.findIndex(x => x.id === c.id)) % de.length].preview;
+}
 function cmbFila(c, editar){
-  const foto = cmbFoto(c.foto_id);
+  const foto = cmbFotoDe(c);
   return '<article class="cmb-fila' + (c.activo === false ? ' inactivo' : '') + '">'
     + '<div class="cmb-mini">' + (foto ? '<img src="' + esc(foto) + '" alt="" loading="lazy">' : CMB_ICO.combo) + '</div>'
     + '<div class="cmb-info"><div class="cmb-tit"><b>' + esc(c.nombre) + '</b>' + (c.destacado ? '<span class="cmb-dest">' + esc(c.destacado) + '</span>' : '') + '</div>'
@@ -23970,9 +24243,21 @@ function cmbCcHtml(){
       : flyer('Cobertura a la medida', 'Sin combos en el CRM: «Consultar precio y contenido»', 'data-cmbflyercat="' + esc(cc.cat) + '"'))
     + '</section>';
 }
+// v332: la vista previa de Combos y Catálogo PDF es el catálogo NUEVO por categoría (fotos reales, todo lo que incluye y un
+// botón de WhatsApp por combo sin número a la vista). La hoja vieja (todas las categorías, teléfono visible) ya no se muestra.
+function cmbPreviaNueva(){
+  const cc = CMB.cc, v = cc.datos, d = CMB.datos, suc = CMB_SUC.find(([id]) => id === cc.suc) || CMB_SUC[0], sinNumero = !String(d?.ajustes?.[suc[2]] || '').replace(/\D/g, '');
+  return '<section class="cmb-caja cmb-previa"><header class="cmb-cabcaja"><span class="cmb-pdfico">' + CMB_ICO.pdf + '</span><div><h3>Vista previa del catálogo</h3><p>Una categoría por catálogo, con fotos reales y todo lo que incluye cada combo. El número de WhatsApp no se ve.</p></div></header>'
+    + '<div class="cmb-cc-chips" role="group" aria-label="Categoría del catálogo">' + CMB_CC.map(([id, nombre]) => '<button type="button" class="cmb-cc-chip' + (cc.cat === id ? ' on' : '') + '" aria-pressed="' + (cc.cat === id) + '" data-cmbcc="' + id + '">' + esc(nombre) + '</button>').join('') + '</div>'
+    + (sinNumero ? '<p class="aviso">Falta el WhatsApp de ' + esc(suc[1]) + ' en «Catálogo PDF»: sin él los botones del catálogo no abren el chat.</p>' : '')
+    + (cc.error ? '<p class="aviso">' + esc(cc.error) + '</p>' : '')
+    + '<div class="cmb-cc-paginas cmb-previa-paginas" aria-busy="' + cc.cargando + '">' + (v ? v.paginas.slice(0, 4).map((pg, i) => '<img src="data:image/jpeg;base64,' + pg + '" alt="Página ' + (i + 1) + ' del catálogo">').join('') : cc.cargando ? '<div class="cmb-esqueleto"></div>' : '')
+    + (cc.cargando ? '<span class="cmb-dibujando">Dibujando…</span>' : '') + '</div>'
+    + '<footer class="cmb-controles"><button type="button" class="btn-linea" data-cmbir="porcategoria">Ver todas las páginas y los flyers</button><button type="button" class="btn-solido" data-cmbccpdf="1"' + (sinNumero ? ' disabled' : '') + '>' + CMB_ICO.pdf + 'Descargar PDF</button></footer></section>';
+}
 // El hueco de la vista previa, compartido por las pestañas Combos y Catálogo PDF (un solo id en el panel).
-function cmbPrevia(){ return '<div id="cmbPreviaHueco">' + cmbVistaHtml() + '</div>'; }
-function cmbPintaVista(){ const c = $('cmbPreviaHueco'); if (c) c.innerHTML = cmbVistaHtml(); }
+function cmbPrevia(){ if (!CMB.cc.datos && !CMB.cc.cargando && CMB.datos?.combos?.length) setTimeout(cmbCcVista, 0); return '<div id="cmbPreviaHueco">' + cmbPreviaNueva() + '</div>'; }
+function cmbPintaVista(){ const c = $('cmbPreviaHueco'); if (c) c.innerHTML = cmbPreviaNueva(); }
 function cmbPinta(){
   const v = $('vista-combos'); if (!v) return;
   const d = CMB.datos, editar = !!d?.puede_editar;
@@ -23988,7 +24273,8 @@ function cmbPinta(){
     const lista = cmbFiltrados();
     cuerpo = '<div class="cmb-dos"><section class="cmb-caja"><header class="cmb-cabcaja cmb-barra"><div><h3>Lista de combos <span class="cmb-cuenta">' + d.combos.length + ' combos</span></h3><p>Crea y administra tus paquetes de productos y servicios</p></div>'
       + '<input type="search" data-cmbbuscar="1" placeholder="Buscar combos…" aria-label="Buscar combos" value="' + esc(CMB.q) + '">'
-      + '<select data-cmbestado="1" aria-label="Estado"><option value="todos">Todos los estados</option><option value="activos"' + (CMB.estado === 'activos' ? ' selected' : '') + '>Activos</option><option value="inactivos"' + (CMB.estado === 'inactivos' ? ' selected' : '') + '>Inactivos</option></select></header>'
+       + '<select data-cmbsucursal="1" aria-label="Sucursal"><option value="central"' + (CMB.sucursal === 'central' ? ' selected' : '') + '>La Central</option><option value="plaza"' + (CMB.sucursal === 'plaza' ? ' selected' : '') + '>Plaza Artesanal</option></select>'
+       + '<select data-cmbestado="1" aria-label="Estado"><option value="todos">Todos los estados</option><option value="activos"' + (CMB.estado === 'activos' ? ' selected' : '') + '>Activos</option><option value="inactivos"' + (CMB.estado === 'inactivos' ? ' selected' : '') + '>Inactivos</option></select></header>'
       + (CMB.categoria ? '<p class="cmb-filtro">Categoría: <b>' + esc(cmbCategoria(CMB.categoria)) + '</b> <button type="button" class="btn-linea cmb-chico" data-cmbcat="">Quitar filtro</button></p>' : '')
       + (lista.length ? lista.map(c => cmbFila(c, editar)).join('') : '<p class="bajada">Ningún combo con estos filtros.</p>')
       + (editar && d.web_pendientes ? '<p class="bajada">Hay ' + d.web_pendientes + ' combos de la web sin importar. <button type="button" class="btn-linea cmb-chico" data-cmbimporta="1">Importarlos</button></p>' : '')
@@ -24027,7 +24313,7 @@ function cmbPinta(){
   const foco = document.activeElement?.dataset?.cmbbuscar ? document.activeElement.selectionStart : null;
   v.innerHTML = '<div class="cmb">'
     + '<header class="cmb-cab"><span class="cmb-logo">' + CMB_ICO.combo + '</span><div><h2>Combos y PDF comercial</h2><p>Gestiona tus combos de productos, crea tu catálogo y genera PDFs comerciales</p></div>'
-    + '<div class="cmb-cabacc">' + (d?.combos?.length ? '<button type="button" class="btn-linea" data-cmbpdf="1">' + CMB_ICO.pdf + 'Descargar catálogo</button>' : '')
+    + '<div class="cmb-cabacc">' + (d?.combos?.length ? '<button type="button" class="btn-linea" data-cmbccpdf="1">' + CMB_ICO.pdf + 'Descargar catálogo</button>' : '')
     + (editar ? '<button type="button" class="btn-solido" data-cmbnuevo="1">+ Nuevo combo</button>' : '') + '</div></header>'
     + '<nav class="cmb-tabs" role="tablist">' + tab('combos', 'Combos') + tab('porcategoria', 'Catálogos por categoría') + tab('categorias', 'Categorías') + tab('catalogo', 'Catálogo PDF') + tab('precios', 'Precios') + '</nav>'
     + cuerpo + '</div>';
@@ -24035,14 +24321,15 @@ function cmbPinta(){
 }
 // Crear o editar un combo. La foto sale de las originales de la biblioteca (las mismas del planificador).
 function cmbEditor(id){
-  const c = id ? (CMB.datos?.combos || []).find(x => x.id === id) : { categoria: CMB.categoria || 'xv', activo: true, items: [] };
+  const c = id ? (CMB.datos?.combos || []).find(x => x.id === id) : { categoria: CMB.categoria || 'xv', sucursal: CMB.sucursal, activo: true, items: [] };
   if (!c) return;
   const cats = CMB.datos?.categorias || [];
   abreModal('<div class="mtapa"><b>' + (id ? 'Editar combo' : 'Nuevo combo') + '</b><button class="cerrarm" data-cerrar>×</button></div>'
     + '<div class="mcuerpo cmb-form"><div class="par"><div class="campo"><label>Nombre</label><input id="cmbNombre" maxlength="60" value="' + esc(c.nombre || '') + '"></div>'
     + '<div class="campo"><label>Precio (RD$)</label><input id="cmbPrecio" type="number" min="1" step="1" value="' + esc(c.precio || '') + '"></div></div>'
-    + '<div class="par"><div class="campo"><label>Categoría</label><select id="cmbCat">' + cats.map(([v, t]) => '<option value="' + esc(v) + '"' + (c.categoria === v ? ' selected' : '') + '>' + esc(t) + '</option>').join('') + '</select></div>'
-    + '<div class="campo"><label>Etiqueta destacada (opcional)</label><input id="cmbDest" maxlength="20" placeholder="Más vendido" value="' + esc(c.destacado || '') + '"></div></div>'
+     + '<div class="par"><div class="campo"><label>Categoría</label><select id="cmbCat">' + cats.map(([v, t]) => '<option value="' + esc(v) + '"' + (c.categoria === v ? ' selected' : '') + '>' + esc(t) + '</option>').join('') + '</select></div>'
+     + '<div class="campo"><label>Sucursal</label><select id="cmbSucursal"><option value="central"' + ((c.sucursal || 'central') === 'central' ? ' selected' : '') + '>La Central</option><option value="plaza"' + (c.sucursal === 'plaza' ? ' selected' : '') + '>Plaza Artesanal</option><option value="ambas"' + (c.sucursal === 'ambas' ? ' selected' : '') + '>Ambas sucursales</option></select></div></div>'
+     + '<div class="par"><div class="campo"><label>Etiqueta destacada (opcional)</label><input id="cmbDest" maxlength="20" placeholder="Más vendido" value="' + esc(c.destacado || '') + '"></div></div>'
     + '<div class="campo"><label>Descripción corta</label><input id="cmbDesc" maxlength="160" value="' + esc(c.descripcion || '') + '"></div>'
     + '<div class="campo"><label>Qué incluye <span style="text-transform:none;letter-spacing:0">(una cosa por línea, hasta 12)</span></label><textarea id="cmbItems" rows="6">' + esc((c.items || []).join('\n')) + '</textarea></div>'
     + '<div class="campo"><label>Foto</label><div class="cmb-fotos" id="cmbFotos">' + (CMB.fotos ? '' : '<p class="bajada">Cargando originales…</p>') + '</div></div>'
@@ -24064,7 +24351,7 @@ function cmbEditor(id){
   $('cmbGuardar').onclick = async ev => {
     const boton = ev.currentTarget; boton.disabled = true;
     const nombre = $('cmbNombre').value;
-    const r = await llama({ action:'combos', operation:'guarda', combo: { ...(id ? { id } : {}), nombre, precio: Number($('cmbPrecio').value), categoria: $('cmbCat').value,
+     const r = await llama({ action:'combos', operation:'guarda', sucursal: CMB.sucursal, combo: { ...(id ? { id } : {}), nombre, precio: Number($('cmbPrecio').value), categoria: $('cmbCat').value, sucursal: $('cmbSucursal').value,
       destacado: $('cmbDest').value, descripcion: $('cmbDesc').value, items: $('cmbItems').value.split('\n'), foto_id: foto, activo: $('cmbActivo').checked, orden: c.orden } });
     boton.disabled = false;
     if (!r.ok) return avisa('No se pudo guardar', r.error);
@@ -24083,13 +24370,14 @@ function montaCombos(){
   const v = hueco('combos', '');
   v.addEventListener('click', async ev => {
     const t = ev.target;
-    const tabB = t.closest('[data-cmbtab]'); if (tabB) { CMB.pestana = tabB.dataset.cmbtab; cmbPinta(); if (['combos', 'catalogo'].includes(CMB.pestana) && !CMB.vista && CMB.datos?.combos?.length) cmbVista();
+    const ir = t.closest('[data-cmbir]'); if (ir) { CMB.pestana = ir.dataset.cmbir; cmbPinta(); if (!CMB.cc.datos && !CMB.cc.cargando) cmbCcVista(); return; }
+    const tabB = t.closest('[data-cmbtab]'); if (tabB) { CMB.pestana = tabB.dataset.cmbtab; cmbPinta();
       if (CMB.pestana === 'porcategoria' && !CMB.cc.datos && !CMB.cc.cargando) cmbCcVista(); return; }
     const cc = t.closest('[data-cmbcc]'); if (cc) { CMB.cc.cat = cc.dataset.cmbcc; CMB.cc.datos = null; return cmbCcVista(); }
     const su = t.closest('[data-cmbsuc]'); if (su) { CMB.cc.suc = su.dataset.cmbsuc; CMB.cc.datos = null; return cmbCcVista(); }
     if (t.closest('[data-cmbccpdf]')) return cmbCcBaja(t.closest('[data-cmbccpdf]'), { operation:'catalogo_categoria', categoria: CMB.cc.cat, sucursal: CMB.cc.suc, formato:'pdf' });
     if (t.closest('[data-cmbccweb]')) return cmbCcBaja(t.closest('[data-cmbccweb]'), { operation:'catalogo_categoria', categoria: CMB.cc.cat, sucursal: CMB.cc.suc, formato:'web' });
-    const fly = t.closest('[data-cmbflyer]'); if (fly) return cmbCcBaja(fly, { operation:'flyer_combo', id: fly.dataset.cmbflyer });
+     const fly = t.closest('[data-cmbflyer]'); if (fly) return cmbCcBaja(fly, { operation:'flyer_combo', id: fly.dataset.cmbflyer, sucursal: CMB.cc.suc });
     // Los combos de boda vienen de la página web (sin id del CRM): su flyer se pide por la referencia.
     const flyr = t.closest('[data-cmbflyerref]'); if (flyr) return cmbCcBaja(flyr, { operation:'flyer_combo', categoria: CMB.cc.cat, ref: flyr.dataset.cmbflyerref });
     const flyc = t.closest('[data-cmbflyercat]'); if (flyc) return cmbCcBaja(flyc, { operation:'flyer_combo', categoria: flyc.dataset.cmbflyercat });
@@ -24099,7 +24387,7 @@ function montaCombos(){
     if (du) { du.disabled = true; const r = await llama({ action:'combos', operation:'duplica', id: du.dataset.cmbduplica }); if (!r.ok) { du.disabled = false; return avisa('No se pudo duplicar', r.error); } avisa('Combo duplicado', 'La copia queda para que la ajustes.'); return cmbCarga(); }
     const ac = t.closest('[data-cmbactiva]');
     if (ac) { const c = CMB.datos.combos.find(x => x.id === ac.dataset.cmbactiva); ac.disabled = true;
-      const r = await llama({ action:'combos', operation:'guarda', combo: { ...c, activo: c.activo === false } }); if (!r.ok) { ac.disabled = false; return avisa('No se pudo cambiar', r.error); } return cmbCarga(); }
+       const r = await llama({ action:'combos', operation:'guarda', sucursal: CMB.sucursal, combo: { ...c, activo: c.activo === false } }); if (!r.ok) { ac.disabled = false; return avisa('No se pudo cambiar', r.error); } return cmbCarga(); }
     if (t.closest('[data-cmbimporta]')) { const b = t.closest('[data-cmbimporta]'); b.disabled = true; const r = await llama({ action:'combos', operation:'importa_web' }); if (!r.ok) { b.disabled = false; return avisa('No se pudo importar', r.error); } avisa('Combos importados', r.creados + ' combos de la web. Revísalos y ponles foto.'); return cmbCarga(); }
     const cat = t.closest('[data-cmbcat]'); if (cat) { CMB.categoria = cat.dataset.cmbcat; CMB.pagina = 1; if (CMB.categoria) CMB.pestana = 'combos'; cmbPinta(); return cmbVista(); }
     if (t.closest('[data-cmbpdf]')) return cmbDescarga(t.closest('[data-cmbpdf]'));
@@ -24116,7 +24404,8 @@ function montaCombos(){
   });
   v.addEventListener('change', ev => {
     const d = ev.target.dataset;
-    if (d.cmbestado) { CMB.estado = ev.target.value; return cmbPinta(); }
+     if (d.cmbestado) { CMB.estado = ev.target.value; return cmbPinta(); }
+     if (d.cmbsucursal) { CMB.sucursal = ev.target.value === 'plaza' ? 'plaza' : 'central'; CMB.datos = null; return cmbCarga(); }
     if (d.cmbpagina) { CMB.pagina = Number(ev.target.value) || 1; return cmbVista(); }
     if (d.cmbplantilla) { CMB.borrador = { ...CMB.borrador, plantilla: ev.target.value }; return cmbVista(); }
   });
