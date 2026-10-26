@@ -548,6 +548,8 @@ body.menu-abierto .velo{display:block}
 /* El distintivo va pegado al avatar, arriba a la derecha: se ve por donde escribe sin
    tener que abrir el chat, que es cuando importa saberlo. */
 .avwrap{position:relative;flex:0 0 auto;line-height:0}
+.cc-auto{margin:8px 0 12px;padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:var(--panel)}.cc-auto-cab{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px}.cc-auto-cab span{color:var(--mut)}
+.cc-on{color:#16a34a}.cc-off{color:#b45309}.cc-auto-lista{margin-top:8px;display:grid;gap:6px}.cc-auto-fila{display:grid;gap:2px;padding:6px 8px;border-radius:8px;background:var(--bg,transparent)}.cc-auto-fila small{color:var(--mut)}
 .entrega-caja{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;padding:6px 10px;border-radius:10px;background:var(--panel,#fff);border:1px solid var(--line,#e5e7eb);font-size:12.5px}
 .entrega-caja b{font-weight:700}.entrega-caja span{color:var(--mut,#667781)}.entrega-caja .entrega-nota{font-size:11.5px}
 .entrega-caja.est-digitales_pendientes{border-color:#f59e0b}.entrega-caja.vencida{border-color:#ef4444;background:rgba(239,68,68,.07)}.entrega-caja.vencida span:first-of-type{color:#dc2626;font-weight:650}
@@ -12886,6 +12888,7 @@ function montaClientesCaja(){
     montadas.add('poscustomers');
     hueco('poscustomers', '<div class="hoja"><h1>Clientes de caja</h1>'
       + '<p class="bajada">Quién te ha comprado, qué se llevó y cuánto debe. Busca, filtra, imprime su estado de cuenta o cóbrale sin incomodarlo. Se llena sola desde la caja.</p>'
+      + '<div class="cc-auto" id="ccAuto"></div>'
       + '<div class="cc-kpis" id="ccKpis"></div>'
       + '<div class="cc-barra"><input id="ccBusca" type="search" placeholder="Buscar por nombre, teléfono o folio…" autocomplete="off">'
       + '<select id="ccOrden"><option value="deuda">Los que más deben</option><option value="gastado">Los que más gastaron</option><option value="reciente">Compra más reciente</option><option value="nombre">Nombre (A–Z)</option></select>'
@@ -12894,6 +12897,7 @@ function montaClientesCaja(){
     $('ccBusca').oninput = () => { CC.q = $('ccBusca').value; CC.limite = 60; pintaClientesCaja(); };
     $('ccOrden').onchange = () => { CC.orden = $('ccOrden').value; pintaClientesCaja(); };
     $('ccCobrar').onclick = () => ccAbreCobro([]);
+    $('ccAuto').addEventListener('click', ev => { if (ev.target.closest('[data-ccauto-ver]')) return ccAutoVista(true); const t = ev.target.closest('[data-ccauto-activo]'); if (t) return ccAutoCambia(t.dataset.ccautoActivo === '1'); });
     $('vista-poscustomers').addEventListener('click', async ev => {
       const f = ev.target.closest('[data-ccf]'); if (f) { CC.filtro = f.dataset.ccf; CC.limite = 60; return pintaClientesCaja(); }
       if (ev.target.closest('#ccMas')) { CC.limite += 60; return pintaClientesCaja(); }
@@ -12905,6 +12909,29 @@ function montaClientesCaja(){
     });
   }
   cargaClientesCaja();
+  if (['admin', 'supervisor'].includes(ROL_ACTUAL)) ccAutoVista(false);
+}
+// COBROS AUTOMÁTICOS (26/10/2026, firebase-functions/src/cobros-core.js): APAGADOS hasta que el dueño los encienda aquí. Recordatorios amables a
+// deudores con compra en los últimos 4 meses (lo anterior queda fuera), máx. 3 separados 7 días, de 9 a 6 de lunes a sábado, por WhatsApp Fotos.
+const CC_AUTO_MOTIVOS = { sin_chat: 'sin chat de WhatsApp', canal_oficial: 'solo tiene el número oficial', no_molestar: 'no quiere mensajes', sin_saldo: 'saldo menor a RD$100', sin_fecha_de_compra: 'sin fecha de compra', base_anterior: 'compra de hace más de 4 meses (base anterior)', tope_recordatorios: 'ya recibió los 3 recordatorios', muy_pronto: 'recordatorio hace menos de 7 días', contesto: 'contestó: lo atiende una persona', abono_reciente: 'abonó hace poco' };
+async function ccAutoVista(lista){
+  const caja = $('ccAuto'); if (!caja) return;
+  const r = await llama({ action: 'cobrosVista' });
+  if (!r?.ok) { caja.innerHTML = '<p class="aviso">Cobros automáticos: ' + esc(r?.error || 'no se pudo leer') + '</p>'; return; }
+  const tocan = r.filas.filter(f => f.ok), resto = r.filas.filter(f => !f.ok);
+  caja.innerHTML = '<div class="cc-auto-cab"><b>Cobros automáticos: ' + (r.activo ? '<span class="cc-on">Encendidos</span>' : '<span class="cc-off">Apagados</span>') + '</b>'
+    + '<span>' + tocan.length + ' recibirían un recordatorio ahora · ' + r.filas.length + ' deben en la caja</span>'
+    + '<button type="button" class="btn-linea" data-ccauto-ver="1">' + (lista ? 'Actualizar' : 'Ver a quién y qué') + '</button>'
+    + (ROL_ACTUAL === 'admin' ? '<button type="button" class="' + (r.activo ? 'btn-linea' : 'btn-solido') + '" data-ccauto-activo="' + (r.activo ? '0' : '1') + '">' + (r.activo ? 'Apagar' : 'Encender') + '</button>' : '') + '</div>'
+    + '<p class="bajada" style="margin:4px 0 0">Mensajes amables, sin recargos: máximo ' + r.reglas.max + ' recordatorios separados ' + r.reglas.dias_entre + ' días, de 9 a 6 de lunes a sábado, solo a quien compró en los últimos ' + Math.round(r.reglas.dias_ventana / 30) + ' meses. Se para si el cliente contesta.</p>'
+    + (lista ? '<div class="cc-auto-lista">' + (tocan.length ? tocan.map(f => '<div class="cc-auto-fila"><b>' + esc(f.nombre || 'Cliente') + ' · ' + esc(pesos(f.saldo_centavos)) + '</b><small>' + esc(f.texto) + '</small></div>').join('') : '<p class="bajada">Ahora no le tocaría a nadie.</p>')
+      + (resto.length ? '<details><summary>' + resto.length + ' que no reciben (y por qué)</summary>' + resto.map(f => '<div class="cc-auto-fila"><b>' + esc(f.nombre || 'Cliente') + ' · ' + esc(pesos(f.saldo_centavos)) + '</b><small>' + esc(CC_AUTO_MOTIVOS[f.motivo] || f.motivo) + '</small></div>').join('') + '</details>' : '') + '</div>' : '');
+}
+async function ccAutoCambia(activo){
+  if (!await confirmaAqui(activo ? 'Se encienden los cobros automáticos: cada hora de 9 a 6 (lunes a sábado) se enviará como mucho 5 recordatorios amables a deudores con compra en los últimos 4 meses. ¿Encender?' : '¿Apagar los cobros automáticos? No sale ningún recordatorio más.')) return;
+  const r = await llama({ action: 'cobrosAjuste', activo });
+  if (!r?.ok) return avisa('No se pudo cambiar', r?.error || '');
+  avisa('Cobros automáticos', r.activo ? 'Encendidos' : 'Apagados'); ccAutoVista(true);
 }
 
 async function montaTablero(id){
