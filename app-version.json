@@ -1,7 +1,7 @@
 {
-  "version": "2026-10-26-crm-release-v328",
+  "version": "2026-10-26-crm-release-v332",
   "channel": "crm",
-  "released_at": "2026-10-26T04:08:25Z",
-  "summary": "Catálogos por categoría en Productos / Combos: PDF con botón de WhatsApp por combo (La Central o Plaza Artesanal), flyer de un combo y versión web animada; fotos recientes del CRM y bodas con los combos de la web. Editor de flyers: los botones de eliminar funcionan con el mosaico sin tocar y la papelera ya no queda fuera del lienzo.",
+  "released_at": "2026-10-26T09:14:46Z",
+  "summary": "Editor de flyers estilo Photoshop: herramientas agrupadas con submenú e íconos nuevos; Ajustar con ajustes de color reales (brillo, contraste, saturación, calidez, B/N); Seleccionar sujeto funciona (modelo de retrato dentro del servidor) y crea la capa Sujeto enlazada; la plantilla 07 pasa la banda por detrás del sujeto; Intercambiar con una sola foto reemplaza desde la Biblioteca; zoom con Ctrl + rueda, Ctrl +/−/0/1 y mano con la barra espaciadora; Mosaico deja elegir las fotos; recreador en un diálogo amplio. Catálogos: la web de Bodas ya muestra sus 13 combos.",
   "requiere_puente": "2026-10-18-diagnostico-citas-v53"
 }
