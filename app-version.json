@@ -1,7 +1,7 @@
 {
-  "version": "2026-10-26-crm-release-v340",
+  "version": "2026-10-26-crm-release-v344",
   "channel": "crm",
-  "released_at": "2026-10-26T18:01:21Z",
-  "summary": "Estados: ya se pueden ELIMINAR desde el panel los tuyos (del CRM y del teléfono); el puente v55 los retira de WhatsApp. Entregas: si no pones una lista propia, la tarea de producción va a las personas de Configuración › Tareas. Cobros automáticos encendidos. Incluye v339.",
+  "released_at": "2026-10-26T23:58:52Z",
+  "summary": "Avisos de atención: ya no llegan por WhatsApp («Atención pendiente» ni los de tiempo de respuesta); salen como burbuja dentro del CRM, con sonido y ventana del sistema, y botón «Abrir chat». Recreador: los titulares del catálogo ya no salen pegados.",
   "requiere_puente": "2026-10-26-borra-estados-v55"
 }
