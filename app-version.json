@@ -1,7 +1,7 @@
 {
-  "version": "2026-10-26-crm-release-v348",
+  "version": "2026-10-27-crm-release-v350",
   "channel": "crm",
-  "released_at": "2026-10-27T00:55:29Z",
-  "summary": "Avisos al supervisor: salen como burbuja en el CRM (por WhatsApp solo si lo enciendes). Chat: con la ficha abierta, el cuadro de texto queda junto al botón de enviar. Plantillas: «No quiero más mensajes» ya da de baja y «Me interesa» lo atiende el bot. Plantilla 07: solo la persona delante de la banda.",
+  "released_at": "2026-10-27T06:34:13Z",
+  "summary": "Botón «Transferir» en cada chat: pasa el cliente a la otra sucursal con sus datos y la sesión, y le avisa al cliente.",
   "requiere_puente": "2026-10-26-borra-estados-v55"
 }
