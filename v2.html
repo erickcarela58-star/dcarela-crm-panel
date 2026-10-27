@@ -1849,6 +1849,13 @@ a.ayuda{color:var(--enlace)}
    una linea no basta para sacarlo de la pantalla. Quedaba asomando por abajo como un
    punto negro permanente. Ahora se esconde de verdad, y visibility evita ademas que
    siga capturando clicks mientras esta fuera. */
+/* Burbujas de atención (dueño 26/10/2026: los avisos ya no van por WhatsApp, salen aquí y como ventana del sistema). */
+.atn-pila{position:fixed;right:18px;bottom:18px;z-index:120;display:flex;flex-direction:column;gap:10px;max-width:min(360px,calc(100vw - 32px))}
+.atn-burbuja{background:var(--panel);color:var(--ink);border:1px solid var(--line);border-left:4px solid #e0533d;border-radius:14px;box-shadow:0 10px 30px rgba(0,0,0,.18);padding:12px 14px;display:grid;gap:6px;animation:atnEntra .22s ease-out}
+.atn-burbuja.calidad{border-left-color:#e2a03f}
+.atn-burbuja b{font-size:13.5px}.atn-burbuja p{margin:0;font-size:12.5px;color:var(--mut);line-height:1.35}
+.atn-burbuja .atn-acc{display:flex;gap:8px;justify-content:flex-end}
+@keyframes atnEntra{from{transform:translateY(12px);opacity:0}to{transform:none;opacity:1}}
 #aviso{position:fixed;left:50%;bottom:26px;transform:translate(-50%,calc(100% + 40px));
   z-index:90;visibility:hidden;pointer-events:none;
   max-width:min(430px,92vw);padding:12px 17px;border-radius:var(--r2);
@@ -4374,6 +4381,7 @@ function aplicaConversaciones(s, modo = 'en vivo'){
     if (vistaActual === 'limpieza' && $('limpiezaCuerpo') && CONVS.filter(enElOlvido).length !== LIMPIEZA_N) pintaLimpieza();
     pintaCuentas();
     avisaMensajesNuevos();
+    vigilaAtencion();
     vigilaLlamadas();
 }
 function detieneRespaldoConvs(){
@@ -4756,6 +4764,47 @@ function pintaAvisosLocal(){
 const VISTO_ENTRANTE = new Map();
 let primerVistazo = true;
 
+// ===== Burbujas de atención (dueño 26/10/2026: «estos avisos no los quiero… quiero que le salga como burbuja de notificación en el mismo
+// CRM y ventanas emergentes»). Lo que antes llegaba por WhatsApp --«Atención pendiente» (un chat que pasó a una persona) y los avisos de
+// tiempo de respuesta-- sale aquí: una burbuja que se queda hasta cerrarla o abrir el chat, el tono y la ventana del sistema.
+const ATN = { vistos: new Set(), iniciado: false, max: 4 };
+function burbujaAtencion({ clave, titulo, nombre, detalle, conv, tipo = 'handoff' }){
+  if (!clave || ATN.vistos.has(clave)) return;
+  ATN.vistos.add(clave);
+  let pila = $('atnPila');
+  if (!pila) { pila = document.createElement('div'); pila.id = 'atnPila'; pila.className = 'atn-pila'; pila.setAttribute('role', 'region'); pila.setAttribute('aria-label', 'Avisos de atención'); document.body.appendChild(pila); }
+  const b = document.createElement('div');
+  b.className = 'atn-burbuja' + (tipo === 'calidad' ? ' calidad' : '');
+  b.setAttribute('role', 'alert');
+  b.innerHTML = '<b>' + esc(titulo) + ' · ' + esc(nombre || 'Cliente') + '</b>' + (detalle ? '<p>' + esc(detalle) + '</p>' : '')
+    + '<div class="atn-acc"><button type="button" class="btn-linea" data-atn="cerrar">Cerrar</button>' + (conv ? '<button type="button" class="btn-solido" data-atn="abrir">Abrir chat</button>' : '') + '</div>';
+  const abrirChat = () => { b.remove(); if (vistaActual !== 'conversations') ve('conversations'); abre(conv); };
+  b.querySelector('[data-atn="cerrar"]').onclick = () => b.remove();
+  const ab = b.querySelector('[data-atn="abrir"]'); if (ab) ab.onclick = abrirChat;
+  pila.prepend(b);
+  while (pila.children.length > ATN.max) pila.lastElementChild.remove();
+  if (avisosSilenciados()) return;
+  suenaTono('campana');
+  if (typeof Notification === 'undefined' || Notification.permission !== 'granted') return;
+  try {
+    const n = new Notification(titulo + ' · ' + (nombre || 'Cliente'), { body: String(detalle || '').slice(0, 160), tag: 'atn-' + clave, requireInteraction: true });
+    n.onclick = () => { window.focus(); if (conv) abrirChat(); n.close(); };
+  } catch (e) {}
+}
+// Un chat que acaba de pasar a una persona (el bot lo derivó: foto, pago, queja, precio de algo que no es sesión…). Al abrir el panel solo
+// salen los de los últimos 30 minutos; los demás ya están en «Hoy».
+function vigilaAtencion(){
+  if (!['admin', 'supervisor', 'agent'].includes(ROL_ACTUAL)) return;
+  const ahora = Date.now();
+  for (const c of CONVS || []) {
+    if (!c.human_handoff_required || !c.human_handoff_requested_at) continue;
+    const clave = 'h:' + (c.id || c._id) + ':' + c.human_handoff_requested_at;
+    if (!ATN.iniciado && ahora - Date.parse(c.human_handoff_requested_at) > 30 * 60000) { ATN.vistos.add(clave); continue; }
+    burbujaAtencion({ clave, titulo: 'Atención pendiente', nombre: nombreDe(c), conv: c,
+      detalle: [c.human_handoff_reason, c.human_handoff_latest || c.last_inbound_preview].filter(Boolean).join(' · ').slice(0, 220) });
+  }
+  ATN.iniciado = true;
+}
 function avisaMensajesNuevos(){
   const nuevos = [];
   // Se toma nota de TODAS, tambien las ocultas: si no, al volver a vincular una linea sus fichas
@@ -12452,12 +12501,9 @@ async function cargaCalidad({ scan = false, silencioso = false } = {}){
   CALIDAD = { reports:r.reports || [], notifications:r.notifications || [], unread:Number(r.unread || 0) };
   pintaCuentaCalidad();
   pintaInformes();
-  const nuevo = CALIDAD.notifications.find(a => a.status === 'unread' && !CALIDAD_CONOCIDOS.has(a.id));
-  if (CALIDAD_INICIADA && nuevo) {
-    avisa('Atención al cliente', nuevo.customer_name + ': ' + nuevo.title);
-    if (typeof Notification !== 'undefined' && Notification.permission === 'granted' && document.hidden) {
-      try { new Notification('CRM · atención requiere revisión', { body:nuevo.customer_name + ': ' + nuevo.title }); } catch (error) {}
-    }
+  if (CALIDAD_INICIADA) for (const a of CALIDAD.notifications.filter(x => x.status === 'unread' && !CALIDAD_CONOCIDOS.has(x.id)).slice(0, 3)) {
+    const conv = (CONVS || []).find(c => (c.id || c._id) === a.conversation_id) || null;
+    burbujaAtencion({ clave: 'q:' + a.id, tipo: 'calidad', titulo: 'Atención al cliente', nombre: a.customer_name, detalle: [a.title, a.evidence].filter(Boolean).join(' · '), conv });
   }
   CALIDAD_CONOCIDOS = new Set(CALIDAD.notifications.map(a => a.id));
   CALIDAD_INICIADA = true;
@@ -20744,8 +20790,17 @@ function aplicaReplicaEditorV249(f,rep){
     const campo=f.elements?.[k];if(campo?.name===k&&v!==undefined&&v!==null)ponCampoV238(campo,v);
   }
   for(const [k,v] of Object.entries({categoria:rep.categoria,foto_id:rep.foto_id,formato:rep.formato,texto_muestra_l1:rep.gancho_utilizado?.l1,texto_muestra_l2:rep.gancho_utilizado?.l2})){
-    if(v!==undefined&&v!==null&&f.elements?.[k])ponCampoV238(f.elements[k],v);
+    if(v!==undefined&&v!==null&&f.elements?.[k])ponCampoV238(f.elements[k],k.startsWith('texto_muestra_')?textoMuestraV341(v):v);
   }
+}
+// Los titulares del catálogo traen saltos de línea («TU HISTORIA\nQUEDA.»): el campo es de una línea y el navegador los borraba
+// pegando las palabras («TU HISTORIAQUEDA.»). Van como espacios, y lo que pase de 65 (tope del servidor; si no, la vista da 422)
+// se corta en la última pausa (punto, dos puntos, coma) o palabra entera que quepa.
+function textoMuestraV341(v){
+  const t=String(v??'').replace(/\s+/g,' ').trim();
+  if(t.length<=65)return t;
+  const corte=t.slice(0,65),pausa=Math.max(corte.lastIndexOf(':'),corte.lastIndexOf('.'),corte.lastIndexOf(';'),corte.lastIndexOf(','),corte.lastIndexOf(' —'));
+  return (pausa>=25?corte.slice(0,pausa):corte.slice(0,Math.max(1,corte.lastIndexOf(' ')))).replace(/[\s,;:—-]+$/,'').trim();
 }
 function estudioV238(m,api){
   const doc=m?.ownerDocument,f=m?.querySelector?.('#editorPlantilla');
@@ -21666,7 +21721,7 @@ function estudioV238(m,api){
     return '<section class="e238-sec"><h3>Trazo y resplandor</h3>'+select('trazo_estilo','Estilo del trazo',[['continuo','Continuo'],['puntos','Punteado'],['guiones','Discontinuo'],['largo','Guiones largos'],['guion_punto','Guion y punto'],['doble_punto','Guion y dos puntos']])+select('extremo','Extremos del trazo',[['round','Redondos'],['butt','Planos'],['square','Cuadrados']])+select('union','Unión de las esquinas',[['round','Redondeada'],['miter','En punta'],['bevel','Biselada']])+(tipo==='texto'?control('solo_trazo','Solo contorno, sin relleno','checkbox')+'<div class="e238-fila2">'+control('trazo_color','Color del contorno','color')+control('trazo_ancho','Grosor del contorno (%)','number',0,8,.1)+'</div>':'')+control('resplandor','Activar resplandor exterior','checkbox')+'<div class="e238-fila2">'+control('resplandor_color','Color del resplandor','color')+control('resplandor_tamano','Tamaño del resplandor (%)','number',0,10,.1)+control('resplandor_intensidad','Intensidad del resplandor','range',0,1,.01)+control('resplandor_extension','Extensión del resplandor (%)','number',0,5,.1)+'</div></section>';
   }
   function efectosTexto244(){const rol=S.sel?.rol;if(!rol||S.sel?.tipo!=='rol')return;let d={};try{d=JSON.parse(leer('estilos_texto_json')||'{}');}catch{}insp.insertAdjacentHTML('beforeend','<details class="e238-detalle" data-texto-avanzado'+(S.textoAvanzado?' open':'')+'><summary title="Contorno, resplandor y estilos de texto">Acabados avanzados</summary>'+controlesAcabado244(d[rol],'texto')+'<section class="e238-sec"><h3>Estilos de texto</h3><div class="e238-acciones">'+[['plantilla','De la plantilla'],['editorial','Editorial dorado'],['contorno','Contorno'],['neon','Neón rosa'],['hielo','Resplandor blanco']].map(([k,t])=>'<button type="button" class="e238-btn e238-peq" data-estilo-texto="'+k+'">'+t+'</button>').join('')+'</div><p class="e238-ayuda">Conserva la tipografía de la plantilla y ajusta su acabado por capa.</p></section></details>');}
-  function pintaSujeto243(){const s=sujeto243();insp.innerHTML=sec('Seleccionar sujeto','<p class="e238-ayuda">La máscara conserva la original. Permite colocar títulos, formas y degradado detrás de la persona.</p><button type="button" class="e238-btn e238-prim" data-sujeto-accion="seleccionar"'+(S.sujetoOcupado?' disabled':'')+'>'+(S.sujetoOcupado?'Seleccionando sujeto…':'Seleccionar sujeto con IA local')+'</button><p role="status" class="e238-ayuda">'+esc(S.sujetoError||'')+'</p>'+(S.sujetoVista?'<div class="e243-transparencia"><img src="'+esc(S.sujetoVista)+'" alt="Recorte real del sujeto" style="max-width:100%;max-height:180px;object-fit:contain"></div>':''))+(s?sec('Máscara no destructiva','<label class="e238-campo"><span>Activar máscara</span><input type="checkbox" data-sujeto-campo="activo"'+(s.activo?' checked':'')+'></label><label class="e238-campo"><span>Suavizar borde</span><input type="range" min="0" max="10" step=".1" data-sujeto-campo="suavidad" value="'+s.suavidad+'"></label><div class="e238-fila"><span>Espacio alrededor del sujeto (%)</span><div class="e238-rango"><input type="range" min="0" max="8" step=".25" data-sujeto-campo="separacion" value="'+(Number(s.separacion)||0)+'" aria-label="Espacio alrededor del sujeto"><input type="number" class="e238-num" min="0" max="8" step=".25" data-sujeto-campo="separacion" value="'+(Number(s.separacion)||0)+'" aria-label="Espacio alrededor del sujeto en porcentaje"></div></div><p class="e238-ayuda">Suaviza la transición de la foto alrededor del sujeto. Si un texto queda cerca, muévelo con sus controles.</p><p class="e238-ayuda">Elementos detrás del sujeto:</p>'+[['titulo1','Titular'],['titulo2','Subtítulo'],['cta','Llamada'],['marca','Marca'],['degradado','Degradado']].map(([k,t])=>'<label class="e238-campo"><span>'+t+'</span><input type="checkbox" data-sujeto-campo="detras" data-sujeto-rol="'+k+'"'+(s.detras.includes(k)?' checked':'')+'></label>').join('')+'<div class="e238-acciones"><button type="button" class="e238-btn" data-sujeto-accion="sumar">＋ Restaurar máscara</button><button type="button" class="e238-btn" data-sujeto-accion="quitar">− Borrar máscara</button><button type="button" class="e238-btn" data-sujeto-accion="terminar">Terminar pincel</button><button type="button" class="e238-btn" data-sujeto-accion="limpiar">Quitar correcciones</button></div><label class="e238-campo"><span>Tamaño del pincel (%)</span><input type="range" min=".2" max="10" step=".2" value="'+(S.pincelRadio||2)+'" data-pincel-radio></label><p class="e238-ayuda">'+(S.pincelModo?'Pincel '+S.pincelModo+' activo. Pinta sobre el lienzo.':'Elige restaurar o borrar para corregir el borde.')+'</p>'):'');}
+  function pintaSujeto243(){const s=sujeto243();insp.innerHTML=sec('Seleccionar sujeto','<p class="e238-ayuda">La máscara conserva la original. Permite colocar títulos, formas y degradado detrás de la persona.</p><button type="button" class="e238-btn e238-prim" data-sujeto-accion="seleccionar"'+(S.sujetoOcupado?' disabled':'')+'>'+(S.sujetoOcupado?'Seleccionando sujeto…':'Seleccionar sujeto con IA local')+'</button><p role="status" class="e238-ayuda">'+esc(S.sujetoError||'')+'</p>'+(S.sujetoVista?'<div class="e243-transparencia"><img src="'+esc(S.sujetoVista)+'" alt="Recorte real del sujeto" style="max-width:100%;max-height:180px;object-fit:contain"></div>':''))+(s?sec('Máscara no destructiva','<label class="e238-campo"><span>Activar máscara</span><input type="checkbox" data-sujeto-campo="activo"'+(s.activo?' checked':'')+'></label><label class="e238-campo"><span>Suavizar borde</span><input type="range" min="0" max="10" step=".1" data-sujeto-campo="suavidad" value="'+s.suavidad+'"></label><div class="e238-fila"><span title="Espacio alrededor del sujeto, en %">Margen (%)</span><div class="e238-rango"><input type="range" min="0" max="8" step=".25" data-sujeto-campo="separacion" value="'+(Number(s.separacion)||0)+'" aria-label="Espacio alrededor del sujeto"><input type="number" class="e238-num" min="0" max="8" step=".25" data-sujeto-campo="separacion" value="'+(Number(s.separacion)||0)+'" aria-label="Espacio alrededor del sujeto en porcentaje"></div></div><p class="e238-ayuda">Suaviza la transición de la foto alrededor del sujeto. Si un texto queda cerca, muévelo con sus controles.</p><p class="e238-ayuda">Elementos detrás del sujeto:</p>'+[['titulo1','Titular'],['titulo2','Subtítulo'],['cta','Llamada'],['marca','Marca'],['degradado','Degradado']].map(([k,t])=>'<label class="e238-campo"><span>'+t+'</span><input type="checkbox" data-sujeto-campo="detras" data-sujeto-rol="'+k+'"'+(s.detras.includes(k)?' checked':'')+'></label>').join('')+'<div class="e238-acciones"><button type="button" class="e238-btn" data-sujeto-accion="sumar">＋ Restaurar máscara</button><button type="button" class="e238-btn" data-sujeto-accion="quitar">− Borrar máscara</button><button type="button" class="e238-btn" data-sujeto-accion="terminar">Terminar pincel</button><button type="button" class="e238-btn" data-sujeto-accion="limpiar">Quitar correcciones</button></div><label class="e238-campo"><span>Tamaño del pincel (%)</span><input type="range" min=".2" max="10" step=".2" value="'+(S.pincelRadio||2)+'" data-pincel-radio></label><p class="e238-ayuda">'+(S.pincelModo?'Pincel '+S.pincelModo+' activo. Pinta sobre el lienzo.':'Elige restaurar o borrar para corregir el borde.')+'</p>'):'');}
   function nodoTextoLibre245(t,W,H){
     const w=W*t.w/100,h=H*t.h/100,anchor=t.alineacion==='middle'?'center':t.alineacion==='end'?'right':'left';
     const g=new K.Group({id:'textoLibre-'+t.id,name:'textoLibre',x:W*t.x/100+w/2-(S.offsetMesa||0),y:H*t.y/100+h/2,width:w,height:h,offsetX:w/2,offsetY:h/2,rotation:t.giro||0,draggable:!t.bloqueada,opacity:Number(t.opacidad)||1});
@@ -29608,7 +29663,11 @@ onAuthStateChanged(auth, async u => {
   vigilaVersion();
   setInterval(vigilaVersion, 300000);
   ve(location.hash.slice(1) || CFG.defaultView || 'conversations');
-  if (['admin','supervisor'].includes(ROL_ACTUAL)) void cargaCalidad({ silencioso:true });
+  if (['admin','supervisor'].includes(ROL_ACTUAL)) {
+    void cargaCalidad({ silencioso:true });
+    // Las burbujas de atención al cliente salen aunque no se abra «Informes»: se revisa cada minuto.
+    if (!CALIDAD_TIMER) CALIDAD_TIMER = setInterval(() => cargaCalidad({ silencioso:true }), 60000);
+  }
 });
 </script>
 </body>
