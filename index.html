@@ -3853,15 +3853,19 @@ function avisa(titulo, detalle){
    Los dialogos nativos (confirm) no se pueden confiar: el navegador integrado de Claude, el modo app del iPhone o un bloqueador los
    descartan sin avisar y el boton parecia muerto («se queda estancado»). Esta version vive en la pagina, siempre se ve y devuelve una
    promesa: true si pulsan Aceptar, false con Cancelar, Escape o tocando fuera. */
-function confirmaAqui(texto, { si = 'Aceptar', no = 'Cancelar' } = {}){
+// Con `nota` (el texto de ayuda del campo) añade un cuadro opcional y, al aceptar, resuelve { nota } en vez de true.
+function confirmaAqui(texto, { si = 'Aceptar', no = 'Cancelar', nota = null } = {}){
   return new Promise(resolve => {
     const previo = document.activeElement;
     const m = document.createElement('div');
     m.className = 'modal on'; m.style.zIndex = '95';
     m.setAttribute('role', 'alertdialog'); m.setAttribute('aria-modal', 'true');
     m.innerHTML = '<div class="caja" style="max-width:420px"><div class="mcuerpo" style="white-space:pre-line;font-size:14px;line-height:1.55"></div>'
+      + (nota != null ? '<textarea data-cf-nota rows="3" maxlength="300" style="width:100%;box-sizing:border-box;margin-top:10px;font:inherit;font-size:14px;padding:8px;border-radius:10px;border:1px solid var(--line2);resize:vertical"></textarea>' : '')
       + '<div class="mpatas"><button class="btn-linea" data-cf-no></button><button class="btn-solido" data-cf-si></button></div></div>';
     m.querySelector('.mcuerpo').textContent = String(texto);
+    const campo = m.querySelector('[data-cf-nota]');
+    if (campo) { campo.placeholder = String(nota); campo.setAttribute('aria-label', String(nota)); }
     const bNo = m.querySelector('[data-cf-no]'), bSi = m.querySelector('[data-cf-si]');
     bNo.textContent = no; bSi.textContent = si;
     const fin = (valor) => {
@@ -3873,10 +3877,10 @@ function confirmaAqui(texto, { si = 'Aceptar', no = 'Cancelar' } = {}){
     const tecla = (ev) => { if (ev.key === 'Escape') { ev.preventDefault(); ev.stopPropagation(); fin(false); } };
     document.addEventListener('keydown', tecla, true);
     bNo.onclick = () => fin(false);
-    bSi.onclick = () => fin(true);
+    bSi.onclick = () => fin(campo ? { nota: campo.value.trim() } : true);
     m.addEventListener('mousedown', ev => { if (ev.target === m) fin(false); });
     document.body.appendChild(m);
-    bSi.focus();
+    (campo || bSi).focus();
   });
 }
 
@@ -7816,11 +7820,13 @@ function cableaChat(c){
     const chat = sel, id = chat.id || chat._id;
     if (!id) return avisa('No se pudo transferir', 'Falta el identificador de esta conversación.');
     const destino = sucursalDestinoTransferencia(chat);
-    if (!await confirmaAqui('¿Transferir a ' + nombreDe(chat) + ' a ' + destino + '?\n\nSe le envían a la sucursal sus datos, la sesión que habló y sus últimos mensajes, '
-      + 'y al cliente un mensaje de que lo atienden allá. El bot se pausa en este chat.', { si: 'Transferir' })) return;
+    // Nota opcional (dueño 27/10/2026: «más contexto para la otra sucursal»): va en el aviso como «Nota: …».
+    const ok = await confirmaAqui('¿Transferir a ' + nombreDe(chat) + ' a ' + destino + '?\n\nSe le envían a la sucursal sus datos, la sesión que habló y sus últimos mensajes, '
+      + 'y al cliente un mensaje de que lo atienden allá. El bot se pausa en este chat.', { si: 'Transferir', nota: 'Nota para la sucursal (opcional): lo que acordaron, presupuesto, horario, detalles del cliente…' });
+    if (!ok) return;
     transferir.disabled = true;
     let r;
-    try { r = await llama({ action: 'transferirSucursal', conversation_id: id }); }
+    try { r = await llama({ action: 'transferirSucursal', conversation_id: id, ...(ok.nota ? { nota: ok.nota } : {}) }); }
     catch (e) { r = { ok: false, error: e?.message }; }
     finally { transferir.disabled = false; }
     if (!r?.ok) return avisa('No se transfirió', r?.error || 'No hubo respuesta del servidor. Revisa antes de volver a intentarlo.');
