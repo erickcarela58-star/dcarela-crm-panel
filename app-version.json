@@ -1,7 +1,7 @@
 {
-  "version": "2026-10-27-crm-release-v350",
+  "version": "2026-10-27-crm-release-v351",
   "channel": "crm",
-  "released_at": "2026-10-27T06:34:13Z",
-  "summary": "Botón «Transferir» en cada chat: pasa el cliente a la otra sucursal con sus datos y la sesión, y le avisa al cliente.",
+  "released_at": "2026-10-27T06:47:05Z",
+  "summary": "Transferir: al pulsarlo aparece una nota opcional para la sucursal con los detalles del cliente; va en el aviso.",
   "requiere_puente": "2026-10-26-borra-estados-v55"
 }
