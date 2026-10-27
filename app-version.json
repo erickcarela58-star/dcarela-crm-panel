@@ -1,7 +1,7 @@
 {
-  "version": "2026-10-26-crm-release-v345",
+  "version": "2026-10-26-crm-release-v348",
   "channel": "crm",
-  "released_at": "2026-10-27T00:22:32Z",
-  "summary": "Editor: vuelven a la barra Recrear flyer, Capas, Logo PNG y Fondo (sale Ajustar color/Efectos). El recreador conserva el botón de la plantilla. Agente de contenido: arma con tus plantillas aprobadas y la foto intercambiada, mide si el texto tapa a la persona y no aprueba sola la que la tape.",
+  "released_at": "2026-10-27T00:55:29Z",
+  "summary": "Avisos al supervisor: salen como burbuja en el CRM (por WhatsApp solo si lo enciendes). Chat: con la ficha abierta, el cuadro de texto queda junto al botón de enviar. Plantillas: «No quiero más mensajes» ya da de baja y «Me interesa» lo atiende el bot. Plantilla 07: solo la persona delante de la banda.",
   "requiere_puente": "2026-10-26-borra-estados-v55"
 }
