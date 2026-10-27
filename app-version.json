@@ -1,7 +1,7 @@
 {
-  "version": "2026-10-26-crm-release-v344",
+  "version": "2026-10-26-crm-release-v345",
   "channel": "crm",
-  "released_at": "2026-10-26T23:58:52Z",
-  "summary": "Avisos de atención: ya no llegan por WhatsApp («Atención pendiente» ni los de tiempo de respuesta); salen como burbuja dentro del CRM, con sonido y ventana del sistema, y botón «Abrir chat». Recreador: los titulares del catálogo ya no salen pegados.",
+  "released_at": "2026-10-27T00:22:32Z",
+  "summary": "Editor: vuelven a la barra Recrear flyer, Capas, Logo PNG y Fondo (sale Ajustar color/Efectos). El recreador conserva el botón de la plantilla. Agente de contenido: arma con tus plantillas aprobadas y la foto intercambiada, mide si el texto tapa a la persona y no aprueba sola la que la tape.",
   "requiere_puente": "2026-10-26-borra-estados-v55"
 }
