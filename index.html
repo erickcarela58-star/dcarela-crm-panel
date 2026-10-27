@@ -7203,6 +7203,8 @@ function abre(c){
     // chat y el contexto. El texto lo decide el servidor con la misma puerta que usa el puente.
     + '<span class="modo-porque" id="modoPorque" hidden></span>'
     + '<button class="modo" id="btnAtendido" title="Ya lo atendiste: se quita de «Sin responder» y de «Se enfrían», se baja el aviso de atención humana y la satisfacción lo cuenta como cliente atendido.">Atendido</button>'
+    // «Transferir» (dueño 27/10/2026): pasa el cliente a la otra sucursal. Avisa a la sucursal con sus datos y la sesión, y al cliente.
+    + (/instagram|facebook|messenger/.test(String(c.source || '').toLowerCase()) ? '' : '<button class="modo" id="btnTransferir">Transferir</button>')
     + '<button class="adj" id="verFicha" title="Ficha del lead" aria-label="Ficha del lead">'
     +   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="8.600"/><path d="M12 11v5.200"/><circle cx="12" cy="7.800" r=".7" fill="currentColor" stroke="none"/></svg></button>'
     + '<button class="adj" id="btnBuscaChat" title="Buscar en esta conversación (Ctrl+F)" aria-label="Buscar en la conversación">'
@@ -7549,6 +7551,18 @@ function pintaModoChat(){
     at.title = atendido && auto ? 'Atendido automáticamente: ' + (MOTIVOS_AUTO[sel.atendido_auto.motivo] || 'no esperaba respuesta') + '. Si vuelve a escribir, reaparece solo.'
       : 'Ya lo atendiste: se quita de «Sin responder» y de «Se enfrían», se baja el aviso de atención humana y la satisfacción lo cuenta como cliente atendido.';
   }
+  const tr = $('btnTransferir');
+  if (tr) {
+    const destino = sucursalDestinoTransferencia(sel);
+    const hecho = sel.transferido_at && sel.transferido_a === sel.sucursal;
+    tr.textContent = hecho ? '↪ ' + (sel.sucursal_nombre || 'Transferido') : 'Transferir';
+    tr.title = (hecho ? 'Transferido a ' + (sel.sucursal_nombre || 'la otra sucursal') + ' el ' + new Date(sel.transferido_at).toLocaleString('es-DO') + '. ' : '')
+      + 'Pulsa para transferirlo a ' + destino + ': se le envían sus datos y la sesión a la sucursal, y al cliente un mensaje de que lo atienden allá.';
+  }
+}
+// La otra sucursal: la contraria de la que tiene la ficha (sin asignar es de la Central). El servidor decide lo mismo (sucursal-routing-core).
+function sucursalDestinoTransferencia(c){
+  return String(c?.sucursal || '') === 'plaza-artesanal' ? 'la Central' : 'Plaza Artesanal';
 }
 
 // Lo que cambia en la conversacion abierta, sin recargar y sin volver a montar el chat. Se llama
@@ -7795,6 +7809,27 @@ function cableaChat(c){
     pintaChats();pintaCuentas();
     if (typeof pintaHoy === 'function' && document.getElementById('hoyCont')) pintaHoy();
     avisa('Atendido', sel===chat?'Ya no sale como pendiente. Si el cliente vuelve a escribir, reaparece sola.':'Se marcó la conversación anterior; la que tienes abierta no cambió.');
+  };
+  const transferir = $('btnTransferir');
+  if (transferir) transferir.onclick = async () => {
+    if (transferir.disabled || !sel) return;
+    const chat = sel, id = chat.id || chat._id;
+    if (!id) return avisa('No se pudo transferir', 'Falta el identificador de esta conversación.');
+    const destino = sucursalDestinoTransferencia(chat);
+    if (!await confirmaAqui('¿Transferir a ' + nombreDe(chat) + ' a ' + destino + '?\n\nSe le envían a la sucursal sus datos, la sesión que habló y sus últimos mensajes, '
+      + 'y al cliente un mensaje de que lo atienden allá. El bot se pausa en este chat.', { si: 'Transferir' })) return;
+    transferir.disabled = true;
+    let r;
+    try { r = await llama({ action: 'transferirSucursal', conversation_id: id }); }
+    catch (e) { r = { ok: false, error: e?.message }; }
+    finally { transferir.disabled = false; }
+    if (!r?.ok) return avisa('No se transfirió', r?.error || 'No hubo respuesta del servidor. Revisa antes de volver a intentarlo.');
+    const ahora = new Date().toISOString();
+    Object.assign(chat, { sucursal: r.sucursal_id, sucursal_nombre: r.sucursal, transferido_a: r.sucursal_id, transferido_at: ahora, mode: 'human', bot_paused: true });
+    if (sel === chat) pintaModoChat();
+    pintaChats();
+    const via = { puente: 'por WhatsApp (5644)', plantilla: 'por el número oficial', crm: 'aquí en el CRM' }[r.via] || '';
+    avisa('Transferido a ' + r.sucursal, 'Aviso a la sucursal ' + via + '. ' + (r.cliente?.ok ? 'Al cliente se le avisó.' : 'Al cliente NO se le pudo escribir: ' + (r.cliente?.error || 'sin motivo') + '.'));
   };
   const mas = $('mas');
   mas.querySelector('button').onclick = ev => { ev.stopPropagation(); $('masAgenda')?.classList.remove('on'); mas.classList.toggle('on'); };
