@@ -2453,6 +2453,10 @@ input[type="checkbox"],input[type="radio"]{accent-color:var(--accent)}
 .escribir{border-top:0;box-shadow:0 -.5px 0 var(--line);padding:10px 16px;gap:8px}
 .escribir textarea{border:0;border-radius:20px;background:var(--hover);padding:10px 16px;box-shadow:none}
 .escribir textarea:focus{background:var(--panel);box-shadow:0 0 0 1.5px var(--accent),var(--foco)}
+/* Chat angosto (ficha del lead abierta): los íconos van en su propia fila y el cuadro de texto queda junto al botón de enviar.
+   Antes el envío caía solo en una fila aparte, debajo de los íconos (lista de problemáticas del dueño: «inconsistencias de responsive»). */
+.conversacion{container-type:inline-size;container-name:chat}
+@container chat (max-width: 560px){.escribir .adjuntos{flex:1 0 100%}.escribir textarea{flex:1 1 0;min-width:0}}
 .enviar{width:36px;height:36px;background:var(--accent);color:#fff;transition:background .15s var(--curva),transform .1s var(--curva)}
 .enviar:hover:not(:disabled){background:var(--accent-fuerte)}
 .enviar:active:not(:disabled){transform:scale(.94)}
@@ -16570,12 +16574,12 @@ async function pintaConfig(){
         interruptorCfg('satisfaccion_auto', 'Mandar la encuesta automáticamente', 'Apágalo para pedirla tú a mano desde el chat.', true))
 
     + tarjetaCfg('Avisos al supervisor',
-        'El CRM le escribe a este teléfono cuando algo necesita tu mirada: <b>mala atención al cliente</b>, <b>temas delicados o polémicos</b>, '
-        + '<b>conversaciones extrañas</b> y chats que piden a una persona. Cada aviso dice <b>qué colaborador</b> atendió, <b>qué cliente</b> y su número, '
-        + 'y la <b>fecha y la hora</b>. Solo de 7 a. m. a 10 p. m., sin repetir el mismo aviso y con un tope diario; nunca le escribe a un cliente ni a un colaborador. '
-        + 'Los avisos de «pide una persona» salen por la línea de WhatsApp Web conectada: si el teléfono es esa misma línea no se envían '
-        + '(sería escribirse a sí mismo) y queda solo la marca «Aviso no enviado» en la ficha.',
-        '<div class="campo"><label>Teléfono que recibe los avisos</label>'
+        // Dueño 26/10/2026: «estos avisos no los quiero… quiero que le salga como burbuja de notificación en el mismo CRM y ventanas emergentes».
+        'Cuando algo necesita tu mirada (<b>un chat que pasó a una persona</b>, <b>mala atención o demoras</b>, temas delicados) te sale una '
+        + '<b>burbuja aquí en el CRM</b> con «Abrir chat», suena y aparece la <b>ventana del sistema</b> (si diste permiso con «Activar avisos»). '
+        + 'Cada aviso dice qué cliente y por qué. Ya no llegan por WhatsApp; si algún día lo quieres también por WhatsApp, enciéndelo abajo.',
+        interruptorCfg('handoff_aviso_whatsapp', 'Avisar también por WhatsApp', 'Apagado: los avisos de «Atención pendiente» solo salen en el CRM.', false)
+        + '<div class="campo"><label>Teléfono que recibe los avisos (si se encienden por WhatsApp)</label>'
         + '<input id="cfgAvisoTel" inputmode="numeric" value="' + esc(AJUSTES.handoff_notify_phone || '')
         + '" placeholder="18094785620"></div>'
         + '<p class="cfgnota">Vacío = 18094785620. Código de país y solo dígitos.</p>'
