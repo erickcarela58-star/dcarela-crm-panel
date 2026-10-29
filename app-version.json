@@ -1,7 +1,7 @@
 {
-  "version": "2026-10-29-crm-release-v354",
+  "version": "2026-10-29-crm-release-v355",
   "channel": "crm",
-  "released_at": "2026-10-29T05:02:00Z",
-  "summary": "Flyers XV individuales visibles y vigentes aunque el catálogo PDF completo permanezca bloqueado.",
+  "released_at": "2026-10-29T04:53:11Z",
+  "summary": "Catálogo XV completo y flyers individuales con las cinco fotos originales revisadas; falla cerrado si falta o no se puede leer una foto.",
   "requiere_puente": "2026-10-26-borra-estados-v55"
 }
