@@ -1,7 +1,7 @@
 {
-  "version": "2026-10-29-crm-release-v357",
+  "version": "2026-10-29-crm-release-v358",
   "channel": "crm",
-  "released_at": "2026-10-29T14:51:58Z",
-  "summary": "Catálogo XV completo con originales revisados, paginación equilibrada y WhatsApp correcto para Central y Plaza.",
+  "released_at": "2026-10-29T19:19:31Z",
+  "summary": "Catálogos con fotos completas en marcos editoriales, sin recortar caras ni laterales en PDF o web.",
   "requiere_puente": "2026-10-26-borra-estados-v55"
 }
