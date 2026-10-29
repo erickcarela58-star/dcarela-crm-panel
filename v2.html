@@ -24496,9 +24496,6 @@ async function cmbCcBaja(boton, pedido){
 function cmbCcHtml(){
   const d = CMB.datos, cc = CMB.cc, v = cc.datos, suc = CMB_SUC.find(([id]) => id === cc.suc) || CMB_SUC[0], sinNumero = !String(d?.ajustes?.[suc[2]] || '').replace(/\D/g, '');
   const categoriasCrm = (CMB_CC.find(([id]) => id === cc.cat) || [null, null, []])[2];
-  // El PDF completo de XV permanece bloqueado hasta tener una composición revisada, pero
-  // eso no debe ocultar los flyers individuales: salen de cada combo vigente y su foto propia.
-  const soloFlyers = cc.cat === 'xv';
   const combosFlyer = Array.isArray(v?.combos) && v.combos.length ? v.combos : (d?.combos || []).filter(c => c.activo !== false
     && categoriasCrm.includes(c.categoria) && (!c.sucursal || c.sucursal === 'ambas' || c.sucursal === cc.suc));
   const cuantos = crm => (d?.combos || []).filter(c => c.activo !== false && crm.includes(c.categoria) && Number(c.precio) > 0).length;
@@ -24509,8 +24506,8 @@ function cmbCcHtml(){
     + '<div class="cmb-cc-chips" role="group" aria-label="Sucursal">' + CMB_SUC.map(([id, nombre]) => '<button type="button" class="cmb-cc-chip' + (cc.suc === id ? ' on' : '') + '" aria-pressed="' + (cc.suc === id) + '" data-cmbsuc="' + id + '">WhatsApp ' + esc(nombre) + '</button>').join('') + '</div>'
     + (sinNumero ? '<p class="aviso">Pon el WhatsApp de ' + esc(suc[1]) + ' en la pestaña «Catálogo PDF» para que los botones del catálogo funcionen.</p>' : '')
     + (cc.error ? '<p class="aviso">' + esc(cc.error) + '</p>' : '')
-    + '<div class="cmb-cc-acc"><button type="button" class="btn-solido" data-cmbccpdf="1"' + (sinNumero || soloFlyers ? ' disabled' : '') + '>' + CMB_ICO.pdf + 'Descargar catálogo PDF</button>'
-    + '<button type="button" class="btn-linea" data-cmbccweb="1"' + (sinNumero || soloFlyers ? ' disabled' : '') + '>Descargar versión web animada</button></div>'
+    + '<div class="cmb-cc-acc"><button type="button" class="btn-solido" data-cmbccpdf="1"' + (sinNumero ? ' disabled' : '') + '>' + CMB_ICO.pdf + 'Descargar catálogo PDF</button>'
+    + '<button type="button" class="btn-linea" data-cmbccweb="1"' + (sinNumero ? ' disabled' : '') + '>Descargar versión web animada</button></div>'
     + '<div class="cmb-cc-paginas" aria-busy="' + cc.cargando + '">' + (v ? v.paginas.map((p, i) => '<img src="data:image/jpeg;base64,' + p + '" alt="Página ' + (i + 1) + ' del catálogo">').join('') : cc.cargando ? '<div class="cmb-esqueleto"></div>' : '')
     + (cc.cargando ? '<span class="cmb-dibujando">Dibujando…</span>' : '') + '</div>'
     + (v ? '<p class="bajada">' + v.paginas.length + ' páginas · ' + v.botones + ' botones de WhatsApp · lo demás de cada combo se explica en el chat</p>' : '')
