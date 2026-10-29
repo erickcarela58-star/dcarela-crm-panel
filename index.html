@@ -9080,22 +9080,22 @@ const COMBO_PDFS = [
   { cat:'bodas', label:'Bodas' },
 ];
 const COMBO_PAGINA = CFG.publicCatalogUrl || 'https://dcarelacompufoto.com/combos.html';
-const COMBO_IMG = 'https://dcarelacompufoto.com/combos-img/';
 const COMBO_REF_PREF = { xv:'XV', infantil:'INF', graduacion:'GRA', cumpleanos:'CUM', embarazadas:'EMB', bodas:'BOD' };
-function comboSlugLegacy(cat, nombre){
-  return cat + '-' + String(nombre || '').toLowerCase().replace(/[^a-z0-9\s-]/g,'')
-    .trim().replace(/\s+/g,'-').replace(/-+/g,'-');
-}
 function comboRefLegacy(cat, nombre){
   const slug = String(nombre || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase()
     .replace(/[^A-Z0-9]+/g, '-').replace(/^-|-$/g, '');
   return (COMBO_REF_PREF[cat] || 'COM') + '-' + slug;
 }
 let COMBOS = null;
+let COMBOS_SUCURSAL = null;
+function sucursalComboDelChat(chat){
+  return ['plaza', 'plaza-artesanal'].includes(String(chat?.sucursal || '')) ? 'plaza' : 'central';
+}
 
 async function cargaCombos(forzar){
-  if (COMBOS && !forzar) return COMBOS;
-  const r = await llama({ action:'combos', operation:'lista' });
+  const sucursal = sucursalComboDelChat(sel);
+  if (COMBOS && COMBOS_SUCURSAL === sucursal && !forzar) return COMBOS;
+  const r = await llama({ action:'combos', operation:'lista', sucursal });
   if (!r?.ok) throw new Error(r?.error || 'No se pudo leer el catálogo de combos.');
   COMBOS = (r.combos || []).filter(c => c && c.activo !== false).map(c => {
     const cat = String(c.categoria || '').toLowerCase();
@@ -9110,12 +9110,13 @@ async function cargaCombos(forzar){
       fotoId: c.foto_id || null, ref: c.ref || comboRefLegacy(cat, c.nombre),
     };
   }).filter(c => c.nombre);
+  COMBOS_SUCURSAL = sucursal;
   return COMBOS;
 }
 /* ---- Flyer del combo y vestidos ------------------------------------------ */
 // Para las categorías del catálogo nuevo el flyer lo genera crmApi a partir de crm_combos.
-// Solo XV conserva el PNG público heredado hasta que entre en el generador nuevo. Ningún
-// PDF del chat depende ya de /pdf/: esos se sustituyen por catalogo_categoria.
+// XV también se genera desde el combo vigente y exige una foto original elegida.
+// Ningún PDF del chat depende ya de /pdf/: esos se sustituyen por catalogo_categoria.
 //
 // Los vestidos viven en la misma pagina, en .dress-block. Son la pregunta que mas repite
 // una clienta de XV despues de ver el precio, y hasta ahora habia que buscarlos a mano.
@@ -9189,7 +9190,7 @@ async function abreCombos(){
     + '<div class="mcuerpo"><span class="cargando"></span> Leyendo el catálogo…</div>');
   $('modal').querySelectorAll('[data-cerrar]').forEach(b => { b.onclick = cierraModal; });
   let filas;
-  try { filas = await cargaCombos(false); }
+  try { filas = await cargaCombos(true); }
   catch (e) {
     $('modal').querySelector('.mcuerpo').innerHTML =
       '<p class="aviso">No se pudo leer el catálogo: ' + esc(e.message) + '</p>';
@@ -9235,21 +9236,14 @@ async function adjuntaCombo(c, boton){
     // Para las categorías nuevas el flyer sale del mismo combo del CRM que alimenta
     // el PDF. Así precio, foto, referencia y botones no pueden venir de dos listas.
     let blob, ref = c.ref || '';
-    if (c.id && c.catalogoCat) {
-      const r = await llama({ action:'combos', operation:'flyer_combo', id:c.id, formato:'jpg' });
+    if (c.id) {
+      const r = await llama({ action:'combos', operation:'flyer_combo', id:c.id, sucursal:sucursalComboDelChat(sel), formato:'jpg' });
       if (!r?.ok || !r.imagen_b64) throw new Error(r?.error || 'no se pudo generar el flyer 1 a 1');
       ref = r.ref || ref;
       const bytes = Uint8Array.from(atob(r.imagen_b64), x => x.charCodeAt(0));
       blob = new Blob([bytes], { type: r.tipo || 'image/jpeg' });
-    } else if (c.cat === 'xv') {
-      // XV todavía no forma parte de los cinco catálogos nuevos. Conservamos su
-      // tarjeta pública como respaldo, pero la lista y el texto ya vienen del CRM.
-      const url = COMBO_IMG + comboSlugLegacy(c.cat, c.nombre) + '.png';
-      const r = await fetch(url, { cache:'no-cache' });
-      if (!r.ok) throw new Error('flyer 1 a 1 HTTP ' + r.status);
-      blob = await r.blob();
     } else {
-      throw new Error('este combo todavía no tiene flyer 1 a 1 de su catálogo');
+      throw new Error('este combo no tiene ID del CRM; vuelve a abrir Combos para cargarlo de nuevo');
     }
     const datos = await leeBase64(blob);
     // Los combos salen con botones: el cliente toca en vez de escribir, y su respuesta
@@ -9290,7 +9284,7 @@ async function adjuntaPdfCombos(cat, boton){
   try {
     // Reemplaza los PDF estáticos antiguos por el catálogo vigente del CRM y usa
     // automáticamente el número de la conversación: central u offline/QR Plaza.
-    const sucursal = canalDe(sel) === 'whatsapp_qr' ? 'plaza' : 'central';
+    const sucursal = sucursalComboDelChat(sel);
     const r = await llama({ action:'combos', operation:'catalogo_categoria', categoria:cat, sucursal, formato:'pdf' });
     if (!r?.ok || !r.pdf_b64) throw new Error(r?.error || 'no se pudo preparar el PDF vigente');
     const bytes = Uint8Array.from(atob(r.pdf_b64), c => c.charCodeAt(0));
