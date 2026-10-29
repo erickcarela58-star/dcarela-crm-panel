@@ -24495,6 +24495,12 @@ async function cmbCcBaja(boton, pedido){
 }
 function cmbCcHtml(){
   const d = CMB.datos, cc = CMB.cc, v = cc.datos, suc = CMB_SUC.find(([id]) => id === cc.suc) || CMB_SUC[0], sinNumero = !String(d?.ajustes?.[suc[2]] || '').replace(/\D/g, '');
+  const categoriasCrm = (CMB_CC.find(([id]) => id === cc.cat) || [null, null, []])[2];
+  // El PDF completo de XV permanece bloqueado hasta tener una composición revisada, pero
+  // eso no debe ocultar los flyers individuales: salen de cada combo vigente y su foto propia.
+  const soloFlyers = cc.cat === 'xv';
+  const combosFlyer = Array.isArray(v?.combos) && v.combos.length ? v.combos : (d?.combos || []).filter(c => c.activo !== false
+    && categoriasCrm.includes(c.categoria) && (!c.sucursal || c.sucursal === 'ambas' || c.sucursal === cc.suc));
   const cuantos = crm => (d?.combos || []).filter(c => c.activo !== false && crm.includes(c.categoria) && Number(c.precio) > 0).length;
   const chips = CMB_CC.map(([id, nombre, crm]) => '<button type="button" class="cmb-cc-chip' + (cc.cat === id ? ' on' : '') + '" aria-pressed="' + (cc.cat === id) + '" data-cmbcc="' + id + '">' + esc(nombre) + ' <small>' + cuantos(crm) + '</small></button>').join('');
   const flyer = (nombre, detalle, attr) => '<div class="cmb-cc-flyer"><div><b>' + esc(nombre) + '</b><span>' + esc(detalle) + '</span></div><button type="button" class="btn-linea cmb-chico" ' + attr + '>Flyer JPG</button></div>';
@@ -24503,15 +24509,15 @@ function cmbCcHtml(){
     + '<div class="cmb-cc-chips" role="group" aria-label="Sucursal">' + CMB_SUC.map(([id, nombre]) => '<button type="button" class="cmb-cc-chip' + (cc.suc === id ? ' on' : '') + '" aria-pressed="' + (cc.suc === id) + '" data-cmbsuc="' + id + '">WhatsApp ' + esc(nombre) + '</button>').join('') + '</div>'
     + (sinNumero ? '<p class="aviso">Pon el WhatsApp de ' + esc(suc[1]) + ' en la pestaña «Catálogo PDF» para que los botones del catálogo funcionen.</p>' : '')
     + (cc.error ? '<p class="aviso">' + esc(cc.error) + '</p>' : '')
-    + '<div class="cmb-cc-acc"><button type="button" class="btn-solido" data-cmbccpdf="1"' + (sinNumero ? ' disabled' : '') + '>' + CMB_ICO.pdf + 'Descargar catálogo PDF</button>'
-    + '<button type="button" class="btn-linea" data-cmbccweb="1"' + (sinNumero ? ' disabled' : '') + '>Descargar versión web animada</button></div>'
+    + '<div class="cmb-cc-acc"><button type="button" class="btn-solido" data-cmbccpdf="1"' + (sinNumero || soloFlyers ? ' disabled' : '') + '>' + CMB_ICO.pdf + 'Descargar catálogo PDF</button>'
+    + '<button type="button" class="btn-linea" data-cmbccweb="1"' + (sinNumero || soloFlyers ? ' disabled' : '') + '>Descargar versión web animada</button></div>'
     + '<div class="cmb-cc-paginas" aria-busy="' + cc.cargando + '">' + (v ? v.paginas.map((p, i) => '<img src="data:image/jpeg;base64,' + p + '" alt="Página ' + (i + 1) + ' del catálogo">').join('') : cc.cargando ? '<div class="cmb-esqueleto"></div>' : '')
     + (cc.cargando ? '<span class="cmb-dibujando">Dibujando…</span>' : '') + '</div>'
     + (v ? '<p class="bajada">' + v.paginas.length + ' páginas · ' + v.botones + ' botones de WhatsApp · lo demás de cada combo se explica en el chat</p>' : '')
     + '</section>'
     + '<section class="cmb-caja"><header class="cmb-cabcaja"><div><h3>Flyers de un solo combo</h3><p>Una imagen por combo (1080 × 1350), sin teléfono, para mandarla suelta o subirla a estados.</p></div></header>'
-    + (!v ? '<p class="bajada">' + (cc.cargando ? 'Cargando…' : 'Elige una categoría.') + '</p>'
-      : v.combos.length ? v.combos.map(c => flyer(c.nombre, (c.desde ? 'Desde ' : '') + cmbDinero(c.precio) + ' · ' + c.ref + (c.foto_id ? '' : ' · foto del portafolio'),
+    + (!combosFlyer.length ? '<p class="bajada">' + (cc.cargando ? 'Cargando…' : 'No hay combos vigentes en esta categoría y sucursal.') + '</p>'
+      : combosFlyer.length ? combosFlyer.map(c => flyer(c.nombre, (c.desde ? 'Desde ' : '') + cmbDinero(c.precio) + (c.ref ? ' · ' + c.ref : '') + (c.foto_id ? '' : ' · falta foto original'),
         c.id ? 'data-cmbflyer="' + esc(c.id) + '"' : 'data-cmbflyerref="' + esc(c.ref) + '"')).join('')
       : flyer('Cobertura a la medida', 'Sin combos en el CRM: «Consultar precio y contenido»', 'data-cmbflyercat="' + esc(cc.cat) + '"'))
     + '</section>';
