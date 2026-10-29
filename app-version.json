@@ -1,7 +1,7 @@
 {
-  "version": "2026-10-29-crm-release-v355",
+  "version": "2026-10-29-crm-release-v356",
   "channel": "crm",
-  "released_at": "2026-10-29T04:53:11Z",
-  "summary": "Catálogo XV completo y flyers individuales con las cinco fotos originales revisadas; falla cerrado si falta o no se puede leer una foto.",
+  "released_at": "2026-10-29T05:42:00Z",
+  "summary": "Catálogo XV completo con las cinco fotos originales revisadas, paginación equilibrada y fallo cerrado si falta o no se puede leer una foto.",
   "requiere_puente": "2026-10-26-borra-estados-v55"
 }
