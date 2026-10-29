@@ -1,7 +1,7 @@
 {
-  "version": "2026-10-27-crm-release-v351",
+  "version": "2026-10-28-crm-release-v352",
   "channel": "crm",
-  "released_at": "2026-10-27T06:47:05Z",
-  "summary": "Transferir: al pulsarlo aparece una nota opcional para la sucursal con los detalles del cliente; va en el aviso.",
+  "released_at": "2026-10-29T01:28:32Z",
+  "summary": "Combos XV con fotos originales y flyers vigentes; el bot cancela el catálogo si hubo intervención humana.",
   "requiere_puente": "2026-10-26-borra-estados-v55"
 }
