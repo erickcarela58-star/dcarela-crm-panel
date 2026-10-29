@@ -1,7 +1,7 @@
 {
-  "version": "2026-10-28-crm-release-v352",
+  "version": "2026-10-29-crm-release-v353",
   "channel": "crm",
-  "released_at": "2026-10-29T01:28:32Z",
-  "summary": "Combos XV con fotos originales y flyers vigentes; el bot cancela el catálogo si hubo intervención humana.",
+  "released_at": "2026-10-29T04:48:00Z",
+  "summary": "Combos XV con fotos originales, categoría visible y flyers vigentes; sin PNG heredados.",
   "requiere_puente": "2026-10-26-borra-estados-v55"
 }
