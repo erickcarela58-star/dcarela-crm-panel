@@ -1,7 +1,7 @@
 {
-  "version": "2026-10-30-crm-release-v362",
+  "version": "2026-10-30-crm-release-v363",
   "channel": "crm",
-  "released_at": "2026-10-30T20:35:30Z",
-  "summary": "La bandeja reserva una linea al ultimo mensaje y presenta etapa, modo y restricciones como emojis compactos accesibles.",
+  "released_at": "2026-10-30T21:07:07Z",
+  "summary": "XV integra siete vestidos sin marcos negros y la bandeja usa emoji Apple con nombres compactos de etapa y modo.",
   "requiere_puente": "2026-10-30-estados-propios-v57"
 }
