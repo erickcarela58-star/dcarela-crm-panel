@@ -616,7 +616,8 @@ img.av{object-fit:cover}
 .chats{flex:1;overflow-y:auto}
 
 /* Fila de chat: plana, con el divisor arrancando despues del avatar, como WhatsApp.
-   Dos lineas de contenido; la etiqueta de etapa comparte linea con el mensaje. */
+   El mensaje conserva una linea propia. Los estados van debajo como iconos pequenos:
+   asi nunca sustituyen ni recortan la vista previa. */
 .chat{display:flex;gap:11px;align-items:center;padding:9px 13px;position:relative;cursor:pointer}
 .chat::after{content:"";position:absolute;left:63px;right:0;bottom:0;height:1px;background:var(--line)}
 .chat:last-child::after{display:none}
@@ -636,7 +637,16 @@ img.av{object-fit:cover}
 .chat.sinleer .hora{color:var(--ok);font-weight:700}
 .chat .prev{font-size:12px;color:var(--mut);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .chat .prev.escribiendo-cliente{color:var(--ok);font-style:italic}
-.chat .marcas{display:flex;gap:4px;align-items:center;flex:0 0 auto}
+.chat .marcas{grid-column:1/3;display:flex;gap:3px;align-items:center;min-height:15px;
+  margin-top:2px;overflow:hidden}
+.chat .marcas:empty{display:none}
+.chat-marca{width:15px;height:15px;flex:0 0 15px;display:inline-flex;align-items:center;
+  justify-content:center;border-radius:4px;background:var(--hover);font-size:9px;line-height:1;
+  cursor:help}
+.chat-marca.ign{background:rgba(178,106,0,.12)}
+.chat-marca.bloqueada{background:rgba(220,38,38,.10)}
+.chat-marca.modo{background:rgba(37,99,235,.10)}
+.chat-marca.silenciada{background:rgba(100,116,139,.12)}
 .etiqueta{font-size:8.5px;font-weight:800;letter-spacing:.4px;text-transform:uppercase;
   padding:2px 5px;border-radius:4px;background:var(--hover);color:var(--mut);white-space:nowrap}
 .etiqueta.ign{background:rgba(178,106,0,.12);color:var(--warn)}
@@ -6918,6 +6928,16 @@ async function editaColaboradores(){
   $('modal').querySelectorAll('[data-cerrar]').forEach(b => { b.onclick = cierraModal; });
   $('entColabsGuarda').onclick = async () => { const r = await llama({ action: 'entregasColaboradores', lista: $('entColabs').value }); if (!r?.ok) return avisa('No se guardó', r?.error || ''); cierraModal(); avisa('Colaboradores', (r.colaboradores || []).map(telefonoLegible).join(', ') || 'Ninguno'); };
 }
+const EMOJI_ETAPA_CHAT = Object.freeze({
+  nuevo:'\u2728', interesado:'\ud83d\udc40', cotizando:'\ud83e\uddfe', pendiente_reserva:'\u23f3',
+  reservado:'\ud83d\udcc5', cliente:'\u2705', desinteresado:'\u2796', perdido:'\u21a9\ufe0f'
+});
+function marcaEmojiChat(emoji, texto, clase){
+  const nombre = String(texto || '').replace(/_/g, ' ').trim();
+  return '<span class="chat-marca' + (clase ? ' ' + esc(clase) : '')
+    + '" role="img" aria-label="' + esc(nombre) + '" title="' + esc(nombre) + '">'
+    + emoji + '</span>';
+}
 function pintaChats(){
   const cont = $('chats'); if (!cont) return;
   // Las cuentas cuentan lo MISMO que se ve. Un filtro que dice 12 y abre 8 se lee como
@@ -7009,11 +7029,12 @@ function pintaChats(){
   cont.innerHTML = arriba + filas.map(c => {
     const n = nombreDe(c), sinLeer = Number(c.unread || 0) > 0;
     const marcas = [];
-    if (ignorada(c)) marcas.push('<span class="etiqueta ign">ignorada · ' + esc(TIPOS_IGNORAR[c.ignored_kind] || 'otro') + '</span>');
-    if (c.lifecycle_stage) marcas.push('<span class="etiqueta">' + esc(c.lifecycle_stage) + '</span>');
-    if (c.proactive_blocked_at) marcas.push('<span class="etiqueta">sin automatización</span>');
-    else if (c.mode === 'human' || c.human_handoff_required) marcas.push('<span class="etiqueta">humano</span>');
-    if (silenciado(c)) marcas.push('<span class="etiqueta">🔕 silenciado</span>');
+    if (ignorada(c)) marcas.push(marcaEmojiChat('\ud83d\udeab', 'Ignorada · ' + (TIPOS_IGNORAR[c.ignored_kind] || 'otro'), 'ign'));
+    if (c.lifecycle_stage) marcas.push(marcaEmojiChat(EMOJI_ETAPA_CHAT[c.lifecycle_stage] || '\ud83c\udff7\ufe0f', 'Etapa · ' + c.lifecycle_stage, 'etapa'));
+    if (c.proactive_blocked_at) marcas.push(marcaEmojiChat('\u26d4', 'Sin automatización', 'bloqueada'));
+    else if (c.mode === 'human' || c.human_handoff_required) marcas.push(marcaEmojiChat('\ud83d\udc64', 'Modo humano', 'modo'));
+    else if (c.mode === 'bot') marcas.push(marcaEmojiChat('\ud83e\udd16', 'Modo bot', 'modo'));
+    if (silenciado(c)) marcas.push(marcaEmojiChat('\ud83d\udd15', 'Silenciado', 'silenciada'));
     if (sinLeer) marcas.push('<span class="globito">' + Number(c.unread) + '</span>');
     const canal = CANALES[canalDe(c)];
     const escribeAqui = textoEscribiendoCliente(c);
