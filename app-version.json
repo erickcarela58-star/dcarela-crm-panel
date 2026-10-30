@@ -1,7 +1,7 @@
 {
-  "version": "2026-10-30-crm-release-v360",
+  "version": "2026-10-30-crm-release-v361",
   "channel": "crm",
-  "released_at": "2026-10-30T12:15:00Z",
-  "summary": "Catálogos v360 sin recortes ni marcos internos; Estados propios de WhatsApp visibles y programados eliminables.",
+  "released_at": "2026-10-30T17:18:34Z",
+  "summary": "Agenda abre el hilo usado o permite elegir WhatsApp Web/API; llamadas sin confirmación interna duplicada.",
   "requiere_puente": "2026-10-30-estados-propios-v57"
 }
