@@ -1,7 +1,7 @@
 {
-  "version": "2026-10-29-crm-release-v359",
+  "version": "2026-10-30-crm-release-v360",
   "channel": "crm",
-  "released_at": "2026-10-29T23:30:00Z",
-  "summary": "Catálogos editoriales de marca, Estados manuales por trozos y respuestas del bot completas y naturales.",
-  "requiere_puente": "2026-10-26-borra-estados-v55"
+  "released_at": "2026-10-30T12:15:00Z",
+  "summary": "Catálogos v360 sin recortes ni marcos internos; Estados propios de WhatsApp visibles y programados eliminables.",
+  "requiere_puente": "2026-10-30-estados-propios-v56"
 }
