@@ -1710,6 +1710,14 @@ a.ayuda{color:var(--enlace)}
 .agcita{display:flex;align-items:center;gap:12px;width:100%;padding:9px 11px;margin-bottom:5px;
   border:1px solid var(--line);border-radius:var(--r);background:var(--panel);cursor:pointer;text-align:left}
 .agcita:hover{border-color:var(--line2);background:var(--hover)}
+.agcanales{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px}
+.agcanal{min-height:112px;border:1px solid var(--line);border-radius:16px;background:var(--panel);color:var(--ink);padding:16px;text-align:left;cursor:pointer;display:flex;align-items:center;gap:13px;transition:.16s ease}
+.agcanal:hover,.agcanal:focus-visible{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-suave);transform:translateY(-1px)}
+.agcanal:disabled{opacity:.58;cursor:wait;transform:none}
+.agcanal-ico{position:relative;display:grid;place-items:center;width:48px;height:48px;flex:0 0 48px;border-radius:15px;color:#fff;background:#25d366}
+.agcanal-ico svg{width:29px;height:29px}.agcanal-ico em{position:absolute;right:-7px;bottom:-7px;border:2px solid var(--panel);border-radius:999px;background:#17344d;color:#fff;font:700 9px/1 system-ui;padding:5px 6px;font-style:normal;letter-spacing:.04em}
+.agcanal.api .agcanal-ico em{background:#2563eb}.agcanal b{display:block;font-size:14px}.agcanal small{display:block;margin-top:5px;color:var(--mut);font-size:12px;line-height:1.35}
+@media(max-width:640px){.agcanales{grid-template-columns:1fr}.agcanal{min-height:92px}}
 /* Un evento de Google no abre ninguna conversacion: no se puede pinchar y se dice con el
    cursor, no solo con el color. */
 .agcita.aggoogle{border-left:3px solid #1a73e8;cursor:default}
@@ -7102,7 +7110,7 @@ let INICIANDO_CHAT = false;
 async function iniciaChat(tel, nombre = ''){
   if (INICIANDO_CHAT) return;
   // Si ya está abierto ese chat no hay nada que iniciar.
-  if (sel && soloDigitos(sel.wa_phone) === tel) return avisa('Ya estás en ese chat');
+  if (sel && canalDe(sel) === 'whatsapp_qr' && soloDigitos(sel.wa_phone) === tel) return avisa('Ya estás en ese chat');
   INICIANDO_CHAT = true;
   avisa('Comprobando si tiene WhatsApp…', telefonoLegible(tel));
   try {
@@ -14128,6 +14136,49 @@ function iframeGoogleCalendar(ids){
     + '<a href="https://calendar.google.com/" target="_blank" rel="noopener">Abrir Google Calendar</a></p>';
 }
 
+async function abreConversacionAgenda(id){
+  const c = buscaConv(id) || await esperaConversacion(id, 7000);
+  if (!c) return avisa('El chat se está preparando', 'Aparecerá en la bandeja en unos segundos.');
+  ve('conversations');
+  abre(c);
+}
+
+// Una reservacion puede existir antes de que el estudio haya escrito. En ese caso no se adivina
+// el canal: se muestran los dos WhatsApp. Elegir solo abre/prepara el hilo; no envia un mensaje.
+async function abreChatAgenda(c, boton = null){
+  if (!c) return;
+  const id = c.id || c._id;
+  const tel = telefonoParaChat(c.wa_phone);
+  if (!tel) return abreConversacionAgenda(id);
+  if (boton) boton.disabled = true;
+  let r;
+  try { r = await llama({ action:'agendaCanales', operation:'status', conversation_id:id }); }
+  finally { if (boton) boton.disabled = false; }
+  if (!r?.ok) return avisa('No se pudo comprobar el chat', r?.error || 'Inténtalo de nuevo.');
+  if (r.escrito) return abreConversacionAgenda(r.conversation_id);
+
+  abreModal('<div class="mtapa"><b>Escribirle a ' + esc(nombreDe(c)) + '</b><button class="cerrarm" data-cerrar>×</button></div>'
+    + '<div class="mcuerpo"><p class="bajada">Todavía no le has escrito. Elige por cuál WhatsApp quieres iniciar la conversación.</p>'
+    + '<div class="agcanales">'
+    + '<button class="agcanal web" data-agcanal="web" aria-label="Abrir por WhatsApp Web"><span class="agcanal-ico">' + LOGO_WA + '<em>WEB</em></span><span><b>WhatsApp Web</b><small>Usa el número conectado al puente.</small></span></button>'
+    + '<button class="agcanal api" data-agcanal="api" aria-label="Abrir por WhatsApp API"><span class="agcanal-ico">' + LOGO_WA + '<em>API</em></span><span><b>WhatsApp API</b><small>Usa el número oficial 849-524-5620.</small></span></button>'
+    + '</div><p class="cfgnota">Elegir un canal no envía ningún mensaje todavía.</p></div>');
+  $('modal').querySelector('.agcanales').onclick = async ev => {
+    const opcion = ev.target.closest('[data-agcanal]');
+    if (!opcion) return;
+    opcion.disabled = true;
+    if (opcion.dataset.agcanal === 'web') {
+      cierraModal();
+      ve('conversations');
+      return iniciaChat(r.phone || tel, nombreDe(c));
+    }
+    const oficial = await llama({ action:'agendaCanales', operation:'official', conversation_id:id });
+    if (!oficial.ok) { opcion.disabled = false; return avisa('No se pudo abrir WhatsApp API', oficial.error || 'Inténtalo de nuevo.'); }
+    cierraModal();
+    return abreConversacionAgenda(oficial.conversation_id);
+  };
+}
+
 function montaAgenda(){
   if (!montadas.has('agenda')) {
     montadas.add('agenda');
@@ -14186,7 +14237,7 @@ function montaAgenda(){
           { id:'mover', texto:'Mover o cambiar de día', nota:'Cambia la fecha y la hora de la sesión' },
           { id:'cancelar', texto:'Cancelar la reservación', nota:'Sale de la Agenda; no toca pagos ni ventas' },
         ], { alElegir: id => {
-          if (id === 'chat') { ve('conversations'); abre(cv); }
+          if (id === 'chat') void abreChatAgenda(cv, mn);
           else if (id === 'mover') abreRecordatorio(cv, { editarReserva:true });
           else cancelaReservaAgenda(cv);
         } });
@@ -14199,7 +14250,7 @@ function montaAgenda(){
         return;
       }
       const ab = ev.target.closest('[data-agconv]');
-      if (ab) { const cv = buscaConv(ab.dataset.agconv); if (cv) { ve('conversations'); abre(cv); } }
+      if (ab) { const cv = buscaConv(ab.dataset.agconv); if (cv) void abreChatAgenda(cv, ab); }
     });
     $('vista-agenda').addEventListener('change', ev => {
       if (ev.target?.id === 'agCategoriaGrafica') { agCategoria = ev.target.value; pintaAgenda(); }
@@ -15220,7 +15271,8 @@ async function cuelgaLlamada(){
   const r = await llama({ action: antes === 'timbre' ? 'callReject' : 'callTerminate', call_id:id });
   if (!r.ok && !/ya no|ended|already/i.test(String(r.error || ''))) avisa('No se pudo cortar la llamada', r.error || '');
 }
-// Llamar al cliente del chat abierto (solo número oficial). Meta pide su permiso: si no lo hay, se ofrece mandárselo.
+// Llamar al cliente del chat abierto (solo número oficial). El CRM no pide una confirmacion extra:
+// si Meta exige habilitacion del cliente, solicita ese permiso inmediatamente al elegir esta opcion.
 // Respaldo cuando la llamada directa por el oficial no se puede hacer todavía (Meta no aprobó la plantilla de permiso):
 // una llamada telefónica normal. Sin enlaces de llamada: el dueño las quiere normales (20/10/2026).
 function abreLlamar5644(c){
@@ -15236,7 +15288,7 @@ function llamaAlContacto(c){
   const tel = String(c.wa_phone || '').replace(/\D/g, '');
   // Solo llamadas normales (pedido del dueño, 20/10/2026): la de WhatsApp directa en el CRM por el número oficial y la telefónica.
   // WhatsApp no deja que un dispositivo vinculado (el 5644) haga llamadas de voz, así que desde el 5644 no hay llamada de WhatsApp.
-  const opcionOficial = '<button class="tpl" data-oficial="1"><b>Llamada de WhatsApp desde el CRM</b><span>Sale por el número oficial (849-524-5620), suena y se habla en este panel. WhatsApp exige el permiso del cliente: si no lo tiene, te ofrezco pedírselo.</span></button>';
+  const opcionOficial = '<button class="tpl" data-oficial="1"><b>Llamada de WhatsApp desde el CRM</b><span>Sale por el número oficial (849-524-5620), suena y se habla en este panel. Si Meta todavía exige habilitación, el CRM la solicita sin abrir otro diálogo.</span></button>';
   const opcionTelefono = tel.length >= 8 ? '<a class="tpl" href="tel:+' + esc(tel) + '" style="text-decoration:none;display:block"><b>Llamada telefónica normal</b><span>Abre el marcador (el celular o el programa de llamadas de la PC) con +' + esc(tel) + '.</span></a>' : '';
   abreModal('<div class="mtapa"><b>Llamar a ' + esc(nombreDe(c)) + '</b><button class="cerrarm" data-cerrar>×</button></div><div class="mcuerpo">'
     + opcionOficial + opcionTelefono + '</div>');
@@ -15253,7 +15305,7 @@ async function llamaPorOficial(c){
   if (!p.puede_llamar) {
     if (!p.puede_pedir) return avisa('Todavía no puedes llamarle', 'Meta solo deja pedir permiso 1 vez al día y 2 por semana a cada cliente. Escríbele por el chat.');
     const del5644 = canalDe(c) === 'whatsapp_qr';
-    if (!await confirmaAqui('Para llamar a ' + nombreDe(c) + ' WhatsApp exige su permiso. ' + (del5644 ? 'La llamada sale por el número oficial (849-524-5620) y el pedido le llega de ese número. ' : '') + '¿Le mando el pedido? Cuando lo acepte te aviso y podrás llamarle.', { si:'Pedir permiso', no:'Ahora no' })) return;
+    avisa('Solicitando permiso de llamada…', del5644 ? 'El pedido sale por el número oficial 849-524-5620.' : 'WhatsApp avisará cuando el cliente lo acepte.');
     const r = await llama({ action:'callStart', conversation_id:id });
     // La plantilla de permiso aún no está aprobada por Meta: se dice y se ofrece el enlace de llamada de WhatsApp mientras tanto.
     if (r.sin_plantilla) { avisa('Falta la plantilla de permiso', r.motivo || ''); if (del5644) abreLlamar5644(c); return; }
