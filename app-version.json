@@ -1,7 +1,7 @@
 {
-  "version": "2026-10-29-crm-release-v358",
+  "version": "2026-10-29-crm-release-v359",
   "channel": "crm",
-  "released_at": "2026-10-29T19:19:31Z",
-  "summary": "Catálogos con fotos completas en marcos editoriales, sin recortar caras ni laterales en PDF o web.",
+  "released_at": "2026-10-29T23:30:00Z",
+  "summary": "Catálogos editoriales de marca, Estados manuales por trozos y respuestas del bot completas y naturales.",
   "requiere_puente": "2026-10-26-borra-estados-v55"
 }
