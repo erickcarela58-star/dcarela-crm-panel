@@ -5396,10 +5396,12 @@ function stgElementos(){
   const pub = (STG.publicados || []).map((f, i) => {
     const t = Date.parse(f.sent_at || f.created_at || '') || 0;
     const lineas = String(f.body || '').split(/\n+/).map(x => x.trim()).filter(Boolean);
-    return { clave: 'p' + i, origen: 'publicado', fila: f, t, reciente: ahora - t < 86400000,
+    const desdeTelefono = f.origen === 'telefono';
+    return { clave: 'p' + i, origen: 'publicado', fuente: desdeTelefono ? 'telefono' : 'crm', fila: f, t, reciente: ahora - t < 86400000,
       tipo: f.kind === 'video' ? 'video' : f.kind === 'image' ? 'foto' : 'texto', thumb: f.media_thumb || '', color: f.color || '#128c7e',
       titulo: lineas[0] || (f.kind === 'video' ? 'Video' : f.kind === 'image' ? 'Foto' : 'Estado de texto'), texto: f.body || '',
-      chip: STG_ESTADO[f.status] || [f.status || 'Sin estado', 'espera'], aud: ES_ETIQUETAS[f.modo] || String(f.modo || '').replace(/^familia:/, 'Familia ') || 'Contactos',
+      chip: desdeTelefono ? ['Publicado desde WhatsApp', 'ok'] : (STG_ESTADO[f.status] || [f.status || 'Sin estado', 'espera']),
+      aud: desdeTelefono ? 'Audiencia elegida en WhatsApp' : (ES_ETIQUETAS[f.modo] || String(f.modo || '').replace(/^familia:/, 'Familia ') || 'Contactos'),
       vistas: f.vistas, mes: stgDia(t).slice(0, 7) };
   });
   const nombreCat = id => (CONT_CATEGORIAS.find(([x]) => x === id) || [, id])[1];
@@ -5498,7 +5500,7 @@ function stgDetalle(clave){
     ? '<div class="stg-det-img stg-det-texto" style="--stg-color:' + esc(e.color) + '">' + esc(e.texto) + '</div>' : '';
   const datos = e.origen === 'programado'
     ? [['Estado', e.chip[0]], ['Sale', stgHace(e.t)], ['Categoría', e.aud]]
-    : [['Estado', e.chip[0]], ['Audiencia', e.aud], ['Contactos', String(f.total || 0)], ['Vistas', e.vistas == null ? 'sin contar todavía' : String(e.vistas)],
+    : [['Estado', e.chip[0]], ['Origen', e.fuente === 'telefono' ? 'WhatsApp / teléfono' : 'CRM'], ['Audiencia', e.aud], ['Contactos', e.fuente === 'telefono' ? 'no informados por WhatsApp' : String(f.total || 0)], ['Vistas', e.vistas == null ? 'sin contar todavía' : String(e.vistas)],
       ['Creado', hora(f.created_at)], ['Enviado', hora(f.sent_at)], ['Primera vista', hora(f.confirmed_at)]];
   abreModal('<div class="mtapa"><b>' + esc(e.titulo) + '</b><button class="cerrarm" data-cerrar>×</button></div>'
     + '<div class="mcuerpo stg-det">' + media + '<div><dl class="stg-det-datos">' + datos.map(([k, v]) => '<dt>' + esc(k) + '</dt><dd>' + esc(v) + '</dd>').join('') + '</dl>'
@@ -5507,14 +5509,35 @@ function stgDetalle(clave){
     + (e.texto && e.tipo !== 'texto' && e.texto.trim() !== e.titulo ? '<p class="stg-det-cuerpo">' + esc(e.texto) + '</p>' : '')
     + (f.resto_total ? '<p class="bajada">Quedan <b>' + Number(f.resto_total) + '</b> contactos sin enviar de este estado.</p>' : '') + '</div></div>'
     + '<div class="mpatas"><button class="btn-linea" data-cerrar>Cerrar</button>'
-    + (e.origen === 'programado' ? '<button class="btn-solido" id="stgAlPlan">Abrir en el planificador</button>'
+    + (e.origen === 'programado' ? '<button class="btn-linea" id="stgAlPlan">Abrir en el planificador</button>'
+      + (!['publicada','publicando','encola','enviada','sin_confirmar'].includes(String(f.estado || '')) ? '<button class="btn-peligro" id="stgEliminaProgramado">Eliminar programado</button>' : '')
       : f.resto_total && !['pending', 'sending'].includes(f.status) ? '<button class="btn-solido" id="stgResto">Publicar los ' + Number(f.resto_total) + ' que faltan</button>' : '')
     + '</div>');
   $('modal').querySelectorAll('[data-cerrar]').forEach(b => { b.onclick = cierraModal; });
   if ($('stgAlPlan')) $('stgAlPlan').onclick = () => { cierraModal(); ve('contenido'); };
+  if ($('stgEliminaProgramado')) $('stgEliminaProgramado').onclick = async ev => {
+    // confirmaAqui reemplaza temporalmente el contenido del modal. Conservamos el
+    // botón original antes de esperar: al restaurarse el detalle, currentTarget ya
+    // no pertenece al DOM y volver a buscarlo puede devolver null.
+    const boton = ev.currentTarget;
+    if (boton.disabled) return;
+    boton.disabled = true;
+    if (!await confirmaAqui('Este estado se quitará de la programación y no se publicará. ¿Continuar?', { si:'Eliminar programado', no:'Cancelar' })) {
+      boton.disabled = false;
+      return;
+    }
+    const r = await llama({ action:'contenidoRechaza', ids:[f.id] });
+    if (!r.ok || !Array.isArray(r.hechas) || !r.hechas.includes(f.id)) {
+      stgDetalle(clave);
+      return avisa('No se pudo eliminar el programado', r.error || 'Ya se publicó o tiene un envío en curso.');
+    }
+    cierraModal();
+    avisa('Programado eliminado', 'La pieza quedó descartada y no se publicará.');
+    stgCarga(true);
+  };
   if ($('stgResto')) $('stgResto').onclick = async ev => {
     ev.currentTarget.disabled = true;
-    const r = await llama({ action:'statusResto', status_id: f.id });
+    const r = await llama({ action:'statusResto', id: f.id });
     cierraModal();
     if (!r.ok) return avisa('No se pudo publicar lo que faltaba', r.error);
     avisa('En cola', 'El resto de este estado sale en cuanto el puente lo tome.');
