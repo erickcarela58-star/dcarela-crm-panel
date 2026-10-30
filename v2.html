@@ -3425,6 +3425,8 @@ input[type="checkbox"],input[type="radio"]{accent-color:var(--accent)}
   .e238-capa-nombre{flex:1;min-width:0;width:0;font-size:12px;padding:6px 8px;border-color:transparent;background:transparent}
   .e238-capa-nombre:hover,.e238-capa-nombre:focus{border-color:var(--e-borde);background:var(--e-card)}
   .e238-capa{gap:6px;padding:5px 6px;border-color:var(--e-borde);border-radius:9px;min-height:42px}
+   .e352-capa-asa,.e352-capa-base{flex:none;width:20px;text-align:center;color:var(--e-mut);font-size:15px;line-height:28px;user-select:none}
+   .e352-capa-asa{cursor:grab;border-radius:5px}.e352-capa-asa:active{cursor:grabbing}.e238-capa.e352-arrastrando{opacity:.5}.e238-capa.e352-sobre{border-color:var(--e-acc);box-shadow:inset 0 2px var(--e-acc)}
   .e238-capa:focus-within{border-color:var(--e-acc)}
   .e238-capa-ico{color:var(--e-acc)}
   .e238.e238-biblioteca-plegada .e238-cuerpo{grid-template-columns:minmax(0,1fr) clamp(250px,23vw,324px)}
@@ -3815,7 +3817,15 @@ const CFG = window.CRM_CONFIG || window.DCARELA_CRM_CONFIG || {};
 const FB  = window.__DCARELA_FIREBASE_CONFIG || {};
 const API = String(CFG.firebaseFunctionsBase || '').replace(/\/$/, '') + '/crmApi';
 const API_CALIDAD = String(CFG.firebaseFunctionsBase || '').replace(/\/$/, '') + '/crmServiceQualityApi';
-const NEGOCIO = 'dcarela';
+// La sucursal proviene de la configuración de este panel y se confirma con whoami
+// antes de iniciar cualquier lectura directa de Firestore.
+const NEGOCIO = CFG.businessId == null ? 'dcarela' : String(CFG.businessId);
+const BRIDGE_ID = NEGOCIO === 'plaza-artesanal' ? 'whatsapp_qr_plaza' : 'whatsapp_qr';
+const SUCURSAL_CONFIG_VALIDA = ['dcarela', 'plaza-artesanal'].includes(NEGOCIO)
+  && (!CFG.bridgeId || CFG.bridgeId === BRIDGE_ID)
+  && (NEGOCIO !== 'plaza-artesanal' || (Array.isArray(CFG.enabledViews) && CFG.enabledViews.length > 0));
+const VISTAS_HABILITADAS = Array.isArray(CFG.enabledViews) ? new Set(CFG.enabledViews.map(String)) : null;
+const vistaHabilitada = id => !VISTAS_HABILITADAS || VISTAS_HABILITADAS.has(id);
 
 const app  = getApps().length ? getApps()[0] : initializeApp(FB);
 const auth = getAuth(app);
@@ -4011,7 +4021,7 @@ function pintaMenu(){
   // 'oculta': la vista existe y se abre por su enlace (#informes) para admin y supervisor, pero no
   // aparece en el menu. Es supervision interna: quien atiende no tiene por que verla, y lo que de
   // verdad importa le llega al dueno por WhatsApp (owner-vigilancia.js).
-  const disponibles = VISTAS.filter(v => !v.oculta && (!v.restringida || ['admin','supervisor'].includes(ROL_ACTUAL)));
+  const disponibles = VISTAS.filter(v => vistaHabilitada(v.id) && !v.oculta && (!v.restringida || ['admin','supervisor'].includes(ROL_ACTUAL)));
   const enlace = v => '<a href="#' + v.id + '" data-vista="' + v.id + '" title="' + esc(v.nombre) + '">' + v.icono
     + '<span>' + esc(v.nombre) + '</span><span class="cuenta" data-cuenta="' + v.id + '" hidden></span></a>';
   // Sin data-vista: el enrutador solo intercepta a[data-vista] (mas abajo), asi que estos abren
@@ -4111,8 +4121,9 @@ document.addEventListener('keydown', ev => { if (ev.key === 'Escape') cierraMenu
 /* ---- Enrutado ------------------------------------------------------------ */
 let vistaActual = null;
 function ve(id){
-  if (!VISTAS.some(v => v.id === id && (!v.restringida || ['admin','supervisor'].includes(ROL_ACTUAL))))
-    id = CFG.defaultView || 'conversations';
+  if (!VISTAS.some(v => v.id === id && vistaHabilitada(v.id) && (!v.restringida || ['admin','supervisor'].includes(ROL_ACTUAL))))
+    id = VISTAS.some(v => v.id === CFG.defaultView && vistaHabilitada(v.id))
+      ? CFG.defaultView : VISTAS.find(v => vistaHabilitada(v.id))?.id || 'conversations';
   vistaActual = id;
   // El montaje va PRIMERO. Al reves, la vista se crea despues de repartir la clase
   // que la hace visible y nace sin ella: sale el marco y por dentro nada. Asi quedo
@@ -4133,7 +4144,7 @@ $('nav').addEventListener('click', ev => {
   ev.preventDefault();
   ve(a.dataset.vista);
 });
-window.addEventListener('hashchange', () => ve(location.hash.slice(1)));
+window.addEventListener('hashchange', () => { if ($('app').classList.contains('on')) ve(location.hash.slice(1)); });
 
 /* ---- Acordeones que se abren y se cierran con suavidad (K11) -------------------------------------------- */
 // Un <details> salta de golpe. Aqui se intercepta el clic en su <summary> y se anima la altura (de la actual a la final) con la API de animaciones,
@@ -4186,7 +4197,7 @@ async function llama(cuerpo, opciones = {}){
     r = await fetch(opciones.endpoint || API, {
       method:'POST',
       headers:{ 'Content-Type':'application/json', Authorization:'Bearer ' + token },
-      body: JSON.stringify(cuerpo),
+      body: JSON.stringify({ ...cuerpo, sucursal_de_trabajo: NEGOCIO }),
       signal: senalDeLlamada(cuerpo, opciones.signal),
     });
   } catch (e) {
@@ -4524,7 +4535,7 @@ function escuchaMensajes(idConv){
 }
 document.addEventListener('visibilitychange', () => {
   if (document.hidden || !auth.currentUser) return;
-  escuchaConversaciones();
+  if (vistaHabilitada('conversations')) escuchaConversaciones();
   if (escuchaMsgId && sel) abreEscuchaMensajes(escuchaMsgId, false);
 });
 // Version cargada y aviso de que hay otra publicada.
@@ -4750,14 +4761,14 @@ function pintaAvisosLocal(){
     .map(([id, t]) => '<option value="' + id + '"' + (id === actual ? ' selected' : '') + '>' + t + '</option>').join('');
   const silencio = avisosSilenciados();
   cont.innerHTML = '<div class="cx-ia" style="align-items:flex-start;flex-direction:column;gap:12px">'
-    + Object.keys(CANALES).map(k => '<label style="flex-direction:row;align-items:center;gap:10px;width:100%;max-width:520px"><span style="flex:1">Sonido · ' + esc(CANALES[k].corto) + '</span>'
+    + Object.keys(CANALES).filter(k => NEGOCIO === 'dcarela' || k === 'whatsapp_qr').map(k => '<label style="flex-direction:row;align-items:center;gap:10px;width:100%;max-width:520px"><span style="flex:1">Sonido · ' + esc(NEGOCIO === 'plaza-artesanal' ? 'WhatsApp de Plaza' : CANALES[k].corto) + '</span>'
         + '<select data-av-sonido="' + k + '">' + opciones(a.sonido[k]) + '</select><button type="button" class="btn-linea" data-av-prueba="' + k + '">Probar</button></label>').join('')
     + '<label class="cx-chk" style="flex-direction:row"><input type="checkbox" id="avNm"' + (a.noMolestar.activo ? ' checked' : '') + '> No molestar de</label>'
     + '<div style="display:flex;gap:8px;align-items:center"><input type="time" id="avDesde" value="' + esc(a.noMolestar.desde) + '"> a <input type="time" id="avHasta" value="' + esc(a.noMolestar.hasta) + '"></div>'
     + '<div style="display:flex;gap:8px;flex-wrap:wrap"><button type="button" class="btn-linea" id="avUnaHora">Silenciar 1 hora</button>'
     + (a.hasta && a.hasta > Date.now() ? '<button type="button" class="btn-linea" id="avQuita">Quitar el silencio</button>' : '') + '</div>'
     + '<small class="cfgnota">' + (silencio ? 'Ahora mismo están silenciados los avisos' + (a.hasta > Date.now() ? ' hasta las ' + new Date(a.hasta).toLocaleTimeString('es-DO', { hour:'2-digit', minute:'2-digit' }) : '') + '.' : 'Los avisos suenan con normalidad.')
-    + ' Las llamadas siempre suenan. Se guarda en este navegador.</small></div>';
+    + (NEGOCIO === 'dcarela' ? ' Las llamadas siempre suenan.' : '') + ' Se guarda en este navegador.</small></div>';
   cont.querySelectorAll('[data-av-sonido]').forEach(s => s.onchange = () => { const x = leeAvisos(); x.sonido[s.dataset.avSonido] = s.value; guardaAvisos(x); suenaTono(s.value); });
   cont.querySelectorAll('[data-av-prueba]').forEach(b => b.onclick = () => suenaTono(leeAvisos().sonido[b.dataset.avPrueba]));
   const guardaNm = () => { const x = leeAvisos(); x.noMolestar = { activo: $('avNm').checked, desde: $('avDesde').value || '22:00', hasta: $('avHasta').value || '07:00' }; guardaAvisos(x); pintaAvisosLocal(); };
@@ -6172,25 +6183,31 @@ async function stcPublica(){
     try {
       for (const f of c.fotos) {
         const cuerpo = { action:'statusPost', text: texto, dias: 180, ...cuerpoAudiencia };
+        let archivo;
         if (f.video) {
-          // El video va tal cual (ya se comprobó MP4, 30 s y 16 MB); la miniatura sale de un fotograma.
-          cuerpo.media_b64 = await leeBase64(f.blob);
+          // El video va tal cual (ya se comprobó MP4, 30 s y 16 MB). Se sube en trozos: meter
+          // hasta 16 MB en base64 dentro de statusPost excedía el cuerpo HTTP y el panel decía
+          // que publicaba aunque el servidor nunca hubiera recibido el Estado completo.
+          archivo = f.blob;
           cuerpo.media_mime = 'video/mp4';
           const cuadro = await fotogramaDeVideo(f.blob);
           const mini = cuadro ? (await vistasDe(cuadro)).thumb : '';
           if (mini) cuerpo.media_thumb_b64 = mini;
         } else {
           const hd = await comprimeHdPuente(f.blob);
-          cuerpo.media_b64 = await leeBase64(hd);
+          archivo = hd;
           cuerpo.media_mime = hd.type || f.blob.type || 'image/jpeg';
           const mini = await miniaturaParaEnviar(f.blob);
           if (mini) cuerpo.media_thumb_b64 = mini;
         }
+        const subida = await subeEnTrozos({ archivo, silenciosa:true });
+        if (!subida.ok) throw new Error(subida.error || 'no se pudo subir el archivo del Estado');
+        Object.assign(cuerpo, subida.cuerpo);
         cuerpos.push(cuerpo);
       }
     } catch (e) {
       boton.disabled = false;
-      return avisa('No se pudo leer la foto', String(e && e.message || e));
+      return avisa('No se pudo preparar el Estado', String(e && e.message || e));
     }
   }
   let r = { ok: true }, hechas = 0;
@@ -6430,7 +6447,7 @@ function escuchaLineaQr(){
   let respaldoPedido = false;
   const respaldo = () => { if (!respaldoPedido) { respaldoPedido = true; cargaEstadoPuente(); } };
   try {
-    escuchaLineaQr.para = onSnapshot(doc(db, 'crm_channel_state', 'whatsapp_qr'), s => {
+    escuchaLineaQr.para = onSnapshot(doc(db, 'crm_channel_state', BRIDGE_ID), s => {
       if (!s.exists()) return respaldo();
       fijaLineaQr(s.data(), { enVivo:true });
     }, () => respaldo());
@@ -7241,6 +7258,8 @@ function abre(c){
             + '<button data-mas="sticker">Enviar sticker (.webp)…</button><button data-mas="gif">Enviar GIF (video MP4)…</button>' : '')
     +   '<button data-mas="camara">Tomar foto con la cámara…</button>'
     +   (canalDe(c) === 'whatsapp_qr' && ['admin','supervisor'].includes(ROL_ACTUAL) ? '<button data-mas="bot-replies">Revisar respuestas del bot</button>' : '')
+    +   (['whatsapp_qr','whatsapp_cloud'].includes(canalDe(c)) && ['admin','supervisor'].includes(ROL_ACTUAL)
+          ? '<button data-mas="sucursal-intenciones">Revisar avisos de sucursal</button>' : '')
     +   '<button data-mas="asistente">Preguntar al asistente</button>'
     +   '<button data-mas="cerrar">Cerrar conversación</button></div></div>'
     + '</div>'
@@ -7821,14 +7840,15 @@ function cableaChat(c){
     if (!id) return avisa('No se pudo transferir', 'Falta el identificador de esta conversación.');
     const destino = sucursalDestinoTransferencia(chat);
     // Nota opcional (dueño 27/10/2026: «más contexto para la otra sucursal»): va en el aviso como «Nota: …».
-    const ok = await confirmaAqui('¿Transferir a ' + nombreDe(chat) + ' a ' + destino + '?\n\nSe le envían a la sucursal sus datos, la sesión que habló y sus últimos mensajes, '
-      + 'y al cliente un mensaje de que lo atienden allá. El bot se pausa en este chat.', { si: 'Transferir', nota: 'Nota para la sucursal (opcional): lo que acordaron, presupuesto, horario, detalles del cliente…' });
+    const ok = await confirmaAqui('¿Transferir a ' + nombreDe(chat) + ' a ' + destino + '?\n\nSe intentará avisar a la sucursal con los datos, la sesión y los últimos mensajes. '
+      + 'Si el aviso queda en cola, habrá que comprobarlo antes de mover el chat o avisar al cliente.', { si: 'Transferir', nota: 'Nota para la sucursal (opcional): lo que acordaron, presupuesto, horario, detalles del cliente…' });
     if (!ok) return;
     transferir.disabled = true;
     let r;
     try { r = await llama({ action: 'transferirSucursal', conversation_id: id, ...(ok.nota ? { nota: ok.nota } : {}) }); }
     catch (e) { r = { ok: false, error: e?.message }; }
     finally { transferir.disabled = false; }
+    if (r?.pending) return avisa('Aviso pendiente', r.error || 'Comprueba el resultado del puente antes de continuar. No se movió el chat ni se avisó al cliente.');
     if (!r?.ok) return avisa('No se transfirió', r?.error || 'No hubo respuesta del servidor. Revisa antes de volver a intentarlo.');
     const ahora = new Date().toISOString();
     Object.assign(chat, { sucursal: r.sucursal_id, sucursal_nombre: r.sucursal, transferido_a: r.sucursal_id, transferido_at: ahora, mode: 'human', bot_paused: true });
@@ -7851,6 +7871,7 @@ function cableaChat(c){
     mas.classList.remove('on');
     if (b.dataset.mas === 'recordar') return abreRecordatorio(sel);
     if (b.dataset.mas === 'bot-replies') return abreRespuestasBot(sel);
+    if (b.dataset.mas === 'sucursal-intenciones') return abreIntencionesSucursal(sel);
     // Abre un hilo del asistente sobre ESTE contacto. Es la unica forma en que el chat abierto
     // llega a Planificacion: abrir un chat ya no cambia el contacto de ningun hilo.
     if (b.dataset.mas === 'asistente') return preguntaAlAsistente(sel);
@@ -8414,18 +8435,20 @@ async function subeEnTrozos(a){
   const id = (crypto.randomUUID ? crypto.randomUUID() : '10000000-1000-4000-8000-100000000000'.replace(/[018]/g, c => (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16)));
   const total = Math.ceil(a.archivo.size / TROZO_SUBIDA);
   for (let i = 0; i < total; i++) {
-    a.subida = 'Subiendo ' + (i + 1) + ' de ' + total; pintaCola();
+    a.subida = 'Subiendo ' + (i + 1) + ' de ' + total;
+    if (!a.silenciosa) pintaCola();
     let base64;
     try { base64 = await leeBase64(a.archivo.slice(i * TROZO_SUBIDA, (i + 1) * TROZO_SUBIDA)); }
-    catch (e) { a.subida = ''; pintaCola(); return { ok:false, error:'no se pudo leer el archivo' }; }
+    catch (e) { a.subida = ''; if (!a.silenciosa) pintaCola(); return { ok:false, error:'no se pudo leer el archivo' }; }
     let r = { ok:false };
     for (let intento = 1; intento <= 3 && !r.ok; intento++) {
       r = await llama({ action:'subirTrozo', upload_id:id, index:i, total, base64 });
       if (!r.ok && intento < 3) await new Promise(res => setTimeout(res, 800 * intento));
     }
-    if (!r.ok) { a.subida = ''; pintaCola(); return { ok:false, error: r.error || 'no se pudo subir el archivo' }; }
+    if (!r.ok) { a.subida = ''; if (!a.silenciosa) pintaCola(); return { ok:false, error: r.error || 'no se pudo subir el archivo' }; }
   }
-  a.subida = ''; pintaCola();
+  a.subida = '';
+  if (!a.silenciosa) pintaCola();
   return { ok:true, cuerpo:{ media_upload_id:id, media_chunks:total } };
 }
 // Lo que lleva el envio de un adjunto: el base64 de siempre, o la referencia a la subida por trozos si es grande.
@@ -9330,6 +9353,43 @@ async function cargaPlantillas(forzar){
 }
 
 // Revisión del registro privado del bot. No envía, no reanuda ni cambia el modo del chat.
+async function abreIntencionesSucursal(c){
+  const conv = String(c?._firestore_id || c?.id || c?._id || '');
+  const uid = auth.currentUser?.uid;
+  if (!conv || !uid || !['admin','supervisor'].includes(ROL_ACTUAL)) return;
+  const m = abreModal('<div class="mtapa"><strong role="heading" aria-level="3">Avisos de sucursal</strong><button class="cerrarm" data-cerrar aria-label="Cerrar revisión">×</button></div>'
+    + '<div class="mcuerpo"><p class="cfgnota">Consulta las intenciones de este chat. Aceptado por Meta o por el puente no confirma entrega ni lectura. Esta pantalla no reenvía mensajes ni mueve el chat.</p>'
+    + '<div id="sucursalIntencionesFilas" aria-live="polite"></div><p id="sucursalIntencionesAviso" role="status"></p></div>'
+    + '<div class="mpatas"><button class="btn-linea" id="sucursalIntencionesRecargar">Actualizar</button><button class="btn-linea" data-cerrar>Cerrar</button></div>');
+  const filas = m.querySelector('#sucursalIntencionesFilas'), aviso = m.querySelector('#sucursalIntencionesAviso');
+  const boton = m.querySelector('#sucursalIntencionesRecargar');
+  const tipos = {pregunta_1:'Primera pregunta de zona',pregunta_2:'Segunda pregunta de zona',asignacion:'Mensaje de asignación',
+    aviso_automatico:'Aviso automático a sucursal',cola_automatica:'Cola del aviso automático',
+    aviso_transferencia:'Aviso de transferencia',cola_transferencia:'Cola de transferencia'};
+  const estados = {preparando:'Resultado incierto: revisar',aceptado_meta:'Meta aceptó la solicitud; entrega sin verificar',
+    sin_acuse:'Sin acuse: revisar, no reenviar',pendiente_puente:'En cola del puente; entrega sin verificar',
+    enviado_plantilla:'Plantilla aceptada; entrega sin verificar',enviado_crm:'Aviso interno en CRM',
+    fallido:'Falló; revisar',pending:'Pendiente en cola',sending:'Envío incierto: revisar',
+    sent:'El puente marcó enviado; entrega sin verificar',failed:'Falló; revisar',skipped:'Omitido',unknown:'Estado desconocido: revisar'};
+  const vigente = () => m.classList.contains('on') && auth.currentUser?.uid === uid
+    && String(sel?._firestore_id || sel?.id || sel?._id || '') === conv;
+  async function carga(){
+    boton.disabled = true; aviso.textContent = 'Consultando…';
+    let r; try { r = await llama({action:'sucursalIntenciones',conversation_id:conv}); } catch { r = null; }
+    if (!vigente()) return;
+    boton.disabled = false;
+    if (!r?.ok || r.conversation_id !== conv || !Array.isArray(r.rows)
+      || r.rows.some(x => !Object.hasOwn(tipos,x.tipo) || !Object.hasOwn(estados,x.estado))) {
+      filas.textContent = ''; aviso.textContent = 'No se pudo comprobar este chat. No se ha enviado ni cambiado nada.'; return;
+    }
+    filas.innerHTML = r.rows.length ? r.rows.map(x => '<article class="tpl"><b>' + esc(tipos[x.tipo]) + '</b><p>'
+      + esc(estados[x.estado]) + '</p></article>').join('') : '<p>No hay intenciones del nuevo control para este chat. Esto no describe mensajes antiguos.</p>';
+    aviso.textContent = '';
+  }
+  boton.onclick = carga;
+  await carga();
+}
+
 async function abreRespuestasBot(c){
   const conv = String(c?._firestore_id || c?.id || c?._id || '');
   const uid = auth.currentUser?.uid;
@@ -15202,6 +15262,7 @@ async function llamaPorOficial(c){
 // Tarjeta «Llamadas por WhatsApp» en Canales (solo administrador): estado en Meta y el interruptor. Apagadas hasta que se activen aquí.
 async function pintaLlamadasCaja(){
   const cont = $('llamadasCaja'); if (!cont) return;
+  if (NEGOCIO !== 'dcarela') { cont.innerHTML = ''; return; }
   if (ROL_ACTUAL !== 'admin') { cont.innerHTML = '<p class="cfgnota">Solo el administrador activa o apaga las llamadas.</p>'; return; }
   cont.innerHTML = '<p class="bajada"><span class="cargando"></span> Consultando a Meta…</p>';
   const r = await llama({ action:'callSettings', operation:'get' });
@@ -15267,13 +15328,13 @@ function montaCanales(){
       + '<h2 style="margin:30px 0 4px;font-size:18px">Avisos y sonidos</h2>'
       + '<p class="bajada">Qué suena cuando entra un mensaje, y «No molestar» para no oír nada de noche.</p>'
       + '<div id="avisosLocal"></div>'
-      + '<h2 style="margin:30px 0 4px;font-size:18px">Llamadas por WhatsApp</h2>'
+      + (NEGOCIO === 'dcarela' ? '<h2 style="margin:30px 0 4px;font-size:18px">Llamadas por WhatsApp</h2>'
       + '<p class="bajada">Recibir y hacer llamadas desde el CRM, solo por el número oficial.</p>'
       + '<div id="llamadasCaja"></div>'
       + '<h2 style="margin:30px 0 4px;font-size:18px">Conexiones y API</h2>'
       + '<p class="bajada">Todo lo que el CRM usa por detrás, en una sola lista: si está conectado, qué pasa si no, y una prueba en vivo de las que se pueden probar. '
       +   'Abajo, la lista de acciones de la API del CRM para conectar otras herramientas.</p>'
-      + '<div id="conexionesCaja"></div></div>');
+      + '<div id="conexionesCaja"></div>' : '') + '</div>');
   }
   pintaCanales();
   pintaAvisosLocal();
@@ -15283,6 +15344,7 @@ function montaCanales(){
 const CX_ESTADO = { ok: 'Conectado', aviso: 'Revisar', caida: 'Caída', sin_configurar: 'Sin configurar' };
 async function pintaConexiones(){
   const cont = $('conexionesCaja'); if (!cont) return;
+  if (NEGOCIO !== 'dcarela') { cont.innerHTML = ''; return; }
   cont.innerHTML = '<p class="bajada"><span class="cargando"></span> Comprobando conexiones…</p>';
   const r = await llama({ action:'conexiones' });
   if (!r.ok) { cont.innerHTML = '<p class="cfgnota">' + esc(/permiso/i.test(String(r.error || '')) ? 'Solo el administrador o el supervisor ven las conexiones.' : (r.error || 'No se pudieron leer las conexiones.')) + '</p>'; return; }
@@ -15403,9 +15465,35 @@ function notaRedesOcultas(){
     + '</div></div>';
 }
 
+async function pintaCanalesPlaza(cont){
+  const r = await llama({ action:'bridgeStatus' });
+  if (!r.ok) {
+    cont.innerHTML = '<div class="canal"><b>Canal de Plaza Artesanal</b><p class="cdetalle">'
+      + esc(r.status === 403 ? 'Solo un administrador de Plaza puede revisar el estado del canal.'
+        : r.error || 'No se pudo consultar el canal de Plaza.') + '</p></div>';
+    return;
+  }
+  const p = r.bridge || {};
+  const estado = String(p.status || p.state || '').toLowerCase();
+  const conectado = estado === 'connected' || estado === 'ready';
+  const hostVivo = p.host_online === true;
+  const activo = conectado && hostVivo && p.paused !== true && p.transport_mode === 'active';
+  const numero = soloDigitos(p.connected_phone);
+  cont.innerHTML = '<div class="canal"><div class="cabecera-canal"><div class="cinfo"><b>WhatsApp de Plaza Artesanal</b>'
+    + '<span>' + esc(numero ? telefonoLegible(numero) : 'Número aún no vinculado') + '</span></div>'
+    + '<i class="chip ' + (activo ? 'ok' : 'medio') + '">'
+    + esc(activo ? 'PC conectada' : conectado ? (hostVivo ? 'en pausa' : 'PC sin latido') : 'sin vincular') + '</i></div>'
+    + '<p class="cdetalle">' + esc(conectado
+      ? (hostVivo ? 'El puente informa una sesión vinculada. Comprueba una recepción real antes de atender clientes.'
+        : 'Hay una sesión vinculada, pero no hay latido reciente de la PC de Plaza; no se acreditan envíos.')
+      : 'El puente de Plaza todavía necesita instalarse y vincularse desde la PC de esa sucursal.')
+    + '</p></div>';
+}
+
 async function pintaCanales(){
   const cont = $('canalesLista'); if (!cont) return;
   cont.innerHTML = '<p class="bajada"><span class="cargando"></span> Comprobando…</p>';
+  if (NEGOCIO === 'plaza-artesanal') return pintaCanalesPlaza(cont);
 
   const [estado, puente] = await Promise.all([
     llama({ action:'transportStatus' }),
@@ -21141,7 +21229,7 @@ function estudioV238(m,api){
      for(const fo of ordenZ((col?.fotos||[]).filter(fo=>!fo.oculta)))LF.add(nodoFoto(fo,W,H,local||!base));
     const velos=capas?.fondo?imagen(capas.fondo.src):null;
     if(velos)LF.add(new K.Image({image:velos,width:W,height:H,listening:false,name:'velos',visible:local}));
-    if(capas?.cristal){const cr=imagen(capas.cristal.src);if(cr)LT.add(new K.Image({image:cr,width:W,height:H,listening:false}));}
+    if(capas?.cristal){const cr=imagen(capas.cristal.src);if(cr)LT.add(new K.Image({id:'cristal-editor',image:cr,width:W,height:H,listening:false}));}
     for(const f of documento?.compartido.fotos||[]){const n=nodoPanoramica244(f,AW,H);if(n)LT.add(n);}
     const ex=extrasV241(),gradKey=JSON.stringify(ex)+':'+AW+':'+H;
     if(S.gradKey!==gradKey){if(S.gradSrc)imgs.delete(S.gradSrc);S.gradKey=gradKey;const svg=svgDegradadoV241(ex,AW,H);S.gradSrc=svg?'data:image/svg+xml;charset=utf-8,'+encodeURIComponent(svg):null;}
@@ -21151,7 +21239,7 @@ function estudioV238(m,api){
     for(const s of formas.filter(s=>s.detras))LT.add(nodoForma243(s,AW,H));
     const estatico=(c,j)=>{const im=imagen(c?.src);if(im){const n=new K.Image({image:im,x:j*W-offset+W*(c.x||0)/100,y:H*(c.y||0)/100,width:W*(c.w||100)/100,height:H*(c.h||100)/100});n.on('mousedown touchstart',()=>root.querySelector('[data-mesa-abrir="'+j+'"]')?.click());LT.add(n);}};
     for(let j=0;j<N;j++)if(documento&&j!==documento.activa){const p=documento.paginas[j],ce=p.capas?.capas_editor;let su=null;try{su=JSON.parse(p.valores.sujeto_editor_json||'null');}catch{}for(const r of ce?.roles||[])if(su?.activo&&su.detras.includes(r.rol))estatico(r,j);if(ce?.sujeto)estatico(ce.sujeto,j);}
-    if(recorte){for(const c of (capas?.roles||[]).filter(c=>sujeto.detras.includes(c.rol)))LT.add(nodoRol(c,W,H));LT.add(new K.Image({image:recorte,width:W,height:H,listening:false}));if(gradImg&&!sujeto.detras.includes('degradado'))LT.add(new K.Image({id:'degradado-editor',image:gradImg,x:-offset,width:AW,height:H,listening:false}));}
+    if(recorte){for(const c of (capas?.roles||[]).filter(c=>sujeto.detras.includes(c.rol)))LT.add(nodoRol(c,W,H));LT.add(new K.Image({id:'sujeto-editor',image:recorte,width:W,height:H,listening:false}));if(gradImg&&!sujeto.detras.includes('degradado'))LT.add(new K.Image({id:'degradado-editor',image:gradImg,x:-offset,width:AW,height:H,listening:false}));}
      for(const s of formas.filter(s=>!s.detras))LT.add(nodoForma243(s,AW,H));
      for(const t of textosLibres245().filter(t=>!t.oculta))LT.add(nodoTextoLibre245(t,AW,H));
     for(const c of (capas?.roles||[]).filter(c=>!recorte||!sujeto.detras.includes(c.rol)))LT.add(nodoRol(c,W,H));
@@ -21162,6 +21250,11 @@ function estudioV238(m,api){
       g.on('mousedown touchstart',()=>selecciona({tipo:'logo'}));g.on('dragstart transformstart',()=>{S.arrastrando=true;ocultaFlotante();});
       g.on('dragend transformend',()=>{S.arrastrando=false;ponCampoV238(campo('logo_x'),clamp(g.x()/W*100,0,95));ponCampoV238(campo('logo_y'),clamp(g.y()/H*100,0,95));ponCampoV238(campo('logo_ancho'),clamp(g.width()*g.scaleX()/W*100,2,80));cambioFormulario(150);pintaInspector();});
       LT.add(g);
+    }
+    if(N===1&&ordenCapas245().length&&capas){
+      const nodoDe=k=>k==='logo'?LT.findOne('#logo-editor'):k==='sujeto'?LT.findOne('#sujeto-editor'):k==='cristal'?LT.findOne('#cristal-editor'):k==='degradado'?LT.findOne('#degradado-editor'):
+        k.startsWith('rol:')?LT.findOne('#rol-'+k.slice(4)):k.startsWith('forma:')?LT.findOne('#forma-'+k.slice(6)):k.startsWith('textoLibre:')?LT.findOne('#textoLibre-'+k.slice(11)):null;
+      for(const k of ordenVisibleV352().reverse())nodoDe(k)?.moveToTop();
     }
     if(S.rejilla)for(const t of [1,2]){LU.add(new K.Line({points:[W*t/3,0,W*t/3,H],stroke:'rgba(255,255,255,.8)',strokeWidth:1,dash:[4,4],listening:false,name:'tercio'}));LU.add(new K.Line({points:[0,H*t/3,W,H*t/3],stroke:'rgba(255,255,255,.8)',strokeWidth:1,dash:[4,4],listening:false,name:'tercio'}));}
     const colorGuia=doc.documentElement.dataset.tema==='oscuro'?'#cbd5e1':'#475569';
@@ -21728,8 +21821,20 @@ function estudioV238(m,api){
   const sujeto243=()=>{try{return JSON.parse(leer('sujeto_editor_json')||'null');}catch{return null;}};
   const textosLibres245=()=>{try{const a=JSON.parse(leer('textos_libres_json')||'[]');return Array.isArray(a)?a:[];}catch{return []}};
   const ordenCapas245=()=>{try{const a=JSON.parse(leer('orden_capas_json')||'[]');return Array.isArray(a)?a:[];}catch{return []}};
+  function defectoCapasV352({logo=false,textos=[],roles=[],detras=[],formas=[],grad=false,sujeto=false,cristal=false}={}){
+    const k=[];if(logo)k.push('logo');for(const t of textos.slice().reverse())k.push('textoLibre:'+t);
+    for(const r of roles.slice().reverse())if(!sujeto||!detras.includes(r))k.push('rol:'+r);
+    if(cristal)k.push('cristal');for(const f of formas.slice().reverse())if(!f.detras)k.push('forma:'+f.id);
+    if(grad&&sujeto&&!detras.includes('degradado'))k.push('degradado');
+    if(sujeto){k.push('sujeto');for(const r of roles.slice().reverse())if(detras.includes(r))k.push('rol:'+r);}
+    for(const f of formas.slice().reverse())if(f.detras)k.push('forma:'+f.id);
+    if(grad&&!k.includes('degradado'))k.push('degradado');return k;
+  }
+  function mezclaOrdenCapasV352(defecto,guardado=[]){const out=[...defecto],conocidos=guardado.filter((k,i)=>defecto.includes(k)&&guardado.indexOf(k)===i);for(let i=conocidos.length-2;i>=0;i--){const key=conocidos[i],next=conocidos[i+1];out.splice(out.indexOf(key),1);out.splice(out.indexOf(next),0,key);}return out;}
+  function ordenVisibleV352(){const ce=mismoFormato()?S.r?.capas_editor:null,su=sujeto243(),roles=(ce?.roles||[]).map(x=>x.rol),formas=formas243().filter(x=>!x.oculta),textos=textosLibres245().filter(x=>!x.oculta&&x.texto).map(x=>x.id);
+    const defecto=defectoCapasV352({logo:!!leer('logo_ruta')&&leer('logo_mostrar')!=='no',textos,roles,detras:su?.detras||[],formas,grad:leer('degradado_modo')==='personalizado',sujeto:!!(su?.activo&&ce?.sujeto),cristal:!!ce?.cristal});return mezclaOrdenCapasV352(defecto,ordenCapas245());}
   function escribeTextosLibres245(arr,fin=true){ponCampoV238(campo('textos_libres_json'),JSON.stringify(arr));if(fin)cambioFormulario(150);else dibuja();}
-  function escribeOrdenCapas245(arr,fin=true){ponCampoV238(campo('orden_capas_json'),JSON.stringify([...new Set(arr)]));if(fin)cambioFormulario(120);else dibuja();}
+  function escribeOrdenCapas245(arr,fin=true){ponCampoV238(campo('orden_capas_json'),JSON.stringify([...new Set(arr)]));dibuja();if(S.tab==='capas')pintaCapas();if(fin)cambioFormulario(120);}
   function normalizaTextoLibre245(t,i=0){return {id:String(t.id||'texto-'+i).replace(/[^a-zA-Z0-9_-]/g,'').slice(0,60)||'texto-'+i,nombre:String(t.nombre||'Texto libre').replace(/[<>]/g,'').slice(0,60),texto:String(t.texto||'Texto libre').slice(0,500),x:Number(t.x)||10,y:Number(t.y)||10,w:Number(t.w)||40,h:Number(t.h)||12,tamano:Number(t.tamano)||4,color:/^#[0-9a-f]{6}$/i.test(t.color)?t.color:'#FFFFFF',fuente:['Arial','Verdana','Georgia','Times New Roman','Courier New','Playfair Display','Poppins','DM Serif Display','Marcellus','Bodoni Moda','League Spartan','Inter','Plus Jakarta Sans'].includes(t.fuente)?t.fuente:'Arial',peso:Number(t.peso)||500,alineacion:['start','middle','end'].includes(t.alineacion)?t.alineacion:'start',giro:Number(t.giro)||0,opacidad:Number.isFinite(Number(t.opacidad))?Number(t.opacidad):1,trazo:t.trazo==='none'||/^#[0-9a-f]{6}$/i.test(t.trazo)?t.trazo:'none',trazo_ancho:Number(t.trazo_ancho)||.2,interlineado:Number.isFinite(Number(t.interlineado))?Math.min(2.5,Math.max(.7,Number(t.interlineado))):1.12,tracking:Number.isFinite(Number(t.tracking))?Math.min(30,Math.max(-10,Number(t.tracking))):0,sombra:!!t.sombra,grupo:String(t.grupo||'').replace(/[^a-zA-Z0-9_-]/g,'').slice(0,40),bloqueada:!!t.bloqueada,oculta:!!t.oculta};}
   // Color inicial de un texto libre nuevo que se lea sobre lo que tiene debajo: se mide el tono en la vista del motor de la
   // página activa (misma procedencia que el panel; x, y, w, h en % de esa página). Si no se puede medir, blanco con contorno y sombra: se lee sobre cualquier fondo.
@@ -21945,20 +22050,28 @@ function estudioV238(m,api){
      if(c)api.escribeCollage(c);ponCampoV238(campo('formas_editor_json'),JSON.stringify(forms));ponCampoV238(campo('textos_libres_json'),JSON.stringify(texts));S.multi=copias.length>1?copias:[];S.sel=copias.at(-1)||null;cambioFormulario(100);
   }
   function pintaSeleccionMultiple245(){const sels=capasOperablesSeleccionadas245();insp.innerHTML=sec('Selección múltiple','<p class="e238-ayuda">'+sels.length+' capas seleccionadas. Las acciones se aplican a formas y fotos; los objetos bloqueados no se mueven, pero sí pueden ocultarse.</p><div class="e238-acciones">'+[['al-izq','Alinear izquierda'],['al-ch','Centrar horizontal'],['al-der','Alinear derecha'],['al-arr','Alinear arriba'],['al-cv','Centrar vertical'],['al-aba','Alinear abajo'],['dist-h','Distribuir horizontal'],['dist-v','Distribuir vertical']].map(([k,t])=>'<button type="button" class="e238-btn e238-peq" data-capa-accion="'+k+'">'+t+'</button>').join('')+'</div><div class="e238-acciones"><button type="button" class="e238-btn e238-peq" data-capa-accion="agrupar">Agrupar</button><button type="button" class="e238-btn e238-peq" data-capa-accion="desagrupar">Desagrupar</button><button type="button" class="e238-btn e238-peq" data-capa-accion="frente">Traer delante</button><button type="button" class="e238-btn e238-peq" data-capa-accion="fondo">Enviar atrás</button><button type="button" class="e238-btn e238-peq" data-capa-accion="duplicar">Duplicar selección</button><button type="button" class="e238-btn e238-peq" data-capa-accion="eliminar">Quitar</button></div>');}
-  function itemsCapas245(){const c=coleccion()||virtual(),items=[];if(leer('logo_ruta'))items.push({sel:{tipo:'logo'},ico:I.foto,fallback:'Logo PNG'});const roles=((mismoFormato()?S.r?.capas_editor?.roles:null)||[]).map(r=>r.rol);for(const k of Object.keys(estadosCapas245()))if(k.startsWith('rol:')&&estadosCapas245()[k].oculta&&CAMPOS_ROL_V238[k.slice(4)]&&!roles.includes(k.slice(4)))roles.push(k.slice(4));for(const rol of roles)items.push({sel:{tipo:'rol',rol},ico:I.texto,fallback:NOMBRE_ROL_V238[rol]});items.push({sel:{tipo:'degradado'},ico:I.fondo,fallback:'Degradado'});for(const t of textosLibres245().slice().reverse())items.push({sel:{tipo:'textoLibre',id:t.id},ico:I.texto,fallback:t.nombre||'Texto libre'});for(const s of formas243().slice().reverse())items.push({sel:{tipo:'forma',id:s.id},ico:'◇',fallback:s.nombre||'Forma'});for(const fo of ordenZ(c?.fotos||[]).reverse())items.push({sel:{tipo:'foto',slot:fo.slot},ico:api.imagenDe(fo.original_id)?'<img src="'+esc(api.imagenDe(fo.original_id))+'" alt="">':I.foto,fallback:fo.nombre||(fo.rol==='principal'?'Foto principal':'Foto del mosaico')});const orden=ordenCapas245(),pos=new Map(orden.map((k,i)=>[k,i]));const lista=items.sort((a,b)=>(pos.get(claveCapaV245(a.sel))??10000)-(pos.get(claveCapaV245(b.sel))??10000));
+  function itemsCapas245(){const c=coleccion()||virtual(),items=[];if(leer('logo_ruta'))items.push({sel:{tipo:'logo'},ico:I.foto,fallback:'Logo PNG'});const roles=((mismoFormato()?S.r?.capas_editor?.roles:null)||[]).map(r=>r.rol);for(const k of Object.keys(estadosCapas245()))if(k.startsWith('rol:')&&estadosCapas245()[k].oculta&&CAMPOS_ROL_V238[k.slice(4)]&&!roles.includes(k.slice(4)))roles.push(k.slice(4));for(const rol of roles)items.push({sel:{tipo:'rol',rol},ico:I.texto,fallback:NOMBRE_ROL_V238[rol]});items.push({sel:{tipo:'degradado'},ico:I.fondo,fallback:'Degradado'});for(const t of textosLibres245().slice().reverse())items.push({sel:{tipo:'textoLibre',id:t.id},ico:I.texto,fallback:t.nombre||'Texto libre'});for(const s of formas243().slice().reverse())items.push({sel:{tipo:'forma',id:s.id},ico:'◇',fallback:s.nombre||'Forma'});for(const fo of ordenZ(c?.fotos||[]).reverse())items.push({sel:{tipo:'foto',slot:fo.slot},ico:api.imagenDe(fo.original_id)?'<img src="'+esc(api.imagenDe(fo.original_id))+'" alt="">':I.foto,fallback:fo.nombre||(fo.rol==='principal'?'Foto principal':'Foto del mosaico')});const pos=new Map(ordenVisibleV352().map((k,i)=>[k,i]));const lista=items.sort((a,b)=>(pos.get(claveCapaV245(a.sel))??10000)-(pos.get(claveCapaV245(b.sel))??10000));
     // v332: el sujeto recortado es una capa propia, enlazada a la foto principal (va justo encima de ella; su ojo activa o apaga la máscara).
-    const su=sujeto243();if(su?.ruta){const i=lista.findIndex(x=>x.sel.tipo==='foto'&&(c?.fotos||[]).find(f=>f.slot===x.sel.slot)?.rol==='principal');lista.splice(i<0?lista.length:i,0,{sel:{tipo:'sujeto'},ico:S.sujetoVista?'<img src="'+esc(S.sujetoVista)+'" alt="">':I.sujeto||I.foto,fallback:'Sujeto · enlazado a la foto',enlace:true});}
+     const su=sujeto243();if(su?.ruta){lista.push({sel:{tipo:'sujeto'},ico:S.sujetoVista?'<img src="'+esc(S.sujetoVista)+'" alt="">':I.sujeto||I.foto,fallback:'Sujeto · enlazado a la foto',enlace:true});lista.sort((a,b)=>(pos.get(claveCapaV245(a.sel))??9999)-(pos.get(claveCapaV245(b.sel))??9999));}
     return lista;}
-  function reordenaCapaGlobal245(a){const items=itemsCapas245(),seleccionadas=S.multi.length?S.multi:(S.sel?[S.sel]:[]),claves=seleccionadas.map(claveCapaV245),orden=items.map(x=>claveCapaV245(x.sel)),elegidas=orden.filter(k=>claves.includes(k));if(!elegidas.length)return avisaV238('Selecciona una capa para cambiar su orden.');let nuevo=orden.slice();if(a==='capa-frente')nuevo=[...orden.filter(k=>!claves.includes(k)),...elegidas];else if(a==='capa-fondo')nuevo=[...elegidas,...orden.filter(k=>!claves.includes(k))];else{const indices=elegidas.map(k=>nuevo.indexOf(k)).filter(i=>i>=0),primero=Math.min(...indices),ultimo=Math.max(...indices);if(a==='capa-subir'&&primero>0){const anterior=nuevo[primero-1];nuevo.splice(primero-1,0,...elegidas);nuevo.splice(ultimo+1,1);}else if(a==='capa-bajar'&&ultimo<nuevo.length-1){const siguiente=nuevo[ultimo+1];nuevo.splice(primero,elegidas.length);nuevo.splice(nuevo.indexOf(siguiente)+1,0,...elegidas);}}escribeOrdenCapas245(nuevo);}
+  function reordenaCapaGlobal245(a){const activas=new Set(ordenVisibleV352()),items=itemsCapas245().filter(x=>activas.has(claveCapaV245(x.sel))),seleccionadas=S.multi.length?S.multi:(S.sel?[S.sel]:[]),claves=new Set(seleccionadas.map(claveCapaV245)),orden=items.map(x=>claveCapaV245(x.sel)),elegidas=orden.filter(k=>claves.has(k));
+    if(!elegidas.length)return avisaV238('Selecciona un texto, forma, sujeto, degradado o logo. Las fotos siguen en la base del diseño.');
+    let nuevo=orden.slice();if(a==='capa-frente')nuevo=[...elegidas,...orden.filter(k=>!claves.has(k))];
+    else if(a==='capa-fondo')nuevo=[...orden.filter(k=>!claves.has(k)),...elegidas];
+    else if(a==='capa-subir'){for(let i=1;i<nuevo.length;i++)if(claves.has(nuevo[i])&&!claves.has(nuevo[i-1]))[nuevo[i-1],nuevo[i]]=[nuevo[i],nuevo[i-1]];}
+    else if(a==='capa-bajar'){for(let i=nuevo.length-2;i>=0;i--)if(claves.has(nuevo[i])&&!claves.has(nuevo[i+1]))[nuevo[i],nuevo[i+1]]=[nuevo[i+1],nuevo[i]];}
+    escribeOrdenCapas245(nuevo);
+  }
   function capaOculta245(sel){if(sel?.tipo==='forma'||sel?.tipo==='foto'||sel?.tipo==='textoLibre')return !!itemCapa245(sel)?.oculta;if(sel?.tipo==='rol'){const M=CAMPOS_ROL_V238[sel.rol];return (!!M?.ver&&leer(M.ver)==='oculto')||!!estadoCapa245(sel).oculta;}if(sel?.tipo==='logo')return leer('logo_mostrar')==='no';if(sel?.tipo==='degradado')return leer('degradado_modo')==='ninguno';if(sel?.tipo==='sujeto'){try{return JSON.parse(leer('sujeto_editor_json')||'null')?.activo===false;}catch{return false;}}return false;}
   function capaBloqueada245(sel){if(sel?.tipo==='forma'||sel?.tipo==='foto'||sel?.tipo==='textoLibre')return !!itemCapa245(sel)?.bloqueada;return !!estadoCapa245(sel).bloqueada;}
   function alternaCapa245(sel,a){const ocultar=a==='ocultar'||a==='mostrar',bloquear=a==='bloquear'||a==='desbloquear',valorOculta=a==='ocultar',valorBloqueada=a==='bloquear';if(sel.tipo==='forma'||sel.tipo==='foto'||sel.tipo==='textoLibre'){const forms=formas243(),texts=typeof textosLibres245==='function'?textosLibres245():[],c=coleccion()||virtual(),x=itemCapa245(sel,forms,c);if(!x)return;x[ocultar?'oculta':'bloqueada']=ocultar?valorOculta:valorBloqueada;if(sel.tipo==='forma')ponCampoV238(campo('formas_editor_json'),JSON.stringify(forms));else if(sel.tipo==='textoLibre')ponCampoV238(campo('textos_libres_json'),JSON.stringify(texts));else if(c)api.escribeCollage(c);}else if(sel.tipo==='rol'){const M=CAMPOS_ROL_V238[sel.rol];if(ocultar&&M.ver)empuja(campo(M.ver),valorOculta?'oculto':'visible');else guardaEstadoCapa245(sel,{[bloquear?'bloqueada':'oculta']:bloquear?valorBloqueada:valorOculta});}else if(sel.tipo==='logo'&&ocultar)ponCampoV238(campo('logo_mostrar'),valorOculta?'no':'si');else if(sel.tipo==='degradado'&&ocultar)ponCampoV238(campo('degradado_modo'),valorOculta?'ninguno':'personalizado');else if(sel.tipo==='sujeto'&&ocultar){let su=null;try{su=JSON.parse(leer('sujeto_editor_json')||'null');}catch{}if(su){su.activo=!valorOculta;ponCampoV238(campo('sujeto_editor_json'),JSON.stringify(su));}}else guardaEstadoCapa245(sel,{[bloquear?'bloqueada':'oculta']:bloquear?valorBloqueada:valorOculta});cambioFormulario(100);}
   function pintaCapas(){
      const items=itemsCapas245();
     const seleccionadas=new Set((S.multi.length?S.multi:(S.sel?[S.sel]:[])).map(claveCapaV245));
-    const fila=o=>{const sel=o.sel,k=claveCapaV245(sel),vis=!capaOculta245(sel),lock=capaBloqueada245(sel),grupo=grupoCapa245(sel);return '<li class="e238-capa'+(seleccionadas.has(k)?' on':'')+'" data-capa="'+esc(JSON.stringify(sel))+'"><span class="e238-capa-ico">'+o.ico+'</span><input class="e238-in e238-capa-nombre" data-capa-nombre="'+esc(JSON.stringify(sel))+'" aria-label="Nombre de capa" value="'+esc(nombreCapa245(sel,o.fallback))+'">'+(grupo?'<small class="e238-ayuda" title="Grupo '+esc(grupo)+'">◆</small>':'')+(o.enlace?'<small class="e332-enlace" title="Enlazado a la foto principal: se mueve y recorta con ella">🔗</small>':'')+'<button type="button" class="e238-ico" data-capa-accion="'+(vis?'ocultar':'mostrar')+'" aria-label="'+(vis?'Ocultar':'Mostrar')+'">'+(vis?I.ojo:I.ojoNo)+'</button><button type="button" class="e238-ico" data-capa-accion="'+(lock?'desbloquear':'bloquear')+'" aria-label="'+(lock?'Desbloquear':'Bloquear')+'">'+(lock?I.candado:I.abierto)+'</button></li>';};
+    const activas=new Set(ordenVisibleV352());
+    const fila=o=>{const sel=o.sel,k=claveCapaV245(sel),vis=!capaOculta245(sel),lock=capaBloqueada245(sel),grupo=grupoCapa245(sel),movible=sel.tipo!=='foto'&&activas.has(k);return '<li class="e238-capa'+(seleccionadas.has(k)?' on':'')+'" data-capa="'+esc(JSON.stringify(sel))+'">'+(!movible?'<span class="e352-capa-base" title="Integrado en la imagen base; activa su edición para moverlo">▣</span>':'<span class="e352-capa-asa" draggable="true" data-capa-asa="'+esc(k)+'" title="Arrastra para cambiar el orden" aria-label="Arrastrar '+esc(nombreCapa245(sel,o.fallback))+'">⋮⋮</span>')+'<span class="e238-capa-ico">'+o.ico+'</span><input class="e238-in e238-capa-nombre" data-capa-nombre="'+esc(JSON.stringify(sel))+'" aria-label="Nombre de capa" value="'+esc(nombreCapa245(sel,o.fallback))+'">'+(grupo?'<small class="e238-ayuda" title="Grupo '+esc(grupo)+'">◆</small>':'')+(o.enlace?'<small class="e332-enlace" title="Enlazado a la foto principal: se mueve y recorta con ella">🔗</small>':'')+'<button type="button" class="e238-ico" data-capa-accion="'+(vis?'ocultar':'mostrar')+'" aria-label="'+(vis?'Ocultar':'Mostrar')+'">'+(vis?I.ojo:I.ojoNo)+'</button><button type="button" class="e238-ico" data-capa-accion="'+(lock?'desbloquear':'bloquear')+'" aria-label="'+(lock?'Desbloquear':'Bloquear')+'">'+(lock?I.candado:I.abierto)+'</button></li>';};
      const acciones='<div class="e238-acciones"><button type="button" class="e238-btn e238-peq" data-capa-accion="capa-fondo">Enviar al fondo</button><button type="button" class="e238-btn e238-peq" data-capa-accion="capa-subir">Subir</button><button type="button" class="e238-btn e238-peq" data-capa-accion="capa-bajar">Bajar</button><button type="button" class="e238-btn e238-peq" data-capa-accion="capa-frente">Traer al frente</button></div>'+(S.multi.length>1?'<div class="e238-acciones"><button type="button" class="e238-btn e238-peq" data-capa-accion="agrupar">Agrupar</button><button type="button" class="e238-btn e238-peq" data-capa-accion="desagrupar">Desagrupar</button><button type="button" class="e238-btn e238-peq" data-capa-accion="duplicar">Duplicar selección</button><button type="button" class="e238-btn e238-peq" data-capa-accion="al-izq">Alinear izquierda</button><button type="button" class="e238-btn e238-peq" data-capa-accion="al-ch">Centrar horizontal</button><button type="button" class="e238-btn e238-peq" data-capa-accion="al-der">Alinear derecha</button><button type="button" class="e238-btn e238-peq" data-capa-accion="al-arr">Alinear arriba</button><button type="button" class="e238-btn e238-peq" data-capa-accion="al-cv">Centrar vertical</button><button type="button" class="e238-btn e238-peq" data-capa-accion="al-aba">Alinear abajo</button><button type="button" class="e238-btn e238-peq" data-capa-accion="dist-h">Distribuir horizontal</button><button type="button" class="e238-btn e238-peq" data-capa-accion="dist-v">Distribuir vertical</button></div>':'');
-     insp.innerHTML=sec('Capas del diseño',acciones+'<p class="e238-ayuda">Mayús/Ctrl/Cmd + clic selecciona varias capas. La lista conserva el orden global del documento.</p><ul class="e238-capas">'+items.map(fila).join('')+'</ul>');
+     insp.innerHTML=sec('Capas del diseño',acciones+'<p class="e238-ayuda">Arrastra ⋮⋮ para apilar de arriba (frente) hacia abajo (fondo). Mayús/Ctrl/Cmd + clic selecciona varias capas. Las fotos son la base del lienzo.</p><ul class="e238-capas">'+items.map(fila).join('')+'</ul>');
   }
   // Eventos del inspector: los controles NO tienen name (no entran en FormData) y sus eventos no suben al formulario.
   const rolSel=()=>S.sel?.tipo==='rol'?S.sel.rol:null,fotoSel=()=>S.sel?.tipo==='foto'?S.sel.slot:null;
@@ -22002,6 +22115,13 @@ function estudioV238(m,api){
       cambiaFoto(slot,patch,fin);if(fin&&(id==='bloqueo'||id==='grosor'||id==='bordecolor'||id==='ajuste')){if(id==='ajuste')S.recorte=null;pintaInspector();}
     }
   }
+  let capaArrastradaV352=null;
+  insp.addEventListener('dragstart',ev=>{const asa=ev.target.closest('[data-capa-asa]');if(!asa)return;capaArrastradaV352=asa.dataset.capaAsa;ev.dataTransfer.effectAllowed='move';ev.dataTransfer.setData('text/e352-capa',capaArrastradaV352);asa.closest('[data-capa]')?.classList.add('e352-arrastrando');});
+  insp.addEventListener('dragover',ev=>{const li=ev.target.closest('[data-capa]');if(!capaArrastradaV352||!li)return;let sel;try{sel=JSON.parse(li.dataset.capa);}catch{return;}if(sel?.tipo==='foto')return;ev.preventDefault();ev.dataTransfer.dropEffect='move';li.classList.add('e352-sobre');});
+  insp.addEventListener('dragleave',ev=>{if(!ev.target.closest('[data-capa]')?.contains(ev.relatedTarget))ev.target.closest('[data-capa]')?.classList.remove('e352-sobre');});
+  insp.addEventListener('drop',ev=>{const li=ev.target.closest('[data-capa]'),origen=capaArrastradaV352;if(!li||!origen)return;let sel;try{sel=JSON.parse(li.dataset.capa);}catch{return;}if(sel?.tipo==='foto')return;ev.preventDefault();const destino=claveCapaV245(sel),activas=new Set(ordenVisibleV352()),orden=itemsCapas245().filter(x=>activas.has(claveCapaV245(x.sel))).map(x=>claveCapaV245(x.sel));if(origen===destino||!orden.includes(origen)||!orden.includes(destino))return;
+    orden.splice(orden.indexOf(origen),1);const despues=ev.clientY>li.getBoundingClientRect().top+li.getBoundingClientRect().height/2;orden.splice(orden.indexOf(destino)+(despues?1:0),0,origen);capaArrastradaV352=null;escribeOrdenCapas245(orden);});
+  insp.addEventListener('dragend',()=>{capaArrastradaV352=null;insp.querySelectorAll('.e352-arrastrando,.e352-sobre').forEach(x=>x.classList.remove('e352-arrastrando','e352-sobre'));});
   insp.addEventListener('input',ev=>{ev.stopPropagation();if(ev.target.matches('[data-capa-nombre]'))return;if(ev.target.type!=='checkbox')controlInspector(ev.target,false);});
   insp.addEventListener('change',ev=>{if(ev.target.matches('[data-capa-nombre]')){ev.stopPropagation();let sel=null;try{sel=JSON.parse(ev.target.dataset.capaNombre);}catch{}if(sel)guardaNombreCapa245(sel,ev.target.value);return;}ev.stopPropagation();controlInspector(ev.target,true);});
   insp.addEventListener('click',ev=>{
@@ -29667,6 +29787,12 @@ function abreVideoAyuda(id){
   };
 })();
 
+function puedeEntrarASucursal(identidad, negocio){
+  return SUCURSAL_CONFIG_VALIDA && identidad?.ok === true && identidad.activo === true
+    && ['admin','supervisor','agent'].includes(String(identidad.rol_efectivo || ''))
+    && identidad.sucursal_efectiva === negocio;
+}
+
 onAuthStateChanged(auth, async u => {
   if (!u) {
     $('acceso').classList.remove('oculto');
@@ -29680,39 +29806,54 @@ onAuthStateChanged(auth, async u => {
     ROL_ACTUAL = ''; pintaMenu();
     return;
   }
+  // El servidor decide el rol efectivo. Informes internos ni siquiera entra al menu de un
+  // agente; el endpoint vuelve a validarlo para que ocultar el enlace no sea la seguridad.
+  const identidad = SUCURSAL_CONFIG_VALIDA ? await llama({ action:'whoami' }) : { ok:false };
+  if (auth.currentUser?.uid !== u.uid) return;
+  if (!puedeEntrarASucursal(identidad, NEGOCIO)) {
+    $('app').classList.remove('on');
+    $('acceso').classList.remove('oculto');
+    const err = $('errorAcceso');
+    err.textContent = !SUCURSAL_CONFIG_VALIDA
+      ? 'La sucursal de este panel no está configurada.'
+      : !identidad.ok
+        ? 'No se pudieron comprobar tus permisos. Revisa la conexión y recarga la página.'
+        : 'No tienes acceso a esta sucursal. Solicita a un administrador que revise tus permisos.';
+    err.classList.add('on');
+    ROL_ACTUAL = ''; pintaMenu();
+    return;
+  }
+  $('errorAcceso').classList.remove('on');
   $('acceso').classList.add('oculto');
   $('app').classList.add('on');
   $('quien').textContent = u.email || '';
-  // El servidor decide el rol efectivo. Informes internos ni siquiera entra al menu de un
-  // agente; el endpoint vuelve a validarlo para que ocultar el enlace no sea la seguridad.
-  const identidad = await llama({ action:'whoami' });
-  ROL_ACTUAL = identidad.ok ? String(identidad.rol_efectivo || '') : '';
+  ROL_ACTUAL = String(identidad.rol_efectivo || '');
   pintaMenu();
   // El historial se carga solo al entrar. No hay boton de "actualizar": la escucha
   // en vivo trae los cambios sin que nadie tenga que pedirlos.
-  escuchaConversaciones();
+  if (vistaHabilitada('conversations')) escuchaConversaciones();
   // El estado de la linea llega en vivo y para cualquier rol. Antes se pedia una vez al entrar,
   // solo le contestaba a un admin, y cambiar algo en el puente obligaba a recargar.
   escuchaLineaQr();
   // Los Estados se cargan en segundo plano nada mas entrar: son cientos de contactos y bajarlos
   // al pulsar «Estados» eran 7 s de lista vacia. Un par de segundos despues, para no competir con
   // lo primero que se ve (la bandeja).
-  setTimeout(escuchaEstados, 2500);
+  if (vistaHabilitada('estados')) setTimeout(escuchaEstados, 2500);
   // Google Calendar se lee solo desde el principio (y se refresca cada 2 min con la Agenda abierta).
-  setTimeout(() => { relojGoogleAgenda(); cargaGoogleAgenda(); }, 4000);
+  if (vistaHabilitada('agenda')) setTimeout(() => { relojGoogleAgenda(); cargaGoogleAgenda(); }, 4000);
   // Las propuestas del agente de marketing (numerito en Campañas), al entrar y cada 30 min.
-  if (['admin', 'supervisor'].includes(ROL_ACTUAL)) {
+  if (vistaHabilitada('campanas') && ['admin', 'supervisor'].includes(ROL_ACTUAL)) {
     setTimeout(() => cargaMarketing({ silencioso: true }), 6000);
     setInterval(() => { if (!document.hidden) cargaMarketing({ silencioso: true }); }, 1800000);
   }
   // Si Instagram y Messenger estan encendidos, hay que saberlo YA: arrancan ocultos a proposito,
   // asi que lo unico que esta llamada puede hacer es traerlos de vuelta, nunca hacerlos
   // desaparecer delante de quien mira. socialStatus lo contesta a cualquier rol.
-  cargaEstadoRedes();
+  if (vistaHabilitada('conversations')) cargaEstadoRedes();
   vigilaVersion();
   setInterval(vigilaVersion, 300000);
   ve(location.hash.slice(1) || CFG.defaultView || 'conversations');
-  if (['admin','supervisor'].includes(ROL_ACTUAL)) {
+  if (vistaHabilitada('informes') && ['admin','supervisor'].includes(ROL_ACTUAL)) {
     void cargaCalidad({ silencioso:true });
     // Las burbujas de atención al cliente salen aunque no se abra «Informes»: se revisa cada minuto.
     if (!CALIDAD_TIMER) CALIDAD_TIMER = setInterval(() => cargaCalidad({ silencioso:true }), 60000);
