@@ -1872,11 +1872,12 @@ a.ayuda{color:var(--enlace)}
    punto negro permanente. Ahora se esconde de verdad, y visibility evita ademas que
    siga capturando clicks mientras esta fuera. */
 /* Burbujas de atención (dueño 26/10/2026: los avisos ya no van por WhatsApp, salen aquí y como ventana del sistema). */
-.atn-pila{position:fixed;right:18px;bottom:18px;z-index:120;display:flex;flex-direction:column;gap:10px;max-width:min(360px,calc(100vw - 32px))}
-.atn-burbuja{background:var(--panel);color:var(--ink);border:1px solid var(--line);border-left:4px solid #e0533d;border-radius:14px;box-shadow:0 10px 30px rgba(0,0,0,.18);padding:12px 14px;display:grid;gap:6px;animation:atnEntra .22s ease-out}
+.atn-pila{position:fixed;right:18px;bottom:18px;z-index:120;display:flex;flex-direction:column;gap:12px;max-width:min(380px,calc(100vw - 32px))}
+.atn-burbuja{background:var(--panel);color:var(--ink);border:1px solid var(--line);border-left:4px solid #e0533d;border-radius:18px;box-shadow:0 14px 38px rgba(0,0,0,.16);padding:15px 16px;display:grid;gap:9px;animation:atnEntra .22s ease-out;overflow:hidden}
 .atn-burbuja.calidad{border-left-color:#e2a03f}
 .atn-burbuja b{font-size:13.5px}.atn-burbuja p{margin:0;font-size:12.5px;color:var(--mut);line-height:1.35}
-.atn-burbuja .atn-acc{display:flex;gap:8px;justify-content:flex-end}
+.atn-burbuja .atn-acc{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;margin-top:2px}
+.atn-burbuja [data-atn="atendido"]{background:#15803d;color:#fff;box-shadow:none}
 @keyframes atnEntra{from{transform:translateY(12px);opacity:0}to{transform:none;opacity:1}}
 #aviso{position:fixed;left:50%;bottom:26px;transform:translate(-50%,calc(100% + 40px));
   z-index:90;visibility:hidden;pointer-events:none;
@@ -2190,6 +2191,8 @@ header.barra{padding:0 20px;background:var(--cristal);
 .titulo{font-size:17px;font-weight:650;letter-spacing:-.022em}
 .quien{font-size:12px}
 header.barra .der .btn-linea{padding:7px 14px}
+#btnTema{width:36px;height:36px;padding:0!important;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;flex:0 0 36px}
+#btnTema svg{width:18px;height:18px}
 
 /* --- Botones: pildoras ---------------------------------------------------------------------- */
 .btn-linea{padding:8px 15px;border:0;border-radius:999px;background:var(--hover);color:var(--fg);
@@ -4809,6 +4812,33 @@ let primerVistazo = true;
 // CRM y ventanas emergentes»). Lo que antes llegaba por WhatsApp --«Atención pendiente» (un chat que pasó a una persona) y los avisos de
 // tiempo de respuesta-- sale aquí: una burbuja que se queda hasta cerrarla o abrir el chat, el tono y la ventana del sistema.
 const ATN = { vistos: new Set(), iniciado: false, max: 4 };
+// Una sola operación segura para el botón del chat, las burbujas de atención y futuras
+// tarjetas: conserva la identidad del chat aunque el usuario abra otro mientras llega el
+// acuse, y no cambia la interfaz si el servidor no confirma la escritura.
+async function marcaConversacionAtendida(chat, boton){
+  if (!chat || boton?.disabled) return false;
+  const id = chat.id || chat._id;
+  if (!id) { avisa('No se pudo marcar', 'Falta el identificador de esta conversación.'); return false; }
+  const ahora = new Date().toISOString();
+  const campos = { cola_omitida_at: String(chat.last_message_at || ahora), atendido_at: ahora };
+  if (chat.human_handoff_required) campos.human_handoff_required = false;
+  if (boton) boton.disabled = true;
+  let r;
+  try { r = await llama({ action:'updateLead', conversation_id:id, fields:campos }); }
+  catch (_) { r = null; }
+  finally { if (boton) boton.disabled = false; }
+  if (!r?.ok) {
+    avisa(r ? 'No se pudo marcar' : 'Marca sin confirmar', r?.error || 'Actualiza la ficha antes de volver a intentarlo.');
+    return false;
+  }
+  Object.assign(chat, campos);
+  if (sel === chat && typeof pintaModoChat === 'function') pintaModoChat();
+  if (typeof pintaChats === 'function') pintaChats();
+  if (typeof pintaCuentas === 'function') pintaCuentas();
+  if (typeof pintaHoy === 'function' && document.getElementById('hoyCont')) pintaHoy();
+  avisa('Atendido', sel === chat ? 'Ya no sale como pendiente. Si el cliente vuelve a escribir, reaparece sola.' : 'Se marcó la conversación anterior; la que tienes abierta no cambió.');
+  return true;
+}
 function burbujaAtencion({ clave, titulo, nombre, detalle, conv, tipo = 'handoff' }){
   if (!clave || ATN.vistos.has(clave)) return;
   ATN.vistos.add(clave);
@@ -4818,9 +4848,12 @@ function burbujaAtencion({ clave, titulo, nombre, detalle, conv, tipo = 'handoff
   b.className = 'atn-burbuja' + (tipo === 'calidad' ? ' calidad' : '');
   b.setAttribute('role', 'alert');
   b.innerHTML = '<b>' + esc(titulo) + ' · ' + esc(nombre || 'Cliente') + '</b>' + (detalle ? '<p>' + esc(detalle) + '</p>' : '')
-    + '<div class="atn-acc"><button type="button" class="btn-linea" data-atn="cerrar">Cerrar</button>' + (conv ? '<button type="button" class="btn-solido" data-atn="abrir">Abrir chat</button>' : '') + '</div>';
+    + '<div class="atn-acc"><button type="button" class="btn-linea" data-atn="cerrar">Cerrar</button>'
+    + (conv ? '<button type="button" class="btn-linea" data-atn="atendido">Atendido</button><button type="button" class="btn-solido" data-atn="abrir">Abrir chat</button>' : '') + '</div>';
   const abrirChat = () => { b.remove(); if (vistaActual !== 'conversations') ve('conversations'); abre(conv); };
   b.querySelector('[data-atn="cerrar"]').onclick = () => b.remove();
+  const at = b.querySelector('[data-atn="atendido"]');
+  if (at) at.onclick = async () => { if (await marcaConversacionAtendida(conv, at)) b.remove(); };
   const ab = b.querySelector('[data-atn="abrir"]'); if (ab) ab.onclick = abrirChat;
   pila.prepend(b);
   while (pila.children.length > ATN.max) pila.lastElementChild.remove();
@@ -6941,8 +6974,13 @@ function marcaEmojiChat(emoji, texto, clase){
   return '<span class="chat-marca' + (clase ? ' ' + esc(clase) : '')
     + '" role="img" aria-label="' + esc(nombre) + '" title="' + esc(nombre) + '">'
     + '<span class="chat-marca-icon">' + emojisApple(emoji) + '</span>'
-    + '<span class="chat-marca-text">' + esc(nombre.replace(/^Etapa · /, '').replace(/^Modo /, '')) + '</span></span>';
+    + '<span class="chat-marca-text">' + esc(nombre.replace(/^Etapa · /, '').replace(/^Modo /, '').replace(/^Etiqueta · /, '')) + '</span></span>';
 }
+const EMOJI_ETIQUETA_CHAT = Object.freeze({
+  cumpleanos:'\ud83c\udf82', infantil:'\ud83e\uddf8', embarazo:'\ud83e\udd30', embarazada:'\ud83e\udd30', xv:'\ud83d\udc57', quinceanera:'\ud83d\udc57',
+  boda:'\ud83d\udc8d', graduacion:'\ud83c\udf93', familiar:'\ud83d\udc6a', estudio:'\ud83d\udcf8', exterior:'\ud83c\udf3f', plaza:'\ud83c\udfdb\ufe0f', premium:'\u2b50'
+});
+function emojiDeEtiquetaChat(etiqueta){ return EMOJI_ETIQUETA_CHAT[claveEtq(etiqueta)] || '\ud83c\udff7\ufe0f'; }
 function pintaChats(){
   const cont = $('chats'); if (!cont) return;
   // Las cuentas cuentan lo MISMO que se ve. Un filtro que dice 12 y abre 8 se lee como
@@ -7040,6 +7078,9 @@ function pintaChats(){
     else if (c.mode === 'human' || c.human_handoff_required) marcas.push(marcaEmojiChat('\ud83d\udc64', 'Modo humano', 'modo'));
     else if (c.mode === 'bot') marcas.push(marcaEmojiChat('\ud83e\udd16', 'Modo bot', 'modo'));
     if (silenciado(c)) marcas.push(marcaEmojiChat('\ud83d\udd15', 'Silenciado', 'silenciada'));
+    const etiquetasChat = etiquetasVisiblesDe(c);
+    etiquetasChat.slice(0, 3).forEach(e => marcas.push(marcaEmojiChat(emojiDeEtiquetaChat(e), 'Etiqueta · ' + e, 'etiqueta')));
+    if (etiquetasChat.length > 3) marcas.push(marcaEmojiChat('\u2795', 'Etiqueta · ' + (etiquetasChat.length - 3) + ' más', 'etiqueta'));
     if (sinLeer) marcas.push('<span class="globito">' + Number(c.unread) + '</span>');
     const canal = CANALES[canalDe(c)];
     const escribeAqui = textoEscribiendoCliente(c);
@@ -7871,25 +7912,7 @@ function cableaChat(c){
   // (cola_omitida_at = el último), igual que «No requiere respuesta» en Hoy: si el cliente vuelve
   // a escribir, reaparece sola. No toca el modo (bot/humano) ni envía nada.
   const atendido = $('btnAtendido');
-  if (atendido) atendido.onclick = async () => {
-    if(atendido.disabled||!sel)return;
-    const chat=sel,id=chat.id||chat._id;
-    if(!id)return avisa('No se pudo marcar','Falta el identificador de esta conversación.');
-    const ahora = new Date().toISOString();
-    const campos = { cola_omitida_at: String(chat.last_message_at || ahora), atendido_at: ahora };
-    if (chat.human_handoff_required) campos.human_handoff_required = false;
-    atendido.disabled = true;
-    let r;
-    try{r=await llama({action:'updateLead',conversation_id:id,fields:campos});}
-    catch{r=null;}
-    finally{atendido.disabled=false;}
-    if(!r?.ok)return avisa(r?'No se pudo marcar':'Marca sin confirmar',r?.error||'Actualiza la ficha antes de volver a intentarlo.');
-    Object.assign(chat,campos);
-    if(sel===chat)pintaModoChat();
-    pintaChats();pintaCuentas();
-    if (typeof pintaHoy === 'function' && document.getElementById('hoyCont')) pintaHoy();
-    avisa('Atendido', sel===chat?'Ya no sale como pendiente. Si el cliente vuelve a escribir, reaparece sola.':'Se marcó la conversación anterior; la que tienes abierta no cambió.');
-  };
+  if (atendido) atendido.onclick = () => marcaConversacionAtendida(sel, atendido);
   const transferir = $('btnTransferir');
   if (transferir) transferir.onclick = async () => {
     if (transferir.disabled || !sel) return;
