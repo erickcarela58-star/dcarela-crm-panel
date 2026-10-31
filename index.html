@@ -637,16 +637,19 @@ img.av{object-fit:cover}
 .chat.sinleer .hora{color:var(--ok);font-weight:700}
 .chat .prev{font-size:12px;color:var(--mut);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .chat .prev.escribiendo-cliente{color:var(--ok);font-style:italic}
-.chat .marcas{grid-column:1/3;display:flex;gap:3px;align-items:center;min-height:15px;
-  margin-top:2px;overflow:hidden}
+.chat .marcas{grid-column:1/3;display:flex;gap:3px;align-items:center;min-height:20px;
+  margin-top:1px;padding-block:1px;overflow:hidden}
 .chat .marcas:empty{display:none}
-.chat-marca{height:16px;flex:0 0 auto;display:inline-flex;align-items:center;gap:2px;
-  justify-content:center;border-radius:4px;background:var(--hover);padding:0 3px 0 2px;
+.chat-marca{min-height:18px;flex:0 0 auto;display:inline-flex;align-items:center;gap:3px;
+  justify-content:center;border-radius:5px;background:var(--hover);padding:2px 4px 2px 3px;
   font-size:8px;font-weight:750;line-height:1;color:var(--mut);white-space:nowrap;cursor:help}
-.chat-marca .chat-marca-icon{width:12px;height:12px;display:inline-flex;align-items:center;justify-content:center;
-  font-family:"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif;font-size:11px;font-weight:400}
-.chat-marca .chat-marca-icon .emj{width:12px;height:12px}
+.chat-marca .chat-marca-icon{width:14px;height:14px;display:inline-flex;align-items:center;justify-content:center;
+  overflow:visible;font-family:"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif;font-size:12px;font-weight:400}
+.chat-marca .chat-marca-icon .emj{width:14px;height:14px;vertical-align:0;font-size:10.77px;
+  background-size:calc(var(--emoji-cols) * 14px) calc(var(--emoji-filas) * 14px);
+  background-position:calc(var(--x) * -14px) calc(var(--y) * -14px)}
 .chat-marca .chat-marca-text{max-width:68px;overflow:hidden;text-overflow:ellipsis}
+.chat-marca.solo-icono{width:20px;min-width:20px;padding:2px;cursor:help}
 .chat-marca.ign{background:rgba(178,106,0,.12)}
 .chat-marca.bloqueada{background:rgba(220,38,38,.10)}
 .chat-marca.modo{background:rgba(37,99,235,.10)}
@@ -2494,6 +2497,15 @@ input[type="checkbox"],input[type="radio"]{accent-color:var(--accent)}
 
 /* --- Cabecera del chat --------------------------------------------------------------------------- */
 .cabecera .modo{border:0;border-radius:999px;background:var(--hover);padding:7px 14px;font-weight:600;font-size:12.5px}
+.cabecera #btnModo{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-width:78px;
+  border:1px solid transparent;transition:background .15s ease,border-color .15s ease,color .15s ease}
+.cabecera #btnModo .emj{width:16px;height:16px;vertical-align:0;font-size:12.31px;
+  background-size:calc(var(--emoji-cols) * 16px) calc(var(--emoji-filas) * 16px);
+  background-position:calc(var(--x) * -16px) calc(var(--y) * -16px)}
+.cabecera #btnModo.modo-humano{background:rgba(245,158,11,.13);border-color:rgba(245,158,11,.28);color:#b45309}
+.cabecera #btnModo.modo-bot{background:rgba(37,99,235,.12);border-color:rgba(37,99,235,.25);color:var(--accent)}
+[data-theme="dark"] .cabecera #btnModo.modo-humano{color:#fbbf24}
+[data-theme="dark"] .cabecera #btnModo.modo-bot{color:#93c5fd}
 .cabecera .modo-porque{flex:1 1 160px;min-width:0;font-size:11.5px;line-height:1.35;color:var(--mut);padding:0 4px}
 @media(max-width:900px){.cabecera .modo-porque{display:none}}
 .cabecera .modo:hover{background:rgba(120,120,128,.2)}
@@ -6969,12 +6981,13 @@ const EMOJI_ETAPA_CHAT = Object.freeze({
   nuevo:'\u2728', interesado:'\ud83d\udc40', cotizando:'\ud83e\uddfe', pendiente_reserva:'\u23f3',
   reservado:'\ud83d\udcc5', cliente:'\u2705', desinteresado:'\u2796', perdido:'\u21a9\ufe0f'
 });
-function marcaEmojiChat(emoji, texto, clase){
+function marcaEmojiChat(emoji, texto, clase, soloIcono){
   const nombre = String(texto || '').replace(/_/g, ' ').trim();
   return '<span class="chat-marca' + (clase ? ' ' + esc(clase) : '')
+    + (soloIcono ? ' solo-icono' : '')
     + '" role="img" aria-label="' + esc(nombre) + '" title="' + esc(nombre) + '">'
     + '<span class="chat-marca-icon">' + emojisApple(emoji) + '</span>'
-    + '<span class="chat-marca-text">' + esc(nombre.replace(/^Etapa · /, '').replace(/^Modo /, '').replace(/^Etiqueta · /, '')) + '</span></span>';
+    + (soloIcono ? '' : '<span class="chat-marca-text">' + esc(nombre.replace(/^Etapa · /, '').replace(/^Modo /, '').replace(/^Etiqueta · /, '')) + '</span>') + '</span>';
 }
 const EMOJI_ETIQUETA_CHAT = Object.freeze({
   cumpleanos:'\ud83c\udf82', infantil:'\ud83e\uddf8', embarazo:'\ud83e\udd30', embarazada:'\ud83e\udd30', xv:'\ud83d\udc57', quinceanera:'\ud83d\udc57',
@@ -7075,8 +7088,8 @@ function pintaChats(){
     if (ignorada(c)) marcas.push(marcaEmojiChat('\ud83d\udeab', 'Ignorada · ' + (TIPOS_IGNORAR[c.ignored_kind] || 'otro'), 'ign'));
     if (c.lifecycle_stage) marcas.push(marcaEmojiChat(EMOJI_ETAPA_CHAT[c.lifecycle_stage] || '\ud83c\udff7\ufe0f', 'Etapa · ' + c.lifecycle_stage, 'etapa'));
     if (c.proactive_blocked_at) marcas.push(marcaEmojiChat('\u26d4', 'Sin automatización', 'bloqueada'));
-    else if (c.mode === 'human' || c.human_handoff_required) marcas.push(marcaEmojiChat('\ud83d\udc64', 'Modo humano', 'modo'));
-    else if (c.mode === 'bot') marcas.push(marcaEmojiChat('\ud83e\udd16', 'Modo bot', 'modo'));
+    else if (c.mode === 'human' || c.human_handoff_required) marcas.push(marcaEmojiChat('\ud83d\udc64', 'Modo humano', 'modo', true));
+    else if (c.mode === 'bot') marcas.push(marcaEmojiChat('\ud83e\udd16', 'Modo bot', 'modo', true));
     if (silenciado(c)) marcas.push(marcaEmojiChat('\ud83d\udd15', 'Silenciado', 'silenciada'));
     const etiquetasChat = etiquetasVisiblesDe(c);
     etiquetasChat.slice(0, 3).forEach(e => marcas.push(marcaEmojiChat(emojiDeEtiquetaChat(e), 'Etiqueta · ' + e, 'etiqueta')));
@@ -7653,7 +7666,10 @@ function pintaModoChat(){
   if (!modo || !sel) return;
   pintaPorqueDelBot();
   const humano = sel.mode === 'human' || sel.human_handoff_required || sel.bot_paused;
-  modo.textContent = humano ? 'Humano atiende' : 'Bot atiende';
+  modo.innerHTML = emojisApple(humano ? '\ud83d\udc64' : '\ud83e\udd16') + '<span>' + (humano ? 'Humano' : 'Bot') + '</span>';
+  modo.classList.toggle('modo-humano', humano);
+  modo.classList.toggle('modo-bot', !humano);
+  modo.setAttribute('aria-label', humano ? 'Humano atiende este chat' : 'Bot atiende este chat');
   modo.title = humano ? 'Bot pausado en este chat. Pulsa para reanudarlo si ya revisaste el contexto.' : 'Bot activo en este chat. Pulsa para pasarlo a atención humana.';
   modo.setAttribute('aria-pressed', humano ? 'false' : 'true');
   // «Atendido» cambia de color para saber de un vistazo si ya se le dio: verde desde que se pulsa y mientras el cliente no escriba
