@@ -1,7 +1,7 @@
 {
-  "version": "2026-10-31-crm-release-v365",
+  "version": "2026-10-31-crm-release-v366",
   "channel": "crm",
-  "released_at": "2026-10-31T07:30:42Z",
-  "summary": "Los emojis ya no se recortan, Humano/Bot ocupan solo un icono en la bandeja y el selector del chat es más claro.",
+  "released_at": "2026-10-31T07:34:06Z",
+  "summary": "Crear estado vuelve a abrir Fotos, videos o Texto; además los emojis y el selector Humano/Bot quedan compactos.",
   "requiere_puente": "2026-10-30-estados-propios-v57"
 }
