@@ -1,7 +1,7 @@
 {
-  "version": "2026-10-30-crm-release-v363",
+  "version": "2026-10-31-crm-release-v364",
   "channel": "crm",
-  "released_at": "2026-10-30T21:07:07Z",
-  "summary": "XV integra siete vestidos sin marcos negros y la bandeja usa emoji Apple con nombres compactos de etapa y modo.",
+  "released_at": "2026-10-31T07:17:24Z",
+  "summary": "Atención permite marcar Atendido, la bandeja muestra etiquetas con emoji Apple y el agente conserva su número oficial.",
   "requiere_puente": "2026-10-30-estados-propios-v57"
 }
