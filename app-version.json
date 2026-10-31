@@ -1,7 +1,7 @@
 {
-  "version": "2026-10-31-crm-release-v364",
+  "version": "2026-10-31-crm-release-v365",
   "channel": "crm",
-  "released_at": "2026-10-31T07:17:24Z",
-  "summary": "Atención permite marcar Atendido, la bandeja muestra etiquetas con emoji Apple y el agente conserva su número oficial.",
+  "released_at": "2026-10-31T07:30:42Z",
+  "summary": "Los emojis ya no se recortan, Humano/Bot ocupan solo un icono en la bandeja y el selector del chat es más claro.",
   "requiere_puente": "2026-10-30-estados-propios-v57"
 }
