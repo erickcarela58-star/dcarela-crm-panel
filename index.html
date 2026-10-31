@@ -5617,7 +5617,11 @@ function stgEventos(g){
     const tabB = t.closest('[data-stgtab]'); if (tabB) { STG.pestana = tabB.dataset.stgtab; STG.pagina = 1; return stgPinta(); }
     const pag = t.closest('[data-stgpag]'); if (pag && !pag.disabled) { STG.pagina = Number(pag.dataset.stgpag) || 1; stgPinta(); return g.scrollTo({ top: 0, behavior: 'smooth' }); }
     if (t.closest('[data-stgcrear]')) { ev.stopPropagation(); const m = $('stgMenuNuevo'); m.hidden = !m.hidden; return; }
-    if (t.closest('[data-stgnuevo]')) return stCompositor('foto');
+    // La tarjeta grande usa data-stgnuevo; las dos opciones del menú usan data-stnuevo.
+    // Antes solo se escuchaba la primera variante: el menú se abría, pero «Fotos y videos»
+    // y «Texto» no hacían nada.
+    const nuevo = t.closest('[data-stgnuevo],[data-stnuevo]');
+    if (nuevo) return stCompositor(nuevo.dataset.stnuevo === 'texto' ? 'texto' : 'foto');
     if (t.closest('[data-stgprogramar]')) return ve('contenido');
     const card = t.closest('[data-stgver]'); if (card) return stgDetalle(card.dataset.stgver);
   });
