@@ -1,7 +1,7 @@
 {
-  "version": "2026-10-31-crm-release-v366",
+  "version": "2026-10-31-crm-release-v367",
   "channel": "crm",
-  "released_at": "2026-10-31T07:34:06Z",
-  "summary": "Crear estado vuelve a abrir Fotos, videos o Texto; además los emojis y el selector Humano/Bot quedan compactos.",
+  "released_at": "2026-10-31T12:58:07Z",
+  "summary": "La primera foto de un Estado se elige con el compositor ya montado, conserva la selección y llega a la cola de publicación.",
   "requiere_puente": "2026-10-30-estados-propios-v57"
 }
