@@ -6151,7 +6151,11 @@ async function stCompositor(tipo, opciones = {}){
     if (opciones.blobs && opciones.blobs.length) {
       opciones.blobs.slice(0, 10).forEach(b => ST.comp.fotos.push({ blob: b, url: URL.createObjectURL(b) }));
       stcPintaFotos();
-    } else $('stcArchivo').click();
+    }
+    // No abras el selector desde dentro del mismo clic que crea el compositor. En Edge/IAB el
+    // primer FileList puede llegar mientras el elemento aun se esta montando y se pierde: el
+    // usuario elige una foto, pero vuelve a ver el boton vacio. El boton visible ya enlazado al
+    // input abre un selector estable y conserva la primera eleccion.
   }
   // La cifra de cada opción, como en la tarjeta de Difusión.
   const [r, rFoto] = await Promise.all([
