@@ -7096,8 +7096,8 @@ function pintaChats(){
     if (ignorada(c)) marcas.push(marcaEmojiChat('\ud83d\udeab', 'Ignorada · ' + (TIPOS_IGNORAR[c.ignored_kind] || 'otro'), 'ign'));
     if (c.lifecycle_stage) marcas.push(marcaEmojiChat(EMOJI_ETAPA_CHAT[c.lifecycle_stage] || '\ud83c\udff7\ufe0f', 'Etapa · ' + c.lifecycle_stage, 'etapa'));
     if (c.proactive_blocked_at) marcas.push(marcaEmojiChat('\u26d4', 'Sin automatización', 'bloqueada'));
-    else if (c.mode === 'human' || c.human_handoff_required) marcas.push(marcaEmojiChat('\ud83d\udc64', 'Modo humano', 'modo', true));
-    else if (c.mode === 'bot') marcas.push(marcaEmojiChat('\ud83e\udd16', 'Modo bot', 'modo', true));
+    else if (c.mode === 'human' || c.human_handoff_required) marcas.push(marcaEmojiChat('\ud83d\udc64', 'Modo Humano', 'modo'));
+    else if (c.mode === 'bot') marcas.push(marcaEmojiChat('\ud83e\udd16', 'Modo Bot', 'modo'));
     if (silenciado(c)) marcas.push(marcaEmojiChat('\ud83d\udd15', 'Silenciado', 'silenciada'));
     const etiquetasChat = etiquetasVisiblesDe(c);
     etiquetasChat.slice(0, 3).forEach(e => marcas.push(marcaEmojiChat(emojiDeEtiquetaChat(e), 'Etiqueta · ' + e, 'etiqueta')));
