@@ -1,7 +1,7 @@
 {
-  "version": "2026-10-31-crm-release-v367",
+  "version": "2026-11-01-crm-release-v368",
   "channel": "crm",
-  "released_at": "2026-10-31T12:58:07Z",
-  "summary": "La primera foto de un Estado se elige con el compositor ya montado, conserva la selección y llega a la cola de publicación.",
+  "released_at": "2026-11-01T15:40:22Z",
+  "summary": "Revisión semanal de contenido por formato (aprobar, pedir cambios o enviarla al WhatsApp oficial) y rutina diaria que prepara las historias de toda la semana, un día por tarea.",
   "requiere_puente": "2026-10-30-estados-propios-v57"
 }
