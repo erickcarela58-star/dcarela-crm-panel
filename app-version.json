@@ -1,7 +1,7 @@
 {
-  "version": "2026-11-01-crm-release-v368",
+  "version": "2026-11-01-crm-release-v369",
   "channel": "crm",
-  "released_at": "2026-11-01T15:40:22Z",
-  "summary": "Revisión semanal de contenido por formato (aprobar, pedir cambios o enviarla al WhatsApp oficial) y rutina diaria que prepara las historias de toda la semana, un día por tarea.",
+  "released_at": "2026-11-01T17:54:07Z",
+  "summary": "La bandeja dice «Bot» o «Humano» junto a su emoji, además de las etiquetas con su nombre.",
   "requiere_puente": "2026-10-30-estados-propios-v57"
 }
