@@ -9426,7 +9426,8 @@ async function adjuntaPdfCombos(cat, boton){
     // Reemplaza los PDF estáticos antiguos por el catálogo vigente del CRM y usa
     // automáticamente el número de la conversación: central u offline/QR Plaza.
     const sucursal = sucursalComboDelChat(sel);
-    const r = await llama({ action:'combos', operation:'catalogo_categoria', categoria:cat, sucursal, formato:'pdf' });
+    const r = await llama({ action:'combos', operation:'catalogo_categoria', categoria:cat, sucursal,
+      conversation_id: sel?.id || null, formato:'pdf' });
     if (!r?.ok || !r.pdf_b64) throw new Error(r?.error || 'no se pudo preparar el PDF vigente');
     const bytes = Uint8Array.from(atob(r.pdf_b64), c => c.charCodeAt(0));
     const datos = await new Promise((res, rej) => {
@@ -18946,7 +18947,7 @@ function cableaLotes(){
 // WhatsApp: «contenido», «aprobar todo», «pausar contenido», «autonomía total»). Instagram, la Página de Facebook y TikTok (como borrador) salen solos a su
 // hora; los Estados, por la PC del negocio. Marketplace y los grupos no se pueden publicar desde un programa: el «paquete del día» lo publica la persona.
 let CONT = { items: [], conteo: {}, calendario: [], canales: [], activos: [], activo: true, tab: null, grupos: [], propias: [], quitadas: [], cargando: false, abiertos: new Set(),
-  autonomia: 'manual', cantidad: 0, tiktok: null, estilos: [], tendencias: null, amandine: true, gen: null, mes: null, mesItems: null, dia: null, diaItems: null, vistas: {}, nuevosIA: [], ref: null, subida: null };
+  autonomia: 'manual', cantidad: 0, historiasDiarias: 8, igCuentas: [], igColaboradores: new Set(), tiktok: null, estilos: [], tendencias: null, amandine: true, gen: null, mes: null, mesItems: null, dia: null, diaItems: null, vistas: {}, nuevosIA: [], ref: null, subida: null };
 const CONT_TABS = [['crear', 'Crear'], ['porAprobar', 'Revisar'], ['calendario', 'Programar'], ['publicadas', 'Resultados']];
 const CONT_VISTAS = [['estilos', 'Plantillas'], ['fotos', 'Fototeca'], ['programadas', 'Cola y pendientes'], ['tendencias', 'Ideas y tendencias'], ['redes', 'Conexiones'], ['paquete', 'Paquete de grupos'], ['fechas', 'Fechas del negocio']];
 const CONT_ESTADOS = { propuesta: 'Por aprobar', aprobada: 'Aprobada', publicando: 'Enviando…', encola: 'Procesando en el canal', enviada: 'Enviada · esperando confirmación', sin_confirmar: 'Sin confirmación', publicada: 'Registrada como publicada', fallida: 'Falló', rechazada: 'Rechazada', vencida: 'Vencida', lista: 'Lista para subir' };
@@ -19523,7 +19524,9 @@ async function cargaContenido(){
   if (!r?.ok) { if ($('contCuerpo')) $('contCuerpo').innerHTML = '<p class="cfgnota">' + esc(r?.error || 'No se pudo leer el contenido.') + '</p>'; if(repetir)return cargaContenido();return; }
   Object.assign(CONT, { items: r.items || [], conteo: r.conteo || {}, calendario: r.calendario || [], canales: r.canales || [], activos: r.canales_activos || [],
     activo: r.planificador_activo !== false, propias: r.fechas_propias || [], quitadas: r.plantillas_quitadas || [], hoy: r.hoy, autonomia: r.autonomia || 'manual',
-    cantidad: Number(r.cantidad_semanal) || 0, tiktok: r.tiktok || null, estilos: r.estilos || [], tendencias: r.tendencias || null, amandine: r.amandine_en_servidor !== false });
+    cantidad: Number(r.cantidad_semanal) || 0, historiasDiarias: Math.min(12, Math.max(8, Number(r.historias_diarias) || 8)),
+    igCuentas: Array.isArray(r.ig_cuentas) ? r.ig_cuentas : [], igColaboradores: new Set(r.ig_colaboradores || []),
+    tiktok: r.tiktok || null, estilos: r.estilos || [], tendencias: r.tendencias || null, amandine: r.amandine_en_servidor !== false });
   CONT.estilosServidorV233 = Array.isArray(r.estilos);
   CONT.grupos = g && g.ok ? g.grupos : [];
   if (!CONT.gen) CONT.gen = { cantidad: CONT.cantidad || '', dias: 7, canales: new Set(CONT.activos) };
@@ -20012,8 +20015,15 @@ function pintaAgente(){
     + '<div class="agente-fila"><span class="agente-rot">Plataformas</span><div class="agente-redes">'
     +   CONT.canales.map(c => '<label class="red-chip' + (g.canales.has(c.id) ? ' on' : '') + '"><input type="checkbox" data-cgenred="' + esc(c.id) + '"' + (g.canales.has(c.id) ? ' checked' : '') + '>' + esc(c.nombre) + '</label>').join('')
     +   '</div></div>'
+    + '<div class="agente-fila"><span class="agente-rot">Historias diarias</span>'
+    +   '<label class="agente-num">Cantidad <input type="number" min="8" max="12" inputmode="numeric" value="' + esc(CONT.historiasDiarias) + '" data-chistorias="1"></label>'
+    +   '<small class="cont-sub">Prepara 8–12 creativos 9:16 al día para Estado de WhatsApp e Historia de Instagram. Siempre quedan pendientes de tu aprobación.</small></div>'
+    + '<div class="agente-fila"><span class="agente-rot">Instagram</span><div class="agente-redes">'
+    +   CONT.igCuentas.map(c => '<label class="red-chip' + (CONT.igColaboradores.has(c) ? ' on' : '') + '"><input type="checkbox" data-cigcolab="' + esc(c) + '"' + (CONT.igColaboradores.has(c) ? ' checked' : '') + '>@' + esc(c) + ' · colaboración</label>').join('')
+    +   '</div><small class="cont-sub">Las dos cuentas quedan mencionadas en la estrategia. Puedes desmarcar aquí cuál no debe recibir invitación de colaboración en Feed/Reel; las Historias no admiten colaboración, solo mención.</small></div>'
     + '<div class="agente-acc">'
     +   '<button type="button" class="btn-solido" data-cgenera="1">Generar creativos</button>'
+    +   (admin ? '<button type="button" class="btn-linea" data-crevisionsemana="1">Revisar semana por formato</button>' : '')
     +   '<button type="button" class="btn-linea" data-ctendencias="1">Investigar temporadas y tendencias</button>'
     +   (admin ? '<button type="button" class="btn-linea" data-cguardaagente="1" title="La rutina de cada mañana usará esta cantidad y estas plataformas">Usar esto cada mañana</button>' : '')
     +   (admin && porAprobar ? '<button type="button" class="btn-linea" data-caprueba-todo="1">Aprobar todo lo pendiente (' + porAprobar + ')</button>' : '')
@@ -20028,6 +20038,8 @@ function cambioContAgente(ev){
   const t = ev.target;
   if (t.dataset.cactivo) return void cambiaActivoAgente(t);
   if (!CONT.gen) return;
+  if (t.dataset.chistorias) CONT.historiasDiarias = Math.min(12, Math.max(8, Number(t.value) || 8));
+  if (t.dataset.cigcolab) { if (t.checked) CONT.igColaboradores.add(t.dataset.cigcolab); else CONT.igColaboradores.delete(t.dataset.cigcolab); t.closest('.red-chip')?.classList.toggle('on', t.checked); }
   if (t.dataset.cgen === 'cantidad') CONT.gen.cantidad = t.value.replace(/[^\d]/g, '').slice(0, 2);
   if (t.dataset.cgen === 'dias') CONT.gen.dias = Number(t.value) || 7;
   if (t.dataset.cgenred) { if (t.checked) CONT.gen.canales.add(t.dataset.cgenred); else CONT.gen.canales.delete(t.dataset.cgenred); t.closest('.red-chip')?.classList.toggle('on', t.checked); }
@@ -20037,6 +20049,38 @@ async function cambiaActivoAgente(b){
   if (!r.ok) { b.checked = !b.checked; return avisa('No se pudo cambiar', r.error); }
   CONT.activo = b.checked; avisa(b.checked ? 'Agente encendido' : 'Agente en pausa', b.checked ? 'Mañana a las 7:00 prepara lo que viene.' : 'No publica nada hasta que lo enciendas.');
   pintaContenido();
+}
+async function revisaSemanaContenido(b){
+  if(b)b.disabled=true;
+  try{
+    const desde=CONT.hoy||new Date().toISOString().slice(0,10), fin=new Date(desde+'T12:00:00Z');fin.setUTCDate(fin.getUTCDate()+6);
+    const r=await llama({action:'contenidoRevision',operation:'crear',desde,hasta:fin.toISOString().slice(0,10)});
+    if(!r.ok||!r.revision?.id||!Array.isArray(r.imagenes)||!r.imagenes.length)return avisa('No se pudo preparar la revisión',r.error||'No hay un resumen completo.');
+    const m=abreModal('<div class="mtapa"><h2>Revisión semanal</h2><button type="button" data-cerrar aria-label="Cerrar revisión">×</button></div><p class="bajada">'+esc(desde+' — '+r.revision.hasta)+' · '+r.revision.ids.length+' publicaciones. Descarga cada imagen para verla a tamaño completo y revisa sus textos y horarios.</p>'
+      +r.imagenes.map((x,i)=>'<details open><summary>'+esc((typeof CONT_FORMATOS==='object'&&CONT_FORMATOS[x.formato])||x.formato)+' · '+x.cantidad+(x.cantidad===1?' creativo':' creativos')+'</summary><a download="revision-semanal-'+(i+1)+'.jpg" href="data:image/jpeg;base64,'+x.jpeg_b64+'">Descargar imagen completa</a><img alt="Resumen '+esc(x.formato)+'" src="data:image/jpeg;base64,'+x.jpeg_b64+'" style="width:100%;height:auto"></details>').join('')
+      +'<details><summary>Textos y destinos completos</summary>'+Object.values(r.revision.formatos).flat().map(p=>'<article class="caja"><b>'+esc(p.fecha+' '+p.hora+' · '+p.destinos.map(d=>d.canal).join(', '))+'</b><p style="white-space:pre-wrap">'+esc(p.texto)+'</p></article>').join('')+'</details>'
+      +'<label style="display:grid;gap:8px;margin-top:16px">Qué quieres cambiar<textarea data-revision-nota maxlength="1000" style="width:100%;min-height:88px"></textarea></label>'
+      +'<p data-revision-estado role="status"></p><div class="acciones"><button type="button" class="btn-solido" data-revision-decidir="enviar">Enviar al WhatsApp oficial</button><button type="button" class="btn-solido" data-revision-decidir="aprobar">Aprobar este conjunto</button><button type="button" class="btn-linea" data-revision-decidir="cambios">Pedir cambios</button></div>');
+    Object.assign(m.firstElementChild.style,{width:'min(1100px,94vw)',maxWidth:'1100px',padding:'24px',maxHeight:'90vh',overflow:'auto'});
+    if(r.revision.estado!=='pendiente'){m.querySelectorAll('[data-revision-decidir]').forEach(x=>x.disabled=true);m.querySelector('[data-revision-estado]').textContent='Esta revisión ya está '+r.revision.estado;}
+    let enCurso=false;
+    m.addEventListener('click',async ev=>{
+      const btn=ev.target.closest('[data-revision-decidir]');if(!btn||enCurso||btn.disabled)return;
+      enCurso=true;const botones=[...m.querySelectorAll('[data-revision-decidir]')];botones.forEach(x=>x.disabled=true);
+      const salida=m.querySelector('[data-revision-estado]');salida.textContent='Guardando decisión…';
+      try{
+        const rr=await llama({action:'contenidoRevision',operation:btn.dataset.revisionDecidir,id:r.revision.id,nota:m.querySelector('[data-revision-nota]').value});
+        if(btn.dataset.revisionDecidir==='enviar'){
+          salida.textContent=rr.ok&&Array.isArray(rr.partes)?rr.aceptadas+' de '+rr.partes.length+' imágenes aceptadas por el canal oficial. Esto no confirma entrega ni lectura. Las piezas siguen sin aprobar.':rr.error||'No se confirmó el envío. Abre de nuevo la revisión para consultar; no repitas por otro número.';
+          return;
+        }
+        if(!rr.ok||!['aprobada','cambios'].includes(rr.estado)){salida.textContent=rr.error||'No se confirmó la decisión. Consulta de nuevo la revisión.';return;}
+        salida.textContent=rr.estado==='aprobada'?'Conjunto aprobado para sus horarios.':'Cambios solicitados; las piezas siguen sin aprobar.';
+        await cargaContenido();
+      }catch(e){salida.textContent='No se confirmó la decisión. Abre de nuevo la revisión antes de reintentar.';}
+      finally{enCurso=false;}
+    });
+  }catch(e){avisa('No se pudo preparar la revisión',e.message);}finally{if(b)b.disabled=false;}
 }
 async function clicContAgente(ev){
   const b = ev.target.closest('button'); if (!b || b.disabled) return;
@@ -20075,12 +20119,14 @@ async function clicContAgente(ev){
     if (!r.ok) return avisa('No se pudo cambiar', r.error);
     CONT.autonomia = d.cautonomia; avisa('Autonomía: ' + (CONT_AUTONOMIA.find(a => a[0] === d.cautonomia) || [])[1]); return pintaContenido();
   }
+  if (d.crevisionsemana) return revisaSemanaContenido(b);
   if (d.cgenera) return cambiaTabContenido('crear');
   if (d.cguardaagente) {
     const g = CONT.gen;
-    const r = await llama({ action: 'contenidoAjustes', canales: [...g.canales], cantidad_semanal: Number(g.cantidad) || 0 });
+    const r = await llama({ action: 'contenidoAjustes', canales: [...g.canales], cantidad_semanal: Number(g.cantidad) || 0,
+      historias_diarias: CONT.historiasDiarias, ig_colaboradores: [...CONT.igColaboradores] });
     if (!r.ok) return avisa('No se pudo guardar', r.error);
-    avisa('Guardado', 'Cada mañana: ' + (Number(g.cantidad) ? g.cantidad + ' creativos por semana' : 'todos los de la agenda') + ' en ' + g.canales.size + ' plataformas.');
+    avisa('Guardado', 'Cada mañana: ' + CONT.historiasDiarias + ' historias/estados del día, más ' + (Number(g.cantidad) ? g.cantidad + ' creativos por semana' : 'todos los de la agenda') + ' en ' + g.canales.size + ' plataformas.');
     return cargaContenido();
   }
   if (d.ctendencias) { CONT.tab = 'tendencias'; pintaContenido(); return investigaTendencias(); }
