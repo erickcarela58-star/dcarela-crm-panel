@@ -2768,6 +2768,76 @@ input[type="checkbox"],input[type="radio"]{accent-color:var(--accent)}
   .campanas-hoja .bc-metrica b{display:block;font-size:22px;letter-spacing:-.04em}.campanas-hoja .bc-metrica span{display:block;margin-top:2px;color:var(--mut);font-size:11px;line-height:1.35}
   .campanas-hoja .bc-metrica.ok b{color:var(--ok)}.campanas-hoja .bc-metrica.warn b{color:var(--warn)}.campanas-hoja .bc-metrica.bad b{color:var(--bad)}
   .campanas-hoja .prompt{border-top:3px solid var(--accent)}
+  /* v360 · Fase 3: asistente de Campañas (referencia 1). Filtros | candidatos | motivos, con la estética del planificador. */
+  .cw3{--e-card:#ffffff;--e-borde:#e5e9f2;--e-txt:#0f172a;--e-mut:#64748b;--e-acc:#2563eb;--e-suave:#eef3ff;--e-lienzo:#f4f6fb;--e-ok:#15803d;--e-okf:#f0fdf4;--e-rev:#b45309;--e-revf:#fff7ed;--e-no:#b91c1c;--e-nof:#fef2f2;--e-sombra:0 1px 2px rgba(15,23,42,.04),0 8px 24px rgba(15,23,42,.06);display:block!important;max-width:1480px;color:var(--e-txt)}
+  :root[data-tema="oscuro"] .cw3{--e-card:#141e24;--e-borde:#23313a;--e-txt:#e9edef;--e-mut:#9aa8b6;--e-suave:#172a3d;--e-lienzo:#0f171c;--e-okf:#12291c;--e-ok:#4ade80;--e-revf:#2d2112;--e-rev:#fbbf24;--e-nof:#2d1515;--e-no:#f87171;--e-sombra:0 1px 2px rgba(0,0,0,.3),0 8px 24px rgba(0,0,0,.25)}
+  .cw3 .cw3-cab h1{margin:0}.cw3 .cw3-cab .bajada{margin:6px 0 0}
+  .cw3 .bc-pasos{display:flex;gap:6px;padding:8px;margin:16px 0 14px;border:1px solid var(--e-borde);border-radius:16px;background:var(--e-card);box-shadow:var(--e-sombra)}
+  .cw3 .cw3-paso{flex:1 1 0;min-width:0;display:flex;align-items:center;gap:10px;padding:8px 10px;border:0;border-radius:12px;background:none;color:var(--e-mut);font:inherit;cursor:pointer;text-align:left}
+  .cw3 .cw3-paso:hover{background:var(--e-suave)}.cw3 .cw3-paso b{font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .cw3 .bc-pasos .cw3-num{flex:none;width:30px;height:30px;padding:0;border-radius:50%;display:grid;place-items:center;border:1px solid var(--e-borde);background:var(--e-lienzo);color:inherit;font-size:13px;font-weight:750}
+  .cw3 .cw3-paso.on{background:var(--e-suave);color:var(--e-acc)}.cw3 .bc-pasos .cw3-paso.on .cw3-num{background:var(--e-acc);border-color:var(--e-acc);color:#fff}
+  .cw3 .bc-pasos .cw3-paso.hecho .cw3-num{color:var(--e-acc);border-color:color-mix(in srgb,var(--e-acc) 35%,var(--e-borde))}
+  .cw3 .cw3-panel[hidden]{display:none!important}
+  .cw3 .cw3-sel{display:grid;grid-template-columns:230px minmax(0,1fr) 260px;gap:12px;align-items:start}
+  .cw3 .cw3-filtros,.cw3 .cw3-tabla,.cw3 .cw3-motivos,.cw3 .cw3-previa,.cw3 .cw3-red>.prompt{background:var(--e-card);border:1px solid var(--e-borde);border-radius:16px;box-shadow:var(--e-sombra);padding:14px;min-width:0}
+  .cw3 .cw3-filtros{display:grid;gap:10px;position:sticky;top:8px}
+  .cw3 .cw3-filtros .campo{margin:0}.cw3 .cw3-filtros .aviso{margin:0;font-size:12px}
+  .cw3 .cw3-filtros input,.cw3 .cw3-filtros select{width:100%;min-height:38px;border:1px solid var(--e-borde);border-radius:10px;background:var(--e-card);color:var(--e-txt);font:inherit;padding:0 10px}
+  .cw3 .cw3-filtros select:disabled{opacity:.6}
+  .cw3 .cw3-tit{display:flex;align-items:center;justify-content:space-between;gap:8px}
+  .cw3 .cw3-link{border:0;background:none;color:var(--e-acc);font:inherit;font-size:13px;font-weight:650;cursor:pointer;padding:2px 0}
+  .cw3 .cw3-sw{display:flex;align-items:flex-start;gap:8px;font-size:12.5px;color:var(--e-txt);cursor:pointer}.cw3 .cw3-sw input{width:auto;min-height:0;margin-top:2px}
+  .cw3 .cw3-mut{color:var(--e-mut);font-size:12px;margin:0;line-height:1.45}
+  .cw3 .cw3-tabla{display:flex;flex-direction:column;gap:10px;padding:0;overflow:hidden}
+  .cw3 .cw3-tabla-cab{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:14px 14px 0}.cw3 .cw3-tabla-cab>b{font-size:15px}
+  .cw3 .cw3-masivas{margin-left:auto;display:flex;gap:6px}.cw3 .cw3-masivas .btn-linea{min-height:32px;padding:0 10px;font-size:12px}
+  .cw3 .cw3-lista{overflow:auto;max-height:min(62vh,640px)}
+  .cw3 .cw3-vacio{padding:28px 16px;text-align:center;color:var(--e-mut);font-size:13px;margin:0}.cw3 .cw3-lista>.aviso{margin:12px 14px}
+  .cw3 .cw3-t{width:100%;border-collapse:collapse;font-size:13px}
+  .cw3 .cw3-t th{position:sticky;top:0;z-index:1;background:var(--e-lienzo);color:var(--e-mut);font-size:11.5px;font-weight:650;text-align:left;padding:8px 7px;border-bottom:1px solid var(--e-borde);white-space:nowrap}
+  .cw3 .cw3-t td{padding:9px 7px;border-bottom:1px solid var(--e-borde);vertical-align:middle}
+  .cw3 .cw3-t tr[data-cwfila]{cursor:pointer}.cw3 .cw3-t tr[data-cwfila]:hover td{background:var(--e-suave)}
+  .cw3 .cw3-t tr.foco td{background:var(--e-suave);box-shadow:inset 0 0 0 9999px color-mix(in srgb,var(--e-acc) 4%,transparent)}
+  .cw3 .cw3-t tr.fuera td{color:var(--e-mut)}.cw3 .cw3-t tr.fuera .cw3-nom b{font-weight:600}
+  .cw3 .cw3-t input[type=checkbox]{width:17px;height:17px;accent-color:var(--e-acc);cursor:pointer}.cw3 .cw3-t input:disabled{cursor:not-allowed;opacity:.45}
+  .cw3 .cw3-tel,.cw3 .cw3-fec{white-space:nowrap;font-variant-numeric:tabular-nums}
+  .cw3 .cw3-chips{display:flex;flex-wrap:wrap;gap:4px}.cw3 .cw3-chips span{padding:2px 8px;border-radius:999px;background:var(--e-suave);color:var(--e-acc);font-size:11.5px;font-weight:600;white-space:nowrap}
+  .cw3 .cw3-est{display:inline-block;padding:3px 9px;border-radius:999px;font-size:11.5px;font-weight:700;white-space:nowrap}
+  .cw3 .cw3-est.ok{background:var(--e-okf);color:var(--e-ok)}.cw3 .cw3-est.rev{background:var(--e-revf);color:var(--e-rev)}.cw3 .cw3-est.no{background:var(--e-nof);color:var(--e-no)}
+  .cw3 .cw3-pie{display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap;padding:0 14px 14px}
+  .cw3 .cw3-oculto{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+  .cw3 .cw3-motivos{display:grid;gap:10px;position:sticky;top:8px;font-size:13px}
+  .cw3 .cw3-h{font-size:15px}.cw3 .cw3-sub{font-size:12.5px;margin-top:4px}
+  .cw3 .cw3-pildora{justify-self:start;padding:5px 11px;border-radius:999px;background:var(--e-suave);color:var(--e-acc);font-weight:700;font-size:12.5px}
+  .cw3 .cw3-eleg,.cw3 .cw3-rec{list-style:none;margin:0;padding:0;display:grid;gap:6px}
+  .cw3 .cw3-eleg li{display:flex;justify-content:space-between;gap:8px;padding-left:20px;position:relative;line-height:1.35}
+  .cw3 .cw3-eleg li:before{position:absolute;left:0;font-weight:800}.cw3 .cw3-eleg li.ok:before{content:'✓';color:var(--e-ok)}.cw3 .cw3-eleg li.no:before{content:'✕';color:var(--e-no)}
+  .cw3 .cw3-rec li{padding-left:16px;position:relative;line-height:1.45;font-size:12.5px}.cw3 .cw3-rec li:before{content:'';position:absolute;left:2px;top:6px;width:7px;height:7px;border-radius:50%;background:var(--e-ok)}
+  .cw3 .cw3-motivo{margin:0;padding:10px 12px;border-radius:10px;font-size:12.5px;line-height:1.45}.cw3 .cw3-motivo b{display:block;margin-bottom:2px}
+  .cw3 .cw3-motivo.ok{background:var(--e-okf)}.cw3 .cw3-motivo.rev{background:var(--e-revf)}.cw3 .cw3-motivo.no{background:var(--e-nof)}
+  .cw3 .cw3-dl{display:grid;grid-template-columns:auto 1fr;gap:5px 10px;margin:0;font-size:12.5px}.cw3 .cw3-dl dt{color:var(--e-mut)}.cw3 .cw3-dl dd{margin:0;overflow-wrap:anywhere}
+  .cw3 .cw3-cita{padding:9px 11px;border-radius:10px;background:var(--e-lienzo);font-size:12.5px;line-height:1.5}.cw3 .cw3-cita span{display:block;font-size:10px;font-weight:750;letter-spacing:.05em;text-transform:uppercase;color:var(--e-mut);margin-bottom:3px}
+  .cw3 .cw3-red{display:grid;grid-template-columns:minmax(0,1fr) 360px;gap:12px;align-items:start}
+  .cw3 .cw3-red>.prompt{border-top:3px solid var(--e-acc);max-width:none;margin:0}
+  .cw3 .cw3-previa{display:grid;gap:10px;position:sticky;top:8px;background:linear-gradient(180deg,var(--e-card),var(--e-lienzo))}
+  .cw3 .cw3-para{font-size:12px;color:var(--e-mut)}
+  .cw3 .cw3-burbuja{position:relative;justify-self:start;max-width:100%;padding:10px 12px;border-radius:4px 14px 14px 14px;background:#dcf8c6;color:#111b21;font-size:13.5px;line-height:1.5;white-space:pre-wrap;overflow-wrap:anywhere;box-shadow:0 1px 1px rgba(0,0,0,.08)}
+  :root[data-tema="oscuro"] .cw3 .cw3-burbuja{background:#005c4b;color:#e9edef}
+  .cw3 .cw3-boton-baja{display:block;margin:10px -12px -10px;padding:8px;border-top:1px solid rgba(0,0,0,.08);text-align:center;color:#0b7cc1;font-weight:600;font-size:13px}
+  .cw3 .cw3-rev-cab{display:grid;gap:2px;margin:0 0 12px}.cw3 .cw3-rev-cab b{font-size:16px}.cw3 .cw3-rev-cab span{color:var(--e-mut);font-size:12.5px}
+  @media (max-width:1240px){.cw3 .cw3-sel{grid-template-columns:230px minmax(0,1fr)}.cw3 .cw3-motivos{grid-column:1/-1;position:static}}
+  @media (max-width:900px){
+    .cw3 .cw3-sel,.cw3 .cw3-red{grid-template-columns:1fr}.cw3 .cw3-filtros,.cw3 .cw3-previa{position:static}
+    .cw3 .cw3-paso{flex-direction:column;gap:4px;text-align:center;padding:6px 2px}.cw3 .cw3-paso b{font-size:11px;white-space:normal}
+    .cw3 .cw3-t thead{display:none}.cw3 .cw3-t,.cw3 .cw3-t tbody{display:block}
+    .cw3 .cw3-t tr{display:grid;grid-template-columns:auto 1fr auto;gap:2px 10px;padding:10px 12px;border-bottom:1px solid var(--e-borde)}
+    .cw3 .cw3-t td{padding:0;border:0}.cw3 .cw3-t td:first-child{grid-row:1/3;align-self:center}
+    .cw3 .cw3-t tr.foco,.cw3 .cw3-t tr[data-cwfila]:hover{background:var(--e-suave)}.cw3 .cw3-t tr.foco td,.cw3 .cw3-t tr[data-cwfila]:hover td{background:none;box-shadow:none}
+    .cw3 .cw3-t .cw3-tel{grid-column:2;font-size:12px;color:var(--e-mut)}.cw3 .cw3-t .cw3-fec{display:none}.cw3 .cw3-t .cw3-chips{grid-column:2/-1}
+    .cw3 .cw3-t td:last-child{grid-column:3;grid-row:1}
+    .cw3 .cw3-masivas{margin-left:0}
+  }
   @media(max-width:760px){.campanas-hoja .bc-snapshot{grid-template-columns:repeat(2,minmax(0,1fr))}.campanas-hoja .bc-pasos{position:static}}
   .plan239{border:1px solid color-mix(in srgb,var(--e-acc) 12%,var(--e-borde));border-radius:22px;box-shadow:0 18px 48px rgba(37,99,235,.08)}
   .plan239 .p239-cabecera{position:sticky;top:8px;z-index:7;padding:6px 0;background:color-mix(in srgb,var(--e-bg) 88%,transparent);backdrop-filter:blur(18px)}
@@ -25725,6 +25795,9 @@ async function preparaPropuesta(p, linea){
   $('bcProposito')?.dispatchEvent(new Event('change'));
   poner('bcEtapa', a.etapa || '');
   poner('bcCategoria', a.categoria || '');
+  poner('bcLinea', linea === 'puente' ? 'puente' : 'oficial');
+  poner('bcEtiqueta', '');
+  if ($('bcModo')) $('bcModo').disabled = false;
   const modo = $('bcModo');
   const libre = a.modo !== 'template' || linea === 'puente';
   if (modo) { modo.value = libre ? 'freeform' : 'template'; if (modo.onchange) await modo.onchange(); }
@@ -25810,51 +25883,85 @@ function montaBroadcast(){
   if (montadas.has('campanas')) return;
   montadas.add('campanas');
   hueco('campanas',
-    '<div class="hoja campanas-hoja"><h1>Campañas</h1>'
-    + '<p class="bajada">Escribe una vez y sale a muchos. Primero se simula: verás exactamente '
-    +   'a quién le llegaría antes de que salga nada.</p>'
-     + '<nav class="bc-pasos" aria-label="Pasos de campaña"><span>1 · Preparar</span><span>2 · Revisar candidatos</span><span>3 · Confirmar envío</span></nav>'
-     + '<div id="bcSnapshot" class="bc-snapshot" hidden aria-live="polite">'
-     + '<div class="bc-metrica ok"><b data-bcmetrica="seleccionados">0</b><span>seleccionados para revisar</span></div>'
-     + '<div class="bc-metrica"><b data-bcmetrica="revisados">0</b><span>conversaciones revisadas</span></div>'
-     + '<div class="bc-metrica warn"><b data-bcmetrica="excluidos">0</b><span>fuera por permisos o contexto</span></div>'
-     + '<div class="bc-metrica bad"><b data-bcmetrica="recientes">0</b><span>protegidos por promoción reciente</span></div></div>'
+    // v360 · Fase 3 (referencia 1 del dueño): Seleccionar → Redactar → Revisar y enviar → Resultados. Mismos campos,
+    // misma simulación y mismo envío protegido de antes; lo nuevo es elegir a quién ANTES de redactar, con sus motivos.
+    '<div class="hoja campanas-hoja cw3"><header class="cw3-cab"><h1>Campañas — Selección inteligente</h1>'
+    + '<p class="bajada">Filtra, revisa y elige a quién le llega. Nada sale hasta que confirmes en «Revisar y enviar».</p></header>'
+    + '<nav class="bc-pasos" aria-label="Pasos de campaña">'
+    +   [['1','Seleccionar'],['2','Redactar'],['3','Revisar y enviar'],['4','Resultados']].map(([n, t]) =>
+          '<button type="button" class="cw3-paso' + (n === '1' ? ' on' : '') + '" data-cwpaso="' + n + '"><span class="cw3-num">' + n + '</span><b>' + t + '</b></button>').join('')
+    + '</nav>'
+    // ---- 1 · Seleccionar: filtros a la izquierda, candidatos en el centro, motivos a la derecha.
+    + '<section class="cw3-panel cw3-sel" data-cwpanel="1">'
+    +   '<aside class="cw3-filtros" aria-label="Filtros de clientes"><div class="cw3-tit"><b>Filtros de clientes</b>'
+    +     '<button type="button" class="cw3-link" id="cwLimpiar">Limpiar</button></div>'
+    +     '<input id="cwBuscar" type="search" placeholder="Buscar por nombre, teléfono o etiqueta…" aria-label="Buscar en los candidatos">'
+    +     '<div class="campo"><label for="bcLinea">Número</label><select id="bcLinea">'
+    +       '<option value="oficial">Número oficial (API de WhatsApp)</option><option value="puente">Segundo número (5644)</option></select></div>'
+    +     '<div class="campo"><label for="bcProposito">Propósito</label><select id="bcProposito">'
+    +       '<option value="marketing">Marketing · promoción</option>'
+    +       '<option value="followup">Seguimiento</option>'
+    +       '<option value="session_reminder">Recordatorio de sesión</option>'
+    +     '</select></div>'
+    // El proposito NO es una etiqueta: decide a cuanta gente llega. Marketing exige permiso
+    // EXPRESO y casi nadie lo tiene, asi que una campana de promocion sale a un punado y el
+    // dueno lo descubria simulando, sin entender por que. Aqui se dice antes.
+    +     '<p class="aviso" id="bcAvisoProp"></p>'
+    +     '<div class="campo"><label for="bcModo">Tipo de envío</label><select id="bcModo">'
+    +       '<option value="freeform">Mensaje libre (solo a quien escribió en las últimas 24 h)</option>'
+    +       '<option value="template">Plantilla aprobada (llega aunque lleve días callado)</option>'
+    +     '</select></div>'
+    +     '<div class="campo"><label for="bcEtapa">Etapa</label><select id="bcEtapa">'
+    +       '<option value="">Todas</option>' + ETAPAS.map(e => '<option value="' + e + '">' + e.replace(/_/g,' ') + '</option>').join('')
+    +     '</select></div>'
+    +     '<div class="campo"><label for="bcCategoria">Categoría</label>'
+    +       '<input id="bcCategoria" placeholder="xv, boda, infantil…"></div>'
+    +     '<div class="campo"><label for="bcEtiqueta">Etiqueta</label><select id="bcEtiqueta"><option value="">Todas las etiquetas</option></select></div>'
+    +     '<label class="cw3-sw"><input type="checkbox" id="cwVerExcl" checked><span>Mostrar también a quienes quedan fuera, con su motivo</span></label>'
+    +     '<button class="btn-solido" type="button" id="cwBuscarBtn">Buscar candidatos</button>'
+    +     '<p class="cw3-mut">Solo consulta. No se envía nada.</p>'
+    +   '</aside>'
+    +   '<div class="cw3-tabla"><div class="cw3-tabla-cab"><b id="cwTitulo">Clientes candidatos</b><span id="cwCuenta" class="cw3-mut"></span>'
+    +     '<span class="cw3-masivas"><button type="button" class="btn-linea" id="cwTodos" disabled>Elegir todos</button>'
+    +     '<button type="button" class="btn-linea" id="cwNinguno" disabled>Quitar todos</button></span></div>'
+    +     '<div id="cwLista" class="cw3-lista"><p class="cw3-vacio">Elige los filtros y pulsa «Buscar candidatos».</p></div>'
+    +     '<div class="cw3-pie"><button type="button" class="btn-linea" id="cwSinSeleccion">Redactar sin seleccionar</button>'
+    +       '<button type="button" class="btn-solido" id="cwIrRedactar" disabled>Continuar a Redactar</button></div>'
+    +   '</div>'
+    +   '<aside class="cw3-motivos" id="cwMotivos" aria-live="polite"></aside>'
+    + '</section>'
+    // ---- 2 · Redactar: el mensaje y su vista previa, armada por el servidor como el envío real.
+    + '<section class="cw3-panel cw3-red" data-cwpanel="2" hidden>'
     + '<div class="prompt">'
     +   '<div class="mk-sugerido" id="bcSugerido" hidden><b>Texto sugerido por el agente</b>'
     +     '<p class="mk-sug-texto"></p>'
     +     '<p class="mk-sug-nota">Fuera de las 24 h solo llega una plantilla aprobada de Meta: elige una abajo, o crea una con este texto en Plantillas.</p>'
     +     '<button class="btn-linea" id="bcCopiarSug" type="button">Copiar texto</button></div>'
-    +   '<div class="par">'
-    +     '<div class="campo"><label>Tipo de envío</label><select id="bcModo">'
-    +       '<option value="freeform">Mensaje libre (solo a quien escribió en las últimas 24 h)</option>'
-    +       '<option value="template">Plantilla aprobada (llega aunque lleve días callado)</option>'
-    +     '</select></div>'
-    +     '<div class="campo"><label>Propósito</label><select id="bcProposito">'
-    +       '<option value="marketing">Marketing · promoción</option>'
-    +       '<option value="followup">Seguimiento</option>'
-    +       '<option value="session_reminder">Recordatorio de sesión</option>'
-    +     '</select></div>'
-    +   '</div>'
-    // El proposito NO es una etiqueta: decide a cuanta gente llega. Marketing exige permiso
-    // EXPRESO y casi nadie lo tiene, asi que una campana de promocion sale a un punado y el
-    // dueno lo descubria simulando, sin entender por que. Aqui se dice antes.
-    +   '<p class="aviso" id="bcAvisoProp" style="margin:0 0 14px"></p>'
+    +   '<p class="cw3-mut" id="cwRedResumen"></p>'
     +   '<div id="bcLibre">'
-    +     '<div class="campo"><label>Mensaje</label>'
-    +       '<textarea id="bcTexto" rows="4" placeholder="Lo que le llegará a cada contacto"></textarea></div>'
+    +     '<div class="campo"><label for="bcTexto">Mensaje</label>'
+    +       '<textarea id="bcTexto" rows="6" placeholder="Lo que le llegará a cada contacto. {nombre} pone su nombre."></textarea></div>'
     +   '</div>'
-    +   '<div id="bcPlantilla" hidden><div class="campo"><label>Plantilla</label>'
+    +   '<div id="bcPlantilla" hidden><div class="campo"><label for="bcTpl">Plantilla</label>'
     +     '<select id="bcTpl"></select></div>'
     +     '<p class="aviso" id="bcTplAviso"></p></div>'
-    +   '<div class="par">'
-    +     '<div class="campo"><label>Etapa (opcional)</label><select id="bcEtapa">'
-    +       '<option value="">Todas</option>' + ETAPAS.map(e => '<option value="' + e + '">' + e.replace(/_/g,' ') + '</option>').join('')
-    +     '</select></div>'
-    +     '<div class="campo"><label>Categoría (opcional)</label>'
-    +       '<input id="bcCategoria" placeholder="xv, boda, infantil…"></div>'
-    +   '</div>'
-    +   '<div class="acciones"><button class="btn-solido" id="bcSimular">Simular envío</button></div>'
-    + '</div><div id="bcSalida"></div>'
+    +   '<div class="acciones"><button type="button" class="btn-linea" data-cwir="1">Atrás</button>'
+    +     '<button class="btn-solido" id="bcSimular">Revisar destinatarios</button></div>'
+    + '</div>'
+    + '<aside class="cw3-previa" aria-label="Vista previa"><div class="cw3-tit"><b>Vista previa</b>'
+    +   '<button type="button" class="cw3-link" id="cwPreviaBtn">Actualizar</button></div>'
+    +   '<div id="cwPrevia"></div></aside>'
+    + '</section>'
+    // ---- 3 · Revisar y enviar / 4 · Resultados: la revisión y el resultado de siempre (#bcSalida).
+    + '<section class="cw3-panel cw3-rev" data-cwpanel="3 4" hidden>'
+    +   '<div class="cw3-rev-cab" id="cwRevCab"></div>'
+    +   '<div id="bcSnapshot" class="bc-snapshot" hidden aria-live="polite">'
+    +   '<div class="bc-metrica ok"><b data-bcmetrica="seleccionados">0</b><span>seleccionados para revisar</span></div>'
+    +   '<div class="bc-metrica"><b data-bcmetrica="revisados">0</b><span>conversaciones revisadas</span></div>'
+    +   '<div class="bc-metrica warn"><b data-bcmetrica="excluidos">0</b><span>fuera por permisos o contexto</span></div>'
+    +   '<div class="bc-metrica bad"><b data-bcmetrica="recientes">0</b><span>protegidos por promoción reciente</span></div></div>'
+    +   '<div id="bcSalida"></div>'
+    + '</section>'
     + '<div id="mkAgente"></div>'
 
     // Pack de Estados y Publicar en Estados son dos herramientas aparte del envio de
@@ -25948,7 +26055,318 @@ function montaBroadcast(){
   avisoProp();
   cableaPackEstados();
   cableaPublicarEstado();
+  cableaAsistenteCampana();
   pintaCampanaPendiente();
+}
+
+// ===== Fase 3 · asistente de Campañas (referencia 1) =====
+// Seleccionar → Redactar → Revisar y enviar → Resultados. Reutiliza la simulación y el envío de siempre: aquí solo se
+// ordena la pantalla y se añade la selección previa. NADA de este bloque envía mensajes; la única llamada es una
+// simulación «solo audiencia» (dry) que el servidor rechaza si alguien intentara enviarla.
+const CW = { paso: 1, sel: null, consulta: 0, previa: 0 };
+// Motivos de exclusión del servidor (broadcast-core: detalleBaja / motivoDeExclusion), en palabras del negocio.
+const CW_MOTIVO = {
+  sin_permiso_marketing: ['Sin permiso', 'No dio permiso expreso de marketing: una promoción no le puede llegar.'],
+  baja_marketing: ['Pidió baja', 'Pidió no recibir promociones.'],
+  baja_total: ['Baja total', 'Pidió no recibir ningún mensaje.'],
+  desinteresado: ['Desinteresado', 'Está marcado como desinteresado: no recibe nada proactivo.'],
+  seguimiento_descartado: ['Descartado', 'Se descartó su seguimiento.'],
+  bloqueado: ['Bloqueado', 'Tiene los envíos proactivos bloqueados.'],
+  ignorada: ['Ignorado', 'Es un chat ignorado (familia, números propios o colegas).'],
+  baja_seguimientos: ['Baja', 'Pidió no recibir seguimientos.'],
+  baja_recordatorios: ['Baja', 'Pidió no recibir recordatorios.'],
+  marketing_reciente: ['Promo reciente', 'Recibió otra promoción en las últimas 72 h; no se le repite para cuidar el número.'],
+  contexto_conversacion: ['Por su chat', 'El agente leyó en su conversación que no corresponde (dijo que no, reclamó o lo atiende una persona).'],
+};
+function cwFecha(iso){
+  const t = Date.parse(iso || '');
+  return Number.isFinite(t) ? new Date(t).toLocaleDateString('es-DO', { day:'2-digit', month:'short', year:'numeric', timeZone:'America/Santo_Domingo' }) : '—';
+}
+// Lo que decide QUIÉN puede recibir (no el texto): si cambia, la selección hecha deja de valer.
+function cuerpoSeleccionCampana(){
+  const c = { action:'broadcast', send_mode:$('bcModo').value, purpose:$('bcProposito').value, filter:filtroBc(), dry:true, solo_audiencia:true };
+  if (MK.preparada) { c.propuesta_id = MK.preparada.id; if (MK.preparada.linea === 'puente') c.linea = 'puente'; }
+  else if ($('bcLinea')?.value === 'puente') c.linea = 'puente';
+  return c;
+}
+function claveAudienciaCampana(c){
+  return JSON.stringify([c.send_mode, c.purpose, c.filter || {}, c.linea === 'puente' ? 'puente' : 'oficial', c.propuesta_id || '']);
+}
+function pasoCampana(n){
+  CW.paso = n;
+  const raiz = $('vista-campanas'); if (!raiz) return;
+  raiz.querySelectorAll('[data-cwpanel]').forEach(s => { s.hidden = !s.dataset.cwpanel.split(' ').includes(String(n)); });
+  raiz.querySelectorAll('[data-cwpaso]').forEach(b => {
+    const k = Number(b.dataset.cwpaso);
+    b.classList.toggle('on', k === n); b.classList.toggle('hecho', k < n);
+    if (k === n) b.setAttribute('aria-current', 'step'); else b.removeAttribute('aria-current');
+  });
+  const cab = $('cwRevCab');
+  if (cab) cab.innerHTML = n === 4
+    ? '<b>Resultados</b><span>Lo que confirmó WhatsApp o el puente. «Comprobar estado» vuelve a consultar el servidor; nada se reenvía solo.</span>'
+    : '<b>Revisar y enviar</b><span>La lista final se calcula de nuevo con el mensaje. Quita a quien no corresponda; solo sale al confirmar.</span>';
+  if (n === 1) lineaCampanaFijada();
+  if (n === 2) { pintaResumenRedactar(); pintaPreviaCampana(); }
+  raiz.querySelector('.bc-pasos')?.scrollIntoView?.({ block:'nearest' });
+}
+function lineaCampanaFijada(){
+  // El 5644 no usa plantillas ni la ventana de 24 h: con él, el tipo de envío es siempre mensaje libre.
+  const puente = (MK.preparada ? MK.preparada.linea : $('bcLinea')?.value) === 'puente';
+  const modo = $('bcModo');
+  if (modo) { if (puente && modo.value !== 'freeform') { modo.value = 'freeform'; modo.onchange?.(); } modo.disabled = puente; }
+}
+function llenaEtiquetasCampana(){
+  const sel = $('bcEtiqueta'); if (!sel) return;
+  const actual = sel.value, cuenta = new Map();
+  for (const c of (typeof CONVS !== 'undefined' ? CONVS : [])) {
+    for (const e of (Array.isArray(c.labels) ? c.labels : String(c.labels || '').split(','))) {
+      const k = String(e || '').trim(); if (k) cuenta.set(k, (cuenta.get(k) || 0) + 1);
+    }
+  }
+  const lista = [...cuenta.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0])).slice(0, 80);
+  sel.innerHTML = '<option value="">Todas las etiquetas</option>'
+    + lista.map(([k, n]) => '<option value="' + esc(k) + '">' + esc(k.replace(/_/g, ' ')) + ' (' + n + ')</option>').join('');
+  if (lista.some(([k]) => k === actual)) sel.value = actual;
+}
+function seleccionCampanaVigente(){
+  return !!CW.sel && CW.sel.clave === claveAudienciaCampana(cuerpoSeleccionCampana());
+}
+async function buscaCandidatosCampana(){
+  const cuerpo = cuerpoSeleccionCampana(), clave = claveAudienciaCampana(cuerpo), consulta = ++CW.consulta;
+  const lista = $('cwLista'), boton = $('cwBuscarBtn'); if (!lista || !boton) return;
+  boton.disabled = true;
+  lista.innerHTML = '<p class="cw3-vacio"><span class="cargando"></span> Buscando candidatos…</p>';
+  let r;
+  try { r = await llama(cuerpo); }
+  catch { r = { ok:false, error:'Se interrumpió la conexión. Vuelve a buscar.' }; }
+  if (consulta !== CW.consulta) return;
+  boton.disabled = false;
+  if (!r?.ok || r.dry !== true || r.solo_audiencia !== true || !Array.isArray(r.filas) || !Array.isArray(r.excluidos)) {
+    CW.sel = null;
+    // Un crmApi anterior a v360 no sabe calcular la audiencia sin mensaje y responde que falta el texto o la plantilla.
+    const viejo = !r?.ok && /texto o imagen requerido|nombre de plantilla requerido|opcion de baja/i.test(String(r?.error || ''));
+    lista.innerHTML = '<p class="aviso">' + (viejo
+      ? 'El servidor todavía no tiene la selección previa (falta desplegar crmApi). Puedes pulsar «Redactar sin seleccionar»: la revisión del paso 3 sigue funcionando igual.'
+      : esc(r?.error || 'La respuesta no confirmó la lista completa. Vuelve a buscar.')) + '</p>';
+    pintaMotivosCampana(); pintaCuentaCampana();
+    return;
+  }
+  const porId = new Map((r.targets || []).map(t => [String(t.id), t]));
+  const filas = r.filas.map(f => {
+    const t = porId.get(String(f.id)) || {};
+    return { ...f, resumen:t.resumen || '', ultimo_cliente:t.ultimo_cliente || '', desactualizado:t.contexto_desactualizado === true, elegible:true };
+  });
+  const fuera = r.excluidos.map(f => ({ ...f, elegible:false }));
+  // Un chat que cambió desde el análisis del agente queda sin marcar: igual que en la revisión, se reincluye a conciencia.
+  const elegidos = new Set(filas.filter(f => !f.desactualizado).map(f => String(f.id)));
+  CW.sel = { clave, r, filas, fuera, elegidos, foco:null };
+  pintaSeleccionCampana();
+}
+function filasVisiblesCampana(){
+  const s = CW.sel; if (!s) return [];
+  const q = String($('cwBuscar')?.value || '').trim().toLowerCase();
+  const todas = $('cwVerExcl')?.checked ? [...s.filas, ...s.fuera] : s.filas;
+  if (!q) return todas;
+  return todas.filter(f => [f.name, f.phone, f.etapa, f.categoria, ...(f.etiquetas || [])].some(v => String(v || '').toLowerCase().includes(q)));
+}
+function estadoFilaCampana(f){
+  if (!f.elegible) { const m = CW_MOTIVO[f.detalle] || CW_MOTIVO[f.motivo] || ['Fuera', 'No cumple las reglas de envío.']; return { clase:'no', texto:m[0], largo:m[1] }; }
+  if (f.desactualizado) return { clase:'rev', texto:'Revisar', largo:'Escribió después del último análisis del agente: abre su chat antes de incluirlo.' };
+  return { clase:'ok', texto:'Sí', largo:'Cumple los filtros, tiene teléfono de WhatsApp y permiso para este propósito.' };
+}
+function pintaCuentaCampana(){
+  const s = CW.sel, n = s ? s.elegidos.size : 0;
+  if ($('cwTitulo')) $('cwTitulo').textContent = 'Clientes candidatos' + (s ? ' (' + s.filas.length + ')' : '');
+  if ($('cwCuenta')) $('cwCuenta').textContent = s ? n + (n === 1 ? ' seleccionado' : ' seleccionados') + (s.fuera.length ? ' · ' + s.fuera.length + ' fuera' : '') : '';
+  const ir = $('cwIrRedactar');
+  if (ir) { ir.disabled = !n; ir.textContent = n ? 'Continuar con ' + n + (n === 1 ? ' persona' : ' personas') : 'Continuar a Redactar'; }
+  if ($('cwTodos')) $('cwTodos').disabled = !s || !s.filas.length;
+  if ($('cwNinguno')) $('cwNinguno').disabled = !n;
+}
+function pintaSeleccionCampana(){
+  const s = CW.sel, lista = $('cwLista'); if (!lista) return;
+  if (!s) { pintaCuentaCampana(); pintaMotivosCampana(); return; }
+  const filas = filasVisiblesCampana();
+  lista.innerHTML = !s.filas.length && !s.fuera.length
+    ? '<p class="cw3-vacio">Nadie cumple estos filtros.' + ($('bcModo').value === 'freeform' && !(cuerpoSeleccionCampana().linea === 'puente')
+        ? ' Con «mensaje libre» por el número oficial solo entran quienes escribieron en las últimas 24 horas.' : '') + '</p>'
+    : !filas.length ? '<p class="cw3-vacio">Ninguno coincide con la búsqueda.</p>'
+    : '<table class="cw3-t"><thead><tr><th scope="col"><span class="cw3-oculto">Elegir</span></th><th scope="col">Cliente</th><th scope="col">Teléfono</th>'
+      + '<th scope="col">Última compra</th><th scope="col">Etapa · etiquetas</th><th scope="col">Elegible</th></tr></thead><tbody>'
+      + filas.map(f => {
+        const id = String(f.id), est = estadoFilaCampana(f), marcado = s.elegidos.has(id);
+        const chips = [f.etapa && f.etapa.replace(/_/g, ' '), f.categoria, ...(f.etiquetas || []).slice(0, 2).map(e => e.replace(/_/g, ' '))].filter(Boolean);
+        return '<tr data-cwfila="' + esc(id) + '" class="' + (f.elegible ? '' : 'fuera') + (s.foco === id ? ' foco' : '') + '" tabindex="0">'
+          + '<td><input type="checkbox" data-cwchk="' + esc(id) + '"' + (marcado ? ' checked' : '') + (f.elegible ? '' : ' disabled')
+          + ' aria-label="' + (f.elegible ? 'Elegir a ' : 'No se puede elegir a ') + esc(f.name || f.phone) + '"></td>'
+          + '<td class="cw3-nom"><b>' + esc(f.name || f.phone) + '</b></td><td class="cw3-tel">' + esc(f.phone || '—') + '</td>'
+          + '<td class="cw3-fec">' + esc(cwFecha(f.ultima_compra_at)) + '</td>'
+          + '<td class="cw3-chips">' + (chips.length ? chips.map(c => '<span>' + esc(c) + '</span>').join('') : '<i class="cw3-mut">—</i>') + '</td>'
+          + '<td><span class="cw3-est ' + est.clase + '" title="' + esc(est.largo) + '">' + esc(est.texto) + '</span></td></tr>';
+      }).join('') + '</tbody></table>';
+  pintaCuentaCampana();
+  pintaMotivosCampana();
+}
+function pintaMotivosCampana(){
+  const box = $('cwMotivos'); if (!box) return;
+  const s = CW.sel;
+  if (!s) {
+    box.innerHTML = '<b class="cw3-h">Revisión y motivos</b><p class="cw3-mut">Al buscar verás cuántos pueden recibir, quién queda fuera y por qué. '
+      + 'Toca una fila para ver el historial de ese cliente.</p>';
+    return;
+  }
+  const f = s.foco && [...s.filas, ...s.fuera].find(x => String(x.id) === s.foco);
+  if (f) {
+    const est = estadoFilaCampana(f), conv = typeof buscaConv === 'function' ? buscaConv(f.id) : null;
+    box.innerHTML = '<button type="button" class="cw3-link" data-cwvolver>← Resumen de la selección</button>'
+      + '<b class="cw3-h">' + esc(f.name || f.phone) + '</b><p class="cw3-mut">' + esc(f.phone || '') + '</p>'
+      + '<p class="cw3-motivo ' + est.clase + '"><b>' + (f.elegible ? (f.desactualizado ? 'Revisar antes de incluir' : 'Por qué entra') : 'Por qué queda fuera') + '</b>' + esc(est.largo) + '</p>'
+      + '<dl class="cw3-dl"><dt>Etapa</dt><dd>' + esc((f.etapa || '—').replace(/_/g, ' ')) + '</dd>'
+      + '<dt>Interés</dt><dd>' + esc(f.categoria || '—') + '</dd>'
+      + '<dt>Etiquetas</dt><dd>' + (f.etiquetas?.length ? f.etiquetas.map(e => esc(e.replace(/_/g, ' '))).join(', ') : '—') + '</dd>'
+      + '<dt>Última compra</dt><dd>' + esc(cwFecha(f.ultima_compra_at)) + '</dd>'
+      + '<dt>Último mensaje</dt><dd>' + esc(cwFecha(f.ultimo_mensaje_at)) + '</dd>'
+      + '<dt>Permiso de marketing</dt><dd>' + (f.permiso_marketing ? 'Sí' : 'No') + '</dd></dl>'
+      + (f.resumen ? '<div class="cw3-cita"><span>Resumen de la conversación · verifica el chat</span>' + esc(f.resumen) + '</div>' : '')
+      + (f.ultimo_cliente && f.ultimo_cliente !== f.resumen ? '<div class="cw3-cita"><span>Último mensaje del cliente</span>' + esc(f.ultimo_cliente) + '</div>' : '')
+      + (conv ? '<button type="button" class="btn-linea" data-cwchat="' + esc(f.id) + '">Ver chat</button>' : '');
+    return;
+  }
+  const r = s.r, porDetalle = new Map();
+  for (const x of s.fuera) porDetalle.set(x.detalle || x.motivo, (porDetalle.get(x.detalle || x.motivo) || 0) + 1);
+  const desact = s.filas.filter(x => x.desactualizado).length;
+  const cuerpo = cuerpoSeleccionCampana(), puente = cuerpo.linea === 'puente';
+  const fila = (ok, texto, n) => '<li class="' + (ok ? 'ok' : 'no') + '"><span>' + texto + '</span><b>' + n + '</b></li>';
+  const sinPermiso = porDetalle.get('sin_permiso_marketing') || 0;
+  const { problemas, minutos } = avisoAntibloqueo(Math.max(1, s.elegidos.size));
+  const recomienda = [
+    MK.preparada ? 'Viene de la propuesta del agente «' + esc(MK.preparada.titulo || '') + '»: quienes descartó por su conversación ya están fuera.' : '',
+    cuerpo.purpose === 'marketing' && sinPermiso ? sinPermiso + ' sin permiso de marketing: pídeselo con la plantilla de consentimiento; no se les puede promocionar.' : '',
+    !puente && cuerpo.send_mode === 'freeform' ? 'Con mensaje libre solo entran quienes escribieron en las últimas 24 h. Con una plantilla aprobada llegas también a quien lleva días sin escribir.' : '',
+    desact ? desact + ' escribieron después del último análisis: abre su chat antes de marcarlos.' : '',
+    s.elegidos.size ? 'Al ritmo seguro, ' + s.elegidos.size + (s.elegidos.size === 1 ? ' mensaje tarda' : ' mensajes tardan') + ' unos ' + minutos + ' min.' : '',
+    ...problemas.map(esc),
+  ].filter(Boolean);
+  box.innerHTML = '<b class="cw3-h">Revisión y motivos</b>'
+    + '<span class="cw3-pildora">Selección actual (' + s.elegidos.size + ')</span>'
+    + '<b class="cw3-sub">Elegibilidad</b><ul class="cw3-eleg">'
+    + fila(true, 'Cumplen los filtros', Number(r.scanned || 0))
+    + fila(true, 'Pueden recibir', s.filas.length)
+    + (Number(r.skippedOptOut || 0) ? fila(false, 'Sin permiso o con baja', Number(r.skippedOptOut)) : '')
+    + (Number(r.skippedRecent || 0) ? fila(false, 'Promoción en las últimas 72 h', Number(r.skippedRecent)) : '')
+    + (Number(r.excluidosPorContexto || 0) ? fila(false, 'Por lo que dijeron en su chat', Number(r.excluidosPorContexto)) : '')
+    + (desact ? fila(false, 'Chat cambió desde el análisis', desact) : '')
+    + '</ul>'
+    + (porDetalle.size ? '<p class="cw3-mut">' + [...porDetalle.entries()].map(([k, n]) => n + ' · ' + esc((CW_MOTIVO[k] || [k])[0])).join(' · ') + '</p>' : '')
+    + (recomienda.length ? '<b class="cw3-sub">Recomendaciones</b><ul class="cw3-rec">' + recomienda.map(t => '<li>' + t + '</li>').join('') + '</ul>' : '');
+}
+function pintaResumenRedactar(){
+  const p = $('cwRedResumen'); if (!p) return;
+  const s = seleccionCampanaVigente() ? CW.sel : null;
+  p.textContent = s ? 'Para ' + s.elegidos.size + (s.elegidos.size === 1 ? ' persona elegida' : ' personas elegidas') + ' en «Seleccionar». En la revisión se vuelve a comprobar a cada una.'
+    : 'Sin selección previa: en la revisión verás a todos los que cumplan los filtros y podrás quitar a quien no corresponda.';
+}
+// Vista previa del mensaje para hasta 3 de los elegidos, armada por el servidor con las mismas funciones del envío real.
+async function pintaPreviaCampana(){
+  const box = $('cwPrevia'); if (!box) return;
+  const s = seleccionCampanaVigente() ? CW.sel : null;
+  const cuerpo = cuerpoSeleccionCampana(), consulta = ++CW.previa;
+  const ids = s ? [...s.elegidos].slice(0, 3) : [];
+  if (cuerpo.linea === 'puente') {
+    box.innerHTML = '<p class="cw3-mut">El segundo número manda el texto con variaciones y ritmo (puente); la versión exacta de cada persona se ve en «Revisar y enviar».</p>'
+      + '<div class="cw3-burbuja">' + esc($('bcTexto')?.value || 'Escribe el mensaje…') + '</div>';
+    return;
+  }
+  if (cuerpo.send_mode === 'freeform') cuerpo.text = String($('bcTexto')?.value || '').trim();
+  else {
+    const t = ($('bcTpl')?._validas || [])[Number($('bcTpl')?.value)];
+    if (!t) { box.innerHTML = '<p class="cw3-mut">Elige una plantilla aprobada para verla.</p>'; return; }
+    cuerpo.template = { name:t.template_name, language_code:t.language_code || 'es', contains_opt_out:true,
+      parameter_keys:t.parameter_keys || [], preview_text:t.body_text || t.preview_text || '' };
+  }
+  if (cuerpo.send_mode === 'freeform' && !cuerpo.text) { box.innerHTML = '<p class="cw3-mut">Escribe el mensaje para verlo como le llegará a cada persona.</p>'; return; }
+  if (!ids.length) {
+    box.innerHTML = '<p class="cw3-mut">Elige personas en «Seleccionar» para ver el mensaje con su nombre.</p>'
+      + '<div class="cw3-burbuja">' + esc(cuerpo.text || cuerpo.template?.preview_text || '') + '</div>';
+    return;
+  }
+  box.innerHTML = '<p class="cw3-vacio"><span class="cargando"></span> Preparando vista previa…</p>';
+  let r;
+  try { r = await llama({ ...cuerpo, previa_ids:ids }); }
+  catch { r = { ok:false, error:'Se interrumpió la conexión.' }; }
+  if (consulta !== CW.previa) return;
+  if (!r?.ok || !Array.isArray(r.previas)) { box.innerHTML = '<p class="aviso">' + esc(r?.error || 'No se pudo preparar la vista previa.') + '</p>'; return; }
+  const nombre = id => (CW.sel?.filas.find(f => String(f.id) === String(id))?.name) || '';
+  if (r.previas.length && cuerpo.send_mode === 'template' && r.previas.every(p => !p.texto)) {
+    box.innerHTML = '<p class="cw3-mut">La plantilla «' + esc(cuerpo.template.name) + '» no tiene su texto guardado en el CRM: Meta la envía tal como la aprobó. '
+      + 'Sincroniza las plantillas en «Plantillas» para verla aquí con el nombre de cada persona.</p>';
+    return;
+  }
+  box.innerHTML = r.previas.length
+    ? r.previas.map(p => '<div class="cw3-para">Para <b>' + esc(nombre(p.id)) + '</b></div><div class="cw3-burbuja">' + esc(p.texto || '(sin texto de vista previa)')
+        + (p.boton_baja ? '<span class="cw3-boton-baja">No recibir más</span>' : '') + '</div>').join('')
+      + '<p class="cw3-mut">' + (r.previas.some(p => p.boton_baja) ? 'El botón «No recibir más» lo añade el envío: así el cliente puede darse de baja. ' : '')
+      + 'Es una vista previa: no se envió nada.</p>'
+    : '<p class="cw3-mut">Las personas elegidas ya no cumplen las reglas de envío. Vuelve a «Seleccionar».</p>';
+}
+function cableaAsistenteCampana(){
+  const raiz = $('vista-campanas'); if (!raiz || raiz.dataset.cw3) return;
+  raiz.dataset.cw3 = '1';
+  llenaEtiquetasCampana();
+  lineaCampanaFijada();
+  raiz.querySelector('.bc-pasos').onclick = ev => {
+    const b = ev.target.closest('[data-cwpaso]'); if (b) pasoCampana(Number(b.dataset.cwpaso));
+  };
+  raiz.querySelectorAll('[data-cwir]').forEach(b => { b.onclick = () => pasoCampana(Number(b.dataset.cwir)); });
+  $('cwBuscarBtn').onclick = buscaCandidatosCampana;
+  $('cwBuscar').oninput = pintaSeleccionCampana;
+  $('cwVerExcl').onchange = pintaSeleccionCampana;
+  $('cwIrRedactar').onclick = () => pasoCampana(2);
+  $('cwSinSeleccion').onclick = () => { CW.sel = null; pintaSeleccionCampana(); pasoCampana(2); };
+  $('cwPreviaBtn').onclick = pintaPreviaCampana;
+  $('cwLimpiar').onclick = () => {
+    for (const [id, v] of [['bcEtapa', ''], ['bcCategoria', ''], ['bcEtiqueta', ''], ['cwBuscar', ''], ['bcLinea', 'oficial']]) { const e = $(id); if (e) e.value = v; }
+    lineaCampanaFijada();
+    CW.sel = null; pintaSeleccionCampana();
+    $('cwLista').innerHTML = '<p class="cw3-vacio">Elige los filtros y pulsa «Buscar candidatos».</p>';
+  };
+  $('cwTodos').onclick = () => { if (!CW.sel) return; for (const f of CW.sel.filas) CW.sel.elegidos.add(String(f.id)); pintaSeleccionCampana(); };
+  $('cwNinguno').onclick = () => { if (!CW.sel) return; CW.sel.elegidos.clear(); pintaSeleccionCampana(); };
+  // Cambiar algo que decide quién puede recibir invalida la selección: hay que volver a buscar (no se adivina).
+  for (const id of ['bcLinea', 'bcProposito', 'bcModo', 'bcEtapa', 'bcCategoria', 'bcEtiqueta']) {
+    $(id)?.addEventListener('change', () => {
+      if (id === 'bcLinea') lineaCampanaFijada();
+      if (CW.sel && !seleccionCampanaVigente()) {
+        CW.sel = null; pintaSeleccionCampana();
+        $('cwLista').innerHTML = '<p class="aviso">Cambiaron los filtros: vuelve a pulsar «Buscar candidatos» para ver a quién le llega ahora.</p>';
+      }
+    });
+  }
+  $('bcTexto').addEventListener('input', () => { clearTimeout(CW.tPrevia); CW.tPrevia = setTimeout(() => { if (CW.paso === 2) pintaPreviaCampana(); }, 700); });
+  $('bcTpl').addEventListener('change', () => { if (CW.paso === 2) pintaPreviaCampana(); });
+  $('cwLista').onclick = ev => {
+    const chk = ev.target.closest('[data-cwchk]');
+    if (chk) {
+      if (!CW.sel || chk.disabled) return;
+      if (chk.checked) CW.sel.elegidos.add(chk.dataset.cwchk); else CW.sel.elegidos.delete(chk.dataset.cwchk);
+      pintaCuentaCampana(); if (!CW.sel.foco) pintaMotivosCampana();
+      return;
+    }
+    const tr = ev.target.closest('[data-cwfila]'); if (!tr || !CW.sel) return;
+    CW.sel.foco = CW.sel.foco === tr.dataset.cwfila ? null : tr.dataset.cwfila;
+    raiz.querySelectorAll('[data-cwfila]').forEach(x => x.classList.toggle('foco', x.dataset.cwfila === CW.sel.foco));
+    pintaMotivosCampana();
+  };
+  $('cwLista').onkeydown = ev => { if ((ev.key === 'Enter' || ev.key === ' ') && ev.target.matches?.('[data-cwfila]')) { ev.preventDefault(); ev.target.click(); } };
+  $('cwMotivos').onclick = ev => {
+    if (ev.target.closest('[data-cwvolver]')) { if (CW.sel) CW.sel.foco = null; raiz.querySelectorAll('[data-cwfila].foco').forEach(x => x.classList.remove('foco')); pintaMotivosCampana(); return; }
+    const b = ev.target.closest('[data-cwchat]'); if (!b) return;
+    const c = buscaConv(b.dataset.cwchat);
+    if (!c) return avisa('No encuentro ese chat', 'Puede que ya no exista o que se haya archivado.');
+    ve('conversations'); abre(c);
+  };
+  pintaMotivosCampana();
+  pasoCampana(1);
 }
 
 // ===== PACK DE ESTADOS =====
@@ -26283,6 +26701,7 @@ function filtroBc(){
   if ($('bcCategoria').value.trim()) f.interested_category = $('bcCategoria').value.trim();
   // Propuestas por etiqueta (clientes de otros servicios con permiso): el filtro viaja con la propuesta preparada.
   if (MK.preparada && MK.preparada.etiqueta) f.label = MK.preparada.etiqueta;
+  else if ($('bcEtiqueta')?.value) f.label = $('bcEtiqueta').value;
   return f;
 }
 function cuerpoBc(dry){
@@ -26290,6 +26709,7 @@ function cuerpoBc(dry){
   const c = { action:'broadcast', send_mode:modo, purpose:$('bcProposito').value,
     filter:filtroBc(), dry };
   if (MK.preparada) { c.propuesta_id = MK.preparada.id; if (MK.preparada.linea === 'puente') c.linea = 'puente'; }
+  else if ($('bcLinea')?.value === 'puente') c.linea = 'puente';
   if (modo === 'freeform') c.text = $('bcTexto').value.trim();
   else {
     const v = $('bcTpl')._validas || [];
@@ -26346,12 +26766,20 @@ function pintaResumenCampana(audiencia){
   const valores={seleccionados:(audiencia.targets||[]).filter(t=>!audiencia.excluidosManuales?.has(String(t.id))).length,revisados:Number(audiencia.scanned||0),excluidos:Number(audiencia.skippedOptOut||0)+Number(audiencia.excluidosPorContexto||0),recientes:Number(audiencia.skippedRecent||0)};
   box.querySelectorAll('[data-bcmetrica]').forEach(e=>{e.textContent=String(valores[e.dataset.bcmetrica]||0);});
 }
+// Ids de esta revisión que el dueño desmarcó en «Seleccionar». Solo cuenta si la selección es de la MISMA audiencia
+// (número, propósito, tipo de envío, filtros y propuesta); quien aparece nuevo desde entonces también empieza fuera.
+function idsQuitadosEnSeleccion(r, cuerpo){
+  if (typeof CW === 'undefined' || !CW.sel || typeof claveAudienciaCampana !== 'function') return new Set();
+  if (CW.sel.clave !== claveAudienciaCampana(cuerpo)) return new Set();
+  return new Set((r.targets || []).map(t => String(t.id)).filter(id => !CW.sel.elegidos.has(id)));
+}
 async function simulaBroadcast(){
   if (AUDIENCIA?.enviando || AUDIENCIA?.puenteEnviando || AUDIENCIA?.reanalizando) return;
   const cuerpo = cuerpoBc(true);
   if (!cuerpo) return avisa('Elige una plantilla');
   if (cuerpo.send_mode === 'freeform' && !cuerpo.text) return avisa('Escribe el mensaje');
   const salida=$('bcSalida'), boton=$('bcSimular'); if (!salida || !boton) return;
+  if (typeof pasoCampana === 'function') pasoCampana(3);
   const contexto=claveCampanaPendiente(), consulta=++SIMULACION_BROADCAST;
   const revision=JSON.stringify(cuerpo), propuesta=JSON.stringify(MK.preparada || null);
   const vistaVigente=()=>consulta===SIMULACION_BROADCAST && contexto===claveCampanaPendiente()
@@ -26382,7 +26810,10 @@ async function simulaBroadcast(){
   }
   // Un análisis anterior al último mensaje no acredita la intención actual del cliente.
   // Queda fuera por defecto; el dueño puede abrir el chat y reincluirlo conscientemente.
-  const contextoViejo = new Set(r.targets.filter(t => t.contexto_desactualizado === true).map(t => String(t.id)));
+  const desactualizados = new Set(r.targets.filter(t => t.contexto_desactualizado === true).map(t => String(t.id)));
+  // Quien se desmarcó en «Seleccionar» (misma audiencia) también empieza fuera; se puede reincluir aquí mismo.
+  const quitadosEnSeleccion = idsQuitadosEnSeleccion(r, JSON.parse(revision));
+  const contextoViejo = new Set([...desactualizados, ...quitadosEnSeleccion]);
   const audiencia = AUDIENCIA = { ...r, excluidosManuales:contextoViejo, campanaKey: nuevoIdCampana(), revision };
   pintaResumenCampana(audiencia);
   const revisionVigente=()=>vistaVigente() && AUDIENCIA===audiencia;
@@ -26409,8 +26840,9 @@ async function simulaBroadcast(){
     +   (r.skippedRecent ? '<div class="cambio"><div class="k">Excluidos por promoción reciente</div>' + Number(r.skippedRecent) + '<div class="nota">Ya recibieron otra promoción en las últimas 72 h: no se les repite para cuidar la calidad del número.</div></div>' : '')
     +   (MK.preparada ? '<div class="cambio"><div class="k">Propuesta «' + esc(MK.preparada.titulo) + '»' + (r.linea === 'puente' ? ' · segundo número (5644)' : '') + '</div>'
         + Number(r.excluidosPorContexto || 0) + ' fuera por lo que dijeron en su conversación</div>' : '')
-    +   (contextoViejo.size && typeof ROL_ACTUAL !== 'undefined' && ROL_ACTUAL === 'admin'
-        ? '<p class="nota">' + contextoViejo.size + ' conversación(es) cambiaron desde el análisis. Se mantienen fuera hasta una nueva revisión.</p>'
+    +   (quitadosEnSeleccion.size ? '<p class="nota">' + quitadosEnSeleccion.size + ' quitado(s) en «Seleccionar»: siguen fuera salvo que los reincluyas.</p>' : '')
+    +   (desactualizados.size && typeof ROL_ACTUAL !== 'undefined' && ROL_ACTUAL === 'admin'
+        ? '<p class="nota">' + desactualizados.size + ' conversación(es) cambiaron desde el análisis. Se mantienen fuera hasta una nueva revisión.</p>'
           + '<button type="button" class="btn-linea" id="bcReanalizaLote">Reanalizar hasta 20 desactualizados</button>' : '')
     +   (destinos.length
         // Acordeon: cada destinatario se puede abrir para revisar su conversacion antes de dar el OK (que el criterio del agente se pueda comprobar).
@@ -26420,9 +26852,10 @@ async function simulaBroadcast(){
              + '<span class="bc-destino-etapa">' + esc([t.etapa,t.categoria].filter(Boolean).join(' · ') || 'Sin categoría') + '</span></div>'
              + (t.resumen ? '<div class="bc-destino-resumen"><span>Resumen breve · verifica el chat</span>' + esc(t.resumen) + (String(t.resumen).length >= 240 ? '…' : '') + '</div>' : '')
              + (t.ultimo_cliente && t.ultimo_cliente !== t.resumen ? '<div class="bc-destino-ultimo"><span>Último mensaje del cliente</span>' + esc(t.ultimo_cliente) + '</div>' : '')
-             + (contextoViejo.has(String(t.id)) ? '<div class="bc-destino-aviso">Fuera por defecto: el cliente escribió después del último análisis. Revisa su chat antes de reincluirlo.</div><div class="nota" data-bcanalisis="' + esc(t.id) + '"></div>' : '') + '</div>'
+             + (desactualizados.has(String(t.id)) ? '<div class="bc-destino-aviso">Fuera por defecto: el cliente escribió después del último análisis. Revisa su chat antes de reincluirlo.</div><div class="nota" data-bcanalisis="' + esc(t.id) + '"></div>'
+               : quitadosEnSeleccion.has(String(t.id)) ? '<div class="nota">Lo quitaste en «Seleccionar».</div>' : '') + '</div>'
              + '<div class="bc-destino-acciones"><button type="button" class="btn-linea" data-bcabre="' + esc(t.id) + '">Ver chat</button>'
-             + (contextoViejo.has(String(t.id)) ? '<button type="button" class="btn-linea" data-bcreanaliza="' + esc(t.id) + '">Reanalizar</button>' : '')
+             + (desactualizados.has(String(t.id)) ? '<button type="button" class="btn-linea" data-bcreanaliza="' + esc(t.id) + '">Reanalizar</button>' : '')
              + '<button type="button" class="btn-linea" data-bcquitar="' + esc(t.id) + '" aria-label="' + (contextoViejo.has(String(t.id)) ? 'Reincluir destinatario' : 'Quitar destinatario') + '">' + (contextoViejo.has(String(t.id)) ? 'Reincluir' : 'Quitar') + '</button></div></div>').join('')
           + '</div></details>'
         : '<p class="aviso" style="margin:0">Nadie cumple estos filtros. Con «mensaje libre» solo entran '
@@ -26494,7 +26927,7 @@ async function simulaBroadcast(){
       if (!revisionVigente()) return;
       const botonLote=$('bcReanalizaLote');
       if (!botonLote || botonLote.disabled || audiencia.reanalizando) return;
-      const ids=[...contextoViejo].slice(0,20);
+      const ids=[...desactualizados].slice(0,20);
       bloqueaReanalisis(true);
       botonLote.disabled=true; botonLote.textContent='Reanalizando ' + ids.length + '…';
       let nuevo;
@@ -26818,6 +27251,7 @@ async function enviaBroadcast(){
     +   (incompleto ? '<p class="nota">Se conserva la misma campaña. Continuar comprueba los destinatarios y omite los aceptados o retenidos. No prepares otra campaña para repetirla.</p><button type="button" class="btn-linea" id="bcContinuar">Continuar sin repetir</button>' : '')
     + '</div></div>';
   if (incompleto) $('bcContinuar').onclick = enviaBroadcast;
+  if (typeof pasoCampana === 'function') pasoCampana(4);
   avisa(incompleto ? 'Campaña con revisión pendiente' : 'Tanda procesada', Number(r.sent || 0) + ' aceptados en esta ejecución');
 }
 
@@ -26868,6 +27302,7 @@ function pintaCampanaPendiente(){
     +(listaCampanasPendientes().length > 1 ? '<p class="nota">Y '+(listaCampanasPendientes().length-1)+' campaña(s) más sin terminar: aparecen al resolver esta.</p>' : '')
     +'<div class="acciones"><button type="button" class="btn-solido" id="bcComprobar">Comprobar estado</button> <button type="button" class="btn-linea" id="bcDescartaPendiente">Descartar este aviso</button></div></div></div>';
   $('bcComprobar').onclick=comprobarCampanaPendiente;
+  if (typeof pasoCampana === 'function') pasoCampana(4);
   $('bcDescartaPendiente').onclick=()=>{ if (!vigente()) return; borraCampanaPendiente(p.key); salida.innerHTML=''; pintaCampanaPendiente(); };
 }
 async function comprobarCampanaPendiente(){
