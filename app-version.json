@@ -1,7 +1,7 @@
 {
-  "version": "2026-11-02-crm-release-v376-integracion",
+  "version": "2026-11-02-crm-release-v382-integracion",
   "channel": "crm",
-  "released_at": "2026-11-02T14:00:00Z",
-  "summary": "Revisión semanal automática (v373) junto con Campañas en cuatro pasos, Estados con «Visto por N» y vista previa vertical, e Instagram con @usuario y sin «[template]».",
+  "released_at": "2026-11-02T20:00:00Z",
+  "summary": "Capas del editor como Photoshop (fotos que suben sobre el texto también en el JPG, barra y panel de capas nuevos), combos con vigencia y condiciones en el PDF, revisión integral, y en Plaza Artesanal: Tareas y Cotizaciones con sus propios datos.",
   "requiere_puente": "2026-10-30-estados-propios-v57"
 }
