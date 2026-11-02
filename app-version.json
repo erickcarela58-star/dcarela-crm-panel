@@ -1,7 +1,7 @@
 {
-  "version": "2026-11-02-crm-release-v375-conversaciones",
+  "version": "2026-11-02-crm-release-v373",
   "channel": "crm",
-  "released_at": "2026-11-02T09:00:00Z",
-  "summary": "Conversaciones: Instagram con @usuario y el motivo si Meta no da el perfil, lo compartido ya no sale como «[template]» y los documentos muestran su nombre.",
+  "released_at": "2026-11-02T05:45:57.600Z",
+  "summary": "Revisión semanal automática por formato, con imagen y botones de aprobación; importación social acotada y recuperación sin duplicar.",
   "requiere_puente": "2026-10-30-estados-propios-v57"
 }
