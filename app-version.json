@@ -1,7 +1,7 @@
 {
-  "version": "2026-11-02-crm-release-v373",
+  "version": "2026-11-02-crm-release-v376-integracion",
   "channel": "crm",
-  "released_at": "2026-11-02T05:45:57.600Z",
-  "summary": "Revisión semanal automática por formato, con imagen y botones de aprobación; importación social acotada y recuperación sin duplicar.",
+  "released_at": "2026-11-02T14:00:00Z",
+  "summary": "Revisión semanal automática (v373) junto con Campañas en cuatro pasos, Estados con «Visto por N» y vista previa vertical, e Instagram con @usuario y sin «[template]».",
   "requiere_puente": "2026-10-30-estados-propios-v57"
 }
