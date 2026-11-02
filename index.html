@@ -948,6 +948,11 @@ a.ayuda{color:var(--enlace)}
 .stg-avatar{position:absolute;left:12px;top:-27px;width:50px;height:50px;border-radius:50%;display:grid;place-items:center;background:#0f2f66;color:#fff;
   font-weight:800;font-size:15px;border:3px solid var(--panel);box-shadow:0 0 0 3px #25d366}
 .stg-avatar.prog{box-shadow:0 0 0 3px var(--morado)}
+/* v374 · Fase 4: el anillo dice si el Estado ya se vio (verde), si salió sin vistas aún (gris), si espera o si falló. */
+.stg-avatar.sinver{box-shadow:0 0 0 3px color-mix(in srgb,var(--mut) 55%,transparent)}
+.stg-avatar.espera{box-shadow:0 0 0 3px var(--warn)}
+.stg-avatar.mal{box-shadow:0 0 0 3px var(--bad)}
+.stg-media{aspect-ratio:4/5}
 .stg-vistas{position:absolute;left:74px;top:7px;display:flex;align-items:center;gap:5px;color:var(--mut);font-size:13px;font-weight:600}
 .stg-titulo{font-size:15px;font-weight:800;color:var(--fg);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:4px}
 .stg-chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:7px}
@@ -1021,6 +1026,8 @@ a.ayuda{color:var(--enlace)}
 .st-quien-t b{display:block;font-size:16px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .st-quien-t i{display:block;font-style:normal;font-size:13px;opacity:.75;margin-top:1px}
 .st-ctl{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;color:#fff}
+/* v374 · Fase 4: display:grid pisaba el atributo hidden y «✕ Eliminar» salía en los Estados de CONTACTOS. */
+.st-ctl[hidden]{display:none!important}
 .st-ctl:hover{background:rgba(255,255,255,.1)}
 .st-ctl svg{width:22px;height:22px}
 .st-x{position:absolute;top:14px;right:16px;z-index:2}
@@ -1064,6 +1071,13 @@ a.ayuda{color:var(--enlace)}
 .st-comp-txt textarea::placeholder{color:rgba(255,255,255,.7)}
 .st-comp-foto{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:70px 20px 10px;min-height:0}
 .st-comp-foto img,.st-comp-foto video{max-width:min(620px,100%);max-height:62vh;object-fit:contain;border-radius:4px}
+/* v374 · Fase 4: vista previa vertical 9:16 del estado que se va a publicar. */
+.st-vertical{display:grid;justify-items:center;gap:6px}.st-vertical small{color:rgba(255,255,255,.75);font-size:12px}
+.st-vertical-marco{position:relative;height:min(50vh,520px);aspect-ratio:9/16;background:#000;border-radius:18px;overflow:hidden;box-shadow:0 0 0 1px rgba(255,255,255,.18),0 18px 40px rgba(0,0,0,.45)}
+.st-comp-foto .st-vertical-marco img,.st-comp-foto .st-vertical-marco video{width:100%;height:100%;max-width:none;max-height:none;object-fit:contain;border-radius:0}
+.st-vertical-pie{position:absolute;left:0;right:0;bottom:0;margin:0;padding:22px 14px 16px;background:linear-gradient(transparent,rgba(0,0,0,.7));color:#fff;font-size:14px;line-height:1.4;text-align:center;overflow-wrap:anywhere}
+.st-vertical-pie[hidden]{display:none}
+.st-mini-ver{all:unset;cursor:pointer;display:block}.st-miniaturas figure.on{outline:2px solid #25d366;outline-offset:2px;border-radius:6px}
 .st-comp-foto input[type=text]{width:min(620px,100%);height:44px;border-radius:8px;border:0;outline:0;padding:0 16px;
   font-size:15px;background:rgba(255,255,255,.12);color:#fff}
 .st-comp-barra{display:flex;align-items:center;gap:10px;padding:14px 22px 22px}
@@ -5534,10 +5548,15 @@ function stgElementos(){
     const t = Date.parse(f.sent_at || f.created_at || '') || 0;
     const lineas = String(f.body || '').split(/\n+/).map(x => x.trim()).filter(Boolean);
     const desdeTelefono = f.origen === 'telefono';
-    return { clave: 'p' + i, origen: 'publicado', fuente: desdeTelefono ? 'telefono' : 'crm', fila: f, t, reciente: ahora - t < 86400000,
+    // v374 · Fase 4: «Enviado» solo dice que WhatsApp aceptó la orden; pasa a «Visto» con una vista real
+    // (crm_status_views) o con confirmed_at. El anillo del avatar dice lo mismo de un vistazo.
+    const nVistas = Number(f.vistas) || 0, visto = ['sent', 'published'].includes(f.status) && (nVistas > 0 || !!f.confirmed_at);
+    const anillo = ['failed', 'expired'].includes(f.status) ? 'mal' : ['pending', 'sending'].includes(f.status) ? 'espera' : visto || desdeTelefono ? 'visto' : 'sinver';
+    return { clave: 'p' + i, origen: 'publicado', fuente: desdeTelefono ? 'telefono' : 'crm', fila: f, t, reciente: ahora - t < 86400000, anillo,
       tipo: f.kind === 'video' ? 'video' : f.kind === 'image' ? 'foto' : 'texto', thumb: f.media_thumb || '', color: f.color || '#128c7e',
       titulo: lineas[0] || (f.kind === 'video' ? 'Video' : f.kind === 'image' ? 'Foto' : 'Estado de texto'), texto: f.body || '',
-      chip: desdeTelefono ? ['Publicado desde WhatsApp', 'ok'] : (STG_ESTADO[f.status] || [f.status || 'Sin estado', 'espera']),
+      chip: desdeTelefono ? ['Publicado desde WhatsApp', 'ok'] : visto ? [nVistas ? 'Visto por ' + nVistas : 'Visto', 'ok']
+        : (STG_ESTADO[f.status] || [f.status || 'Sin estado', 'espera']),
       aud: desdeTelefono ? 'Audiencia elegida en WhatsApp' : (ES_ETIQUETAS[f.modo] || String(f.modo || '').replace(/^familia:/, 'Familia ') || 'Contactos'),
       vistas: f.vistas, mes: stgDia(t).slice(0, 7) };
   });
@@ -5546,7 +5565,9 @@ function stgElementos(){
     const t = Date.parse((x.fecha || '') + 'T' + (x.hora || '09:00') + ':00-04:00') || 0;
     return { clave: 'g' + i, origen: 'programado', fila: x, t, reciente: false,
       tipo: x.tipo_media === 'video' ? 'video' : 'foto', thumb: x.miniatura || '', color: '#5b6bd6',
-      titulo: x.titular || x.tema || x.evento_nombre || (x.categoria ? 'Estado · ' + nombreCat(x.categoria) : 'Estado programado'), texto: x.texto || '',
+      // El titular de una pieza del planificador es {l1, l2}; antes salía «[object Object]» en la tarjeta.
+      titulo: (x.titular && typeof x.titular === 'object' ? [x.titular.l1, x.titular.l2].filter(Boolean).join(' · ') : x.titular)
+        || x.tema || x.evento_nombre || (x.categoria ? 'Estado · ' + nombreCat(x.categoria) : 'Estado programado'), texto: x.texto || '',
       chip: [STG_PROG[x.estado] || x.estado || 'Programado', x.estado === 'fallida' ? 'mal' : 'prog'], aud: x.categoria ? nombreCat(x.categoria) : 'Planificador',
       vistas: null, mes: String(x.fecha || '').slice(0, 7) };
   });
@@ -5571,7 +5592,7 @@ function stgTarjeta(e){
   return '<article class="stg-card" data-stgver="' + esc(e.clave) + '" tabindex="0" aria-label="' + esc(e.titulo) + '">'
     + '<div class="stg-media" style="--stg-color:' + esc(e.color) + '">' + media
     +   '<span class="stg-tipo" title="' + (e.tipo === 'video' ? 'Video' : e.tipo === 'foto' ? 'Foto' : 'Texto') + '">' + STG_ICO[e.tipo] + '</span></div>'
-    + '<div class="stg-cuerpo"><span class="stg-avatar' + (e.origen === 'programado' ? ' prog' : '') + '" aria-hidden="true">DC</span>'
+    + '<div class="stg-cuerpo"><span class="stg-avatar ' + (e.origen === 'programado' ? 'prog' : esc(e.anillo || 'sinver')) + '" aria-hidden="true">DC</span>'
     +   '<span class="stg-vistas">' + (e.origen === 'programado' ? STG_ICO.cal + esc(stgHace(e.t)) : STG_ICO.ojo + (e.vistas == null ? '—' : Number(e.vistas).toLocaleString('en-US'))) + '</span>'
     +   '<b class="stg-titulo">' + esc(e.titulo) + '</b>'
     +   '<div class="stg-chips"><span class="stg-chip ' + esc(e.chip[1]) + '">' + esc(e.chip[0]) + '</span><span class="stg-chip aud">' + esc(e.aud) + '</span></div>'
@@ -6181,6 +6202,7 @@ async function stCompositor(tipo, opciones = {}){
     if (q === 'fuente') { ST.comp.fuente = (ST.comp.fuente + 1) % ST_FUENTES.length; return stcPinta(); }
     if (q === 'color') { ST.comp.color = (ST.comp.color + 1) % ST_PALETA.length; return stcPinta(); }
     if (q === 'elegir') return $('stcArchivo').click();
+    if (q === 'ver') { ST.comp.sel = Number(b.dataset.i); return stcPintaFotos(); }
     if (q === 'quitar') {
       const i = Number(b.dataset.i);
       const f = ST.comp.fotos[i]; if (f) URL.revokeObjectURL(f.url);
@@ -6280,11 +6302,24 @@ function stcPintaFotos(){
   const c = ST.comp; if (!c || c.tipo !== 'foto') return;
   const pie = $('stcPie')?.value || '';
   if (!c.fotos.length) { $('stcPrevia').innerHTML = '<button class="btn-linea" data-stc="elegir">Elegir fotos o videos</button>'; return; }
-  $('stcPrevia').innerHTML = '<div class="st-miniaturas">' + c.fotos.map((f, i) => '<figure>'
-      + (f.video ? '<video src="' + f.url + '" muted playsinline preload="metadata"></video>' : '<img src="' + f.url + '" alt="">')
+  // v374 · Fase 4: vista previa vertical (9:16) de la que está elegida, con el comentario encima como en WhatsApp.
+  // WhatsApp no recorta: muestra la foto entera sobre negro. Tocar una miniatura la pone aquí.
+  c.sel = Math.min(Math.max(0, Number(c.sel) || 0), c.fotos.length - 1);
+  const ver = c.fotos[c.sel];
+  $('stcPrevia').innerHTML = '<div class="st-vertical"><div class="st-vertical-marco" aria-label="Vista previa vertical del estado">'
+      + (ver.video ? '<video src="' + ver.url + '" muted playsinline loop autoplay preload="metadata"></video>' : '<img src="' + ver.url + '" alt="">')
+      + '<p class="st-vertical-pie"' + (pie.trim() ? '' : ' hidden') + '>' + esc(pie) + '</p></div>'
+      + '<small>Vista previa · ' + (c.sel + 1) + ' de ' + c.fotos.length + ' · así se ve en el teléfono</small></div>'
+    + '<div class="st-miniaturas">' + c.fotos.map((f, i) => '<figure' + (i === c.sel ? ' class="on"' : '') + '>'
+      + '<button type="button" class="st-mini-ver" data-stc="ver" data-i="' + i + '" aria-label="Ver la ' + (i + 1) + ' en la vista previa">'
+      + (f.video ? '<video src="' + f.url + '" muted playsinline preload="metadata"></video>' : '<img src="' + f.url + '" alt="">') + '</button>'
       + '<button class="st-ctl" data-stc="quitar" data-i="' + i + '" aria-label="Quitar">×</button></figure>').join('') + '</div>'
     + '<div class="st-mas"><button class="btn-linea" data-stc="elegir">＋ Añadir más (' + c.fotos.length + ' de 10)</button></div>'
     + '<input type="text" id="stcPie" maxlength="700" placeholder="Añade un comentario (va en cada una)…" value="' + esc(pie) + '">';
+  $('stcPie').oninput = () => {
+    const p = $('stcPrevia')?.querySelector('.st-vertical-pie'); if (!p) return;
+    p.textContent = $('stcPie').value; p.hidden = !$('stcPie').value.trim();
+  };
 }
 
 function stcTeclas(ev){
