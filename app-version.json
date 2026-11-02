@@ -1,7 +1,7 @@
 {
-  "version": "2026-11-01-crm-release-v373-campanas",
+  "version": "2026-11-01-crm-release-v374-estados",
   "channel": "crm",
-  "released_at": "2026-11-02T03:30:00Z",
-  "summary": "Campañas en cuatro pasos: elige a quién (con el motivo de quien queda fuera), redacta con vista previa, revisa y mira los resultados.",
+  "released_at": "2026-11-02T05:00:00Z",
+  "summary": "Estados: cada uno dice si ya lo vieron (Visto por N) con su anillo, vista previa vertical al publicar y sin «Eliminar» en estados de contactos.",
   "requiere_puente": "2026-10-30-estados-propios-v57"
 }
