@@ -1,7 +1,7 @@
 {
-  "version": "2026-11-01-crm-release-v369",
+  "version": "2026-11-01-crm-release-v373-campanas",
   "channel": "crm",
-  "released_at": "2026-11-01T17:54:07Z",
-  "summary": "La bandeja dice «Bot» o «Humano» junto a su emoji, además de las etiquetas con su nombre.",
+  "released_at": "2026-11-02T03:30:00Z",
+  "summary": "Campañas en cuatro pasos: elige a quién (con el motivo de quien queda fuera), redacta con vista previa, revisa y mira los resultados.",
   "requiere_puente": "2026-10-30-estados-propios-v57"
 }
