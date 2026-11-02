@@ -2521,6 +2521,10 @@ input[type="checkbox"],input[type="radio"]{accent-color:var(--accent)}
 [data-theme="dark"] .cabecera #btnModo.modo-humano{color:#fbbf24}
 [data-theme="dark"] .cabecera #btnModo.modo-bot{color:#93c5fd}
 .cabecera .modo-porque{flex:1 1 160px;min-width:0;font-size:11.5px;line-height:1.35;color:var(--mut);padding:0 4px}
+/* v375 · Fase 5: el aviso le quitaba sitio al nombre («@usuario · I…»). Ahora el nombre manda; el aviso, 2 líneas como mucho. */
+.cabecera .quien-chat{flex:1 1 auto;min-width:170px}
+.cabecera .modo-porque{flex:0 1 240px;max-width:240px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.cabecera .modo-porque[hidden]{display:none}
 @media(max-width:900px){.cabecera .modo-porque{display:none}}
 .cabecera .modo:hover{background:rgba(120,120,128,.2)}
 .cabecera .modo.atendido,.cabecera .modo.atendido:hover{background:var(--ok);color:#fff}
@@ -4399,8 +4403,30 @@ function nombreDe(c){
   // Contacto «Sin numero»: WhatsApp no da su telefono y wa_phone es su LID. Se rotula asi (con los ultimos digitos para distinguirlos) y no como un +numero falso.
   if (c.wa_lid_only === true && c.wa_phone) return 'Sin número · ' + String(c.wa_phone).slice(-6);
   if (c.wa_phone) return '+' + c.wa_phone;
+  // v375 · Fase 5: el usuario de Instagram, si Meta lo dio, antes que un id.
+  if (c.social_username) return '@' + c.social_username;
   const id = String(c.social_id || '');
   return id ? 'Sin nombre · ' + id.slice(-6) : 'Sin nombre';
+}
+// La vista previa de la bandeja. Las fichas de Instagram guardadas antes de v375 traen «[template]» o «[fallback]»
+// por una publicación compartida: se lee como lo que es, no como una plantilla.
+function previaLegible(c){
+  const p = String(c?.last_message_preview || '');
+  if (c?.social_id && /^\[(template|fallback|share|ig_reel|reel)\]$/i.test(p.trim())) return 'Publicación compartida';
+  if (c?.social_id && /^\[story_mention\]$/i.test(p.trim())) return 'Mención en su historia';
+  return p;
+}
+// Por qué falta el nombre, el usuario o la foto de una ficha de Instagram/Messenger: no es lo mismo que Meta
+// no lo comparta (permiso o consentimiento) que un error de Meta o un fallo del propio CRM.
+function perfilSocialMotivo(c){
+  const det = c?.social_perfil_detalle ? ' (' + String(c.social_perfil_detalle).slice(0, 120) + ')' : '';
+  switch (String(c?.social_perfil_estado || '')) {
+    case 'restringido_meta': return 'Meta no comparte su perfil: falta permiso o el consentimiento de la persona' + det + '.';
+    case 'error_meta': return 'Meta no respondió al pedir su perfil' + det + '. Se reintenta cuando vuelva a escribir.';
+    case 'error_crm': return 'El CRM no pudo consultar su perfil (fallo propio)' + det + '. Se reintenta cuando vuelva a escribir.';
+    case 'ok': return 'Meta no da foto de perfil para esta persona.';
+    default: return 'Su perfil todavía no se ha consultado: se pide cuando vuelva a escribir.';
+  }
 }
 // Foto de perfil si el canal la trae; si no, las iniciales.
 //
@@ -7223,7 +7249,7 @@ function pintaChats(){
       // mensaje se cambia por el aviso, no se le suma al lado.
       +   (escribeAqui
           ? '<div class="prev escribiendo-cliente">' + esc(escribeAqui) + '</div>'
-          : '<div class="prev">' + emojisApple(esc(c.last_message_preview || '')) + '</div>')
+          : '<div class="prev">' + emojisApple(esc(previaLegible(c))) + '</div>')
       +   '<div class="marcas">' + marcas.join('') + '</div>'
       + '</div><button type="button" class="pin-chat' + (anclado(c) ? ' anclado' : '')
       + '" data-chat-pin="' + esc(c._id) + '" title="' + (anclado(c) ? 'Desfijar chat' : 'Fijar chat arriba')
@@ -7398,6 +7424,12 @@ function textoEscribiendoCliente(c){
 function subtituloChat(c){
   const escribiendo = textoEscribiendoCliente(c);
   if (escribiendo) return '<span class="escribiendo-cliente">' + esc(escribiendo) + '</span>';
+  // Instagram/Messenger no tienen teléfono: antes salía «+ · Instagram». Ahora el usuario, o que falta y por qué.
+  if (!c.wa_phone && c.social_id) {
+    const quien = c.social_username ? '@' + c.social_username
+      : ['restringido_meta', 'error_meta', 'error_crm'].includes(String(c.social_perfil_estado || '')) ? 'Perfil no disponible' : 'Sin usuario';
+    return '<span title="' + esc(c.social_username ? '' : perfilSocialMotivo(c)) + '">' + esc(quien) + ' · ' + esc(CANALES[canalDe(c)].corto) + insigniaAnuncio(c) + '</span>';
+  }
   return '<span>+' + esc(c.wa_phone || '') + ' · ' + esc(CANALES[canalDe(c)].corto) + insigniaAnuncio(c) + '</span>';
 }
 
@@ -7638,6 +7670,7 @@ async function abreFotoPerfil(c){
     }
     return avisa(nombre + ' no tiene foto de perfil para mostrar',
       k === 'whatsapp_cloud' ? 'El número oficial de WhatsApp no entrega la foto de sus contactos.'
+        : (!c.wa_phone && c.social_id) ? perfilSocialMotivo(c)
         : c.profile_pic_status === 'privada' ? 'La tiene oculta en su privacidad de WhatsApp.' : 'No la tiene o no la comparte.');
   }
   const turno = ++LUPA_TURNO;
@@ -7749,6 +7782,12 @@ function firmaDeModo(c){
 function pintaPorqueDelBot(){
   const el = $('modoPorque');
   if (!el || !sel) return;
+  // Instagram/Messenger: no hay bot y siempre es lo mismo; se dice en el botón y la cabecera queda para el nombre.
+  if (!sel.wa_phone && sel.social_id) {
+    el.hidden = true; el.textContent = '';
+    if ($('btnModo')) $('btnModo').title = 'Por Instagram y Messenger no hay bot: estos chats los atiende siempre una persona.';
+    return;
+  }
   const id = sel._id || sel.id;
   const firma = firmaDeModo(sel);
   if (!MODO_DICHO.has(firma)) {
@@ -7762,11 +7801,13 @@ function pintaPorqueDelBot(){
       // mismo estado que cuando se pregunto.
       if (!sel || (sel._id || sel.id) !== id || firmaDeModo(sel) !== firma) return;
       el.textContent = MODO_DICHO.get(firma);
+      el.title = el.textContent;
       el.hidden = !el.textContent;
     })();
   }
   const dicho = MODO_DICHO.get(firma) || '';
   el.textContent = dicho;
+  el.title = dicho;
   el.hidden = !dicho;
 }
 
@@ -11480,12 +11521,23 @@ function adjuntoDe(m){
   if (typeof bruto === 'string') { try { bruto = JSON.parse(bruto); } catch (e) { bruto = null; } }
   const a = Array.isArray(bruto) ? (bruto.find(x => x && typeof x === 'object') || {})
     : (bruto && typeof bruto === 'object' ? bruto : {});
+  const url = (m && m.media_url) || a.url || '';
   return {
-    nombre: a.fileName || a.file_name || a.filename || '',
-    mime: a.mimeType || a.mime_type || a.mimetype || '',
+    // v375 · Fase 5: también media_filename/media_mime de la fila (como tipoRealMedio) y, en Instagram/Messenger,
+    // que solo traen la URL, el nombre del archivo que va en ella. Antes un PDF salía como «Archivo · archivo».
+    nombre: a.fileName || a.file_name || a.filename || (m && m.media_filename) || nombreDeUrlArchivo(url),
+    mime: a.mimeType || a.mime_type || a.mimetype || (m && m.media_mime) || '',
     peso: Number(a.size || 0) || 0,
-    url: (m && m.media_url) || a.url || '',
+    url,
   };
+}
+// El nombre de archivo de una URL (solo si termina en extensión: un enlace a una página no es un archivo).
+function nombreDeUrlArchivo(url){
+  try {
+    const u = new URL(String(url || ''));
+    const ultimo = decodeURIComponent(u.pathname.split('/').pop() || '');
+    return /\.[a-z0-9]{2,5}$/i.test(ultimo) ? ultimo.slice(0, 160) : '';
+  } catch (e) { return ''; }
 }
 // El detalle de la llamada viaja en metadata, que segun de donde venga la fila llega como
 // objeto o como texto JSON. Se acepta lo que sea: perder el estado dejaria todas las llamadas
@@ -11837,6 +11889,18 @@ function cuerpoMensaje(m){
     return tarjetaArchivo(a, 'Archivo', m) + pie;
   }
 
+  // v375 · Fase 5: lo compartido por Instagram/Messenger (publicación, reel, mención en historia). Meta lo manda
+  // como «template»/«fallback» y el chat enseñaba «[template]», como si fuera una plantilla. Solo redes sociales:
+  // una plantilla de WhatsApp de verdad sigue pintándose como siempre.
+  const social = ['instagram', 'facebook'].includes(String(m.source || '')) || m.metadata?.social === true;
+  if (social && ['share', 'template', 'fallback', 'ig_reel', 'reel', 'story_mention'].includes(t)) {
+    const titulo = t === 'story_mention' ? (m.direction === 'in' ? 'Te mencionó en su historia' : 'Mención en una historia')
+      : t === 'ig_reel' || t === 'reel' ? 'Reel compartido' : 'Publicación compartida';
+    return '<div class="marchivo msocial"><b>' + esc(titulo) + '</b>'
+      + (a.url ? '<a href="' + esc(a.url) + '" target="_blank" rel="noopener noreferrer">Abrir en Instagram</a>'
+        : '<span>Meta no envía el enlace de este contenido.</span>') + '</div>'
+      + (m.body && !/^\[[^\]]*\]$/.test(String(m.body).trim()) ? '<div class="mpie">' + conTelefonos(esc(m.body)) + '</div>' : '');
+  }
   // Los números que manda el cliente se pueden pulsar para abrir un chat con ellos.
   return conTelefonos(esc(m.body || '')) + tarjetaEnlace(m);
 }
