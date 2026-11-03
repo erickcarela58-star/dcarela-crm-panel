@@ -1,7 +1,7 @@
 {
-  "version": "2026-11-03-crm-release-v387-integracion",
+  "version": "2026-11-03-crm-release-v388-integracion",
   "channel": "crm",
-  "released_at": "2026-11-03T07:00:00Z",
-  "summary": "Control de diseño antes de aprobar flyers, descargar varios del chat en ZIP, rechazo confirmado, recordatorio de sesión por WhatsApp Web o oficial desde la Agenda y avisos más cortos. Incluye la plantilla 07 con sujeto único (v386).",
+  "released_at": "2026-11-03T08:00:00Z",
+  "summary": "Seleccionar sujeto vuelve a funcionar (la IA local corre en un proceso propio) y elegir una capa ya no salta a sus propiedades, como en Photoshop. Incluye todo lo de v387.",
   "requiere_puente": "2026-10-30-estados-propios-v57"
 }
