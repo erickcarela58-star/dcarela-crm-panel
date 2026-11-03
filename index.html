@@ -15894,7 +15894,7 @@ async function pintaConexiones(){
   const ia = r.ia_ajustes;
   const ajustesIa = g => (g !== 'Inteligencia' || !ia) ? '' :
     '<form class="cx-ia" data-cx-ia><label>Responde primero<select name="principal"' + (ROL_ACTUAL === 'admin' ? '' : ' disabled') + '>'
-    + ia.opciones.map(o => '<option value="' + esc(o.id) + '"' + (o.id === ia.principal ? ' selected' : '') + (o.disponible ? '' : ' disabled') + '>' + esc(o.nombre) + (o.disponible ? '' : ' (sin llave)') + '</option>').join('')
+    + ia.opciones.map(o => '<option value="' + esc(o.id) + '"' + (o.id === ia.principal ? ' selected' : '') + (o.disponible ? '' : ' disabled') + '>' + esc(o.nombre) + (o.disponible ? '' : ' (sin llave)') + (o.estado ? ' · ' + esc(o.estado) : '') + '</option>').join('')
     + '</select></label><label class="cx-chk"><input type="checkbox" name="respaldo"' + (ia.respaldo ? ' checked' : '') + (ROL_ACTUAL === 'admin' ? '' : ' disabled') + '> Si falla, probar con los demás que tengan llave</label>'
     + (ROL_ACTUAL === 'admin' ? '<button class="btn-solido" type="submit">Guardar orden</button>' : '') + '</form>';
   cont.innerHTML = '<div class="cx-res">'
