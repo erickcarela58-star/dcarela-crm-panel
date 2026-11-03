@@ -1,7 +1,7 @@
 {
-  "version": "2026-11-02-crm-release-v385-integracion",
+  "version": "2026-11-03-crm-release-v387-integracion",
   "channel": "crm",
-  "released_at": "2026-11-03T00:30:00Z",
-  "summary": "Selección múltiple con todas las acciones (destacar, copiar, descargar, eliminar, reenviar), clic derecho en un mensaje abre su menú, banda de la plantilla 07 y sujeto como capas propias, e integración del trabajo de Codex.",
+  "released_at": "2026-11-03T07:00:00Z",
+  "summary": "Control de diseño antes de aprobar flyers, descargar varios del chat en ZIP, rechazo confirmado, recordatorio de sesión por WhatsApp Web o oficial desde la Agenda y avisos más cortos. Incluye la plantilla 07 con sujeto único (v386).",
   "requiere_puente": "2026-10-30-estados-propios-v57"
 }
