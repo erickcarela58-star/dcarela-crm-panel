@@ -1,7 +1,7 @@
 {
-  "version": "2026-11-03-crm-release-v388-integracion",
+  "version": "2026-11-03-crm-release-v389-integracion",
   "channel": "crm",
-  "released_at": "2026-11-03T08:00:00Z",
-  "summary": "Seleccionar sujeto vuelve a funcionar (la IA local corre en un proceso propio) y elegir una capa ya no salta a sus propiedades, como en Photoshop. Incluye todo lo de v387.",
+  "released_at": "2026-11-03T08:30:00Z",
+  "summary": "Plantilla 07 retirada (el recorte del sujeto no salía limpio) y candado de proporción para escalar el sujeto y las fotos sin deformarlos. Incluye v388.",
   "requiere_puente": "2026-10-30-estados-propios-v57"
 }
