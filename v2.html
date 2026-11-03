@@ -19480,7 +19480,7 @@ function categoriasSinOriginalCrear(c){
 // v240: el asistente «Crear» con la estética del planificador nuevo (escritorio). MISMOS campos (name), botones
 // (data-cpaso, data-celegirplantilla, data-ceditardiseno…) y envío: guardaCrearContenido y generaLoteContenido no cambian.
 // Las plantillas usan su foto fija (panel/plantillas/NN.webp): el catálogo ya no espera 10 renders del motor.
-const PLANTILLAS_CREAR_V240 = [['01-editorial-social','Editorial social',1],['02-editorial-rojo-serif','Editorial rojo serif',1],['03-editorial-azul-suave','Editorial azul suave',1],['04-mosaico-oferta','Mosaico (5 fotos)',5],['05-spotlight-noir','Spotlight noir',1],['06-glow-carmesi','Glow carmesí',1],['07-contraste-titular-banda','Contraste banda',1],['08-tarjeta-cristal','Tarjeta cristal',1],['09-spotlight-azul-corporativo','Spotlight azul',1],['10-alta-clave-fotografica','Alta clave',1]];
+const PLANTILLAS_CREAR_V240 = [['01-editorial-social','Editorial social',1],['02-editorial-rojo-serif','Editorial rojo serif',1],['03-editorial-azul-suave','Editorial azul suave',1],['04-mosaico-oferta','Mosaico (5 fotos)',5],['05-spotlight-noir','Spotlight noir',1],['06-glow-carmesi','Glow carmesí',1],['08-tarjeta-cristal','Tarjeta cristal',1],['09-spotlight-azul-corporativo','Spotlight azul',1],['10-alta-clave-fotografica','Alta clave',1]];
 function catalogoCrearV242(){
   return [...PLANTILLAS_CREAR_V240,...(CONT.estilos||[]).filter(e=>e.origen==='referencia'&&e.activo!==false&&e.composicion).map(e=>[e.id,e.nombre,Math.max(1,Number(e.fotos_minimas)||1),e.referencia||CONT.vistas?.[e.id]||'',true])];
 }
@@ -19623,7 +19623,7 @@ function pintaCrearContenido(cuerpo){
     { id: '04-mosaico-oferta', altId: 'v6-mosaico-oferta', indice: '04', nombre: 'Mosaico oferta (5 fotos)', badge: '5 fotos requeridas', alerta: true, fotosReq: 5, resumen: 'Collage editorial de 5 fotos (retrato central + 4 paneles laterales con marcos blancos) y titular superior izquierdo.', acento: '#FFFFFF' },
     { id: '05-spotlight-noir', altId: 'v6-spotlight-noir', indice: '05', nombre: 'Spotlight noir', badge: '1 foto full-bleed', fotosReq: 1, resumen: 'Viñeta noir dramática inferior con titular serif blanco centrado, filetes dorados laterales y botón ámbar.', acento: '#F39A27' },
     { id: '06-glow-carmesi', altId: 'v6-glow-carmesi', indice: '06', nombre: 'Glow carmesí', badge: '1 foto full-bleed', fotosReq: 1, resumen: 'Titular display blanco centrado al pie sobre resplandor carmesí intenso y botón rojo sólido.', acento: '#EE2748' },
-    { id: '07-contraste-titular-banda', altId: 'v6-contraste-titular-banda', indice: '07', nombre: 'Contraste titular banda', badge: '1 foto full-bleed', fotosReq: 1, resumen: 'Titular sans bold en esquina superior izquierda con banda sólida carmesí detrás de la última línea y botón blanco.', acento: '#DC2547' },
+    // Plantilla 07 retirada por el dueño (03/11/2026): el recorte del sujeto no salía limpio.
     { id: '08-tarjeta-cristal', altId: 'v6-tarjeta-cristal', indice: '08', nombre: 'Tarjeta cristal', badge: '1 foto full-bleed', fotosReq: 1, resumen: 'Tarjeta translúcida frosted-glass al pie con borde fino blanco, titular centrado y botón blanco sólido.', acento: '#FFFFFF' },
     { id: '09-spotlight-azul-corporativo', altId: 'v6-spotlight-azul-corporativo', indice: '09', nombre: 'Spotlight azul corporativo', badge: '1 foto full-bleed', fotosReq: 1, resumen: 'Titular display blanco con acento celeste al pie izquierdo sobre atmósfera azul corporativa y botón celeste a la derecha.', acento: '#69B6FF' },
     { id: '10-alta-clave-fotografica', altId: 'v6-alta-clave-fotografia', indice: '10', nombre: 'Alta clave fotográfica', badge: '1 foto full-bleed', fotosReq: 1, resumen: 'Velo pastel luminoso de alta clave en esquina superior izquierda con tipografía carbón oscuro y botón oscuro.', acento: '#171724' }
@@ -21604,7 +21604,7 @@ function estudioV238(m,api){
     +'<div class="e238-estado" data-e238-estado role="status"></div>'
     +'<div class="e238-escena" data-e238-escena><div class="e238-escenario" data-e238-stage></div></div>'
     +'<div class="e238-flotante" data-e238-flot hidden></div>'
-    +'<footer class="e238-pie"><div class="e238-grupo"><button type="button" class="e238-ico" data-e238="giraIzq" title="Girar −5°" aria-label="Girar a la izquierda">'+I.girarIzq+'</button><button type="button" class="e238-ico" data-e238="giraDer" title="Girar +5°" aria-label="Girar a la derecha">'+I.girarDer+'</button></div>'
+    +'<footer class="e238-pie"><div class="e238-grupo"><button type="button" class="e238-ico" data-e238="giraIzq" title="Girar −5°" aria-label="Girar a la izquierda">'+I.girarIzq+'</button><button type="button" class="e238-ico" data-e238="giraDer" title="Girar +5°" aria-label="Girar a la derecha">'+I.girarDer+'</button><button type="button" class="e238-ico on" data-e238="proporcion" aria-pressed="true" title="Proporción bloqueada" aria-label="Proporción bloqueada">'+I.candado+'</button></div>'
     +'<span class="e238-dim" data-e238-dim></span>'
     +'<div class="e238-zoom"><button type="button" class="e238-ico" data-e238="zoomMenos" aria-label="Alejar">'+I.menos+'</button><output data-e238-zpct>100%</output><button type="button" class="e238-ico" data-e238="zoomMas" aria-label="Acercar">'+I.mas+'</button><button type="button" class="e238-ico" data-e238="zoomAjustar" title="Ajustar a la pantalla" aria-label="Ajustar a la pantalla">'+I.ajustarPantalla+'</button></div></footer>'
     +'<div class="e238-legacy" data-e238-legacy hidden><div class="e238-legacy-cab"><b data-e238-legacy-tit></b><button type="button" class="e238-btn" data-e238="volver">Volver al lienzo</button></div></div>'
@@ -21979,11 +21979,17 @@ function estudioV238(m,api){
     if(c)api.escribeCollage(c);ponCampoV238(campo('formas_editor_json'),JSON.stringify(forms));S.transformando245=false;S.arrastrando=false;limpiaGuias();cambioFormulario(150);
   }
 
+  // Candado de proporción (03/11/2026, el dueño): al agrandar el sujeto separado o una foto, la proporción queda fija como en
+  // Photoshop y solo se escala desde las esquinas; el botón del pie del lienzo la abre para estirar a mano. Se recuerda aquí.
+  function proporcionFija245(){if(typeof S.proporcion!=='boolean'){let v=null;try{v=localStorage.getItem('dc_editor_proporcion');}catch{}S.proporcion=v!=='libre';}return S.proporcion;}
+  function anclas245(conCandado,extra){const fija=conCandado&&proporcionFija245();return {keepRatio:fija,enabledAnchors:fija?['top-left','top-right','bottom-left','bottom-right']:['top-left','top-center','top-right','middle-left','middle-right','bottom-left','bottom-center','bottom-right'],...extra};}
+  function pintaProporcion245(){const b=root.querySelector('[data-e238="proporcion"]');if(!b)return;const fija=proporcionFija245(),t=fija?'Proporción bloqueada: el sujeto y las fotos no se deforman. Clic para desbloquear':'Proporción libre: puedes estirar. Clic para bloquear';b.innerHTML=fija?I.candado:I.abierto;b.setAttribute('aria-pressed',String(fija));b.title=t;b.setAttribute('aria-label',t);b.classList.toggle('on',fija);}
   function ajustaSeleccion(){
+    pintaProporcion245();
     if(LU)LU.find('.formaguia').forEach(n=>n.destroy());
     if(S.multi.length>1){const ns=nodosSeleccion245();tr.setAttrs({keepRatio:false,rotateEnabled:true,resizeEnabled:true,enabledAnchors:['top-left','top-center','top-right','middle-left','middle-right','bottom-left','bottom-center','bottom-right'],rotationSnaps:[0],borderDash:[]});tr.nodes(ns.map(x=>x.n));tr.moveToTop();ocultaFlotante();return;}
     if(S.sel?.tipo==='panorama'){const n=LT.findOne('#pan-'+S.sel.id);tr.setAttrs({keepRatio:false,rotateEnabled:true,resizeEnabled:true,enabledAnchors:['top-left','top-center','top-right','middle-left','middle-right','bottom-left','bottom-center','bottom-right']});tr.nodes(n?[n]:[]);tr.moveToTop();ocultaFlotante();return;}
-    if(['banda','velos','decoracion','resplandor','sujeto'].includes(S.sel?.tipo)&&nodoCapa245(S.sel)){const n=nodoCapa245(S.sel);tr.setAttrs({keepRatio:false,rotateEnabled:false,resizeEnabled:true,enabledAnchors:['top-left','top-center','top-right','middle-left','middle-right','bottom-left','bottom-center','bottom-right']});tr.nodes(!capaBloqueada245(S.sel)&&!capaOculta245(S.sel)?[n]:[]);tr.moveToTop();ocultaFlotante();return;}
+    if(['banda','velos','decoracion','resplandor','sujeto'].includes(S.sel?.tipo)&&nodoCapa245(S.sel)){const n=nodoCapa245(S.sel);tr.setAttrs(anclas245(S.sel.tipo==='sujeto',{rotateEnabled:false,resizeEnabled:true}));tr.nodes(!capaBloqueada245(S.sel)&&!capaOculta245(S.sel)?[n]:[]);tr.moveToTop();ocultaFlotante();return;}
     if(['sujeto','formas'].includes(S.sel?.tipo)){tr.nodes([]);ocultaFlotante();return;}
      if(S.sel?.tipo==='textoLibre'){const n=LT.findOne('#textoLibre-'+S.sel.id),s=textosLibres245().find(x=>x.id===S.sel.id);tr.setAttrs({keepRatio:false,rotateEnabled:true,resizeEnabled:true,enabledAnchors:['top-left','top-center','top-right','middle-left','middle-right','bottom-left','bottom-center','bottom-right']});tr.nodes(n&&!s?.bloqueada?[n]:[]);tr.moveToTop();if(n)posFlotante(n);else ocultaFlotante();return;}
      if(S.sel?.tipo==='forma'){const n=LT.findOne('#forma-'+S.sel.id),s=formas243().find(x=>x.id===S.sel.id);tr.setAttrs({keepRatio:false,rotateEnabled:true,resizeEnabled:true,enabledAnchors:['top-left','top-center','top-right','middle-left','middle-right','bottom-left','bottom-center','bottom-right']});tr.nodes(n&&!s?.bloqueada?[n]:[]);tr.moveToTop();
@@ -22016,7 +22022,7 @@ function estudioV238(m,api){
     }else{
       const fo=(coleccion()||virtual())?.fotos.find(x=>x.slot===S.sel.slot);
       if(fo?.bloqueada){tr.nodes([]);posFlotante(n);return;}
-      tr.setAttrs({keepRatio:false,enabledAnchors:['top-left','top-center','top-right','middle-right','middle-left','bottom-left','bottom-center','bottom-right'],rotateEnabled:true,resizeEnabled:true,rotationSnaps:[0,90,180,270],borderDash:[]});
+      tr.setAttrs(anclas245(true,{rotateEnabled:true,resizeEnabled:true,rotationSnaps:[0,90,180,270],borderDash:[]}));
     }
      if(capaBloqueada245(S.sel)){tr.nodes([]);posFlotante(n);return;}
      tr.nodes([n]);tr.moveToTop();posFlotante(n);
@@ -22996,6 +23002,7 @@ function estudioV238(m,api){
     if(a==='rejilla'){S.rejilla=!S.rejilla;pintaBotones();dibuja();return;}
     if(a==='biblioteca'){const plegada=root.classList.toggle('e238-biblioteca-plegada');b.setAttribute('aria-expanded',String(!plegada));b.title=(plegada?'Mostrar':'Ocultar')+' biblioteca de plantillas y fotos';ajustaEspacioV248();programaDibujo();return;}
     if(a==='compacto'){S.compacto=!S.compacto;root.classList.toggle('compacto',S.compacto);pintaBotones();try{win.localStorage?.setItem('dcarela-editor-compacto-v246',S.compacto?'1':'0');}catch{};return;}
+    if(a==='proporcion'){S.proporcion=!proporcionFija245();try{localStorage.setItem('dc_editor_proporcion',S.proporcion?'fija':'libre');}catch{}ajustaSeleccion();stage?.batchDraw();avisaV238(S.proporcion?'Proporción bloqueada: el sujeto y las fotos escalan sin deformarse.':'Proporción libre: ya puedes estirar.');return;}
     if(a==='zoomMas'||a==='zoomMenos'){const k=escala(),pasos=[.25,.33,.5,.58,.67,.75,1,1.25,1.5];S.zoom=a==='zoomMas'?(pasos.find(p=>p>k+.005)||1.5):([...pasos].reverse().find(p=>p<k-.005)||.25);dibuja();return;}
     if(a==='zoomAjustar'){S.zoom='ajustar';dibuja();return;}
     if(a==='giraIzq'||a==='giraDer'){const d=a==='giraIzq'?-5:5,slot=fotoSel(),rol=rolSel();
@@ -23153,7 +23160,7 @@ async function montaEditorFlyers(){
     { id: 'v6-mosaico-oferta', template_id: '04-mosaico-oferta', indice: 4, nombre: 'Mosaico oferta (5 fotos)', origen: 'v6', acento: '#FFFFFF', texto: '#FFFFFF', activo: true },
     { id: 'v6-spotlight-noir', template_id: '05-spotlight-noir', indice: 5, nombre: 'Spotlight noir', origen: 'v6', acento: '#F39A27', texto: '#FFFFFF', activo: true },
     { id: 'v6-glow-carmesi', template_id: '06-glow-carmesi', indice: 6, nombre: 'Glow carmesí', origen: 'v6', acento: '#EE2748', texto: '#FFFFFF', activo: true },
-    { id: 'v6-contraste-titular-banda', template_id: '07-contraste-titular-banda', indice: 7, nombre: 'Contraste titular banda', origen: 'v6', acento: '#DC2547', texto: '#FFFFFF', activo: true },
+    // Plantilla 07 retirada por el dueño (03/11/2026): el recorte del sujeto no salía limpio.
     { id: 'v6-tarjeta-cristal', template_id: '08-tarjeta-cristal', indice: 8, nombre: 'Tarjeta cristal', origen: 'v6', acento: '#FFFFFF', texto: '#FFFFFF', activo: true },
     { id: 'v6-spotlight-azul-corporativo', template_id: '09-spotlight-azul-corporativo', indice: 9, nombre: 'Spotlight azul corporativo', origen: 'v6', acento: '#69B6FF', texto: '#FFFFFF', activo: true },
     { id: 'v6-alta-clave-fotografia', template_id: '10-alta-clave-fotografica', indice: 10, nombre: 'Alta clave fotográfica', origen: 'v6', acento: '#171724', texto: '#171724', activo: true }
@@ -23706,7 +23713,7 @@ function abreEditorPlantilla(id, piezaInicialId = ''){
     ['v6-mosaico-oferta','04','Mosaico 5 fotos','#FFFFFF'],
     ['v6-spotlight-noir','05','Spotlight noir','#F39A27'],
     ['v6-glow-carmesi','06','Glow carmesí','#EE2748'],
-    ['v6-contraste-titular-banda','07','Contraste banda','#DC2547'],
+    // Plantilla 07 retirada por el dueño (03/11/2026): el recorte del sujeto no salía limpio.
     ['v6-tarjeta-cristal','08','Tarjeta cristal','#FFFFFF'],
     ['v6-spotlight-azul-corporativo','09','Spotlight azul','#69B6FF'],
     ['v6-alta-clave-fotografia','10','Alta clave','#171724']
