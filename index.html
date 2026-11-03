@@ -22028,7 +22028,9 @@ function estudioV238(m,api){
     if(sel?.tipo!=='sujeto')S.pincelModo=null;if(!['forma','formas'].includes(sel?.tipo))S.formaDibujar=null;
     S.sel=sel;if(!sel||sel.tipo!=='foto'||sel.slot!==S.recorte)S.recorte=null;
     if(sel?.tipo==='rol'&&campo('bloque_arrastre'))ponCampoV238(campo('bloque_arrastre'),CAPA_ROL_V238[sel.rol]);
-    if(S.tab!=='editar'&&sel)cambiaTab('editar');
+    // Como Photoshop (03/11/2026, el dueño): elegir una capa no salta a sus propiedades. Desde Capas se queda en Capas; solo
+    // desde Diseño, que no muestra la selección, se pasa a Editar.
+    if(S.tab==='diseno'&&sel)cambiaTab('editar');
     if(stage){ajustaSeleccion();stage.batchDraw();}
     pintaInspector();
   }
@@ -22637,12 +22639,12 @@ function estudioV238(m,api){
     else if(!ev.altKey&&S.multi.length>1&&S.multi.some(x=>claveCapaV245(x)===claveCapaV245(sel))){S.sel=sel;}
     else{S.multi=[];S.sel=sel;}
     if(sel?.tipo==='rol'&&campo('bloque_arrastre'))ponCampoV238(campo('bloque_arrastre'),CAPA_ROL_V238[sel.rol]);
-    if(S.tab!=='editar'&&sel&&!ev.target?.closest?.('[data-capa]'))cambiaTab('editar');
+    if(S.tab==='diseno'&&sel&&!ev.target?.closest?.('[data-capa]'))cambiaTab('editar');
     if(stage){ajustaSeleccion();stage.batchDraw();}pintaInspector();
   }
   function grupoComun245(sels){const grupos=sels.map(grupoCapa245),validos=grupos.filter(Boolean);return validos.length===sels.length&&new Set(validos).size===1?validos[0]:'';}
   function miembrosGrupo245(sel){const grupo=grupoCapa245(sel);if(!grupo)return [sel];const out=[];for(const s of formas243())if(s.grupo===grupo)out.push({tipo:'forma',id:s.id});for(const f of (coleccion()||virtual())?.fotos||[])if(f.grupo===grupo)out.push({tipo:'foto',slot:f.slot});return out.length?out:[sel];}
-  function seleccionaGrupo245(sel){const miembros=miembrosGrupo245(sel);S.multi=miembros.length>1?miembros:[];S.sel=miembros.at(-1)||sel;if(S.tab!=='editar')cambiaTab('editar');ajustaSeleccion();stage?.batchDraw();pintaInspector();avisaV238(S.multi.length>1?'Grupo seleccionado: arrastra o escala el conjunto.':'Esta capa no pertenece a un grupo.');}
+  function seleccionaGrupo245(sel){const miembros=miembrosGrupo245(sel);S.multi=miembros.length>1?miembros:[];S.sel=miembros.at(-1)||sel;if(S.tab==='diseno')cambiaTab('editar');ajustaSeleccion();stage?.batchDraw();pintaInspector();avisaV238(S.multi.length>1?'Grupo seleccionado: arrastra o escala el conjunto.':'Esta capa no pertenece a un grupo.');}
   function itemCapa245(sel,forms=formas243(),c=coleccion()||virtual()){
     if(sel?.tipo==='forma')return forms.find(x=>x.id===sel.id)||null;
     if(sel?.tipo==='foto')return c?.fotos.find(x=>x.slot===sel.slot)||null;
