@@ -1,7 +1,7 @@
 {
-  "version": "2026-11-03-crm-release-v389-integracion",
+  "version": "2026-11-03-crm-release-v390-birefnet-pc",
   "channel": "crm",
-  "released_at": "2026-11-03T08:30:00Z",
-  "summary": "Plantilla 07 retirada (el recorte del sujeto no salía limpio) y candado de proporción para escalar el sujeto y las fotos sin deformarlos. Incluye v388.",
-  "requiere_puente": "2026-10-30-estados-propios-v57"
+  "released_at": "2026-11-03T08:15:00Z",
+  "summary": "Seleccionar sujeto con BiRefNet en la PC: cola privada, espera visible, descarga de modelos en el instalador 1.0.4. Conserva v389 y la 07 retirada.",
+  "requiere_puente": "2026-11-03-birefnet-v61"
 }
