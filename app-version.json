@@ -1,7 +1,7 @@
 {
-  "version": "2026-11-03-crm-release-v390-birefnet-pc",
+  "version": "2026-11-03-crm-release-v391-cerebro-ollama",
   "channel": "crm",
-  "released_at": "2026-11-03T08:15:00Z",
-  "summary": "Seleccionar sujeto con BiRefNet en la PC: cola privada, espera visible, descarga de modelos en el instalador 1.0.4. Conserva v389 y la 07 retirada.",
-  "requiere_puente": "2026-11-03-birefnet-v61"
+  "released_at": "2026-11-03T17:00:00Z",
+  "summary": "Ollama en la PC como cerebro de texto (elige «Ollama en la PC» en Conexiones y API; Gemini queda de respaldo). Conserva BiRefNet de v390.",
+  "requiere_puente": "2026-11-03-ollama-v62"
 }
