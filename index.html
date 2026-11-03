@@ -1125,6 +1125,15 @@ a.ayuda{color:var(--enlace)}
 .barra-seleccion .bstexto{flex:1;min-width:0;font-size:12.5px;color:var(--mut)}
 .barra-seleccion .bscancelar{width:26px;height:26px;border-radius:50%;color:var(--mut);font-size:16px}
 .barra-seleccion .bscancelar:hover{background:var(--hover)}
+.barra-seleccion{flex-wrap:wrap}
+.barra-seleccion .bstexto{flex:1 1 auto;font-weight:600;color:var(--fg)}
+.barra-seleccion .bsacciones{display:flex;flex-wrap:wrap;align-items:center;gap:4px}
+.barra-seleccion .bsbtn{display:inline-flex;align-items:center;gap:5px;height:32px;padding:0 10px;border-radius:8px;color:var(--fg);font-size:12.5px;font-weight:600}
+.barra-seleccion .bsbtn:hover:not(:disabled){background:var(--hover)}
+.barra-seleccion .bsbtn:disabled{opacity:.38;cursor:default}
+.barra-seleccion .bsbtn.peligro{color:var(--bad)}
+.barra-seleccion .bsbtn[hidden]{display:none}
+@media (max-width:640px){.barra-seleccion .bsbtn span{display:none}.barra-seleccion .bsbtn{padding:0 8px}}
 .barra-seleccion .bsreenviar{padding:7px 16px;font-size:13px}
 .barra-seleccion .bsreenviar:disabled{opacity:.5}
 .fwd-enviar{padding:8px 16px;font-size:13px}
@@ -7588,7 +7597,14 @@ function abre(c){
     + '<div class="barra-seleccion" id="barraSeleccion" hidden>'
     +   '<button class="bscancelar" aria-label="Cancelar selección">×</button>'
     +   '<div class="bstexto">0 mensajes seleccionados</div>'
-    +   '<button class="bsreenviar btn-solido" disabled>Reenviar</button></div>'
+    // v384 · como en WhatsApp Web: con varios mensajes, fotos o archivos elegidos, todas las acciones y no solo Reenviar.
+    + '<div class="bsacciones">'
+    +   '<button class="bsbtn" data-bs="destacar" title="Destacar"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3.5l2.6 5.3 5.8.8-4.2 4.1 1 5.8-5.2-2.7-5.2 2.7 1-5.8-4.2-4.1 5.8-.8z"/></svg><span>Destacar</span></button>'
+    +   '<button class="bsbtn" data-bs="copiar" title="Copiar texto"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M4 16V6a2 2 0 012-2h10"/></svg><span>Copiar</span></button>'
+    +   '<button class="bsbtn" data-bs="descargar" title="Descargar fotos y archivos"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg><span>Descargar</span></button>'
+    +   '<button class="bsbtn peligro" data-bs="eliminar" title="Eliminar"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg><span>Eliminar</span></button>'
+    +   '<button class="bsbtn peligro" data-bs="retirar" title="Eliminar para todos" hidden><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M6 7l1 13h10l1-13M9 7V4h6v3M9 12l6 6M15 12l-6 6"/></svg><span>Para todos</span></button>'
+    +   '<button class="bsreenviar btn-solido" disabled>Reenviar</button></div></div>'
     + '<div class="escribir">'
     +   '<div class="adjuntos">'
     +     '<button class="adj" id="adjEmoji" title="Emojis" aria-label="Emojis">'
@@ -7954,14 +7970,26 @@ function refrescaSeleccion(){
 // pintaba siempre, se escribia, y el rechazo llegaba despues traducido por "pulsa Reanudar",
 // tambien en fichas de una linea que ya no esta vinculada, donde Reanudar no arregla nada.
 // Se repinta sola cuando cambia la linea (fijaLineaQr).
+function sucursalEnConsulta(negocio){
+  return negocio !== 'dcarela';
+}
 function pintaAvisoLinea(){
   const caja = $('avisoLinea'); if (!caja || !sel) return;
   // La red oculta manda ANTES que la linea: un chat de Instagram no tiene linea de WhatsApp Web
   // que mirar, y avisoLineaQr diria que todo esta bien.
   const red = avisoRedOculta(sel);
-  const av = red.bloquea ? red : avisoLineaQr(sel, LINEA_QR);
+  const consulta = sucursalEnConsulta(NEGOCIO);
+  const av = consulta ? {bloquea:true,titulo:'Plaza en preparación.',
+    texto:'Puedes consultar, calcular cotizaciones y guardar notas internas. Los envíos y la automatización se habilitarán al completar el canal propio de Plaza.'}
+    : red.bloquea ? red : avisoLineaQr(sel, LINEA_QR);
   for (const id of ['texto', 'btnEnviar', 'adjImg', 'adjHd', 'adjDoc', 'adjRapida', 'adjCombo', 'adjCotiza', 'adjTpl', 'adjMic']) {
     const e = $(id); if (e) e.disabled = av.bloquea;
+  }
+  if (consulta) {
+    const cotiza = $('adjCotiza'); if (cotiza) cotiza.disabled = false;
+    for (const id of ['btnModo','btnAtendido','btnTransferir','btnAgendar','btnSesionRealizada','chatEtapa','chatEtiquetasResumen','btnNuevoChat']) {
+      const e = $(id); if (e) { e.disabled = true; e.title = 'Disponible cuando se complete la configuración independiente de Plaza.'; }
+    }
   }
   if (!av.bloquea) { caja.hidden = true; caja.innerHTML = ''; return; }
   caja.hidden = false;
@@ -8225,6 +8253,7 @@ function cableaChat(c){
   pintaBarraSeleccion();
   $('barraSeleccion').querySelector('.bscancelar').onclick = saleSeleccion;
   $('barraSeleccion').querySelector('.bsreenviar').onclick = () => abreReenviar([...SEL_MSGS]);
+  $('barraSeleccion').querySelector('.bsacciones').addEventListener('click', ev => { const b = ev.target.closest('[data-bs]'); if (b && !b.disabled) void accionSeleccion(b.dataset.bs); });
   const caja = $('texto'), env = $('btnEnviar');
   caja.addEventListener('input', () => {
     caja.style.height = 'auto';
@@ -8235,6 +8264,7 @@ function cableaChat(c){
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); env.click(); }
   });
   env.onclick = async () => {
+    if (sucursalEnConsulta(NEGOCIO)) return avisa('Plaza en preparación', 'Los envíos de esta sucursal todavía no están habilitados.');
     const t = caja.value.trim();
     if (!t && !COLA.length) return;
     // La linea manda antes que nada: si por este chat no puede salir nada, se dice la causa real
@@ -10416,13 +10446,79 @@ function alternaSeleccion(id){
   pintaMensajes();
   pintaBarraSeleccion();
 }
+// Los mensajes elegidos, en el orden del hilo (copiar y descargar respetan ese orden).
+function mensajesElegidos(){
+  return MSGS.filter(m => SEL_MSGS.has(m.id || m.wamid));
+}
+// Qué se puede hacer con lo elegido: cada botón solo se activa si sirve para al menos uno (o para todos, si la acción lo exige).
+function accionesSeleccion(msgs){
+  const vivos = msgs.filter(m => m.id && !infoEliminado(m));
+  const conTexto = msgs.filter(m => { const t = String(m.body || '').trim(); return t && !/^\[[a-z]+\]$/i.test(t); });
+  const conArchivo = msgs.filter(m => !esBajoDemanda(m) && (m.media_id || adjuntoDe(m)?.url));
+  const retirable = m => canalDe(sel) === 'whatsapp_qr' && m.direction === 'out' && !!m.wamid && !infoEliminado(m)
+    && Date.now() - (Date.parse(String(m.created_at || '')) || 0) <= 48 * 3600000;
+  return { vivos, conTexto, conArchivo, todosDestacados: vivos.length > 0 && vivos.every(m => m.metadata?.starred),
+    retirables: msgs.length > 0 && msgs.every(retirable) };
+}
 function pintaBarraSeleccion(){
   const barra = $('barraSeleccion'); if (!barra) return;
   barra.hidden = !modoSeleccion;
   if (!modoSeleccion) return;
   const n = SEL_MSGS.size;
-  barra.querySelector('.bstexto').textContent = n === 1 ? '1 mensaje seleccionado' : n + ' mensajes seleccionados';
+  barra.querySelector('.bstexto').textContent = n === 1 ? '1 seleccionado' : n + ' seleccionados';
   barra.querySelector('.bsreenviar').disabled = !n;
+  const a = accionesSeleccion(mensajesElegidos());
+  const pon = (k, activo, titulo) => { const b = barra.querySelector('[data-bs="' + k + '"]'); if (!b) return; b.disabled = !activo; if (titulo) { b.title = titulo; b.querySelector('span').textContent = titulo; } };
+  pon('destacar', a.vivos.length, a.todosDestacados ? 'Quitar destacado' : 'Destacar');
+  pon('copiar', a.conTexto.length);
+  pon('descargar', a.conArchivo.length);
+  pon('eliminar', a.vivos.length);
+  const r = barra.querySelector('[data-bs="retirar"]'); if (r) r.hidden = !a.retirables;
+}
+async function accionSeleccion(op){
+  const msgs = mensajesElegidos(), a = accionesSeleccion(msgs);
+  if (op === 'destacar') {
+    // Destacar es solo del CRM: no le llega nada al cliente.
+    const valor = !a.todosDestacados;
+    const r = await Promise.all(a.vivos.map(m => llama({ action:'star', message_id: m.id, starred: valor })));
+    const malos = r.filter(x => !x.ok).length;
+    avisa(malos ? 'No se pudieron destacar ' + malos : (valor ? 'Destacados: ' : 'Sin destacar: ') + a.vivos.length);
+    return saleSeleccion();
+  }
+  if (op === 'copiar') {
+    const texto = a.conTexto.map(m => String(m.body || '').trim()).join('\n\n');
+    try { await navigator.clipboard.writeText(texto); avisa('Copiado', a.conTexto.length + (a.conTexto.length === 1 ? ' mensaje' : ' mensajes')); }
+    catch (e) { avisa('No se pudo copiar'); }
+    return saleSeleccion();
+  }
+  if (op === 'descargar') {
+    // De uno en uno: el navegador acepta mejor varias descargas seguidas que todas a la vez.
+    let bien = 0;
+    for (const m of a.conArchivo) {
+      try {
+        const url = adjuntoDe(m)?.url || await urlDeMedio(m.media_id, sel, m);
+        if (!url) continue;
+        await descargaConNombre(await (await fetch(url)).blob(), m);
+        bien++;
+        await new Promise(r => setTimeout(r, 350));
+      } catch (e) { /* se cuenta abajo */ }
+    }
+    avisa(bien === a.conArchivo.length ? 'Descargados: ' + bien : 'Descargados ' + bien + ' de ' + a.conArchivo.length);
+    return saleSeleccion();
+  }
+  if (op === 'eliminar' || op === 'retirar') {
+    const todos = op === 'retirar', lista = todos ? msgs : a.vivos;
+    if (!lista.length) return;
+    const motivo = await pideMotivo(todos
+      ? { titulo: 'Eliminar ' + lista.length + ' para todos', aviso: 'El cliente verá «Se eliminó este mensaje» en su WhatsApp. Aquí NO se borran: quedan marcados como eliminados, con tu nombre y este motivo.', boton: 'Eliminar para todos' }
+      : { titulo: 'Eliminar ' + lista.length + (lista.length === 1 ? ' mensaje' : ' mensajes'), aviso: 'El cliente los seguirá viendo en su WhatsApp. Aquí NO se borran: quedan marcados como eliminados, con tu nombre y este motivo.', boton: 'Eliminar' });
+    if (!motivo) return;
+    const r = [];
+    for (const m of lista) r.push(await llama(todos ? { action:'ownMsg', operation:'revoke', message_id: m.id, reason: motivo } : { action:'deleteMsg', message_id: m.id, reason: motivo }));
+    const malos = r.filter(x => !x.ok).length;
+    avisa(malos ? 'No se pudieron eliminar ' + malos + ' de ' + lista.length : (todos ? 'Eliminando para todos…' : 'Marcados como eliminados: ' + lista.length), malos ? (r.find(x => !x.ok)?.error || '') : '');
+    return saleSeleccion();
+  }
 }
 
 // Delegado en el documento: los globos se repintan con cada mensaje nuevo, y un
@@ -10557,6 +10653,18 @@ document.addEventListener('click', async ev => {
       avisa(r.ok ? 'Mensaje marcado como eliminado' : 'No se pudo eliminar', r.ok ? '' : r.error);
     }
   };
+});
+
+// v385 · clic derecho sobre un mensaje, foto o archivo = su menú (Responder, Reenviar, Seleccionar, Eliminar…), como en
+// WhatsApp Web. En el programa de escritorio (WebView2) el clic derecho abría el menú del navegador, que solo trae «Seleccionar
+// todo». Si hay texto marcado o se pulsa en un enlace, se deja el menú del sistema para poder copiarlo.
+document.addEventListener('contextmenu', ev => {
+  const globo = ev.target.closest('.mensajes [data-msg]');
+  if (!globo || ev.target.closest('a,input,textarea,.gmenu') || String(window.getSelection?.() || '').trim()) return;
+  const boton = globo.querySelector('.gaccion');
+  if (!boton) return;
+  ev.preventDefault();
+  boton.click();
 });
 
 /* ---- Mensajes eliminados y editados: nada se pierde ------------------------ */
@@ -21675,6 +21783,9 @@ function estudioV238(m,api){
      for(const fo of ordenZ((col?.fotos||[]).filter(fo=>!fo.oculta)))LF.add(nodoFoto(fo,W,H,local||!base||fueraBase.has(fo.slot)));
     const velos=capas?.fondo?imagen(capas.fondo.src):null;
     if(velos)LF.add(new K.Image({image:velos,width:W,height:H,listening:false,name:'velos',visible:local}));
+    // v383: banda y sujeto delante de ella, capas propias (el motor ya no los pinta en la base).
+    if(capas?.banda&&!capaOculta245({tipo:'banda'})){const im=imagen(capas.banda.src);if(im)LT.add(new K.Image({id:'banda-editor',image:im,width:W,height:H,listening:false}));}
+    if(capas?.sujeto_banda&&!capaOculta245({tipo:'banda'})&&!capaOculta245({tipo:'sujetoBanda'})){const im=imagen(capas.sujeto_banda.src);if(im)LT.add(new K.Image({id:'sujetoBanda-editor',image:im,width:W,height:H,listening:false}));}
     if(capas?.cristal){const cr=imagen(capas.cristal.src);if(cr)LT.add(new K.Image({id:'cristal-editor',image:cr,width:W,height:H,listening:false}));}
     for(const f of documento?.compartido.fotos||[]){const n=nodoPanoramica244(f,AW,H);if(n)LT.add(n);}
     const ex=extrasV241(),gradKey=JSON.stringify(ex)+':'+AW+':'+H;
@@ -21701,7 +21812,7 @@ function estudioV238(m,api){
       // v380 · como en Photoshop: una foto subida por encima de un texto o una forma sale de la base y se apila en su sitio (el motor hace lo mismo).
       const orden=ordenVisibleV352();
       for(const slot of fotosElevadasV380(orden)){const n=LF.findOne('#foto-'+slot);if(n){n.moveTo(LT);n.opacity(1);}}
-      const nodoDe=k=>k==='logo'?LT.findOne('#logo-editor'):k==='sujeto'?LT.findOne('#sujeto-editor'):k==='cristal'?LT.findOne('#cristal-editor'):k==='degradado'?LT.findOne('#degradado-editor'):
+      const nodoDe=k=>k==='logo'?LT.findOne('#logo-editor'):k==='sujeto'?LT.findOne('#sujeto-editor'):k==='cristal'?LT.findOne('#cristal-editor'):k==='degradado'?LT.findOne('#degradado-editor'):k==='banda'?LT.findOne('#banda-editor'):k==='sujetoBanda'?LT.findOne('#sujetoBanda-editor'):
         k.startsWith('rol:')?LT.findOne('#rol-'+k.slice(4)):k.startsWith('forma:')?LT.findOne('#forma-'+k.slice(6)):k.startsWith('textoLibre:')?LT.findOne('#textoLibre-'+k.slice(11)):k.startsWith('foto:')?LT.findOne('#foto-'+k.slice(5)):null;
       for(const k of orden.slice().reverse())nodoDe(k)?.moveToTop();
     }
@@ -22271,26 +22382,26 @@ function estudioV238(m,api){
   const textosLibres245=()=>{try{const a=JSON.parse(leer('textos_libres_json')||'[]');return Array.isArray(a)?a:[];}catch{return []}};
   const ordenCapas245=()=>{try{const a=JSON.parse(leer('orden_capas_json')||'[]');return Array.isArray(a)?a:[];}catch{return []}};
   // Copia idéntica de defectoCapas / fotosElevadas del motor (contenido-editor-capas.js); una prueba compara las dos.
-  function defectoCapasV352({logo=false,textos=[],roles=[],detras=[],formas=[],grad=false,sujeto=false,cristal=false,fotos=[]}={}){
+  function defectoCapasV352({logo=false,textos=[],roles=[],detras=[],formas=[],grad=false,sujeto=false,cristal=false,fotos=[],banda=false,sujetoBanda=false}={}){
     const k=[];if(logo)k.push('logo');for(const t of textos.slice().reverse())k.push('textoLibre:'+t);
     for(const r of roles.slice().reverse())if(!sujeto||!detras.includes(r))k.push('rol:'+r);
     if(cristal)k.push('cristal');for(const f of formas.slice().reverse())if(!f.detras)k.push('forma:'+f.id);
     if(grad&&sujeto&&!detras.includes('degradado'))k.push('degradado');
     if(sujeto){k.push('sujeto');for(const r of roles.slice().reverse())if(detras.includes(r))k.push('rol:'+r);}
     for(const f of formas.slice().reverse())if(f.detras)k.push('forma:'+f.id);
-    if(grad&&!k.includes('degradado'))k.push('degradado');for(const f of fotos)k.push('foto:'+f);return k;
+    if(grad&&!k.includes('degradado'))k.push('degradado');if(sujetoBanda)k.push('sujetoBanda');if(banda)k.push('banda');for(const f of fotos)k.push('foto:'+f);return k;
   }
-  function fotosElevadasV380(orden=[]){const u=orden.reduce((n,k,i)=>/^(rol|forma|textoLibre):.|^(logo|degradado|cristal|sujeto)$/.test(String(k))?i:n,-1);return orden.slice(0,Math.max(0,u)).filter(k=>String(k).startsWith('foto:')).map(k=>String(k).slice(5));}
+  function fotosElevadasV380(orden=[]){const u=orden.reduce((n,k,i)=>/^(rol|forma|textoLibre):.|^(logo|degradado|cristal|sujeto|banda|sujetoBanda)$/.test(String(k))?i:n,-1);return orden.slice(0,Math.max(0,u)).filter(k=>String(k).startsWith('foto:')).map(k=>String(k).slice(5));}
   const nodoFotoV380=slot=>LF?.findOne('#foto-'+slot)||LT?.findOne('#foto-'+slot)||null;
   const fotosCapasV380=soloVisibles=>ordenZ(((coleccion()||virtual())?.fotos||[]).filter(x=>!soloVisibles||!x.oculta)).reverse().map(x=>x.slot);
   const rolesCapasV380=()=>{const roles=((mismoFormato()?S.r?.capas_editor?.roles:null)||[]).map(r=>r.rol),est=estadosCapas245();for(const k of Object.keys(est))if(k.startsWith('rol:')&&est[k].oculta&&CAMPOS_ROL_V238[k.slice(4)]&&!roles.includes(k.slice(4)))roles.push(k.slice(4));return roles;};
   // v380 · el orden de TODAS las capas, también las ocultas: en Photoshop una capa apagada conserva su sitio y se puede arrastrar.
   function ordenCompletoV380(){const ce=mismoFormato()?S.r?.capas_editor:null,su=sujeto243();
-    const defecto=defectoCapasV352({logo:!!leer('logo_ruta'),textos:textosLibres245().map(x=>x.id),roles:rolesCapasV380(),detras:su?.detras||[],formas:formas243(),grad:['personalizado','ninguno'].includes(leer('degradado_modo')),sujeto:!!su?.ruta,cristal:!!ce?.cristal,fotos:fotosCapasV380(false)});
+    const defecto=defectoCapasV352({logo:!!leer('logo_ruta'),textos:textosLibres245().map(x=>x.id),roles:rolesCapasV380(),detras:su?.detras||[],formas:formas243(),grad:['personalizado','ninguno'].includes(leer('degradado_modo')),sujeto:!!su?.ruta,cristal:!!ce?.cristal,fotos:fotosCapasV380(false),banda:!!ce?.banda,sujetoBanda:!!ce?.sujeto_banda});
     return mezclaOrdenCapasV352(defecto,ordenCapas245());}
   function mezclaOrdenCapasV352(defecto,guardado=[]){const out=[...defecto],conocidos=guardado.filter((k,i)=>defecto.includes(k)&&guardado.indexOf(k)===i);for(let i=conocidos.length-2;i>=0;i--){const key=conocidos[i],next=conocidos[i+1];out.splice(out.indexOf(key),1);out.splice(out.indexOf(next),0,key);}return out;}
   function ordenVisibleV352(){const ce=mismoFormato()?S.r?.capas_editor:null,su=sujeto243(),roles=(ce?.roles||[]).map(x=>x.rol),formas=formas243().filter(x=>!x.oculta),textos=textosLibres245().filter(x=>!x.oculta&&x.texto).map(x=>x.id);
-    const defecto=defectoCapasV352({logo:!!leer('logo_ruta')&&leer('logo_mostrar')!=='no',textos,roles,detras:su?.detras||[],formas,grad:leer('degradado_modo')==='personalizado',sujeto:!!(su?.activo&&ce?.sujeto),cristal:!!ce?.cristal,fotos:fotosCapasV380(true)});return mezclaOrdenCapasV352(defecto,ordenCapas245());}
+    const defecto=defectoCapasV352({logo:!!leer('logo_ruta')&&leer('logo_mostrar')!=='no',textos,roles,detras:su?.detras||[],formas,grad:leer('degradado_modo')==='personalizado',sujeto:!!(su?.activo&&ce?.sujeto),cristal:!!ce?.cristal,fotos:fotosCapasV380(true),banda:!!ce?.banda&&!capaOculta245({tipo:'banda'}),sujetoBanda:!!ce?.sujeto_banda&&!capaOculta245({tipo:'sujetoBanda'})});return mezclaOrdenCapasV352(defecto,ordenCapas245());}
   function escribeTextosLibres245(arr,fin=true){ponCampoV238(campo('textos_libres_json'),JSON.stringify(arr));if(fin)cambioFormulario(150);else dibuja();}
   function escribeOrdenCapas245(arr,fin=true){
     // v380: el orden entre fotos es también su z en el collage (el motor pinta la base por z).
@@ -22513,6 +22624,8 @@ function estudioV238(m,api){
   }
   function pintaSeleccionMultiple245(){const sels=capasOperablesSeleccionadas245();insp.innerHTML=sec('Selección múltiple','<p class="e238-ayuda">'+sels.length+' capas seleccionadas. Las acciones se aplican a formas y fotos; los objetos bloqueados no se mueven, pero sí pueden ocultarse.</p><div class="e238-acciones">'+[['al-izq','Alinear izquierda'],['al-ch','Centrar horizontal'],['al-der','Alinear derecha'],['al-arr','Alinear arriba'],['al-cv','Centrar vertical'],['al-aba','Alinear abajo'],['dist-h','Distribuir horizontal'],['dist-v','Distribuir vertical']].map(([k,t])=>'<button type="button" class="e238-btn e238-peq" data-capa-accion="'+k+'">'+t+'</button>').join('')+'</div><div class="e238-acciones"><button type="button" class="e238-btn e238-peq" data-capa-accion="agrupar">Agrupar</button><button type="button" class="e238-btn e238-peq" data-capa-accion="desagrupar">Desagrupar</button><button type="button" class="e238-btn e238-peq" data-capa-accion="frente">Traer delante</button><button type="button" class="e238-btn e238-peq" data-capa-accion="fondo">Enviar atrás</button><button type="button" class="e238-btn e238-peq" data-capa-accion="duplicar">Duplicar selección</button><button type="button" class="e238-btn e238-peq" data-capa-accion="eliminar">Quitar</button></div>');}
   function itemsCapas245(){const c=coleccion()||virtual(),items=[];if(leer('logo_ruta'))items.push({sel:{tipo:'logo'},ico:I.foto,fallback:'Logo PNG'});const roles=rolesCapasV380();for(const rol of roles)items.push({sel:{tipo:'rol',rol},ico:I.texto,fallback:NOMBRE_ROL_V238[rol]});items.push({sel:{tipo:'degradado'},ico:I.fondo,fallback:'Degradado'});for(const t of textosLibres245().slice().reverse())items.push({sel:{tipo:'textoLibre',id:t.id},ico:I.texto,fallback:t.nombre||'Texto libre'});for(const s of formas243().slice().reverse())items.push({sel:{tipo:'forma',id:s.id},ico:'◇',fallback:s.nombre||'Forma'});for(const fo of ordenZ(c?.fotos||[]).reverse())items.push({sel:{tipo:'foto',slot:fo.slot},ico:api.imagenDe(fo.original_id)?'<img src="'+esc(api.imagenDe(fo.original_id))+'" alt="">':I.foto,fallback:fo.nombre||(fo.rol==='principal'?'Foto principal':'Foto del mosaico')});const pos=new Map(ordenCompletoV380().map((k,i)=>[k,i]));{const ks=[...pos.keys()],el=new Set(fotosElevadasV380(ks)),f=ks.findIndex(k=>k.startsWith('foto:')&&!el.has(k.slice(5)));if(!pos.has('degradado'))pos.set('degradado',f>=0?f-.5:9999);}const lista=items.sort((a,b)=>(pos.get(claveCapaV245(a.sel))??10000)-(pos.get(claveCapaV245(b.sel))??10000));
+    // v383: la banda de la plantilla y el sujeto que pasa delante de ella también son capas (ojo y orden), ya no parte de la base.
+    {const ce=mismoFormato()?S.r?.capas_editor:null;if(ce?.banda)lista.push({sel:{tipo:'banda'},ico:I.fondo,fallback:'Banda (rectángulo)'});if(ce?.sujeto_banda)lista.push({sel:{tipo:'sujetoBanda'},ico:I.sujeto||I.foto,fallback:'Sujeto delante de la banda',enlace:true});lista.sort((a,b)=>(pos.get(claveCapaV245(a.sel))??9999)-(pos.get(claveCapaV245(b.sel))??9999));}
     // v332: el sujeto recortado es una capa propia, enlazada a la foto principal (va justo encima de ella; su ojo activa o apaga la máscara).
      const su=sujeto243();if(su?.ruta){lista.push({sel:{tipo:'sujeto'},ico:S.sujetoVista?'<img src="'+esc(S.sujetoVista)+'" alt="">':I.sujeto||I.foto,fallback:'Sujeto · enlazado a la foto',enlace:true});lista.sort((a,b)=>(pos.get(claveCapaV245(a.sel))??9999)-(pos.get(claveCapaV245(b.sel))??9999));}
     return lista;}
@@ -22524,7 +22637,7 @@ function estudioV238(m,api){
     else if(a==='capa-bajar'){for(let i=nuevo.length-2;i>=0;i--)if(claves.has(nuevo[i])&&!claves.has(nuevo[i+1]))[nuevo[i],nuevo[i+1]]=[nuevo[i+1],nuevo[i]];}
     escribeOrdenCapas245(nuevo);
   }
-  function capaOculta245(sel){if(sel?.tipo==='forma'||sel?.tipo==='foto'||sel?.tipo==='textoLibre')return !!itemCapa245(sel)?.oculta;if(sel?.tipo==='rol'){const M=CAMPOS_ROL_V238[sel.rol];return (!!M?.ver&&leer(M.ver)==='oculto')||!!estadoCapa245(sel).oculta;}if(sel?.tipo==='logo')return leer('logo_mostrar')==='no';if(sel?.tipo==='degradado')return leer('degradado_modo')==='ninguno';if(sel?.tipo==='sujeto'){try{return JSON.parse(leer('sujeto_editor_json')||'null')?.activo===false;}catch{return false;}}return false;}
+  function capaOculta245(sel){if(sel?.tipo==='forma'||sel?.tipo==='foto'||sel?.tipo==='textoLibre')return !!itemCapa245(sel)?.oculta;if(sel?.tipo==='rol'){const M=CAMPOS_ROL_V238[sel.rol];return (!!M?.ver&&leer(M.ver)==='oculto')||!!estadoCapa245(sel).oculta;}if(sel?.tipo==='logo')return leer('logo_mostrar')==='no';if(sel?.tipo==='degradado')return leer('degradado_modo')==='ninguno';if(sel?.tipo==='sujeto'){try{return JSON.parse(leer('sujeto_editor_json')||'null')?.activo===false;}catch{return false;}}if(sel?.tipo==='banda'||sel?.tipo==='sujetoBanda')return !!estadoCapa245(sel).oculta;return false;}
   function capaBloqueada245(sel){if(sel?.tipo==='forma'||sel?.tipo==='foto'||sel?.tipo==='textoLibre')return !!itemCapa245(sel)?.bloqueada;return !!estadoCapa245(sel).bloqueada;}
   function alternaCapa245(sel,a){const ocultar=a==='ocultar'||a==='mostrar',bloquear=a==='bloquear'||a==='desbloquear',valorOculta=a==='ocultar',valorBloqueada=a==='bloquear';if(sel.tipo==='forma'||sel.tipo==='foto'||sel.tipo==='textoLibre'){const forms=formas243(),texts=typeof textosLibres245==='function'?textosLibres245():[],c=coleccion()||virtual(),x=itemCapa245(sel,forms,c);if(!x)return;x[ocultar?'oculta':'bloqueada']=ocultar?valorOculta:valorBloqueada;if(sel.tipo==='forma')ponCampoV238(campo('formas_editor_json'),JSON.stringify(forms));else if(sel.tipo==='textoLibre')ponCampoV238(campo('textos_libres_json'),JSON.stringify(texts));else if(c)api.escribeCollage(c);}else if(sel.tipo==='rol'){const M=CAMPOS_ROL_V238[sel.rol];if(ocultar&&M.ver)empuja(campo(M.ver),valorOculta?'oculto':'visible');else guardaEstadoCapa245(sel,{[bloquear?'bloqueada':'oculta']:bloquear?valorBloqueada:valorOculta});}else if(sel.tipo==='logo'&&ocultar)ponCampoV238(campo('logo_mostrar'),valorOculta?'no':'si');else if(sel.tipo==='degradado'&&ocultar)ponCampoV238(campo('degradado_modo'),valorOculta?'ninguno':'personalizado');else if(sel.tipo==='sujeto'&&ocultar){let su=null;try{su=JSON.parse(leer('sujeto_editor_json')||'null');}catch{}if(su){su.activo=!valorOculta;ponCampoV238(campo('sujeto_editor_json'),JSON.stringify(su));}}else guardaEstadoCapa245(sel,{[bloquear?'bloqueada':'oculta']:bloquear?valorBloqueada:valorOculta});cambioFormulario(100);}
   // v380 · panel «Capas» como el de Photoshop (pedido del dueño 02/11): opacidad y bloqueo de la capa elegida arriba; cada fila con el ojo
@@ -28897,6 +29010,7 @@ function revalidaOpcionCotV335(vista, respuesta, indice){
 }
 function abreCotizador(c){
   if (!c) return avisa('Abre una conversación primero');
+  const consultaSucursal = sucursalEnConsulta(NEGOCIO);
   const puedeDescontar = ['admin', 'supervisor'].includes(ROL_ACTUAL);
   const op = (lista, sel0) => lista.map(x => { const [v, t] = Array.isArray(x) ? x : [x, x || 'Cualquiera'];
     return '<option value="' + esc(v) + '"' + (v === sel0 ? ' selected' : '') + '>' + esc(t === '2x2' ? '2x2 · 8 fotos por impresión' : t) + '</option>'; }).join('');
@@ -28904,6 +29018,7 @@ function abreCotizador(c){
     || (Date.now() - Date.parse(c.last_customer_reply_at || '')) < 24 * 3600000;
   abreModal('<div class="mtapa"><b>Cotizar · ' + esc(nombreDe(c)) + '</b><button class="cerrarm" data-cerrar>×</button></div>'
     + '<div class="mcuerpo">'
+    + (consultaSucursal ? '<p class="aviso">Cotización de consulta. Los precios son de Plaza; el envío y el registro comercial esperan la configuración de su canal independiente.</p>' : '')
     + '<div class="par"><div class="campo"><label>Tipo de sesión</label><select id="cotCat">' + op(COT_CATS, categoriaParaCotizar(c)) + '</select></div>'
     +   '<div class="campo"><label>Presupuesto del cliente (opcional)</label><input type="number" min="0" id="cotPres" placeholder="RD$"></div></div>'
     + (puedeDescontar ? '<div class="par"><div class="campo"><label>Descuento especial (opcional)</label><div class="cotdesc"><input type="number" min="0" step="any" id="cotDescV" placeholder="0" aria-label="Valor del descuento">'
@@ -29046,7 +29161,7 @@ function abreCotizador(c){
       + (pr.leido_at ? ' · leídos ' + new Date(pr.leido_at).toLocaleTimeString('es-DO', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : '');
     $('cotMsgCampo').hidden = !ops.length;
     $('cotTexto').value = ops.length ? textoActual() : '';
-    $('cotEnviar').disabled = !ops.length;
+    $('cotEnviar').disabled = !ops.length || consultaSucursal;
   };
   $('cotOpciones').onchange = ev => {
     const r = ev.target.closest('input[name="cotOp"]'); if (!r) return;
@@ -29086,6 +29201,7 @@ function abreCotizador(c){
     else if (r) avisa('No entendí qué pide', 'Llena las piezas a mano.');
   };
   $('cotEnviar').onclick = async ev => {
+    if (consultaSucursal) return avisa('Cotización de consulta', 'El envío de Plaza todavía no está habilitado. No se envió ni registró la cotización.');
     const formato = formatoActual();
     const texto = $('cotTexto').value.trim();
     if (!ultimo || (formato !== 'imagen' && !texto)) return;
