@@ -1,7 +1,7 @@
 {
-  "version": "2026-11-03-crm-release-v391-cerebro-ollama",
+  "version": "2026-11-03-crm-release-v392-menus",
   "channel": "crm",
-  "released_at": "2026-11-03T17:00:00Z",
-  "summary": "Ollama en la PC como cerebro de texto (elige «Ollama en la PC» en Conexiones y API; Gemini queda de respaldo). Conserva BiRefNet de v390.",
+  "released_at": "2026-11-03T17:45:00Z",
+  "summary": "Los menús «⋯» se abren hacia arriba cuando no caben (la Agenda escondía «Cancelar la reservación»). Incluye Ollama como cerebro (v391).",
   "requiere_puente": "2026-11-03-ollama-v62"
 }
