@@ -1,7 +1,7 @@
 {
-  "version": "2026-11-05-crm-release-v396-estados-telefono",
+  "version": "2026-11-05-crm-release-v397-cola-estados",
   "channel": "crm",
-  "released_at": "2026-11-05T19:29:23.2669262Z",
-  "summary": "Los estados del teléfono aparecen en Mis estados: sincronización, vista completa de fotos y videos, y estados confirmados visibles.",
-  "requiere_puente": "2026-11-05-estados-v63"
+  "released_at": "2026-11-05T20:05:03.0996620Z",
+  "summary": "Estados múltiples en cola visible con reloj, archivos conservados al recargar y reintentos sin duplicados. Vinculación con estado actualizado y nueva solicitud tras un intento interrumpido.",
+  "requiere_puente": "2026-11-05-cola-estados-v64"
 }
