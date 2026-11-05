@@ -5355,8 +5355,9 @@ function aroEstado(c, conEstado){
 // Los tuyos que siguen vivos: publicados y de hace menos de un día.
 function stMios(){
   const ahora = Date.now();
-  return ST.mios.filter(p => p.status === 'sent' && !p.deleted_at && !p.delete_requested_at && !ST.borrados.has(p.wamid) && ahora - Date.parse(String(p.sent_at || '')) < ST_DIA_MS)
-    .sort((a, b) => String(a.sent_at || '').localeCompare(String(b.sent_at || '')));
+  return ST.mios.filter(p => ['sent', 'published'].includes(p.status) && !p.deleted_at && !p.delete_requested_at && !ST.borrados.has(p.wamid) && ahora - Date.parse(String(p.sent_at || '')) < ST_DIA_MS)
+    .sort((a, b) => String(a.sent_at || '').localeCompare(String(b.sent_at || '')))
+    .map(p => ({ ...p, _id: p.id, media_thumb_b64: p.media_thumb || '' }));
 }
 
 // El anillo: un trozo por estado, verde lo que falta por ver y gris lo visto, empezando arriba.
@@ -5612,6 +5613,7 @@ const STG_ESTADO = { pending: ['En cola', 'espera'], sending: ['Saliendo…', 'e
   failed: ['No salió', 'mal'], expired: ['Caducó sin salir', 'mal'] };
 const STG_PROG = { propuesta: 'Por aprobar', aprobada: 'Programado', en_cola: 'Saliendo', fallida: 'Falló' };
 const STG_ICO = {
+  audio: '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10v2a7 7 0 0 0 14 0v-2M12 19v3M8 22h8"/></svg>',
   ojo: '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>',
   video: '<svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" aria-hidden="true"><path d="M4 6h11a2 2 0 0 1 2 2v1.5l4-2.5v10l-4-2.5V16a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2z"/></svg>',
   foto: '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="m21 16-5-5-9 9"/></svg>',
@@ -5668,8 +5670,8 @@ function stgElementos(){
     const nVistas = Number(f.vistas) || 0, visto = ['sent', 'published'].includes(f.status) && (nVistas > 0 || !!f.confirmed_at);
     const anillo = ['failed', 'expired'].includes(f.status) ? 'mal' : ['pending', 'sending'].includes(f.status) ? 'espera' : visto || desdeTelefono ? 'visto' : 'sinver';
     return { clave: 'p' + i, origen: 'publicado', fuente: desdeTelefono ? 'telefono' : 'crm', fila: f, t, reciente: ahora - t < 86400000, anillo,
-      tipo: f.kind === 'video' ? 'video' : f.kind === 'image' ? 'foto' : 'texto', thumb: f.media_thumb || '', color: f.color || '#128c7e',
-      titulo: lineas[0] || (f.kind === 'video' ? 'Video' : f.kind === 'image' ? 'Foto' : 'Estado de texto'), texto: f.body || '',
+      tipo: f.kind === 'video' ? 'video' : f.kind === 'image' ? 'foto' : f.kind === 'audio' ? 'audio' : 'texto', thumb: f.media_thumb || '', color: f.color || '#128c7e',
+      titulo: lineas[0] || (f.kind === 'video' ? 'Video' : f.kind === 'image' ? 'Foto' : f.kind === 'audio' ? 'Nota de voz' : 'Estado de texto'), texto: f.body || '',
       chip: desdeTelefono ? ['Publicado desde WhatsApp', 'ok'] : visto ? [nVistas ? 'Visto por ' + nVistas : 'Visto', 'ok']
         : (STG_ESTADO[f.status] || [f.status || 'Sin estado', 'espera']),
       aud: desdeTelefono ? 'Audiencia elegida en WhatsApp' : (ES_ETIQUETAS[f.modo] || String(f.modo || '').replace(/^familia:/, 'Familia ') || 'Contactos'),
@@ -5703,10 +5705,10 @@ function stgHace(t){
 function stgTarjeta(e){
   const media = e.thumb ? '<img src="' + esc(e.thumb) + '" alt="" loading="lazy">'
     : e.tipo === 'texto' ? '<span class="stg-texto">' + esc(e.texto || e.titulo) + '</span>'
-    : '<span class="stg-sinmini">' + (e.tipo === 'video' ? STG_ICO.video : STG_ICO.foto) + '<small>' + (e.origen === 'programado' ? 'Vista previa en el planificador' : 'Sin miniatura') + '</small></span>';
+    : '<span class="stg-sinmini">' + (STG_ICO[e.tipo] || STG_ICO.foto) + '<small>' + (e.tipo === 'audio' ? 'Nota de voz' : e.origen === 'programado' ? 'Vista previa en el planificador' : 'Sin miniatura') + '</small></span>';
   return '<article class="stg-card" data-stgver="' + esc(e.clave) + '" tabindex="0" aria-label="' + esc(e.titulo) + '">'
     + '<div class="stg-media" style="--stg-color:' + esc(e.color) + '">' + media
-    +   '<span class="stg-tipo" title="' + (e.tipo === 'video' ? 'Video' : e.tipo === 'foto' ? 'Foto' : 'Texto') + '">' + STG_ICO[e.tipo] + '</span></div>'
+    +   '<span class="stg-tipo" title="' + (e.tipo === 'video' ? 'Video' : e.tipo === 'foto' ? 'Foto' : e.tipo === 'audio' ? 'Nota de voz' : 'Texto') + '">' + STG_ICO[e.tipo] + '</span></div>'
     + '<div class="stg-cuerpo"><span class="stg-avatar ' + (e.origen === 'programado' ? 'prog' : esc(e.anillo || 'sinver')) + '" aria-hidden="true">DC</span>'
     +   '<span class="stg-vistas">' + (e.origen === 'programado' ? STG_ICO.cal + esc(stgHace(e.t)) : STG_ICO.ojo + (e.vistas == null ? '—' : Number(e.vistas).toLocaleString('en-US'))) + '</span>'
     +   '<b class="stg-titulo">' + esc(e.titulo) + '</b>'
@@ -5751,7 +5753,7 @@ function stgPinta(){
     + (fallidos ? '<p class="aviso">' + fallidos + (fallidos === 1 ? ' estado de las últimas 24 h no salió' : ' estados de las últimas 24 h no salieron') + '. Ábrelo para ver el motivo.</p>' : '')
     + '<section class="stg-caja"><div class="stg-barra"><div class="stg-tabs" role="tablist">' + tab('todos', 'Todos') + tab('recientes', 'Recientes') + tab('programados', 'Programados') + tab('archivados', 'Archivados') + '</div>'
     +   '<label class="stg-buscar">' + STG_ICO.buscar + '<input type="search" data-stgbuscar="1" aria-label="Buscar estados" placeholder="Buscar estados por título, audiencia…" value="' + esc(STG.q) + '"></label></div>'
-    + '<div class="stg-filtros">' + sel('Tipo de contenido', 'tipo', [['todos', 'Todos'], ['foto', 'Fotos'], ['video', 'Videos'], ['texto', 'Textos']])
+    + '<div class="stg-filtros">' + sel('Tipo de contenido', 'tipo', [['todos', 'Todos'], ['foto', 'Fotos'], ['video', 'Videos'], ['texto', 'Textos'], ['audio', 'Audios']])
     +   sel('Mes', 'mes', [['', 'Todos los meses'], ...meses.map(m => [m, mesLegibleCrear(m)])])
     +   sel('Ordenar por', 'orden', [['recientes', 'Más recientes'], ['vistos', 'Más vistos'], ['antiguos', 'Más antiguos']]) + '</div>'
     + '<div class="stg-grid" aria-busy="' + STG.cargando + '">' + nuevo + pagina.map(stgTarjeta).join('') + '</div>' + vacio
@@ -5782,11 +5784,17 @@ function stgDetalle(clave){
     + (e.texto && e.tipo !== 'texto' && e.texto.trim() !== e.titulo ? '<p class="stg-det-cuerpo">' + esc(e.texto) + '</p>' : '')
     + (f.resto_total ? '<p class="bajada">Quedan <b>' + Number(f.resto_total) + '</b> contactos sin enviar de este estado.</p>' : '') + '</div></div>'
     + '<div class="mpatas"><button class="btn-linea" data-cerrar>Cerrar</button>'
+    + (e.origen === 'publicado' && ['sent', 'published'].includes(f.status) && f.wamid && (f.media_thumb || f.media_store === 'bajo_demanda' || f.kind === 'text') ? '<button class="btn-solido" id="stgVerEstado">Ver estado</button>' : '')
     + (e.origen === 'programado' ? '<button class="btn-linea" id="stgAlPlan">Abrir en el planificador</button>'
       + (!['publicada','publicando','encola','enviada','sin_confirmar'].includes(String(f.estado || '')) ? '<button class="btn-peligro" id="stgEliminaProgramado">Eliminar programado</button>' : '')
       : f.resto_total && !['pending', 'sending'].includes(f.status) ? '<button class="btn-solido" id="stgResto">Publicar los ' + Number(f.resto_total) + ' que faltan</button>' : '')
     + '</div>');
   $('modal').querySelectorAll('[data-cerrar]').forEach(b => { b.onclick = cierraModal; });
+  if ($('stgVerEstado')) $('stgVerEstado').onclick = () => {
+    cierraModal();
+    escuchaVistasEstados();
+    stVisor({ modo: 'mios', grupos: [{ tel: '', lista: [{ ...f, _id: f.id, media_thumb_b64: f.media_thumb || '' }] }], gi: 0, i: 0 });
+  };
   if ($('stgAlPlan')) $('stgAlPlan').onclick = () => { cierraModal(); ve('contenido'); };
   if ($('stgEliminaProgramado')) $('stgEliminaProgramado').onclick = async ev => {
     // confirmaAqui reemplaza temporalmente el contenido del modal. Conservamos el
@@ -6109,7 +6117,7 @@ function stMuestra(){
     escena.innerHTML = '<div class="st-txt" style="background:' + fondo + ';color:' + letra
       + ';font-family:' + (ST_FUENTES[Number(e.font) || 0] || ST_FUENTES[0]) + '">' + esc(texto) + '</div>';
     stArranca(Math.min(12000, ST_DURACION_MS + texto.length * 30));
-  } else if (mio) {
+  } else if (mio && e.media_store !== 'bajo_demanda') {
     // Lo tuyo se publicó desde aquí y el archivo no se guardó: queda su miniatura.
     escena.innerHTML = e.media_thumb ? '<img class="st-img" src="' + esc(e.media_thumb) + '" alt="">' : '';
     pie.textContent = texto;
