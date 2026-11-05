@@ -4002,7 +4002,7 @@ input[type="checkbox"],input[type="radio"]{accent-color:var(--accent)}
 import { initializeApp, getApps } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js';
 import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut }
   from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js';
-import { getFirestore, collection, query, where, onSnapshot, doc, setDoc, getDoc, getDocs, limit, orderBy }
+import { initializeFirestore, collection, query, where, onSnapshot, doc, setDoc, getDoc, getDocs, limit, orderBy }
   from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
 
 const CFG = window.CRM_CONFIG || window.DCARELA_CRM_CONFIG || {};
@@ -4021,7 +4021,9 @@ const vistaHabilitada = id => !VISTAS_HABILITADAS || VISTAS_HABILITADAS.has(id);
 
 const app  = getApps().length ? getApps()[0] : initializeApp(FB);
 const auth = getAuth(app);
-const db   = getFirestore(app);
+// Las respuestas en streaming quedan retenidas en algunos WebView/proxies de la PC.
+// Cerrar cada respuesta permite recibir los datos sin esperar a que termine el canal.
+const db   = initializeFirestore(app, { experimentalForceLongPolling: true });
 
 const $ = id => document.getElementById(id);
 const esc = v => String(v ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
@@ -4060,7 +4062,7 @@ function confirmaAqui(texto, { si = 'Aceptar', no = 'Cancelar', nota = null } = 
   return new Promise(resolve => {
     const previo = document.activeElement;
     const m = document.createElement('div');
-    m.className = 'modal on'; m.style.zIndex = '95';
+    m.className = 'modal on'; m.style.zIndex = '1000';
     m.setAttribute('role', 'alertdialog'); m.setAttribute('aria-modal', 'true');
     m.innerHTML = '<div class="caja" style="max-width:420px"><div class="mcuerpo" style="white-space:pre-line;font-size:14px;line-height:1.55"></div>'
       + (nota != null ? '<textarea data-cf-nota rows="3" maxlength="300" style="width:100%;box-sizing:border-box;margin-top:10px;font:inherit;font-size:14px;padding:8px;border-radius:10px;border:1px solid var(--line2);resize:vertical"></textarea>' : '')
@@ -4439,6 +4441,8 @@ const ULTIMA_IMPORTACION = {};
 let CONVS = [], CONVS_TODAS = [], CONVS_OCULTAS = [], CONVS_IGNORADAS = [], MSGS = [], sel = null;
 let paraConvs = null, sondeoConvs = null, reintentoConvs = null;
 let paraMsgs = null, sondeoMsgs = null, reintentoMsgs = null, escuchaMsgId = '';
+let sondeoConvsEnCurso = false, revisionConvs = 0, revisionMsgs = 0;
+const sondeoMsgsEnCurso = new Set();
 let convsDesdeServidor = false, msgsDesdeServidor = false;
 // Los mismos tipos que firebase-functions/src/ignore-core.js (TIPOS): solo dicen POR QUE se ignora.
 const TIPOS_IGNORAR = { propio:'número propio', linea_negocio:'línea del negocio', familia:'familia',
@@ -4593,8 +4597,11 @@ function actualizaEstadoSincronizacion(){
 }
 function aplicaConversaciones(s, modo = 'en vivo'){
     convsDesdeServidor = s?.metadata?.fromCache !== true;
-    CONVS_TODAS = s.docs.map(d => ({ ...d.data(), _id:d.id })).filter(perteneceAlCanal).filter(c => !c.merged_into)
+    const siguientes = s.docs.map(d => ({ ...d.data(), _id:d.id })).filter(perteneceAlCanal).filter(c => !c.merged_into)
       .sort((a,b) => String(b.last_message_at||'').localeCompare(String(a.last_message_at||'')));
+    // Un cambio de conexión o un sondeo idéntico no reconstruye cientos de filas.
+    if (siguientes.length && JSON.stringify(siguientes) === JSON.stringify(CONVS_TODAS)) { actualizaEstadoSincronizacion(); return; }
+    CONVS_TODAS = siguientes;
     // Un unico punto donde se separa lo vivo de lo oculto. Asi cada vista y cada contador cuenta
     // lo mismo que se ve, sin repetir el filtro en veinte sitios (y olvidarlo en alguno).
     recalculaVisibles();
@@ -4622,13 +4629,18 @@ function detieneRespaldoConvs(){
   if (reintentoConvs) { clearTimeout(reintentoConvs); reintentoConvs = null; }
 }
 async function sondeaConversaciones(){
+  if (sondeoConvsEnCurso) return;
+  sondeoConvsEnCurso = true;
+  const revision = revisionConvs;
   try {
     const q = query(collection(db,'crm_conversations'), where('business_id','==',NEGOCIO));
-    aplicaConversaciones(await getDocs(q), 'respaldo cada 8 s');
+    const s = await getDocs(q);
+    if (revision === revisionConvs) aplicaConversaciones(s, 'respaldo cada 8 s');
   } catch (error) {
+    if (revision !== revisionConvs) return;
     convsDesdeServidor = false;
     marcaEstado(false, 'Sincronización interrumpida: ' + (error?.code || 'sin red'));
-  }
+  } finally { sondeoConvsEnCurso = false; }
 }
 function activaRespaldoConvs(){
   if (!sondeoConvs) {
@@ -4641,11 +4653,13 @@ function activaRespaldoConvs(){
   }, 30000);
 }
 function escuchaConversaciones(){
+  revisionConvs++;
   if (paraConvs) { paraConvs(); paraConvs = null; }
   const q = query(collection(db,'crm_conversations'), where('business_id','==',NEGOCIO));
   // El primer snapshot puede venir de IndexedDB. No lo confundimos con una conexión viva:
   // mientras siga siendo local, dejamos activo el sondeo y esperamos el cambio de metadata.
   paraConvs = onSnapshot(q, { includeMetadataChanges: true }, s => {
+    revisionConvs++;
     if (s?.metadata?.fromCache === true) activaRespaldoConvs();
     else detieneRespaldoConvs();
     aplicaConversaciones(s, s?.metadata?.fromCache === true ? 'copia local' : 'en vivo');
@@ -4663,14 +4677,18 @@ function detieneRespaldoMsgs(){
 function aplicaMensajes(s, idConv){
   if (!sel || (sel.id !== idConv && sel._id !== idConv)) return;
   msgsDesdeServidor = s?.metadata?.fromCache !== true;
-  MSGS = s.docs.map(d => ({ ...d.data(), _id:d.id }))
+  const siguientes = s.docs.map(d => ({ ...d.data(), _id:d.id }))
     .sort((a,b) => instanteMsg(a) - instanteMsg(b));
   actualizaEstadoSincronizacion();
+  if (siguientes.length && JSON.stringify(siguientes) === JSON.stringify(MSGS)) return;
+  MSGS = siguientes;
   pintaMensajes();
   pintaComboCatalogo();
 }
 async function sondeaMensajes(idConv){
-  if (escuchaMsgId !== idConv) return;
+  if (escuchaMsgId !== idConv || sondeoMsgsEnCurso.has(idConv)) return;
+  sondeoMsgsEnCurso.add(idConv);
+  const revision = revisionMsgs;
   const base = [where('business_id','==',NEGOCIO), where('conversation_id','==',idConv)];
   try {
     let s;
@@ -4679,14 +4697,15 @@ async function sondeaMensajes(idConv){
       if (error?.code !== 'failed-precondition') throw error;
       s = await getDocs(query(collection(db,'crm_messages'), ...base, limit(400)));
     }
-    aplicaMensajes(s, idConv);
+    if (escuchaMsgId === idConv && revision === revisionMsgs) aplicaMensajes(s, idConv);
   } catch (error) {
+    if (escuchaMsgId !== idConv || revision !== revisionMsgs) return;
     msgsDesdeServidor = false;
     actualizaEstadoSincronizacion();
     const cont = $('mensajes');
     if (cont && !MSGS.length) cont.innerHTML = '<div style="margin:auto;max-width:340px;text-align:center;color:var(--mut);font-size:13px">'
       + 'Reconectando mensajes…<br><b>' + esc(error?.code || 'sin red') + '</b></div>';
-  }
+  } finally { sondeoMsgsEnCurso.delete(idConv); }
 }
 function activaRespaldoMsgs(idConv){
   if (!sondeoMsgs) {
@@ -4705,6 +4724,8 @@ function abreEscuchaMensajes(idConv, esRespaldo){
     ? query(collection(db,'crm_messages'), ...base, limit(400))
     : query(collection(db,'crm_messages'), ...base, orderBy('created_at','desc'), limit(400));
   paraMsgs = onSnapshot(q, { includeMetadataChanges: true }, s => {
+    if (escuchaMsgId !== idConv) return;
+    revisionMsgs++;
     if (s?.metadata?.fromCache === true) activaRespaldoMsgs(idConv);
     else detieneRespaldoMsgs();
     aplicaMensajes(s, idConv);
@@ -4725,6 +4746,7 @@ function escuchaMensajes(idConv){
   detieneRespaldoMsgs();
   if (typeof detieneVozActiva === 'function') detieneVozActiva();
   escuchaMsgId = idConv;
+  revisionMsgs++;
   msgsDesdeServidor = false;
   actualizaEstadoSincronizacion();
   MSGS = [];
@@ -6347,11 +6369,12 @@ async function stCompositor(tipo, opciones = {}){
     llama({ action:'statusAudience', dias: 180 }),
     llama({ action:'audienciaFoto' }),
   ]);
-  if (!$('stComp')) return;
+  if ($('stComp') !== d) return;
   if (r.ok) {
     ST.comp.conteo = r.data || {};
     const c = ST.comp.conteo.conteo || {};
     [...$('stcQuien').options].forEach(o => {
+      if (!Object.prototype.hasOwnProperty.call(ES_ETIQUETAS, o.value)) return;
       const n = c[o.value] ? c[o.value].total : 0;
       o.textContent = ES_ETIQUETAS[o.value] + (o.value === 'activos' ? ' (180 días)' : '') + ' — ' + n
         + (n === 1 ? ' contacto' : ' contactos');
