@@ -1,7 +1,7 @@
 {
-  "version": "2026-11-03-crm-release-v392-menus",
+  "version": "2026-11-05-crm-release-v395-estados-sincronizacion",
   "channel": "crm",
-  "released_at": "2026-11-03T17:45:00Z",
-  "summary": "Los menús «⋯» se abren hacia arriba cuando no caben (la Agenda escondía «Cancelar la reservación»). Incluye Ollama como cerebro (v391).",
+  "released_at": "2026-11-05T17:33:31.662994Z",
+  "summary": "Estados: confirmación visible, audiencias sin duplicados y prueba privada enviada. Menos lecturas y repintados repetidos al reconectar el chat.",
   "requiere_puente": "2026-11-03-ollama-v62"
 }
