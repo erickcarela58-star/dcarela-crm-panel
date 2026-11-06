@@ -2142,7 +2142,7 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{outline:0}
 .cmb-cc-chip small{color:var(--mut);font-weight:500;margin-left:4px}.cmb-cc-chip.on{background:var(--accent);border-color:var(--accent);color:#fff}.cmb-cc-chip.on small{color:#fff}
 .cmb-cc-acc{display:flex;flex-wrap:wrap;gap:8px}
 .cmb-cc-paginas{position:relative;display:grid;grid-auto-flow:column;grid-auto-columns:minmax(180px,220px);gap:12px;overflow-x:auto;padding:4px 2px 10px;min-height:120px}
-.cmb-cc-paginas img{width:100%;border-radius:10px;box-shadow:var(--sombra-suave);background:#fff}
+.cmb-cc-paginas img{width:100%;height:auto;border-radius:10px;box-shadow:var(--sombra-suave);background:#fff}
 .cmb-cc-flyer{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 0;border-top:1px solid var(--line)}
 .cmb-cc-flyer span{display:block;color:var(--mut);font-size:13px}
 .cmb-hoja{position:relative;background:var(--segmento);border-radius:14px;padding:12px;max-height:72vh;overflow:auto;text-align:center}
@@ -25592,7 +25592,7 @@ const CMB = { datos: null, cargando: false, error: '', pestana: 'combos', q: '',
 const CMB_SUC = [['central', 'La Central', 'whatsapp'], ['plaza', 'Plaza Artesanal', 'whatsapp_plaza']];
 // Catálogos por categoría (pedido del dueño 25/10/2026): [id del catálogo, nombre, categorías de crm_combos que entran].
 const CMB_CC = [['xv', 'Quinceañeras', ['xv']], ['infantiles', 'Infantiles', ['infantil']], ['cumpleanos', 'Cumpleaños', ['cumpleanos']], ['graduacion', 'Graduación', ['graduacion']],
-  ['embarazo', 'Embarazo', ['embarazadas']], ['bodas', 'Bodas', ['bodas', 'boda']]];
+  ['embarazo', 'Embarazo', ['embarazadas']], ['bodas', 'Bodas', ['bodas', 'boda']], ['navidad', 'Navidad 2026', []]];
 const CMB_ICO = {
   combo: '<svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 7 12 3 4 7l8 4 8-4z"/><path d="M4 7v10l8 4 8-4V7"/><path d="M12 11v10"/></svg>',
   ok: '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 5 5 9-10"/></svg>',
@@ -25693,6 +25693,13 @@ function cmbVistaHtml(){
 // Las páginas del catálogo de una categoría, dibujadas en el servidor. Solo cuenta la última petición.
 async function cmbCcVista(){
   const turno = ++CMB.cc.turno;
+  if (CMB.cc.cat === 'navidad') {
+    if (cmbNavidadDisponible()) {
+      Object.assign(CMB.cc, { datos: null, cargando: false, error: '' });
+      return cmbPinta();
+    }
+    CMB.cc.cat = 'infantiles';
+  }
   CMB.cc.cargando = true; CMB.cc.error = ''; cmbPinta();
   const r = await llama({ action:'combos', operation:'catalogo_categoria', categoria: CMB.cc.cat, sucursal: CMB.cc.suc, formato:'vista' });
   if (turno !== CMB.cc.turno) return;
@@ -25714,18 +25721,45 @@ async function cmbCcBaja(boton, pedido){
   if (r.imagen_b64) return cmbBaja(r.imagen_b64, r.tipo, r.nombre);
   if (r.html != null) return cmbBaja(r.html, 'text/html', r.nombre);
 }
+function cmbNavidadDisponible(){
+  return NEGOCIO === 'dcarela' && CMB.cc.suc === 'central';
+}
+function cmbCcSelector(conteo){
+  return '<div class="cmb-cc-chips" role="group" aria-label="Categoría del catálogo">'
+    + CMB_CC.filter(([id]) => id !== 'navidad' || cmbNavidadDisponible()).map(([id, nombre, crm]) => {
+      const activa = CMB.cc.cat === id;
+      const cantidad = id === 'navidad' ? 22 : conteo?.(crm);
+      return '<button type="button" class="cmb-cc-chip' + (activa ? ' on' : '') + '" aria-pressed="' + activa + '" data-cmbcc="' + id + '">'
+        + esc(nombre) + (cantidad == null ? '' : ' <small>' + cantidad + '</small>') + '</button>';
+    }).join('') + '</div>';
+}
+function cmbCcSucursales(){
+  const cc = CMB.cc;
+  return '<div class="cmb-cc-chips" role="group" aria-label="Sucursal">' + CMB_SUC.map(([id, nombre]) => '<button type="button" class="cmb-cc-chip' + (cc.suc === id ? ' on' : '') + '" aria-pressed="' + (cc.suc === id) + '" data-cmbsuc="' + id + '">WhatsApp ' + esc(nombre) + '</button>').join('') + '</div>';
+}
+function cmbNavidadHtml(completa){
+  const paginas = Array.from({length: completa ? 13 : 4}, (_, i) => '<img width="560" height="792"'
+    + (i ? ' loading="lazy"' : ' fetchpriority="high"') + ' decoding="async" src="./catalogos/navidad-2026/pagina-' + (i + 1)
+    + '.webp?v=405" alt="' + (i ? 'Navidad 2026 · página ' + (i + 1) : 'Portada del catálogo de Navidad 2026') + '">').join('');
+  return '<section class="cmb-caja cmb-previa"><header class="cmb-cabcaja"><span class="cmb-pdfico">' + CMB_ICO.pdf
+    + '</span><div><h3>Navidad 2026 · La Central</h3><p>Guía de experiencias con 22 combos, 13 páginas y botones de WhatsApp.</p></div></header>'
+    + cmbCcSelector() + (completa ? cmbCcSucursales() : '')
+    + '<div class="cmb-cc-paginas' + (completa ? '' : ' cmb-previa-paginas') + '" aria-label="Vista previa de Navidad 2026">' + paginas + '</div>'
+    + '<footer class="cmb-controles">' + (completa ? '<a class="btn-linea" href="https://dcarelacompufoto.com/navidad/" target="_blank" rel="noopener noreferrer">Abrir catálogo web</a>'
+      : '<button type="button" class="btn-linea" data-cmbir="porcategoria">Ver las 13 páginas</button>')
+    + '<a class="btn-solido" href="./catalogos/navidad-2026.pdf?v=405" download>' + CMB_ICO.pdf + 'Descargar PDF de Navidad</a></footer></section>';
+}
 function cmbCcHtml(){
+  if (CMB.cc.cat === 'navidad' && cmbNavidadDisponible()) return cmbNavidadHtml(true);
   const d = CMB.datos, cc = CMB.cc, v = cc.datos, suc = CMB_SUC.find(([id]) => id === cc.suc) || CMB_SUC[0], sinNumero = !String(d?.ajustes?.[suc[2]] || '').replace(/\D/g, '');
   const categoriasCrm = (CMB_CC.find(([id]) => id === cc.cat) || [null, null, []])[2];
   const combosFlyer = Array.isArray(v?.combos) && v.combos.length ? v.combos : (d?.combos || []).filter(c => c.activo !== false
     && categoriasCrm.includes(c.categoria) && (!c.sucursal || c.sucursal === 'ambas' || c.sucursal === cc.suc));
   const cuantos = crm => (d?.combos || []).filter(c => c.activo !== false && crm.includes(c.categoria) && Number(c.precio) > 0).length;
-  const chips = CMB_CC.map(([id, nombre, crm]) => '<button type="button" class="cmb-cc-chip' + (cc.cat === id ? ' on' : '') + '" aria-pressed="' + (cc.cat === id) + '" data-cmbcc="' + id + '">' + esc(nombre) + ' <small>' + cuantos(crm) + '</small></button>').join('');
   const flyer = (nombre, detalle, attr) => '<div class="cmb-cc-flyer"><div><b>' + esc(nombre) + '</b><span>' + esc(detalle) + '</span></div><button type="button" class="btn-linea cmb-chico" ' + attr + '>Flyer JPG</button></div>';
   return '<section class="cmb-caja"><header class="cmb-cabcaja"><div><h3>Catálogos por categoría</h3><p>Un catálogo por categoría, solo con sus combos. Cada combo lleva su botón «Quiero este combo», que abre WhatsApp con el combo y su referencia ya escritos. El número no se ve en ninguna página.</p></div></header>'
-    + '<div class="cmb-cc-chips" role="group" aria-label="Categoría del catálogo">' + chips + '</div>'
-    + (cc.suc === 'central' ? '<div class="cmb-cc-flyer"><div><b>Navidad 2026 · La Central</b><span>Guía de experiencias con los 22 combos y botones de WhatsApp.</span></div><a class="btn-linea cmb-chico" href="./catalogos/navidad-2026.pdf" target="_blank" rel="noopener noreferrer">Abrir PDF de Navidad</a></div>' : '')
-    + '<div class="cmb-cc-chips" role="group" aria-label="Sucursal">' + CMB_SUC.map(([id, nombre]) => '<button type="button" class="cmb-cc-chip' + (cc.suc === id ? ' on' : '') + '" aria-pressed="' + (cc.suc === id) + '" data-cmbsuc="' + id + '">WhatsApp ' + esc(nombre) + '</button>').join('') + '</div>'
+    + cmbCcSelector(cuantos)
+    + cmbCcSucursales()
     + (sinNumero ? '<p class="aviso">Pon el WhatsApp de ' + esc(suc[1]) + ' en la pestaña «Catálogo PDF» para que los botones del catálogo funcionen.</p>' : '')
     + (cc.error ? '<p class="aviso">' + esc(cc.error) + '</p>' : '')
     + '<div class="cmb-cc-acc"><button type="button" class="btn-solido" data-cmbccpdf="1"' + (sinNumero ? ' disabled' : '') + '>' + CMB_ICO.pdf + 'Descargar catálogo PDF</button>'
@@ -25744,9 +25778,10 @@ function cmbCcHtml(){
 // v332: la vista previa de Combos y Catálogo PDF es el catálogo NUEVO por categoría (fotos reales, todo lo que incluye y un
 // botón de WhatsApp por combo sin número a la vista). La hoja vieja (todas las categorías, teléfono visible) ya no se muestra.
 function cmbPreviaNueva(){
+  if (CMB.cc.cat === 'navidad' && cmbNavidadDisponible()) return cmbNavidadHtml(false);
   const cc = CMB.cc, v = cc.datos, d = CMB.datos, suc = CMB_SUC.find(([id]) => id === cc.suc) || CMB_SUC[0], sinNumero = !String(d?.ajustes?.[suc[2]] || '').replace(/\D/g, '');
   return '<section class="cmb-caja cmb-previa"><header class="cmb-cabcaja"><span class="cmb-pdfico">' + CMB_ICO.pdf + '</span><div><h3>Vista previa del catálogo</h3><p>Una categoría por catálogo, con fotos reales y todo lo que incluye cada combo. El número de WhatsApp no se ve.</p></div></header>'
-    + '<div class="cmb-cc-chips" role="group" aria-label="Categoría del catálogo">' + CMB_CC.map(([id, nombre]) => '<button type="button" class="cmb-cc-chip' + (cc.cat === id ? ' on' : '') + '" aria-pressed="' + (cc.cat === id) + '" data-cmbcc="' + id + '">' + esc(nombre) + '</button>').join('') + '</div>'
+    + cmbCcSelector()
     + (sinNumero ? '<p class="aviso">Falta el WhatsApp de ' + esc(suc[1]) + ' en «Catálogo PDF»: sin él los botones del catálogo no abren el chat.</p>' : '')
     + (cc.error ? '<p class="aviso">' + esc(cc.error) + '</p>' : '')
     + '<div class="cmb-cc-paginas cmb-previa-paginas" aria-busy="' + cc.cargando + '">' + (v ? v.paginas.slice(0, 4).map((pg, i) => '<img src="data:image/jpeg;base64,' + pg + '" alt="Página ' + (i + 1) + ' del catálogo">').join('') : cc.cargando ? '<div class="cmb-esqueleto"></div>' : '')
@@ -25757,7 +25792,7 @@ function cmbPreviaNueva(){
 // v378 · Fase 7: tras un error (p. ej. falta el WhatsApp de la sucursal) NO se vuelve a pedir sola: cmbCcVista repinta, el
 // repintado llamaba aquí y se pedía otra vez, sin fin (más de 150 000 peticiones en el banco). Reintenta el dueño al cambiar
 // categoría, sucursal o ajustes.
-function cmbPrevia(){ if (!CMB.cc.datos && !CMB.cc.cargando && !CMB.cc.error && CMB.datos?.combos?.length) setTimeout(cmbCcVista, 0); return '<div id="cmbPreviaHueco">' + cmbPreviaNueva() + '</div>'; }
+function cmbPrevia(){ if (CMB.cc.cat !== 'navidad' && !CMB.cc.datos && !CMB.cc.cargando && !CMB.cc.error && CMB.datos?.combos?.length) setTimeout(cmbCcVista, 0); return '<div id="cmbPreviaHueco">' + cmbPreviaNueva() + '</div>'; }
 function cmbPintaVista(){ const c = $('cmbPreviaHueco'); if (c) c.innerHTML = cmbPreviaNueva(); }
 function cmbPinta(){
   const v = $('vista-combos'); if (!v) return;
@@ -25816,7 +25851,9 @@ function cmbPinta(){
   const foco = document.activeElement?.dataset?.cmbbuscar ? document.activeElement.selectionStart : null;
   v.innerHTML = '<div class="cmb">'
     + '<header class="cmb-cab"><span class="cmb-logo">' + CMB_ICO.combo + '</span><div><h2>Combos y PDF comercial</h2><p>Gestiona tus combos de productos, crea tu catálogo y genera PDFs comerciales</p></div>'
-    + '<div class="cmb-cabacc">' + (d?.combos?.length ? '<button type="button" class="btn-linea" data-cmbccpdf="1">' + CMB_ICO.pdf + 'Descargar catálogo</button>' : '')
+    + '<div class="cmb-cabacc">' + (CMB.cc.cat === 'navidad' && cmbNavidadDisponible()
+      ? '<a class="btn-linea" href="./catalogos/navidad-2026.pdf?v=405" download>' + CMB_ICO.pdf + 'Descargar PDF de Navidad</a>'
+      : d?.combos?.length ? '<button type="button" class="btn-linea" data-cmbccpdf="1">' + CMB_ICO.pdf + 'Descargar catálogo</button>' : '')
     + (editar ? '<button type="button" class="btn-solido" data-cmbnuevo="1">+ Nuevo combo</button>' : '') + '</div></header>'
     + '<nav class="cmb-tabs" role="tablist">' + tab('combos', 'Combos') + tab('porcategoria', 'Catálogos por categoría') + tab('categorias', 'Categorías') + tab('catalogo', 'Catálogo PDF') + tab('precios', 'Precios') + '</nav>'
     + cuerpo + '</div>';
@@ -25875,9 +25912,9 @@ function montaCombos(){
   const v = hueco('combos', '');
   v.addEventListener('click', async ev => {
     const t = ev.target;
-    const ir = t.closest('[data-cmbir]'); if (ir) { CMB.pestana = ir.dataset.cmbir; cmbPinta(); if (!CMB.cc.datos && !CMB.cc.cargando) cmbCcVista(); return; }
+    const ir = t.closest('[data-cmbir]'); if (ir) { CMB.pestana = ir.dataset.cmbir; cmbPinta(); if (CMB.cc.cat !== 'navidad' && !CMB.cc.datos && !CMB.cc.cargando) cmbCcVista(); return; }
     const tabB = t.closest('[data-cmbtab]'); if (tabB) { CMB.pestana = tabB.dataset.cmbtab; cmbPinta();
-      if (CMB.pestana === 'porcategoria' && !CMB.cc.datos && !CMB.cc.cargando) cmbCcVista(); return; }
+      if (CMB.pestana === 'porcategoria' && CMB.cc.cat !== 'navidad' && !CMB.cc.datos && !CMB.cc.cargando) cmbCcVista(); return; }
     const cc = t.closest('[data-cmbcc]'); if (cc) { CMB.cc.cat = cc.dataset.cmbcc; CMB.cc.datos = null; return cmbCcVista(); }
     const su = t.closest('[data-cmbsuc]'); if (su) { CMB.cc.suc = su.dataset.cmbsuc; CMB.cc.datos = null; return cmbCcVista(); }
     if (t.closest('[data-cmbccpdf]')) return cmbCcBaja(t.closest('[data-cmbccpdf]'), { operation:'catalogo_categoria', categoria: CMB.cc.cat, sucursal: CMB.cc.suc, formato:'pdf' });
