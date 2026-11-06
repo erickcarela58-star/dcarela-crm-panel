@@ -1,7 +1,7 @@
 {
-  "version": "2026-11-06-crm-release-v403-navidad-solicitudes",
+  "version": "2026-11-06-crm-release-v404-guia-navidad",
   "channel": "crm",
-  "released_at": "2026-11-06T10:44:00Z",
-  "summary": "Catálogo de Navidad Central V9, solicitudes web y revisión por WhatsApp.",
+  "released_at": "2026-11-06T16:14:44Z",
+  "summary": "Guía comercial de Navidad 2026 disponible para abrir en Productos / Combos y adjuntar en el chat.",
   "requiere_puente": "2026-11-06-vision-navidad-v67"
 }
