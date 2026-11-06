@@ -1,7 +1,7 @@
 {
-  "version": "2026-11-05-crm-release-v397-cola-estados",
+  "version": "2026-11-05-crm-release-v398-citas-chat",
   "channel": "crm",
-  "released_at": "2026-11-05T20:05:03.0996620Z",
-  "summary": "Estados múltiples en cola visible con reloj, archivos conservados al recargar y reintentos sin duplicados. Vinculación con estado actualizado y nueva solicitud tras un intento interrumpido.",
-  "requiere_puente": "2026-11-05-cola-estados-v64"
+  "released_at": "2026-11-06T01:55:43Z",
+  "summary": "Las respuestas citadas muestran el nombre del documento o la miniatura de la foto y abren el mensaje original del chat.",
+  "requiere_puente": "2026-11-05-citas-v65"
 }
