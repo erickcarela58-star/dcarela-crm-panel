@@ -25740,14 +25740,14 @@ function cmbCcSucursales(){
 function cmbNavidadHtml(completa){
   const paginas = Array.from({length: completa ? 13 : 4}, (_, i) => '<img width="560" height="792"'
     + (i ? ' loading="lazy"' : ' fetchpriority="high"') + ' decoding="async" src="./catalogos/navidad-2026/pagina-' + (i + 1)
-    + '.webp?v=405" alt="' + (i ? 'Navidad 2026 · página ' + (i + 1) : 'Portada del catálogo de Navidad 2026') + '">').join('');
+    + '.webp?v=406" alt="' + (i ? 'Navidad 2026 · página ' + (i + 1) : 'Portada del catálogo de Navidad 2026') + '">').join('');
   return '<section class="cmb-caja cmb-previa"><header class="cmb-cabcaja"><span class="cmb-pdfico">' + CMB_ICO.pdf
     + '</span><div><h3>Navidad 2026 · La Central</h3><p>Guía de experiencias con 22 combos, 13 páginas y botones de WhatsApp.</p></div></header>'
     + cmbCcSelector() + (completa ? cmbCcSucursales() : '')
     + '<div class="cmb-cc-paginas' + (completa ? '' : ' cmb-previa-paginas') + '" aria-label="Vista previa de Navidad 2026">' + paginas + '</div>'
     + '<footer class="cmb-controles">' + (completa ? '<a class="btn-linea" href="https://dcarelacompufoto.com/navidad/" target="_blank" rel="noopener noreferrer">Abrir catálogo web</a>'
       : '<button type="button" class="btn-linea" data-cmbir="porcategoria">Ver las 13 páginas</button>')
-    + '<a class="btn-solido" href="./catalogos/navidad-2026.pdf?v=405" download>' + CMB_ICO.pdf + 'Descargar PDF de Navidad</a></footer></section>';
+    + '<a class="btn-solido" href="./catalogos/navidad-2026.pdf?v=406" download>' + CMB_ICO.pdf + 'Descargar PDF de Navidad</a></footer></section>';
 }
 function cmbCcHtml(){
   if (CMB.cc.cat === 'navidad' && cmbNavidadDisponible()) return cmbNavidadHtml(true);
@@ -25852,7 +25852,7 @@ function cmbPinta(){
   v.innerHTML = '<div class="cmb">'
     + '<header class="cmb-cab"><span class="cmb-logo">' + CMB_ICO.combo + '</span><div><h2>Combos y PDF comercial</h2><p>Gestiona tus combos de productos, crea tu catálogo y genera PDFs comerciales</p></div>'
     + '<div class="cmb-cabacc">' + (CMB.cc.cat === 'navidad' && cmbNavidadDisponible()
-      ? '<a class="btn-linea" href="./catalogos/navidad-2026.pdf?v=405" download>' + CMB_ICO.pdf + 'Descargar PDF de Navidad</a>'
+      ? '<a class="btn-linea" href="./catalogos/navidad-2026.pdf?v=406" download>' + CMB_ICO.pdf + 'Descargar PDF de Navidad</a>'
       : d?.combos?.length ? '<button type="button" class="btn-linea" data-cmbccpdf="1">' + CMB_ICO.pdf + 'Descargar catálogo</button>' : '')
     + (editar ? '<button type="button" class="btn-solido" data-cmbnuevo="1">+ Nuevo combo</button>' : '') + '</div></header>'
     + '<nav class="cmb-tabs" role="tablist">' + tab('combos', 'Combos') + tab('porcategoria', 'Catálogos por categoría') + tab('categorias', 'Categorías') + tab('catalogo', 'Catálogo PDF') + tab('precios', 'Precios') + '</nav>'

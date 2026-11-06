@@ -1,7 +1,7 @@
 {
-  "version": "2026-11-06-crm-release-v405-previa-navidad",
+  "version": "2026-11-06-crm-release-v406-galeria-navidad",
   "channel": "crm",
-  "released_at": "2026-11-06T16:35:26Z",
-  "summary": "Navidad 2026 tiene categoría propia y vista previa inmediata con páginas ligeras.",
+  "released_at": "2026-11-06T16:48:34Z",
+  "summary": "Guía de Navidad con las cuatro fotos del Bosque Nevado y los fondos rojo y verde en las fichas.",
   "requiere_puente": "2026-11-06-vision-navidad-v67"
 }
