@@ -17883,6 +17883,7 @@ async function pfPintaGaleria(){
   const privado = categoria === 'navidad';
   const resumen = Object.keys(nombres).map(c => esc(nombres[c]) + ': <b>' + Number((r.conteo || {})[c] || 0) + '</b>').join(' · ');
   g.innerHTML = '<div class="plan-seccion-cab"><h3>Fotos subidas'+(categoria?' · '+esc(nombres[categoria] || categoria):'')+'</h3><span class="cont-sub">'+items.length+' archivos</span></div><details class="plan-upload-check"><summary>Ver todas las categorías</summary><p>' + resumen + '</p></details>'
+    + (privado ? '<p><a class="btn-sec" href="https://dcarelacompufoto.com/navidad/" target="_blank" rel="noopener noreferrer">Ver los 22 combos navideños</a></p>' : '')
     + (privado && items.some(f => f.original) ? '<form id="pfNavidad" class="cont-form"><p>Marca hasta 12 originales. Por foto se preparan piezas para Instagram, Página de Facebook, Estado de WhatsApp y un cuadrado para pauta en Marketplace.</p><div class="fila"><label>Mes de campaña <input type="month" name="mes" required value="' + esc(contMesNavidad()) + '"></label><button type="submit" class="btn-solido">Preparar lote navideño</button></div></form>' : '')
     + (items.length ? '<div class="pf-miniaturas">' + items.map(f =>
       '<figure class="pf-mini' + (f.estado === 'oculta' ? ' oculta' : '') + '" data-id="' + esc(f.id) + '">'
