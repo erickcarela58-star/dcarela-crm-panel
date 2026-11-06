@@ -1093,7 +1093,10 @@ a.ayuda{color:var(--enlace)}
   background:rgba(11,20,26,.06);font-size:12px;color:var(--meta);line-height:1.35}
 :root[data-tema="oscuro"] .cita{background:rgba(255,255,255,.07)}
 .cita b{display:block;color:var(--ok);font-size:11px}
-.cita[data-cita]{cursor:pointer}
+.cita[data-cita]{display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;border-top:0;border-right:0;border-bottom:0;text-align:left;font-family:inherit;cursor:pointer}
+.cita-texto{min-width:0;overflow-wrap:anywhere}
+.cita-foto{flex:none;width:46px;height:46px;object-fit:cover;border-radius:4px}
+.cita[aria-busy="true"]{cursor:progress}
 .globo.resaltado{animation:resalta 1.4s ease-out}
 /* Los resultados de buscar dentro de los mensajes, encima de la lista de chats. */
 .cabeza #buscaMsgs{margin-left:7px;border:1px solid var(--line);background:var(--panel);
@@ -4440,6 +4443,7 @@ const ULTIMA_IMPORTACION = {};
 // CONVS y de CONVS_OCULTAS, asi que ninguna vista ni contador las cuenta; el chip 'Ignorados' las
 // trae y desde ahi se deshace.
 let CONVS = [], CONVS_TODAS = [], CONVS_OCULTAS = [], CONVS_IGNORADAS = [], MSGS = [], sel = null;
+let citaHistorial = null, turnoCita = 0, citasLeidas = new Map();
 let paraConvs = null, sondeoConvs = null, reintentoConvs = null;
 let paraMsgs = null, sondeoMsgs = null, reintentoMsgs = null, escuchaMsgId = '';
 let sondeoConvsEnCurso = false, revisionConvs = 0, revisionMsgs = 0;
@@ -4678,8 +4682,12 @@ function detieneRespaldoMsgs(){
 function aplicaMensajes(s, idConv){
   if (!sel || (sel.id !== idConv && sel._id !== idConv)) return;
   msgsDesdeServidor = s?.metadata?.fromCache !== true;
-  const siguientes = s.docs.map(d => ({ ...d.data(), _id:d.id }))
-    .sort((a,b) => instanteMsg(a) - instanteMsg(b));
+  const siguientes = s.docs.map(d => ({ ...d.data(), _id:d.id }));
+  if (citaHistorial) {
+    if (siguientes.some(m => m._id === citaHistorial._id)) citaHistorial = null;
+    else siguientes.push(citaHistorial);
+  }
+  siguientes.sort((a,b) => instanteMsg(a) - instanteMsg(b));
   actualizaEstadoSincronizacion();
   if (siguientes.length && JSON.stringify(siguientes) === JSON.stringify(MSGS)) return;
   MSGS = siguientes;
@@ -4751,6 +4759,9 @@ function escuchaMensajes(idConv){
   msgsDesdeServidor = false;
   actualizaEstadoSincronizacion();
   MSGS = [];
+  citaHistorial = null;
+  citasLeidas = new Map();
+  turnoCita++;
   // Los globos de "enviando" son de la conversacion que se deja: al cambiar de chat ya no hay
   // MSGS con que confirmarlos, y arrastrarlos seria enseñar un reloj que no se apaga nunca.
   ENVIANDO = [];
@@ -7229,11 +7240,65 @@ function fechaDelResultado(iso){
 // Saltar al mensaje dentro del hilo, si esta entre los que se cargaron. Si no, no se hace nada:
 // el chat ya esta abierto, que es el 90 % de lo que se venia a hacer.
 function saltaAlMensaje(id){
-  const globo = document.querySelector('.globo[data-msg="' + CSS.escape(String(id)) + '"]');
+  const globo = $('mensajes')?.querySelector('.globo[data-msg="' + CSS.escape(String(id)) + '"]');
   if (!globo) return;
   globo.scrollIntoView({ behavior: 'smooth', block: 'center' });
   globo.classList.add('resaltado');
   setTimeout(() => globo.classList.remove('resaltado'), 1400);
+  return true;
+}
+
+async function saltaACita(boton){
+  if (boton.getAttribute('aria-busy') === 'true') return;
+  const id = boton.dataset.cita;
+  const turno = ++turnoCita;
+  const original = MSGS.find(m => m.wamid === id || m.id === id || m._id === id);
+  if (original && saltaAlMensaje(original.id || original.wamid || original._id)) return;
+  const chat = escuchaMsgId, uid = auth.currentUser?.uid, vista = vistaActual;
+  if (!chat || !uid) return;
+  const vigente = () => turno === turnoCita && chat === escuchaMsgId && uid === auth.currentUser?.uid && vista === vistaActual;
+  boton.setAttribute('aria-busy', 'true');
+  try {
+    const fila = await leeOriginalCita(id, chat);
+    if (!vigente()) return;
+    if (!fila) return avisa('Original no disponible', 'Ese mensaje no está guardado en este chat.');
+    const cargado = MSGS.find(m => m._id === fila._id || m.wamid === id);
+    if (cargado && saltaAlMensaje(cargado.id || cargado.wamid || cargado._id)) return;
+    detieneVozActiva();
+    MSGS = MSGS.filter(m => m !== citaHistorial);
+    citaHistorial = fila;
+    MSGS.push(fila);
+    MSGS.sort((a,b) => instanteMsg(a) - instanteMsg(b));
+    pintaMensajes();
+    saltaAlMensaje(fila.id || fila.wamid || fila._id);
+  } catch (e) {
+    if (vigente()) avisa('No se pudo abrir el original', 'Vuelve a pulsar la cita para reintentar.');
+  } finally { boton.removeAttribute('aria-busy'); }
+}
+
+function leeOriginalCita(id, chat){
+  const cache = citasLeidas;
+  const anterior = cache.get(id);
+  if (anterior && anterior.fila !== null) return anterior.pedido;
+  const entrada = { fila:undefined };
+  entrada.pedido = getDocs(query(collection(db, 'crm_messages'),
+    where('business_id', '==', NEGOCIO), where('conversation_id', '==', chat), where('wamid', '==', id), limit(1)))
+    .then(s => {
+      const d = s.docs[0];
+      entrada.fila = d ? { ...d.data(), _id:d.id } : null;
+      return entrada.fila;
+    }).catch(e => { cache.delete(id); throw e; });
+  cache.set(id, entrada);
+  return entrada.pedido;
+}
+
+async function preparaPreviaCita(id){
+  const cache = citasLeidas, chat = escuchaMsgId, uid = auth.currentUser?.uid;
+  if (!chat || !uid || cache.has(id) || cache.size >= 30) return;
+  try {
+    const fila = await leeOriginalCita(id, chat);
+    if (fila && citasLeidas === cache && uid === auth.currentUser?.uid) pintaMensajes();
+  } catch (e) { /* Pulsar la cita permite reintentar la consulta. */ }
 }
 
 // ENTREGA de la sesión (26/10/2026, firebase-functions/src/entregas-core.js): digitales a nombre del dueño con plazo de 3 días → producción con
@@ -10680,17 +10745,10 @@ document.addEventListener('click', async ev => {
     if (editado) abreVersiones(editado);
     return;
   }
-  // Pulsar la cita salta al mensaje citado, como en WhatsApp. Si ese mensaje no esta cargado
-  // --el hilo trae los ultimos 400-- no se hace nada: mejor eso que un salto a otro sitio.
   const cita = ev.target.closest('.cita[data-cita]');
   if (cita) {
     ev.stopPropagation();
-    const original = document.querySelector('.globo[data-msg="' + CSS.escape(cita.dataset.cita) + '"]');
-    if (!original) return avisa('Ese mensaje no está cargado', 'Es más antiguo que los que tiene abiertos el chat.');
-    original.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    original.classList.add('resaltado');
-    setTimeout(() => original.classList.remove('resaltado'), 1400);
-    return;
+    return saltaACita(cita);
   }
   const b = ev.target.closest('.gaccion');
   if (!b) { document.querySelectorAll('.gmenu').forEach(m => m.remove()); return; }
@@ -11707,7 +11765,10 @@ function resuelveMedios(){
   cableaVoz();
   cableaBajoDemanda();
   cableaDescargas();
-  const pendientes = [...document.querySelectorAll('[data-medio]:not([data-medio-cola])')];
+  const pendientes = [
+    ...document.querySelectorAll('[data-medio]:not([data-medio-cola])'),
+    ...document.querySelectorAll('.cita[data-cita-previa]:not([data-medio-cola])'),
+  ];
   if (!pendientes.length) return;
   // Lo que ya esta en la cache se pinta en el acto: no cuesta ninguna llamada.
   const porPedir = [];
@@ -11750,16 +11811,18 @@ function bombeaMedios(){
     const el = COLA_MEDIOS.shift();
     // Un globo que se repinto mientras esperaba turno ya no esta en el documento: pedirlo
     // seria bajar un archivo que nadie va a ver.
-    if (!el.isConnected || !el.dataset.medio) continue;
+    if (!el.isConnected || (!el.dataset.medio && !el.dataset.citaPrevia)) continue;
     mediosEnCurso++;
     pintaMedio(el).finally(() => { mediosEnCurso--; bombeaMedios(); });
   }
 }
 
 async function pintaMedio(el){
+  if (el.dataset.citaPrevia) return preparaPreviaCita(el.dataset.citaPrevia);
   const url = await urlDeMedio(el.dataset.medio);
   if (!el.isConnected) return;
   if (!url) {
+    if (el.classList.contains('cita-foto')) { el.remove(); return; }
     // Un fallo pasajero no puede dejar la foto fuera hasta recargar el panel: la tarjeta trae su
     // boton para volver a pedirla (ver el manejador de [data-reintenta]).
     const caja = document.createElement('div');
@@ -12252,18 +12315,33 @@ function globosEnviando(conv){
 // en metadata.responde_a; reply_snippet es el campo viejo del bot oficial y se sigue leyendo.
 // Sin esto, la respuesta de un cliente llegaba suelta --"si, ese"-- y no habia manera de saber
 // a cual de los tres combos decia que si. En WhatsApp Web eso se ve siempre.
-function citaDelMensaje(m){
+function citaDelMensaje(m, originales){
   const r = m.metadata?.responde_a;
-  const texto = r?.texto || m.reply_snippet || '';
+  const original = r?.wamid && !r.estado ? originales?.get(r.wamid) : null;
+  const a = original ? adjuntoDe(original) : null;
+  const tipo = original ? tipoRealMedio(original, a) : r?.tipo;
+  const esDocumento = ['file', 'document', 'archivo'].includes(original?.msg_type || r?.tipo || tipo);
+  const esFoto = tipo === 'image' || !!r?.miniatura;
+  const texto = (esDocumento && (a?.nombre || r?.nombre)) || r?.texto || m.reply_snippet || '';
   if (!texto) return '';
-  const mio = r ? r.mio === true : m.reply_sender !== 'customer';
-  // El id del mensaje citado va en el atributo: pulsando la cita se salta al original, como en
-  // WhatsApp. Si ese mensaje no esta cargado (el hilo trae los ultimos 400), no pasa nada.
-  const destino = r?.wamid ? ' data-cita="' + esc(r.wamid) + '"' : '';
+  const mio = original ? original.direction === 'out' : r ? r.mio === true : m.reply_sender !== 'customer';
+  const enlace = !!r?.wamid && !r.estado;
+  const buscarPrevia = enlace && originales && !originales.has(r.wamid)
+    && (!r.tipo || (r.tipo === 'file' && !r.nombre) || (r.tipo === 'image' && !r.miniatura));
+  const privado = original?.metadata?.vista_unica || original?.metadata?.deleted || original?.metadata?.deleted_at;
+  let foto = '';
+  if (esFoto && !privado) {
+    const mini = miniaturaMensaje(original) || miniaturaMensaje({ media_thumb_b64:r?.miniatura });
+    const src = mini || (/^https:\/\//i.test(a?.url || '') ? a.url : '');
+    if (src) foto = '<img class="cita-foto" loading="lazy" alt="Foto citada" src="' + esc(src) + '">';
+    else if (original?.media_id && !esBajoDemanda(original)) foto = '<img class="cita-foto" alt="Foto citada" data-medio="' + esc(original.media_id) + '">';
+  }
   // Una respuesta a un Estado lo dice: «Tu estado» (el cliente contesta al del dueño) o «Estado de <nombre>» (el dueño contesta al del cliente).
   const rotulo = r?.estado ? (mio ? 'Tu estado' : 'Estado de ' + nombreDe(sel)) : (mio ? 'Tú' : nombreDe(sel));
-  return '<div class="cita"' + destino + '><b>' + esc(rotulo) + '</b>'
-    + esc(String(texto).slice(0, 140)) + '</div>';
+  return (enlace ? '<button type="button" class="cita" title="Ir al mensaje original" data-cita="' + esc(r.wamid) + '"'
+    + (buscarPrevia ? ' data-cita-previa="' + esc(r.wamid) + '"' : '') + '>' : '<div class="cita">')
+    + '<span class="cita-texto"><b>' + esc(rotulo) + '</b>'
+    + esc(String(texto).slice(0, 160)) + '</span>' + foto + (enlace ? '</button>' : '</div>');
 }
 
 function reaccionesDelHilo(lista){
@@ -12293,6 +12371,8 @@ function pintaMensajes(){
   const ordenados = MSGS.concat(globosEnviando(sel && (sel.id || sel._id)), globosPendientes(sel && (sel.id || sel._id)))
     .sort((a, b) => instanteMsg(a) - instanteMsg(b));
   const reacciones = reaccionesDelHilo(ordenados);
+  const originales = new Map([...citasLeidas].map(([id, entrada]) => [id, entrada.fila]));
+  for (const m of MSGS) for (const id of [m.wamid, m.id, m._id]) if (id) originales.set(id, m);
   const html = ordenados.filter(m => !(m.msg_type === 'reaction' && reacciones.originales.has(String(m.metadata?.reaccion?.wamid || ''))))
     .map(m => {
     const t = instanteMsg(m);
@@ -12321,8 +12401,8 @@ function pintaMensajes(){
       enviando: ' <span title="En cola, saliendo">🕓</span>',
     }[String(m.delivery_status || 'sent')] ?? ' ·') : '';
     const autor = (sale && m.sender === 'bot' && primero) ? '<div class="autor">Bot</div>' : '';
-    const cita = citaDelMensaje(m);
-    const idMsg = m.id || m.wamid || '';
+    const cita = citaDelMensaje(m, originales);
+    const idMsg = m.id || m.wamid || m._id || '';
     const marcado = modoSeleccion && SEL_MSGS.has(idMsg);
     // El puente reescribe el body con el texto nuevo (index.js:aplicaCambioDeMensaje), asi que
     // el hilo YA mostraba la version editada; lo unico que faltaba era decirlo, como WhatsApp
@@ -12341,14 +12421,15 @@ function pintaMensajes(){
     const gestos = [...(reacciones.porMensaje.get(String(m.wamid || '')) || new Map())];
     const pieReacciones = gestos.length ? '<div class="mreacciones">'
       + gestos.map(([quien, emoji]) => '<span title="' + esc(quien) + '">' + esc(emoji) + '</span>').join('') + '</div>' : '';
-    return cabeza + '<div class="globo ' + (sale ? 'sale' : 'entra') + ' ' + (primero ? 'primero' : 'seguido')
+    return cabeza + (m === citaHistorial ? '<div class="dia">Original de la cita · historial</div>' : '')
+      + '<div class="globo ' + (sale ? 'sale' : 'entra') + ' ' + (primero ? 'primero' : 'seguido')
       + (marcado ? ' marcado' : '') + (eliminado ? ' eliminado' : '') + '"'
       + ' data-msg="' + esc(idMsg) + '">'
       + '<input type="checkbox" class="msel" data-msel="' + esc(idMsg) + '"' + (marcado ? ' checked' : '') + '>'
       + '<button class="gaccion" aria-label="Opciones del mensaje">⌄</button>'
       + avisoElim + autor + cita + cuerpoMensaje(m)
       + '<span class="pie-globo">' + destacadoTag + editado + (conFecha ? esc(d.toLocaleTimeString('es-DO',{hour:'2-digit',minute:'2-digit'})) : '') + ticks + '</span>' + pieReacciones
-      + '</div>';
+      + '</div>' + (m === citaHistorial ? '<div class="dia">Fin del mensaje del historial</div>' : '');
   }).join('') || '<div style="margin:auto;color:var(--mut);font-size:13px">Sin mensajes todavía.</div>';
 
   // Repintado INCREMENTAL. Antes se reconstruia el hilo entero en cada snapshot, y un
@@ -31022,6 +31103,7 @@ function puedeEntrarASucursal(identidad, negocio){
 }
 
 onAuthStateChanged(auth, async u => {
+  citaHistorial = null; citasLeidas = new Map(); turnoCita++;
   STQ.token = null; STQ.cola = null; STQ.uid = ''; STQ.jobs = [];
   for (const url of STQ.urls.values()) URL.revokeObjectURL(url);
   STQ.urls.clear();
