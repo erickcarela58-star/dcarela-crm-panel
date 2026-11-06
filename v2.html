@@ -9636,6 +9636,7 @@ const COMBO_PDFS = [
   { cat:'infantiles', label:'Infantiles' }, { cat:'cumpleanos', label:'Cumpleaños' },
   { cat:'graduacion', label:'Graduación' }, { cat:'embarazo', label:'Embarazo' },
   { cat:'bodas', label:'Bodas' },
+  { cat:'navidad', label:'Navidad 2026', archivo:'./catalogos/navidad-2026.pdf', sucursal:'central' },
 ];
 const COMBO_PAGINA = CFG.publicCatalogUrl || 'https://dcarelacompufoto.com/combos.html';
 const COMBO_REF_PREF = { xv:'XV', infantil:'INF', graduacion:'GRA', cumpleanos:'CUM', embarazadas:'EMB', bodas:'BOD' };
@@ -9771,7 +9772,7 @@ async function abreCombos(){
   const cuerpo = $('modal').querySelector('.mcuerpo');
    cuerpo.innerHTML = '<div class="campo"><input id="cbBusca" placeholder="Buscar combo…"></div>'
      + '<div class="seccion" style="margin:12px 0 6px">Catálogo PDF vigente</div>'
-     + '<div class="pdfs">' + COMBO_PDFS.map(p =>
+     + '<div class="pdfs">' + COMBO_PDFS.filter(p => !p.sucursal || p.sucursal === sucursalComboDelChat(sel)).map(p =>
          '<button class="tplchip" data-pdf="' + p.cat + '">' + esc(p.label) + '</button>').join('')
     + '</div>'
     + '<div class="seccion" style="margin:14px 0 6px">Vestidos</div>'
@@ -9854,21 +9855,30 @@ async function adjuntaPdfCombos(cat, boton){
   const antes = boton.textContent;
   boton.disabled = true; boton.textContent = 'Preparando…';
   try {
-    // Reemplaza los PDF estáticos antiguos por el catálogo vigente del CRM y usa
-    // automáticamente el número de la conversación: central u offline/QR Plaza.
+    const chatId = sel?.id;
     const sucursal = sucursalComboDelChat(sel);
-    const r = await llama({ action:'combos', operation:'catalogo_categoria', categoria:cat, sucursal,
-      conversation_id: sel?.id || null, formato:'pdf' });
-    if (!r?.ok || !r.pdf_b64) throw new Error(r?.error || 'no se pudo preparar el PDF vigente');
-    const bytes = Uint8Array.from(atob(r.pdf_b64), c => c.charCodeAt(0));
+    if (p.sucursal && p.sucursal !== sucursal) throw new Error('Este catálogo corresponde a La Central.');
+    let archivo, nombre;
+    if (p.archivo) {
+      const response = await fetch(p.archivo, { cache:'no-cache' });
+      if (!response.ok || !response.headers.get('content-type')?.includes('application/pdf')) throw new Error('No se pudo abrir el catálogo navideño.');
+      archivo = await response.blob();
+      nombre = 'Combos Navidad 2026 - DCarela.pdf';
+    } else {
+      const r = await llama({ action:'combos', operation:'catalogo_categoria', categoria:cat, sucursal,
+        conversation_id: chatId || null, formato:'pdf' });
+      if (!r?.ok || !r.pdf_b64) throw new Error(r?.error || 'no se pudo preparar el PDF vigente');
+      archivo = new Blob([Uint8Array.from(atob(r.pdf_b64), c => c.charCodeAt(0))], { type:'application/pdf' });
+      nombre = r.nombre || ('Combos ' + p.label + ' - DCarela.pdf');
+    }
     const datos = await new Promise((res, rej) => {
       const l = new FileReader();
       l.onload = () => res(String(l.result).split(',')[1] || '');
       l.onerror = () => rej(new Error('no se pudo leer el PDF'));
-      l.readAsDataURL(new Blob([bytes], { type:'application/pdf' }));
+      l.readAsDataURL(archivo);
     });
-    COLA.push({ tipo:'document', mime:'application/pdf',
-      nombre:r.nombre || ('Combos ' + p.label + ' - DCarela.pdf'), datos });
+    if (chatId !== sel?.id) return;
+    COLA.push({ tipo:'document', mime:'application/pdf', nombre, datos });
     pintaCola();
     const caja = $('texto');
     if (!caja.value.trim()) {
@@ -17883,7 +17893,7 @@ async function pfPintaGaleria(){
   const privado = categoria === 'navidad';
   const resumen = Object.keys(nombres).map(c => esc(nombres[c]) + ': <b>' + Number((r.conteo || {})[c] || 0) + '</b>').join(' · ');
   g.innerHTML = '<div class="plan-seccion-cab"><h3>Fotos subidas'+(categoria?' · '+esc(nombres[categoria] || categoria):'')+'</h3><span class="cont-sub">'+items.length+' archivos</span></div><details class="plan-upload-check"><summary>Ver todas las categorías</summary><p>' + resumen + '</p></details>'
-    + (privado ? '<p><a class="btn-sec" href="https://dcarelacompufoto.com/navidad/" target="_blank" rel="noopener noreferrer">Ver los 22 combos navideños</a> <button type="button" class="btn-linea" id="pfSolicitudesNavidad">Ver solicitudes web</button></p><div id="pfSolicitudesNavidadLista" aria-live="polite"></div>' : '')
+    + (privado ? '<p><a class="btn-sec" href="https://dcarelacompufoto.com/navidad/" target="_blank" rel="noopener noreferrer">Ver los 22 combos navideños</a> <a class="btn-linea" href="./catalogos/navidad-2026.pdf" target="_blank" rel="noopener noreferrer">Abrir PDF de Navidad</a> <button type="button" class="btn-linea" id="pfSolicitudesNavidad">Ver solicitudes web</button></p><div id="pfSolicitudesNavidadLista" aria-live="polite"></div>' : '')
     + (privado && items.some(f => f.original) ? '<form id="pfNavidad" class="cont-form"><p>Marca hasta 12 originales. Por foto se preparan piezas para Instagram, Página de Facebook, Estado de WhatsApp y un cuadrado para pauta en Marketplace.</p><div class="fila"><label>Mes de campaña <input type="month" name="mes" required value="' + esc(contMesNavidad()) + '"></label><button type="submit" class="btn-solido">Preparar lote navideño</button></div></form>' : '')
     + (items.length ? '<div class="pf-miniaturas">' + items.map(f =>
       '<figure class="pf-mini' + (f.estado === 'oculta' ? ' oculta' : '') + '" data-id="' + esc(f.id) + '">'
@@ -25714,6 +25724,7 @@ function cmbCcHtml(){
   const flyer = (nombre, detalle, attr) => '<div class="cmb-cc-flyer"><div><b>' + esc(nombre) + '</b><span>' + esc(detalle) + '</span></div><button type="button" class="btn-linea cmb-chico" ' + attr + '>Flyer JPG</button></div>';
   return '<section class="cmb-caja"><header class="cmb-cabcaja"><div><h3>Catálogos por categoría</h3><p>Un catálogo por categoría, solo con sus combos. Cada combo lleva su botón «Quiero este combo», que abre WhatsApp con el combo y su referencia ya escritos. El número no se ve en ninguna página.</p></div></header>'
     + '<div class="cmb-cc-chips" role="group" aria-label="Categoría del catálogo">' + chips + '</div>'
+    + (cc.suc === 'central' ? '<div class="cmb-cc-flyer"><div><b>Navidad 2026 · La Central</b><span>Guía de experiencias con los 22 combos y botones de WhatsApp.</span></div><a class="btn-linea cmb-chico" href="./catalogos/navidad-2026.pdf" target="_blank" rel="noopener noreferrer">Abrir PDF de Navidad</a></div>' : '')
     + '<div class="cmb-cc-chips" role="group" aria-label="Sucursal">' + CMB_SUC.map(([id, nombre]) => '<button type="button" class="cmb-cc-chip' + (cc.suc === id ? ' on' : '') + '" aria-pressed="' + (cc.suc === id) + '" data-cmbsuc="' + id + '">WhatsApp ' + esc(nombre) + '</button>').join('') + '</div>'
     + (sinNumero ? '<p class="aviso">Pon el WhatsApp de ' + esc(suc[1]) + ' en la pestaña «Catálogo PDF» para que los botones del catálogo funcionen.</p>' : '')
     + (cc.error ? '<p class="aviso">' + esc(cc.error) + '</p>' : '')
