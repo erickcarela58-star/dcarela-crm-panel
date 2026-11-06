@@ -17874,20 +17874,25 @@ async function pfPreparaFoto(archivo){
 async function pfPintaGaleria(){
   if (!$('pfGaleria')) return;
   const ticket=CONT.fototecaConsulta=(CONT.fototecaConsulta || 0)+1;
-  const r = await llama({ action:'portfolio', operation:'list' });
+  const categoriaPedida = $('pfCategoria')?.value === 'navidad' ? 'navidad' : '';
+  const r = await llama({ action:'portfolio', operation:'list', categoria:categoriaPedida });
   const g=$('pfGaleria');if(!g || ticket!==CONT.fototecaConsulta)return;
   if (!r.ok) { g.innerHTML = '<p class="cfgnota">' + esc(r.error || 'No se pudo leer el portafolio.') + '</p>'; return; }
   const nombres = r.categorias || {};
   const categoria=$('pfCategoria')?.value || '',items=(r.items || []).filter(f=>!categoria || f.categoria===categoria);
+  const privado = categoria === 'navidad';
   const resumen = Object.keys(nombres).map(c => esc(nombres[c]) + ': <b>' + Number((r.conteo || {})[c] || 0) + '</b>').join(' · ');
   g.innerHTML = '<div class="plan-seccion-cab"><h3>Fotos subidas'+(categoria?' · '+esc(nombres[categoria] || categoria):'')+'</h3><span class="cont-sub">'+items.length+' archivos</span></div><details class="plan-upload-check"><summary>Ver todas las categorías</summary><p>' + resumen + '</p></details>'
+    + (privado && items.some(f => f.original) ? '<form id="pfNavidad" class="cont-form"><p>Marca hasta 12 originales. Por foto se preparan piezas para Instagram, Página de Facebook, Estado de WhatsApp y un cuadrado para pauta en Marketplace.</p><div class="fila"><label>Mes de campaña <input type="month" name="mes" required value="' + esc(contMesNavidad()) + '"></label><button type="submit" class="btn-solido">Preparar lote navideño</button></div></form>' : '')
     + (items.length ? '<div class="pf-miniaturas">' + items.map(f =>
       '<figure class="pf-mini' + (f.estado === 'oculta' ? ' oculta' : '') + '" data-id="' + esc(f.id) + '">'
-      + '<img loading="lazy" alt="' + esc(nombres[f.categoria] || f.categoria) + '" src="' + PORTAFOLIO_URL + '?img=' + encodeURIComponent(f.id) + '">'
-      + '<figcaption><span>' + esc(nombres[f.categoria] || f.categoria) + (f.estado === 'oculta' ? ' · oculta' : '') + '<br>' + (f.original ? 'Original: ' + f.original_width + ' × ' + f.original_height : 'Falta la original para flyers') + '<br>' + (f.drive_estado === 'copiada_local' ? 'Copiada en carpeta Drive · nube sin confirmar' : f.original ? 'Copia a Drive pendiente' : '') + '</span>'
-      + '<button class="btn-linea" data-pf-ver="' + esc(f.id) + '" data-estado="' + (f.estado === 'oculta' ? 'publicada' : 'oculta') + '">' + (f.estado === 'oculta' ? 'Mostrar' : 'Ocultar') + '</button>'
+      + (privado ? (miniaturaMensaje({media_thumb_b64:f.miniatura}) ? '<img loading="lazy" alt="Original del set" src="' + esc(f.miniatura) + '">' : '') : '<img loading="lazy" alt="' + esc(nombres[f.categoria] || f.categoria) + '" src="' + PORTAFOLIO_URL + '?img=' + encodeURIComponent(f.id) + '">')
+      + '<figcaption><span>' + esc(privado ? f.nombre || 'Original navideña' : nombres[f.categoria] || f.categoria) + (f.estado === 'oculta' ? ' · privada' : '') + '<br>' + (f.original ? 'Original: ' + f.original_width + ' × ' + f.original_height : 'Falta la original para flyers') + '<br>' + (f.drive_estado === 'copiada_local' ? 'Copiada en carpeta Drive · nube sin confirmar' : f.original ? 'Copia a Drive pendiente' : '') + '</span>'
+      + (privado ? (f.original ? '<label><input form="pfNavidad" type="checkbox" name="foto" value="' + esc(f.id) + '"> Usar esta foto</label>' : '')
+        : '<button class="btn-linea" data-pf-ver="' + esc(f.id) + '" data-estado="' + (f.estado === 'oculta' ? 'publicada' : 'oculta') + '">' + (f.estado === 'oculta' ? 'Mostrar' : 'Ocultar') + '</button>')
       + (ROL_ACTUAL === 'admin' ? '<button class="btn-linea" data-pf-quita="' + esc(f.id) + '">Quitar</button>' : '') + '</figcaption></figure>').join('') + '</div>'
       : '<p class="cfgnota">No hay fotos subidas desde el CRM para esta categoría. Las fotos anteriores de la web no se cambian.</p>');
+  if ($('pfNavidad')) $('pfNavidad').onsubmit = ev => { ev.preventDefault(); ev.stopPropagation(); void generaLoteNavidad(ev.currentTarget); };
   g.querySelectorAll('[data-pf-ver]').forEach(b => b.onclick = async () => {
     b.disabled = true;
     const x = await llama({ action:'portfolio', operation:'visibility', id:b.dataset.pfVer, estado:b.dataset.estado });
@@ -17921,20 +17926,20 @@ async function pfSube(archivos){
     try {
       const p = await pfPreparaFoto(f);
       if(!/\.(jpe?g|png)$/i.test(f.name||'') || f.size>24*1024*1024 || Math.max(p.origW,p.origH)<1600 || Math.min(p.origW,p.origH)<1000)throw new Error('Elige la original JPG o PNG: al menos 1600 × 1000 px y hasta 24 MB.');
-      subida.mensaje='Guardando copia web · '+prefijo;pintaEstadoSubidaPortafolio();
+      subida.mensaje=(cat==='navidad'?'Guardando vista previa privada · ':'Guardando copia web · ')+prefijo;pintaEstadoSubidaPortafolio();
       const r = await llama({ action:'portfolio', operation:'upload', categoria:cat, nombre:f.name || '', base64:p.base64, width:p.width, height:p.height });
       if (!r.ok) throw new Error(r.error || 'el servidor la rechazó');
       // Además de la copia de 1800 px para la web, se guarda el ORIGINAL completo (privado) para flyers y pauta. Si falla, la foto de la web ya salió: no se cuenta como error.
       if (!r.id || !/\.(jpe?g|png)$/i.test(f.name || '') || f.size > 24 * 1024 * 1024) throw new Error('La web recibió su copia, pero falta una original JPG o PNG de hasta 24 MB para flyers y Drive.');
       subida.mensaje='Guardando original completa · '+prefijo;pintaEstadoSubidaPortafolio();
       const original = await llamaCont({ action:'portfolio', operation:'original', id:r.id, base64:await pfLeeBase64(f), width:p.origW || null, height:p.origH || null });
-      if(!original.ok)throw new Error('La copia web está guardada; la original no: '+(original.error||'reintenta'));
+      if(!original.ok)throw new Error('La vista previa quedó guardada. Falta la original. '+(original.error||'Vuelve a subir la misma foto.'));
       CONT.modelos=null;CONT.modelosError=null;
       if (r.duplicada) repetidas++; else hechas++;
     } catch (e) { falladas.push((f.name || 'foto') + ' (' + (e.message || e) + ')'); }
   }
   subida.enviando=false;subida.mensaje = '✓ ' + hechas + ' subida(s)' + (repetidas ? ', ' + repetidas + ' ya estaba(n)' : '')
-    + (falladas.length ? '. No se pudieron subir: ' + falladas.slice(0, 4).join('; ') + (falladas.length > 4 ? '…' : '') : '. Salen en la web en un par de minutos.');
+      + (falladas.length ? '. No se pudieron subir: ' + falladas.slice(0, 4).join('; ') + (falladas.length > 4 ? '…' : '') : cat === 'navidad' ? '. Originales privadas listas para elegir.' : '. Salen en la web en un par de minutos.');
   pintaEstadoSubidaPortafolio();
   pfPintaGaleria();
 }
@@ -19589,7 +19594,7 @@ function cableaLotes(){
 let CONT = { items: [], conteo: {}, calendario: [], canales: [], activos: [], activo: true, tab: null, grupos: [], propias: [], quitadas: [], cargando: false, abiertos: new Set(),
   autonomia: 'manual', cantidad: 0, historiasDiarias: 8, igCuentas: [], igColaboradores: new Set(), tiktok: null, estilos: [], tendencias: null, amandine: true, gen: null, mes: null, mesItems: null, dia: null, diaItems: null, vistas: {}, nuevosIA: [], ref: null, subida: null };
 const CONT_TABS = [['crear', 'Crear'], ['porAprobar', 'Revisar'], ['calendario', 'Programar'], ['publicadas', 'Resultados']];
-const CONT_VISTAS = [['estilos', 'Plantillas'], ['fotos', 'Fototeca'], ['programadas', 'Cola y pendientes'], ['tendencias', 'Ideas y tendencias'], ['redes', 'Conexiones'], ['paquete', 'Paquete de grupos'], ['fechas', 'Fechas del negocio']];
+const CONT_VISTAS = [['estilos', 'Plantillas'], ['fotos', 'Fototeca'], ['navidad','Set navideño'], ['programadas', 'Cola y pendientes'], ['tendencias', 'Ideas y tendencias'], ['redes', 'Conexiones'], ['paquete', 'Paquetes y Marketplace'], ['fechas', 'Fechas del negocio']];
 const CONT_ESTADOS = { propuesta: 'Por aprobar', aprobada: 'Aprobada', publicando: 'Enviando…', encola: 'Procesando en el canal', enviada: 'Enviada · esperando confirmación', sin_confirmar: 'Sin confirmación', publicada: 'Registrada como publicada', fallida: 'Falló', rechazada: 'Rechazada', vencida: 'Vencida', lista: 'Lista para subir' };
 const CONT_CORTO = { instagram: 'IG', facebook: 'FB', whatsapp_estado: 'Estado', tiktok: 'TikTok', paquete_grupos: 'Grupos' };
 // v235: el tamaño de la pieza se ve en la tarjeta. Antes había que abrirla para saber si era feed,
@@ -20025,7 +20030,8 @@ function restauraTareaContenido(){
   try { const v=JSON.parse(localStorage.getItem(claveTareaContenido())||'null');if(v?.tarea?.id)CONT.tarea=v.tarea;if(v?.solicitud || v?.crear){const c=borradorCrearContenido();if(v.crear){Object.assign(c,v.crear);for(const k of ['categorias','formatos','canales'])c[k]=new Set(v.crear[k]||[]);}c.solicitud=v.solicitud || null;if(v.mes)c.mes=v.mes;c.enviando=!!CONT.tarea && !['fallida','completada'].includes(CONT.tarea.estado);} } catch {}
   // Tras F5 con un diseño pendiente o un lote aún preparándose, se vuelve a Crear, donde se ve su progreso.
   const loteEnCurso=!!CONT.tarea?.id&&!['fallida','completada'].includes(CONT.tarea.estado);
-  if((CONT.crear?.editorDocumento||loteEnCurso)&&!CONT.tab)CONT.tab='crear';
+  if (loteEnCurso && CONT.tarea.campana_navidad && !CONT.tab) { CONT.tab='fotos'; CONT.fototecaCategoria='navidad'; }
+  else if((CONT.crear?.editorDocumento||loteEnCurso)&&!CONT.tab)CONT.tab='crear';
   if(CONT.tarea?.id)void sigueTareaContenido();
 }
 async function sigueTareaContenido(){
@@ -20039,9 +20045,16 @@ async function sigueTareaContenido(){
     CONT.tarea=r.tarea;const c=borradorCrearContenido(),fin=['completada','fallida'].includes(r.tarea.estado);c.enviando=!fin;
     if(fin){c.error=r.tarea.estado==='fallida'?(r.tarea.error?.mensaje || 'No se completó la preparación'):null;}
     guardaTareaContenido();
-    if(r.tarea.estado==='completada' && CONT.tareaNotificada!==id){CONT.tareaNotificada=id;CONT.filtroMes=c.mes;CONT.mes=c.mes;await cargaContenido();avisa('Propuestas listas','Revisa originales, textos y diseños antes de aprobar.');}
+    if(r.tarea.estado==='completada' && CONT.tareaNotificada!==id){CONT.tareaNotificada=id;CONT.filtroMes=r.tarea.resultado?.mes_objetivo || c.mes;CONT.mes=CONT.filtroMes;await cargaContenido();avisa('Propuestas listas','Revisa originales, textos y diseños antes de aprobar.');}
   } catch(e){if(CONT.tarea?.id===id)CONT.tarea.avisoConexion='La consulta de progreso no terminó. La tarea sigue guardada; volveremos a conectar.';}
-  finally {CONT.consultandoTarea=false;if($('contCuerpo')){if(CONT.tab==='crear')pintaContenido();else pintaAgente();}if(CONT.tarea?.id===id && !['completada','fallida'].includes(CONT.tarea.estado))CONT.tareaTimer=setTimeout(()=>void sigueTareaContenido(),CONT.tarea.avisoConexion?10000:3000);}
+  finally {
+    CONT.consultandoTarea=false;
+    if ($('contCuerpo')) {
+      if(CONT.tab==='crear')pintaContenido();else pintaAgente();
+      if (CONT.tarea?.campana_navidad) pintaProgresoNavidad();
+    }
+    if(CONT.tarea?.id===id && !['completada','fallida'].includes(CONT.tarea.estado))CONT.tareaTimer=setTimeout(()=>void sigueTareaContenido(),CONT.tarea.avisoConexion?10000:3000);
+  }
 }
 async function reintentaTareaContenido(){
   if(CONT.retomandoTarea || !CONT.tarea?.id)return;CONT.retomandoTarea=true;
@@ -20177,7 +20190,10 @@ async function cargaContenido(){
   void revisionContenidoEnlace();
   if(repetir)return cargaContenido();
 }
-function cambiaTabContenido(tab){ CONT.tab = tab; pintaContenido(); }
+function cambiaTabContenido(tab){
+  if (tab === 'navidad') { CONT.fototecaCategoria = 'navidad'; tab = 'fotos'; }
+  CONT.tab = tab; pintaContenido();
+}
 // Las acciones nuevas del agente, con un aviso claro mientras la PC no haya desplegado el servidor nuevo.
 function validaMosaicoCompletoV253(cuerpo,r){
   if(!r?.ok||!['vista','exportar'].includes(cuerpo.operation)||!cuerpo.collage?.fotos?.some(f=>f.ajuste==='completa'))return r;
@@ -20372,7 +20388,7 @@ function cabeceraV239(P){
     + '<div class="p239-crear"><button type="button" class="p239-btn p239-prim p239-grande" data-p239="menu" aria-haspopup="menu" aria-expanded="' + !!P.menu + '">' + ICO_V239.mas + '<span>Crear contenido</span>' + ICO_V239.flecha + '</button>'
     + '<div class="p239-menu" role="menu"' + (P.menu ? '' : ' hidden') + '>'
     + [['crear', 'Crear con el agente', 'Ideas, textos y flyers con tus fotos'], ['editor', 'Editor de flyers', 'Diseña una pieza a mano'], ['subir', 'Subir foto o video', 'Tu propio contenido, a la fecha que elijas'], ['agente', P.agente ? 'Ocultar agente automático' : 'Agente automático', 'Rutina, autonomía y redes del agente'],
-      ['estilos', 'Plantillas', ''], ['fotos', 'Fototeca', ''], ['redes', 'Conexiones', ''], ['paquete', 'Paquete de grupos', ''], ['fechas', 'Fechas del negocio', '']]
+      ['estilos', 'Plantillas', ''], ['fotos', 'Fototeca', ''], ['navidad','Set navideño','Sube originales y prepara el lote'], ['redes', 'Conexiones', ''], ['paquete', 'Paquetes y Marketplace', ''], ['fechas', 'Fechas del negocio', '']]
       .map(([k, t, d]) => '<button type="button" role="menuitem" data-p239crear="' + k + '"><b>' + esc(t) + '</b>' + (d ? '<small>' + esc(d) + '</small>' : '') + '</button>').join('')
     + '</div></div></div></header>'
     + '<nav class="p239-card p239-pasos" aria-label="Flujo de publicación">' + PASOS_V239.map(([id, t, d], i) => '<button type="button" data-ctab="' + id + '" class="p239-paso' + (i === actual ? ' on' : '') + (i < actual ? ' hecho' : '') + '"' + (i === actual ? ' aria-current="step"' : '') + '>'
@@ -21098,15 +21114,51 @@ function pintaSubir(cuerpo){
 
 function pintaFotosContenido(cuerpo){
   const categoria=CONT.fototecaCategoria || [...(CONT.crear?.categorias || [])][0] || 'infantil';
-  cuerpo.innerHTML = '<div class="plan-seccion-cab"><div><h2>Fototeca</h2><p class="plan-intro">Originales para crear flyers. La web recibe una copia ligera.</p></div>'+(CONT.crear?'<button type="button" class="btn-linea" data-cvolvercrear="1">Volver a mi flyer</button>':'')+'</div><section class="plan-creador"><div class="plan-fototeca-cab"><label>Categoría de las fotos<select id="pfCategoria">'
-        + [...CONT_CATEGORIAS,['boda','Bodas']].map(([id,t])=>'<option value="'+id+'"'+(categoria===id?' selected':'')+'>'+esc(t)+'</option>').join('')+'</select></label><div class="cont-acc"><button class="btn-solido" id="pfElegir">Elegir originales</button><button class="btn-linea" id="pfCarpeta">Elegir carpeta</button></div></div>'
+  cuerpo.innerHTML = '<div class="plan-seccion-cab"><div><h2>Fototeca</h2><p class="plan-intro">Originales para crear flyers. Las fotos del set navideño se guardan en privado.</p></div>'+(CONT.crear?'<button type="button" class="btn-linea" data-cvolvercrear="1">Volver a mi flyer</button>':'')+'</div><section class="plan-creador"><div class="plan-fototeca-cab"><label>Categoría de las fotos<select id="pfCategoria">'
+        + [...CONT_CATEGORIAS,['boda','Bodas'],['navidad','Set navideño privado']].map(([id,t])=>'<option value="'+id+'"'+(categoria===id?' selected':'')+'>'+esc(t)+'</option>').join('')+'</select></label><div class="cont-acc"><button class="btn-solido" id="pfElegir">Elegir originales</button><button class="btn-linea" id="pfCarpeta">Elegir carpeta</button></div></div>'
         + '<div id="pfZona" class="pf-zona" tabindex="0" role="button" aria-label="Soltar fotos o carpeta aquí">Arrastra aquí tus fotos o una carpeta, o usa los botones.</div>'
         + '<input type="file" id="pfArchivos" accept="image/jpeg,image/png,.jpg,.jpeg,.png" multiple hidden>'
         + '<input type="file" id="pfDirectorio" webkitdirectory multiple hidden>'
-        + '<p class="cfgnota" id="pfEstado" aria-live="polite"></p>'
+        + '<p class="cfgnota" id="pfEstado" aria-live="polite"></p><div id="pfNavidadTarea" aria-live="polite"></div>'
         + '<details class="plan-upload-check"><summary>Qué original sirve para un flyer</summary><p>JPG o PNG, al menos 1600 × 1000 px y hasta 24 MB. Nítida y bien expuesta. Tu logo puede permanecer en la foto. Estar en la fototeca no equivale a superar el control de calidad.</p><p>Se conserva el archivo original completo. La PC prepara la copia a la carpeta de Drive; aquí se distingue cuando la nube aún no está confirmada.</p></details>'
         + '<div id="pfGaleria" class="pf-galeria"><p class="cfgnota">Cargando…</p></div>' + '</section>';
   cableaPortafolio();
+  pintaProgresoNavidad();
+}
+
+function pintaProgresoNavidad(){
+  const zona = $('pfNavidadTarea'), t = CONT.tarea;
+  if (!zona) return;
+  zona.innerHTML = t?.campana_navidad
+    ? '<p class="cfgnota">' + esc(t.error?.mensaje || t.mensaje || 'Preparando lote navideño…') + '</p>'
+      + '<progress max="100" value="' + Math.min(100, Math.max(0, Number(t.progreso) || 0)) + '" aria-label="Progreso del lote navideño"></progress>'
+      + (t.estado === 'completada' ? '<button class="btn-linea" data-cirtab="porAprobar">Revisar propuestas</button>' : '')
+    : '';
+}
+
+function contMesNavidad(){
+  const [anio, mes, dia] = (CONT.hoy || stgDia(Date.now())).split('-');
+  if (mes === '12' && dia === '31') return (Number(anio) + 1) + '-11';
+  return Number(mes) < 11 || (mes === '11' && dia !== '30') ? anio + '-11' : anio + '-12';
+}
+
+async function generaLoteNavidad(form){
+  if (CONT.tarea?.id && !['completada','fallida'].includes(CONT.tarea.estado)) return avisa('Ya hay un lote en preparación', 'Su progreso aparece arriba.');
+  const datos = new FormData(form), fotos = datos.getAll('foto'), mes = datos.get('mes');
+  if (!fotos.length || fotos.length > 12) return avisa('Selecciona de 1 a 12 originales del set.');
+  const boton = form.querySelector('button[type=submit]');
+  if (boton.disabled) return;
+  boton.disabled = true;
+  try {
+    const r = await llamaCont({action:'contenidoTarea', operation:'crear', idempotency_key:crypto.randomUUID(),
+      payload:{action:'contenidoGenera', campana_navidad:true, fotos_navidad:fotos, mes}});
+    if (!r.ok || !r.tarea) return avisa('No se pudo preparar el lote', r.error);
+    CONT.tarea = r.tarea;
+    guardaTareaContenido();
+    pintaAgente();
+    pintaProgresoNavidad();
+    void sigueTareaContenido();
+  } finally { boton.disabled = false; }
 }
 
 // ---- estilos de flyer: los de fábrica, los de tus referencias y los que propone Gemini (la «pauta entrenada») ----
@@ -25118,10 +25170,23 @@ function pintaRedes(cuerpo){
 }
 
 // ---- paquete del día y fechas del nicho (como antes) ----
+function piezasPautaNavidad(lista){
+  return lista.filter(x => x.canal === 'paquete_grupos' && x.tema === 'campana_navidad'
+    && x.formato === 'imagen_1x1' && ['aprobada','lista'].includes(x.estado) && x.tiene_imagen && !x.problema_diseno);
+}
 function pintaPaquete(cuerpo){
-  const hoy = CONT.items.filter(x => x.canal === 'paquete_grupos' && x.estado === 'lista').sort((a, b) => String(b.fecha).localeCompare(String(a.fecha)));
-  const pieza = hoy[0];
-  cuerpo.innerHTML = '<p class="cfgnota">El paquete es el flyer y el texto del día para <b>Marketplace y tus grupos de Facebook</b>. Facebook no permite publicar ahí desde un programa, así que lo publicas tú: abre el grupo, pega el texto, sube la imagen y marca «Ya publiqué». '
+  const hoy = CONT.items.filter(x => x.canal === 'paquete_grupos').sort((a, b) => String(b.fecha).localeCompare(String(a.fecha)));
+  const anuncios = piezasPautaNavidad(hoy);
+  const lotes = [...new Set(anuncios.map(x => x.generacion_id).filter(Boolean))];
+  const pieza = hoy.find(x => x.tema !== 'campana_navidad' && x.estado === 'lista');
+  cuerpo.innerHTML = '<h3>Pauta navideña en Marketplace</h3><p class="cfgnota">Prepara en Meta una campaña pausada con los cuadrados aprobados. Destinos: Feed de Facebook y Marketplace, si Meta acepta la ubicación. Alcance: adultos en La Romana y 15 km alrededor. El anuncio abre la web del estudio.</p>'
+    + '<p><a class="btn-linea" href="https://www.facebook.com/adsmanager/manage/campaigns" target="_blank" rel="noopener noreferrer">Abrir Meta Ads Manager ↗</a></p>'
+    + (anuncios.length ? '<div class="cont-acc">' + lotes.map((id,i) => '<button type="button" class="btn-solido" data-cnavidadzip="' + esc(id) + '">Descargar lote ' + (i+1) + ' para Marketplace</button>').join('') + '</div>' + anuncios.map(a => '<div class="cont">' + (a.miniatura ? '<img class="cont-mini" src="' + esc(a.miniatura) + '" alt="" data-cver="' + esc(a.id) + '">' : '')
+      + '<div class="cont-cuerpo"><b>' + esc(a.titular?.l1 || 'Flyer navideño') + '</b><div class="cont-acc">'
+      + '<button type="button" class="btn-solido" data-ccopia="' + esc(a.id) + '">Copiar texto</button><button type="button" class="btn-linea" data-cdescarga="' + esc(a.id) + '">Descargar cuadrado</button></div></div></div>').join('')
+      : '<p class="cfgnota">Los cuadrados del set aparecen aquí después de aprobarlos.</p>')
+    + (ROL_ACTUAL === 'admin' ? lotes.map((id,i) => '<form class="cont-form" data-cpautanavidad="' + esc(id) + '"><h4>Preparar pauta del lote ' + (i+1) + '</h4><div class="fila"><label>Presupuesto total máximo (USD)<input name="presupuesto_usd" type="number" min="1" step="0.01" required></label><label>Inicio (La Romana)<input name="desde" type="date" required></label><label>Último día<input name="hasta" type="date" required></label></div><div class="cont-acc"><button class="btn-solido" type="submit">Crear campaña pausada en Meta</button></div><p class="cfgnota" data-pautaresultado aria-live="polite"></p></form>').join('') : '')
+    + '<h3>Paquete del día para grupos</h3><p class="cfgnota">El paquete es el flyer y el texto del día para <b>Marketplace y tus grupos de Facebook</b>. Facebook no permite publicar ahí desde un programa, así que lo publicas tú: abre el grupo, pega el texto, sube la imagen y marca «Ya publiqué». '
     + 'Los grupos que llevan más tiempo sin publicación salen primero, para que ninguno se quede atrás. Lee las reglas de cada grupo: muchos no aceptan anuncios.</p>'
     + (pieza ? '<div class="cont">' + (pieza.miniatura ? '<img class="cont-mini" src="' + esc(pieza.miniatura) + '" alt="" data-cver="' + esc(pieza.id) + '">' : '')
       + '<div class="cont-cuerpo"><div class="cont-cab"><b>' + esc(contDia(pieza.fecha)) + '</b><span>' + esc(pieza.categoria || '') + '</span></div><div class="cont-texto" style="max-height:none">' + esc(pieza.texto) + '</div>'
@@ -25183,6 +25248,18 @@ async function clicContenido(ev){
   }
   const b = ev.target.closest('button'); if (!b || b.disabled) return;
   const d = b.dataset;
+  if (d.cnavidadzip) {
+    const ids = piezasPautaNavidad(CONT.items).filter(x => x.generacion_id === d.cnavidadzip).map(x => x.id);
+    if (!ids.length) return avisa('Todavía no hay cuadrados aprobados.');
+    b.disabled = true;
+    try {
+      const r = await llamaCont({action:'contenidoImagenLote', ids, paquete_navidad:true});
+      if (!r.ok || !r.zip_b64) return avisa('No se pudo preparar el paquete', r.error || 'Respuesta incompleta.');
+      const bytes = Uint8Array.from(atob(r.zip_b64), c => c.charCodeAt(0));
+      descargaComoArchivo(new Blob([bytes], {type:'application/zip'}), r.nombre);
+    } finally { b.disabled = false; }
+    return;
+  }
   if(d.csepara){
     const ids = CONT.cruces || [];
     if(!ids.length) return avisa('Nada que separar','No hay publicaciones que compartan canal y hora.');
@@ -25339,6 +25416,20 @@ async function cambioContenido(ev){
   }
 }
 async function guardaFormContenido(f){
+  if (f.dataset.cpautanavidad) {
+    const lote = f.dataset.cpautanavidad, ids = piezasPautaNavidad(CONT.items).filter(x=>x.generacion_id===lote).map(x=>x.id);
+    const datos = Object.fromEntries(new FormData(f));
+    if (!ids.length || !await confirmaAqui('Se prepararán ' + ids.length + ' anuncios pausados en Meta. Presupuesto total indicado: USD ' + datos.presupuesto_usd + '. La activación se hace en Meta Ads Manager.', {si:'Crear pausada'})) return;
+    const boton = f.querySelector('[type=submit]'), salida = f.querySelector('[data-pautaresultado]');
+    boton.disabled = true; salida.textContent = 'Preparando campaña, conjunto y anuncios en Meta…';
+    try {
+      const r = await llamaCont({action:'contenidoPautaNavidad', lote, ids, ...datos});
+      salida.textContent = r.ok ? (r.estado==='pausada' ? r.creados+' anuncios confirmados como pausados. Abre Meta Ads Manager para revisarlos.'
+        : r.estado==='creando' ? 'La solicitud anterior está en preparación. Revisa Meta Ads Manager antes de continuar.'
+        : r.creados+' anuncios registrados. Revisa el estado en Meta Ads Manager. '+(r.error || '')) : r.error || 'No se pudo confirmar la preparación.';
+    } finally { boton.disabled = false; }
+    return;
+  }
   const v = Object.fromEntries(new FormData(f).entries());
   if (f.dataset.cestilopersonaliza) {
     const boton = f.querySelector('button[type=submit]'); if (boton?.disabled) return;
