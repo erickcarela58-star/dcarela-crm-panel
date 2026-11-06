@@ -12286,11 +12286,12 @@ function cuerpoMensaje(m){
   // una plantilla de WhatsApp de verdad sigue pintándose como siempre.
   const social = ['instagram', 'facebook'].includes(String(m.source || '')) || m.metadata?.social === true;
   if (social && m.source === 'instagram' && (t === 'unsupported_type' || t === 'story_mention')) {
-    const url = /^https:\/\//i.test(a.url || '') ? a.url : 'https://www.instagram.com/direct/inbox/';
+    const url = /^https:\/\//i.test(a.url || '') ? a.url : '';
     const titulo = t === 'unsupported_type' ? 'Contenido de Instagram' : m.direction === 'in' ? 'Te mencionó en su historia' : 'Mención en una historia';
     return '<div class="marchivo msocial"><b>' + esc(titulo) + '</b>'
-      + (t === 'unsupported_type' ? '<span>Meta no compartió el tipo ni el contenido del aviso.</span>' : '')
-      + '<a href="' + esc(url) + '" target="_blank" rel="noopener noreferrer">Revisar en Instagram</a></div>'
+      + (t === 'unsupported_type' ? '<span>Meta no identificó el tipo de aviso.</span>' : '')
+      + (url ? '<a href="' + esc(url) + '" target="_blank" rel="noopener noreferrer">Ver adjunto de Meta</a>' : '')
+      + '<a href="https://www.instagram.com/direct/inbox/" target="_blank" rel="noopener noreferrer">Abrir bandeja de Instagram</a></div>'
       + (m.body && !/^\[[^\]]*\]$/.test(String(m.body).trim()) ? '<div class="mpie">' + conTelefonos(esc(m.body)) + '</div>' : '');
   }
   if (social && ['share', 'template', 'fallback', 'ig_reel', 'reel', 'story_mention'].includes(t)) {
