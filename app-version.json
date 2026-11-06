@@ -1,7 +1,7 @@
 {
-  "version": "2026-11-05-crm-release-v399-respuestas-redes",
+  "version": "2026-11-05-crm-release-v400-respuestas-redes",
   "channel": "crm",
-  "released_at": "2026-11-06T02:09:09Z",
-  "summary": "Abre los estados propios citados desde el chat y distingue los avisos de Instagram que Meta entrega sin contenido.",
+  "released_at": "2026-11-06T02:18:10Z",
+  "summary": "Abre los estados propios citados desde el chat. En Instagram separa los adjuntos de Meta del acceso a la bandeja.",
   "requiere_puente": "2026-11-05-redes-estados-v66"
 }
