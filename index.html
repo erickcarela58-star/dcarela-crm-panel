@@ -4490,6 +4490,7 @@ function previaLegible(c){
   const p = String(c?.last_message_preview || '');
   if (c?.social_id && /^\[(template|fallback|share|ig_reel|reel)\]$/i.test(p.trim())) return 'Publicación compartida';
   if (c?.social_id && /^\[story_mention\]$/i.test(p.trim())) return 'Mención en su historia';
+  if (c?.social_id && /^\[unsupported_type\]$/i.test(p.trim())) return 'Contenido disponible en Instagram';
   return p;
 }
 // Por qué falta el nombre, el usuario o la foto de una ficha de Instagram/Messenger: no es lo mismo que Meta
@@ -5613,11 +5614,13 @@ function escuchaVistasEstados(){
 }
 
 async function stCargaMios(){
+  ST.miosLeidoEn = Date.now();
   const r = await llama({ action:'statusList' });
   if (!r.ok) return;
   ST.mios = r.data || [];
   stgFusiona(ST.mios);
   pintaEstadosPronto();
+  if (vistaActual === 'conversations' && MSGS.some(m => m.metadata?.responde_a?.estado)) pintaMensajes();
 }
 
 // ---- Galería «Mis estados» (referencia del dueño 25/10/2026) ----
@@ -6125,6 +6128,33 @@ function stAbreMios(){
   if (!mios.length) return stCompositor('texto');
   escuchaVistasEstados();
   stVisor({ modo: 'mios', grupos: [{ tel: '', lista: mios }], gi: 0, i: 0 });
+}
+
+async function abreEstadoCitado(boton){
+  if (boton.getAttribute('aria-busy') === 'true') return;
+  const id = boton.dataset.citaEstado;
+  const chat = escuchaMsgId, uid = auth.currentUser?.uid;
+  const vigente = () => chat === escuchaMsgId && uid === auth.currentUser?.uid && vistaActual === 'conversations';
+  boton.setAttribute('aria-busy', 'true');
+  try {
+    const r = await llama({ action:'statusList', wamid:id });
+    if (!vigente()) return;
+    const fila = (r?.data || []).find(f => f.wamid === id && ['sent', 'published'].includes(f.status));
+    if (!fila || ST.borrados.has(id)) {
+      return avisa('Estado no disponible', r?.error || 'El estado pudo caducar o haber sido retirado.');
+    }
+    if (Date.now() - Date.parse(fila.sent_at || fila.created_at) < ST_DIA_MS) {
+      escuchaVistasEstados();
+      return stVisor({ modo:'mios', grupos:[{ tel:'', lista:[{ ...fila, _id:fila.id, media_thumb_b64:fila.media_thumb }] }], gi:0, i:0 });
+    }
+    const mini = miniaturaMensaje({ media_thumb_b64:fila.media_thumb });
+    abreModal('<div class="mtapa"><b>Estado caducado</b><button class="cerrarm" data-cerrar>×</button></div>'
+      + '<div class="mcuerpo"><p>' + (mini || fila.body ? 'Vista guardada en el CRM.' : 'El archivo del estado ya no está disponible.') + '</p>'
+      + (mini ? '<img class="mmedia" alt="Miniatura del estado" src="' + esc(mini) + '">' : '')
+      + (fila.body ? '<p>' + esc(fila.body) + '</p>' : '') + '</div>');
+  } finally {
+    boton.removeAttribute('aria-busy');
+  }
 }
 
 function stActual(){
@@ -10750,6 +10780,11 @@ document.addEventListener('click', async ev => {
     ev.stopPropagation();
     return saltaACita(cita);
   }
+  const estadoCitado = ev.target.closest('.cita[data-cita-estado]');
+  if (estadoCitado) {
+    ev.stopPropagation();
+    return abreEstadoCitado(estadoCitado);
+  }
   const b = ev.target.closest('.gaccion');
   if (!b) { document.querySelectorAll('.gmenu').forEach(m => m.remove()); return; }
   ev.stopPropagation();
@@ -12250,6 +12285,14 @@ function cuerpoMensaje(m){
   // como «template»/«fallback» y el chat enseñaba «[template]», como si fuera una plantilla. Solo redes sociales:
   // una plantilla de WhatsApp de verdad sigue pintándose como siempre.
   const social = ['instagram', 'facebook'].includes(String(m.source || '')) || m.metadata?.social === true;
+  if (social && m.source === 'instagram' && (t === 'unsupported_type' || t === 'story_mention')) {
+    const url = /^https:\/\//i.test(a.url || '') ? a.url : 'https://www.instagram.com/direct/inbox/';
+    const titulo = t === 'unsupported_type' ? 'Contenido de Instagram' : m.direction === 'in' ? 'Te mencionó en su historia' : 'Mención en una historia';
+    return '<div class="marchivo msocial"><b>' + esc(titulo) + '</b>'
+      + (t === 'unsupported_type' ? '<span>Meta no compartió el tipo ni el contenido del aviso.</span>' : '')
+      + '<a href="' + esc(url) + '" target="_blank" rel="noopener noreferrer">Revisar en Instagram</a></div>'
+      + (m.body && !/^\[[^\]]*\]$/.test(String(m.body).trim()) ? '<div class="mpie">' + conTelefonos(esc(m.body)) + '</div>' : '');
+  }
   if (social && ['share', 'template', 'fallback', 'ig_reel', 'reel', 'story_mention'].includes(t)) {
     const titulo = t === 'story_mention' ? (m.direction === 'in' ? 'Te mencionó en su historia' : 'Mención en una historia')
       : t === 'ig_reel' || t === 'reel' ? 'Reel compartido' : 'Publicación compartida';
@@ -12317,6 +12360,21 @@ function globosEnviando(conv){
 // a cual de los tres combos decia que si. En WhatsApp Web eso se ve siempre.
 function citaDelMensaje(m, originales){
   const r = m.metadata?.responde_a;
+  if (r?.estado && m.source !== 'instagram' && m.source !== 'facebook') {
+    const puedeAbrir = ['admin', 'supervisor'].includes(ROL_ACTUAL);
+    const retirado = ST.borrados.has(r.wamid);
+    const original = puedeAbrir && r.wamid && !retirado
+      ? ST.mios.find(e => e.wamid === r.wamid && ['sent', 'published'].includes(e.status) && !e.deleted_at && !e.delete_requested_at) : null;
+    const propio = !!original || r.mio === true;
+    const texto = retirado ? 'Estado retirado' : original?.body || r.texto || 'Estado';
+    const mini = retirado ? '' : miniaturaMensaje({ media_thumb_b64:original?.media_thumb || r.miniatura });
+    const rotulo = propio ? 'Tu estado' : m.direction === 'in' ? 'Respuesta a un estado' : 'Estado de ' + nombreDe(sel);
+    const abrir = puedeAbrir && !retirado && r.wamid && (propio || m.direction === 'in');
+    return (abrir ? '<button type="button" class="cita" data-cita-estado="' + esc(r.wamid) + '" title="Abrir estado citado">' : '<div class="cita">')
+      + '<span class="cita-texto"><b>' + esc(rotulo) + '</b>' + esc(String(texto).slice(0, 160)) + '</span>'
+      + (mini ? '<img class="cita-foto" loading="lazy" alt="Miniatura del estado" src="' + esc(mini) + '">' : '')
+      + (abrir ? '</button>' : '</div>');
+  }
   const original = r?.wamid && !r.estado ? originales?.get(r.wamid) : null;
   const a = original ? adjuntoDe(original) : null;
   const tipo = original ? tipoRealMedio(original, a) : r?.tipo;
@@ -12337,7 +12395,7 @@ function citaDelMensaje(m, originales){
     else if (original?.media_id && !esBajoDemanda(original)) foto = '<img class="cita-foto" alt="Foto citada" data-medio="' + esc(original.media_id) + '">';
   }
   // Una respuesta a un Estado lo dice: «Tu estado» (el cliente contesta al del dueño) o «Estado de <nombre>» (el dueño contesta al del cliente).
-  const rotulo = r?.estado ? (mio ? 'Tu estado' : 'Estado de ' + nombreDe(sel)) : (mio ? 'Tú' : nombreDe(sel));
+  const rotulo = r?.estado ? 'Respuesta a tu historia' : (mio ? 'Tú' : nombreDe(sel));
   return (enlace ? '<button type="button" class="cita" title="Ir al mensaje original" data-cita="' + esc(r.wamid) + '"'
     + (buscarPrevia ? ' data-cita-previa="' + esc(r.wamid) + '"' : '') + '>' : '<div class="cita">')
     + '<span class="cita-texto"><b>' + esc(rotulo) + '</b>'
@@ -12363,6 +12421,8 @@ function reaccionesDelHilo(lista){
 
 function pintaMensajes(){
   const cont = $('mensajes'); if (!cont) return;
+  if (['admin', 'supervisor'].includes(ROL_ACTUAL) && Date.now() - (ST.miosLeidoEn || 0) > 60000
+      && MSGS.some(m => m.metadata?.responde_a?.estado && !m.metadata?.social)) void stCargaMios();
   const pegado = cont.scrollHeight - cont.scrollTop - cont.clientHeight < 90;
   let dia = '', antes = '';
   // Un mensaje eliminado NO desaparece del hilo: se queda, marcado, con quien lo elimino y por
