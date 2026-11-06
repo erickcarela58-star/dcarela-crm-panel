@@ -9866,7 +9866,7 @@ async function adjuntaPdfCombos(cat, boton){
       nombre = 'Combos Navidad 2026 - DCarela.pdf';
     } else {
       const r = await llama({ action:'combos', operation:'catalogo_categoria', categoria:cat, sucursal,
-        conversation_id: chatId || null, formato:'pdf' });
+        conversation_id: sel?.id || null, formato:'pdf' });
       if (!r?.ok || !r.pdf_b64) throw new Error(r?.error || 'no se pudo preparar el PDF vigente');
       archivo = new Blob([Uint8Array.from(atob(r.pdf_b64), c => c.charCodeAt(0))], { type:'application/pdf' });
       nombre = r.nombre || ('Combos ' + p.label + ' - DCarela.pdf');
