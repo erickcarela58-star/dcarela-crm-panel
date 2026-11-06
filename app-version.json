@@ -1,7 +1,7 @@
 {
-  "version": "2026-11-05-crm-release-v398-citas-chat",
+  "version": "2026-11-05-crm-release-v399-respuestas-redes",
   "channel": "crm",
-  "released_at": "2026-11-06T01:55:43Z",
-  "summary": "Las respuestas citadas muestran el nombre del documento o la miniatura de la foto y abren el mensaje original del chat.",
-  "requiere_puente": "2026-11-05-citas-v65"
+  "released_at": "2026-11-06T02:09:09Z",
+  "summary": "Abre los estados propios citados desde el chat y distingue los avisos de Instagram que Meta entrega sin contenido.",
+  "requiere_puente": "2026-11-05-redes-estados-v66"
 }
