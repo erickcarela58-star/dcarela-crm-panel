@@ -1,7 +1,7 @@
 {
-  "version": "2026-11-05-crm-release-v400-respuestas-redes",
+  "version": "2026-11-05-crm-release-v401-campana-navidad",
   "channel": "crm",
-  "released_at": "2026-11-06T02:18:10Z",
-  "summary": "Abre los estados propios citados desde el chat. En Instagram separa los adjuntos de Meta del acceso a la bandeja.",
+  "released_at": "2026-11-06T03:31:36Z",
+  "summary": "Set navideño privado con flyers en lote, calendario de aprobación y preparación de anuncios pausados para Marketplace.",
   "requiere_puente": "2026-11-05-redes-estados-v66"
 }
