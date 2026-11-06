@@ -9759,39 +9759,54 @@ function textoDeCombo(c, conTarjeta){
 
 async function abreCombos(){
   if (!sel) return avisa('Abre una conversación primero');
+  const chatId = sel.id;
+  const sucursal = sucursalComboDelChat(sel);
+  const navidadDisponible = NEGOCIO === 'dcarela' && sucursal === 'central';
   abreModal('<div class="mtapa"><b>Combos</b><button class="cerrarm" data-cerrar>×</button></div>'
     + '<div class="mcuerpo"><span class="cargando"></span> Leyendo el catálogo…</div>');
   $('modal').querySelectorAll('[data-cerrar]').forEach(b => { b.onclick = cierraModal; });
-  let filas;
-  try { filas = await cargaCombos(true); }
-  catch (e) {
-    $('modal').querySelector('.mcuerpo').innerHTML =
-      '<p class="aviso">No se pudo leer el catálogo: ' + esc(e.message) + '</p>';
-    return;
-  }
   const cuerpo = $('modal').querySelector('.mcuerpo');
+  const [regular, navidad] = await Promise.allSettled([cargaCombos(true),
+    navidadDisponible ? llama({action:'navidadCatalogo'}) : Promise.resolve(null)]);
+  if (chatId !== sel?.id || cuerpo !== $('modal').querySelector('.mcuerpo')) return;
+  const navidenos = (navidad.value?.items || []).filter(c => /^[A-Z]\d{2}$/.test(c.id)).map(c => ({
+    id:c.id, cat:'navidad', catLabel:'Navidad 2026', nombre:c.name, ref:c.id,
+    precio:'RD$' + Number(c.price).toLocaleString('en-US'), digital:c.photos + ' fotos digitales', items:[],
+  }));
+  const filas = [...navidenos, ...(regular.value || []).filter(c => c.cat !== 'navidad')];
+  const avisoCatalogo = regular.status === 'rejected' || (navidadDisponible && !navidad.value?.ok);
    cuerpo.innerHTML = '<div class="campo"><input id="cbBusca" placeholder="Buscar combo…"></div>'
      + '<div class="seccion" style="margin:12px 0 6px">Catálogo PDF vigente</div>'
-     + '<div class="pdfs">' + COMBO_PDFS.filter(p => !p.sucursal || p.sucursal === sucursalComboDelChat(sel)).map(p =>
+     + '<div class="pdfs">' + COMBO_PDFS.filter(p => p.cat === 'navidad' ? navidadDisponible : !p.sucursal || p.sucursal === sucursal).map(p =>
          '<button class="tplchip" data-pdf="' + p.cat + '">' + esc(p.label) + '</button>').join('')
     + '</div>'
     + '<div class="seccion" style="margin:14px 0 6px">Vestidos</div>'
     + '<div class="pdfs"><button class="tplchip" data-vestidos>Enviar los vestidos disponibles</button></div>'
-     + '<div class="seccion" style="margin:14px 0 6px">Combos 1 a 1 del CRM</div><div id="cbLista"></div>';
+     + (navidadDisponible && ['admin','supervisor'].includes(ROL_ACTUAL) ? '<div class="pdfs" style="margin-top:12px"><button class="tplchip" data-navidad-solicitudes>Solicitudes web de Navidad</button></div>' : '')
+     + '<div class="seccion" style="margin:14px 0 6px">Combos 1 a 1 del CRM</div>'
+     + (avisoCatalogo ? '<p class="aviso">Faltan opciones por cargar. Vuelve a abrir Combos para reintentar.</p>' : '') + '<div id="cbLista"></div>';
 
   const pinta = () => {
     const q = ($('cbBusca').value || '').trim().toLowerCase();
     const vis = filas.filter(c => !q ||
-      (c.nombre + ' ' + c.catLabel + ' ' + c.precio + ' ' + c.items.join(' ')).toLowerCase().includes(q));
-    $('cbLista').innerHTML = vis.map((c,i) =>
+      (c.nombre + ' ' + c.catLabel + ' ' + c.ref + ' ' + c.precio + ' ' + c.items.join(' ')).toLowerCase().includes(q));
+    const tarjetas = lista => lista.map(c =>
       '<button class="tpl" data-combo="' + filas.indexOf(c) + '"><b>' + esc(c.nombre) + '</b>'
       + '<span class="tplmeta">' + esc(c.catLabel) + (c.precio ? ' · ' + esc(c.precio) : '') + '</span></button>'
-    ).join('') || '<p class="aviso">Sin resultados.</p>';
+    ).join('');
+    const fiestas = vis.filter(c => c.cat === 'navidad');
+    $('cbLista').innerHTML = (fiestas.length ? '<details open><summary>Navidad 2026 · ' + fiestas.length + '</summary>' + tarjetas(fiestas) + '</details>' : '')
+      + tarjetas(vis.filter(c => c.cat !== 'navidad')) || '<p class="aviso">Sin resultados.</p>';
   };
   pinta();
   $('cbBusca').oninput = pinta;
 
   cuerpo.onclick = async ev => {
+    if (ev.target.closest('[data-navidad-solicitudes]')) {
+      abreModal('<div class="mtapa"><b>Solicitudes web de Navidad</b><button class="cerrarm" data-cerrar>×</button></div><div class="mcuerpo" id="cbSolicitudes" aria-live="polite"></div>');
+      $('modal').querySelector('[data-cerrar]').onclick = cierraModal;
+      return cargaSolicitudesNavidad($('cbSolicitudes'));
+    }
     const pdf = ev.target.closest('[data-pdf]');
     if (pdf) return adjuntaPdfCombos(pdf.dataset.pdf, pdf);
     const ves = ev.target.closest('[data-vestidos]');
@@ -9801,15 +9816,25 @@ async function abreCombos(){
   };
 }
 
+async function leeTarjetaNavidena(id){
+  if (NEGOCIO !== 'dcarela' || sucursalComboDelChat(sel) !== 'central' || !/^[A-Z]\d{2}$/.test(id)) throw new Error('Combo navideño no disponible en esta sucursal.');
+  const response = await fetch('./catalogos/navidad-2026/combos/' + id + '.jpg');
+  if (!response.ok || !response.headers.get('content-type')?.includes('image/jpeg')) throw new Error('No se pudo abrir la tarjeta aprobada.');
+  return response.blob();
+}
+
 async function adjuntaCombo(c, boton){
   if (!c) return;
+  const chatId = sel?.id;
   const antes = boton.innerHTML;
   boton.disabled = true; boton.textContent = 'Preparando…';
   try {
     // Para las categorías nuevas el flyer sale del mismo combo del CRM que alimenta
     // el PDF. Así precio, foto, referencia y botones no pueden venir de dos listas.
     let blob, ref = c.ref || '';
-    if (c.id) {
+    if (c.cat === 'navidad') {
+      blob = await leeTarjetaNavidena(c.id);
+    } else if (c.id) {
       const r = await llama({ action:'combos', operation:'flyer_combo', id:c.id, sucursal:sucursalComboDelChat(sel), formato:'jpg' });
       if (!r?.ok || !r.imagen_b64) throw new Error(r?.error || 'no se pudo generar el flyer 1 a 1');
       ref = r.ref || ref;
@@ -9819,6 +9844,7 @@ async function adjuntaCombo(c, boton){
       throw new Error('este combo no tiene ID del CRM; vuelve a abrir Combos para cargarlo de nuevo');
     }
     const datos = await leeBase64(blob);
+    if (chatId !== sel?.id) return;
     // Los combos salen con botones: el cliente toca en vez de escribir, y su respuesta
     // vuelve identificada -- se sabe QUE combo le intereso, no un "si" suelto que hay
     // que ir a buscar tres mensajes mas arriba.
@@ -9892,6 +9918,19 @@ async function adjuntaPdfCombos(cat, boton){
     boton.disabled = false; boton.textContent = antes;
     avisa('No se pudo preparar el PDF', e?.message || String(e));
   }
+}
+
+async function cargaSolicitudesNavidad(lista){
+  lista.textContent = 'Cargando solicitudes…';
+  try {
+    const x = await llama({action:'navidadSolicitudes'});
+    if (!x.ok) throw new Error(x.error || 'No se pudieron cargar las solicitudes.');
+    lista.innerHTML = x.items.length ? '<ul>' + x.items.map(s => '<li><b>' + esc(s.combo) + '</b> · ' + esc(s.nombre)
+      + ' · ' + esc(s.whatsapp) + ' · ' + esc(s.fecha || 'Fecha por acordar') + '<br>'
+      + esc(s.estado === 'registrada_crm' ? 'Recibida por WhatsApp' : 'Guardada en la web · WhatsApp por confirmar')
+      + (s.respuesta ? ' · ' + esc(s.respuesta) : '') + ' · ' + esc(s.id) + '</li>').join('') + '</ul>'
+      : '<p class="cfgnota">Todavía no hay solicitudes web.</p>';
+  } catch (error) { lista.textContent = error.message || 'No se pudieron cargar las solicitudes.'; }
 }
 
 /* ---- Plantillas de WhatsApp ---------------------------------------------- */
@@ -17916,14 +17955,10 @@ async function pfPintaGaleria(){
       + (ROL_ACTUAL === 'admin' ? '<button class="btn-linea" data-pf-quita="' + esc(f.id) + '">Quitar</button>' : '') + '</figcaption></figure>').join('') + '</div>'
       : '<p class="cfgnota">No hay fotos subidas desde el CRM para esta categoría. Las fotos anteriores de la web no se cambian.</p>');
   if ($('pfSolicitudesNavidad')) $('pfSolicitudesNavidad').onclick=async ev=>{
-    const boton=ev.currentTarget, lista=$('pfSolicitudesNavidadLista');
-    boton.disabled=true;
-    lista.textContent='Cargando solicitudes…';
-    try {
-      const x=await llama({action:'navidadSolicitudes'});
-      if(!x.ok) {lista.textContent=x.error || 'No se pudieron cargar las solicitudes.';return;}
-      lista.innerHTML=x.items.length?'<ul>'+x.items.map(s=>'<li><b>'+esc(s.combo)+'</b> · '+esc(s.nombre)+' · '+esc(s.whatsapp)+' · '+esc(s.fecha || 'Fecha por acordar')+' · '+esc(s.estado==='registrada_crm'?'Recibida por WhatsApp':'Pendiente de confirmar WhatsApp')+(s.respuesta?' · '+esc(s.respuesta):'')+'</li>').join('')+'</ul>':'<p class="cfgnota">Todavía no hay solicitudes web.</p>';
-    }catch{lista.textContent='No se pudieron cargar las solicitudes.';}finally{boton.disabled=false;}
+    const boton = ev.currentTarget;
+    boton.disabled = true;
+    try { await cargaSolicitudesNavidad($('pfSolicitudesNavidadLista')); }
+    finally { boton.disabled = false; }
   };
   if ($('pfNavidad')) $('pfNavidad').onsubmit = ev => { ev.preventDefault(); ev.stopPropagation(); void generaLoteNavidad(ev.currentTarget); };
   g.querySelectorAll('[data-pf-ver]').forEach(b => b.onclick = async () => {

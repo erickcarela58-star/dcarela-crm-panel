@@ -1,7 +1,7 @@
 {
-  "version": "2026-11-06-crm-release-v409-hermes-claro",
+  "version": "2026-11-06-crm-release-v410-navidad-solicitudes",
   "channel": "crm",
-  "released_at": "2026-11-06T21:54:10.543631Z",
-  "summary": "Agente Hermes local, vínculo de publicaciones y conciliación de estados y contrato de Claro.",
+  "released_at": "2026-11-06T22:17:58.434902Z",
+  "summary": "Los 22 combos de Navidad en el chat y acceso a las solicitudes guardadas en la web.",
   "requiere_puente": "2026-11-06-vision-navidad-ollama-v68"
 }
