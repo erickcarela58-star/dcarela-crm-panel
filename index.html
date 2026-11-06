@@ -16166,7 +16166,8 @@ async function pintaConexiones(){
   // Quien responde primero a la IA (Gemini, OpenAI, Anthropic, DeepSeek, OpenRouter) y si los demás sirven de respaldo cuando uno falla o se queda sin cuota.
   const ia = r.ia_ajustes;
   const ajustesIa = g => (g !== 'Inteligencia' || !ia) ? '' :
-    ia.solo_local ? '<p class="cfgnota">La IA de este CRM usa Ollama en la PC del negocio.</p>' :
+    ia.solo_local ? '<p class="cfgnota">La IA de este CRM usa Ollama en la PC del negocio.</p>'
+      + (ROL_ACTUAL === 'admin' ? '<p><button class="btn-linea" id="cxHermes">Vincular agente Hermes</button></p><p class="cfgnota">Descarga el vínculo y selecciónalo al configurar Hermes en la PC que publicará el contenido aprobado.</p>' : '') :
     '<form class="cx-ia" data-cx-ia><label>Responde primero<select name="principal"' + (ROL_ACTUAL === 'admin' ? '' : ' disabled') + '>'
     + ia.opciones.map(o => '<option value="' + esc(o.id) + '"' + (o.id === ia.principal ? ' selected' : '') + (o.disponible ? '' : ' disabled') + '>' + esc(o.nombre) + (o.disponible ? '' : ' (sin llave)') + (o.estado ? ' · ' + esc(o.estado) : '') + '</option>').join('')
     + '</select></label><label class="cx-chk"><input type="checkbox" name="respaldo"' + (ia.respaldo ? ' checked' : '') + (ROL_ACTUAL === 'admin' ? '' : ' disabled') + '> Si falla, probar con los demás que tengan llave</label>'
@@ -16189,6 +16190,16 @@ async function pintaConexiones(){
     + 'Cada acción comprueba tu rol (administrador, supervisor o agente).</p>'
     + '<table>' + (r.acciones || []).map(a => '<tr><td><code>' + esc(a.accion) + '</code></td><td>' + esc(a.descripcion) + '</td></tr>').join('') + '</table></details>';
   $('cxOtra').onclick = pintaConexiones;
+  if ($('cxHermes')) $('cxHermes').onclick = async () => {
+    const boton = $('cxHermes'); boton.disabled = true;
+    try {
+      const vinculo = await llama({ action: 'publicacionesAgenteVincular' });
+      if (!vinculo.ok) throw new Error(vinculo.error || 'No se pudo vincular el agente.');
+      descargaComoArchivo(new Blob([JSON.stringify(vinculo, null, 2)], { type: 'application/json' }), 'Dcarela-Hermes-vinculo.json');
+      avisa('Vínculo descargado', 'Guarda este archivo en la PC de publicaciones y selecciónalo en el asistente de Hermes.');
+    } catch (error) { avisa('Hermes', error.message); }
+    finally { boton.disabled = false; }
+  };
   cont.querySelectorAll('form[data-cx-ia]').forEach(f => f.onsubmit = async ev => {
     ev.preventDefault();
     const boton = f.querySelector('button[type=submit]'); boton.disabled = true;
