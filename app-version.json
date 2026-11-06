@@ -1,7 +1,7 @@
 {
-  "version": "2026-11-06-crm-release-v406-galeria-navidad",
+  "version": "2026-11-06-crm-release-v408-local-catalogo",
   "channel": "crm",
-  "released_at": "2026-11-06T16:48:34Z",
-  "summary": "Guía de Navidad con las cuatro fotos del Bosque Nevado y los fondos rojo y verde en las fichas.",
-  "requiere_puente": "2026-11-06-vision-navidad-v67"
+  "released_at": "2026-11-06T20:13:36.877009Z",
+  "summary": "IA local de texto y fotos. Catálogo de Navidad con 22 combos y rotulación corregida.",
+  "requiere_puente": "2026-11-06-vision-navidad-ollama-v68"
 }

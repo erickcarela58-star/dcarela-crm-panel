@@ -16166,6 +16166,7 @@ async function pintaConexiones(){
   // Quien responde primero a la IA (Gemini, OpenAI, Anthropic, DeepSeek, OpenRouter) y si los demás sirven de respaldo cuando uno falla o se queda sin cuota.
   const ia = r.ia_ajustes;
   const ajustesIa = g => (g !== 'Inteligencia' || !ia) ? '' :
+    ia.solo_local ? '<p class="cfgnota">La IA de este CRM usa Ollama en la PC del negocio.</p>' :
     '<form class="cx-ia" data-cx-ia><label>Responde primero<select name="principal"' + (ROL_ACTUAL === 'admin' ? '' : ' disabled') + '>'
     + ia.opciones.map(o => '<option value="' + esc(o.id) + '"' + (o.id === ia.principal ? ' selected' : '') + (o.disponible ? '' : ' disabled') + '>' + esc(o.nombre) + (o.disponible ? '' : ' (sin llave)') + (o.estado ? ' · ' + esc(o.estado) : '') + '</option>').join('')
     + '</select></label><label class="cx-chk"><input type="checkbox" name="respaldo"' + (ia.respaldo ? ' checked' : '') + (ROL_ACTUAL === 'admin' ? '' : ' disabled') + '> Si falla, probar con los demás que tengan llave</label>'
@@ -17403,7 +17404,7 @@ async function pintaConfig(){
         'La clave de Google vive <b>solo en el servidor</b>. No se puede leer ni cambiar desde el '
         + 'panel, y eso es a propósito: una clave que el navegador puede leer es una clave '
         + 'que se puede robar.',
-        dato('Motor', 'Google Gemini 2.5 Flash')
+        dato('Motor', 'Ollama en la PC')
         + '<button class="btn-linea" id="cfgReglas2" style="margin-top:8px">Editar reglas del negocio</button>')
 
     + (['admin', 'supervisor'].includes(ROL_ACTUAL) ? tarjetaCfg('Agente de marketing',
@@ -17440,7 +17441,7 @@ async function pintaConfig(){
         ignoradosCfg())
 
     + tarjetaCfg('Análisis de conversaciones con IA',
-        'La IA (Gemini u otro proveedor de Conexiones y API) lee el texto de cada conversación, sin teléfonos, y propone resumen, etiquetas, categoría, '
+        'La IA local lee el texto de cada conversación, sin teléfonos, y propone resumen, etiquetas, categoría, '
         + 'etapa y si conviene ignorarla. <b>No aplica nada</b>: se revisa en cada ficha o en la lista. Las '
         + 'ignoradas nunca se mandan. El servidor pone tope por día y por minuto.',
         analisisCfg())
@@ -19681,7 +19682,7 @@ function borradorCrearContenido(){
     categorias: new Set(['infantil']),
     formatos: new Set(['imagen_4x5','imagen_9x16','imagen_1x1']),
     canales: new Set(['instagram','whatsapp_estado']),
-    modelo: CONT.modelo || 'gemini-4-argon',
+    modelo: CONT.modelo || 'qwen2.5vl:3b',
     estilo_id: '01-editorial-social',
     brief: '',
     objetivo: 'consultas',
@@ -19718,7 +19719,7 @@ async function cargaModelosContenido(){
       await new Promise(resolve=>setTimeout(resolve,350));
     }
     if (!r.ok) throw new Error(r.error || 'No se pudieron consultar los modelos');
-    if (!r.modelos?.length) throw new Error('Esta conexión no tiene modelos de Gemini disponibles. Revisa Canales → Conexiones y API.');
+    if (!r.modelos?.length) throw new Error('Ollama no está disponible en la PC. Revisa Canales → Conexiones y API.');
     CONT.modelos = r.modelos || []; CONT.modelo = r.modelo; CONT.originales = r.originales || {}; CONT.fotosCreativas = r.fotos || []; CONT.originalesError = r.originales_error || null;
     const c = borradorCrearContenido(); if (!CONT.modelos.some(m=>m.id===c.modelo)) c.modelo = CONT.modelos[0]?.id || '';
   } catch (e) { CONT.modelosError = e.message; }
@@ -19803,13 +19804,13 @@ function planLoteV240(pl){
 function procesoLoteV240Html(t,c){
   const plan=planLoteV240(c?.solicitud?.payload),hechos=Number(t.conceptos)||0,etapa=t.etapa||'conceptos',p=Math.max(0,Math.min(100,Number(t.progreso)||0));
   const lista=t.estado==='completada',comp=etapa==='composicion'||lista;
-  const pasos=[['Pedido guardado','Nada se publica',true,false],['Ideas y frases','Gemini mira cada foto',comp,etapa==='conceptos'],['Componiendo flyers','Con la original en alta',lista,etapa==='composicion'],['Listo para revisar','Pendiente de tu aprobación',lista,false]];
+  const pasos=[['Pedido guardado','Nada se publica',true,false],['Ideas y frases','Ollama analiza cada foto',comp,etapa==='conceptos'],['Componiendo flyers','Con la original en alta',lista,etapa==='composicion'],['Listo para revisar','Pendiente de tu aprobación',lista,false]];
   const nombreCat=id=>(CONT_CATEGORIAS.find(([x])=>x===id)||[,id])[1];
   const nombrePl=id=>(catalogoCrearV242().find(([x])=>x===id)||[,''])[1];
   const fotoDe=id=>(CONT.fotosCreativas||[]).find(f=>f.id===id);
   const tarjeta=(u,j)=>{
     const estado=lista||j<hechos&&comp?'lista':j<hechos?'frase':j===hechos&&etapa==='conceptos'?'escribiendo':'espera';
-    const txt={lista:comp&&!lista?'Frase lista · componiendo':'Lista',frase:'Frase lista',escribiendo:'Gemini escribe la frase…',espera:'En espera'}[estado];
+    const txt={lista:comp&&!lista?'Frase lista · componiendo':'Lista',frase:'Frase lista',escribiendo:'Ollama escribe la frase…',espera:'En espera'}[estado];
     const f=fotoDe(u.foto),plantilla=catalogoCrearV242().find(([id])=>id===u.estilo);
     return '<li class="c240-idea es-'+estado+'"><div class="c240-idea-img">'
       +(plantilla?.[4]?(plantilla[3]?'<img src="'+esc(plantilla[3])+'" alt="Referencia elegida" loading="lazy">':'<span>Referencia elegida</span>'):u.estilo&&nombrePl(u.estilo)?'<img src="plantillas/'+esc(u.estilo.slice(0,2))+'.webp" alt="" loading="lazy">':'<span>Plantilla según Gemini</span>')
@@ -20626,7 +20627,7 @@ async function clicTableroV239(ev){
     const pieza = (CONT.items || []).find(x => x.id === d.cvariaciones);
     if (!pieza || !pieza.tiene_imagen || pieza.origen === 'propia') return avisa('Variaciones no disponibles', 'Solo se pueden crear para piezas con imagen que no sean contenido propio.');
     if (pieza.formato === 'imagen_16x9') return avisa('Variaciones no disponibles en 16:9', 'Las variaciones automáticas usan originales verticales. Para otra versión horizontal, abre la pieza en el Editor de flyers con una original horizontal.');
-    CONT.crear = { baseId: pieza.id, mes: pieza.mes_objetivo || pieza.fecha.slice(0, 7), cantidad: 3, categorias: new Set([pieza.categoria]), formatos: new Set([pieza.formato]), canales: new Set([pieza.canal]), estilo_id: pieza.estilo_referencia_id || '', modelo: CONT.modelo || 'gemini-4-argon', brief: '', otraFoto: false };
+    CONT.crear = { baseId: pieza.id, mes: pieza.mes_objetivo || pieza.fecha.slice(0, 7), cantidad: 3, categorias: new Set([pieza.categoria]), formatos: new Set([pieza.formato]), canales: new Set([pieza.canal]), estilo_id: pieza.estilo_referencia_id || '', modelo: CONT.modelo || 'qwen2.5vl:3b', brief: '', otraFoto: false };
     return cambiaTabContenido('crear');
   }
   if (d.p239apruebagrupo) {
@@ -20681,7 +20682,7 @@ function pintaAgente(){
     + '<div class="agente-cab"><span class="agente-ico" aria-hidden="true">🤖</span><div class="agente-tit"><b>Automatización</b><small>'
     +   (CONT.activo ? 'Configurada para las 7:00. Consulta cada resultado para comprobar su ejecución.' : 'En pausa: no propone ni publica nada (tampoco lo ya aprobado).') + '</small></div>'
     +   (admin ? '<label class="agente-sw"><input type="checkbox" data-cactivo="1"' + (CONT.activo ? ' checked' : '') + '><span>' + (CONT.activo ? 'Encendido' : 'En pausa') + '</span></label>' : '') + '</div>'
-    + '<div class="agente-acc"><button type="button" class="btn-linea" data-cmcpmodal="1" title="Consultar modelos disponibles de Gemini">Estado de IA y modelos</button></div>'
+    + '<div class="agente-acc"><button type="button" class="btn-linea" data-cmcpmodal="1" title="Consultar los modelos locales">Estado de IA y modelos</button></div>'
     + '<details class="plan-rutina"' + (CONT.rutinaAbierta ? ' open' : '') + '><summary>Ajustes de la rutina · ' + esc(aut[1]) + '</summary>'
     + '<div class="agente-fila"><span class="agente-rot">Autonomía</span><div class="segmento" role="radiogroup" aria-label="Autonomía del agente">'
     +   CONT_AUTONOMIA.map(([k, t]) => '<button type="button" role="radio" aria-checked="' + (CONT.autonomia === k) + '" class="' + (CONT.autonomia === k ? 'on' : '') + '" data-cautonomia="' + k + '"' + (admin ? '' : ' disabled') + '>' + esc(t) + '</button>').join('')
@@ -20778,7 +20779,7 @@ async function clicContAgente(ev){
   if(d.cmcpmodal){
     const m=abreModal('<div class="mtapa"><b>Estado de IA y render de flyers</b><button type="button" data-cerrar aria-label="Cerrar">×</button></div>'
       +'<div class="caja" style="display:grid;gap:12px;max-width:540px">'
-      +'<div id="contEstadoIa" class="estudio-bloque-card" role="status">Consultando los modelos disponibles de Gemini…</div>'
+      +'<div id="contEstadoIa" class="estudio-bloque-card" role="status">Consultando los modelos locales…</div>'
       +'<p class="cont-sub" style="margin:0">El CRM web solicita ganchos a la API de Gemini y compone los flyers con su motor de render. El servidor MCP <code>dcarela-flyers</code> es una herramienta local para agentes compatibles; esta pantalla no comprueba que esté ejecutándose.</p>'
       +'<p class="cont-sub" style="margin:0">Un modelo disponible no confirma que una generación haya terminado. El resultado de cada solicitud debe mostrar la fuente real; si Gemini falla, no se mostrarán frases prefijadas como si fueran su respuesta.</p>'
       +'<div style="display:flex;justify-content:flex-end;gap:8px">'
@@ -20791,7 +20792,7 @@ async function clicContAgente(ev){
     const estado=m.querySelector?.('#contEstadoIa');
     if(estado) estado.innerHTML=r.ok
       ? '<b>Gemini: '+(r.modelos?.length?'modelos disponibles':'sin modelos disponibles')+'</b><div class="cont-sub">Modelo configurado: '+esc(r.modelo||'sin configurar')+' · modelos compatibles: '+Number(r.modelos?.length||0)+'. Esta consulta no genera un flyer.</div>'
-      : '<b>No se pudo consultar Gemini</b><div class="cont-sub">'+esc(r.error||'Revisa la conexión en Canales.')+'</div>';
+      : '<b>No se pudo consultar Ollama</b><div class="cont-sub">'+esc(r.error||'Revisa la conexión en Canales.')+'</div>';
     return;
   }
   if(d.ctareacorregir)return corrigePedidoContenido(d.ctareacorregir);
@@ -21212,7 +21213,7 @@ function lecturaReferenciaHtml(analisis, abierto = false){
   if (!analisis || !analisis.descripcion) return '';
   const textos = (Array.isArray(analisis.texto_visible) ? analisis.texto_visible : []).slice(0, 10);
   const colores = (Array.isArray(analisis.colores) ? analisis.colores : []).filter(c => /^#[0-9a-f]{6}$/i.test(c)).slice(0, 6);
-  return '<details class="cont-lectura"' + (abierto ? ' open' : '') + '><summary>Lo que Gemini vio</summary>'
+  return '<details class="cont-lectura"' + (abierto ? ' open' : '') + '><summary>Lo que vio el modelo local</summary>'
     + '<p class="cont-sub">' + esc(analisis.descripcion) + '</p>'
     + '<p class="cont-sub"><b>Texto leído:</b> ' + (textos.length ? textos.map(esc).join(' · ') : 'No encontró texto legible') + '</p>'
     + (colores.length ? '<p class="cont-sub"><b>Colores:</b> ' + colores.map(esc).join(' · ') + '</p>' : '') + '</details>';
@@ -23223,12 +23224,12 @@ function estudioV238(m,api){
         +'<button type="button" class="e238-btn e238-prim e238-peq" data-e238="ideasIA">Pedir 3 ideas a Gemini</button><div class="e238-ideas" data-e238-ideas>'+(S.ideas||'')+'</div>',ab('Ideas de titular con Gemini',false));
   }
   async function pideIdeas(b){
-    const caja=diseno.querySelector('[data-e238-ideas]');b.disabled=true;caja.innerHTML='<p class="e238-ayuda"><span class="e238-giro"></span> Pidiendo ideas a Gemini…</p>';
+    const caja=diseno.querySelector('[data-e238-ideas]');b.disabled=true;caja.innerHTML='<p class="e238-ayuda"><span class="e238-giro"></span> Pidiendo ideas a Ollama…</p>';
     const v=api.valores();
     // Solo lo que el servidor usa de verdad: categoría, enfoque y plantilla (antes había «objetivo» y «tono» que no se enviaban).
     const r=await llamaCont({action:'contenidoEstilos',operation:'gemini_ganchos',categoria:v._categoria,enfoque:leer('gemini_enfoque'),plantilla_id:api.idReal});
     b.disabled=false;
-    if(!r.ok||!Array.isArray(r.ganchos)||!r.ganchos.length){S.ideas='';caja.innerHTML='<p class="e238-aviso">'+esc(r?.error||'Gemini no devolvió ideas.')+'</p>';return;}
+    if(!r.ok||!Array.isArray(r.ganchos)||!r.ganchos.length){S.ideas='';caja.innerHTML='<p class="e238-aviso">'+esc(r?.error||'Ollama no devolvió ideas.')+'</p>';return;}
     S.listaIdeas=r.ganchos;
     S.ideas=r.ganchos.map((g,i)=>'<div class="e238-idea"><b>'+esc(g.l1)+'</b>'+(g.l2?'<span>'+esc(g.l2)+'</span>':'')+(g.copy?'<small>'+esc(g.copy)+'</small>':'')+'<button type="button" class="e238-mini" data-e238idea="'+i+'">Usar en el flyer</button></div>').join('')
       +'<small class="e238-ayuda">Fuente: '+esc(r.fuente||'—')+' · modelo '+esc(r.modelo||'—')+'</small>';
@@ -25352,7 +25353,7 @@ async function clicContenido(ev){
     const pieza = CONT.items.concat(CONT.diaItems || []).find(x => x.id === d.cvariaciones);
     if (!pieza) return avisa('La pieza ya no está disponible');
     if (pieza.formato === 'imagen_16x9') return avisa('Variaciones no disponibles en 16:9', 'Las variaciones automáticas usan originales verticales. Para otra versión horizontal, abre la pieza en el Editor de flyers con una original horizontal.');
-    CONT.crear = { baseId: pieza.id, mes: pieza.mes_objetivo || pieza.fecha.slice(0,7), cantidad: 3, categorias: new Set([pieza.categoria]), formatos: new Set([pieza.formato]), canales: new Set([pieza.canal]), estilo_id: pieza.estilo_referencia_id || '', modelo: CONT.modelo || 'gemini-4-argon', brief: '', otraFoto: false };
+    CONT.crear = { baseId: pieza.id, mes: pieza.mes_objetivo || pieza.fecha.slice(0,7), cantidad: 3, categorias: new Set([pieza.categoria]), formatos: new Set([pieza.formato]), canales: new Set([pieza.canal]), estilo_id: pieza.estilo_referencia_id || '', modelo: CONT.modelo || 'qwen2.5vl:3b', brief: '', otraFoto: false };
     return cambiaTabContenido('crear');
   }
   if (d.ccomprueba) {
@@ -25740,14 +25741,14 @@ function cmbCcSucursales(){
 function cmbNavidadHtml(completa){
   const paginas = Array.from({length: completa ? 13 : 4}, (_, i) => '<img width="560" height="792"'
     + (i ? ' loading="lazy"' : ' fetchpriority="high"') + ' decoding="async" src="./catalogos/navidad-2026/pagina-' + (i + 1)
-    + '.webp?v=406" alt="' + (i ? 'Navidad 2026 · página ' + (i + 1) : 'Portada del catálogo de Navidad 2026') + '">').join('');
+    + '.webp?v=407" alt="' + (i ? 'Navidad 2026 · página ' + (i + 1) : 'Portada del catálogo de Navidad 2026') + '">').join('');
   return '<section class="cmb-caja cmb-previa"><header class="cmb-cabcaja"><span class="cmb-pdfico">' + CMB_ICO.pdf
-    + '</span><div><h3>Navidad 2026 · La Central</h3><p>Guía de experiencias con 22 combos, 13 páginas y botones de WhatsApp.</p></div></header>'
+    + '</span><div><h3>Navidad 2026</h3><p>22 combos con fotos de los ambientes y botones de WhatsApp.</p></div></header>'
     + cmbCcSelector() + (completa ? cmbCcSucursales() : '')
     + '<div class="cmb-cc-paginas' + (completa ? '' : ' cmb-previa-paginas') + '" aria-label="Vista previa de Navidad 2026">' + paginas + '</div>'
     + '<footer class="cmb-controles">' + (completa ? '<a class="btn-linea" href="https://dcarelacompufoto.com/navidad/" target="_blank" rel="noopener noreferrer">Abrir catálogo web</a>'
       : '<button type="button" class="btn-linea" data-cmbir="porcategoria">Ver las 13 páginas</button>')
-    + '<a class="btn-solido" href="./catalogos/navidad-2026.pdf?v=406" download>' + CMB_ICO.pdf + 'Descargar PDF de Navidad</a></footer></section>';
+    + '<a class="btn-solido" href="./catalogos/navidad-2026.pdf?v=407" download>' + CMB_ICO.pdf + 'Descargar PDF de Navidad</a></footer></section>';
 }
 function cmbCcHtml(){
   if (CMB.cc.cat === 'navidad' && cmbNavidadDisponible()) return cmbNavidadHtml(true);
@@ -25852,7 +25853,7 @@ function cmbPinta(){
   v.innerHTML = '<div class="cmb">'
     + '<header class="cmb-cab"><span class="cmb-logo">' + CMB_ICO.combo + '</span><div><h2>Combos y PDF comercial</h2><p>Gestiona tus combos de productos, crea tu catálogo y genera PDFs comerciales</p></div>'
     + '<div class="cmb-cabacc">' + (CMB.cc.cat === 'navidad' && cmbNavidadDisponible()
-      ? '<a class="btn-linea" href="./catalogos/navidad-2026.pdf?v=406" download>' + CMB_ICO.pdf + 'Descargar PDF de Navidad</a>'
+      ? '<a class="btn-linea" href="./catalogos/navidad-2026.pdf?v=407" download>' + CMB_ICO.pdf + 'Descargar PDF de Navidad</a>'
       : d?.combos?.length ? '<button type="button" class="btn-linea" data-cmbccpdf="1">' + CMB_ICO.pdf + 'Descargar catálogo</button>' : '')
     + (editar ? '<button type="button" class="btn-solido" data-cmbnuevo="1">+ Nuevo combo</button>' : '') + '</div></header>'
     + '<nav class="cmb-tabs" role="tablist">' + tab('combos', 'Combos') + tab('porcategoria', 'Catálogos por categoría') + tab('categorias', 'Categorías') + tab('catalogo', 'Catálogo PDF') + tab('precios', 'Precios') + '</nav>'
