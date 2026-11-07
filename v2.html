@@ -651,6 +651,8 @@ img.av{object-fit:cover}
   background-position:calc(var(--x) * -14px) calc(var(--y) * -14px)}
 .chat-marca .chat-marca-text{max-width:68px;overflow:hidden;text-overflow:ellipsis}
 .chat-marca.solo-icono{width:20px;min-width:20px;padding:2px;cursor:help}
+.chat .marcas.compactas .chat-marca{width:20px;min-width:20px;padding:2px}
+.chat .marcas.compactas .chat-marca-text{display:none}
 .chat-marca.ign{background:rgba(178,106,0,.12)}
 .chat-marca.bloqueada{background:rgba(220,38,38,.10)}
 .chat-marca.modo{background:rgba(37,99,235,.10)}
@@ -660,6 +662,7 @@ img.av{object-fit:cover}
 .etiqueta.ign{background:rgba(178,106,0,.12);color:var(--warn)}
 .globito{min-width:17px;height:17px;padding:0 5px;border-radius:9px;background:var(--ok);
   color:#fff;font-size:10.5px;font-weight:700;display:flex;align-items:center;justify-content:center}
+.chat .fila1 .globito{flex:0 0 auto;margin-left:auto}
 
 /* --- Conversaciones: chat -------------------------------------------------- */
 .conversacion{flex:1;min-width:0;display:flex;flex-direction:column;background:var(--wall)}
@@ -1599,6 +1602,8 @@ a.ayuda{color:var(--enlace)}
 .tpl:hover{background:var(--hover);border-color:var(--line2)}
 .tpl b{display:block;font-size:13.5px}
 .tplmeta{display:block;margin-top:2px;font-size:11px;color:var(--mut)}
+.tpldetalle{display:block;margin-top:7px;font-size:11px;line-height:1.4;color:var(--fg);font-weight:500}
+.tpldetalle em{display:block;margin-top:3px;color:var(--accent);font-style:normal;font-weight:700}
 /* Destinos marcados para reenviar a varios a la vez, y el rotulo de "Frecuentes" que separa
    los chats mas recientes del resto, como en WhatsApp Web. */
 .tpl.marcado{border-color:var(--ok);background:rgba(37,163,102,.1)}
@@ -7386,9 +7391,8 @@ function pintaChats(){
     else if (c.mode === 'bot') marcas.push(marcaEmojiChat('\ud83e\udd16', 'Modo Bot', 'modo'));
     if (silenciado(c)) marcas.push(marcaEmojiChat('\ud83d\udd15', 'Silenciado', 'silenciada'));
     const etiquetasChat = etiquetasVisiblesDe(c);
-    etiquetasChat.slice(0, 3).forEach(e => marcas.push(marcaEmojiChat(emojiDeEtiquetaChat(e), 'Etiqueta · ' + e, 'etiqueta')));
-    if (etiquetasChat.length > 3) marcas.push(marcaEmojiChat('\u2795', 'Etiqueta · ' + (etiquetasChat.length - 3) + ' más', 'etiqueta'));
-    if (sinLeer) marcas.push('<span class="globito">' + Number(c.unread) + '</span>');
+    etiquetasChat.slice(0, 3).forEach(e => marcas.push(marcaEmojiChat(emojiDeEtiquetaChat(e), 'Etiqueta · ' + e, 'etiqueta', true)));
+    if (etiquetasChat.length > 3) marcas.push(marcaEmojiChat('\u2795', 'Etiqueta · ' + (etiquetasChat.length - 3) + ' más', 'etiqueta', true));
     const canal = CANALES[canalDe(c)];
     const escribeAqui = textoEscribiendoCliente(c);
     return '<div class="chat' + (sel && sel._id === c._id ? ' on' : '') + (sinLeer ? ' sinleer' : '')
@@ -7399,13 +7403,14 @@ function pintaChats(){
       +     'style="background:' + canal.color + '">' + canal.logo + '</span></div>'
       + '<div class="cuerpo">'
       +   '<div class="fila1"><div class="nom">' + emojisApple(esc(n)) + '</div>'
-      +     '<div class="hora">' + esc(hora(c.last_message_at)) + '</div></div>'
+      +     '<div class="hora">' + esc(hora(c.last_message_at)) + '</div>'
+      +     (sinLeer ? '<span class="globito" aria-label="' + Number(c.unread) + ' mensajes sin leer">' + Number(c.unread) + '</span>' : '') + '</div>'
       // En la lista tambien, como WhatsApp Web: mientras escribe, la vista previa del ultimo
       // mensaje se cambia por el aviso, no se le suma al lado.
       +   (escribeAqui
           ? '<div class="prev escribiendo-cliente">' + esc(escribeAqui) + '</div>'
           : '<div class="prev">' + emojisApple(esc(previaLegible(c))) + '</div>')
-      +   '<div class="marcas">' + marcas.join('') + '</div>'
+      +   '<div class="marcas' + (marcas.length > 3 ? ' compactas' : '') + '">' + marcas.join('') + '</div>'
       + '</div><button type="button" class="pin-chat' + (anclado(c) ? ' anclado' : '')
       + '" data-chat-pin="' + esc(c._id) + '" title="' + (anclado(c) ? 'Desfijar chat' : 'Fijar chat arriba')
       + '" aria-label="' + (anclado(c) ? 'Desfijar' : 'Fijar') + ' chat de ' + esc(n) + '">'
@@ -9535,9 +9540,9 @@ async function abreRapidas(){
 // aplica la misma referencia, precio, foto y sucursal que los catálogos actuales.
 const COMBO_CATEGORIAS = { xv:'XV', infantil:'Infantiles', graduacion:'Graduación',
   cumpleanos:'Cumpleaños', embarazadas:'Embarazo', bodas:'Bodas' };
-const COMBO_CATALOGO_CAT = { infantil:'infantiles', cumpleanos:'cumpleanos', graduacion:'graduacion', embarazadas:'embarazo', bodas:'bodas' };
+const COMBO_CATALOGO_CAT = { xv:'xv', infantil:'infantiles', cumpleanos:'cumpleanos', graduacion:'graduacion', embarazadas:'embarazo', bodas:'bodas' };
 const COMBO_PDFS = [
-  { cat:'infantiles', label:'Infantiles' }, { cat:'cumpleanos', label:'Cumpleaños' },
+  { cat:'xv', label:'XV años' }, { cat:'infantiles', label:'Infantiles' }, { cat:'cumpleanos', label:'Cumpleaños' },
   { cat:'graduacion', label:'Graduación' }, { cat:'embarazo', label:'Embarazo' },
   { cat:'bodas', label:'Bodas' },
   { cat:'navidad', label:'Navidad 2026', archivo:'./catalogos/navidad-2026.pdf', sucursal:'central' },
@@ -9587,7 +9592,8 @@ async function cargaCombos(forzar){
       catLabel: COMBO_CATEGORIAS[cat] || cat || 'Otros', nombre: String(c.nombre || '').trim(),
       precio: Number.isFinite(precio) && precio > 0 ? 'RD$' + precio.toLocaleString('en-US') : '',
       precioNumero: Number.isFinite(precio) && precio > 0 ? precio : null,
-      digital: items[0] || '', items, incluyeLabel: 'Incluye', incluye: String(c.descripcion || '').trim(),
+      digital: items[0] || '', items, incluyeLabel: 'Incluye',
+      incluye: String(c.descripcion || '').replace(/^Incluye:\s*/i, '').trim(),
       fotoId: c.foto_id || null, ref: c.ref || comboRefLegacy(cat, c.nombre),
     };
   }).filter(c => c.nombre);
@@ -9674,6 +9680,9 @@ function textoDeCombo(c, conTarjeta){
     if (c.incluye) l.push('', c.incluyeLabel + ': ' + c.incluye + '.');
   } else if (c.digital) {
     l.push('', c.digital + '. Todo el detalle está en la tarjeta.');
+    // La ropa y el maquillaje de XV viven en descripcion, no en items. El texto
+    // buscable del chat conserva esa parte aunque la tarjeta también la muestre.
+    if (c.incluye) l.push('Incluye: ' + c.incluye.replace(/^Incluye:\s*/i, '') + '.');
   }
   l.push('', 'Si te interesa, dime tu fecha tentativa y te confirmamos disponibilidad.');
   return l.join('\n');
@@ -9712,10 +9721,14 @@ async function abreCombos(){
     const q = ($('cbBusca').value || '').trim().toLowerCase();
     const vis = filas.filter(c => !q ||
       (c.nombre + ' ' + c.catLabel + ' ' + c.ref + ' ' + c.precio + ' ' + c.items.join(' ')).toLowerCase().includes(q));
-    const tarjetas = lista => lista.map(c =>
-      '<button class="tpl" data-combo="' + filas.indexOf(c) + '"><b>' + esc(c.nombre) + '</b>'
-      + '<span class="tplmeta">' + esc(c.catLabel) + (c.precio ? ' · ' + esc(c.precio) : '') + '</span></button>'
-    ).join('');
+    const tarjetas = lista => lista.map(c => {
+      const detalle = c.items.map(i => esc(i)).join(' · ');
+      const incluye = String(c.incluye || '').replace(/^Incluye:\s*/i, '').trim();
+      return '<button class="tpl" data-combo="' + filas.indexOf(c) + '"><b>' + esc(c.nombre) + '</b>'
+        + '<span class="tplmeta">' + esc(c.catLabel) + (c.precio ? ' · ' + esc(c.precio) : '') + '</span>'
+        + (detalle ? '<span class="tpldetalle">' + detalle + (incluye ? '<em>También incluye: ' + esc(incluye) + '</em>' : '') + '</span>' : '')
+        + '</button>';
+    }).join('');
     const fiestas = vis.filter(c => c.cat === 'navidad');
     $('cbLista').innerHTML = (fiestas.length ? '<details open><summary>Navidad 2026 · ' + fiestas.length + '</summary>' + tarjetas(fiestas) + '</details>' : '')
       + tarjetas(vis.filter(c => c.cat !== 'navidad')) || '<p class="aviso">Sin resultados.</p>';

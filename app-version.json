@@ -1,7 +1,7 @@
 {
-  "version": "2026-11-07-crm-release-v417-grupos",
+  "version": "2026-11-07-crm-release-v418-xv-etiquetas",
   "channel": "crm",
-  "released_at": "2026-11-07T15:23:53.026405+00:00",
-  "summary": "Seguimiento de publicaciones por grupo y respeto de permisos retirados. Activación pendiente de validar el navegador del agente.",
+  "released_at": "2026-11-07T21:30:05.0698462Z",
+  "summary": "XV muestra contenido completo y extras de sesión; contador sin leer junto a la hora y etiquetas compactas con iconos.",
   "requiere_puente": "2026-11-06-documentos-grandes-v70"
 }
