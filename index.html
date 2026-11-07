@@ -20176,6 +20176,7 @@ async function cargaContenido(){
     tiktok: r.tiktok || null, estilos: r.estilos || [], tendencias: r.tendencias || null, amandine: r.amandine_en_servidor !== false });
   CONT.estilosServidorV233 = Array.isArray(r.estilos);
   CONT.grupos = g && g.ok ? g.grupos : [];
+  CONT.gruposHermesActivo = g?.hermes_activo === true;
   if (!CONT.gen) CONT.gen = { cantidad: CONT.cantidad || '', dias: 7, canales: new Set(CONT.activos) };
   if (!CONT.tab) CONT.tab = CONT.items.some(x => x.estado === 'propuesta') ? 'porAprobar' : 'calendario';
   CONT.mesItems = null; CONT.mesError = null; // el calendario vuelve a pedir su mes con lo nuevo
@@ -20512,6 +20513,44 @@ function abreOrdenMarketplace(id){
     finally { boton.disabled=false; }
   };
 }
+function accionGruposHermes(x){
+  if (NEGOCIO !== 'dcarela') return '';
+  if (x.hermes_grupos_orden && ['admin','supervisor'].includes(ROL_ACTUAL)) {
+    return '<button type="button" class="btn-linea" data-cgruposacuse="'+esc(x.hermes_grupos_orden)+'">Ver resultados en grupos</button>';
+  }
+  if (!CONT.gruposHermesActivo || ROL_ACTUAL !== 'admin' || !x.tiene_imagen || x.tipo_media !== 'imagen' ||
+      x.problema_diseno || !['aprobada','lista','publicada'].includes(x.estado)) return '';
+  return '<button type="button" class="btn-linea" data-cgruposordena="'+esc(x.id)+'">Publicar en grupos</button>';
+}
+function muestraOrdenGrupos(r){
+  const estados={pendiente:'Pendiente',en_proceso:'En curso',publicada:'Publicada',en_moderacion:'En moderación',
+    no_autorizado:'Sin autorización',no_elegible:'Fuera de alcance',requiere_revision:'Requiere revisión'};
+  abreModal('<div class="mtapa"><b>Publicación en grupos de Facebook</b><button class="cerrarm" data-cerrar aria-label="Cerrar">×</button></div>'
+    + '<div class="mcuerpo">'+(r.inventario_completo ? '<p>Destinos revisados: '+esc(r.total)+'. Publicaciones con enlace: '+esc(r.conteo?.publicada || 0)+'.</p>'
+      : '<p>Hermes debe completar el inventario de grupos de erikc antes de publicar.</p>')
+    + (r.destinos || []).map(g=>{
+      const enlace=/^https:\/\/www\.facebook\.com\/groups\/\d+\/(?:posts|permalink)\/\d+\/?$/.test(g.enlace || '') ? g.enlace : '';
+      return '<div class="cont-grupo"><b>'+esc(g.nombre)+'</b><small>'+esc(estados[g.estado] || g.estado)
+        +(g.motivo ? ' · '+esc(g.motivo) : '')+'</small>'
+        +(enlace ? '<a class="btn-linea" href="'+esc(enlace)+'" target="_blank" rel="noopener noreferrer">Ver publicación</a>' : '')+'</div>';
+    }).join('')+'</div>');
+  $('modal').querySelector('[data-cerrar]').onclick=cierraModal;
+}
+async function clicGruposHermes(b){
+  const d=b.dataset;
+  if (d.cgruposordena) {
+    if (tieneBorradorPublicacionV250(d.cgruposordena)) return avisa('Guarda el borrador antes de publicar.');
+    if (!await confirmaAqui('¿Enviar este flyer aprobado a todos los grupos autorizados que admitan la publicación?', {si:'Enviar orden'})) return;
+  }
+  b.disabled=true;
+  try {
+    const r=await llamaCont(d.cgruposacuse ? {action:'contenidoConsultaOrdenGrupos',id:d.cgruposacuse}
+      : {action:'contenidoOrdenGrupos',id:d.cgruposordena,todos_los_autorizados:true});
+    if(!r?.ok) return avisa('La orden requiere revisión',r?.error || 'Respuesta incompleta.');
+    muestraOrdenGrupos(r);
+    if(d.cgruposordena) void cargaContenido();
+  } finally { b.disabled=false; }
+}
 function publicacionV239(g, x){
   const admin = ROL_ACTUAL === 'admin', est = estadoHonestoV239(x);
   const editable = !['publicada', 'publicando', 'encola', 'enviada', 'sin_confirmar'].includes(x.estado) && x.canal !== 'paquete_grupos';
@@ -20520,7 +20559,7 @@ function publicacionV239(g, x){
   const borrador=borradoresPublicacionV250()[x.id], conflicto=!!borrador && (!editable || borrador.base!==firmaPublicacionV250(x));
   const valores=borrador && !conflicto ? borrador : x;
   const acc = [];
-  acc.push(accionMarketplace(x,admin));
+  acc.push(accionMarketplace(x,admin),accionGruposHermes(x));
   if (admin && x.estado === 'propuesta' && x.tiene_imagen) acc.push('<button type="button" class="p239-btn p239-prim" data-caprueba="' + esc(x.id) + '" data-p239programa="1">' + ICO_V239.calChico + 'Aprobar y programar</button>');
   if (admin && pendientes.length > 1) acc.push('<button type="button" class="p239-btn" data-p239apruebagrupo="1">Aprobar las ' + pendientes.length + ' redes</button>');
   if (admin && ['aprobada', 'fallida', 'vencida'].includes(x.estado)) acc.push('<button type="button" class="p239-btn" data-cpublica="' + esc(x.id) + '">' + (x.estado === 'aprobada' ? 'Publicar ahora' : 'Reintentar ahora') + '</button>');
@@ -20627,6 +20666,7 @@ async function clicTableroV239(ev){
   const P = CONT.p239, b = ev.target.closest('button, input[type=checkbox]'); if (!b) return;
   const d = b.dataset;
   if (d.cmarketplace) return abreOrdenMarketplace(d.cmarketplace);
+  if (d.cgruposordena || d.cgruposacuse) return clicGruposHermes(b);
   if(d.p239descartaborrador){
     const id=d.p239descartaborrador, contexto=claveBorradoresPublicacionV250(), previo=JSON.stringify(borradoresPublicacionV250()[id]);
     if(!await confirmaAqui('¿Descartar el borrador local? La publicación guardada no cambia.',{si:'Descartar'}))return;
@@ -20970,7 +21010,7 @@ function tarjetaContenido(x, admin, cruce = 0){
   const abierto = CONT.abiertos.has(x.id);
   const editable = !['publicada', 'publicando', 'encola', 'enviada', 'sin_confirmar'].includes(x.estado);
   const acc = [];
-  acc.push(accionMarketplace(x,admin));
+  acc.push(accionMarketplace(x,admin),accionGruposHermes(x));
   if (admin && ['publicando', 'encola', 'enviada', 'sin_confirmar'].includes(x.estado) && x.canal !== 'paquete_grupos') acc.push('<button type="button" class="btn-linea" data-ccomprueba="' + esc(x.id) + '" title="Consulta el resultado sin volver a publicar ni subir el archivo">Comprobar envío</button>');
   if (admin && ['propuesta', 'rechazada'].includes(x.estado) && x.tiene_imagen) acc.push('<button type="button" class="btn-solido" data-caprueba="' + esc(x.id) + '">Aprobar</button>');
   if (admin && ['propuesta', 'aprobada', 'fallida', 'lista'].includes(x.estado)) acc.push('<button type="button" class="btn-linea" data-crechaza="' + esc(x.id) + '">Rechazar</button>');
@@ -25306,6 +25346,7 @@ async function clicContenido(ev){
   const b = ev.target.closest('button'); if (!b || b.disabled) return;
   const d = b.dataset;
   if (d.cmarketplace) return abreOrdenMarketplace(d.cmarketplace);
+  if (d.cgruposordena || d.cgruposacuse) return clicGruposHermes(b);
   if (d.cnavidadzip) {
     const ids = piezasPautaNavidad(CONT.items).filter(x => x.generacion_id === d.cnavidadzip).map(x => x.id);
     if (!ids.length) return avisa('Todavía no hay cuadrados aprobados.');

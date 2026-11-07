@@ -1,7 +1,7 @@
 {
-  "version": "2026-11-06-crm-release-v416-envios-hd",
+  "version": "2026-11-07-crm-release-v417-grupos",
   "channel": "crm",
-  "released_at": "2026-11-07T03:22:32.364523+00:00",
-  "summary": "Archivos originales de hasta 2 GB por WhatsApp Web y recuperación del envío cuando falla la preparación.",
+  "released_at": "2026-11-07T15:23:53.026405+00:00",
+  "summary": "Seguimiento de publicaciones por grupo y respeto de permisos retirados. Activación pendiente de validar el navegador del agente.",
   "requiere_puente": "2026-11-06-documentos-grandes-v70"
 }
