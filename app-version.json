@@ -1,7 +1,7 @@
 {
-  "version": "2026-11-06-crm-release-v412-combos-fotos-navidad",
+  "version": "2026-11-06-crm-release-v413-planificador-estados-local",
   "channel": "crm",
-  "released_at": "2026-11-07T01:00:00Z",
-  "summary": "22 combos navideños en Productos y chat; fotos individuales de Graduación y Maternidad.",
-  "requiere_puente": "2026-11-06-vision-navidad-ollama-v68"
+  "released_at": "2026-11-07T01:47:50Z",
+  "summary": "Plantillas navideñas, generación con Ollama y recuperación de estados y citas.",
+  "requiere_puente": "2026-11-06-vision-navidad-medios-v69"
 }

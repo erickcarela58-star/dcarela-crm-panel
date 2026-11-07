@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="CRM">
 <script src="./mosaicos-catalogo.js"></script>
 <script src="./mosaicos-smart.js"></script>
-<script src="./estados-cola.js?v=397"></script>
+<script src="./estados-cola.js?v=413"></script>
 <script src="./crm-config.js"></script>
 <script src="./firebase-config.js"></script>
 <!-- opus-recorder graba OGG/Opus de verdad por WASM. MediaRecorder no sirve aqui: en
@@ -12448,7 +12448,7 @@ function citaDelMensaje(m, originales){
   const tipo = original ? tipoRealMedio(original, a) : r?.tipo;
   const esDocumento = ['file', 'document', 'archivo'].includes(original?.msg_type || r?.tipo || tipo);
   const esFoto = tipo === 'image' || !!r?.miniatura;
-  const texto = (esDocumento && (a?.nombre || r?.nombre)) || r?.texto || m.reply_snippet || '';
+  const texto = (esDocumento && (a?.nombre || r?.nombre)) || original?.body || r?.texto || m.reply_snippet || '';
   if (!texto) return '';
   const mio = original ? original.direction === 'out' : r ? r.mio === true : m.reply_sender !== 'customer';
   const enlace = !!r?.wamid && !r.estado;
@@ -17963,7 +17963,7 @@ async function pfPintaGaleria(){
   const resumen = Object.keys(nombres).map(c => esc(nombres[c]) + ': <b>' + Number((r.conteo || {})[c] || 0) + '</b>').join(' · ');
   g.innerHTML = '<div class="plan-seccion-cab"><h3>Fotos subidas'+(categoria?' · '+esc(nombres[categoria] || categoria):'')+'</h3><span class="cont-sub">'+items.length+' archivos</span></div><details class="plan-upload-check"><summary>Ver todas las categorías</summary><p>' + resumen + '</p></details>'
     + (privado ? '<p><a class="btn-sec" href="https://dcarelacompufoto.com/navidad/" target="_blank" rel="noopener noreferrer">Ver los 22 combos navideños</a> <a class="btn-linea" href="./catalogos/navidad-2026.pdf" target="_blank" rel="noopener noreferrer">Abrir PDF de Navidad</a> <button type="button" class="btn-linea" id="pfSolicitudesNavidad">Ver solicitudes web</button></p><div id="pfSolicitudesNavidadLista" aria-live="polite"></div>' : '')
-    + (privado && items.some(f => f.original) ? '<form id="pfNavidad" class="cont-form"><p>Marca hasta 12 originales. Por foto se preparan piezas para Instagram, Página de Facebook, Estado de WhatsApp y un cuadrado para pauta en Marketplace.</p><div class="fila"><label>Mes de campaña <input type="month" name="mes" required value="' + esc(contMesNavidad()) + '"></label><button type="submit" class="btn-solido">Preparar lote navideño</button></div></form>' : '')
+    + (privado && items.some(f => f.original) ? '<form id="pfNavidad" class="cont-form"><p>Elige hasta 12 originales y la plantilla del catálogo. Se conserva esa plantilla en publicación, historia y cuadrado; nada se publica sin aprobación.</p><label>Plantilla del flyer<select name="estilo_id" required>' + opcionesPlantillaNavidad() + '</select></label><div class="fila"><label>Mes de campaña <input type="month" name="mes" required value="' + esc(contMesNavidad()) + '"></label><button type="submit" class="btn-solido">Preparar lote navideño</button></div></form>' : '')
     + (items.length ? '<div class="pf-miniaturas">' + items.map(f =>
       '<figure class="pf-mini' + (f.estado === 'oculta' ? ' oculta' : '') + '" data-id="' + esc(f.id) + '">'
       + (privado ? (miniaturaMensaje({media_thumb_b64:f.miniatura}) ? '<img loading="lazy" alt="Original del set" src="' + esc(f.miniatura) + '">' : '') : '<img loading="lazy" alt="' + esc(nombres[f.categoria] || f.categoria) + '" src="' + PORTAFOLIO_URL + '?img=' + encodeURIComponent(f.id) + '">')
@@ -20057,7 +20057,7 @@ function pintaCrearContenido(cuerpo){
     + personalizaHtml
     + '<div class="plan-original-cab" style="margin-top:16px"><b>Fotografía original</b><span class="cont-sub">La foto original es el lienzo completo</span></div>'
     + (c.baseId?'<label class="red-chip"><input type="checkbox" name="otra_foto"'+(c.otraFoto?' checked':'')+'> Cambiar también la foto</label>':'') + fotosCrearContenido(c)
-    + (CONT.originalesError?'<p class="cont-aviso">'+esc(CONT.originalesError)+'</p>':'')+'<p class="plan-ayuda">Las miniaturas son solo para elegir. El render usa el archivo original en máxima resolución. Si la foto trae un sello o marca de agua, se respeta tal cual. La nitidez y la resolución se revisan automáticamente.</p><div class="plan-modelo-linea"><label>Modelo de Gemini<select name="modelo" required'+(!CONT.modelos?.length?' disabled':'')+'>'+((CONT.modelos||[]).map(m=>'<option value="'+esc(m.id)+'"'+(m.id===c.modelo?' selected':'')+'>'+esc(m.nombre)+'</option>').join('') || '<option>Consultando modelos…</option>')+'</select></label>'+(ROL_ACTUAL==='admin'?'<button type="button" class="btn-linea" data-cmodelodefault="1">Guardar como predeterminado</button>':'')+'</div><details class="plan-opciones"><summary>Disponibilidad por categoría</summary><p class="plan-ayuda">'+CONT_CATEGORIAS.map(([id,t])=>esc(t)+': '+Number(CONT.originales?.[id]||0)).join(' · ')+'</p><p class="plan-ayuda">Son archivos disponibles en el catálogo, listos para la composición.</p><button type="button" class="btn-linea" data-cbiblioteca="1">Subir más originales</button></details></fieldset>'
+    + (CONT.originalesError?'<p class="cont-aviso">'+esc(CONT.originalesError)+'</p>':'')+'<p class="plan-ayuda">Las miniaturas son solo para elegir. El render usa el archivo original en máxima resolución. Si la foto trae un sello o marca de agua, se respeta tal cual. La nitidez y la resolución se revisan automáticamente.</p><div class="plan-modelo-linea"><label>Modelo local de Ollama<select name="modelo" required'+(!CONT.modelos?.length?' disabled':'')+'>'+((CONT.modelos||[]).map(m=>'<option value="'+esc(m.id)+'"'+(m.id===c.modelo?' selected':'')+'>'+esc(m.nombre)+'</option>').join('') || '<option>Consultando modelos…</option>')+'</select></label>'+(ROL_ACTUAL==='admin'?'<button type="button" class="btn-linea" data-cmodelodefault="1">Guardar como predeterminado</button>':'')+'</div><details class="plan-opciones"><summary>Disponibilidad por categoría</summary><p class="plan-ayuda">'+CONT_CATEGORIAS.map(([id,t])=>esc(t)+': '+Number(CONT.originales?.[id]||0)).join(' · ')+'</p><p class="plan-ayuda">Son archivos disponibles en el catálogo, listos para la composición.</p><button type="button" class="btn-linea" data-cbiblioteca="1">Subir más originales</button></details></fieldset>'
     + '<fieldset'+disabled+(paso!==3?' hidden':'')+'><legend>Formatos y Entrega Social</legend><p class="plan-intro">Primero revisas foto, gancho y diseño. La creación manual deja todas las piezas pendientes de tu aprobación.</p>'
     + '<div class="plan-control-grupo"><strong>Tamaños sociales V7</strong><div class="agente-redes">'+chips([['imagen_4x5','Feed · 4:5 (1080×1350)'],['imagen_9x16','Historia / Reel / Estado · 9:16 (1080×1920)'],['imagen_1x1','Cuadrado · 1:1 (1080×1080)']],'formato',c.formatos,!!c.baseId)+'<label class="red-chip" title="Necesita una original horizontal"><input type="checkbox" disabled>Horizontal · 16:9 (1920×1080)</label></div><p class="plan-ayuda" data-c169="1">El 16:9 necesita una original horizontal y se prepara desde el Editor de flyers; en este lote no se genera.</p></div>'
     + '<div class="plan-control-grupo"><strong>Destinos</strong><div class="agente-redes">'+chips(CONT.canales.filter(x=>x.id!=='paquete_grupos').map(x=>[x.id,x.nombre]),'plataforma',c.canales,!!c.baseId)+'</div></div>'
@@ -21256,6 +21256,10 @@ function pintaFotosContenido(cuerpo){
   pintaProgresoNavidad();
 }
 
+function opcionesPlantillaNavidad(){
+  return (CONT.estilos || []).filter(e=>e.origen==='v6' && e.activo!==false && (e.fotos_minimas||1)===1).map(e=>
+    '<option value="'+esc(e.id)+'">'+esc(String(e.indice||'').padStart(2,'0')+' · '+e.nombre)+'</option>').join('');
+}
 function pintaProgresoNavidad(){
   const zona = $('pfNavidadTarea'), t = CONT.tarea;
   if (!zona) return;
@@ -21274,14 +21278,14 @@ function contMesNavidad(){
 
 async function generaLoteNavidad(form){
   if (CONT.tarea?.id && !['completada','fallida'].includes(CONT.tarea.estado)) return avisa('Ya hay un lote en preparación', 'Su progreso aparece arriba.');
-  const datos = new FormData(form), fotos = datos.getAll('foto'), mes = datos.get('mes');
+  const datos = new FormData(form), fotos = datos.getAll('foto'), mes = datos.get('mes'), estiloId=datos.get('estilo_id');
   if (!fotos.length || fotos.length > 12) return avisa('Selecciona de 1 a 12 originales del set.');
   const boton = form.querySelector('button[type=submit]');
   if (boton.disabled) return;
   boton.disabled = true;
   try {
     const r = await llamaCont({action:'contenidoTarea', operation:'crear', idempotency_key:crypto.randomUUID(),
-      payload:{action:'contenidoGenera', campana_navidad:true, fotos_navidad:fotos, mes}});
+      payload:{action:'contenidoGenera', campana_navidad:true, fotos_navidad:fotos, mes,estilo_id:estiloId}});
     if (!r.ok || !r.tarea) return avisa('No se pudo preparar el lote', r.error);
     CONT.tarea = r.tarea;
     guardaTareaContenido();

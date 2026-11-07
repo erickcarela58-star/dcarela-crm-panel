@@ -42,14 +42,18 @@
   function crear({ store, preparar, publicar, consultar, cambio = () => {}, resultado = () => {}, vigente = () => true,
     bloqueo = fn => fn(), ahora = () => Date.now() }) {
     let jobs = [], ready = null, worker = null, polling = null;
+    const sinGuardar = new Set();
     const avisar = () => { try { cambio(jobs.slice()); } catch (_) { /* el dibujo no cancela un envío */ } };
     const recibido = (job, row) => { try { resultado(job, row); } catch (_) { /* acuse independiente del dibujo */ } };
-    const guardar = job => store.put([job]);
+    const guardar = async job => {
+      try { await store.put([job]); sinGuardar.delete(job.id); }
+      catch(e) { sinGuardar.add(job.id); throw e; }
+    };
     const init = () => ready || (ready = store.all().then(rows => {
       jobs = rows.sort((a, b) => a.created_at.localeCompare(b.created_at));
       for (const j of jobs) if (j.phase === 'uploading') j.phase = 'queued';
       avisar(); return jobs;
-    }));
+    }).catch(e => { ready = null; throw e; }));
     async function add(items) {
       await init();
       if (jobs.length + items.length > MAX) throw Error('Hay un máximo de 50 estados en cola. Espera a que salgan algunos.');
@@ -62,6 +66,16 @@
       await init();
       if (worker || !vigente()) return worker;
       worker = Promise.resolve().then(() => bloqueo(async () => {
+        // El bloqueo impide dos publicadores simultáneos, pero otra pestaña pudo
+        // terminar esta tanda mientras esperábamos. Releer el almacén DENTRO del
+        // bloqueo evita subir y preparar otra vez una foto ya aceptada.
+        const anteriores = new Set(jobs.map(j=>j.id));
+        const filas = await store.all();
+        const memoria = jobs.filter(j => sinGuardar.has(j.id) || !anteriores.has(j.id));
+        jobs = [...new Map([...filas, ...memoria].map(j=>[j.id,j])).values()]
+          .sort((a,b)=>a.created_at.localeCompare(b.created_at));
+        for (const j of jobs) if (j.phase === 'uploading' && !sinGuardar.has(j.id)) j.phase = 'queued';
+        avisar();
         for (const job of jobs) {
           if (!vigente()) break;
           if (job.phase === 'accepted' || job.phase === 'failed') continue;
@@ -83,7 +97,7 @@
             job.server_id = r.data.id; job.server_status = r.data.status || 'pending';
             job.total = r.data.total ?? job.total;
             job.phase = 'accepted'; job.blob = null; job.progress = ''; job.error = '';
-            try { await guardar(job); } catch (_) { /* El reintento persistido conserva el mismo request_id. */ }
+            try { await guardar(job); } catch (_) { /* El acuse en memoria prevalece sobre la copia antigua del disco. */ }
             recibido(job, { id: job.server_id, status: job.server_status }); avisar();
           } catch (e) {
             job.error = String(e?.error || e?.message || e || 'No se pudo enviar el estado'); job.progress = '';
@@ -112,7 +126,7 @@
           job.server_status = row.status;
           recibido(job, row);
           if (['sent', 'published', 'failed', 'expired'].includes(row.status) || row.deleted_at) {
-            await store.del(job.id); jobs = jobs.filter(j => j !== job);
+            await store.del(job.id); sinGuardar.delete(job.id); jobs = jobs.filter(j => j !== job);
           }
         }
         avisar();
