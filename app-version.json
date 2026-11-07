@@ -1,7 +1,7 @@
 {
-  "version": "2026-11-06-crm-release-v413-planificador-estados-local",
+  "version": "2026-11-07-crm-release-v414-estados-activos",
   "channel": "crm",
-  "released_at": "2026-11-07T01:47:50Z",
-  "summary": "Plantillas navideñas, generación con Ollama y recuperación de estados y citas.",
+  "released_at": "2026-11-07T02:46:09Z",
+  "summary": "Estados activos de 24 horas y acceso directo a la programación de WhatsApp.",
   "requiere_puente": "2026-11-06-vision-navidad-medios-v69"
 }

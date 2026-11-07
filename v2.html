@@ -917,24 +917,11 @@ a.ayuda{color:var(--enlace)}
 #vista-estados:not(.stg-on)>.stg{display:none}
 .stg{flex:1;min-width:0;overflow:auto;padding:22px 26px 32px;display:flex;flex-direction:column;gap:16px}
 .stg-cab{display:flex;align-items:center;gap:16px;flex-wrap:wrap}
-.stg-logo{width:56px;height:56px;border-radius:16px;display:grid;place-items:center;background:rgba(37,211,102,.14);color:#1faa52;flex:none}
 .stg-cab h2{margin:0;font-size:26px;font-weight:800;letter-spacing:-.02em;color:var(--fg)}
 .stg-cab p{margin:3px 0 0;color:var(--mut);font-size:14px}
 .stg-acc{margin-left:auto;display:flex;gap:10px;align-items:center;position:relative;flex-wrap:wrap}
 .stg-acc .btn-linea,.stg-acc .btn-solido{display:inline-flex;align-items:center;gap:7px}
-.stg-menu{position:absolute;right:0;top:calc(100% + 6px);z-index:5}
-.stg-caja{background:var(--panel);border:1px solid var(--line);border-radius:var(--r3);box-shadow:var(--sombra-suave);padding:16px 18px;display:grid;gap:16px}
-.stg-barra{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
-.stg-tabs{display:flex;gap:4px;background:var(--segmento);border-radius:14px;padding:4px;flex-wrap:wrap}
-.stg-tabs button{border:0;background:transparent;padding:9px 16px;border-radius:10px;font:600 13.5px var(--tipo);color:var(--fg);cursor:pointer}
-.stg-tabs button:hover{background:var(--boton-hover)}
-.stg-tabs button.on{background:var(--accent);color:#fff}
-.stg-buscar{margin-left:auto;flex:0 1 340px;min-width:220px;display:flex;align-items:center;gap:8px;border:1px solid var(--line2);border-radius:12px;padding:0 12px;color:var(--mut);background:var(--campo)}
-.stg-buscar input{border:0;background:transparent;outline:0;flex:1;min-width:0;padding:10px 0;font:14px var(--tipo);color:var(--fg)}
-.stg-filtros{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
-.stg-filtros label{display:grid;gap:5px;font-size:12px;font-weight:700;color:var(--mut)}
-.stg-filtros select,.stg-por select{height:42px;border:1px solid var(--line2);border-radius:12px;padding:0 12px;background:var(--campo);font:500 14px var(--tipo);color:var(--fg);cursor:pointer}
-.stg-filtros select:focus-visible,.stg-por select:focus-visible{outline:0;box-shadow:var(--foco)}
+.st-acc .st-al-plan{padding:6px 9px;white-space:nowrap}
 .stg-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(205px,1fr));gap:16px}
 .stg-card{position:relative;background:var(--panel);border:1px solid var(--line);border-radius:16px;overflow:hidden;cursor:pointer;display:flex;flex-direction:column;
   text-align:left;padding:0;font:inherit;color:inherit;transition:transform .15s var(--curva),box-shadow .15s var(--curva)}
@@ -948,7 +935,6 @@ a.ayuda{color:var(--enlace)}
 .stg-cuerpo{position:relative;padding:30px 14px 12px;display:grid;gap:2px}
 .stg-avatar{position:absolute;left:12px;top:-27px;width:50px;height:50px;border-radius:50%;display:grid;place-items:center;background:#0f2f66;color:#fff;
   font-weight:800;font-size:15px;border:3px solid var(--panel);box-shadow:0 0 0 3px #25d366}
-.stg-avatar.prog{box-shadow:0 0 0 3px var(--morado)}
 /* v374 · Fase 4: el anillo dice si el Estado ya se vio (verde), si salió sin vistas aún (gris), si espera o si falló. */
 .stg-avatar.sinver{box-shadow:0 0 0 3px color-mix(in srgb,var(--mut) 55%,transparent)}
 .stg-avatar.espera{box-shadow:0 0 0 3px var(--warn)}
@@ -961,28 +947,17 @@ a.ayuda{color:var(--enlace)}
 .stg-chip.ok{background:rgba(63,143,90,.14);color:var(--ok)}
 .stg-chip.mal{background:rgba(200,82,74,.14);color:var(--bad)}
 .stg-chip.espera{background:rgba(176,112,47,.15);color:var(--warn)}
-.stg-chip.prog{background:rgba(169,138,212,.2);color:#7c5cc0}
 .stg-pie{display:flex;justify-content:space-between;align-items:center;margin-top:10px;color:var(--mut);font-size:12.5px}
 .stg-puntos svg{width:18px;height:18px}
-.stg-nuevo{border:2px dashed var(--line2);background:transparent;display:grid;place-content:center;justify-items:center;gap:6px;text-align:center;padding:22px;min-height:280px;color:var(--mut)}
-.stg-nuevo b{color:var(--accent-fuerte);font-size:18px}.stg-nuevo small{font-size:13px;line-height:1.4;max-width:190px}
-.stg-mas-grande{width:60px;height:60px;border-radius:50%;background:var(--accent);color:#fff;display:grid;place-items:center;font-size:32px;line-height:1;margin-bottom:8px;box-shadow:0 0 0 9px var(--accent-suave)}
 .stg-vacio{text-align:center;color:var(--mut);padding:30px 0;margin:0}
-.stg-pag{display:flex;align-items:center;gap:12px;flex-wrap:wrap;color:var(--mut);font-size:13px}
-.stg-paginas{margin:0 auto;display:flex;gap:6px}
-.stg-paginas button{min-width:38px;height:38px;border-radius:10px;border:1px solid var(--line2);background:var(--panel);cursor:pointer;color:var(--fg);font:600 14px var(--tipo)}
-.stg-paginas button.on{background:var(--accent);border-color:var(--accent);color:#fff}
-.stg-paginas button:disabled{opacity:.4;cursor:default}
 .stg-det{display:grid;grid-template-columns:minmax(0,180px) minmax(0,1fr);gap:16px;align-items:start}
 .stg-det-img{width:100%;aspect-ratio:9/16;object-fit:cover;border-radius:12px;background:var(--st-fondo)}
 .stg-det-texto{display:grid;place-items:center;padding:14px;background:var(--stg-color);color:#fff;font-weight:700;text-align:center}
 .stg-det-datos{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;margin:0;font-size:13.5px}
 .stg-det-datos dt{color:var(--mut)}.stg-det-datos dd{margin:0;font-weight:600}
 .stg-det-cuerpo{white-space:pre-wrap;font-size:13.5px;color:var(--fg)}
-@media (max-width:1100px){.stg-buscar{margin-left:0;flex:1 1 100%}.stg-acc{margin-left:0}}
-@media (max-width:900px){.stg-filtros{grid-template-columns:1fr 1fr}}
-@media (max-width:640px){.stg{padding:16px}.stg-filtros{grid-template-columns:1fr}.stg-det{grid-template-columns:1fr}}
-.st-lista{width:min(400px,36vw);flex:0 0 auto;display:flex;flex-direction:column;min-height:0;
+@media (max-width:640px){.stg{padding:16px}.stg-det{grid-template-columns:1fr}}
+.st-lista{width:clamp(310px,36vw,400px);flex:0 0 auto;display:flex;flex-direction:column;min-height:0;
   border-right:1px solid var(--line);background:var(--panel)}
 .st-cab{height:64px;padding:0 12px 0 20px;display:flex;align-items:center;justify-content:space-between;flex:0 0 auto}
 .st-cab h2{margin:0;font-size:22px;font-weight:700;color:var(--fg);letter-spacing:-.2px}
@@ -1015,6 +990,10 @@ a.ayuda{color:var(--enlace)}
 .st-panel .st-nota{position:absolute;bottom:34px;left:0;right:0;display:flex;gap:6px;justify-content:center;
   align-items:center;font-size:13px}
 .st-panel .st-nota svg{width:13px;height:13px}
+@media (max-width:720px){
+  #vista-estados>.st-lista{width:100%;border-right:0}
+  #vista-estados>.st-panel{display:none}
+}
 /* Visor */
 .st-visor{position:fixed;inset:0;z-index:400;background:var(--st-visor);color:#fff;display:flex;justify-content:center}
 .st-col{width:min(620px,100vw);height:100%;display:flex;flex-direction:column;position:relative}
@@ -3704,7 +3683,7 @@ input[type="checkbox"],input[type="radio"]{accent-color:var(--accent)}
   .p239-titulo{display:flex;align-items:center;gap:14px;padding:14px 18px}
   .p239-titulo-ico{width:54px;height:54px;border-radius:14px;display:grid;place-items:center;background:linear-gradient(135deg,#dbeafe,#eef2ff);color:#2563eb;flex:none}
   .p239-titulo-txt{flex:1;min-width:0}.p239-titulo h1{margin:0;font-size:27px;font-weight:800;letter-spacing:-.02em;color:var(--e-txt)}.p239-titulo p{margin:4px 0 0;color:var(--e-mut);font-size:14px}
-  .p239-titulo-acc{display:flex;align-items:center;gap:12px;flex:none}
+  .p239-titulo-acc{display:flex;align-items:center;gap:12px;flex:none;flex-wrap:wrap}
   .p239-ia{display:flex;align-items:center;gap:10px;height:54px;padding:0 16px;border:1px solid var(--e-borde);border-radius:14px;background:var(--e-card);color:var(--e-acc);cursor:pointer;font:inherit;text-align:left}
   .p239-ia span{display:grid}.p239-ia b{color:var(--e-txt);font-size:13.5px}.p239-ia small{color:var(--e-mut);font-size:11.5px}.p239-ia:hover{background:var(--e-suave)}
   .p239-crear{position:relative}
@@ -5283,6 +5262,10 @@ const ST_FUENTES = [
 const ST_DURACION_MS = 6000;
 const ST_DIA_MS = 24 * 3600000;
 
+function stVencePublicacion(fecha){
+  return Date.parse(String(fecha || '')) + ST_DIA_MS;
+}
+
 const ST = { feed: [], vistas: new Map(), mios: [], borrados: new Set(), vistos: new Set(), escuchando: false,
   sel: '', visor: null, comp: null };
 // La audiencia de fotografía elegida en el modal, para preseleccionarla al abrir el compositor.
@@ -5368,7 +5351,7 @@ function aroEstado(c, conEstado){
 // Los tuyos que siguen vivos: publicados y de hace menos de un día.
 function stMios(){
   const ahora = Date.now();
-  return ST.mios.filter(p => ['sent', 'published'].includes(p.status) && !p.deleted_at && !p.delete_requested_at && !ST.borrados.has(p.wamid) && ahora - Date.parse(String(p.sent_at || '')) < ST_DIA_MS)
+  return ST.mios.filter(p => ['sent', 'published'].includes(p.status) && !p.deleted_at && !p.delete_requested_at && !ST.borrados.has(p.wamid) && stVencePublicacion(p.sent_at) > ahora)
     .sort((a, b) => String(a.sent_at || '').localeCompare(String(b.sent_at || '')))
     .map(p => ({ ...p, _id: p.id, media_thumb_b64: p.media_thumb || '' }));
 }
@@ -5398,11 +5381,16 @@ function stFila(g){
 
 function stFilaMia(){
   const mios = stMios();
-  const pendientes = [...(typeof STG === 'undefined' ? [] : STG.publicados || []), ...(typeof stqFilas === 'function' ? stqFilas() : [])]
-    .filter(f => ['pending','sending'].includes(f.status));
-  const enCola = new Set(pendientes.map(f => f.id)).size;
+  const propios = STG.publicados || ST.mios;
+  const pendientes = propios.filter(f => ['pending','sending'].includes(f.status)).map(f => f.id);
+  for (const j of STQ.jobs) if (j.phase !== 'failed') pendientes.push(j.server_id || j.id);
+  const enCola = new Set(pendientes).size;
+  const falloReciente = propios.some(f => ['failed','expired'].includes(f.status) && stVencePublicacion(f.created_at) > Date.now())
+    || STQ.jobs.some(j => j.phase === 'failed');
   if (enCola) return '<button class="st-fila" data-stmio="cola"><span class="st-anillo">' + stAvatarPropio()
     + '<span class="st-mas">◷</span></span><span class="st-texto"><b>Mi estado</b><i>Enviando estado · ' + enCola + ' pendientes</i></span></button>';
+  if (!mios.length && falloReciente) return '<button class="st-fila" data-stmio="cola"><span class="st-anillo">' + stAvatarPropio()
+    + '<span class="st-mas">!</span></span><span class="st-texto"><b>Mi estado</b><i>Revisar envíos</i></span></button>';
   if (!mios.length) {
     return '<button class="st-fila" data-stmio="nuevo"><span class="st-anillo">' + stAvatarPropio()
       + '<span class="st-mas">+</span></span><span class="st-texto"><b>Mi estado</b>'
@@ -5421,6 +5409,7 @@ const ST_TANDA = 60;
 const ST_ADELANTO_LISTA = 10;
 
 function pintaEstados(){
+  stProgramaVencimiento();
   const cont = $('stScroll');
   if (!cont) return;
   // Con otra vista abierta no se pinta para nadie. Al volver, ve() monta la vista ANTES de
@@ -5433,7 +5422,7 @@ function pintaEstados(){
   let usados = 0;
   const tanda = lista => { const t = lista.slice(0, Math.max(0, limite - usados)); usados += t.length; return t; };
   const r = tanda(recientes), v = tanda(vistos);
-  cont.innerHTML = stFilaMia() + stFilaTelefono()
+  cont.innerHTML = stFilaMia()
     + (r.length ? '<div class="st-sec">Recientes</div>' + r.map(stFila).join('') : '')
     + (v.length ? '<div class="st-sec">Vistos</div>' + v.map(stFila).join('') : '')
     + (usados < grupos.length ? '<button class="st-vermas" data-stvermas>Mostrar más · ' + (grupos.length - usados) + '</button>' : '')
@@ -5446,31 +5435,20 @@ function pintaEstados(){
   stAdelanta(recientes.slice(0, ST_ADELANTO_LISTA).map(g => g.lista.find(e => !stVisto(e))).filter(Boolean));
 }
 
-// v332: los estados que el dueño publica desde el teléfono o WhatsApp Web no pasan por el CRM, pero el puente sí guarda
-// quién los vio (crm_status_views). Sin esta fila esas vistas no se veían en ningún sitio. Últimas 24 h, por estado.
-function stVistasTelefono(){
-  const mios = new Set((ST.mios || []).map(p => String(p.wamid || '')).filter(Boolean)), ahora = Date.now(), porEstado = [];
-  for (const [wamid, lista] of (ST.vistas || new Map())) {
-    if (!wamid || mios.has(wamid) || ST.borrados.has(wamid)) continue;
-    const recientes = lista.filter(x => ahora - Date.parse(String(x.viewed_at || '')) < ST_DIA_MS);
-    if (recientes.length) porEstado.push({ wamid, vistas: recientes.sort((a, b) => String(b.viewed_at || '').localeCompare(String(a.viewed_at || ''))) });
-  }
-  return porEstado.sort((a, b) => String(b.vistas[0].viewed_at).localeCompare(String(a.vistas[0].viewed_at)));
-}
-function stFilaTelefono(){
-  const e = stVistasTelefono(); if (!e.length) return '';
-  const total = new Set(e.flatMap(x => x.vistas.map(v => soloDigitos(v.wa_phone)))).size;
-  return '<button class="st-fila st-telefono" data-st-telefono="1"><span class="st-av-tel">' + ST_ICO.reloj + '</span><span class="st-texto"><b>Publicados desde el teléfono</b><i>'
-    + e.length + (e.length === 1 ? ' estado' : ' estados') + ' · visto por ' + total + (total === 1 ? ' persona' : ' personas') + '</i></span></button>';
-}
-function stHojaTelefono(){
-  const e = stVistasTelefono();
-  abreModal('<div class="mtapa"><b>Quién vio tus estados del teléfono</b><button class="cerrarm" data-cerrar>×</button></div>'
-    + '<div class="mcuerpo"><p class="bajada">Estados publicados desde el teléfono o WhatsApp Web (no pasan por el CRM, por eso no hay vista previa). Últimas 24 horas.</p>'
-    + e.map((x, i) => '<div class="st-sec">Estado ' + (e.length - i) + ' · ' + x.vistas.length + ' vistas <button type="button" class="btn-linea" data-st-borra="' + esc(x.wamid) + '" style="float:right;padding:2px 10px">Eliminar</button></div>' + x.vistas.map(v => { const tel = soloDigitos(v.wa_phone);
-      return '<div class="st-fila">' + stAvatar(tel, null) + '<span class="st-texto"><b>' + esc(stNombre(tel, null)) + '</b><i>' + esc(stCuando(v.viewed_at)) + '</i></span></div>'; }).join('')).join('') + '</div>');
-  $('modal').querySelectorAll('[data-st-borra]').forEach(b => { b.onclick = async () => { cierraModal(); await stBorraEstado(b.dataset.stBorra); }; });
-  resuelveAvatares();
+let ST_VENCE_T = 0;
+function stProgramaVencimiento(){
+  clearTimeout(ST_VENCE_T);
+  const ahora = Date.now();
+  let proximo = Infinity;
+  const considera = t => { if (t > ahora && t < proximo) proximo = t; };
+  for (const e of ST.feed) considera(Date.parse(e.expires_at));
+  for (const f of [...ST.mios, ...(STG.publicados || [])]) considera(stVencePublicacion(f.sent_at || f.created_at));
+  for (const j of STQ.jobs) if (j.phase === 'failed') considera(stVencePublicacion(j.created_at));
+  if (Number.isFinite(proximo)) ST_VENCE_T = setTimeout(() => {
+    pintaEstados();
+    stgPinta();
+    if (vistaActual === 'conversations') pintaChats();
+  }, proximo - ahora);
 }
 // Los cambios llegan en ráfagas (un snapshot por documento que se actualiza): se juntan en un
 // solo pintado en vez de rehacer la lista por cada uno.
@@ -5615,7 +5593,7 @@ function escuchaVistasEstados(){
 
 async function stCargaMios(){
   ST.miosLeidoEn = Date.now();
-  const r = await llama({ action:'statusList' });
+  const r = await llama({ action:'statusList', ...(vistaActual === 'estados' ? { limite:50 } : {}) });
   if (!r.ok) return;
   ST.mios = r.data || [];
   stgFusiona(ST.mios);
@@ -5623,12 +5601,8 @@ async function stCargaMios(){
   if (vistaActual === 'conversations' && MSGS.some(m => m.metadata?.responde_a?.estado)) pintaMensajes();
 }
 
-// ---- Galería «Mis estados» (referencia del dueño 25/10/2026) ----
-// Los estados DEL NEGOCIO como galería: lo publicado con su estado real (en cola, enviado, visto, no salió), lo que el planificador
-// tiene programado para «Estado de WhatsApp» y lo que ya caducó (más de 24 h: ya no se ve en WhatsApp). Las vistas son las de
-// crm_status_views (quien lo abrió), contadas en el servidor. Lo de los contactos (WhatsApp Web) sigue en «De tus contactos».
-const STG = { pestana: 'todos', tipo: 'todos', mes: '', orden: 'recientes', q: '', pagina: 1, porPagina: 8,
-  publicados: null, programados: null, error: '', errorProg: '', cargando: false, leidoEn: 0 };
+// Los envíos propios conservan sus detalles mientras están activos o pendientes.
+const STG = { publicados: null, error: '', cargando: false, leidoEn: 0 };
 const STQ = { cola: null, uid: '', token: null, jobs: [], urls: new Map(), consultando: false };
 function stqFila(j){
   let mini = j.thumb || '';
@@ -5708,7 +5682,6 @@ async function stqTick(){
 setInterval(stqTick, 4000);
 const STG_ESTADO = { pending: ['Enviando estado', 'espera'], sending: ['Enviando estado', 'espera'], sent: ['Enviado', 'ok'], published: ['Visto', 'ok'],
   failed: ['No salió', 'mal'], expired: ['Caducó sin salir', 'mal'] };
-const STG_PROG = { propuesta: 'Por aprobar', aprobada: 'Programado', en_cola: 'Saliendo', fallida: 'Falló' };
 const STG_ICO = {
   reloj: '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>',
   audio: '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10v2a7 7 0 0 0 14 0v-2M12 19v3M8 22h8"/></svg>',
@@ -5720,9 +5693,7 @@ const STG_ICO = {
   buscar: '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>',
   wa: '<svg viewBox="0 0 24 24" width="30" height="30" fill="currentColor" aria-hidden="true"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2zm0 18.2a8.2 8.2 0 0 1-4.2-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8s-.4-.1-.6.1-.7.8-.8 1-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.2-.4.2-.4.7-1.3a.5.5 0 0 0 0-.5l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5a1 1 0 0 0-.7.3 3 3 0 0 0-.9 2.2 5.2 5.2 0 0 0 1.1 2.7 11.8 11.8 0 0 0 4.5 4c1.7.7 2.3.8 3.2.6a2.7 2.7 0 0 0 1.8-1.3 2.2 2.2 0 0 0 .2-1.3c-.1-.1-.3-.2-.5-.3z"/></svg>',
 };
-function stgModo(){ try { return localStorage.getItem('crm_estados_modo') === 'contactos' ? 'contactos' : 'galeria'; } catch (e) { return 'galeria'; } }
 function stgCambiaModo(modo){
-  try { localStorage.setItem('crm_estados_modo', modo); } catch (e) { /* sin almacenamiento: solo esta vez */ }
   const v = $('vista-estados'); if (!v) return;
   v.classList.toggle('stg-on', modo === 'galeria');
   if (modo === 'galeria') stgCarga(false);
@@ -5733,17 +5704,12 @@ async function stgCarga(forzar){
   if (STG.cargando) return;
   if (!forzar && STG.publicados && Date.now() - STG.leidoEn < 60000) return stgPinta();
   STG.cargando = true; stgPinta();
-  const hoy = Date.now();
-  const [pub, cont] = await Promise.all([
-    llama({ action:'statusList', limite: 200, vistas: true }),
-    llama({ action:'contenidoLista', desde: stgDia(hoy - 86400000), hasta: stgDia(hoy + 60 * 86400000) }),
-  ]);
+  const pub = await llama({ action:'statusList', limite: 200, vistas: true });
   STG.cargando = false; STG.leidoEn = Date.now();
-  STG.error = pub.ok ? '' : (pub.error || 'No se pudo leer el historial de estados.');
-  STG.publicados = pub.ok ? (pub.data || []) : [];
+  STG.error = pub.ok ? '' : (pub.error || 'No se pudieron leer tus estados.');
+  if (pub.ok) STG.publicados = pub.data || [];
   for (const w of (pub.ok && pub.borrados) || []) ST.borrados.add(w);
-  STG.errorProg = cont.ok ? '' : (cont.error || 'No se pudo leer el planificador.');
-  STG.programados = cont.ok ? (cont.items || []).filter(x => x.canal === 'whatsapp_estado' && !['publicada', 'rechazada'].includes(x.estado)) : [];
+  pintaEstadosPronto();
   stgPinta();
 }
 // Lo que llega cada minuto por stCargaMios (los 15 últimos, sin vistas): actualiza el estado de los que ya están y añade los nuevos.
@@ -5762,7 +5728,12 @@ function stgElementos(){
   const ahora = Date.now();
   const existentes = STG.publicados || [];
   const locales = typeof stqFilas === 'function' ? stqFilas().filter(f => !existentes.some(e => e.id === f.id)) : [];
-  const pub = [...existentes, ...locales].map((f, i) => {
+  const vigentes = [...existentes, ...locales].filter(f => {
+    if (f.deleted_at || f.delete_requested_at || ST.borrados.has(f.wamid)) return false;
+    if (f.local || ['pending','sending'].includes(f.status)) return true;
+    return stVencePublicacion(['sent','published'].includes(f.status) ? f.sent_at : f.created_at) > ahora;
+  });
+  return vigentes.map(f => {
     const t = Date.parse(f.sent_at || f.created_at || '') || 0;
     const lineas = String(f.body || '').split(/\n+/).map(x => x.trim()).filter(Boolean);
     const desdeTelefono = f.origen === 'telefono';
@@ -5770,26 +5741,14 @@ function stgElementos(){
     // (crm_status_views) o con confirmed_at. El anillo del avatar dice lo mismo de un vistazo.
     const nVistas = Number(f.vistas) || 0, visto = ['sent', 'published'].includes(f.status) && (nVistas > 0 || !!f.confirmed_at);
     const anillo = ['failed', 'expired'].includes(f.status) ? 'mal' : ['pending', 'sending'].includes(f.status) ? 'espera' : visto || desdeTelefono ? 'visto' : 'sinver';
-    return { clave: 'p' + i, origen: 'publicado', fuente: desdeTelefono ? 'telefono' : 'crm', fila: f, t, reciente: ahora - t < 86400000, anillo,
+    return { clave: f.id, fuente: desdeTelefono ? 'telefono' : 'crm', fila: f, t, anillo,
       tipo: f.kind === 'video' ? 'video' : f.kind === 'image' ? 'foto' : f.kind === 'audio' ? 'audio' : 'texto', thumb: f.media_thumb || '', color: f.color || '#128c7e',
       titulo: lineas[0] || (f.kind === 'video' ? 'Video' : f.kind === 'image' ? 'Foto' : f.kind === 'audio' ? 'Nota de voz' : 'Estado de texto'), texto: f.body || '',
       chip: desdeTelefono ? ['Publicado desde WhatsApp', 'ok'] : visto ? [nVistas ? 'Visto por ' + nVistas : 'Visto', 'ok']
         : (STG_ESTADO[f.status] || [f.status || 'Sin estado', 'espera']),
       aud: desdeTelefono ? 'Audiencia elegida en WhatsApp' : (ES_ETIQUETAS[f.modo] || String(f.modo || '').replace(/^familia:/, 'Familia ') || 'Contactos'),
-      vistas: f.vistas, mes: stgDia(t).slice(0, 7) };
+      vistas: f.vistas };
   });
-  const nombreCat = id => (CONT_CATEGORIAS.find(([x]) => x === id) || [, id])[1];
-  const prog = (STG.programados || []).map((x, i) => {
-    const t = Date.parse((x.fecha || '') + 'T' + (x.hora || '09:00') + ':00-04:00') || 0;
-    return { clave: 'g' + i, origen: 'programado', fila: x, t, reciente: false,
-      tipo: x.tipo_media === 'video' ? 'video' : 'foto', thumb: x.miniatura || '', color: '#5b6bd6',
-      // El titular de una pieza del planificador es {l1, l2}; antes salía «[object Object]» en la tarjeta.
-      titulo: (x.titular && typeof x.titular === 'object' ? [x.titular.l1, x.titular.l2].filter(Boolean).join(' · ') : x.titular)
-        || x.tema || x.evento_nombre || (x.categoria ? 'Estado · ' + nombreCat(x.categoria) : 'Estado programado'), texto: x.texto || '',
-      chip: [STG_PROG[x.estado] || x.estado || 'Programado', x.estado === 'fallida' ? 'mal' : 'prog'], aud: x.categoria ? nombreCat(x.categoria) : 'Planificador',
-      vistas: null, mes: String(x.fecha || '').slice(0, 7) };
-  });
-  return { pub, prog };
 }
 function stgHace(t){
   if (!t) return '';
@@ -5806,120 +5765,54 @@ function stgHace(t){
 function stgTarjeta(e){
   const media = e.thumb ? '<img src="' + esc(e.thumb) + '" alt="" loading="lazy">'
     : e.tipo === 'texto' ? '<span class="stg-texto">' + esc(e.texto || e.titulo) + '</span>'
-    : '<span class="stg-sinmini">' + (STG_ICO[e.tipo] || STG_ICO.foto) + '<small>' + (e.tipo === 'audio' ? 'Nota de voz' : e.origen === 'programado' ? 'Vista previa en el planificador' : 'Sin miniatura') + '</small></span>';
+    : '<span class="stg-sinmini">' + (STG_ICO[e.tipo] || STG_ICO.foto) + '<small>' + (e.tipo === 'audio' ? 'Nota de voz' : 'Sin miniatura') + '</small></span>';
   return '<article class="stg-card" data-stgver="' + esc(e.clave) + '" tabindex="0" aria-label="' + esc(e.titulo) + '">'
     + '<div class="stg-media" style="--stg-color:' + esc(e.color) + '">' + media
     +   '<span class="stg-tipo" title="' + (e.tipo === 'video' ? 'Video' : e.tipo === 'foto' ? 'Foto' : e.tipo === 'audio' ? 'Nota de voz' : 'Texto') + '">' + STG_ICO[e.tipo] + '</span></div>'
-    + '<div class="stg-cuerpo"><span class="stg-avatar ' + (e.origen === 'programado' ? 'prog' : esc(e.anillo || 'sinver')) + '" aria-hidden="true">DC</span>'
-    +   '<span class="stg-vistas">' + (e.origen === 'programado' ? STG_ICO.cal + esc(stgHace(e.t)) : STG_ICO.ojo + (e.vistas == null ? '—' : Number(e.vistas).toLocaleString('en-US'))) + '</span>'
+    + '<div class="stg-cuerpo"><span class="stg-avatar ' + esc(e.anillo || 'sinver') + '" aria-hidden="true">DC</span>'
+    +   '<span class="stg-vistas">' + STG_ICO.ojo + (e.vistas == null ? '—' : Number(e.vistas).toLocaleString('en-US')) + '</span>'
     +   '<b class="stg-titulo">' + esc(e.titulo) + '</b>'
     +   '<div class="stg-chips"><span class="stg-chip ' + esc(e.chip[1]) + '">' + (e.anillo === 'espera' ? STG_ICO.reloj + ' ' : '') + esc(e.chip[0]) + '</span><span class="stg-chip aud">' + esc(e.aud) + '</span></div>'
     +   (e.fila.queue_stage && e.anillo === 'espera' ? '<small class="stg-cola-etapa">' + esc(e.fila.queue_stage) + '</small>' : '')
     +   (e.fila.local && e.fila.status === 'failed' ? '<small>' + esc(e.fila.error) + '</small><button class="btn-linea" data-stqretry="' + esc(e.fila.local_request_id) + '">Reintentar</button><button class="btn-linea" data-stqquitar="' + esc(e.fila.local_request_id) + '">Quitar de la cola</button>' : '')
-    +   '<div class="stg-pie"><span>' + esc(e.origen === 'programado' ? 'Programado' : stgHace(e.t)) + '</span><span class="stg-puntos" aria-hidden="true">' + ST_ICO.puntos + '</span></div>'
+    +   '<div class="stg-pie"><span>' + esc(stgHace(e.t)) + '</span><span class="stg-puntos" aria-hidden="true">' + ST_ICO.puntos + '</span></div>'
     + '</div></article>';
 }
 function stgPinta(){
-  const g = $('stGaleria'); if (!g) return;
-  const { pub, prog } = stgElementos();
-  const listas = { todos: [...prog, ...pub], recientes: pub.filter(e => e.reciente), programados: prog, archivados: pub.filter(e => !e.reciente) };
-  const q = STG.q.trim().toLowerCase();
-  let lista = listas[STG.pestana] || listas.todos;
-  if (STG.tipo !== 'todos') lista = lista.filter(e => e.tipo === STG.tipo);
-  if (STG.mes) lista = lista.filter(e => e.mes === STG.mes);
-  if (q) lista = lista.filter(e => [e.titulo, e.texto, e.aud, e.chip[0]].some(v => String(v || '').toLowerCase().includes(q)));
-  lista = [...lista].sort(STG.orden === 'vistos' ? (a, b) => (Number(b.vistas) || 0) - (Number(a.vistas) || 0) || b.t - a.t
-    : STG.orden === 'antiguos' ? (a, b) => a.t - b.t : (a, b) => b.t - a.t);
-  const paginas = Math.max(1, Math.ceil(lista.length / STG.porPagina));
-  STG.pagina = Math.min(STG.pagina, paginas);
-  const desde = (STG.pagina - 1) * STG.porPagina;
-  const pagina = lista.slice(desde, desde + STG.porPagina);
-  const meses = [...new Set([...pub, ...prog].map(e => e.mes).filter(Boolean))].sort().reverse();
-  const tab = (id, nombre) => '<button type="button" role="tab" aria-selected="' + (STG.pestana === id) + '" class="' + (STG.pestana === id ? 'on' : '') + '" data-stgtab="' + id + '">'
-    + nombre + ' (' + listas[id].length + ')</button>';
-  const sel = (nombre, campo, opciones) => '<label>' + nombre + '<select data-stgfiltro="' + campo + '">'
-    + opciones.map(([v, t]) => '<option value="' + esc(v) + '"' + (String(STG[campo]) === String(v) ? ' selected' : '') + '>' + esc(t) + '</option>').join('') + '</select></label>';
-  const nuevo = STG.pagina === 1 && ['todos', 'recientes'].includes(STG.pestana) && !q
-    ? '<button type="button" class="stg-card stg-nuevo" data-stgnuevo="1"><span class="stg-mas-grande" aria-hidden="true">+</span><b>Crear estado</b>'
-      + '<small>Comparte fotos, videos, promociones o novedades en tu estado de WhatsApp.</small></button>' : '';
-  const enCola = pub.filter(e => e.anillo === 'espera').length;
-  const avisos = (enCola ? '<p class="aviso" role="status" aria-live="polite">' + STG_ICO.reloj + ' Enviando estado · ' + enCola + (enCola === 1 ? ' pendiente' : ' pendientes') + '. Se envían uno detrás de otro.</p>' : '')
-    + (STG.error ? '<p class="aviso">' + esc(STG.error) + '</p>' : '') + (STG.errorProg ? '<p class="aviso">Programados: ' + esc(STG.errorProg) + '</p>' : '');
-  const fallidos = pub.filter(e => e.reciente && ['failed', 'expired'].includes(e.fila.status)).length;
-  const vacio = !pagina.length ? '<p class="stg-vacio">' + (STG.cargando ? 'Cargando tus estados…' : 'No hay estados con estos filtros.') + '</p>' : '';
-  const enfocado = document.activeElement?.dataset?.stgbuscar ? document.activeElement.selectionStart : null;
-  g.innerHTML = '<header class="stg-cab"><span class="stg-logo">' + STG_ICO.wa + '</span>'
-    + '<div><h2>Estados de WhatsApp</h2><p>Comparte momentos, promociones y novedades de D’ Carela Compufoto.</p></div>'
-    + '<div class="stg-acc"><button type="button" class="btn-linea" data-stmodo="contactos">De tus contactos</button>'
-    +   '<button type="button" class="btn-linea" data-stgprogramar="1">' + STG_ICO.cal + 'Programar estado</button>'
-    +   '<button type="button" class="btn-solido" data-stgcrear="1">+ Crear estado</button>'
-    +   '<div class="st-menu stg-menu" id="stgMenuNuevo" hidden><button data-stnuevo="foto">' + ST_ICO.foto + 'Fotos y videos</button><button data-stnuevo="texto">' + ST_ICO.lapiz + 'Texto</button></div></div></header>'
-    + avisos
-    + (fallidos ? '<p class="aviso">' + fallidos + (fallidos === 1 ? ' estado de las últimas 24 h no salió' : ' estados de las últimas 24 h no salieron') + '. Ábrelo para ver el motivo.</p>' : '')
-    + '<section class="stg-caja"><div class="stg-barra"><div class="stg-tabs" role="tablist">' + tab('todos', 'Todos') + tab('recientes', 'Recientes') + tab('programados', 'Programados') + tab('archivados', 'Archivados') + '</div>'
-    +   '<label class="stg-buscar">' + STG_ICO.buscar + '<input type="search" data-stgbuscar="1" aria-label="Buscar estados" placeholder="Buscar estados por título, audiencia…" value="' + esc(STG.q) + '"></label></div>'
-    + '<div class="stg-filtros">' + sel('Tipo de contenido', 'tipo', [['todos', 'Todos'], ['foto', 'Fotos'], ['video', 'Videos'], ['texto', 'Textos'], ['audio', 'Audios']])
-    +   sel('Mes', 'mes', [['', 'Todos los meses'], ...meses.map(m => [m, mesLegibleCrear(m)])])
-    +   sel('Ordenar por', 'orden', [['recientes', 'Más recientes'], ['vistos', 'Más vistos'], ['antiguos', 'Más antiguos']]) + '</div>'
-    + '<div class="stg-grid" aria-busy="' + STG.cargando + '">' + nuevo + pagina.map(stgTarjeta).join('') + '</div>' + vacio
-    + '<footer class="stg-pag"><span>' + (lista.length ? 'Mostrando ' + (desde + 1) + ' a ' + (desde + pagina.length) + ' de ' + lista.length + (lista.length === 1 ? ' estado' : ' estados') : 'Sin estados') + '</span>'
-    +   '<div class="stg-paginas"><button type="button" data-stgpag="' + (STG.pagina - 1) + '"' + (STG.pagina > 1 ? '' : ' disabled') + ' aria-label="Página anterior">‹</button>'
-    +   Array.from({ length: paginas }, (_, i) => i + 1).filter(n => paginas <= 7 || Math.abs(n - STG.pagina) <= 2 || n === 1 || n === paginas)
-          .map(n => '<button type="button" data-stgpag="' + n + '" class="' + (n === STG.pagina ? 'on' : '') + '">' + n + '</button>').join('')
-    +   '<button type="button" data-stgpag="' + (STG.pagina + 1) + '"' + (STG.pagina < paginas ? '' : ' disabled') + ' aria-label="Página siguiente">›</button></div>'
-    +   '<label class="stg-por"><select data-stgfiltro="porPagina" aria-label="Estados por página">' + [8, 12, 24].map(n => '<option value="' + n + '"' + (STG.porPagina === n ? ' selected' : '') + '>' + n + ' por página</option>').join('') + '</select></label></footer>'
-    + '</section>';
-  if (enfocado != null) { const b = g.querySelector('[data-stgbuscar]'); b.focus(); b.setSelectionRange(enfocado, enfocado); }
+  const g = $('stGaleria'); if (!g || !$('vista-estados')?.classList.contains('stg-on')) return;
+  const lista = stgElementos().sort((a, b) => b.t - a.t);
+  const enCola = lista.filter(e => e.anillo === 'espera').length;
+  g.innerHTML = '<header class="stg-cab"><div><h2>Mis estados</h2><p>Estados activos y envíos en curso.</p></div>'
+    + '<div class="stg-acc"><button type="button" class="btn-linea" data-stmodo="contactos">Volver a Estados</button></div></header>'
+    + (enCola ? '<p class="aviso" role="status">' + STG_ICO.reloj + ' Enviando estado · ' + enCola + (enCola === 1 ? ' pendiente' : ' pendientes') + '</p>' : '')
+    + (STG.error ? '<p class="aviso" role="alert">' + esc(STG.error) + '</p>' : '')
+    + (lista.length ? '<div class="stg-grid" aria-busy="' + STG.cargando + '">' + lista.map(stgTarjeta).join('') + '</div>'
+      : '<p class="stg-vacio">' + (STG.cargando ? 'Cargando tus estados…' : 'Todavía no hay estados activos.') + '</p>');
 }
 // El detalle de un estado: lo que se sabe de verdad (enviado ≠ visto) y, si quedó cola o falló, qué hacer.
 function stgDetalle(clave){
-  const { pub, prog } = stgElementos();
-  const e = [...pub, ...prog].find(x => x.clave === clave); if (!e) return;
+  const e = stgElementos().find(x => x.clave === clave); if (!e) return;
   const f = e.fila; const hora = v => v ? esCuando(v) : '—';
   const media = e.thumb ? '<img class="stg-det-img" src="' + esc(e.thumb) + '" alt="">' : e.tipo === 'texto'
     ? '<div class="stg-det-img stg-det-texto" style="--stg-color:' + esc(e.color) + '">' + esc(e.texto) + '</div>' : '';
-  const datos = e.origen === 'programado'
-    ? [['Estado', e.chip[0]], ['Sale', stgHace(e.t)], ['Categoría', e.aud]]
-    : [['Estado', e.chip[0]], ['Origen', e.fuente === 'telefono' ? 'WhatsApp / teléfono' : 'CRM'], ['Audiencia', e.aud], ['Contactos', e.fuente === 'telefono' ? 'no informados por WhatsApp' : String(f.total || 0)], ['Vistas', e.vistas == null ? 'sin contar todavía' : String(e.vistas)],
+  const datos = [['Estado', e.chip[0]], ['Origen', e.fuente === 'telefono' ? 'WhatsApp / teléfono' : 'CRM'], ['Audiencia', e.aud], ['Contactos', e.fuente === 'telefono' ? 'no informados por WhatsApp' : String(f.total || 0)], ['Vistas', e.vistas == null ? 'sin contar todavía' : String(e.vistas)],
       ['Creado', hora(f.created_at)], ['Enviado', hora(f.sent_at)], ['Primera vista', hora(f.confirmed_at)]];
   abreModal('<div class="mtapa"><b>' + esc(e.titulo) + '</b><button class="cerrarm" data-cerrar>×</button></div>'
     + '<div class="mcuerpo stg-det">' + media + '<div><dl class="stg-det-datos">' + datos.map(([k, v]) => '<dt>' + esc(k) + '</dt><dd>' + esc(v) + '</dd>').join('') + '</dl>'
-    + (e.origen === 'publicado' && f.status === 'sent' ? '<p class="bajada">«Enviado» quiere decir que WhatsApp recibió la orden. Pasa a «Visto» cuando un contacto lo abre.</p>' : '')
+    + (f.status === 'sent' ? '<p class="bajada">«Enviado» quiere decir que WhatsApp recibió la orden. Pasa a «Visto» cuando un contacto lo abre.</p>' : '')
     + (f.error ? '<p class="aviso">No salió: ' + esc(f.error) + '</p>' : '')
     + (e.texto && e.tipo !== 'texto' && e.texto.trim() !== e.titulo ? '<p class="stg-det-cuerpo">' + esc(e.texto) + '</p>' : '')
     + (f.resto_total ? '<p class="bajada">Quedan <b>' + Number(f.resto_total) + '</b> contactos sin enviar de este estado.</p>' : '') + '</div></div>'
     + '<div class="mpatas"><button class="btn-linea" data-cerrar>Cerrar</button>'
-    + (e.origen === 'publicado' && ['sent', 'published'].includes(f.status) && f.wamid && (f.media_thumb || f.media_store === 'bajo_demanda' || f.kind === 'text') ? '<button class="btn-solido" id="stgVerEstado">Ver estado</button>' : '')
-    + (e.origen === 'programado' ? '<button class="btn-linea" id="stgAlPlan">Abrir en el planificador</button>'
-      + (!['publicada','publicando','encola','enviada','sin_confirmar'].includes(String(f.estado || '')) ? '<button class="btn-peligro" id="stgEliminaProgramado">Eliminar programado</button>' : '')
-      : f.resto_total && !['pending', 'sending'].includes(f.status) ? '<button class="btn-solido" id="stgResto">Publicar los ' + Number(f.resto_total) + ' que faltan</button>' : '')
+    + (['sent', 'published'].includes(f.status) && f.wamid && (f.media_thumb || f.media_store === 'bajo_demanda' || f.kind === 'text') ? '<button class="btn-solido" id="stgVerEstado">Ver estado</button>' : '')
+    + (f.resto_total && !['pending', 'sending'].includes(f.status) ? '<button class="btn-solido" id="stgResto">Publicar los ' + Number(f.resto_total) + ' que faltan</button>' : '')
     + '</div>');
   $('modal').querySelectorAll('[data-cerrar]').forEach(b => { b.onclick = cierraModal; });
   if ($('stgVerEstado')) $('stgVerEstado').onclick = () => {
     cierraModal();
+    if (!(stVencePublicacion(f.sent_at) > Date.now())) return avisa('Este estado caducó.');
     escuchaVistasEstados();
     stVisor({ modo: 'mios', grupos: [{ tel: '', lista: [{ ...f, _id: f.id, media_thumb_b64: f.media_thumb || '' }] }], gi: 0, i: 0 });
-  };
-  if ($('stgAlPlan')) $('stgAlPlan').onclick = () => { cierraModal(); ve('contenido'); };
-  if ($('stgEliminaProgramado')) $('stgEliminaProgramado').onclick = async ev => {
-    // confirmaAqui reemplaza temporalmente el contenido del modal. Conservamos el
-    // botón original antes de esperar: al restaurarse el detalle, currentTarget ya
-    // no pertenece al DOM y volver a buscarlo puede devolver null.
-    const boton = ev.currentTarget;
-    if (boton.disabled) return;
-    boton.disabled = true;
-    if (!await confirmaAqui('Este estado se quitará de la programación y no se publicará. ¿Continuar?', { si:'Eliminar programado', no:'Cancelar' })) {
-      boton.disabled = false;
-      return;
-    }
-    const r = await llama({ action:'contenidoRechaza', ids:[f.id] });
-    if (!r.ok || !Array.isArray(r.hechas) || !r.hechas.includes(f.id)) {
-      stgDetalle(clave);
-      return avisa('No se pudo eliminar el programado', r.error || 'Ya se publicó o tiene un envío en curso.');
-    }
-    cierraModal();
-    avisa('Programado eliminado', 'La pieza quedó descartada y no se publicará.');
-    stgCarga(true);
   };
   if ($('stgResto')) $('stgResto').onclick = async ev => {
     ev.currentTarget.disabled = true;
@@ -5932,41 +5825,30 @@ function stgDetalle(clave){
 }
 function stgEventos(g){
   g.addEventListener('click', ev => {
-    const t = ev.target;
-    const retry = t.closest('[data-stqretry]'); if (retry) { ev.stopPropagation(); void STQ.cola?.retry(retry.dataset.stqretry); return; }
-    const quitar = t.closest('[data-stqquitar]'); if (quitar) { ev.stopPropagation(); void STQ.cola?.remove(quitar.dataset.stqquitar).catch(e => avisa('No se pudo quitar', e.message)); return; }
-    const tabB = t.closest('[data-stgtab]'); if (tabB) { STG.pestana = tabB.dataset.stgtab; STG.pagina = 1; return stgPinta(); }
-    const pag = t.closest('[data-stgpag]'); if (pag && !pag.disabled) { STG.pagina = Number(pag.dataset.stgpag) || 1; stgPinta(); return g.scrollTo({ top: 0, behavior: 'smooth' }); }
-    if (t.closest('[data-stgcrear]')) { ev.stopPropagation(); const m = $('stgMenuNuevo'); m.hidden = !m.hidden; return; }
-    // La tarjeta grande usa data-stgnuevo; las dos opciones del menú usan data-stnuevo.
-    // Antes solo se escuchaba la primera variante: el menú se abría, pero «Fotos y videos»
-    // y «Texto» no hacían nada.
-    const nuevo = t.closest('[data-stgnuevo],[data-stnuevo]');
-    if (nuevo) return stCompositor(nuevo.dataset.stnuevo === 'texto' ? 'texto' : 'foto');
-    if (t.closest('[data-stgprogramar]')) return ve('contenido');
-    const card = t.closest('[data-stgver]'); if (card) return stgDetalle(card.dataset.stgver);
+    const retry = ev.target.closest('[data-stqretry]'); if (retry) return void STQ.cola?.retry(retry.dataset.stqretry).catch(e => avisa('No se pudo reintentar', e.message));
+    const quitar = ev.target.closest('[data-stqquitar]'); if (quitar) return void STQ.cola?.remove(quitar.dataset.stqquitar).catch(e => avisa('No se pudo quitar', e.message));
+    const card = ev.target.closest('[data-stgver]'); if (card) stgDetalle(card.dataset.stgver);
   });
-  g.addEventListener('keydown', ev => { const card = ev.target.closest('[data-stgver]'); if (card && (ev.key === 'Enter' || ev.key === ' ')) { ev.preventDefault(); stgDetalle(card.dataset.stgver); } });
-  g.addEventListener('input', ev => {
-    if (ev.target.dataset.stgbuscar) { STG.q = ev.target.value; STG.pagina = 1; return stgPinta(); }
-  });
-  g.addEventListener('change', ev => {
-    const campo = ev.target.dataset.stgfiltro; if (!campo) return;
-    STG[campo] = campo === 'porPagina' ? Number(ev.target.value) || 8 : ev.target.value; STG.pagina = 1; stgPinta();
+  g.addEventListener('keydown', ev => {
+    const card = ev.target.closest('[data-stgver]');
+    if (card === ev.target && (ev.key === 'Enter' || ev.key === ' ')) { ev.preventDefault(); stgDetalle(card.dataset.stgver); }
   });
 }
-
 function montaEstados(){
   escuchaEstados();
-  escuchaVistasEstados();
   // Al volver a la vista la lista se pone al dia (hace mas de 15 s que no se lee).
   if (ST.leidoEn && Date.now() - ST.leidoEn > 15000) stLeeLista();
-  if (montadas.has('estados')) { pintaEstados(); if ($('vista-estados')?.classList.contains('stg-on')) stgCarga(false); return; }
+  if (montadas.has('estados')) {
+    stgCambiaModo('contactos');
+    if (Date.now() - (ST.miosLeidoEn || 0) > 15000) void stCargaMios();
+    pintaEstados();
+    return;
+  }
   montadas.add('estados');
   const v = hueco('estados', '<div class="stg" id="stGaleria" aria-label="Mis estados"></div><div class="st-lista">'
     + '<div class="st-cab"><h2>Estados</h2><div class="st-acc">'
-    +   '<button class="st-icono" data-stmodo="galeria" title="Mis estados (galería)" aria-label="Mis estados">' + STG_ICO.foto + '</button>'
-    +   '<button class="st-icono" id="stMas" title="Añadir estado" aria-label="Añadir estado">' + ST_ICO.mas + '</button>'
+    +   (vistaHabilitada('contenido') ? '<button type="button" class="btn-linea st-al-plan" data-stplanificador>Planificador</button>' : '')
+    +   '<button class="st-icono" id="stMas" title="Añadir estado" aria-label="Añadir estado" aria-expanded="false" aria-controls="stMenuNuevo">' + ST_ICO.mas + '</button>'
     +   '<button class="st-icono" id="stPuntos" title="Más opciones" aria-label="Más opciones">' + ST_ICO.puntos + '</button>'
     +   '<div class="st-menu" id="stMenuNuevo" hidden>'
     +     '<button data-stnuevo="foto">' + ST_ICO.foto + 'Fotos y videos</button>'
@@ -5974,31 +5856,36 @@ function montaEstados(){
     +   '<div class="st-menu" id="stMenuPuntos" hidden>'
     +     '<button data-stpuntos="audiencias">' + ST_ICO.grupo + 'Audiencias de fotografía</button>'
     +     '<button data-stpuntos="agenda">' + ST_ICO.lapiz + 'Agenda de contactos</button>'
-    +     '<button data-stpuntos="historial">' + ST_ICO.reloj + 'Mis estados publicados</button></div>'
+    +     '<button data-stmodo="galeria">' + ST_ICO.reloj + 'Mis estados y envíos</button></div>'
     + '</div></div>'
     + '<div class="st-scroll" id="stScroll"></div></div>'
     + '<div class="st-panel">' + ST_ICO.estado
     +   '<p>Haz clic en un contacto para ver sus actualizaciones de estado.</p>'
     +   '<div class="st-nota">' + ST_ICO.reloj + 'Los estados desaparecen a las 24 horas.</div></div>');
-  const menus = () => { $('stMenuNuevo').hidden = true; $('stMenuPuntos').hidden = true; };
-  $('stMas').onclick = ev => { ev.stopPropagation(); const m = $('stMenuNuevo'); const abrir = m.hidden; menus(); m.hidden = !abrir; };
+  const menus = () => { $('stMenuNuevo').hidden = true; $('stMenuPuntos').hidden = true; $('stMas').setAttribute('aria-expanded','false'); };
+  const abreNuevo = () => { const m = $('stMenuNuevo'); const abrir = m.hidden; menus(); m.hidden = !abrir; $('stMas').setAttribute('aria-expanded', String(abrir)); };
+  $('stMas').onclick = ev => { ev.stopPropagation(); abreNuevo(); };
   $('stPuntos').onclick = ev => { ev.stopPropagation(); const m = $('stMenuPuntos'); const abrir = m.hidden; menus(); m.hidden = !abrir; };
   document.addEventListener('click', menus);
-  document.addEventListener('click', () => { const m = $('stgMenuNuevo'); if (m) m.hidden = true; });
   stgEventos($('stGaleria'));
-  stgCambiaModo(stgModo());
   v.addEventListener('click', ev => {
     const nuevo = ev.target.closest('[data-stnuevo]');
     if (nuevo) { menus(); return stCompositor(nuevo.dataset.stnuevo); }
     if (ev.target.closest('[data-stpuntos="audiencias"]')) { menus(); return stAudiencias(); }
     if (ev.target.closest('[data-stpuntos="agenda"]')) { menus(); return stAgenda(false); }
-    if (ev.target.closest('[data-stpuntos="historial"]')) { menus(); return stgCambiaModo('galeria'); }
+    if (ev.target.closest('[data-stplanificador]')) { CONT.tab = 'estadosProgramados'; return ve('contenido'); }
     const modo = ev.target.closest('[data-stmodo]');
     if (modo) { menus(); return stgCambiaModo(modo.dataset.stmodo); }
     const mio = ev.target.closest('[data-stmio]');
-    if (mio) return mio.dataset.stmio === 'cola' ? stgCambiaModo('galeria') : mio.dataset.stmio === 'ver' ? stAbreMios() : stCompositor('texto');
+    if (mio) {
+      if (mio.dataset.stmio === 'cola') return stgCambiaModo('galeria');
+      if (mio.dataset.stmio === 'ver') return stAbreMios();
+      ev.stopPropagation();
+      abreNuevo();
+      $('stMenuNuevo').querySelector('button')?.focus();
+      return;
+    }
     if (ev.target.closest('[data-stvermas]')) { ST.mostrar = (ST.mostrar || ST_TANDA) + ST_TANDA; return pintaEstados(); }
-    if (ev.target.closest('[data-st-telefono]')) return stHojaTelefono();
     const fila = ev.target.closest('[data-sttel]');
     if (fila) stAbreContacto(fila.dataset.sttel);
   });
@@ -6661,7 +6548,7 @@ async function stcPublica(){
     number:d.linea, total, color:ST_PALETA[c.color], font:c.fuente }));
   await cola.add(creados);
   stcCierra();
-  stgCambiaModo('galeria');
+  pintaEstadosPronto();
   void cola.run().catch(() => {});
   } catch (e) {
     avisa('No se pudo guardar la cola', String(e?.message || e));
@@ -20228,11 +20115,15 @@ function montaContenido(){
   if (!montadas.has('contenido')) {
     montadas.add('contenido');
     hueco('contenido', '<div class="hoja plan-hoja"><header class="plan-cabecera"><div class="plan-cabecera-titulo"><svg class="plan-rayo" viewBox="0 0 24 24" aria-hidden="true"><path d="M13.5 2.5 4.5 14h6l-1 7.5L19.5 10h-6V2.5Z"/></svg><h1>Planificador de contenido</h1></div>'
-      + '<p class="bajada">Tus publicaciones, fotos y plantillas en un solo lugar.</p></header>'
+      + '<p class="bajada">Tus publicaciones, fotos y plantillas en un solo lugar.</p>'
+      + (vistaHabilitada('estados') ? '<button type="button" class="btn-linea" data-cont-estados>Estados</button>' : '') + '</header>'
       + '<div id="contAgente"></div><div class="cont-tabs" id="contTabs"></div><main id="contCuerpo" aria-label="Contenido del paso actual"></main></div>');
     $('contTabs').addEventListener('click', ev => { const b = ev.target.closest('[data-ctab]'); if (b) cambiaTabContenido(b.dataset.ctab); });
     $('contTabs').addEventListener('change', ev => { if (ev.target.matches('[data-cvista]') && ev.target.value) cambiaTabContenido(ev.target.value); if (ev.target.matches('[data-cmeslista]') && ev.target.value) { CONT.filtroMes = ev.target.value; CONT.mes = ev.target.value; void cargaContenido(); } });
     $('contAgente').addEventListener('click', clicContAgente);
+    $('vista-contenido').querySelector('.plan-cabecera').addEventListener('click', ev => {
+      if (ev.target.closest('[data-cont-estados]')) ve('estados');
+    });
     $('contAgente').addEventListener('change', cambioContAgente);
     $('contAgente').addEventListener('toggle', ev => { if (ev.target.classList.contains('plan-rutina')) CONT.rutinaAbierta = ev.target.open; }, true);
     $('contCuerpo').addEventListener('click', clicContenido);
@@ -20303,6 +20194,7 @@ function pintaContenido(){
   $('contTabs').innerHTML = navegacionContenidoHtml(cuenta);
   // v239: en escritorio, cabecera y pasos de la referencia 2; en Revisar/Programar/Publicar/Analizar, el tablero.
   if (typeof planificadorV239 === 'function' && planificadorV239(cuerpo)) return;
+  if (CONT.tab === 'estadosProgramados') return pintaEstadosProgramados(cuerpo);
   const vistas = { crear: pintaCrearContenido, fotos: pintaFotosContenido, calendario: pintaCalendario, tendencias: pintaTendencias, subir: pintaSubir, estilos: pintaEstilos, redes: pintaRedes, paquete: pintaPaquete, fechas: pintaFechasNicho };
   if (vistas[CONT.tab]) return vistas[CONT.tab](cuerpo);
   const filtro = { porAprobar: x => x.estado === 'propuesta', programadas: x => ['aprobada', 'publicando', 'encola', 'enviada', 'sin_confirmar', 'lista', 'fallida', 'vencida'].includes(x.estado) && x.canal !== 'paquete_grupos', publicadas: x => x.estado === 'publicada' }[CONT.tab];
@@ -20321,6 +20213,15 @@ function pintaContenido(){
     + avisoCruces
     + (listas.length ? '<div class="cont-lista">' + listas.map(x => tarjetaContenido(x, ROL_ACTUAL === 'admin', cruces.porId.get(x.id) || 0)).join('') + '</div>' : '<div class="plan-vacio">No hay piezas listas para revisar.</div>')
     + (bloqueadas.length ? '<details class="plan-bloqueadas"><summary>' + bloqueadas.length + ' pendientes de foto original</summary><p class="cont-sub">Estas piezas no se pueden aprobar hasta tener una foto en alta calidad.</p><button type="button" class="btn-linea" data-cbiblioteca="1">Subir originales a la fototeca</button><div class="cont-lista">' + bloqueadas.map(x => tarjetaContenido(x, ROL_ACTUAL === 'admin', 0)).join('') + '</div></details>' : '');
+}
+
+function pintaEstadosProgramados(cuerpo){
+  const estados = CONT.items.filter(x => x.canal === 'whatsapp_estado'
+    && ['aprobada','publicando','encola','enviada','sin_confirmar'].includes(x.estado))
+    .sort((a, b) => (a.fecha + ' ' + a.hora).localeCompare(b.fecha + ' ' + b.hora));
+  cuerpo.innerHTML = '<div class="plan-seccion-cab"><h2>Estados programados</h2></div>'
+    + (estados.length ? '<div class="cont-lista">' + estados.map(x => tarjetaContenido(x, ROL_ACTUAL === 'admin')).join('') + '</div>'
+      : '<p class="cfgnota">No hay estados programados para este mes.</p>');
 }
 
 // ───────────── v239 · Planificador de contenido (referencia 2 del dueño) ─────────────
@@ -20466,11 +20367,13 @@ function planificadorV239(cuerpo){
   return true;
 }
 function cabeceraV239(P){
-  const admin = ROL_ACTUAL === 'admin', actual = PASOS_V239.findIndex(([id]) => id === CONT.tab);
+  const paso = CONT.tab === 'estadosProgramados' ? 'calendario' : CONT.tab;
+  const admin = ROL_ACTUAL === 'admin', actual = PASOS_V239.findIndex(([id]) => id === paso);
   // Mismo criterio que la cola: publicaciones (una pieza en varias redes cuenta una vez) con algo por aprobar.
   const pendientes = gruposV239(CONT.items || []).filter((g) => g.piezas.some((x) => x.estado === 'propuesta' && x.tiene_imagen)).length;
   return '<header class="p239-card p239-titulo"><span class="p239-titulo-ico">' + ICO_V239.rayo + '</span><div class="p239-titulo-txt"><h1>Planificador de contenido</h1><p>Organiza tus publicaciones, fotos y videos en un solo lugar.</p></div>'
-    + '<div class="p239-titulo-acc"><button type="button" class="p239-ia" data-p239="ia">' + ICO_V239.ia + '<span><b>Sugerencias con IA</b><small>Ideas de contenido para tu negocio</small></span></button>'
+    + '<div class="p239-titulo-acc">' + (vistaHabilitada('estados') ? '<button type="button" class="p239-btn" data-p239="estados">Estados</button>' : '')
+    + '<button type="button" class="p239-ia" data-p239="ia">' + ICO_V239.ia + '<span><b>Sugerencias con IA</b><small>Ideas de contenido para tu negocio</small></span></button>'
     + '<div class="p239-crear"><button type="button" class="p239-btn p239-prim p239-grande" data-p239="menu" aria-haspopup="menu" aria-expanded="' + !!P.menu + '">' + ICO_V239.mas + '<span>Crear contenido</span>' + ICO_V239.flecha + '</button>'
     + '<div class="p239-menu" role="menu"' + (P.menu ? '' : ' hidden') + '>'
     + [['crear', 'Crear con el agente', 'Ideas, textos y flyers con tus fotos'], ['editor', 'Editor de flyers', 'Diseña una pieza a mano'], ['subir', 'Subir foto o video', 'Tu propio contenido, a la fecha que elijas'], ['agente', P.agente ? 'Ocultar agente automático' : 'Agente automático', 'Rutina, autonomía y redes del agente'],
@@ -20694,6 +20597,7 @@ function vistaRedV239(x){
 async function clicCabeceraV239(ev){
   const P = CONT.p239, b = ev.target.closest('button'); if (!b) return;
   if (b.dataset.ctab) { P.menu = false; return cambiaTabContenido(b.dataset.ctab); }
+  if (b.dataset.p239 === 'estados') return ve('estados');
   if (b.dataset.p239 === 'menu') { P.menu = !P.menu; return pintaContenido(); }
   if (b.dataset.p239 === 'ia') { P.menu = false; return cambiaTabContenido('tendencias'); }
   const k = b.dataset.p239crear; if (!k) return;
