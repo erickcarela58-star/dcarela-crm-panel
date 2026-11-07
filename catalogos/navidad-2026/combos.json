@@ -1,0 +1,372 @@
+{
+  "ok": true,
+  "items": [
+    {
+      "id": "D06",
+      "name": "Chispa de Navidad",
+      "cat": "digital",
+      "tier": "DIGITAL",
+      "photos": 6,
+      "scenes": 1,
+      "price": 2000,
+      "prints": 0,
+      "frame": null,
+      "mugs": 0,
+      "keys": 0,
+      "calendar": false,
+      "print_sizes": {}
+    },
+    {
+      "id": "D10",
+      "name": "Luces de Diciembre",
+      "cat": "digital",
+      "tier": "DIGITAL",
+      "photos": 10,
+      "scenes": 2,
+      "price": 3000,
+      "prints": 0,
+      "frame": null,
+      "mugs": 0,
+      "keys": 0,
+      "calendar": true,
+      "print_sizes": {}
+    },
+    {
+      "id": "D15",
+      "name": "Noche de Estrellas",
+      "cat": "digital",
+      "tier": "DIGITAL",
+      "photos": 15,
+      "scenes": 2,
+      "price": 4900,
+      "prints": 0,
+      "frame": null,
+      "mugs": 0,
+      "keys": 0,
+      "calendar": true,
+      "print_sizes": {}
+    },
+    {
+      "id": "D19",
+      "name": "Cuento de Invierno",
+      "cat": "digital",
+      "tier": "DIGITAL",
+      "photos": 19,
+      "scenes": 2,
+      "price": 6400,
+      "prints": 0,
+      "frame": null,
+      "mugs": 0,
+      "keys": 0,
+      "calendar": true,
+      "print_sizes": {}
+    },
+    {
+      "id": "D24",
+      "name": "Álbum de Nochebuena",
+      "cat": "digital",
+      "tier": "DIGITAL",
+      "photos": 24,
+      "scenes": 2,
+      "price": 7900,
+      "prints": 0,
+      "frame": null,
+      "mugs": 0,
+      "keys": 0,
+      "calendar": true,
+      "print_sizes": {}
+    },
+    {
+      "id": "D28",
+      "name": "Toda la Navidad",
+      "cat": "digital",
+      "tier": "DIGITAL",
+      "photos": 28,
+      "scenes": 2,
+      "price": 9000,
+      "prints": 0,
+      "frame": null,
+      "mugs": 0,
+      "keys": 0,
+      "calendar": true,
+      "print_sizes": {}
+    },
+    {
+      "id": "M06",
+      "name": "Estrella del Pino",
+      "cat": "economico",
+      "tier": "MIXTO ECONÓMICO",
+      "photos": 6,
+      "scenes": 1,
+      "price": 3000,
+      "prints": 4,
+      "frame": null,
+      "mugs": 0,
+      "keys": 0,
+      "calendar": true,
+      "print_sizes": {
+        "5×7": 4
+      }
+    },
+    {
+      "id": "M08",
+      "name": "Moños y Recuerdos",
+      "cat": "economico",
+      "tier": "MIXTO ECONÓMICO",
+      "photos": 8,
+      "scenes": 1,
+      "price": 3500,
+      "prints": 0,
+      "frame": null,
+      "mugs": 1,
+      "keys": 0,
+      "calendar": true,
+      "print_sizes": {}
+    },
+    {
+      "id": "M10",
+      "name": "Abrazo de Invierno",
+      "cat": "economico",
+      "tier": "MIXTO ECONÓMICO",
+      "photos": 10,
+      "scenes": 1,
+      "price": 4600,
+      "prints": 0,
+      "frame": "8½×11",
+      "mugs": 0,
+      "keys": 0,
+      "calendar": true,
+      "print_sizes": {}
+    },
+    {
+      "id": "M12",
+      "name": "Diciembre en Familia",
+      "cat": "superior",
+      "tier": "MIXTO ESTÁNDAR",
+      "photos": 12,
+      "scenes": 2,
+      "price": 6000,
+      "prints": 4,
+      "frame": "11×14",
+      "mugs": 0,
+      "keys": 0,
+      "calendar": true,
+      "print_sizes": {
+        "5×7": 4
+      }
+    },
+    {
+      "id": "M15",
+      "name": "Galería de Nochebuena",
+      "cat": "superior",
+      "tier": "MIXTO ESTÁNDAR",
+      "photos": 15,
+      "scenes": 2,
+      "price": 7700,
+      "prints": 6,
+      "frame": "11×14",
+      "mugs": 1,
+      "keys": 0,
+      "calendar": true,
+      "print_sizes": {
+        "5×7": 6
+      }
+    },
+    {
+      "id": "M19",
+      "name": "Noche de Oro",
+      "cat": "superior",
+      "tier": "MIXTO PREMIUM",
+      "photos": 19,
+      "scenes": 3,
+      "price": 10900,
+      "prints": 8,
+      "frame": "13×19",
+      "mugs": 2,
+      "keys": 1,
+      "calendar": true,
+      "print_sizes": {
+        "5×7": 8
+      }
+    },
+    {
+      "id": "X01",
+      "name": "Lazos de Navidad",
+      "cat": "superior",
+      "tier": "MIXTO",
+      "photos": 10,
+      "scenes": 2,
+      "price": 5950,
+      "prints": 8,
+      "print_sizes": {
+        "5×7": 8
+      },
+      "frame": "8½×11",
+      "mugs": 2,
+      "keys": 2,
+      "calendar": true
+    },
+    {
+      "id": "X02",
+      "name": "Pinos y Luces",
+      "cat": "superior",
+      "tier": "MIXTO",
+      "photos": 10,
+      "scenes": 2,
+      "price": 6600,
+      "prints": 10,
+      "print_sizes": {
+        "5×7": 6,
+        "6×8": 4
+      },
+      "frame": "11×14",
+      "mugs": 2,
+      "keys": 2,
+      "calendar": true
+    },
+    {
+      "id": "X03",
+      "name": "Brindis Navideño",
+      "cat": "superior",
+      "tier": "MIXTO",
+      "photos": 10,
+      "scenes": 2,
+      "price": 7450,
+      "prints": 12,
+      "print_sizes": {
+        "5×7": 8,
+        "6×8": 4
+      },
+      "frame": "8½×11",
+      "mugs": 4,
+      "keys": 4,
+      "calendar": true
+    },
+    {
+      "id": "X04",
+      "name": "Navidad en Casa",
+      "cat": "superior",
+      "tier": "MIXTO",
+      "photos": 15,
+      "scenes": 2,
+      "price": 9150,
+      "prints": 12,
+      "print_sizes": {
+        "5×7": 6,
+        "6×8": 6
+      },
+      "frame": "11×14",
+      "mugs": 3,
+      "keys": 2,
+      "calendar": true
+    },
+    {
+      "id": "X05",
+      "name": "Recuerdos para Todos",
+      "cat": "superior",
+      "tier": "MIXTO",
+      "photos": 15,
+      "scenes": 2,
+      "price": 9700,
+      "prints": 16,
+      "print_sizes": {
+        "5×7": 10,
+        "6×8": 6
+      },
+      "frame": "8½×11",
+      "mugs": 4,
+      "keys": 4,
+      "calendar": true
+    },
+    {
+      "id": "X06",
+      "name": "Retrato de Nochebuena",
+      "cat": "superior",
+      "tier": "MIXTO",
+      "photos": 15,
+      "scenes": 2,
+      "price": 9700,
+      "prints": 12,
+      "print_sizes": {
+        "5×7": 6,
+        "6×8": 6
+      },
+      "frame": "13×19",
+      "mugs": 2,
+      "keys": 2,
+      "calendar": true
+    },
+    {
+      "id": "X07",
+      "name": "Regalos bajo el Árbol",
+      "cat": "superior",
+      "tier": "MIXTO",
+      "photos": 19,
+      "scenes": 3,
+      "price": 12450,
+      "prints": 22,
+      "print_sizes": {
+        "5×7": 14,
+        "6×8": 8
+      },
+      "frame": "11×14",
+      "mugs": 5,
+      "keys": 4,
+      "calendar": true
+    },
+    {
+      "id": "X08",
+      "name": "Nochebuena en Familia",
+      "cat": "superior",
+      "tier": "MIXTO",
+      "photos": 19,
+      "scenes": 3,
+      "price": 12650,
+      "prints": 16,
+      "print_sizes": {
+        "5×7": 8,
+        "6×8": 8
+      },
+      "frame": "13×19",
+      "mugs": 4,
+      "keys": 4,
+      "calendar": true
+    },
+    {
+      "id": "X09",
+      "name": "Tradición en Grande",
+      "cat": "superior",
+      "tier": "MIXTO",
+      "photos": 24,
+      "scenes": 3,
+      "price": 15650,
+      "prints": 20,
+      "print_sizes": {
+        "5×7": 10,
+        "6×8": 10
+      },
+      "frame": "16×20",
+      "mugs": 4,
+      "keys": 4,
+      "calendar": true
+    },
+    {
+      "id": "X10",
+      "name": "Legado de Diciembre",
+      "cat": "superior",
+      "tier": "MIXTO",
+      "photos": 28,
+      "scenes": 3,
+      "price": 18400,
+      "prints": 26,
+      "print_sizes": {
+        "5×7": 14,
+        "6×8": 12
+      },
+      "frame": "16×20",
+      "mugs": 6,
+      "keys": 6,
+      "calendar": true
+    }
+  ]
+}

@@ -9651,6 +9651,24 @@ function sucursalComboDelChat(chat){
   return ['plaza', 'plaza-artesanal'].includes(String(chat?.sucursal || '')) ? 'plaza' : 'central';
 }
 
+let CATALOGO_NAVIDAD_PROMESA;
+function cargaCatalogoNavidad(){
+  if (NEGOCIO !== 'dcarela') return Promise.resolve(null);
+  if (!CATALOGO_NAVIDAD_PROMESA) CATALOGO_NAVIDAD_PROMESA=(async()=>{
+    const valido = r => r?.ok && Array.isArray(r.items) && r.items.length===22
+      && new Set(r.items.map(c=>c?.id)).size===22 && r.items.every(c=>/^[A-Z]\d{2}$/.test(c?.id) && c.name && c.price>0);
+    try {
+      const r=await fetch('./catalogos/navidad-2026/combos.json?v=412');
+      const data=r.ok ? await r.json() : null;
+      if(valido(data))return data;
+    } catch { /* La copia del servidor conserva el mismo catálogo aprobado. */ }
+    const data=await llama({action:'navidadCatalogo'});
+    if(!valido(data))throw new Error('No se pudo abrir el catálogo de Navidad.');
+    return data;
+  })().catch(e=>{CATALOGO_NAVIDAD_PROMESA=null;throw e;});
+  return CATALOGO_NAVIDAD_PROMESA;
+}
+
 async function cargaCombos(forzar){
   const sucursal = sucursalComboDelChat(sel);
   if (COMBOS && COMBOS_SUCURSAL === sucursal && !forzar) return COMBOS;
@@ -9767,7 +9785,7 @@ async function abreCombos(){
   $('modal').querySelectorAll('[data-cerrar]').forEach(b => { b.onclick = cierraModal; });
   const cuerpo = $('modal').querySelector('.mcuerpo');
   const [regular, navidad] = await Promise.allSettled([cargaCombos(true),
-    navidadDisponible ? llama({action:'navidadCatalogo'}) : Promise.resolve(null)]);
+    navidadDisponible ? cargaCatalogoNavidad() : Promise.resolve(null)]);
   if (chatId !== sel?.id || cuerpo !== $('modal').querySelector('.mcuerpo')) return;
   const navidenos = (navidad.value?.items || []).filter(c => /^[A-Z]\d{2}$/.test(c.id)).map(c => ({
     id:c.id, cat:'navidad', catLabel:'Navidad 2026', nombre:c.name, ref:c.id,
@@ -9783,7 +9801,7 @@ async function abreCombos(){
     + '<div class="seccion" style="margin:14px 0 6px">Vestidos</div>'
     + '<div class="pdfs"><button class="tplchip" data-vestidos>Enviar los vestidos disponibles</button></div>'
      + (navidadDisponible && ['admin','supervisor'].includes(ROL_ACTUAL) ? '<div class="pdfs" style="margin-top:12px"><button class="tplchip" data-navidad-solicitudes>Solicitudes web de Navidad</button></div>' : '')
-     + '<div class="seccion" style="margin:14px 0 6px">Combos 1 a 1 del CRM</div>'
+    + '<div class="seccion" style="margin:14px 0 6px">Combos 1 a 1 del CRM</div>'
      + (avisoCatalogo ? '<p class="aviso">Faltan opciones por cargar. Vuelve a abrir Combos para reintentar.</p>' : '') + '<div id="cbLista"></div>';
 
   const pinta = () => {
@@ -25696,7 +25714,17 @@ const cmbDinero = n => 'RD$ ' + Math.round(Number(n) || 0).toLocaleString('en-US
 const cmbCategoria = id => ((CMB.datos?.categorias || []).find(([x]) => x === id) || [, id || 'Otros'])[1];
 async function cmbCarga(){
   CMB.cargando = true; cmbPinta();
-  const r = await llama({ action:'combos', operation:'lista', sucursal: CMB.sucursal });
+  const sucursal=CMB.sucursal;
+  const [lista,navidad]=await Promise.allSettled([llama({ action:'combos', operation:'lista', sucursal }),
+    sucursal==='central' && NEGOCIO==='dcarela' ? cargaCatalogoNavidad() : Promise.resolve(null)]);
+  if (sucursal !== CMB.sucursal) return;
+  const r=lista.value || {ok:false};
+  if (navidad.value?.ok && r.ok) {
+    r.categorias=[...(r.categorias||[]).filter(([id])=>id!=='navidad'),['navidad','Navidad 2026']];
+    r.combos=[...navidad.value.items.map(c=>({id:'NAV26-'+c.id,nombre:c.name,categoria:'navidad',sucursal:'central',activo:true,
+      precio:c.price,items:[c.photos+' fotos digitales',c.scenes===1?'1 ambiente':'Hasta '+c.scenes+' ambientes'],codigo_navidad:c.id})),
+      ...(r.combos||[]).filter(c=>c.categoria!=='navidad')];
+  }
   CMB.cargando = false;
   CMB.error = r.ok ? '' : (r.error || 'No se pudieron leer los combos.');
   if (r.ok) { CMB.datos = r; if (!CMB.borrador) CMB.borrador = { ...r.ajustes }; }
@@ -25735,12 +25763,14 @@ function cmbFiltrados(){
   const q = CMB.q.trim().toLowerCase();
   return (CMB.datos?.combos || []).filter(c => (CMB.estado === 'todos' || (CMB.estado === 'activos') === (c.activo !== false && !cmbVencido(c)))
     && (!CMB.categoria || c.categoria === CMB.categoria)
-    && (!q || [c.nombre, c.descripcion, ...(c.items || [])].some(v => String(v || '').toLowerCase().includes(q))));
+    && (!q || [c.nombre, c.descripcion, c.codigo_navidad, ...(c.items || [])].some(v => String(v || '').toLowerCase().includes(q))));
 }
 function cmbFoto(id){ return (CMB.fotos || []).find(f => f.id === id)?.preview || ''; }
 // v332: un combo sin foto propia muestra una original real de su categoría (una distinta por combo), no el cubo gris.
 function cmbFotoDe(c){
+  if (/^[A-Z]\d{2}$/.test(c.codigo_navidad || '')) return './catalogos/navidad-2026/combos/'+c.codigo_navidad+'.jpg';
   const propia = cmbFoto(c.foto_id); if (propia) return propia;
+  if (/^pf_(grad|emb)_\d{1,3}$/.test(c.foto_portafolio || '')) return 'https://dcarelacompufoto.com/img/'+c.foto_portafolio+'.webp';
   const de = (CMB.fotos || []).filter(f => f.categoria === c.categoria && f.preview); if (!de.length) return '';
   const hermanos = (CMB.datos?.combos || []).filter(x => x.categoria === c.categoria && !cmbFoto(x.foto_id));
   return de[Math.max(0, hermanos.findIndex(x => x.id === c.id)) % de.length].preview;
@@ -25757,7 +25787,7 @@ function cmbFila(c, editar){
   return '<article class="cmb-fila' + (c.activo === false ? ' inactivo' : '') + '">'
     + '<div class="cmb-mini">' + (foto ? '<img src="' + esc(foto) + '" alt="" loading="lazy">' : CMB_ICO.combo) + '</div>'
     + '<div class="cmb-info"><div class="cmb-tit"><b>' + esc(c.nombre) + '</b>' + (c.destacado ? '<span class="cmb-dest">' + esc(c.destacado) + '</span>' : '') + '</div>'
-    +   (c.descripcion ? '<p>' + esc(c.descripcion) + '</p>' : '<p>' + esc(cmbCategoria(c.categoria)) + '</p>')
+    +   (c.descripcion ? '<p>' + esc(c.descripcion) + '</p>' : '<p>' + esc(cmbCategoria(c.categoria)) + (c.codigo_navidad ? ' · '+esc(c.codigo_navidad) : '') + '</p>')
     +   '<ul>' + (c.items || []).slice(0, 5).map(i => '<li>' + CMB_ICO.ok + esc(i) + '</li>').join('') + ((c.items || []).length > 5 ? '<li class="mas">y ' + ((c.items || []).length - 5) + ' más</li>' : '') + '</ul></div>'
     + '<div class="cmb-lado"><b class="cmb-precio">' + esc(cmbDinero(c.precio)) + '</b>'
     // v377 · Fase 6: estado real (un combo «activo» con su vigencia pasada ya no se vende) y la fecha de fin.
@@ -25765,7 +25795,8 @@ function cmbFila(c, editar){
       : cmbVencido(c) ? '<span class="cmb-estado mal" title="Pasó su vigencia: no sale en el catálogo ni en los PDF.">Vencido</span>'
       : '<span class="cmb-estado on">Activo</span>')
     +   (c.vigente_hasta ? '<small class="cmb-vigencia">' + (cmbVencido(c) ? 'Venció el ' : 'Vigente hasta el ') + esc(cmbFechaCorta(c.vigente_hasta)) + '</small>' : '')
-    +   (editar ? '<div class="cmb-acc"><button type="button" class="btn-solido cmb-chico" data-cmbedita="' + esc(c.id) + '">' + CMB_ICO.lapiz + 'Editar</button>'
+    +   (c.codigo_navidad ? '<a class="btn-linea cmb-chico" href="'+esc(foto)+'" download>Descargar tarjeta</a>'
+      : editar ? '<div class="cmb-acc"><button type="button" class="btn-solido cmb-chico" data-cmbedita="' + esc(c.id) + '">' + CMB_ICO.lapiz + 'Editar</button>'
       + '<button type="button" class="btn-linea cmb-chico" data-cmbduplica="' + esc(c.id) + '">' + CMB_ICO.copia + 'Duplicar</button>'
       + '<button type="button" class="btn-linea cmb-chico" data-cmbactiva="' + esc(c.id) + '">' + (c.activo === false ? 'Activar' : 'Desactivar') + '</button></div>' : '')
     + '</div></article>';
@@ -26023,7 +26054,11 @@ function montaCombos(){
     if (ac) { const c = CMB.datos.combos.find(x => x.id === ac.dataset.cmbactiva); ac.disabled = true;
        const r = await llama({ action:'combos', operation:'guarda', sucursal: CMB.sucursal, combo: { ...c, activo: c.activo === false } }); if (!r.ok) { ac.disabled = false; return avisa('No se pudo cambiar', r.error); } return cmbCarga(); }
     if (t.closest('[data-cmbimporta]')) { const b = t.closest('[data-cmbimporta]'); b.disabled = true; const r = await llama({ action:'combos', operation:'importa_web' }); if (!r.ok) { b.disabled = false; return avisa('No se pudo importar', r.error); } avisa('Combos importados', r.creados + ' combos de la web. Revísalos y ponles foto.'); return cmbCarga(); }
-    const cat = t.closest('[data-cmbcat]'); if (cat) { CMB.categoria = cat.dataset.cmbcat; CMB.pagina = 1; if (CMB.categoria) CMB.pestana = 'combos'; cmbPinta(); return cmbVista(); }
+    const cat = t.closest('[data-cmbcat]'); if (cat) {
+      CMB.categoria=cat.dataset.cmbcat; CMB.pagina=1; if(CMB.categoria)CMB.pestana='combos';
+      if(CMB.categoria==='navidad'){CMB.cc.cat='navidad';CMB.cc.suc='central';return cmbCcVista();}
+      cmbPinta(); return cmbVista();
+    }
     if (t.closest('[data-cmbpdf]')) return cmbDescarga(t.closest('[data-cmbpdf]'));
     const z = t.closest('[data-cmbzoom]'); if (z) { CMB.zoom = Math.min(150, Math.max(50, CMB.zoom + Number(z.dataset.cmbzoom))); return cmbPintaVista(); }
     const po = t.closest('[data-cmbportada]'); if (po) { CMB.borrador = { ...CMB.borrador, portada_foto_id: po.dataset.cmbportada }; CMB.pagina = 1; cmbPinta(); return cmbVista(); }
