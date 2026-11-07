@@ -1,7 +1,7 @@
 {
-  "version": "2026-11-06-crm-release-v410-navidad-solicitudes",
+  "version": "2026-11-06-crm-release-v411-orden-marketplace",
   "channel": "crm",
-  "released_at": "2026-11-06T22:17:58.434902Z",
-  "summary": "Los 22 combos de Navidad en el chat y acceso a las solicitudes guardadas en la web.",
+  "released_at": "2026-11-07T00:35:29Z",
+  "summary": "Orden de publicación en Marketplace para un flyer aprobado de producto físico.",
   "requiere_puente": "2026-11-06-vision-navidad-ollama-v68"
 }

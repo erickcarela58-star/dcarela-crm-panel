@@ -20533,6 +20533,47 @@ function persisteBorradoresPublicacionV250(){
   catch{CONT.p239.borradoresPersistidos=false;}
 }
 function tieneBorradorPublicacionV250(id){return !!borradoresPublicacionV250()[id];}
+function accionMarketplace(x, admin){
+  if (x.marketplace) {
+    const m=x.marketplace;
+    const estados={pendiente:'En cola para Hermes',en_proceso:'Hermes está procesando',requiere_revision:'Revisar en Marketplace',enlace_recibido:'Enlace de Marketplace recibido'};
+    const estado=m.estado==='en_proceso' && Date.now()-m.actualizado>=600000 ? 'requiere_revision' : m.estado;
+    const enlace=/^https:\/\/www\.facebook\.com\/marketplace\/item\/\d+\/?$/.test(m.enlace || '') ? m.enlace : '';
+    return enlace ? '<a class="btn-linea" href="'+esc(enlace)+'" target="_blank" rel="noopener noreferrer">Ver publicación en Marketplace</a>'
+      : '<span class="cont-sub">Marketplace · '+esc(estados[estado] || 'Pendiente')+'</span>';
+  }
+  if (!admin || NEGOCIO!=='dcarela' || !x.tiene_imagen || x.tipo_media!=='imagen' || x.tema==='campana_navidad'
+      || !['aprobada','lista','publicada'].includes(x.estado)) return '';
+  return '<button type="button" class="btn-linea" data-cmarketplace="'+esc(x.id)+'">Publicar en Marketplace</button>';
+}
+function abreOrdenMarketplace(id){
+  if (tieneBorradorPublicacionV250(id)) return avisa('Guarda el borrador antes de publicar.');
+  const flyer=CONT.items.find(x=>x.id===id);
+  abreModal('<div class="mtapa"><b>Publicar en Marketplace</b><button class="cerrarm" data-cerrar>×</button></div>'
+    + '<div class="mcuerpo"><form class="cont-form" id="ordenaMarketplace"><p>Hermes usará este flyer para publicar el artículo en el perfil conectado de Facebook.</p>'
+    + '<label>Título del producto <input name="titulo" required minlength="4" maxlength="80" value="'+esc(String(flyer?.titular || '').slice(0,80))+'"></label>'
+    + '<label>Precio en RD$ <input name="precio" required type="number" min="1" max="99999999" step="1"></label>'
+    + '<label>Condición <select name="condicion" required><option value="">Elige</option><option value="nuevo">Nuevo</option><option value="usado">Usado</option></select></label>'
+    + '<label>Descripción <textarea name="descripcion" required maxlength="1200"></textarea></label>'
+    + '<label><input type="checkbox" name="producto_fisico" required> Confirmo que el flyer muestra el artículo físico disponible y que el precio es el de venta.</label>'
+    + '<button type="submit" class="btn-solido">Ordenar publicación</button><p role="status"></p></form></div>');
+  $('modal').querySelector('[data-cerrar]').onclick=cierraModal;
+  $('ordenaMarketplace').onsubmit=async ev=>{
+    ev.preventDefault();
+    const f=ev.currentTarget, boton=f.querySelector('button[type=submit]'), status=f.querySelector('[role=status]');
+    const datos=Object.fromEntries(new FormData(f));
+    boton.disabled=true;
+    status.textContent='Guardando la orden…';
+    try {
+      const r=await llama({action:'contenidoOrdenMarketplace',id,...datos,producto_fisico:datos.producto_fisico==='on'});
+      if (!r?.ok) throw new Error(r?.error || 'No se confirmó la orden.');
+      cierraModal();
+      avisa('Orden enviada','La publicación queda en cola para Hermes.');
+      return cargaContenido();
+    } catch (e) { status.textContent=e.message || 'Actualiza el planificador y revisa si la orden se guardó.'; }
+    finally { boton.disabled=false; }
+  };
+}
 function publicacionV239(g, x){
   const admin = ROL_ACTUAL === 'admin', est = estadoHonestoV239(x);
   const editable = !['publicada', 'publicando', 'encola', 'enviada', 'sin_confirmar'].includes(x.estado) && x.canal !== 'paquete_grupos';
@@ -20541,6 +20582,7 @@ function publicacionV239(g, x){
   const borrador=borradoresPublicacionV250()[x.id], conflicto=!!borrador && (!editable || borrador.base!==firmaPublicacionV250(x));
   const valores=borrador && !conflicto ? borrador : x;
   const acc = [];
+  acc.push(accionMarketplace(x,admin));
   if (admin && x.estado === 'propuesta' && x.tiene_imagen) acc.push('<button type="button" class="p239-btn p239-prim" data-caprueba="' + esc(x.id) + '" data-p239programa="1">' + ICO_V239.calChico + 'Aprobar y programar</button>');
   if (admin && pendientes.length > 1) acc.push('<button type="button" class="p239-btn" data-p239apruebagrupo="1">Aprobar las ' + pendientes.length + ' redes</button>');
   if (admin && ['aprobada', 'fallida', 'vencida'].includes(x.estado)) acc.push('<button type="button" class="p239-btn" data-cpublica="' + esc(x.id) + '">' + (x.estado === 'aprobada' ? 'Publicar ahora' : 'Reintentar ahora') + '</button>');
@@ -20645,6 +20687,7 @@ async function clicCabeceraV239(ev){
 async function clicTableroV239(ev){
   const P = CONT.p239, b = ev.target.closest('button, input[type=checkbox]'); if (!b) return;
   const d = b.dataset;
+  if (d.cmarketplace) return abreOrdenMarketplace(d.cmarketplace);
   if(d.p239descartaborrador){
     const id=d.p239descartaborrador, contexto=claveBorradoresPublicacionV250(), previo=JSON.stringify(borradoresPublicacionV250()[id]);
     if(!await confirmaAqui('¿Descartar el borrador local? La publicación guardada no cambia.',{si:'Descartar'}))return;
@@ -20986,6 +21029,7 @@ function tarjetaContenido(x, admin, cruce = 0){
   const abierto = CONT.abiertos.has(x.id);
   const editable = !['publicada', 'publicando', 'encola', 'enviada', 'sin_confirmar'].includes(x.estado);
   const acc = [];
+  acc.push(accionMarketplace(x,admin));
   if (admin && ['publicando', 'encola', 'enviada', 'sin_confirmar'].includes(x.estado) && x.canal !== 'paquete_grupos') acc.push('<button type="button" class="btn-linea" data-ccomprueba="' + esc(x.id) + '" title="Consulta el resultado sin volver a publicar ni subir el archivo">Comprobar envío</button>');
   if (admin && ['propuesta', 'rechazada'].includes(x.estado) && x.tiene_imagen) acc.push('<button type="button" class="btn-solido" data-caprueba="' + esc(x.id) + '">Aprobar</button>');
   if (admin && ['propuesta', 'aprobada', 'fallida', 'lista'].includes(x.estado)) acc.push('<button type="button" class="btn-linea" data-crechaza="' + esc(x.id) + '">Rechazar</button>');
@@ -25316,6 +25360,7 @@ async function clicContenido(ev){
   }
   const b = ev.target.closest('button'); if (!b || b.disabled) return;
   const d = b.dataset;
+  if (d.cmarketplace) return abreOrdenMarketplace(d.cmarketplace);
   if (d.cnavidadzip) {
     const ids = piezasPautaNavidad(CONT.items).filter(x => x.generacion_id === d.cnavidadzip).map(x => x.id);
     if (!ids.length) return avisa('Todavía no hay cuadrados aprobados.');
