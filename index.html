@@ -1225,7 +1225,10 @@ a.ayuda{color:var(--enlace)}
 .emoji-grid{display:grid;grid-template-columns:repeat(7,1fr)}
 .emoji-grid button{font-size:21px;line-height:1;padding:5px 0;border-radius:6px}
 .emoji-grid button:hover{background:var(--hover)}
-.cola{display:flex;flex-wrap:wrap;gap:6px;padding:0 14px 11px;background:var(--panel)}
+.cola{display:flex;flex:0 0 auto;max-height:28vh;overflow-y:auto;flex-wrap:wrap;gap:6px;padding:0 14px 11px;background:var(--panel)}
+.cola[hidden]{display:none}
+.conversacion,.mensajes{min-height:0}
+.escribir{flex-shrink:0}
 .pieza{display:inline-flex;align-items:center;gap:8px;max-width:250px;padding:5px 8px 5px 5px;
   border:1px solid var(--line2);border-radius:var(--r);font-size:12px}
 .pieza img{width:36px;height:36px;object-fit:cover;border-radius:5px;flex:0 0 auto}
@@ -4381,7 +4384,9 @@ async function llama(cuerpo, opciones = {}){
     // Tres fallos distintos que antes se veian iguales: lo paro la persona (Detener), se
     // agoto el tope de tiempo, o no hubo red. El asistente dice cual fue y ofrece reintentar.
     const nombre = e?.name || '';
-    return { ok:false, error: e?.message || String(e), abortado: nombre === 'AbortError',
+    return { ok:false, error: ['send','sendText','bridgeQueue'].includes(cuerpo.action)
+      ? 'No se recibió confirmación del envío. Revisa el chat antes de repetirlo para evitar duplicados.'
+      : (e?.message || String(e)), abortado: nombre === 'AbortError',
       tiempo: nombre === 'TimeoutError', red: nombre !== 'AbortError' && nombre !== 'TimeoutError' };
   }
   // v238: un cuerpo que no se puede leer entero (la conexión se cortó a mitad, p. ej. al recargar la app por versión
@@ -4403,7 +4408,9 @@ async function llama(cuerpo, opciones = {}){
 // que su señal se combina con ese tope.
 const LLAMADAS_LENTAS = new Set(['assistantPlan', 'assistantChat']);
 function senalDeLlamada(cuerpo, propia){
-  const tope = LLAMADAS_LENTAS.has(cuerpo.action) ? AbortSignal.timeout(90000) : null;
+  const ms = LLAMADAS_LENTAS.has(cuerpo.action) ? 90000
+    : ['send','sendText','bridgeQueue','subirTrozo'].includes(cuerpo.action) ? 180000 : 0;
+  const tope = ms ? AbortSignal.timeout(ms) : null;
   if (!propia) return tope || undefined;
   if (!tope) return propia;
   return typeof AbortSignal.any === 'function' ? AbortSignal.any([propia, tope]) : propia;
@@ -7701,7 +7708,7 @@ function abre(c){
     +       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="8.600"/><path d="M8.600 14.200a4.200 4.200 0 006.800 0"/><circle cx="9.200" cy="9.800" r=".9" fill="currentColor" stroke="none"/><circle cx="14.800" cy="9.800" r=".9" fill="currentColor" stroke="none"/></svg></button>'
     +     '<button class="adj" id="adjImg" title="Enviar fotos o videos" aria-label="Enviar fotos o videos">'
     +       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3.500" y="4.500" width="17" height="15" rx="3.200"/><circle cx="9" cy="10" r="1.700"/><path d="M4 17.500l4.500-4.200 3.500 3.200 3-2.800 5 4.300"/></svg></button>'
-    +     '<button class="adj hd' + (modoHd ? ' on' : '') + '" id="adjHd" title="HD: envía la imagen sin comprimir" aria-pressed="' + (modoHd ? 'true' : 'false') + '">HD</button>'
+    +     '<button class="adj hd' + (modoHd ? ' on' : '') + '" id="adjHd" title="HD: máxima calidad para foto. Usa Documento para enviar el original intacto." aria-pressed="' + (modoHd ? 'true' : 'false') + '">HD</button>'
     +     '<button class="adj" id="adjDoc" title="Enviar documento" aria-label="Enviar documento">'
     +       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M7 3h6.600L19 8.400V18a3 3 0 01-3 3H7a3 3 0 01-3-3V6a3 3 0 013-3z"/><path d="M13.400 3.200V8.600H19"/></svg></button>'
     +     '<button class="adj" id="adjRapida" title="Respuestas rápidas" aria-label="Respuestas rápidas">'
@@ -8356,6 +8363,7 @@ function cableaChat(c){
   env.onclick = async () => {
     if (sucursalEnConsulta(NEGOCIO)) return avisa('Plaza en preparación', 'Los envíos de esta sucursal todavía no están habilitados.');
     const t = caja.value.trim();
+    const chatEnvio = sel;
     if (!t && !COLA.length) return;
     // La linea manda antes que nada: si por este chat no puede salir nada, se dice la causa real
     // y no se llama al servidor. El servidor lo rechazaria igual, con su propio codigo.
@@ -8397,8 +8405,11 @@ function cableaChat(c){
       return avisa('Sin conexión', 'El mensaje quedó pendiente y saldrá solo cuando vuelva internet.');
     }
     env.disabled = true;
+    try {
     // Si todavia se estan preparando (comprimiendo, leyendo), se espera: enviar a medias mandaba el archivo vacio.
     if (COLA.length) { await recalculaCola(); if (!COLA.length) { env.disabled = false; return; } }
+    if (sel !== chatEnvio) throw new Error('Cambiaste de conversación. Revisa el destinatario antes de enviar.');
+    if (COLA.some(a => a.error)) return avisa('Revisa el archivo', COLA.find(a => a.error).error);
     COLA.forEach(a => { a.estado = 'espera'; a.error = ''; });
     pintaCola();
     let fallo = null;
@@ -8534,6 +8545,13 @@ function cableaChat(c){
     // WhatsApp, que en esas redes no existen.
     if (fallo) return avisa('No se pudo enviar', claveRed ? fallo : traduceErrorMeta(fallo, falloCodigo));
     caja.value = ''; caja.style.height = 'auto';
+    } catch (error) {
+      avisa('No se pudo completar el envío', error?.message || 'Conservamos el mensaje y los archivos pendientes.');
+    } finally {
+      env.disabled = false;
+      sueltaCola();
+      pintaCola();
+    }
   };
 }
 
@@ -8614,23 +8632,13 @@ const COLA = [];
 // HD siempre, por defecto. Lo pidio el dueno: «las fotos se deben subir en HD siempre». El
 // boton sigue ahi por si alguna vez hace falta mandar algo ligero, pero arranca encendido.
 let modoHd = true;
-// El tope de ADJUNTAR depende del canal, no es el mismo numero para los dos:
-//  - Meta (Cloud API, el numero oficial): uploadMetaMedia rechaza por encima de 16 MB ya
-//    decodificado (firebase-functions/src/index.js, uploadMetaMedia). Poner mas aqui solo
-//    conseguiria que el archivo se subiera entero para morir alla, asi que se corta antes.
-//  - WhatsApp Web (el puente, 5644): la foto se comprime AQUI antes de mandarla
-//    (comprimeHdPuente, tope real 7,5 MB) sin importar cuanto pese el original, asi que el
-//    tope de Meta no tiene nada que ver: bloqueaba fotos HD de telefono (12-20 MB) que la
-//    compresion iba a bajar de sobra. Solo los documentos van intactos por el puente, y ahi
-//    si manda el tope del servidor (TOPE_MEDIO_PUENTE, 8 MB).
+// Límite de entrada del original. Las fotos de hasta 100 MB se preparan en HD.
+// Documentos intactos hasta 2 GB por WhatsApp Web y 100 MB por la API oficial.
 function LIMITE_MB(porPuente, tipo){
-  // Los documentos grandes ya no caben en UN envio (la funcion admite 32 MB): se suben por trozos de 12 MB y el servidor los
-  // une (subeEnTrozos). Por WhatsApp Web (el puente) hasta 380 MB, que es lo que componen 32 trozos; por la API oficial el
-  // tope es de Meta, no nuestro: 100 MB. Las fotos siguen en 15/12 porque Meta las acepta de 5 MB y se comprimen antes.
-  if (porPuente) return tipo === 'document' ? 380 : 60;
+  if (porPuente) return tipo === 'document' ? 2048 : tipo === 'image' ? 100 : 60;
   if (tipo === 'document') return 100;
   if (tipo === 'video') return 16;      // el tope de Meta para un video que se reproduce en el chat; mas grande sale como documento
-  return modoHd ? 15 : 12;
+  return tipo === 'image' ? 100 : 16;
 }
 // Desde este peso un documento no viaja en un solo POST con base64: se parte (ver subeEnTrozos). Igual que
 // UMBRAL_SIN_TROZOS_BYTES / TROZO_MAX_BYTES de firebase-functions/src/subida-trozos-core.js.
@@ -8767,6 +8775,7 @@ async function recalculaColaAhora(){
     }
     if (a.hd === modoHd && a.datos) continue;      // ya esta en el modo pedido
     const porPuente = canalDe(sel) === 'whatsapp_qr';
+    try {
     let blob = modoHd ? await (porPuente ? comprimeHdPuente(a.archivo) : comprimeHd(a.archivo)) : await comprimeNormal(a.archivo);
     // WhatsApp Cloud API solo acepta JPEG y PNG como imagen. Una WebP pequeña pasaba sin
     // recomprimir y Meta rechazaba el mensaje: asi salian los vestidos del catalogo, que la
@@ -8788,7 +8797,11 @@ async function recalculaColaAhora(){
     // Baileys genera la suya al enviar si la PC tiene sharp; esta es el respaldo.
     const vistas = await vistasDe(blob);
     a.thumb = vistas.thumb; a.vista = vistas.vista;
-    a.hd = modoHd;
+    a.hd = modoHd; a.error = '';
+    } catch (error) {
+      a.estado = 'error'; a.error = error?.message || 'No se pudo preparar la foto';
+      a.datos = '';
+    }
   }
   pintaCola();
 }
@@ -8875,6 +8888,8 @@ async function subeEnTrozos(a){
 }
 // Lo que lleva el envio de un adjunto: el base64 de siempre, o la referencia a la subida por trozos si es grande.
 async function cuerpoDeAdjunto(a){
+  if (a.error) return { ok:false, error:a.error };
+  if (!a.grande && !a.datos) return { ok:false, error:'El archivo todavía no está preparado. Vuelve a adjuntarlo.' };
   if (!a.grande) return { ok:true, cuerpo:{ media_b64: a.datos } };
   return subeEnTrozos(a);
 }
@@ -8892,8 +8907,9 @@ function cargaImagen(file){
     const url = URL.createObjectURL(file);
     // Se suelta el enlace en cuanto la imagen cargo (o fallo): antes cada foto adjuntada dejaba el archivo entero en memoria
     // hasta cerrar la pestaña. La imagen ya decodificada sigue sirviendo para dibujarla en un canvas.
-    i.onload = () => { URL.revokeObjectURL(url); res(i); };
-    i.onerror = () => { URL.revokeObjectURL(url); rej(new Error('no se pudo abrir la imagen')); };
+    const timer = setTimeout(() => { i.src = ''; URL.revokeObjectURL(url); rej(new Error('La foto tardó demasiado en abrir. Puedes enviarla como documento original.')); }, 30000);
+    i.onload = () => { clearTimeout(timer); URL.revokeObjectURL(url); res(i); };
+    i.onerror = () => { clearTimeout(timer); URL.revokeObjectURL(url); rej(new Error('No se pudo abrir la imagen. Puedes enviarla como documento original.')); };
     i.src = url;
   });
 }
@@ -8915,14 +8931,14 @@ const LADO_HD_PUENTE = 4096;
 async function comprimeHd(file, tope = TOPE_FIABLE, ladoMax = 2560){
   if (!file.type?.startsWith('image/')) return file;
   try {
+    const img = await cargaImagen(file);
     // Ya cabe y no se pasa de lado: intacta, sin tocar un pixel.
     if (/jpe?g/i.test(file.type) && file.size <= tope) {
       if (ladoMax >= LADO_HD_PUENTE) {
-        const img0 = await cargaImagen(file);
+        const img0 = img;
         if (Math.max(img0.width, img0.height) <= ladoMax) return file;
       } else return file;
     }
-    const img = await cargaImagen(file);
     const mayor = Math.max(img.width, img.height);
     // Antes se probaban hasta diez tamaños uno tras otro, cada uno una codificacion completa (con 4096 px, segundos). Ahora
     // el siguiente intento se calcula con lo que pesó el anterior (el peso baja con el area, o sea con el lado al cuadrado).
@@ -8934,7 +8950,7 @@ async function comprimeHd(file, tope = TOPE_FIABLE, ladoMax = 2560){
       lado = Math.floor(lado * Math.min(0.9, Math.sqrt(tope / b.size) * 0.97));
     }
     return (await aJpeg(img, 1600, 0.85)) || file;
-  } catch (e) { return file; }
+  } catch (e) { throw new Error(e?.message || 'No se pudo preparar la imagen HD'); }
 }
 
 // La foto en HD para la linea del puente: chats de WhatsApp Web y Estados.
@@ -9040,7 +9056,8 @@ async function encola(files, tipo){
   for (const f of files) {
     const mime = mimeDeArchivo(f);
     // Un video por el API oficial que no se reproduciria (MOV de iPhone, mas de 16 MB) sale como documento, no se pierde.
-    const tipoF = tipo === 'video' && !porPuente && !videoReproducibleMeta(mime, f.size) ? 'document' : tipo;
+    const tipoF = (tipo === 'video' && ((!porPuente && !videoReproducibleMeta(mime, f.size)) || (porPuente && f.size > 60 * 1024 * 1024)))
+      || (tipo === 'image' && f.size > 100 * 1024 * 1024) ? 'document' : tipo;
     if (tipoF !== tipo) comoArchivo++;
     const tope = LIMITE_MB(porPuente, tipoF);
     // HEIC (fotos de iPhone): Safari y Edge con la extension de video HEVC la abren y se convierte a JPEG al enviar; Chrome no.
@@ -9060,8 +9077,8 @@ async function encola(files, tipo){
   await recalculaCola();
   if (omitidos.length) avisa(omitidos.length === 1 ? 'Un archivo se omitió' : omitidos.length + ' archivos se omitieron',
     omitidos.slice(0, 3).join(' · ') + (omitidos.length > 3 ? ' · …' : ''));
-  if (comoArchivo) avisa(comoArchivo === 1 ? 'Ese video saldrá como archivo' : comoArchivo + ' videos saldrán como archivo',
-    'WhatsApp oficial solo reproduce MP4 o 3GP de hasta 16 MB; el resto llega como documento (hasta 100 MB). Por WhatsApp Web sí se reproducen.');
+  if (comoArchivo) avisa(comoArchivo === 1 ? 'Saldrá como archivo original' : comoArchivo + ' archivos conservarán su calidad original',
+    'Los archivos grandes se envían como documento sin compresión. Máximo de 2 GB por WhatsApp Web y 100 MB por el número oficial.');
   pintaCola();
 }
 // Lo que se elige con «fotos o videos», se pega o se suelta: cada cosa por su camino. Devuelve si habia algo que adjuntar.

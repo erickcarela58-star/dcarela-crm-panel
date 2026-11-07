@@ -1,7 +1,7 @@
 {
-  "version": "2026-11-07-crm-release-v415-revision-semanal",
+  "version": "2026-11-06-crm-release-v416-envios-hd",
   "channel": "crm",
-  "released_at": "2026-11-07T02:54:38Z",
-  "summary": "Rechazo de la revisión semanal exacta desde el Planificador y WhatsApp con sesión abierta.",
-  "requiere_puente": "2026-11-06-vision-navidad-medios-v69"
+  "released_at": "2026-11-07T03:22:32.364523+00:00",
+  "summary": "Archivos originales de hasta 2 GB por WhatsApp Web y recuperación del envío cuando falla la preparación.",
+  "requiere_puente": "2026-11-06-documentos-grandes-v70"
 }
