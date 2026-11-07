@@ -20752,7 +20752,7 @@ async function revisaSemanaContenido(b,idRevision=null){
       +r.imagenes.map((x,i)=>'<details open><summary>'+esc((typeof CONT_FORMATOS==='object'&&CONT_FORMATOS[x.formato])||x.formato)+' · '+x.cantidad+(x.cantidad===1?' creativo':' creativos')+'</summary><a download="revision-semanal-'+(i+1)+'.jpg" href="data:image/jpeg;base64,'+x.jpeg_b64+'">Descargar imagen completa</a><img alt="Resumen '+esc(x.formato)+'" src="data:image/jpeg;base64,'+x.jpeg_b64+'" style="width:100%;height:auto"></details>').join('')
       +'<details><summary>Textos y destinos completos</summary>'+Object.values(r.revision.formatos).flat().map(p=>'<article class="caja"><b>'+esc(p.fecha+' '+p.hora+' · '+p.destinos.map(d=>d.canal).join(', '))+'</b><p style="white-space:pre-wrap">'+esc(p.texto)+'</p></article>').join('')+'</details>'
       +'<label style="display:grid;gap:8px;margin-top:16px">Qué quieres cambiar<textarea data-revision-nota maxlength="1000" style="width:100%;min-height:88px"></textarea></label>'
-      +'<p data-revision-estado role="status"></p><div class="acciones"><button type="button" class="btn-solido" data-revision-decidir="enviar">Enviar al WhatsApp oficial</button><button type="button" class="btn-solido" data-revision-decidir="aprobar">Aprobar este conjunto</button><button type="button" class="btn-linea" data-revision-decidir="cambios">Pedir cambios</button></div>');
+      +'<p data-revision-estado role="status"></p><div class="acciones"><button type="button" class="btn-solido" data-revision-decidir="enviar">Enviar al WhatsApp oficial</button><button type="button" class="btn-solido" data-revision-decidir="aprobar">Aprobar este conjunto</button><button type="button" class="btn-linea" data-revision-decidir="cambios">Pedir cambios</button><button type="button" class="btn-peligro" data-revision-decidir="rechazar">Rechazar este conjunto</button></div>');
     Object.assign(m.firstElementChild.style,{width:'min(1100px,94vw)',maxWidth:'1100px',padding:'24px',maxHeight:'90vh',overflow:'auto'});
     if(r.revision.estado!=='pendiente'){m.querySelectorAll('[data-revision-decidir]').forEach(x=>x.disabled=true);m.querySelector('[data-revision-estado]').textContent='Esta revisión ya está '+r.revision.estado;}
     let enCurso=false;
@@ -20769,8 +20769,10 @@ async function revisaSemanaContenido(b,idRevision=null){
             :rr.error||'No se confirmó el envío. Abre de nuevo la revisión para consultar; no repitas por otro número.';
           return;
         }
-        if(!rr.ok||!['aprobada','cambios'].includes(rr.estado)){salida.textContent=rr.error||'No se confirmó la decisión. Consulta de nuevo la revisión.';return;}
-        salida.textContent=rr.estado==='aprobada'?'Conjunto aprobado para sus horarios.':'Cambios solicitados; las piezas siguen sin aprobar.';
+        const mensaje = { aprobada:'Conjunto aprobado para sus horarios.', cambios:'Cambios solicitados. Las piezas siguen sin aprobar.',
+          rechazada:'Conjunto rechazado. Las piezas quedaron descartadas.' }[rr.estado];
+        if (!rr.ok || !mensaje) { salida.textContent=rr.error||'No se confirmó la decisión. Consulta de nuevo la revisión.';return; }
+        salida.textContent=mensaje;
         await cargaContenido();
       }catch(e){salida.textContent='No se confirmó la decisión. Abre de nuevo la revisión antes de reintentar.';}
       finally{enCurso=false;}
