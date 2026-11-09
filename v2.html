@@ -3399,7 +3399,7 @@ input[type="checkbox"],input[type="radio"]{accent-color:var(--accent)}
   .e238-chips{display:flex;gap:6px;padding:0 14px 10px;overflow-x:auto;scrollbar-width:none}
   .e238-chip{flex:none;height:30px;padding:0 12px;border-radius:9px;border:1px solid var(--e-borde);background:var(--e-card);color:var(--e-txt);font:inherit;font-size:12px;font-weight:600;cursor:pointer}
   .e238-chip.on{border-color:var(--e-acc);color:var(--e-acc);background:var(--e-suave)}
-  .e238-tpls{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:0 14px 14px}
+  .e238-tpls{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:0 14px 14px;max-height:min(520px,62vh);overflow-y:auto;overscroll-behavior:contain;align-content:start;scrollbar-width:thin}
   .e238-tpl{position:relative;display:block;padding:0;border:2px solid transparent;border-radius:12px;overflow:hidden;background:var(--e-lienzo);cursor:pointer;aspect-ratio:4/5}
   .e238-tpl img{width:100%;height:100%;object-fit:cover;display:block}
   .e238-tpl.on{border-color:#ec4899;box-shadow:0 0 0 3px rgba(236,72,153,.18)}
@@ -21974,7 +21974,7 @@ function estudioV238(m,api){
   const campoInicialMesas=()=>!!f.elements?.mesas_editor_json?.value;
   const compactoInicial=()=>{try{return win.localStorage?.getItem('dcarela-editor-compacto-v246')==='1';}catch{return false;}};
   const S={sel:null,zoom:CONT.mesasEditorV243||campoInicialMesas()?'documento':'ajustar',r:null,pedido:null,ocupado:true,error:'',layout:'album',layoutAplicado:null,elegidas:[],recorte:null,intercambio:null,
-     rejilla:false,tab:'editar',verTodas:false,filtro:'todas',bib:'categoria',comparando:false,arrastrando:false,transformando245:false,textoLibreDibujar:false,multi:[],minis:0,compacto:compactoInicial()};
+     rejilla:false,tab:'editar',verTodas:true,filtro:'todas',bib:'categoria',comparando:false,arrastrando:false,transformando245:false,textoLibreDibujar:false,multi:[],minis:0,compacto:compactoInicial()};
   const el=(tag,cls,html)=>{const n=doc.createElement(tag);if(cls)n.className=cls;if(html!=null)n.innerHTML=html;return n;};
   const campo=n=>f.elements?.[n]||null;
   const leer=n=>campo(n)?.value??'';
@@ -23072,6 +23072,7 @@ function estudioV238(m,api){
   function estadoCapa245(sel){return estadosCapas245()[claveCapaV245(sel)]||{};}
   function guardaNombreCapa245(sel,nombre){const d=nombresCapas245(),k=claveCapaV245(sel),v=String(nombre||'').replace(/[<>]/g,'').trim().slice(0,60);if(v)d[k]=v;else delete d[k];const forms=formas243(),c=coleccion()||virtual(),x=itemCapa245(sel,forms,c);if(x&&v)x.nombre=v;ponCampoV238(campo('nombres_capas_json'),JSON.stringify(d));if(sel.tipo==='forma'&&x)ponCampoV238(campo('formas_editor_json'),JSON.stringify(forms));if(sel.tipo==='foto'&&x)api.escribeCollage(c);cambioFormulario(150);}
   function guardaEstadoCapa245(sel,patch){const d=estadosCapas245(),k=claveCapaV245(sel),prev=d[k]||{};d[k]={bloqueada:patch.bloqueada===undefined?!!prev.bloqueada:!!patch.bloqueada,oculta:patch.oculta===undefined?!!prev.oculta:!!patch.oculta};if(!d[k].bloqueada&&!d[k].oculta)delete d[k];ponCampoV238(campo('capas_estado_json'),JSON.stringify(d));}
+  const CAPAS_DISENO_ELIMINABLES=['rol','banda','sujetoBanda','velos','decoracion','resplandor'];
   function capaOperable245(sel){return sel?.tipo==='forma'||sel?.tipo==='foto'||sel?.tipo==='textoLibre';}
   function seleccionaCapa245(sel,ev={}){
     const multi=!!(ev.shiftKey||ev.ctrlKey||ev.metaKey)&&capaOperable245(sel);
@@ -23097,6 +23098,7 @@ function estudioV238(m,api){
   function capasOperablesSeleccionadas245(){const xs=S.multi.length?S.multi:(capaOperable245(S.sel)?[S.sel]:[]);return xs.filter(capaOperable245).filter(s=>itemCapa245(s));}
   function escribeItemCapa245(sel,patch,forms,c){const x=itemCapa245(sel,forms,c);if(!x)return;if(sel.tipo==='forma'||sel.tipo==='textoLibre')Object.assign(x,patch);else Object.assign(x,patch.marco?{marco:{...x.marco,...patch.marco}}:patch);}
   function modificaCapas245(a){
+    if(a==='eliminar'&&!capasOperablesSeleccionadas245().length&&S.sel&&CAPAS_DISENO_ELIMINABLES.includes(S.sel.tipo)){api.guardaHistorial();alternaCapa245(S.sel,'ocultar');avisaV238('Capa oculta. Vuelve a mostrarla con el ojo del panel Capas.');pintaInspector();return;}
     if(a==='frente'||a==='fondo')return reordenaCapaGlobal245(a==='frente'?'capa-frente':'capa-fondo');
     const sels=capasOperablesSeleccionadas245();if(!sels.length)return avisaV238('Selecciona una o más formas o fotos en Capas.');
      const forms=formas243(),texts=typeof textosLibres245==='function'?textosLibres245():[],c=coleccion()||virtual(),escribeItem=(sel,patch)=>escribeItemCapa245(sel,patch,forms,c);if(!c&&sels.some(x=>x.tipo==='foto'))return;
@@ -23533,6 +23535,8 @@ function estudioV238(m,api){
     if(ev.key==='Escape'){S.recorte=null;S.intercambio=null;S.reemplazo=null;selecciona(null);dibuja();return;}
     // Supr / Retroceso con varias capas elegidas: las quita todas (formas, textos libres y fotos que no son la principal).
     if((ev.key==='Delete'||ev.key==='Backspace')&&S.multi.length>1){ev.preventDefault();api.guardaHistorial();modificaCapas245('eliminar');return;}
+    // 09/11/2026: las capas del diseño (titular, subtítulo, botón, velos, banda…) no son formas ni fotos: Supr no hacía nada. Se ocultan, igual que con el ojo.
+    if((ev.key==='Delete'||ev.key==='Backspace')&&CAPAS_DISENO_ELIMINABLES.includes(S.sel.tipo)){ev.preventDefault();api.guardaHistorial();alternaCapa245(S.sel,'ocultar');avisaV238('Capa oculta. Vuelve a mostrarla con el ojo del panel Capas.');pintaInspector();return;}
     if(S.sel.tipo==='textoLibre'){const a=textosLibres245(),t=a.find(x=>x.id===S.sel.id);if(!t)return;
       if(ev.key==='Delete'||ev.key==='Backspace'){ev.preventDefault();api.guardaHistorial();a.splice(a.indexOf(t),1);S.sel=null;escribeTextosLibres245(a);pintaInspector();return;}
       const d={ArrowLeft:[-1,0],ArrowRight:[1,0],ArrowUp:[0,-1],ArrowDown:[0,1]}[ev.key];
