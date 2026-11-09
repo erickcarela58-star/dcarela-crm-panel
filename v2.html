@@ -17880,7 +17880,7 @@ async function pfPintaGaleria(){
   const resumen = Object.keys(nombres).map(c => esc(nombres[c]) + ': <b>' + Number((r.conteo || {})[c] || 0) + '</b>').join(' · ');
   g.innerHTML = '<div class="plan-seccion-cab"><h3>Fotos subidas'+(categoria?' · '+esc(nombres[categoria] || categoria):'')+'</h3><span class="cont-sub">'+items.length+' archivos</span></div><details class="plan-upload-check"><summary>Ver todas las categorías</summary><p>' + resumen + '</p></details>'
     + (privado ? '<p><a class="btn-sec" href="https://dcarelacompufoto.com/navidad/" target="_blank" rel="noopener noreferrer">Ver los 22 combos navideños</a> <a class="btn-linea" href="./catalogos/navidad-2026.pdf" target="_blank" rel="noopener noreferrer">Abrir PDF de Navidad</a> <button type="button" class="btn-linea" id="pfSolicitudesNavidad">Ver solicitudes web</button></p><div id="pfSolicitudesNavidadLista" aria-live="polite"></div>' : '')
-    + (privado && items.some(f => f.original) ? '<form id="pfNavidad" class="cont-form"><p>Elige hasta 12 originales y la plantilla del catálogo. Se conserva esa plantilla en publicación, historia y cuadrado; nada se publica sin aprobación.</p><label>Plantilla del flyer<select name="estilo_id" required>' + opcionesPlantillaNavidad() + '</select></label><div class="fila"><label>Mes de campaña <input type="month" name="mes" required value="' + esc(contMesNavidad()) + '"></label><button type="submit" class="btn-solido">Preparar lote navideño</button></div></form>' : '')
+    + (privado && items.some(f => f.original) ? '<form id="pfNavidad" class="cont-form"><p>Elige hasta 12 originales y la plantilla del catálogo. Se conserva esa plantilla en publicación, historia y cuadrado; nada se publica sin aprobación.</p><label>Plantilla del flyer<select name="estilo_id" required>' + opcionesPlantillaNavidad() + '</select></label><label>Mensaje<select name="oferta_navidad"><option value="">Mensajes navideños generales</option><option value="marketplace">Oferta 15 % con depósito antes del 30 (Marketplace)</option><option value="meta">Oferta 15 % con depósito antes del 30 (Meta, otro enfoque)</option></select></label><div class="fila"><label>Mes de campaña <input type="month" name="mes" required value="' + esc(contMesNavidad()) + '"></label><button type="submit" class="btn-solido">Preparar lote navideño</button></div></form>' : '')
     + (items.length ? '<div class="pf-miniaturas">' + items.map(f =>
       '<figure class="pf-mini' + (f.estado === 'oculta' ? ' oculta' : '') + '" data-id="' + esc(f.id) + '">'
       + (privado ? (miniaturaMensaje({media_thumb_b64:f.miniatura}) ? '<img loading="lazy" alt="Original del set" src="' + esc(f.miniatura) + '">' : '') : '<img loading="lazy" alt="' + esc(nombres[f.categoria] || f.categoria) + '" src="' + PORTAFOLIO_URL + '?img=' + encodeURIComponent(f.id) + '">')
@@ -21265,7 +21265,7 @@ async function generaLoteNavidad(form){
   boton.disabled = true;
   try {
     const r = await llamaCont({action:'contenidoTarea', operation:'crear', idempotency_key:crypto.randomUUID(),
-      payload:{action:'contenidoGenera', campana_navidad:true, fotos_navidad:fotos, mes,estilo_id:estiloId}});
+      payload:{action:'contenidoGenera', campana_navidad:true, fotos_navidad:fotos, mes,estilo_id:estiloId, ...(datos.get('oferta_navidad') ? {oferta_navidad:datos.get('oferta_navidad')} : {})}});
     if (!r.ok || !r.tarea) return avisa('No se pudo preparar el lote', r.error);
     CONT.tarea = r.tarea;
     guardaTareaContenido();
