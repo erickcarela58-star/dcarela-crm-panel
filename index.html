@@ -22609,10 +22609,10 @@ function estudioV238(m,api){
     // Con una sola foto no hay con quién intercambiar (antes quedaba esperando sin salida): se elige en la Biblioteca la que va en su lugar.
     if(a==='intercambiar'){if(((coleccion()||virtual())?.fotos||[]).length<2){S.reemplazo=slot;S.intercambio=null;if(root.classList.contains('e238-biblioteca-plegada'))$q('[data-e238="biblioteca"]')?.click();S.bib='categoria';pintaBiblioteca();pintaEstado();return;}S.intercambio=slot;pintaEstado();return;}
     if(a==='quitar')return quitaFoto(slot);
+    // El frente y el fondo son de toda la pila; `z` solo ordena fotos entre sí.
+    if(a==='frente'||a==='atras')return reordenaCapaGlobal245(a==='frente'?'capa-frente':'capa-fondo',{tipo:'foto',slot});
     const c=coleccion()||materializa();if(!c)return;const fo=c.fotos.find(x=>x.slot===slot);if(!fo)return;
-    if(a==='frente')fo.z=Math.max(...c.fotos.map(x=>x.z||0))+1;
-    else if(a==='atras')fo.z=Math.min(...c.fotos.map(x=>x.z||0))-1;
-    else if(a==='bloquear')fo.bloqueada=!fo.bloqueada;
+    if(a==='bloquear')fo.bloqueada=!fo.bloqueada;
     else if(a==='voltear')fo.voltear=!fo.voltear;
     else if(a==='auto')fo.encuadre=null;
     else if(a==='principal'){api.ponFotoPrincipal(fo.original_id);for(const x of c.fotos)x.rol=x===fo?'principal':'secundaria';}
@@ -22990,7 +22990,7 @@ function estudioV238(m,api){
     const b=ev.target.closest('[data-forma-tipo],[data-forma-sel],[data-forma-accion],[data-sujeto-accion]');if(!b)return;
      if(b.dataset.formaTipo){S.formaDibujar=b.dataset.formaTipo;S.textoLibreDibujar=false;S.pincelModo=null;S.gradDibujar=false;S.sel={tipo:'formas'};dibuja();pintaInspector();avisaV238('Arrastra sobre el lienzo para crear la forma.');return;}
     if(b.dataset.formaSel){selecciona({tipo:'forma',id:b.dataset.formaSel});return;}
-    if(b.dataset.formaAccion){let a=formas243();const i=a.findIndex(x=>x.id===S.sel?.id),s=a[i];if(!s)return;const k=b.dataset.formaAccion;api.guardaHistorial();if(k==='duplicar'){const p={...s,id:'f'+Date.now(),x:s.x+3,y:s.y+3,nombre:s.nombre+' copia'};a.push(p);S.sel={tipo:'forma',id:p.id};}if(k==='quitar'){a.splice(i,1);S.sel={tipo:'formas'};}if(k==='frente'){a.splice(i,1);a.push(s);}if(k==='fondo'){a.splice(i,1);a.unshift(s);}if(k==='centrar'){s.x=(100-s.w)/2;s.y=(100-s.h)/2;}if(k==='sinrelleno')s.relleno='none';if(k==='sintrazo')s.trazo='none';escribeFormas243(a);pintaInspector();return;}
+    if(b.dataset.formaAccion){let a=formas243();const i=a.findIndex(x=>x.id===S.sel?.id),s=a[i];if(!s)return;const k=b.dataset.formaAccion;api.guardaHistorial();if(k==='frente'||k==='fondo'){reordenaCapaGlobal245(k==='frente'?'capa-frente':'capa-fondo',{tipo:'forma',id:s.id});return;}if(k==='duplicar'){const p={...s,id:'f'+Date.now(),x:s.x+3,y:s.y+3,nombre:s.nombre+' copia'};a.push(p);S.sel={tipo:'forma',id:p.id};}if(k==='quitar'){a.splice(i,1);S.sel={tipo:'formas'};}if(k==='centrar'){s.x=(100-s.w)/2;s.y=(100-s.h)/2;}if(k==='sinrelleno')s.relleno='none';if(k==='sintrazo')s.trazo='none';escribeFormas243(a);pintaInspector();return;}
     const k=b.dataset.sujetoAccion;
     if(['sumar','quitar','terminar'].includes(k)){S.pincelModo=k==='terminar'?null:k;S.formaDibujar=null;S.gradDibujar=false;dibuja();pintaSujeto243();return;}
     if(k==='limpiar'){const s=sujeto243();s.trazos=[];ponCampoV238(campo('sujeto_editor_json'),JSON.stringify(s));cambioFormulario(100);return;}
@@ -23097,16 +23097,13 @@ function estudioV238(m,api){
   function capasOperablesSeleccionadas245(){const xs=S.multi.length?S.multi:(capaOperable245(S.sel)?[S.sel]:[]);return xs.filter(capaOperable245).filter(s=>itemCapa245(s));}
   function escribeItemCapa245(sel,patch,forms,c){const x=itemCapa245(sel,forms,c);if(!x)return;if(sel.tipo==='forma'||sel.tipo==='textoLibre')Object.assign(x,patch);else Object.assign(x,patch.marco?{marco:{...x.marco,...patch.marco}}:patch);}
   function modificaCapas245(a){
+    if(a==='frente'||a==='fondo')return reordenaCapaGlobal245(a==='frente'?'capa-frente':'capa-fondo');
     const sels=capasOperablesSeleccionadas245();if(!sels.length)return avisaV238('Selecciona una o más formas o fotos en Capas.');
      const forms=formas243(),texts=typeof textosLibres245==='function'?textosLibres245():[],c=coleccion()||virtual(),escribeItem=(sel,patch)=>escribeItemCapa245(sel,patch,forms,c);if(!c&&sels.some(x=>x.tipo==='foto'))return;
     const ordenFotos=xs=>xs.slice().sort((a,b)=>(Number(a.z)||0)-(Number(b.z)||0));
      const claves=new Set(sels.map(claveCapaV245)),ordenadas=[...forms.map(x=>({tipo:'forma',id:x.id})),...texts.map(x=>({tipo:'textoLibre',id:x.id})),...ordenFotos(c?.fotos||[]).map(x=>({tipo:'foto',slot:x.slot}))].filter(s=>claves.has(claveCapaV245(s))),copias=[];
     if(a==='agrupar'||a==='desagrupar'){const g=a==='agrupar'?'g'+Date.now()+'-'+Math.random().toString(36).slice(2,6):'';for(const s of sels){const x=itemCapa245(s,forms,c);if(x)x.grupo=g;}}
     else if(a==='ocultar'||a==='mostrar'||a==='bloquear'||a==='desbloquear')for(const s of sels){const x=itemCapa245(s,forms,c),v=a==='ocultar'||a==='bloquear';x[(a==='ocultar'||a==='mostrar')?'oculta':'bloqueada']=v;}
-    else if(a==='frente'||a==='fondo'){
-       const reordena=(xs,tipo)=>{const elegidas=xs.filter(x=>claves.has(claveCapaV245(tipo==='foto'?{tipo,slot:x.slot}:{tipo,id:x.id}))),otras=xs.filter(x=>!elegidas.includes(x));return a==='frente'?[...otras,...elegidas]:[...elegidas,...otras];};
-       forms.splice(0,forms.length,...reordena(forms,'forma'));texts.splice(0,texts.length,...reordena(texts,'textoLibre'));if(c)reordena(ordenFotos(c.fotos),'foto').forEach((x,i)=>{x.z=i;});
-    }
     else if(a==='duplicar'){
        if(sels.some(s=>s.tipo==='foto'))return avisaV238('Cada foto del mosaico debe usar una original distinta. Añade otra desde la biblioteca; puedes duplicar formas y textos seleccionándolos aparte.');
        if(forms.length+sels.filter(s=>s.tipo==='forma').length>80||texts.length+sels.filter(s=>s.tipo==='textoLibre').length>40||(c?.fotos.length||0)+sels.filter(s=>s.tipo==='foto').length>9)return avisaV238('La copia supera el límite de 80 formas, 40 textos o 9 fotos del formato. No se duplicó ninguna capa.');
@@ -23141,7 +23138,7 @@ function estudioV238(m,api){
      const su=sujeto243();if(su?.ruta||(mismoFormato()&&S.r?.capas_editor?.sujeto)){lista.push({sel:{tipo:'sujeto'},ico:S.sujetoVista?'<img src="'+esc(S.sujetoVista)+'" alt="">':I.sujeto||I.foto,fallback:'Sujeto · enlazado a la foto',enlace:true});lista.sort((a,b)=>(pos.get(claveCapaV245(a.sel))??9999)-(pos.get(claveCapaV245(b.sel))??9999));}
     for(const tipo of ['velos','decoracion','resplandor'])if(mismoFormato()&&S.r?.capas_editor?.[tipo])lista.push({sel:{tipo},ico:I.fondo,fallback:NOMBRES_PLANTILLA386[tipo]});lista.sort((a,b)=>(pos.get(claveCapaV245(a.sel))??9999)-(pos.get(claveCapaV245(b.sel))??9999));
     return lista;}
-  function reordenaCapaGlobal245(a){const activas=new Set(ordenCompletoV380()),items=itemsCapas245().filter(x=>activas.has(claveCapaV245(x.sel))),seleccionadas=S.multi.length?S.multi:(S.sel?[S.sel]:[]),claves=new Set(seleccionadas.map(claveCapaV245)),orden=items.map(x=>claveCapaV245(x.sel)),elegidas=orden.filter(k=>claves.has(k));
+  function reordenaCapaGlobal245(a,seleccionForzada=null){const activas=new Set(ordenCompletoV380()),items=itemsCapas245().filter(x=>activas.has(claveCapaV245(x.sel))),seleccionadas=seleccionForzada?[seleccionForzada]:(S.multi.length?S.multi:(S.sel?[S.sel]:[])),claves=new Set(seleccionadas.map(claveCapaV245)),orden=items.map(x=>claveCapaV245(x.sel)),elegidas=orden.filter(k=>claves.has(k));
     if(!elegidas.length)return avisaV238('Selecciona una capa en el lienzo o en la lista.');
     let nuevo=orden.slice();if(a==='capa-frente')nuevo=[...elegidas,...orden.filter(k=>!claves.has(k))];
     else if(a==='capa-fondo')nuevo=[...orden.filter(k=>!claves.has(k)),...elegidas];
