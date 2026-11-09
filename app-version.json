@@ -1,7 +1,7 @@
 {
-  "version": "2026-11-09-crm-release-v419-ia-local-segura",
+  "version": "2026-11-09-crm-release-v420-categoria-marketplace",
   "channel": "crm",
-  "released_at": "2026-11-09T05:25:17.928Z",
-  "summary": "Planificador y editor identifican Ollama; tendencias locales con calendario validado, sin fechas inventadas ni ideas duplicadas.",
+  "released_at": "2026-11-09T09:11:51.000Z",
+  "summary": "Publicar en Marketplace: selector de categoría de Facebook (Hogar por defecto).",
   "requiere_puente": "2026-11-06-documentos-grandes-v70"
 }
