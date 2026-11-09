@@ -1,7 +1,7 @@
 {
-  "version": "2026-11-09-crm-release-v423-oferta-navidad-supr",
+  "version": "2026-11-09-crm-release-v425-plantillas-visibles",
   "channel": "crm",
   "released_at": "2026-11-09T17:30:00.000Z",
-  "summary": "Estados sin filtros, oferta navideña 15 % en el lote, y Supr borra la capa tras usar controles.",
+  "summary": "Editor: la lista de plantillas muestra todas y se desplaza; Supr oculta capas del diseño.",
   "requiere_puente": "2026-11-06-documentos-grandes-v70"
 }
