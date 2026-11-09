@@ -1,7 +1,7 @@
 {
-  "version": "2026-11-07-crm-release-v418-xv-etiquetas",
+  "version": "2026-11-09-crm-release-v419-ia-local-segura",
   "channel": "crm",
-  "released_at": "2026-11-07T21:30:05.0698462Z",
-  "summary": "XV muestra contenido completo y extras de sesión; contador sin leer junto a la hora y etiquetas compactas con iconos.",
+  "released_at": "2026-11-09T05:25:17.928Z",
+  "summary": "Planificador y editor identifican Ollama; tendencias locales con calendario validado, sin fechas inventadas ni ideas duplicadas.",
   "requiere_puente": "2026-11-06-documentos-grandes-v70"
 }
