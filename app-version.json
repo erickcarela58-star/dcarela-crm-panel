@@ -1,7 +1,7 @@
 {
-  "version": "2026-11-09-crm-release-v421-orden-global-capas",
+  "version": "2026-11-09-crm-release-v422-estados-sin-filtros",
   "channel": "crm",
-  "released_at": "2026-11-09T15:59:11.000Z",
-  "summary": "Editor: frente y fondo de fotos, formas y selección múltiple respetan el orden global de capas.",
+  "released_at": "2026-11-09T17:30:00.000Z",
+  "summary": "Estados: se quitaron los filtros de movimiento y de linea; avisos de corte con respaldo por plantilla.",
   "requiere_puente": "2026-11-06-documentos-grandes-v70"
 }
