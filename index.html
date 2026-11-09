@@ -17880,7 +17880,7 @@ async function pfPintaGaleria(){
   const resumen = Object.keys(nombres).map(c => esc(nombres[c]) + ': <b>' + Number((r.conteo || {})[c] || 0) + '</b>').join(' · ');
   g.innerHTML = '<div class="plan-seccion-cab"><h3>Fotos subidas'+(categoria?' · '+esc(nombres[categoria] || categoria):'')+'</h3><span class="cont-sub">'+items.length+' archivos</span></div><details class="plan-upload-check"><summary>Ver todas las categorías</summary><p>' + resumen + '</p></details>'
     + (privado ? '<p><a class="btn-sec" href="https://dcarelacompufoto.com/navidad/" target="_blank" rel="noopener noreferrer">Ver los 22 combos navideños</a> <a class="btn-linea" href="./catalogos/navidad-2026.pdf" target="_blank" rel="noopener noreferrer">Abrir PDF de Navidad</a> <button type="button" class="btn-linea" id="pfSolicitudesNavidad">Ver solicitudes web</button></p><div id="pfSolicitudesNavidadLista" aria-live="polite"></div>' : '')
-    + (privado && items.some(f => f.original) ? '<form id="pfNavidad" class="cont-form"><p>Elige hasta 12 originales y la plantilla del catálogo. Se conserva esa plantilla en publicación, historia y cuadrado; nada se publica sin aprobación.</p><label>Plantilla del flyer<select name="estilo_id" required>' + opcionesPlantillaNavidad() + '</select></label><div class="fila"><label>Mes de campaña <input type="month" name="mes" required value="' + esc(contMesNavidad()) + '"></label><button type="submit" class="btn-solido">Preparar lote navideño</button></div></form>' : '')
+    + (privado && items.some(f => f.original) ? '<form id="pfNavidad" class="cont-form"><p>Elige hasta 12 originales y la plantilla del catálogo. Se conserva esa plantilla en publicación, historia y cuadrado; nada se publica sin aprobación.</p><label>Plantilla del flyer<select name="estilo_id" required>' + opcionesPlantillaNavidad() + '</select></label><label>Mensaje<select name="oferta_navidad"><option value="">Mensajes navideños generales</option><option value="marketplace">Oferta 15 % con depósito antes del 30 (Marketplace)</option><option value="meta">Oferta 15 % con depósito antes del 30 (Meta, otro enfoque)</option></select></label><div class="fila"><label>Mes de campaña <input type="month" name="mes" required value="' + esc(contMesNavidad()) + '"></label><button type="submit" class="btn-solido">Preparar lote navideño</button></div></form>' : '')
     + (items.length ? '<div class="pf-miniaturas">' + items.map(f =>
       '<figure class="pf-mini' + (f.estado === 'oculta' ? ' oculta' : '') + '" data-id="' + esc(f.id) + '">'
       + (privado ? (miniaturaMensaje({media_thumb_b64:f.miniatura}) ? '<img loading="lazy" alt="Original del set" src="' + esc(f.miniatura) + '">' : '') : '<img loading="lazy" alt="' + esc(nombres[f.categoria] || f.categoria) + '" src="' + PORTAFOLIO_URL + '?img=' + encodeURIComponent(f.id) + '">')
@@ -21265,7 +21265,7 @@ async function generaLoteNavidad(form){
   boton.disabled = true;
   try {
     const r = await llamaCont({action:'contenidoTarea', operation:'crear', idempotency_key:crypto.randomUUID(),
-      payload:{action:'contenidoGenera', campana_navidad:true, fotos_navidad:fotos, mes,estilo_id:estiloId}});
+      payload:{action:'contenidoGenera', campana_navidad:true, fotos_navidad:fotos, mes,estilo_id:estiloId, ...(datos.get('oferta_navidad') ? {oferta_navidad:datos.get('oferta_navidad')} : {})}});
     if (!r.ok || !r.tarea) return avisa('No se pudo preparar el lote', r.error);
     CONT.tarea = r.tarea;
     guardaTareaContenido();
@@ -23519,7 +23519,7 @@ function estudioV238(m,api){
   const teclas=ev=>{
     if(!root.isConnected||api.cerrado()){doc.removeEventListener('keydown',teclas);return;}
     if(ev.key==='Escape'&&root.classList.contains('e238-enfoque')){ev.preventDefault();root.classList.remove('e238-enfoque');const b=$q('[data-e238="pantalla"]');if(b){b.setAttribute('aria-pressed','false');b.setAttribute('aria-label','Ampliar lienzo');b.title='Ampliar el lienzo y ocultar el menú del CRM';b.querySelector('span').textContent='Ampliar lienzo';}ajustaEspacioV248();programaDibujo();return;}
-    const t=ev.target,escribe=t&&(t.isContentEditable||/^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName));
+    const t=ev.target,escribe=t&&(t.isContentEditable||/^(TEXTAREA|SELECT)$/.test(t.tagName)||(t.tagName==='INPUT'&&!/^(checkbox|radio|range|button|submit|reset|color|file|image)$/i.test(t.type||'')));// 09/11/2026: tras tocar un deslizador, casilla o color, Supr dejaba de borrar la capa porque ese INPUT contaba como «escribiendo».
     if((ev.ctrlKey||ev.metaKey)&&!escribe&&(ev.key==='z'||ev.key==='Z')){ev.preventDefault();if(ev.shiftKey)api.rehacer();else api.deshacer();trasHistorial();return;}
     if((ev.ctrlKey||ev.metaKey)&&!escribe&&(ev.key==='y'||ev.key==='Y')){ev.preventDefault();api.rehacer();trasHistorial();return;}
     // Zoom como Photoshop: Ctrl/⌘ + y − acercan y alejan (hacia el centro), Ctrl/⌘ 0 ajusta a la página y Ctrl/⌘ 1 es el 100 %.
@@ -26984,18 +26984,9 @@ function montaBroadcast(){
     +     '<input id="esFoto" type="file" accept="image/*"></div>'
     +   '<div class="campo"><label>Quién lo ve</label><select id="esQuien">'
     +     '<option value="prueba">Solo mis números (prueba)</option>'
-    +     '<option value="activos">Clientes con movimiento</option>'
     +     '<option value="todos">Todos los clientes</option>'
     +   '</select></div>'
     + '</div>'
-    // Cuanto tiempo atras cuenta como "con movimiento". No es un detalle: la promo de
-    // esta semana tiene sentido para quien escribio esta semana, y empezar por una lista
-    // corta es la forma de estrenar esto sin jugarse el numero a la primera.
-    + '<div class="campo"><label>Movimiento en</label><select id="esDias">'
-    +   '<option value="7">los últimos 7 días</option>'
-    +   '<option value="30">los últimos 30 días</option>'
-    +   '<option value="180" selected>los últimos 180 días</option>'
-    + '</select></div>'
     + '<div id="esPrevia"></div>'
     + '<div class="acciones"><button class="btn-linea" id="esDelPack">Usar la del Pack</button>'
     +   '<button class="btn-linea" id="esVer">Ver a cuántos llega</button>'
@@ -27637,7 +27628,7 @@ function cableaPublicarEstado(){
   $('esVer').onclick = () => esCuenta(false);
   // Cambiar la ventana cambia la cifra que se acaba de leer: se vuelve a contar sola, que
   // es mas seguro que dejar en pantalla un numero que ya no es el de la opcion elegida.
-  $('esDias').onchange = () => esCuenta(true);
+  if ($('esDias')) $('esDias').onchange = () => esCuenta(true);
   $('esFoto').onchange = async () => {
     const f = ($('esFoto').files || [])[0];
     ES_FOTO = f ? { blob:f, nombre:f.name, url:URL.createObjectURL(f) } : null;
