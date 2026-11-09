@@ -20506,6 +20506,10 @@ function abreOrdenMarketplace(id){
     + '<label>Título del producto <input name="titulo" required minlength="4" maxlength="80" value="'+esc(String(flyer?.titular || '').slice(0,80))+'"></label>'
     + '<label>Precio en RD$ <input name="precio" required type="number" min="1" max="99999999" step="1"></label>'
     + '<label>Condición <select name="condicion" required><option value="">Elige</option><option value="nuevo">Nuevo</option><option value="usado">Usado</option></select></label>'
+    + '<label>Categoría en Facebook <select name="categoria">'
+      + ['Hogar','Herramientas','Muebles','Jardinería','Electrodomésticos','Instrumentos musicales','Antigüedades y artículos de colección','Varios']
+        .map((c,i)=>'<option value="'+esc(c)+'"'+(i===0?' selected':'')+'>'+esc(c)+'</option>').join('')
+      + '</select></label>'
     + '<label>Descripción <textarea name="descripcion" required maxlength="1200"></textarea></label>'
     + '<label><input type="checkbox" name="producto_fisico" required> Confirmo que el flyer muestra el artículo físico disponible y que el precio es el de venta.</label>'
     + '<button type="submit" class="btn-solido">Ordenar publicación</button><p role="status"></p></form></div>');
