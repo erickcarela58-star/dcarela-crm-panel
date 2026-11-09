@@ -1,7 +1,7 @@
 {
-  "version": "2026-11-09-crm-release-v422-estados-sin-filtros",
+  "version": "2026-11-09-crm-release-v423-oferta-navidad-supr",
   "channel": "crm",
   "released_at": "2026-11-09T17:30:00.000Z",
-  "summary": "Estados: se quitaron los filtros de movimiento y de linea; avisos de corte con respaldo por plantilla.",
+  "summary": "Estados sin filtros, oferta navideña 15 % en el lote, y Supr borra la capa tras usar controles.",
   "requiere_puente": "2026-11-06-documentos-grandes-v70"
 }
