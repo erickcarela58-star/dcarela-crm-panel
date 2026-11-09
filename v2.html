@@ -23519,7 +23519,7 @@ function estudioV238(m,api){
   const teclas=ev=>{
     if(!root.isConnected||api.cerrado()){doc.removeEventListener('keydown',teclas);return;}
     if(ev.key==='Escape'&&root.classList.contains('e238-enfoque')){ev.preventDefault();root.classList.remove('e238-enfoque');const b=$q('[data-e238="pantalla"]');if(b){b.setAttribute('aria-pressed','false');b.setAttribute('aria-label','Ampliar lienzo');b.title='Ampliar el lienzo y ocultar el menú del CRM';b.querySelector('span').textContent='Ampliar lienzo';}ajustaEspacioV248();programaDibujo();return;}
-    const t=ev.target,escribe=t&&(t.isContentEditable||/^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName));
+    const t=ev.target,escribe=t&&(t.isContentEditable||/^(TEXTAREA|SELECT)$/.test(t.tagName)||(t.tagName==='INPUT'&&!/^(checkbox|radio|range|button|submit|reset|color|file|image)$/i.test(t.type||'')));// 09/11/2026: tras tocar un deslizador, casilla o color, Supr dejaba de borrar la capa porque ese INPUT contaba como «escribiendo».
     if((ev.ctrlKey||ev.metaKey)&&!escribe&&(ev.key==='z'||ev.key==='Z')){ev.preventDefault();if(ev.shiftKey)api.rehacer();else api.deshacer();trasHistorial();return;}
     if((ev.ctrlKey||ev.metaKey)&&!escribe&&(ev.key==='y'||ev.key==='Y')){ev.preventDefault();api.rehacer();trasHistorial();return;}
     // Zoom como Photoshop: Ctrl/⌘ + y − acercan y alejan (hacia el centro), Ctrl/⌘ 0 ajusta a la página y Ctrl/⌘ 1 es el 100 %.
