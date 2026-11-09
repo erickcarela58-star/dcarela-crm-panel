@@ -17396,7 +17396,7 @@ async function pintaConfig(){
         'Cada mañana a las 8:20 mira tus conversaciones y tus ventas y deja propuestas de campaña en <b>Campañas</b>: cotizaciones '
         + 'enfriadas, clientes dormidos, fechas que se acercan, categorías que suben. <b>Nunca envía nada</b>: tú decides.',
         interruptorCfg('agente_marketing', 'Proponer campañas automáticamente', 'Se puede apagar sin perder lo ya propuesto.', true)
-        + interruptorCfg('agente_marketing_ia', 'Que la IA mejore la redacción', 'Usa Gemini solo para el título y el texto; las cifras y a quién le llega salen siempre de tus datos.', true)
+        + interruptorCfg('agente_marketing_ia', 'Que la IA local mejore la redacción', 'Usa Ollama en la PC solo para el título y el texto; las cifras y a quién le llega salen siempre de tus datos.', true)
         + interruptorCfg('agente_marketing_avisa', 'Avisarme por WhatsApp de lo importante', 'Como mucho un aviso al día, y solo si hay una propuesta de prioridad alta.', true)) : '')
 
     + tarjetaCfg('Fotógrafos y colaboradores',
@@ -19794,9 +19794,9 @@ function procesoLoteV240Html(t,c){
     const txt={lista:comp&&!lista?'Frase lista · componiendo':'Lista',frase:'Frase lista',escribiendo:'Ollama escribe la frase…',espera:'En espera'}[estado];
     const f=fotoDe(u.foto),plantilla=catalogoCrearV242().find(([id])=>id===u.estilo);
     return '<li class="c240-idea es-'+estado+'"><div class="c240-idea-img">'
-      +(plantilla?.[4]?(plantilla[3]?'<img src="'+esc(plantilla[3])+'" alt="Referencia elegida" loading="lazy">':'<span>Referencia elegida</span>'):u.estilo&&nombrePl(u.estilo)?'<img src="plantillas/'+esc(u.estilo.slice(0,2))+'.webp" alt="" loading="lazy">':'<span>Plantilla según Gemini</span>')
+      +(plantilla?.[4]?(plantilla[3]?'<img src="'+esc(plantilla[3])+'" alt="Referencia elegida" loading="lazy">':'<span>Referencia elegida</span>'):u.estilo&&nombrePl(u.estilo)?'<img src="plantillas/'+esc(u.estilo.slice(0,2))+'.webp" alt="" loading="lazy">':'<span>Plantilla sugerida por IA local</span>')
       +(f?.preview?'<img src="'+esc(f.preview)+'" alt="" loading="lazy">':'<span>'+(u.foto?'Foto elegida':'Foto automática')+'</span>')+'</div>'
-      +'<b>Idea '+(u.i+1)+' · '+esc(nombreCat(u.cat))+'</b><small>'+esc(nombrePl(u.estilo)||'Plantilla según Gemini')+'</small><span class="c240-idea-estado">'+(estado==='escribiendo'?'<i class="c240-gira" aria-hidden="true"></i>':'')+esc(txt)+'</span></li>';
+      +'<b>Idea '+(u.i+1)+' · '+esc(nombreCat(u.cat))+'</b><small>'+esc(nombrePl(u.estilo)||'Plantilla sugerida por IA local')+'</small><span class="c240-idea-estado">'+(estado==='escribiendo'?'<i class="c240-gira" aria-hidden="true"></i>':'')+esc(txt)+'</span></li>';
   };
   return '<section class="p239-card c240-proceso" aria-live="polite" aria-busy="'+(!lista)+'">'
     +'<header><div><h3>'+(lista?'Tus propuestas están listas':'Preparando tus propuestas')+'</h3><p>'+esc(t.mensaje||'Trabajando…')+'</p></div><b>'+p+'%</b></header>'
@@ -19831,7 +19831,7 @@ function pintaCrearV240(cuerpo){
       const tarjeta=(f,i)=>opcion('foto_'+id,f.id,marcadas.includes(f.id),'checkbox',(f.preview?'<img src="'+esc(f.preview)+'" loading="lazy" alt="Original '+(i+1)+' de '+esc(t)+'">':'<span class="c240-sinfoto">Original '+(i+1)+'</span>')+'<small>'+Number(f.width)+' × '+Number(f.height)+'</small>');
       const mosaico=conMosaico,elegidas=c.mosaicoFotos?.[id]||[];
       return '<section class="c240-cat"><header><b>'+esc(t)+'</b><span>'+(marcadas.length>1?marcadas.length+' elegidas · una por idea · ':'')+lista.length+' originales</span></header>'
-        +(lista.length?'<p class="c240-ayuda">Marca varias para que cada idea use una foto distinta; Gemini escribe la frase de cada flyer mirando su foto.</p><div class="c240-fotos">'+opcion('foto_'+id,'',!marcadas.length,'checkbox','<span class="c240-auto">Automática<small>Se elige una original apta</small></span>')+orden.slice(0,11).map(tarjeta).join('')+'</div>'
+        +(lista.length?'<p class="c240-ayuda">Marca varias para que cada idea use una foto distinta; la IA local escribe la frase de cada flyer mirando su foto.</p><div class="c240-fotos">'+opcion('foto_'+id,'',!marcadas.length,'checkbox','<span class="c240-auto">Automática<small>Se elige una original apta</small></span>')+orden.slice(0,11).map(tarjeta).join('')+'</div>'
           +(orden.length>11?'<details class="c240-mas"><summary>Ver '+(orden.length-11)+' originales más</summary><div class="c240-fotos">'+orden.slice(11).map((f,i)=>tarjeta(f,i+11)).join('')+'</div></details>':'')
           :'<div class="c240-vacio">No hay originales de esta categoría. <button type="button" class="p239-btn p239-chico" data-cbiblioteca="1">Subir a Fototeca</button></div>')
         +(mosaico?'<div class="c240-sub">Otras cuatro fotos del mosaico · '+elegidas.length+'/4</div><div class="c240-fotos">'+lista.filter(x=>x.id!==actual).map((f,i)=>opcion('mosaico_'+id,f.id,elegidas.includes(f.id),'checkbox',(f.preview?'<img src="'+esc(f.preview)+'" loading="lazy" alt="Secundaria '+(i+1)+'">':'<span class="c240-sinfoto">'+(i+1)+'</span>'))).join('')+'</div>':'')
@@ -19858,13 +19858,13 @@ function pintaCrearV240(cuerpo){
     +'<div class="c240-plantillas">'+catalogoPl.map(([id,nombre,n,mini,ref])=>{const k=elegidasPl.indexOf(id);return '<label class="c240-plantilla" data-cplantilla240="'+esc(id)+'"><input type="checkbox" name="estilo_id" value="'+esc(id)+'"'+(k>=0?' checked':'')+(c.enviando?' disabled':'')+'>'+(ref?(mini?'<img src="'+esc(mini)+'" alt="Referencia subida" loading="lazy">':'<i class="c240-sinfoto">Referencia</i>'):'<img src="plantillas/'+id.slice(0,2)+'.webp" alt="" loading="lazy">')+'<span>'+esc((ref?'Referencia':id.slice(0,2))+' · '+nombre)+'</span>'+(n>1?'<em>'+n+' fotos</em>':'')+(k>=0&&elegidasPl.length>1?'<i class="c240-orden" aria-label="Orden '+(k+1)+'">'+(k+1)+'</i>':'')+'</label>';}).join('')+'</div>'
     +'<div class="c240-elegida"><span>'+(!elegidasPl.length?'<b>Marca al menos una plantilla</b>':elegidasPl.length===1?'Plantilla elegida: <b>'+esc(meta[1])+'</b>':esc(elegidasPl.length+' plantillas: ')+'<b>'+esc(nombresPl.join(' · '))+'</b>')+'</span>'+(meta[4]?'<small>El lote usa la referencia analizada y tus fotografías originales.</small>':'<button type="button" class="p239-btn p239-chico" data-ceditardiseno="'+esc(estiloDe(meta[0]))+'"'+(elegidasPl.length?'':' disabled')+'>Personalizar '+(elegidasPl.length>1?'la primera ':'')+'en el editor de flyers</button>')+'</div>'
     +(conMosaico?'<div class="c240-aviso">El mosaico usa 5 originales distintas del mismo set: la principal y 4 secundarias. Nunca repite una foto.</div>':'')
-    +'<details class="c240-mas"'+(c.titular_l1||c.cta_texto||c.etiqueta_texto?' open':'')+'><summary>Textos fijos (opcional · vacío = los redacta Gemini)</summary><div class="c240-dos"><label>Titular<input name="titular_l1" maxlength="70" value="'+esc(c.titular_l1||'')+'"></label><label>Subtítulo<input name="titular_l2" maxlength="40" value="'+esc(c.titular_l2||'')+'"></label><label>Botón<input name="cta_texto" maxlength="36" placeholder="El de la plantilla" value="'+esc(c.cta_texto||'')+'"></label><label>Etiqueta<input name="etiqueta_texto" maxlength="32" placeholder="Según la plantilla" value="'+esc(c.etiqueta_texto||'')+'"></label>'
+    +'<details class="c240-mas"'+(c.titular_l1||c.cta_texto||c.etiqueta_texto?' open':'')+'><summary>Textos fijos (opcional · vacío = los redacta la IA local)</summary><div class="c240-dos"><label>Titular<input name="titular_l1" maxlength="70" value="'+esc(c.titular_l1||'')+'"></label><label>Subtítulo<input name="titular_l2" maxlength="40" value="'+esc(c.titular_l2||'')+'"></label><label>Botón<input name="cta_texto" maxlength="36" placeholder="El de la plantilla" value="'+esc(c.cta_texto||'')+'"></label><label>Etiqueta<input name="etiqueta_texto" maxlength="32" placeholder="Según la plantilla" value="'+esc(c.etiqueta_texto||'')+'"></label>'
     +'<label>WhatsApp en el botón<select name="mostrar_whatsapp"><option value="si"'+(c.mostrar_whatsapp!==false?' selected':'')+'>Con el número</option><option value="no"'+(c.mostrar_whatsapp===false?' selected':'')+'>Solo el texto</option></select></label>'
     +'<label>Letra del titular<select name="tipografia">'+[['editorial','La de la plantilla'],['playfair','Playfair Display'],['amandine','Amandine'],['clasica','Marcellus'],['inter','Inter'],['moderna','Poppins'],['spartan','League Spartan']].map(([v,t])=>'<option value="'+v+'"'+((c.tipografia||'editorial')===v?' selected':'')+'>'+t+'</option>').join('')+'</select></label></div></details>'
     +(c.baseId?'<label class="c240-switch"><input type="checkbox" name="otra_foto"'+(c.otraFoto?' checked':'')+'> Cambiar también la foto</label>':'')
     +'<div class="c240-sub">Fotografía original</div>'+fotos
     +(CONT.originalesError?'<div class="c240-aviso">'+esc(CONT.originalesError)+'</div>':'')
-    +'<div class="c240-modelo"><label>Modelo de Gemini para los textos<select name="modelo" required'+(!CONT.modelos?.length?' disabled':'')+'>'+((CONT.modelos||[]).map(m=>'<option value="'+esc(m.id)+'"'+(m.id===c.modelo?' selected':'')+'>'+esc(m.nombre)+'</option>').join('')||'<option>Consultando modelos…</option>')+'</select></label>'+(ROL_ACTUAL==='admin'?'<button type="button" class="p239-btn p239-chico" data-cmodelodefault="1">Usar siempre este</button>':'')+'</div></fieldset>'
+    +'<div class="c240-modelo"><label>Modelo local para los textos<select name="modelo" required'+(!CONT.modelos?.length?' disabled':'')+'>'+((CONT.modelos||[]).map(m=>'<option value="'+esc(m.id)+'"'+(m.id===c.modelo?' selected':'')+'>'+esc(m.nombre)+'</option>').join('')||'<option>Consultando modelo local…</option>')+'</select></label>'+(ROL_ACTUAL==='admin'?'<button type="button" class="p239-btn p239-chico" data-cmodelodefault="1">Usar siempre este</button>':'')+'</div></fieldset>'
     +'<fieldset class="p239-card c240-paso"'+des+(paso!==3?' hidden':'')+'><legend>Formatos y redes</legend>'
     +'<div class="c240-grupo"><span class="c240-etq">Formatos</span><div class="c240-formatos">'+[['imagen_4x5','Feed','4:5 · 1080×1350',[24,30]],['imagen_9x16','Historia, Reel y Estado','9:16 · 1080×1920',[18,32]],['imagen_1x1','Cuadrado','1:1 · 1080×1080',[28,28]]].map(([id,t,d,[w,h]])=>opcion('formato',id,c.formatos.has(id),'checkbox','<i style="width:'+w+'px;height:'+h+'px"></i><b>'+t+'</b><small>'+d+'</small>',!!c.baseId)).join('')+'<label class="c240-opcion" title="Necesita una original horizontal: se prepara desde el editor de flyers"><input type="checkbox" disabled><i style="width:34px;height:19px"></i><b>Horizontal</b><small>16:9 · desde el editor</small></label></div></div>'
     +'<div class="c240-grupo"><span class="c240-etq">Redes</span><div class="c240-redes">'+redes.map(x=>opcion('plataforma',x.id,c.canales.has(x.id),'checkbox',iconoRedV239(x.id,26)+'<b>'+esc(x.nombre)+'</b>',!!c.baseId)).join('')+'</div></div>'
@@ -19946,7 +19946,7 @@ function pintaCrearContenido(cuerpo){
     + '<button type="button" class="btn-solido" data-ceditardiseno="' + esc(estiloSelObj?.id || metaSel.altId || metaSel.id) + '">Abrir editor en vivo (arrastrar bloques / colores / 4 formatos)</button></div>'
     + (esMosaico ? '<div class="cont-aviso" style="margin:4px 0 8px"><b>Atención Plantilla 04:</b> Requiere 5 fotografías distintas del mismo set (1 principal y 4 secundarias). La composición V7 prohíbe repetir la misma fotografía en el mosaico.</div>' : '')
     + '<div class="plan-campos">'
-    + '<label>Titular / Gancho fijo (línea 1)<input name="titular_l1" maxlength="70" placeholder="Vacío = Gemini redacta el gancho; o escribe tu titular fijo" value="' + esc(c.titular_l1 || '') + '"></label>'
+    + '<label>Titular / Gancho fijo (línea 1)<input name="titular_l1" maxlength="70" placeholder="Vacío = la IA local redacta el gancho; o escribe tu titular fijo" value="' + esc(c.titular_l1 || '') + '"></label>'
     + '<label>Subtítulo / Remate fijo (línea 2)<input name="titular_l2" maxlength="40" placeholder="Opcional: remate complementario" value="' + esc(c.titular_l2 || '') + '"></label>'
     + '</div>'
     + '<div class="plan-campos">'
@@ -20863,8 +20863,8 @@ async function clicContAgente(ev){
     const m=abreModal('<div class="mtapa"><b>Estado de IA y render de flyers</b><button type="button" data-cerrar aria-label="Cerrar">×</button></div>'
       +'<div class="caja" style="display:grid;gap:12px;max-width:540px">'
       +'<div id="contEstadoIa" class="estudio-bloque-card" role="status">Consultando los modelos locales…</div>'
-      +'<p class="cont-sub" style="margin:0">El CRM web solicita ganchos a la API de Gemini y compone los flyers con su motor de render. El servidor MCP <code>dcarela-flyers</code> es una herramienta local para agentes compatibles; esta pantalla no comprueba que esté ejecutándose.</p>'
-      +'<p class="cont-sub" style="margin:0">Un modelo disponible no confirma que una generación haya terminado. El resultado de cada solicitud debe mostrar la fuente real; si Gemini falla, no se mostrarán frases prefijadas como si fueran su respuesta.</p>'
+      +'<p class="cont-sub" style="margin:0">El CRM solicita los ganchos a Ollama en la PC y compone los flyers con su propio motor. El servidor MCP <code>dcarela-flyers</code> es una herramienta local para agentes compatibles; esta pantalla no comprueba que esté ejecutándose.</p>'
+      +'<p class="cont-sub" style="margin:0">Un modelo disponible no confirma que una generación haya terminado. El resultado de cada solicitud muestra la fuente real; si Ollama falla, no se mostrarán frases prefijadas como si fueran su respuesta.</p>'
       +'<div style="display:flex;justify-content:flex-end;gap:8px">'
       +'<button type="button" class="btn-linea" data-cerrar>Entendido</button>'
       +'<button type="button" class="btn-solido" data-cmcpabrir="1">Abrir Editor de Flyers</button>'
@@ -20874,7 +20874,7 @@ async function clicContAgente(ev){
     let r;try{r=await llamaCont({action:'contenidoModelos'});}catch(e){r={ok:false,error:e.message};}
     const estado=m.querySelector?.('#contEstadoIa');
     if(estado) estado.innerHTML=r.ok
-      ? '<b>Gemini: '+(r.modelos?.length?'modelos disponibles':'sin modelos disponibles')+'</b><div class="cont-sub">Modelo configurado: '+esc(r.modelo||'sin configurar')+' · modelos compatibles: '+Number(r.modelos?.length||0)+'. Esta consulta no genera un flyer.</div>'
+      ? '<b>IA local: '+(r.modelos?.length?'modelo disponible':'sin modelo disponible')+'</b><div class="cont-sub">Modelo configurado: '+esc(r.modelo||'sin configurar')+' · modelos compatibles: '+Number(r.modelos?.length||0)+'. Esta consulta no genera un flyer.</div>'
       : '<b>No se pudo consultar Ollama</b><div class="cont-sub">'+esc(r.error||'Revisa la conexión en Canales.')+'</div>';
     return;
   }
@@ -21083,7 +21083,7 @@ function tarjetaContenido(x, admin, cruce = 0){
     + '<div class="cont-acc">' + acc.slice(0, 2).join('') + (acc.length > 2 ? '<details class="plan-acciones"><summary>Opciones</summary><div class="cont-acc">' + acc.slice(2).join('') + '</div></details>' : '') + '</div></div></div>';
 }
 
-// ---- tendencias: Gemini investiga (con búsqueda de Google) temporadas y tendencias; cada idea se convierte en creativos con un toque ----
+// ---- temporadas: Ollama propone fechas de calendario e ideas evergreen; no finge búsqueda web ----
 async function investigaTendencias(){
   if (CONT.investigando) return;
   CONT.investigando = true; CONT.tendenciaError = null;
@@ -21099,7 +21099,7 @@ async function investigaTendencias(){
   const t = CONT.tendencias;
   const canalesIdea = CONT.canales.filter(c => c.id !== 'paquete_grupos');
   const NOMBRE_CAT = { xv: 'Quince', cumpleanos: 'Cumpleaños', graduacion: 'Graduación', embarazadas: 'Embarazo', infantil: 'Infantil' };
-  cuerpo.innerHTML = '<p class="cfgnota">El agente le pide a Gemini que investigue (con búsqueda de Google) las <b>temporadas, fechas y tendencias</b> de las próximas semanas que sirven para tus sesiones: graduaciones, quinces, fechas del país, formatos que están pegando en Instagram y TikTok. '
+  cuerpo.innerHTML = '<p class="cfgnota">El agente usa la IA local para proponer <b>temporadas, fechas de calendario e ideas evergreen</b> de las próximas semanas que sirven para tus sesiones. No consulta Internet ni presenta una moda como actual sin una fuente verificada. '
     + 'Cada idea respeta tus reglas (sin precios, descuentos ni cupos inventados). «Usar idea» arma los creativos con tus fotos y quedan por aprobar.</p>'
     + '<div class="cont-acc" style="margin:0 0 12px"><button type="button" class="btn-solido" data-cinvestiga="1"' + (CONT.investigando ? ' disabled' : '') + '>' + (CONT.investigando ? 'Investigando… (hasta un par de minutos)' : (t ? 'Investigar de nuevo' : 'Investigar temporadas y tendencias')) + '</button>'
     + (t && t.fecha ? '<span class="cont-sub" style="align-self:center">Última investigación: ' + esc(t.fecha) + '</span>' : '') + '</div>'
@@ -21310,7 +21310,7 @@ function formularioEstiloContenido(){
   const s = CONT.refDraft || (CONT.refDraft = {}), ia = CONT.estiloModo === 'ia';
   return '<section class="plan-creador"><div class="segmento" aria-label="Cómo crear una plantilla"><button type="button" data-cestilomodo="referencia" class="' + (!ia ? 'on' : '') + '">Desde una referencia</button><button type="button" data-cestilomodo="ia" class="' + (ia ? 'on' : '') + '">Proponer con IA</button></div>'
     + (ia ? '<form class="cont-form" data-cestilosia="1"><p class="cont-sub">Las propuestas quedan apagadas hasta que elijas cuáles usar.</p><div class="fila"><label>Cantidad <select name="cantidad">' + [2,3,4,6].map(n => '<option value="' + n + '"' + (n === 4 ? ' selected' : '') + '>' + n + ' estilos</option>').join('') + '</select></label><button class="btn-solido" type="submit"' + (CONT.estiloOcupado ? ' disabled' : '') + '>' + (CONT.estiloOcupado ? 'Diseñando…' : 'Pedir variaciones') + '</button></div></form>'
-      : '<form class="cont-form" data-cref="1"><p class="cont-sub">Sube un flyer nítido. Gemini lee su foto, colores, texto y posiciones; el diseño usa tus originales.</p>' + (s.vista ? '<img class="plan-ref-vista" src="' + esc(s.vista) + '" alt="Referencia seleccionada">' : '') + '<label>Imagen de referencia<input type="file" name="archivo" accept="image/jpeg,image/png,image/webp" data-crefarchivo="1"' + (s.archivo ? '' : ' required') + '></label><small class="cont-sub">' + esc(s.archivo?.name || 'JPG, PNG o WebP') + '</small><label>Nombre de la plantilla<input name="nombre" maxlength="60" placeholder="Opcional" value="' + esc(s.nombre || '') + '"></label><button class="btn-solido" type="submit"' + (s.ocupado ? ' disabled' : '') + '>' + (s.ocupado ? 'Analizando la referencia…' : 'Analizar y guardar estilo') + '</button></form>')
+      : '<form class="cont-form" data-cref="1"><p class="cont-sub">Sube un flyer nítido. La IA local lee su foto, colores, texto y posiciones; el diseño usa tus originales.</p>' + (s.vista ? '<img class="plan-ref-vista" src="' + esc(s.vista) + '" alt="Referencia seleccionada">' : '') + '<label>Imagen de referencia<input type="file" name="archivo" accept="image/jpeg,image/png,image/webp" data-crefarchivo="1"' + (s.archivo ? '' : ' required') + '></label><small class="cont-sub">' + esc(s.archivo?.name || 'JPG, PNG o WebP') + '</small><label>Nombre de la plantilla<input name="nombre" maxlength="60" placeholder="Opcional" value="' + esc(s.nombre || '') + '"></label><button class="btn-solido" type="submit"' + (s.ocupado ? ' disabled' : '') + '>' + (s.ocupado ? 'Analizando la referencia…' : 'Analizar y guardar estilo') + '</button></form>')
     + (s.error && !ia || CONT.estiloError && ia ? '<p class="cont-aviso" role="alert">' + esc(ia ? CONT.estiloError : s.error) + '</p>' : '') + '</section>';
 }
 function pintaEstilos(cuerpo){
@@ -23307,9 +23307,9 @@ function estudioV238(m,api){
         +dTxt('redes_texto','Redes',40,'@dcarela_compufoto')+dSw('mostrar_contactos','Mostrar redes y ubicación','visible','oculto')+dTxt('copy_secundario','Línea extra bajo el subtítulo',80,'Opcional'),ab('Marca y contacto',false))
       +(piezas.length?dSec('Pieza del calendario',dSel('pieza_id','Editar una pieza ya creada')
         +(leer('pieza_id')?'<label class="e238-campo"><span>Texto de la publicación</span><textarea data-d="pieza_texto" rows="3" maxlength="3000">'+esc(leer('pieza_texto'))+'</textarea></label><button type="button" class="e238-btn e238-prim e238-peq" data-ceditor-guardapieza="1">Guardar cambios en la pieza</button><small class="e238-ayuda">Se recompone con el motor; no se publica.</small>':'<small class="e238-ayuda">Elige una pieza para cambiar su diseño y su texto.</small>'),ab('Pieza del calendario',!!leer('pieza_id'))):'')
-      +dSec('Ideas de titular con Gemini','<p class="e238-ayuda">Gemini propone 3 titulares para la categoría del flyer. No inventa precios ni promociones; tú eliges cuál usar.</p>'
+      +dSec('Ideas de titular con IA local','<p class="e238-ayuda">Ollama propone 3 titulares para la categoría del flyer. No inventa precios ni promociones; tú eliges cuál usar.</p>'
         +dTxt('gemini_enfoque','Enfoque (opcional)',100,'Ej. sesión de 1 año con pastel')
-        +'<button type="button" class="e238-btn e238-prim e238-peq" data-e238="ideasIA">Pedir 3 ideas a Gemini</button><div class="e238-ideas" data-e238-ideas>'+(S.ideas||'')+'</div>',ab('Ideas de titular con Gemini',false));
+        +'<button type="button" class="e238-btn e238-prim e238-peq" data-e238="ideasIA">Pedir 3 ideas a la IA local</button><div class="e238-ideas" data-e238-ideas>'+(S.ideas||'')+'</div>',ab('Ideas de titular con IA local',false));
   }
   async function pideIdeas(b){
     const caja=diseno.querySelector('[data-e238-ideas]');b.disabled=true;caja.innerHTML='<p class="e238-ayuda"><span class="e238-giro"></span> Pidiendo ideas a Ollama…</p>';
@@ -23677,7 +23677,7 @@ function pintaEntregaEditorContenido(cuerpo,c){
   const pedido=c.editorDocumento,clave=JSON.stringify(pedido),vista=CONT.entregaEditorVista?.clave===clave?CONT.entregaEditorVista:null;
   if(!vista&&typeof cargaVistaEntregaEditor==='function')void cargaVistaEntregaEditor(pedido);
   const formato=({'imagen_4x5':'Feed · 4:5','imagen_9x16':'Historia / Reel · 9:16','imagen_1x1':'Cuadrado · 1:1','imagen_16x9':'Horizontal · 16:9'})[pedido.formato]||pedido.formato;
-  cuerpo.innerHTML='<div class="plan-seccion-cab"><div><h2>Tu diseño del editor</h2><p class="plan-intro">Conservamos tu foto, textos y ajustes. No necesita Gemini ni vuelve a generar ideas.</p></div></div>'
+  cuerpo.innerHTML='<div class="plan-seccion-cab"><div><h2>Tu diseño del editor</h2><p class="plan-intro">Conservamos tu foto, textos y ajustes. No necesita volver a consultar la IA local ni generar ideas.</p></div></div>'
     +'<section class="cont-form"><div style="text-align:center">'+(vista?.vista?'<img src="'+esc(vista.vista)+'" alt="Vista real del diseño que se guardará en revisión" style="max-width:100%;max-height:420px;object-fit:contain;border-radius:12px">':vista?.error?'<p class="cont-aviso" role="alert">'+esc(vista.error)+'</p><button type="button" class="btn-linea" data-centregavista="1">Reintentar vista</button>':'<p role="status">Componiendo la vista con tu original…</p>')+'</div>'
     +'<h3 class="plan-gancho">'+esc(pedido.titular?.l1||'')+'</h3><p>'+esc(pedido.titular?.l2||'')+'</p>'
     +'<div class="plan-resumen"><span>Mes<b>'+esc(pedido.mes)+'</b></span><span>Formato<b>'+esc(formato)+'</b></span><span>Foto<b>La elegida en el editor</b></span></div>'
@@ -24227,7 +24227,7 @@ function abreEditorPlantilla(id, piezaInicialId = ''){
     +'<div class="estudio-topbar-izq">'
     +'<span class="estudio-marca-badge">🎨 Estudio de Flyers · '+esc(e.nombre)+'</span>'
     +(pBorrador?'<span class="cotz-est">Borrador activo</span>':'')
-    +'<button type="button" class="btn-linea" data-ceditor-geminiact="1" style="border-color:#38bdf8;color:#0284c7;font-weight:700" title="Ganchos por API de Gemini y herramientas locales de diseño">✨ Asistente de diseño</button>'
+    +'<button type="button" class="btn-linea" data-ceditor-geminiact="1" style="border-color:#38bdf8;color:#0284c7;font-weight:700" title="Ganchos con Ollama y herramientas locales de diseño">✨ Asistente de diseño</button>'
     +(enModulo?'<button type="button" class="btn-linea" data-ceditor-irplan="1">← Planificador</button>':'<button type="button" class="btn-linea" data-ceditor-irmodulo="1" title="Abrir en vista de módulo completo">⤢ Módulo completo</button>')
     +'</div>'
     +'<div class="estudio-topbar-centro">'
@@ -24330,7 +24330,7 @@ function abreEditorPlantilla(id, piezaInicialId = ''){
     +'<button type="button" class="estudio-insp-tab" data-ceditor-tab="a">✏️ Textos</button>'
     +'<button type="button" class="estudio-insp-tab" data-ceditor-tab="b">🔤 Formato</button>'
     +'<button type="button" class="estudio-insp-tab" data-ceditor-tab="c">📐 Posición</button>'
-    +'<button type="button" class="estudio-insp-tab" data-ceditor-tab="gemini" style="color:#0284c7">✨ Gemini</button>'
+    +'<button type="button" class="estudio-insp-tab" data-ceditor-tab="gemini" style="color:#0284c7">✨ IA local</button>'
     +'</nav>'
     +'<details open class="estudio-sec-panel" data-ceditor-sec="a"><summary><b>Textos, marca y botón</b><span>▾</span></summary><div style="display:grid;gap:10px;margin-top:8px">'
     +'<div class="estudio-bloque-card"><div class="estudio-bloque-cab"><span>🔤 Titular y Subtítulo del Flyer</span><span class="cont-sub">Textos en lienzo</span></div>'
@@ -24453,15 +24453,15 @@ function abreEditorPlantilla(id, piezaInicialId = ''){
     +'</div></details>'
     +'<details open class="estudio-sec-panel" data-ceditor-sec="gemini" id="estudioSecGemini"><summary><b style="color:#0284c7">✨ Ganchos con IA</b><span>▾</span></summary><div style="display:grid;gap:10px;margin-top:8px">'
     +'<div class="estudio-bloque-card" style="border-left:3px solid #0284c7">'
-    +'<div class="estudio-bloque-cab"><span>✨ Ganchos comerciales con Gemini</span><span class="cotz-est" style="background:#e0f2fe;color:#0369a1">API · se verifica al solicitar</span></div>'
-    +'<p class="cont-sub" style="margin:0 0 6px">Gemini redacta 3 propuestas de titular (L1), subtítulo (L2) y copy secundario respetando la firma de D\' Carela Compufoto en La Romana y sin inventar precios.</p>'
+    +'<div class="estudio-bloque-cab"><span>✨ Ganchos comerciales con IA local</span><span class="cotz-est" style="background:#e0f2fe;color:#0369a1">PC local · se verifica al solicitar</span></div>'
+    +'<p class="cont-sub" style="margin:0 0 6px">Ollama redacta 3 propuestas de titular (L1), subtítulo (L2) y copy secundario respetando la firma de D\' Carela Compufoto en La Romana y sin inventar precios.</p>'
     +'<div class="estudio-grid-2">'
     +'<label>Objetivo publicitario<select name="gemini_objetivo"><option value="consultas">Conseguir consultas por WhatsApp</option><option value="reservas">Convertir interés en reserva</option><option value="portafolio">Mostrar portafolio y calidad</option><option value="emotivo">Conexión familiar y recuerdos</option></select></label>'
     +'<label>Tono comercial<select name="gemini_tono"><option value="elegante">Elegante y fotográfico</option><option value="calido">Cálido y familiar (Dominicano)</option><option value="directo">Directo a la acción</option><option value="festivo">Festivo y alegre</option></select></label>'
     +'</div>'
     +'<label>Idea, ocasión o enfoque breve (opcional)<input name="gemini_enfoque" maxlength="120" placeholder="Ej. Sesión de 1 año con pastel, graduación familiar..."></label>'
     +'<div style="display:flex;gap:8px;margin-top:6px;flex-wrap:wrap">'
-    +'<button type="button" class="btn-solido" data-cgemini-ganchos="1" style="background:#0284c7">✨ Redactar 3 ganchos con Gemini</button>'
+    +'<button type="button" class="btn-solido" data-cgemini-ganchos="1" style="background:#0284c7">✨ Redactar 3 ganchos con IA local</button>'
     +'<button type="button" class="btn-linea" data-cgemini-recomienda="1">🎯 Recomendar plantilla para esta foto</button>'
     +'</div>'
     +'<div id="estudioGeminiResultados" style="margin-top:8px;display:none"></div>'
@@ -24978,7 +24978,7 @@ function abreEditorPlantilla(id, piezaInicialId = ''){
     }
     if(b.dataset?.cgeminiGanchos){
       const v=valores(),cajaRes=m.querySelector('#estudioGeminiResultados');
-      if(cajaRes){cajaRes.style.display='block';cajaRes.innerHTML='<span class="cont-sub"><span class="cargando"></span> Solicitando tres ganchos a Gemini…</span>';}
+      if(cajaRes){cajaRes.style.display='block';cajaRes.innerHTML='<span class="cont-sub"><span class="cargando"></span> Solicitando tres ganchos a Ollama…</span>';}
       b.disabled=true;
       const obj=f.elements.gemini_objetivo?.value||'consultas';
       const tono=f.elements.gemini_tono?.value||'elegante';
@@ -25607,11 +25607,11 @@ async function guardaFormContenido(f){
     if (s.ocupado) return;
     const archivo = s.archivo || f.querySelector('input[type=file]').files[0]; if (!archivo) return avisa('Elige la imagen de referencia');
     s.archivo = archivo; s.nombre = v.nombre; s.ocupado = true; s.error = null;
-    ocupa('Gemini la está mirando…');
+    ocupa('La IA local está mirando la referencia…');
     try {
       const im = await imagenParaSubir(archivo, { lado: 1600, maxBytes: 4 * 1024 * 1024 });
       const r = await llamaCont({ action: 'contenidoEstilos', operation: 'referencia', imagen_b64: im.b64, mime: im.mime, nombre: v.nombre });
-      if (!r.ok) throw new Error(r.error || 'Gemini no terminó el análisis');
+      if (!r.ok) throw new Error(r.error || 'La IA local no terminó el análisis');
       if (r.vista) CONT.vistas[r.estilo.id] = r.vista;
       CONT.ref = { nombre: r.estilo.nombre, analisis: r.analisis };
       CONT.nuevosIA = [{ id: r.estilo.id }];
@@ -25626,10 +25626,10 @@ async function guardaFormContenido(f){
   if (f.dataset.cestilosia) {
     if (CONT.estiloOcupado) return;
     CONT.estiloOcupado = true; CONT.estiloError = null;
-    ocupa('Gemini está diseñando…');
+    ocupa('La IA local está diseñando…');
     try {
       const r = await llamaCont({ action: 'contenidoEstilos', operation: 'ia', cantidad: Number(v.cantidad) || 4 });
-      if (!r.ok) throw new Error(r.error || 'Gemini no terminó las variaciones');
+      if (!r.ok) throw new Error(r.error || 'La IA local no terminó las variaciones');
       for (const e of r.estilos || []) if (e.vista) CONT.vistas[e.id] = e.vista;
       CONT.nuevosIA = (r.estilos || []).map(e => ({ id: e.id }));
       avisa('Estilos propuestos', CONT.nuevosIA.length + ' nuevos (apagados): activa los que te gusten');
@@ -30287,9 +30287,9 @@ function traduceErrorAsistente(r){
   if (status === 429 || code === 'ia_limite' || code === 'asistente_por_minuto' || code === 'asistente_tope_diario' || /RESOURCE_EXHAUSTED/.test(prov)) {
     return { titulo:'Límite del asistente', texto:(servidor || 'Se alcanzó el límite de uso de la IA.') + cola, reintentar: code !== 'asistente_tope_diario' };
   }
-  if (code === 'ia_sin_clave' || code === 'ia_clave') return { titulo:'IA no configurada', texto:(servidor || 'Google AI no está configurado en el servidor.') + cola, reintentar:false };
+  if (code === 'ia_sin_clave' || code === 'ia_clave') return { titulo:'IA local no disponible', texto:(servidor || 'Ollama no está disponible en la PC del negocio.') + cola, reintentar:false };
   if (status === 502 || status === 503 || status === 504 || code.startsWith('ia_')) {
-    return { titulo:'Google no respondió', texto:(servidor || 'El proveedor de IA no respondió.') + cola, reintentar: r?.retryable !== false };
+    return { titulo:'La IA local no respondió', texto:(servidor || 'Ollama no respondió desde la PC del negocio.') + cola, reintentar: r?.retryable !== false };
   }
   if (status === 404) return { titulo:'No encontrado', texto: servidor || 'Esa conversación del asistente ya no existe.', reintentar:false };
   if (status === 409) return { titulo:'No se pudo', texto: servidor || 'Ese cambio ya no se puede hacer así.', reintentar:false };
