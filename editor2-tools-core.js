@@ -9,7 +9,7 @@
 })(typeof globalThis !== 'undefined' ? globalThis : this, function () {
   'use strict';
 
-  const GRUPOS = ['select', 'content', 'draw', 'layout', 'style', 'production'];
+  const GRUPOS = ['select', 'content', 'draw', 'layout', 'style', 'production', 'motor'];
   const PERFILES = {
     // `null` = todo visible. Las claves son ids reales de herramientas; los que no existan simplemente no cuentan.
     completo: null,
