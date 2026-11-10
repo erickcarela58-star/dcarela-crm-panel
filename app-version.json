@@ -1,7 +1,7 @@
 {
-  "version": "2026-11-09-crm-release-v426-pautas-plantillas",
+  "version": "2026-11-10-crm-release-v427-cadencia-diaria",
   "channel": "crm",
-  "released_at": "2026-11-09T17:30:00.000Z",
-  "summary": "Editor: pautas A1, B1, K1 y K2 como plantillas; redes con vidrio; Supr oculta capas del diseño.",
+  "released_at": "2026-11-10T05:13:16.060Z",
+  "summary": "Planificador: total de 6 a 8 piezas al día, todos los días (selector Piezas al día).",
   "requiere_puente": "2026-11-06-documentos-grandes-v70"
 }
