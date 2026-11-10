@@ -24163,7 +24163,12 @@ function abreEditorPlantilla(id, piezaInicialId = ''){
     // Plantilla 07 retirada por el dueño (03/11/2026): el recorte del sujeto no salía limpio.
     ['v6-tarjeta-cristal','08','Tarjeta cristal','#FFFFFF'],
     ['v6-spotlight-azul-corporativo','09','Spotlight azul','#69B6FF'],
-    ['v6-alta-clave-fotografia','10','Alta clave','#171724']
+    ['v6-alta-clave-fotografia','10','Alta clave','#171724'],
+    // Pautas del dueño (v9): el motor ya las tiene; faltaban aquí y por eso el filtro «Pautas» salía vacío (10/11/2026). Miniaturas plantillas/11–14.webp.
+    ['v9-pauta-a1','11','Pauta A1 · foto limpia','#FF7E00'],
+    ['v9-pauta-b1','12','Pauta B1 · regla naranja','#FF7E00'],
+    ['v9-pauta-k1','13','Pauta K1 · foco negro','#FF7E00'],
+    ['v9-pauta-k2','14','Pauta K2 · bloque naranja','#FF7E00']
   ];
   let e=(CONT.estilos||[]).find(x=>(x.id===id||x.template_id===id||x.id?.replace(/^v6-/,'')===id?.replace(/^(\d{2}-|v6-)/,''))&&x.origen==='v6');
   if(!e){
