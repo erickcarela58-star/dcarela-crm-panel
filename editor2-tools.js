@@ -15,7 +15,7 @@
     ['compacto', 'layout'], ['zoomMenos', 'layout'], ['zoomMas', 'layout'], ['giraIzq', 'layout'],
   ];
   const GRUPO_HERRAMIENTA = { seleccionar: 'select', texto: 'content', textoLibre: 'content', foto: 'content', logo: 'content', formas: 'draw', degradado: 'draw', fondo: 'draw', efectos: 'style' };
-  const NOMBRE_GRUPO = { select: 'Selección', content: 'Contenido', draw: 'Dibujo', layout: 'Composición', style: 'Estilo', production: 'Producción' };
+  const NOMBRE_GRUPO = { select: 'Selección', content: 'Contenido', draw: 'Dibujo', layout: 'Composición', style: 'Estilo', production: 'Producción', motor: 'Motor V7' };
   const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
   const $ = (s, r) => (r || document).querySelector(s);
   const vivo = (el) => !!el && el.isConnected;
@@ -28,7 +28,7 @@
   const cargaPrefs = () => { try { return JSON.parse(localStorage.getItem(claveUsuario()) || 'null'); } catch (_) { return null; } };
   const guardaPrefs = () => { try { localStorage.setItem(claveUsuario(), JSON.stringify(registro.getPreferences())); } catch (_) { /* sin almacenamiento: vale esta sesión */ } };
 
-  function selectorDe(id) { const [tipo, clave] = id.split('.'); return tipo === 'tool' ? '[data-e238-tool="' + clave + '"]' : '[data-e238="' + clave + '"]'; }
+  function selectorDe(id) { const [tipo, clave] = id.split('.'); return tipo === 'tool' ? '[data-e238-tool="' + clave + '"]' : tipo === 'e2' ? '[data-e2x-sin-boton="' + clave + '"]' : '[data-e238="' + clave + '"]'; }
   const botonDe = (id) => $(selectorDe(id));
 
   function definicion(id, grupo, el, fijo) {
@@ -45,6 +45,8 @@
       const k = el.getAttribute('data-e238-tool'), id = 'tool.' + k;
       if (!r.get(id) && etiquetaDe(el)) r.register(definicion(id, GRUPO_HERRAMIENTA[k] || 'layout', el, k === 'seleccionar'));
     });
+    // Etapa B: las acciones del menú «Motor V7» (editor2-extras.js) también salen en la paleta Ctrl+K y en el gestor.
+    const E = window.DcarelaEditor2Extras; if (E) for (const d of E.comandos()) if (!r.get(d.id)) r.register(d);
     for (const [k, grupo, fijo] of ACCIONES) { const el = $('[data-e238="' + k + '"]'); if (el && !r.get('acc.' + k)) r.register(definicion('acc.' + k, grupo, el, fijo)); }
   }
 
