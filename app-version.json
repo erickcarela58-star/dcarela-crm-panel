@@ -1,7 +1,7 @@
 {
-  "version": "2026-11-10-crm-release-v429-marketplace-ficha",
+  "version": "2026-11-10-crm-release-v430-editor2-herramientas",
   "channel": "crm",
-  "released_at": "2026-11-10T07:08:42.309Z",
-  "summary": "Marketplace: la ficha del cliente dice Marketplace y los chats no muestran el aviso del bot de WhatsApp.",
+  "released_at": "2026-11-10T07:37:18.365Z",
+  "summary": "Editor 2.0 etapa A: paleta Ctrl+K, gestor de herramientas con perfiles, favoritos y atajos (se apaga con flyerEditor2Enabled=0).",
   "requiere_puente": "2026-11-06-documentos-grandes-v70"
 }
