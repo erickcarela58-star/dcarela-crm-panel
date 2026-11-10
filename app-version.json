@@ -1,7 +1,7 @@
 {
-  "version": "2026-11-10-crm-release-v435-editor-motor-v7-revision",
+  "version": "2026-11-10-crm-release-v436-margenes-seguros",
   "channel": "crm",
-  "released_at": "2026-11-10T14:51:07.978Z",
-  "summary": "Editor: menú Motor V7 (recomponer, conservar/restaurar diseños, siguiente plantilla, 3 formatos) y revisión antes de exportar; pautas con todas sus capas.",
+  "released_at": "2026-11-10T21:31:41.646Z",
+  "summary": "Editor: las guías de tercios ahora también dibujan los márgenes seguros (los que revisa «Revisar antes de exportar»).",
   "requiere_puente": "2026-11-06-documentos-grandes-v70"
 }
