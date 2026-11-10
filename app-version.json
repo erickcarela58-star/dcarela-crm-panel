@@ -1,7 +1,7 @@
 {
-  "version": "2026-11-10-crm-release-v430-editor2-herramientas",
+  "version": "2026-11-10-crm-release-v431-menu-compacto",
   "channel": "crm",
-  "released_at": "2026-11-10T07:37:18.365Z",
-  "summary": "Editor 2.0 etapa A: paleta Ctrl+K, gestor de herramientas con perfiles, favoritos y atajos (se apaga con flyerEditor2Enabled=0).",
+  "released_at": "2026-11-10T08:42:49.082Z",
+  "summary": "Menú lateral compacto: iconos más bajos y sin barra de desplazamiento.",
   "requiere_puente": "2026-11-06-documentos-grandes-v70"
 }
