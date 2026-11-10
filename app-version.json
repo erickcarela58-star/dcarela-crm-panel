@@ -1,7 +1,7 @@
 {
-  "version": "2026-11-10-crm-release-v436-margenes-seguros",
+  "version": "2026-11-10-crm-release-v437-lista-de-chats-por-lotes",
   "channel": "crm",
-  "released_at": "2026-11-10T21:31:41.646Z",
-  "summary": "Editor: las guías de tercios ahora también dibujan los márgenes seguros (los que revisa «Revisar antes de exportar»).",
+  "released_at": "2026-11-10T22:46:14.330Z",
+  "summary": "CRM más ligero: la lista de chats se dibuja por lotes de 120 (con 2.200 chats eran 57.000 elementos y se congelaba medio segundo en cada actualización).",
   "requiere_puente": "2026-11-06-documentos-grandes-v70"
 }
