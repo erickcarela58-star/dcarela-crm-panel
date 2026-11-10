@@ -1,7 +1,7 @@
 {
-  "version": "2026-11-09-crm-release-v425-plantillas-visibles",
+  "version": "2026-11-09-crm-release-v426-pautas-plantillas",
   "channel": "crm",
   "released_at": "2026-11-09T17:30:00.000Z",
-  "summary": "Editor: la lista de plantillas muestra todas y se desplaza; Supr oculta capas del diseño.",
+  "summary": "Editor: pautas A1, B1, K1 y K2 como plantillas; redes con vidrio; Supr oculta capas del diseño.",
   "requiere_puente": "2026-11-06-documentos-grandes-v70"
 }
