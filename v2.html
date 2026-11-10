@@ -19648,9 +19648,9 @@ function guardaMesContenidoV294(){
   try { sessionStorage.setItem(claveMesContenidoV294(),mes); } catch {}
 }
 function normalizaPlantillaContenido(id, estilos = []){
-  const slugs = ['editorial-social','editorial-rojo-serif','editorial-azul-suave','mosaico-oferta','spotlight-noir','glow-carmesi','contraste-titular-banda','tarjeta-cristal','spotlight-azul-corporativo','alta-clave-fotografica'];
+  const slugs = ['editorial-social','editorial-rojo-serif','editorial-azul-suave','mosaico-oferta','spotlight-noir','glow-carmesi','contraste-titular-banda','tarjeta-cristal','spotlight-azul-corporativo','alta-clave-fotografica','pauta-a1','pauta-b1','pauta-k1','pauta-k2'];
   const value = String(id || '').trim().toLowerCase();
-  const indice = slugs.findIndex((slug,i) => [slug,'v6-'+slug,String(i+1),String(i+1).padStart(2,'0'),String(i+1).padStart(2,'0')+'-'+slug].includes(value)
+  const indice = slugs.findIndex((slug,i) => [slug,'v6-'+slug,'v9-'+slug,String(i+1),String(i+1).padStart(2,'0'),String(i+1).padStart(2,'0')+'-'+slug].includes(value)
     || (i === 9 && ['alta-clave-fotografia','v6-alta-clave-fotografia'].includes(value)));
   if (indice >= 0) return String(indice+1).padStart(2,'0')+'-'+slugs[indice];
   const estilo = estilos.find(e => e.activo !== false && [e.id,e.template_id].includes(id));
@@ -23341,7 +23341,7 @@ function estudioV238(m,api){
     if(b.dataset.e238==='ideasIA'){ev.stopPropagation();void pideIdeas(b);return;}
     if(b.dataset.e238idea){const g=S.listaIdeas?.[Number(b.dataset.e238idea)];if(!g)return;empuja(campo('texto_muestra_l1'),g.l1||'','input');empuja(campo('texto_muestra_l2'),g.l2||'','input');if(g.copy&&campo('copy_secundario'))empuja(campo('copy_secundario'),String(g.copy).slice(0,80),'input');avisaV238('Titular aplicado: el motor compone la vista.');}});
   // ───── Plantillas y biblioteca ─────
-  const FILTROS_PLANTILLAS=[['todas','Todas',()=>true],['editorial','Editorial',id=>/editorial|alta-clave/.test(id)],['spotlight','Spotlight',id=>/spotlight/.test(id)],['color','Color',id=>/glow|contraste/.test(id)],['especiales','Especiales',id=>/mosaico|cristal/.test(id)]];
+  const FILTROS_PLANTILLAS=[['todas','Todas',()=>true],['editorial','Editorial',id=>/editorial|alta-clave/.test(id)],['spotlight','Spotlight',id=>/spotlight/.test(id)],['color','Color',id=>/glow|contraste/.test(id)],['pautas','Pautas',id=>/pauta/.test(id)],['especiales','Especiales',id=>/mosaico|cristal/.test(id)]];
   function pintaPlantillas(){
     $q('[data-e238-chips]').innerHTML=FILTROS_PLANTILLAS.map(([k,t])=>'<button type="button" class="e238-chip'+(S.filtro===k?' on':'')+'" data-e238-filtro="'+k+'">'+t+'</button>').join('');
     const cumple=FILTROS_PLANTILLAS.find(x=>x[0]===S.filtro)?.[2]||(()=>true);
