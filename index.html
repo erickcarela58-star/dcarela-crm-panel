@@ -22029,7 +22029,7 @@ function estudioV238(m,api){
     +'<select data-e238="zoom" aria-label="Zoom del lienzo"><option value="ajustar">Ajustar página</option><option value="documento">Ver carrusel completo</option>'+[25,33,50,58,67,75,100].map(z=>'<option value="'+(z/100)+'">'+z+'%</option>').join('')+'</select>'
     +'<button type="button" class="e238-btn e238-peq" data-e238="biblioteca" aria-expanded="true" title="Ocultar biblioteca de plantillas y fotos">'+I.biblioteca+'<span>Biblioteca</span></button>'
     +'<button type="button" class="e238-btn e238-peq e238-modo" data-e238="pantalla" title="Ampliar el lienzo y ocultar el menú del CRM" aria-label="Ampliar lienzo" aria-pressed="false">'+I.pantalla+'<span>Ampliar lienzo</span></button>'
-    +'<button type="button" class="e238-ico" data-e238="rejilla" title="Guías de tercios" aria-label="Guías de tercios">'+I.rejilla+'</button>'
+    +'<button type="button" class="e238-ico" data-e238="rejilla" title="Guías de tercios y márgenes seguros" aria-label="Guías de tercios y márgenes seguros">'+I.rejilla+'</button>'
     +'<button type="button" class="e238-ico" data-e238="compacto" title="Compactar todos los módulos" aria-label="Compactar todos los módulos" aria-pressed="false">'+I.compactar+'</button></div>'
     +'</nav>'
     +'<div class="e238-cuerpo">'
@@ -22324,6 +22324,9 @@ function estudioV238(m,api){
       for(const k of orden.slice().reverse())nodoDe(k)?.moveToTop();
     }
     if(S.rejilla)for(const t of [1,2]){LU.add(new K.Line({points:[W*t/3,0,W*t/3,H],stroke:'rgba(255,255,255,.8)',strokeWidth:1,dash:[4,4],listening:false,name:'tercio'}));LU.add(new K.Line({points:[0,H*t/3,W,H*t/3],stroke:'rgba(255,255,255,.8)',strokeWidth:1,dash:[4,4],listening:false,name:'tercio'}));}
+    // Etapa B (10/11/2026): las mismas guías marcan los MÁRGENES SEGUROS (lo que revisa «Revisar antes de exportar»): 4 % a los lados y 3 % arriba/abajo;
+    // en historias (9:16) 11 % arriba y abajo, donde Instagram pone el nombre de la cuenta y la caja de responder.
+    if(S.rejilla){const hist=H/W>1.6,mx=W*.04,my=H*(hist?.11:.03);LU.add(new K.Rect({name:'seguro',x:mx,y:my,width:W-2*mx,height:H-2*my,stroke:'rgba(250,204,21,.95)',strokeWidth:1.5,dash:[8,5],listening:false}));}
     const colorGuia=doc.documentElement.dataset.tema==='oscuro'?'#cbd5e1':'#475569';
     for(let i=0;i<N;i++){LU.add(new K.Rect({name:'limite',x:i*W-offset,y:0,width:W,height:H,stroke:i===(documento?.activa||0)?'#2563eb':'#94a3b8',strokeWidth:1,dash:[6,5],listening:false}));LU.add(new K.Text({name:'limite',x:i*W-offset+8,y:-24,text:(documento?'Página '+(i+1):'Flyer')+' · '+FMT().w+' × '+FMT().h+' px',fontSize:11,fill:colorGuia,listening:false}));}
     LU.add(new K.Rect({name:'limite',x:-offset,y:0,width:AW,height:H,stroke:'#94a3b8',strokeWidth:1,listening:false}));
