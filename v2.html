@@ -12771,7 +12771,7 @@ function pintaComboCatalogo(){
 function tarjetaClienteFicha(c){
   const nombre = nombreReal(c) || 'Sin nombre';
   const iniciales = nombre.split(/\s+/).filter(Boolean).slice(0, 2).map(p => p[0]).join('').toUpperCase() || '?';
-  const red = redSocial(c);
+  const red = redSocial(c) || (canalDe(c) === 'marketplace' ? 'Marketplace' : null); // Marketplace: etiqueta propia, sin tratarlo como red social de envío
   const tel = red ? '' : String(c.wa_phone || '').replace(/\D/g, '');
   const usuario = String(c.ig_username || c.instagram_username || c.username || '').replace(/^@/, '').trim();
   const fila = (icono, texto, accion) => '<div class="fc-fila"><span class="fc-ico" aria-hidden="true">' + icono + '</span><span class="fc-txt">' + texto + '</span>' + (accion || '') + '</div>';
