@@ -7392,7 +7392,15 @@ function pintaChats(){
     return;
   }
   const conEstado = stConEstado();
-  cont.innerHTML = arriba + filas.map(c => {
+  // 10/11/2026 (el CRM «se queda frisado»): con 2.200 conversaciones se dibujaban TODAS (57.000 elementos) y la lista se reconstruía entera en cada
+  // actualización en vivo (~0,5 s congelado cada vez). Ahora se dibujan por lotes de 120; el resto sale con «Mostrar más» o al llegar al final.
+  // El chat abierto siempre queda dentro de lo dibujado, y al cambiar de filtro o de búsqueda se vuelve al primer lote.
+  const claveLote = filtro + '|' + ($('buscaChat')?.value || '');
+  if (claveLote !== CHATS_LOTE.clave) { CHATS_LOTE.clave = claveLote; CHATS_LOTE.limite = CHATS_LOTE.paso; }
+  const posAbierto = sel ? filas.findIndex(x => x._id === sel._id) : -1;
+  const tope = Math.max(CHATS_LOTE.limite, posAbierto + 1);
+  const visibles = filas.length > tope ? filas.slice(0, tope) : filas;
+  cont.innerHTML = arriba + visibles.map(c => {
     const n = nombreDe(c), sinLeer = Number(c.unread || 0) > 0;
     const marcas = [];
     if (ignorada(c)) marcas.push(marcaEmojiChat('\ud83d\udeab', 'Ignorada · ' + (TIPOS_IGNORAR[c.ignored_kind] || 'otro'), 'ign'));
@@ -7426,8 +7434,20 @@ function pintaChats(){
       + '" data-chat-pin="' + esc(c._id) + '" title="' + (anclado(c) ? 'Desfijar chat' : 'Fijar chat arriba')
       + '" aria-label="' + (anclado(c) ? 'Desfijar' : 'Fijar') + ' chat de ' + esc(n) + '">'
       + '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 3h8l-1 5 3 3v2H6v-2l3-3-1-5zm4 10v8"/></svg></button></div>';
-  }).join('');
+  }).join('') + (filas.length > visibles.length
+    ? '<button type="button" class="mas-chats" id="masChats" style="display:block;width:calc(100% - 24px);margin:10px 12px 16px;padding:10px;border:1px solid var(--line);border-radius:10px;background:transparent;color:inherit;font:inherit;cursor:pointer">Mostrar más · quedan ' + (filas.length - visibles.length) + '</button>' : '');
+  vigilaFinDeLista(cont);
   resuelveAvatares();
+}
+// Lista de chats por lotes: `paso` filas por vez. El botón «Mostrar más» y el final de la lista piden el siguiente lote.
+const CHATS_LOTE = { paso: 120, limite: 120, clave: '' };
+let finListaObs = null;
+function pideMasChats(){ CHATS_LOTE.limite += CHATS_LOTE.paso; pintaChats(); }
+function vigilaFinDeLista(cont){
+  if (finListaObs) { finListaObs.disconnect(); finListaObs = null; }
+  const boton = $('masChats'); if (!boton) return;
+  boton.onclick = pideMasChats;
+  if (typeof IntersectionObserver === 'function') { finListaObs = new IntersectionObserver(es => { if (es.some(e => e.isIntersecting)) pideMasChats(); }, { root: cont, rootMargin: '0px 0px 240px 0px' }); finListaObs.observe(boton); }
 }
 
 // ===== INICIAR UN CHAT CON UN NÚMERO NUEVO =====
