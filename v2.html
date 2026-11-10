@@ -20184,7 +20184,7 @@ async function cargaContenido(){
   if (!r?.ok) { if ($('contCuerpo')) $('contCuerpo').innerHTML = '<p class="cfgnota">' + esc(r?.error || 'No se pudo leer el contenido.') + '</p>'; if(repetir)return cargaContenido();return; }
   Object.assign(CONT, { items: r.items || [], conteo: r.conteo || {}, calendario: r.calendario || [], canales: r.canales || [], activos: r.canales_activos || [],
     activo: r.planificador_activo !== false, propias: r.fechas_propias || [], quitadas: r.plantillas_quitadas || [], hoy: r.hoy, autonomia: r.autonomia || 'manual',
-    cantidad: Number(r.cantidad_semanal) || 0, historiasDiarias: Math.min(12, Math.max(8, Number(r.historias_diarias) || 8)),
+    cantidad: Number(r.cantidad_semanal) || 0, historiasDiarias: Math.min(8, Math.max(6, Number(r.historias_diarias) || 8)),
     igCuentas: Array.isArray(r.ig_cuentas) ? r.ig_cuentas : [], igColaboradores: new Set(r.ig_colaboradores || []),
     tiktok: r.tiktok || null, estilos: r.estilos || [], tendencias: r.tendencias || null, amandine: r.amandine_en_servidor !== false });
   CONT.estilosServidorV233 = Array.isArray(r.estilos);
@@ -20780,8 +20780,8 @@ function pintaAgente(){
     +   CONT.canales.map(c => '<label class="red-chip' + (g.canales.has(c.id) ? ' on' : '') + '"><input type="checkbox" data-cgenred="' + esc(c.id) + '"' + (g.canales.has(c.id) ? ' checked' : '') + '>' + esc(c.nombre) + '</label>').join('')
     +   '</div></div>'
     + '<div class="agente-fila"><span class="agente-rot">Historias diarias</span>'
-    +   '<label class="agente-num">Cantidad <input type="number" min="8" max="12" inputmode="numeric" value="' + esc(CONT.historiasDiarias) + '" data-chistorias="1"></label>'
-    +   '<small class="cont-sub">Prepara 8–12 creativos 9:16 al día para Estado de WhatsApp e Historia de Instagram. Siempre quedan pendientes de tu aprobación.</small></div>'
+    +   '<label class="agente-num">Piezas al día <input type="number" min="6" max="8" inputmode="numeric" value="' + esc(CONT.historiasDiarias) + '" data-chistorias="1"></label>'
+    +   '<small class="cont-sub">Total de piezas por día (6 a 8, todos los días): lo que toque en el feed se descuenta y el resto son Estados de WhatsApp e Historias de Instagram 9:16. Siempre quedan pendientes de tu aprobación.</small></div>'
     + '<div class="agente-fila"><span class="agente-rot">Instagram</span><div class="agente-redes">'
     +   CONT.igCuentas.map(c => '<label class="red-chip' + (CONT.igColaboradores.has(c) ? ' on' : '') + '"><input type="checkbox" data-cigcolab="' + esc(c) + '"' + (CONT.igColaboradores.has(c) ? ' checked' : '') + '>@' + esc(c) + ' · colaboración</label>').join('')
     +   '</div><small class="cont-sub">Las dos cuentas quedan mencionadas en la estrategia. Puedes desmarcar aquí cuál no debe recibir invitación de colaboración en Feed/Reel; las Historias no admiten colaboración, solo mención.</small></div>'
@@ -20802,7 +20802,7 @@ function cambioContAgente(ev){
   const t = ev.target;
   if (t.dataset.cactivo) return void cambiaActivoAgente(t);
   if (!CONT.gen) return;
-  if (t.dataset.chistorias) CONT.historiasDiarias = Math.min(12, Math.max(8, Number(t.value) || 8));
+  if (t.dataset.chistorias) CONT.historiasDiarias = Math.min(8, Math.max(6, Number(t.value) || 8));
   if (t.dataset.cigcolab) { if (t.checked) CONT.igColaboradores.add(t.dataset.cigcolab); else CONT.igColaboradores.delete(t.dataset.cigcolab); t.closest('.red-chip')?.classList.toggle('on', t.checked); }
   if (t.dataset.cgen === 'cantidad') CONT.gen.cantidad = t.value.replace(/[^\d]/g, '').slice(0, 2);
   if (t.dataset.cgen === 'dias') CONT.gen.dias = Number(t.value) || 7;
