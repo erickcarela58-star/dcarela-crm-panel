@@ -3181,7 +3181,7 @@ input[type="checkbox"],input[type="radio"]{accent-color:var(--accent)}
 .fc-nombre{display:grid;gap:3px;min-width:0;flex:1}.fc-nombre b{font-size:16px;color:var(--fg);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .fc-chips{display:flex;gap:6px;flex-wrap:wrap}
 .fc-canal{white-space:nowrap;font-size:11.5px;font-weight:700;padding:2px 8px;border-radius:999px;background:rgba(37,211,102,.15);color:#15803d}
-.fc-canal.instagram{background:rgba(225,48,108,.13);color:#c2185b}.fc-canal.messenger{background:rgba(24,119,242,.13);color:#1565c0}
+.fc-canal.instagram{background:rgba(225,48,108,.13);color:#c2185b}.fc-canal.messenger{background:rgba(24,119,242,.13);color:#1565c0}.fc-canal.marketplace{background:rgba(24,119,242,.13);color:#0d5fd0}
 .fc-etapa{font-size:11.5px;font-weight:700;padding:3px 9px;border-radius:999px;background:var(--accent-suave);color:var(--accent-fuerte);text-transform:capitalize;white-space:nowrap}
 .fc-fila{display:flex;align-items:center;flex-wrap:wrap;gap:6px 8px;font-size:13.5px;color:var(--fg);min-width:0}
 .fc-ico{color:var(--mut);display:grid;place-items:center;flex:none}
@@ -7641,7 +7641,7 @@ function abre(c){
     + '<span class="modo-porque" id="modoPorque" hidden></span>'
     + '<button class="modo" id="btnAtendido" title="Ya lo atendiste: se quita de «Sin responder» y de «Se enfrían», se baja el aviso de atención humana y la satisfacción lo cuenta como cliente atendido.">Atendido</button>'
     // «Transferir» (dueño 27/10/2026): pasa el cliente a la otra sucursal. Avisa a la sucursal con sus datos y la sesión, y al cliente.
-    + (/instagram|facebook|messenger/.test(String(c.source || '').toLowerCase()) ? '' : '<button class="modo" id="btnTransferir">Transferir</button>')
+    + (/instagram|facebook|messenger|marketplace/.test(String(c.source || '').toLowerCase()) ? '' : '<button class="modo" id="btnTransferir">Transferir</button>')
     + '<button class="adj" id="verFicha" title="Ficha del lead" aria-label="Ficha del lead">'
     +   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="8.600"/><path d="M12 11v5.200"/><circle cx="12" cy="7.800" r=".7" fill="currentColor" stroke="none"/></svg></button>'
     + '<button class="adj" id="btnBuscaChat" title="Buscar en esta conversación (Ctrl+F)" aria-label="Buscar en la conversación">'
@@ -15468,11 +15468,13 @@ const LOGO_WA = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.5 14.
 const LOGO_IG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1.2" fill="currentColor" stroke="none"/></svg>';
 const LOGO_FB = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.4 2 2 6.2 2 11.7c0 3.1 1.4 5.9 3.7 7.7v3.8l3.4-1.9c.9.3 1.9.4 2.9.4 5.6 0 10-4.2 10-9.7S17.6 2 12 2zm1 12.9l-2.5-2.7-4.9 2.7L11 9.1l2.6 2.7 4.8-2.7-5.4 5.8z"/></svg>';
 
+const LOGO_MP = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M4 9l1.5-5h13L20 9"/><path d="M4 9h16v1a3 3 0 0 1-5.3 1.9A3 3 0 0 1 12 13a3 3 0 0 1-2.7-1.1A3 3 0 0 1 4 10z"/><path d="M5 14v6h14v-6"/></svg>';
 const CANALES = {
   whatsapp_cloud: { nombre:'WhatsApp oficial (API)',    corto:'WhatsApp',  logo:LOGO_WA, color:'#25d366' },
   whatsapp_qr:    { nombre:'WhatsApp Web (2.º número)', corto:'WA Web',    logo:LOGO_WA, color:'#0b7f6b' },
   instagram:      { nombre:'Instagram Direct',          corto:'Instagram', logo:LOGO_IG, color:'#c13584' },
   facebook:       { nombre:'Facebook Messenger',        corto:'Messenger', logo:LOGO_FB, color:'#0084ff' },
+  marketplace:    { nombre:'Facebook Marketplace',      corto:'Marketplace', logo:LOGO_MP, color:'#1877f2' },
 };
 // Las plantillas y la ventana de 24 h son del API oficial de Meta, no de WhatsApp. Por WhatsApp
 // Web se escribe cuando se quiera y como se quiera, igual que desde el telefono, e Instagram y
