@@ -1,7 +1,7 @@
 {
-  "version": "2026-11-10-crm-release-v427-cadencia-diaria",
+  "version": "2026-11-10-crm-release-v428-marketplace-chats",
   "channel": "crm",
-  "released_at": "2026-11-10T05:13:16.060Z",
-  "summary": "Planificador: total de 6 a 8 piezas al día, todos los días (selector Piezas al día).",
+  "released_at": "2026-11-10T05:41:19.117Z",
+  "summary": "Conversaciones de Marketplace dentro del CRM (canal Marketplace, con respuestas por cola).",
   "requiere_puente": "2026-11-06-documentos-grandes-v70"
 }
