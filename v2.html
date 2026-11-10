@@ -3081,6 +3081,13 @@ input[type="checkbox"],input[type="radio"]{accent-color:var(--accent)}
   #app.lateral-min .marca .plega svg{transform:rotate(180deg)}
   #app.lateral-min .nav{padding:4px 10px 10px}
   #app.lateral-min .nav a{justify-content:center;padding:5px 0;position:relative}
+  /* Iconos compactos (dueño 10/11/2026: «que queden compactos para no usar esa barra negra para deslizar»): más bajos y sin barra visible; si la pantalla es muy baja se sigue pudiendo desplazar con la rueda. */
+  #app.lateral-min .nav{scrollbar-width:none;-ms-overflow-style:none}
+  #app.lateral-min .nav::-webkit-scrollbar{display:none;width:0;height:0}
+  #app.lateral-min .nav a{height:28px;padding:0;margin-bottom:0;box-sizing:border-box}
+  #app.lateral-min .nav a svg{width:17px;height:17px}
+  #app.lateral-min .nav .secundarias{margin-top:2px;padding-top:0}
+  @media(max-height:800px){#app.lateral-min .nav a{height:24px}#app.lateral-min .nav a svg{width:16px;height:16px}}
   #app.lateral-min .nav a>span:not(.cuenta){display:none}
   #app.lateral-min .nav a .cuenta{position:absolute;top:-1px;right:4px;min-width:15px;padding:0 4px;font-size:9.5px;line-height:15px;text-align:center}
   #app.lateral-min .nav .rotulo{font-size:0;height:1px;padding:0;margin:8px 12px 6px;background:var(--line)}
