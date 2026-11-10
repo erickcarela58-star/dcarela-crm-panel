@@ -1,7 +1,7 @@
 {
-  "version": "2026-11-10-crm-release-v428-marketplace-chats",
+  "version": "2026-11-10-crm-release-v429-marketplace-ficha",
   "channel": "crm",
-  "released_at": "2026-11-10T05:41:19.117Z",
-  "summary": "Conversaciones de Marketplace dentro del CRM (canal Marketplace, con respuestas por cola).",
+  "released_at": "2026-11-10T07:08:42.309Z",
+  "summary": "Marketplace: la ficha del cliente dice Marketplace y los chats no muestran el aviso del bot de WhatsApp.",
   "requiere_puente": "2026-11-06-documentos-grandes-v70"
 }
