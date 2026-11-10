@@ -1,7 +1,7 @@
 {
-  "version": "2026-11-10-crm-release-v433-pautas-v4-v5-v6-v7",
+  "version": "2026-11-10-crm-release-v434-iconos-legibles",
   "channel": "crm",
-  "released_at": "2026-11-10T09:03:42.170Z",
-  "summary": "Pautas v4, v5, v6 y v7 como plantillas (con contexto y miniatura de estilo); las 8 pautas aparecen en el filtro Pautas.",
+  "released_at": "2026-11-10T10:09:05.926Z",
+  "summary": "Menú lateral compacto con iconos legibles (el dibujo vuelve a 17 px dentro de su ficha de color).",
   "requiere_puente": "2026-11-06-documentos-grandes-v70"
 }
