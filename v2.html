@@ -19659,7 +19659,7 @@ function guardaMesContenidoV294(){
   try { sessionStorage.setItem(claveMesContenidoV294(),mes); } catch {}
 }
 function normalizaPlantillaContenido(id, estilos = []){
-  const slugs = ['editorial-social','editorial-rojo-serif','editorial-azul-suave','mosaico-oferta','spotlight-noir','glow-carmesi','contraste-titular-banda','tarjeta-cristal','spotlight-azul-corporativo','alta-clave-fotografica','pauta-a1','pauta-b1','pauta-k1','pauta-k2'];
+  const slugs = ['editorial-social','editorial-rojo-serif','editorial-azul-suave','mosaico-oferta','spotlight-noir','glow-carmesi','contraste-titular-banda','tarjeta-cristal','spotlight-azul-corporativo','alta-clave-fotografica','pauta-a1','pauta-b1','pauta-k1','pauta-k2','pauta-v4-fuerte','pauta-v4-cursiva','pauta-v6-foco-banda','pauta-v7-cristal'];
   const value = String(id || '').trim().toLowerCase();
   const indice = slugs.findIndex((slug,i) => [slug,'v6-'+slug,'v9-'+slug,String(i+1),String(i+1).padStart(2,'0'),String(i+1).padStart(2,'0')+'-'+slug].includes(value)
     || (i === 9 && ['alta-clave-fotografia','v6-alta-clave-fotografia'].includes(value)));
@@ -24168,7 +24168,12 @@ function abreEditorPlantilla(id, piezaInicialId = ''){
     ['v9-pauta-a1','11','Pauta A1 · foto limpia','#FF7E00'],
     ['v9-pauta-b1','12','Pauta B1 · regla naranja','#FF7E00'],
     ['v9-pauta-k1','13','Pauta K1 · foco negro','#FF7E00'],
-    ['v9-pauta-k2','14','Pauta K2 · bloque naranja','#FF7E00']
+    ['v9-pauta-k2','14','Pauta K2 · bloque naranja','#FF7E00'],
+    // Series v4, v5, v6 y v7 del dueño (v5 es una variante de v4 cursiva). Miniaturas plantillas/15–18.webp = sus propias imágenes de referencia.
+    ['v9-pauta-v4-fuerte','15','Pauta V4 · titular fuerte','#E3A72F'],
+    ['v9-pauta-v4-cursiva','16','Pauta V4 · cursiva serif','#CFDDEE'],
+    ['v9-pauta-v6-foco-banda','17','Pauta V6 · foco y banda roja','#C8102E'],
+    ['v9-pauta-v7-cristal','18','Pauta V7 · tarjeta de cristal','#B0123F']
   ];
   let e=(CONT.estilos||[]).find(x=>(x.id===id||x.template_id===id||x.id?.replace(/^v6-/,'')===id?.replace(/^(\d{2}-|v6-)/,''))&&x.origen==='v6');
   if(!e){
