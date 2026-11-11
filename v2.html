@@ -4013,9 +4013,14 @@ const API = String(CFG.firebaseFunctionsBase || '').replace(/\/$/, '') + '/crmAp
 const API_CALIDAD = String(CFG.firebaseFunctionsBase || '').replace(/\/$/, '') + '/crmServiceQualityApi';
 // La sucursal proviene de la configuración de este panel y se confirma con whoami
 // antes de iniciar cualquier lectura directa de Firestore.
-const NEGOCIO = CFG.businessId == null ? 'dcarela' : String(CFG.businessId);
+// Identidad del negocio desde crm-config.js (checklist de comercialización, A). Sin esas claves, los valores de siempre.
+const NEGOCIO_PRINCIPAL = /^[a-z0-9][a-z0-9-]{1,39}$/.test(String(CFG.principalBusinessId || '')) ? String(CFG.principalBusinessId) : 'dcarela';
+const TELS = Object.freeze(Object.fromEntries(Object.entries({ oficial: '18495245620', web: '18097575644', dueno: '18094785620' })
+  .map(([k, v]) => { const d = String(CFG.telefonos?.[k] || '').replace(/\D/g, ''); return [k, /^1\d{10}$/.test(d) ? d : v]; })));
+const TEL_TXT = Object.freeze(Object.fromEntries(Object.entries(TELS).map(([k, v]) => [k, v.slice(1, 4) + '-' + v.slice(4, 7) + '-' + v.slice(7)])));
+const NEGOCIO = CFG.businessId == null ? NEGOCIO_PRINCIPAL : String(CFG.businessId);
 const BRIDGE_ID = NEGOCIO === 'plaza-artesanal' ? 'whatsapp_qr_plaza' : 'whatsapp_qr';
-const SUCURSAL_CONFIG_VALIDA = ['dcarela', 'plaza-artesanal'].includes(NEGOCIO)
+const SUCURSAL_CONFIG_VALIDA = [NEGOCIO_PRINCIPAL, 'plaza-artesanal'].includes(NEGOCIO)
   && (!CFG.bridgeId || CFG.bridgeId === BRIDGE_ID)
   && (NEGOCIO !== 'plaza-artesanal' || (Array.isArray(CFG.enabledViews) && CFG.enabledViews.length > 0));
 const VISTAS_HABILITADAS = Array.isArray(CFG.enabledViews) ? new Set(CFG.enabledViews.map(String)) : null;
@@ -5012,14 +5017,14 @@ function pintaAvisosLocal(){
     .map(([id, t]) => '<option value="' + id + '"' + (id === actual ? ' selected' : '') + '>' + t + '</option>').join('');
   const silencio = avisosSilenciados();
   cont.innerHTML = '<div class="cx-ia" style="align-items:flex-start;flex-direction:column;gap:12px">'
-    + Object.keys(CANALES).filter(k => NEGOCIO === 'dcarela' || k === 'whatsapp_qr').map(k => '<label style="flex-direction:row;align-items:center;gap:10px;width:100%;max-width:520px"><span style="flex:1">Sonido · ' + esc(NEGOCIO === 'plaza-artesanal' ? 'WhatsApp de Plaza' : CANALES[k].corto) + '</span>'
+    + Object.keys(CANALES).filter(k => NEGOCIO === NEGOCIO_PRINCIPAL || k === 'whatsapp_qr').map(k => '<label style="flex-direction:row;align-items:center;gap:10px;width:100%;max-width:520px"><span style="flex:1">Sonido · ' + esc(NEGOCIO === 'plaza-artesanal' ? 'WhatsApp de Plaza' : CANALES[k].corto) + '</span>'
         + '<select data-av-sonido="' + k + '">' + opciones(a.sonido[k]) + '</select><button type="button" class="btn-linea" data-av-prueba="' + k + '">Probar</button></label>').join('')
     + '<label class="cx-chk" style="flex-direction:row"><input type="checkbox" id="avNm"' + (a.noMolestar.activo ? ' checked' : '') + '> No molestar de</label>'
     + '<div style="display:flex;gap:8px;align-items:center"><input type="time" id="avDesde" value="' + esc(a.noMolestar.desde) + '"> a <input type="time" id="avHasta" value="' + esc(a.noMolestar.hasta) + '"></div>'
     + '<div style="display:flex;gap:8px;flex-wrap:wrap"><button type="button" class="btn-linea" id="avUnaHora">Silenciar 1 hora</button>'
     + (a.hasta && a.hasta > Date.now() ? '<button type="button" class="btn-linea" id="avQuita">Quitar el silencio</button>' : '') + '</div>'
     + '<small class="cfgnota">' + (silencio ? 'Ahora mismo están silenciados los avisos' + (a.hasta > Date.now() ? ' hasta las ' + new Date(a.hasta).toLocaleTimeString('es-DO', { hour:'2-digit', minute:'2-digit' }) : '') + '.' : 'Los avisos suenan con normalidad.')
-    + (NEGOCIO === 'dcarela' ? ' Las llamadas siempre suenan.' : '') + ' Se guarda en este navegador.</small></div>';
+    + (NEGOCIO === NEGOCIO_PRINCIPAL ? ' Las llamadas siempre suenan.' : '') + ' Se guarda en este navegador.</small></div>';
   cont.querySelectorAll('[data-av-sonido]').forEach(s => s.onchange = () => { const x = leeAvisos(); x.sonido[s.dataset.avSonido] = s.value; guardaAvisos(x); suenaTono(s.value); });
   cont.querySelectorAll('[data-av-prueba]').forEach(b => b.onclick = () => suenaTono(leeAvisos().sonido[b.dataset.avPrueba]));
   const guardaNm = () => { const x = leeAvisos(); x.noMolestar = { activo: $('avNm').checked, desde: $('avDesde').value || '22:00', hasta: $('avHasta').value || '07:00' }; guardaAvisos(x); pintaAvisosLocal(); };
@@ -8104,7 +8109,7 @@ function refrescaSeleccion(){
 // tambien en fichas de una linea que ya no esta vinculada, donde Reanudar no arregla nada.
 // Se repinta sola cuando cambia la linea (fijaLineaQr).
 function sucursalEnConsulta(negocio){
-  return negocio !== 'dcarela';
+  return negocio !== NEGOCIO_PRINCIPAL;
 }
 function pintaAvisoLinea(){
   const caja = $('avisoLinea'); if (!caja || !sel) return;
@@ -9593,7 +9598,7 @@ function sucursalComboDelChat(chat){
 
 let CATALOGO_NAVIDAD_PROMESA;
 function cargaCatalogoNavidad(){
-  if (NEGOCIO !== 'dcarela') return Promise.resolve(null);
+  if (NEGOCIO !== NEGOCIO_PRINCIPAL) return Promise.resolve(null);
   if (!CATALOGO_NAVIDAD_PROMESA) CATALOGO_NAVIDAD_PROMESA=(async()=>{
     const valido = r => r?.ok && Array.isArray(r.items) && r.items.length===22
       && new Set(r.items.map(c=>c?.id)).size===22 && r.items.every(c=>/^[A-Z]\d{2}$/.test(c?.id) && c.name && c.price>0);
@@ -9723,7 +9728,7 @@ async function abreCombos(){
   if (!sel) return avisa('Abre una conversación primero');
   const chatId = sel.id;
   const sucursal = sucursalComboDelChat(sel);
-  const navidadDisponible = NEGOCIO === 'dcarela' && sucursal === 'central';
+  const navidadDisponible = NEGOCIO === NEGOCIO_PRINCIPAL && sucursal === 'central';
   abreModal('<div class="mtapa"><b>Combos</b><button class="cerrarm" data-cerrar>×</button></div>'
     + '<div class="mcuerpo"><span class="cargando"></span> Leyendo el catálogo…</div>');
   $('modal').querySelectorAll('[data-cerrar]').forEach(b => { b.onclick = cierraModal; });
@@ -9783,7 +9788,7 @@ async function abreCombos(){
 }
 
 async function leeTarjetaNavidena(id){
-  if (NEGOCIO !== 'dcarela' || sucursalComboDelChat(sel) !== 'central' || !/^[A-Z]\d{2}$/.test(id)) throw new Error('Combo navideño no disponible en esta sucursal.');
+  if (NEGOCIO !== NEGOCIO_PRINCIPAL || sucursalComboDelChat(sel) !== 'central' || !/^[A-Z]\d{2}$/.test(id)) throw new Error('Combo navideño no disponible en esta sucursal.');
   const response = await fetch('./catalogos/navidad-2026/combos/' + id + '.jpg');
   if (!response.ok || !response.headers.get('content-type')?.includes('image/jpeg')) throw new Error('No se pudo abrir la tarjeta aprobada.');
   return response.blob();
@@ -14883,7 +14888,7 @@ async function abreChatAgenda(c, boton = null){
     + '<div class="mcuerpo"><p class="bajada">Todavía no le has escrito. Elige por cuál WhatsApp quieres iniciar la conversación.</p>'
     + '<div class="agcanales">'
     + '<button class="agcanal web" data-agcanal="web" aria-label="Abrir por WhatsApp Web"><span class="agcanal-ico">' + LOGO_WA + '<em>WEB</em></span><span><b>WhatsApp Web</b><small>Usa el número conectado al puente.</small></span></button>'
-    + '<button class="agcanal api" data-agcanal="api" aria-label="Abrir por WhatsApp API"><span class="agcanal-ico">' + LOGO_WA + '<em>API</em></span><span><b>WhatsApp API</b><small>Usa el número oficial 849-524-5620.</small></span></button>'
+    + '<button class="agcanal api" data-agcanal="api" aria-label="Abrir por WhatsApp API"><span class="agcanal-ico">' + LOGO_WA + '<em>API</em></span><span><b>WhatsApp API</b><small>Usa el número oficial ' + TEL_TXT.oficial + '.</small></span></button>'
     + '</div><p class="cfgnota">Elegir un canal no envía ningún mensaje todavía.</p></div>');
   $('modal').querySelector('.agcanales').onclick = async ev => {
     const opcion = ev.target.closest('[data-agcanal]');
@@ -15372,7 +15377,7 @@ function montaComboPicker(p, { conv, categoria }){
 function canalRecordatorioHtml(id, valor){
   const op = (v, t) => '<option value="' + v + '"' + ((valor || '') === v ? ' selected' : '') + '>' + t + '</option>';
   return '<div class="campo"><label for="' + id + '">Recordatorio automático por</label><select id="' + id + '">'
-    + op('', 'Automático (recomendado)') + op('whatsapp_web', 'WhatsApp Web · 809-757-5644') + op('oficial', 'WhatsApp oficial · 849-524-5620')
+    + op('', 'Automático (recomendado)') + op('whatsapp_web', 'WhatsApp Web · ' + TEL_TXT.web) + op('oficial', 'WhatsApp oficial · ' + TEL_TXT.oficial)
     + '</select></div>';
 }
 
@@ -16033,7 +16038,7 @@ function llamaAlContacto(c){
   const tel = String(c.wa_phone || '').replace(/\D/g, '');
   // Solo llamadas normales (pedido del dueño, 20/10/2026): la de WhatsApp directa en el CRM por el número oficial y la telefónica.
   // WhatsApp no deja que un dispositivo vinculado (el 5644) haga llamadas de voz, así que desde el 5644 no hay llamada de WhatsApp.
-  const opcionOficial = '<button class="tpl" data-oficial="1"><b>Llamada de WhatsApp desde el CRM</b><span>Sale por el número oficial (849-524-5620), suena y se habla en este panel. Si Meta todavía exige habilitación, el CRM la solicita sin abrir otro diálogo.</span></button>';
+  const opcionOficial = '<button class="tpl" data-oficial="1"><b>Llamada de WhatsApp desde el CRM</b><span>Sale por el número oficial (' + TEL_TXT.oficial + '), suena y se habla en este panel. Si Meta todavía exige habilitación, el CRM la solicita sin abrir otro diálogo.</span></button>';
   const opcionTelefono = tel.length >= 8 ? '<a class="tpl" href="tel:+' + esc(tel) + '" style="text-decoration:none;display:block"><b>Llamada telefónica normal</b><span>Abre el marcador (el celular o el programa de llamadas de la PC) con +' + esc(tel) + '.</span></a>' : '';
   abreModal('<div class="mtapa"><b>Llamar a ' + esc(nombreDe(c)) + '</b><button class="cerrarm" data-cerrar>×</button></div><div class="mcuerpo">'
     + opcionOficial + opcionTelefono + '</div>');
@@ -16050,7 +16055,7 @@ async function llamaPorOficial(c){
   if (!p.puede_llamar) {
     if (!p.puede_pedir) return avisa('Todavía no puedes llamarle', 'Meta solo deja pedir permiso 1 vez al día y 2 por semana a cada cliente. Escríbele por el chat.');
     const del5644 = canalDe(c) === 'whatsapp_qr';
-    avisa('Solicitando permiso de llamada…', del5644 ? 'El pedido sale por el número oficial 849-524-5620.' : 'WhatsApp avisará cuando el cliente lo acepte.');
+    avisa('Solicitando permiso de llamada…', del5644 ? 'El pedido sale por el número oficial ' + TEL_TXT.oficial + '.' : 'WhatsApp avisará cuando el cliente lo acepte.');
     const r = await llama({ action:'callStart', conversation_id:id });
     // La plantilla de permiso aún no está aprobada por Meta: se dice y se ofrece el enlace de llamada de WhatsApp mientras tanto.
     if (r.sin_plantilla) { avisa('Falta la plantilla de permiso', r.motivo || ''); if (del5644) abreLlamar5644(c); return; }
@@ -16082,7 +16087,7 @@ async function llamaPorOficial(c){
 // Tarjeta «Llamadas por WhatsApp» en Canales (solo administrador): estado en Meta y el interruptor. Apagadas hasta que se activen aquí.
 async function pintaLlamadasCaja(){
   const cont = $('llamadasCaja'); if (!cont) return;
-  if (NEGOCIO !== 'dcarela') { cont.innerHTML = ''; return; }
+  if (NEGOCIO !== NEGOCIO_PRINCIPAL) { cont.innerHTML = ''; return; }
   if (ROL_ACTUAL !== 'admin') { cont.innerHTML = '<p class="cfgnota">Solo el administrador activa o apaga las llamadas.</p>'; return; }
   cont.innerHTML = '<p class="bajada"><span class="cargando"></span> Consultando a Meta…</p>';
   const r = await llama({ action:'callSettings', operation:'get' });
@@ -16148,7 +16153,7 @@ function montaCanales(){
       + '<h2 style="margin:30px 0 4px;font-size:18px">Avisos y sonidos</h2>'
       + '<p class="bajada">Qué suena cuando entra un mensaje, y «No molestar» para no oír nada de noche.</p>'
       + '<div id="avisosLocal"></div>'
-      + (NEGOCIO === 'dcarela' ? '<h2 style="margin:30px 0 4px;font-size:18px">Llamadas por WhatsApp</h2>'
+      + (NEGOCIO === NEGOCIO_PRINCIPAL ? '<h2 style="margin:30px 0 4px;font-size:18px">Llamadas por WhatsApp</h2>'
       + '<p class="bajada">Recibir y hacer llamadas desde el CRM, solo por el número oficial.</p>'
       + '<div id="llamadasCaja"></div>'
       + '<h2 style="margin:30px 0 4px;font-size:18px">Conexiones y API</h2>'
@@ -16164,7 +16169,7 @@ function montaCanales(){
 const CX_ESTADO = { ok: 'Conectado', aviso: 'Revisar', caida: 'Caída', sin_configurar: 'Sin configurar' };
 async function pintaConexiones(){
   const cont = $('conexionesCaja'); if (!cont) return;
-  if (NEGOCIO !== 'dcarela') { cont.innerHTML = ''; return; }
+  if (NEGOCIO !== NEGOCIO_PRINCIPAL) { cont.innerHTML = ''; return; }
   cont.innerHTML = '<p class="bajada"><span class="cargando"></span> Comprobando conexiones…</p>';
   const r = await llama({ action:'conexiones' });
   if (!r.ok) { cont.innerHTML = '<p class="cfgnota">' + esc(/permiso/i.test(String(r.error || '')) ? 'Solo el administrador o el supervisor ven las conexiones.' : (r.error || 'No se pudieron leer las conexiones.')) + '</p>'; return; }
@@ -17247,12 +17252,12 @@ async function pintaConfig(){
         'Recibe cortes de caja, alertas internas, recordatorios y respuestas del asistente personal. '
         + 'El cambio se aplica en el servidor, redirige los avisos pendientes y queda auditado.',
         '<div class="campo"><label>Número con código de país</label>'
-        + '<input id="cfgAdminNumero" type="tel" inputmode="tel" autocomplete="tel" placeholder="809-478-5620" value="'
+        + '<input id="cfgAdminNumero" type="tel" inputmode="tel" autocomplete="tel" placeholder="' + TEL_TXT.dueno + '" value="'
         + esc(adminNumber?.number?.display || adminNumber?.number?.e164 || '') + '"></div>'
         + '<button class="btn-solido" id="cfgAdminGuarda" style="margin-top:9px">Guardar número</button>'
         + '<p class="cfgnota" id="cfgAdminEstado">Destino activo: '
         + esc(adminNumber?.number?.display || adminNumber?.number?.e164 || 'no disponible') + '.</p>'
-        + '<p class="cfgnota">Después de cambiarlo, escribe una vez al WhatsApp oficial 849-524-5620 para abrir la ventana de respuestas libres. Los avisos urgentes pueden llegar por plantilla.</p>',
+        + '<p class="cfgnota">Después de cambiarlo, escribe una vez al WhatsApp oficial ' + TEL_TXT.oficial + ' para abrir la ventana de respuestas libres. Los avisos urgentes pueden llegar por plantilla.</p>',
         'numero-administrador') : '')
 
     + tarjetaCfg('Auto-cierre a los 14 días',
@@ -17399,7 +17404,7 @@ async function pintaConfig(){
         + '<input type="file" id="igArchivos" accept="image/*" multiple hidden>'
         + '<div id="igPrevia" class="pf-miniaturas"></div>'
         + '<div class="campo"><label for="igPie">Texto de la publicación <span class="cfgnota" id="igContador">0 / 2200</span></label>'
-        + '<textarea id="igPie" rows="4" maxlength="2200" placeholder="Ej.: Sesión de cumpleaños en estudio ✨ Reserva tu fecha por WhatsApp 849-524-5620 #dcarelacompufoto #laromana"></textarea></div>'
+        + '<textarea id="igPie" rows="4" maxlength="2200" placeholder="Ej.: Sesión de cumpleaños en estudio ✨ Reserva tu fecha por WhatsApp ' + TEL_TXT.oficial + ' #dcarelacompufoto #laromana"></textarea></div>'
         + '<div class="pf-botones"><button class="btn-linea" id="igCola" disabled>Agregar a la cola</button>'
         + '<button class="btn-solido" id="igYa" disabled>Publicar ahora</button>'
         + '<button class="btn-linea" id="igSiguiente">Publicar la siguiente de la cola</button></div>'
@@ -17536,8 +17541,8 @@ async function pintaConfig(){
         interruptorCfg('handoff_aviso_whatsapp', 'Avisar también por WhatsApp', 'Apagado: los avisos de «Atención pendiente» solo salen en el CRM.', false)
         + '<div class="campo"><label>Teléfono que recibe los avisos (si se encienden por WhatsApp)</label>'
         + '<input id="cfgAvisoTel" inputmode="numeric" value="' + esc(AJUSTES.handoff_notify_phone || '')
-        + '" placeholder="18094785620"></div>'
-        + '<p class="cfgnota">Vacío = 18094785620. Código de país y solo dígitos.</p>'
+        + '" placeholder="' + TELS.dueno + '"></div>'
+        + '<p class="cfgnota">Vacío = ' + TELS.dueno + '. Código de país y solo dígitos.</p>'
         + '<button class="btn-linea" id="cfgGuardaAviso" style="margin-top:8px">Guardar teléfono</button>')
 
     + tarjetaCfg('Bot de WhatsApp',
@@ -17861,7 +17866,7 @@ async function pintaConfig(){
       ? '✓ Actualizado. ' + Number(r.pending_retargeted || 0) + ' aviso(s) pendiente(s) redirigidos.'
       : '✓ Ese número ya era el destino activo.';
     avisa('Número del administrador actualizado', r.changed
-      ? 'Escribe una vez al 849-524-5620 para abrir la conversación libre.'
+      ? 'Escribe una vez al ' + TEL_TXT.oficial + ' para abrir la conversación libre.'
       : 'No había cambios pendientes.');
   };
   if ($('pfZona')) cableaPortafolio();
@@ -20018,7 +20023,7 @@ function pintaCrearContenido(cuerpo){
     + '<li><b>Rostros y sujetos protegidos:</b> Titulares y botones nunca invaden caras ni detalles principales.</li>'
     + '<li><b>Aprobación previa obligatoria:</b> Toda pieza queda en estado «Por aprobar». No se publica nada de forma automática.</li>'
     + '</ul></div></div>'
-    + '<p class="plan-ayuda">El tamaño 9:16 sale como <b>historia</b> y, además, como <b>Reel</b> en Instagram y en tu Página de Facebook, y como Estado de WhatsApp y TikTok. Los de 4:5 y 1:1 van al feed. WhatsApp usa el número oficial 849-524-5620. No se inventan precios, promociones ni disponibilidad.</p></fieldset>'
+    + '<p class="plan-ayuda">El tamaño 9:16 sale como <b>historia</b> y, además, como <b>Reel</b> en Instagram y en tu Página de Facebook, y como Estado de WhatsApp y TikTok. Los de 4:5 y 1:1 van al feed. WhatsApp usa el número oficial ' + TEL_TXT.oficial + '. No se inventan precios, promociones ni disponibilidad.</p></fieldset>'
     + (c.error || CONT.modelosError?'<p class="cont-aviso" role="alert">'+esc(c.error || CONT.modelosError)+'</p>'+ (CONT.modelosError?'<button type="button" class="btn-linea" data-cmodelosretry="1">Volver a consultar modelos</button>':''):'')
     + '<div class="plan-resumen"><span>Mes<b>'+esc(c.mes)+'</b></span><span>Ideas<b>'+c.cantidad+' × '+c.categorias.size+' categoría'+(c.categorias.size===1?'':'s')+'</b></span><span>Formatos<b>'+c.formatos.size+'</b></span><span>Modelo<b>'+esc(c.modelo || 'Consultando…')+'</b></span></div><div class="plan-footer"><p class="plan-ayuda">'+(c.enviando?'El trabajo continúa en el servidor. Puedes salir de esta vista y volver a consultar su progreso.':'Las propuestas se guardan para revisión. Tú decides cuáles programar.')+'</p><div class="cont-acc">'+(paso>1?'<button type="button" class="btn-linea" data-cpaso="'+(paso-1)+'"'+disabled+'>Atrás</button>':'<button type="button" class="btn-linea" data-cnuevolote="1"'+disabled+'>Empezar de nuevo</button>')+(paso<3?'<button type="button" class="btn-solido" data-cpaso="'+(paso+1)+'"'+disabled+'>Continuar</button>':'<button type="submit" class="btn-solido"'+(c.enviando || !CONT.modelos?.length?' disabled':'')+'>'+(c.enviando?'Preparación en curso…':c.baseId?'Preparar nuevas variaciones':'Preparar propuestas')+'</button>')+'</div></div></form>';
 }
@@ -20108,7 +20113,7 @@ function briefCrearContenido(c){
     c.titular_l1?'Titular deseado (l1): '+c.titular_l1:'',
     c.titular_l2?'Remate deseado (l2): '+c.titular_l2:'',
     c.cta_texto?'Llamada CTA: '+c.cta_texto:'',
-    c.mostrar_whatsapp===false?'Sin WhatsApp en botón':'Con WhatsApp oficial (849-524-5620)',
+    c.mostrar_whatsapp===false?'Sin WhatsApp en botón':'Con WhatsApp oficial (' + TEL_TXT.oficial + ')',
     c.etiqueta_texto?'Etiqueta / temporada fija: '+c.etiqueta_texto:'',
     c.tipografia&&c.tipografia!=='editorial'?'Tipografía titular preferida: '+c.tipografia:'',
     c.evitar?'Evitar: '+c.evitar:''
@@ -20527,7 +20532,7 @@ function accionMarketplace(x, admin){
     return enlace ? '<a class="btn-linea" href="'+esc(enlace)+'" target="_blank" rel="noopener noreferrer">Ver publicación en Marketplace</a>'
       : '<span class="cont-sub">Marketplace · '+esc(estados[estado] || 'Pendiente')+'</span>';
   }
-  if (!admin || NEGOCIO!=='dcarela' || !x.tiene_imagen || x.tipo_media!=='imagen' || x.tema==='campana_navidad'
+  if (!admin || NEGOCIO!==NEGOCIO_PRINCIPAL || !x.tiene_imagen || x.tipo_media!=='imagen' || x.tema==='campana_navidad'
       || !['aprobada','lista','publicada'].includes(x.estado)) return '';
   return '<button type="button" class="btn-linea" data-cmarketplace="'+esc(x.id)+'">Publicar en Marketplace</button>';
 }
@@ -20564,7 +20569,7 @@ function abreOrdenMarketplace(id){
   };
 }
 function accionGruposHermes(x){
-  if (NEGOCIO !== 'dcarela') return '';
+  if (NEGOCIO !== NEGOCIO_PRINCIPAL) return '';
   if (x.hermes_grupos_orden && ['admin','supervisor'].includes(ROL_ACTUAL)) {
     return '<button type="button" class="btn-linea" data-cgruposacuse="'+esc(x.hermes_grupos_orden)+'">Ver resultados en grupos</button>';
   }
@@ -22164,7 +22169,7 @@ function estudioV238(m,api){
   function provisional(rol){const M=CAMPOS_ROL_V238[rol];return ['texto','fuente','peso','color','alin','inter','letras','mayus'].some(p=>M[p]&&String(leer(M[p]))!==String(leerPedido(M[p])??''));}
   function textoRol(rol,caja){
     const M=CAMPOS_ROL_V238[rol];let t=leer(M.texto)||(caja?.texto||'');
-    if(rol==='cta'&&leer('mostrar_whatsapp')!=='no'&&leer(M.texto)&&!/849/.test(t))t+=' · 849-524-5620';
+    if(rol==='cta'&&leer('mostrar_whatsapp')!=='no'&&leer(M.texto)&&!t.includes(TEL_TXT.oficial.slice(0, 3)))t+=' · ' + TEL_TXT.oficial;
     const may=M.mayus?leer(M.mayus):'original';
     return may==='si'||(may!=='no'&&caja?.mayusculas)?t.toLocaleUpperCase('es'):t;
   }
@@ -23740,7 +23745,7 @@ function abreRevisionEditorV7(pedido,opciones={}){
   const vertical=pedido.formato==='imagen_9x16',seleccion=Array.isArray(opciones.canales)?opciones.canales:['instagram'];
   const m=abreModal('<form data-editor-revision><h2>Preparar publicación</h2><p class="bajada">Se compone con el motor V7 y se guarda en Revisar. No se publica ni se activa automáticamente.</p>'
     +'<div class="estudio-grid-2"><label>Fecha<input type="date" name="fecha" value="'+esc(fecha)+'" required></label><label>Hora<select name="hora" required>'+contHoras('18:30')+'</select></label></div>'
-    +'<label>Texto de la publicación<textarea name="texto" rows="4" maxlength="2200" required>'+esc(pedido.titular.l1+'\n'+pedido.titular.l2+'\nEscríbenos al 849-524-5620 · @dcarela_compufoto')+'</textarea></label>'
+    +'<label>Texto de la publicación<textarea name="texto" rows="4" maxlength="2200" required>'+esc(pedido.titular.l1+'\n'+pedido.titular.l2+'\nEscríbenos al ' + TEL_TXT.oficial + ' · @dcarela_compufoto')+'</textarea></label>'
     +'<fieldset><legend>Destinos para revisión</legend>'+[['instagram','Instagram'],['facebook','Facebook'],['whatsapp_estado','Estado de WhatsApp'],['tiktok','TikTok']].map(([id,t])=>{const apto=vertical||['instagram','facebook'].includes(id);return '<label style="display:flex;gap:8px"><input type="checkbox" name="canal" value="'+id+'"'+(apto&&seleccion.includes(id)?' checked':'')+(apto?'':' disabled')+'>'+t+(apto?'':' · requiere 9:16')+'</label>';}).join('')+'</fieldset>'
     +'<p data-editor-revision-estado role="status"></p><div class="acciones"><button type="button" class="btn-linea" data-cerrar>Cancelar</button><button type="submit" class="btn-solido">Guardar en revisión</button></div></form>');
   const f=m.querySelector('form');
@@ -23824,7 +23829,7 @@ function capaEnVivoV230(vista, form){
     if (b && typeof b.texto === 'string' && b.texto && !motor.textos[c]) return b.texto;
     if (c === 'titulo') return propio || 'Titular';
     if (c === 'subtitulo') return propio || 'Subtítulo';
-    if (c === 'cta') return (propio || 'Escríbenos') + (campo('mostrar_whatsapp') === 'no' ? '' : ' · 849-524-5620');
+    if (c === 'cta') return (propio || 'Escríbenos') + (campo('mostrar_whatsapp') === 'no' ? '' : ' · ' + TEL_TXT.oficial);
     if (c === 'marca') return propio || "D' Carela Compufoto";
     return propio || 'Mes';
   }
@@ -24399,7 +24404,7 @@ function abreEditorPlantilla(id, piezaInicialId = ''){
     +'<div class="estudio-bloque-card"><div class="estudio-bloque-cab"><span>🔘 Botón de Llamada (CTA)</span><span class="cont-sub">Acción y WhatsApp</span></div>'
     +'<div class="estudio-grid-2">'
     +'<label>Texto del botón CTA<input name="cta_texto" maxlength="36" value="'+esc(p.cta_texto||'Escríbenos')+'"></label>'
-    +'<label>Teléfono en botón CTA'+seleccion('mostrar_whatsapp',p.mostrar_whatsapp||'si',[['si','Con WhatsApp (· 849-524-5620)'],['no','Solo texto del botón CTA']])+'</label>'
+    +'<label>Teléfono en botón CTA'+seleccion('mostrar_whatsapp',p.mostrar_whatsapp||'si',[['si','Con WhatsApp (· ' + TEL_TXT.oficial + ')'],['no','Solo texto del botón CTA']])+'</label>'
     +'</div></div>'
     +'<div class="estudio-bloque-card"><div class="estudio-bloque-cab"><span>📅 Etiqueta, Temporada y Redes</span></div>'
     +'<div class="estudio-grid-2">'
@@ -25748,7 +25753,7 @@ async function cmbCarga(){
   CMB.cargando = true; cmbPinta();
   const sucursal=CMB.sucursal;
   const [lista,navidad]=await Promise.allSettled([llama({ action:'combos', operation:'lista', sucursal }),
-    sucursal==='central' && NEGOCIO==='dcarela' ? cargaCatalogoNavidad() : Promise.resolve(null)]);
+    sucursal==='central' && NEGOCIO===NEGOCIO_PRINCIPAL ? cargaCatalogoNavidad() : Promise.resolve(null)]);
   if (sucursal !== CMB.sucursal) return;
   const r=lista.value || {ok:false};
   if (navidad.value?.ok && r.ok) {
@@ -25877,7 +25882,7 @@ async function cmbCcBaja(boton, pedido){
   if (r.html != null) return cmbBaja(r.html, 'text/html', r.nombre);
 }
 function cmbNavidadDisponible(){
-  return NEGOCIO === 'dcarela' && CMB.cc.suc === 'central';
+  return NEGOCIO === NEGOCIO_PRINCIPAL && CMB.cc.suc === 'central';
 }
 function cmbCcSelector(conteo){
   return '<div class="cmb-cc-chips" role="group" aria-label="Categoría del catálogo">'
@@ -26215,7 +26220,7 @@ function pintaCotizaciones(){
 }
 // ---- Catálogo de la Caja: de qué producto sale cada precio del cotizador (dueño 14/10: «que no invente productos… que analice el catálogo actual, sujeto a cambios»)
 // Se lee la Caja AHORA. El dueño puede fijar el producto de una pieza o de un combo, o decir que la Caja no lo tiene; lo que no está en la Caja se cotiza «por confirmar».
-let CATCAJA = { sucursal: NEGOCIO === 'plaza-artesanal' ? 'plaza-artesanal' : 'dcarela', datos: null };
+let CATCAJA = { sucursal: NEGOCIO === 'plaza-artesanal' ? 'plaza-artesanal' : NEGOCIO_PRINCIPAL, datos: null };
 async function cargaCatalogoCaja(){
   const cuerpo = $('cotzCuerpo'); if (!cuerpo) return;
   cuerpo.innerHTML = '<p class="cfgnota"><span class="cargando"></span> Leyendo el catálogo de la Caja…</p>';
@@ -26250,7 +26255,7 @@ function pintaCatalogoCaja(){
     + (filas ? '<div style="overflow-x:auto"><table class="cotz-tabla" style="width:100%"><thead><tr><th>En el cotizador</th><th>Producto de la Caja</th><th>Precio</th><th></th><th>' + (admin ? 'Cambiar' : '') + '</th></tr></thead><tbody>' + filas + '</tbody></table></div>' : '<p class="cfgnota">Nada.</p>');
   const combosMal = (r.combos || []).filter(x => !x.caja || x.difiere || x.confianza === 'media');
   const combosBien = (r.combos || []).filter(x => !combosMal.includes(x));
-  cuerpo.innerHTML = '<div class="cotz-barra"><label style="display:' + (NEGOCIO === 'plaza-artesanal' ? 'none' : 'flex') + ';gap:6px;align-items:center;font-size:13px">Sucursal <select data-ccatsuc="1"><option value="dcarela"' + (CATCAJA.sucursal === 'dcarela' ? ' selected' : '') + '>Central</option>'
+  cuerpo.innerHTML = '<div class="cotz-barra"><label style="display:' + (NEGOCIO === 'plaza-artesanal' ? 'none' : 'flex') + ';gap:6px;align-items:center;font-size:13px">Sucursal <select data-ccatsuc="1"><option value="' + NEGOCIO_PRINCIPAL + '"' + (CATCAJA.sucursal === NEGOCIO_PRINCIPAL ? ' selected' : '') + '>Central</option>'
     + '<option value="plaza-artesanal"' + (CATCAJA.sucursal === 'plaza-artesanal' ? ' selected' : '') + '>Plaza Artesanal</option></select></label>'
     + '<button type="button" class="btn-linea" data-ccatrecarga="1">Volver a leer la Caja</button>'
     + '<small class="cont-sub">' + esc((r.productos_leidos || 0) + ' productos leídos' + (r.leido_at ? ' · ' + new Date(r.leido_at).toLocaleTimeString('es-DO', { hour: '2-digit', minute: '2-digit' }) : '')) + '</small></div>'
