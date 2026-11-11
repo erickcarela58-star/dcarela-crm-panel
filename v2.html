@@ -1030,6 +1030,10 @@ a.ayuda{color:var(--enlace)}
 /* 11/11/2026: la foto ocupa TODA la escena (como en WhatsApp). Con solo max-width/max-height, una miniatura
    (~100 px, lo que se ve mientras llega el archivo o si no llega) quedaba diminuta en el centro. */
 .st-img{width:100%;height:100%;max-width:100%;max-height:100%;object-fit:contain;display:block;transition:filter .25s}
+/* 11/11/2026 · EL fallo de «se ven pequeños»: la miniatura que espera su archivo lleva la clase «cargando», y la regla
+   global .cargando (el circulito de 15 px que gira) la dejaba de 15×15, redonda y girando. Si el archivo tardaba o no
+   llegaba, el estado se quedaba así. En el visor, «cargando» solo significa «borrosa mientras llega». */
+.st-escena .st-img.cargando{display:block;width:100%;height:100%;border:0;border-radius:0;animation:none;vertical-align:baseline}
 .st-img.cargando{filter:blur(10px);transform:scale(1.02)}
 .st-txt{width:100%;height:100%;display:flex;align-items:center;justify-content:center;padding:40px 48px;
   text-align:center;font-size:clamp(24px,3.6vw,40px);line-height:1.3;white-space:pre-wrap;word-break:break-word}
