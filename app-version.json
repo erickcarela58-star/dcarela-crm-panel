@@ -1,7 +1,7 @@
 {
-  "version": "2026-11-11-crm-release-v447-estados-completos",
+  "version": "2026-11-11-crm-release-v448-estados-a-pantalla",
   "channel": "crm",
-  "released_at": "2026-11-11T14:17:18.000Z",
-  "summary": "Estados: los suyos se ven con la foto completa y a pantalla; las miniaturas ya no quedan diminutas mientras carga el archivo.",
+  "released_at": "2026-11-11T15:17:06.000Z",
+  "summary": "Estados de contactos: mientras carga el archivo, la foto ocupa todo el visor (antes la regla del circulito de carga la dejaba de 15 px, redonda y girando).",
   "requiere_puente": "2026-11-06-documentos-grandes-v70"
 }
