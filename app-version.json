@@ -1,7 +1,7 @@
 {
-  "version": "2026-11-10-crm-release-v438-disenos-como-archivo",
+  "version": "2026-11-11-crm-release-v439-alinear-capa",
   "channel": "crm",
-  "released_at": "2026-11-11T02:10:29.342Z",
-  "summary": "Editor: guardar el diseño como archivo y abrirlo después (incluso en otra plantilla), en el menú Motor V7.",
+  "released_at": "2026-11-11T04:16:32.877Z",
+  "summary": "Editor: alinear la capa activa al lienzo (izquierda, centro, derecha, arriba, medio, abajo) desde el menú Motor V7.",
   "requiere_puente": "2026-11-06-documentos-grandes-v70"
 }
