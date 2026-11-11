@@ -50,6 +50,38 @@
     return cambiados;
   }
 
+  // ---------- Alinear la capa activa al lienzo ----------
+  const NOMBRE_DESTINO = { izquierda: 'A la izquierda', centro: 'Al centro', derecha: 'A la derecha', arriba: 'Arriba', medio: 'En medio', abajo: 'Abajo' };
+  // La capa activa es la que el Estudio tiene en `bloque_arrastre` (titulo, subtitulo, cta, marca, periodo).
+  function capaActiva() {
+    const f = formulario(); if (!f) return null;
+    const capa = (f.elements.bloque_arrastre && f.elements.bloque_arrastre.value) || 'titulo', rol = X.CAPA_A_ROL[capa] || 'titulo1';
+    return { capa, rol, f };
+  }
+  function alinea(destino) {
+    const c = capaActiva(), a = api(); if (!c || !a) throw new Error('El editor no está abierto.');
+    let cajas = []; try { const m = a.ultimoMotor(); cajas = Array.isArray(m) ? m[0] : []; } catch (_) { /* aún sin vista */ }
+    const caja = cajas.find((x) => x.rol === c.rol) || (c.rol === 'periodo' ? cajas.find((x) => x.rol === 'zona') : null);
+    if (!caja) { aviso('Esa capa no tiene texto visible para alinear.'); return null; }
+    const [kx, ky] = X.CAMPOS_ALINEA[caja.rol] || X.CAMPOS_ALINEA[c.rol], ex = c.f.elements[kx], ey = c.f.elements[ky];
+    if (!ex || !ey) { aviso('Esta plantilla no deja mover esa capa.'); return null; }
+    const formato = (c.f.elements._formato && c.f.elements._formato.value) || (a.valores()._formato), [ancho, alto] = DIM[formato] || DIM.imagen_4x5;
+    const r = X.calculaAlineacion({ caja, destino, actual: { dx: ex.value, dy: ey.value }, margen: X.margenes(ancho, alto) });
+    if (!r) return null;
+    a.guardaHistorial();
+    for (const [el, v] of [[ex, r.dx], [ey, r.dy]]) { if (String(el.value) === String(v)) continue; el.value = String(v); el.dispatchEvent(new Event('input', { bubbles: true })); el.dispatchEvent(new Event('change', { bubbles: true })); }
+    a.guardaHistorial(); a.programaVista(0);
+    aviso(NOMBRE_DESTINO[destino] + ': ' + (X.NOMBRE_ROL[caja.rol] || caja.rol).toLowerCase() + (r.limitado ? ' (llegó al tope de movimiento; el resto lo ajusta el motor)' : '') + '. Ctrl+Z lo deshace.');
+    return r;
+  }
+  function abreAlinear() {
+    const c = capaActiva(); if (!c) return;
+    const f = dialogo('Alinear al lienzo', '<div class="e2-perfiles" style="padding-bottom:0"><span>Capa activa: <b>' + esc(X.NOMBRE_ROL[c.rol] || c.rol) + '</b>. Elige dónde ponerla.</span></div>'
+      + '<div class="e2x-alinea">' + X.DESTINOS.map((d) => '<button class="e2-btn" type="button" data-e2x-alinea="' + d + '">' + NOMBRE_DESTINO[d] + '</button>').join('') + '</div>'
+      + '<div class="e2-pie"><span>Respeta los márgenes seguros. Cambia de capa con la herramienta Capas y vuelve a abrir esto.</span></div>');
+    f.addEventListener('click', (e) => { const b = e.target.closest('[data-e2x-alinea]'); if (b) { try { alinea(b.dataset.e2xAlinea); } catch (err) { aviso(err.message); } } });
+  }
+
   // ---------- «Mis diseños»: guardar y abrir como archivo ----------
   const esperaMs = (ms) => new Promise((r) => setTimeout(r, ms));
   function guardaArchivo() {
@@ -106,6 +138,7 @@
       + '.e2x-menu button{display:flex;align-items:center;gap:9px;width:100%;border:0;background:transparent;color:inherit;text-align:left;padding:8px 10px;border-radius:8px;font:inherit;cursor:pointer}.e2x-menu button:hover:not(:disabled),.e2x-menu button:focus-visible{background:var(--accent-suave,rgba(74,134,232,.13));outline:0}.e2x-menu button:disabled{opacity:.45;cursor:not-allowed}.e2x-menu small{display:block;opacity:.62;font-size:11.5px}'
       + '.e2x-lista{list-style:none;margin:0;padding:8px 14px 14px;overflow:auto}.e2x-lista li{display:flex;gap:10px;align-items:flex-start;padding:8px 0;border-bottom:1px solid rgba(120,130,150,.16)}.e2x-lista li:last-child{border-bottom:0}'
       + '.e2x-nivel{flex:none;font-size:11px;font-weight:700;border-radius:999px;padding:2px 8px;margin-top:1px}.e2x-nivel[data-n=error]{background:#fde8e8;color:#b3261e}.e2x-nivel[data-n=aviso]{background:#fff3d6;color:#8a5a00}.e2x-nivel[data-n=bien]{background:#dcf5e7;color:#0f6b3f}'
+      + '.e2x-alinea{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:14px}.e2x-alinea .e2-btn{padding:10px 6px}'
       + '.e2x-punto{display:flex;align-items:center;gap:10px;padding:9px 14px;border-bottom:1px solid rgba(120,130,150,.16)}.e2x-punto b{flex:1;font-weight:600}.e2x-punto small{opacity:.6;font-weight:400}.e2x-vacio{padding:18px 14px;opacity:.7}';
     document.head.appendChild(s);
   }
@@ -154,6 +187,7 @@
     { id: 'e2.restaurar', label: 'Restaurar un diseño conservado…', nota: 'Lista de diseños guardados', icono: ICONO.volver, puede: () => !!api(), hace: abrePuntos },
     { id: 'e2.variar', label: 'Probar la siguiente plantilla', nota: 'De la misma serie, con tu foto y textos', icono: ICONO.siguiente, puede: () => { const a = api(); return !!a && !!X.siguientePlantilla(a.lista, a.idReal); }, hace: () => { const a = api(); try { conserva('Antes de cambiar de plantilla'); } catch (_) { /* sin almacenamiento */ } a.abrirPlantilla(X.siguientePlantilla(a.lista, a.idReal)); } },
     { id: 'e2.formatos', label: 'Adaptar a los 3 formatos', nota: '4:5, 1:1 y 9:16 con el mismo diseño', icono: ICONO.formatos, puede: () => { const b = boton('formatos3'); return !!b && !b.disabled; }, hace: () => boton('formatos3').click() },
+    { id: 'e2.alinear', label: 'Alinear la capa activa al lienzo…', nota: 'Izquierda, centro, derecha, arriba, medio, abajo', icono: ICONO.formatos, puede: () => !!api(), hace: abreAlinear },
     { id: 'e2.guardar-archivo', label: 'Guardar el diseño como archivo', nota: 'Para llevarlo a otro equipo o conservarlo', icono: ICONO.guardar, puede: () => !!api(), hace: guardaArchivo },
     { id: 'e2.abrir-archivo', label: 'Abrir un diseño desde archivo…', nota: 'Abre su plantilla y aplica sus ajustes', icono: ICONO.volver, puede: () => !!api(), hace: abreArchivo },
     { id: 'e2.revisar', label: 'Revisar antes de exportar', nota: 'Márgenes, letra, textos montados', icono: ICONO.revisar, puede: () => !!api(), hace: abreRevision },
@@ -182,6 +216,6 @@
   document.addEventListener('mousedown', (e) => { if ($('.e2x-menu') && !e.target.closest('.e2x-dock')) cierraMenu(); });
   let espera = 0;
   new MutationObserver(() => { clearTimeout(espera); espera = setTimeout(monta, 200); }).observe(document.documentElement, { childList: true, subtree: true });
-  window.DcarelaEditor2Extras = { comandos, revisa, conserva, restaura, abreRevision, abrePuntos, puntos: leePuntos, guardaArchivo, aplicaArchivo, version: 'etapa-B' };
+  window.DcarelaEditor2Extras = { comandos, revisa, conserva, restaura, abreRevision, abrePuntos, puntos: leePuntos, guardaArchivo, aplicaArchivo, alinea, version: 'etapa-B' };
   monta();
 })();
