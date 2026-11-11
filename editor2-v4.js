@@ -239,6 +239,28 @@
   function pintaMotor(r) { $$('[data-e2v4-v7]', r).forEach((b) => { let ok = false; try { ok = MOTOR[b.dataset.e2v4V7].puede(); } catch (_) { ok = false; } b.disabled = !ok; }); }
   // ---------- Repartir textos con el mismo espacio ----------
   let medidaReparto = null;
+  // ---------- Ordenar la selección múltiple (acciones reales del panel Capas: al-* y dist-*) ----------
+  const seleccionados = () => { try { const s = api() && api().seleccionMultipleV4; return s ? s.cuantas() : 0; } catch (_) { return 0; } };
+  const ACCIONES_SEL = [['al-izq', 'A la izquierda'], ['al-ch', 'Al centro (horizontal)'], ['al-der', 'A la derecha'], ['al-arr', 'Arriba'], ['al-cv', 'En medio (vertical)'], ['al-aba', 'Abajo'], ['dist-h', 'Repartir en horizontal'], ['dist-v', 'Repartir en vertical']];
+  function ordenaSeleccion(accion) {
+    const s = api() && api().seleccionMultipleV4; if (!s) { aviso('El editor no está listo todavía.'); return false; }
+    const n = s.cuantas(); if (n < 2) { aviso('Selecciona al menos dos objetos (Mayús + clic) para ordenarlos entre sí.'); return false; }
+    const ok = s.hace(accion);
+    if (ok) aviso(((ACCIONES_SEL.find((x) => x[0] === accion) || [])[1] || accion) + ': ' + n + ' objetos. Ctrl+Z lo deshace.');
+    return ok;
+  }
+  function abreOrdenarSeleccion(tipo) {
+    if (tipo === 'repartir' && seleccionados() >= 3) { ordenaSeleccion('dist-v'); return; }
+    $$('.e2-fondo').forEach((n) => n.remove());
+    const fondo = document.createElement('div'); fondo.className = 'e2-fondo';
+    fondo.innerHTML = '<div class="e2-caja" role="dialog" aria-modal="true" aria-label="Ordenar la selección"><header><b>Ordenar ' + seleccionados() + ' objetos seleccionados</b><button class="e2-btn" type="button" data-e2v4-cerrar>Cerrar</button></header>'
+      + '<div class="e2x-alinea" style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:14px">' + ACCIONES_SEL.map(([a, t]) => '<button class="e2-btn" type="button" data-e2v4-sel="' + a + '"' + (a.startsWith('dist') && seleccionados() < 3 ? ' disabled title="Para repartir hacen falta 3 objetos o más"' : '') + '>' + esc(t) + '</button>').join('') + '</div>'
+      + '<div class="e2-pie"><span>Se alinean entre sí (no al lienzo). Los objetos bloqueados no se mueven.</span></div></div>';
+    fondo.addEventListener('mousedown', (e) => { if (e.target === fondo) fondo.remove(); });
+    fondo.addEventListener('click', (e) => { if (e.target.closest('[data-e2v4-cerrar]')) { fondo.remove(); return; } const b = e.target.closest('[data-e2v4-sel]'); if (b && !b.disabled) { ordenaSeleccion(b.dataset.e2v4Sel); fondo.remove(); } });
+    document.body.appendChild(fondo);
+  }
+
   function reparte() {
     const a = api(), XC = window.DcarelaEditor2ExtrasCore; if (!a || !XC) { aviso('El editor no está listo todavía.'); return; }
     let cajas = []; try { cajas = (a.ultimoMotor() || [])[0] || []; } catch (_) { /* aún sin vista */ }
@@ -304,7 +326,12 @@
     d.addEventListener('click', (e) => {
       if (e.target.closest('[data-e2v4-lote]')) { exportaLote(r); return; }
       const ob = e.target.closest('[data-e2v4-ord]');
-      if (ob) { if (ob.dataset.e2v4Ord === 'repartir') reparte(); else if (E() && E().abreAlinear) E().abreAlinear(); return; }
+      if (ob) {
+        // Con 2 o más objetos seleccionados (formas, textos libres, fotos) se ordena la SELECCIÓN; si no, los textos de la plantilla.
+        if (seleccionados() >= 2) { abreOrdenarSeleccion(ob.dataset.e2v4Ord); return; }
+        if (ob.dataset.e2v4Ord === 'repartir') reparte(); else if (E() && E().abreAlinear) E().abreAlinear();
+        return;
+      }
       const fb = e.target.closest('[data-e2v4-fmt]'), mb = e.target.closest('[data-e2v4-v7]');
       if (fb && !fb.disabled) { const sel = formulario().elements.formato; if (sel.value !== fb.dataset.e2v4Fmt) { sel.value = fb.dataset.e2v4Fmt; sel.dispatchEvent(new Event('input', { bubbles: true })); sel.dispatchEvent(new Event('change', { bubbles: true })); } pintaVariantes(r); }
       if (mb && !mb.disabled) { try { MOTOR[mb.dataset.e2v4V7].hace(); } catch (err) { aviso(err.message || 'No se pudo.'); } setTimeout(() => pintaMotor(r), 300); }
@@ -370,6 +397,6 @@
   }
   let espera = 0;
   new MutationObserver(() => { clearTimeout(espera); espera = setTimeout(monta, 220); }).observe(document.documentElement, { childList: true, subtree: true });
-  window.DcarelaEditorV4 = { paridad, motor: MOTOR, aplica, propone, reparte, exportaLote: () => exportaLote(raiz()), guardaPrefs: guardaEnServidor, prefsLocales, version: 'v4-completo' };
+  window.DcarelaEditorV4 = { paridad, motor: MOTOR, aplica, propone, reparte, ordenaSeleccion, seleccionados,exportaLote: () => exportaLote(raiz()), guardaPrefs: guardaEnServidor, prefsLocales, version: 'v4-completo' };
   monta();
 })();
