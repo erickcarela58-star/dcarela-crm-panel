@@ -50,6 +50,41 @@
     return cambiados;
   }
 
+  // ---------- «Mis diseños»: guardar y abrir como archivo ----------
+  const esperaMs = (ms) => new Promise((r) => setTimeout(r, ms));
+  function guardaArchivo() {
+    const a = api(); if (!a) throw new Error('El editor no está abierto.');
+    const v = a.valores(), arch = X.armaArchivo({ plantilla: a.idReal, formato: v._formato, valores: v });
+    const url = URL.createObjectURL(new Blob([JSON.stringify(arch, null, 2)], { type: 'application/json' }));
+    const l = document.createElement('a'); l.href = url; l.download = X.nombreArchivo(a.idReal, arch.guardado); document.body.appendChild(l); l.click(); l.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 4000);
+    aviso('Diseño guardado como archivo: ' + l.download + ' (lleva los ajustes y textos, no las fotos).');
+    return arch;
+  }
+  // Aplica un archivo ya leído: si es de otra plantilla, la abre primero y espera a que cargue.
+  async function aplicaArchivo(r) {
+    const a = api(); if (!a) throw new Error('El editor no está abierto.');
+    if (r.plantilla !== a.idReal) {
+      a.abrirPlantilla(r.plantilla);
+      for (let i = 0; i < 60 && (!api() || api().idReal !== r.plantilla); i++) await esperaMs(250);
+      if (!api() || api().idReal !== r.plantilla) { aviso('No se pudo abrir la plantilla de ese diseño.'); return 0; }
+      await esperaMs(900);
+    }
+    const n = restaura({ plantilla: r.plantilla, valores: r.valores });
+    aviso(n ? 'Diseño abierto desde el archivo (' + n + ' ajustes). Ctrl+Z lo deshace.' : 'El archivo ya coincide con el diseño actual.');
+    return n;
+  }
+  function abreArchivo() {
+    const inp = document.createElement('input'); inp.type = 'file'; inp.accept = 'application/json,.json';
+    inp.addEventListener('change', async () => {
+      const f0 = inp.files && inp.files[0]; if (!f0) return;
+      const r = X.leeArchivo(await f0.text());
+      if (!r.ok) { aviso(r.error); return; }
+      try { await aplicaArchivo(r); } catch (err) { aviso(err.message || 'No se pudo abrir el diseño.'); }
+    });
+    inp.click();
+  }
+
   // ---------- revisión antes de exportar ----------
   function revisa() {
     const a = api(); if (!a) return [{ nivel: 'error', texto: 'El editor no está abierto.' }];
@@ -119,6 +154,8 @@
     { id: 'e2.restaurar', label: 'Restaurar un diseño conservado…', nota: 'Lista de diseños guardados', icono: ICONO.volver, puede: () => !!api(), hace: abrePuntos },
     { id: 'e2.variar', label: 'Probar la siguiente plantilla', nota: 'De la misma serie, con tu foto y textos', icono: ICONO.siguiente, puede: () => { const a = api(); return !!a && !!X.siguientePlantilla(a.lista, a.idReal); }, hace: () => { const a = api(); try { conserva('Antes de cambiar de plantilla'); } catch (_) { /* sin almacenamiento */ } a.abrirPlantilla(X.siguientePlantilla(a.lista, a.idReal)); } },
     { id: 'e2.formatos', label: 'Adaptar a los 3 formatos', nota: '4:5, 1:1 y 9:16 con el mismo diseño', icono: ICONO.formatos, puede: () => { const b = boton('formatos3'); return !!b && !b.disabled; }, hace: () => boton('formatos3').click() },
+    { id: 'e2.guardar-archivo', label: 'Guardar el diseño como archivo', nota: 'Para llevarlo a otro equipo o conservarlo', icono: ICONO.guardar, puede: () => !!api(), hace: guardaArchivo },
+    { id: 'e2.abrir-archivo', label: 'Abrir un diseño desde archivo…', nota: 'Abre su plantilla y aplica sus ajustes', icono: ICONO.volver, puede: () => !!api(), hace: abreArchivo },
     { id: 'e2.revisar', label: 'Revisar antes de exportar', nota: 'Márgenes, letra, textos montados', icono: ICONO.revisar, puede: () => !!api(), hace: abreRevision },
   ];
   // Definiciones para la paleta Ctrl+K y el gestor (las registra editor2-tools.js). Son fijas: ningún perfil las esconde.
@@ -145,6 +182,6 @@
   document.addEventListener('mousedown', (e) => { if ($('.e2x-menu') && !e.target.closest('.e2x-dock')) cierraMenu(); });
   let espera = 0;
   new MutationObserver(() => { clearTimeout(espera); espera = setTimeout(monta, 200); }).observe(document.documentElement, { childList: true, subtree: true });
-  window.DcarelaEditor2Extras = { comandos, revisa, conserva, restaura, abreRevision, abrePuntos, puntos: leePuntos, version: 'etapa-B' };
+  window.DcarelaEditor2Extras = { comandos, revisa, conserva, restaura, abreRevision, abrePuntos, puntos: leePuntos, guardaArchivo, aplicaArchivo, version: 'etapa-B' };
   monta();
 })();
