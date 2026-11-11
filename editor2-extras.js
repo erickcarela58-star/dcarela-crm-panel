@@ -71,6 +71,8 @@
     const formato = (c.f.elements._formato && c.f.elements._formato.value) || (a.valores()._formato), [ancho, alto] = DIM[formato] || DIM.imagen_4x5;
     const r = X.calculaAlineacion({ caja, destino, actual: { dx: ex.value, dy: ey.value }, margen: X.margenes(ancho, alto) });
     if (!r) return null;
+    // Ya está ahí: no se pide al motor que redibuje (tarda ~10 s en producción y bloquearía la siguiente alineación sin motivo).
+    if (Number(r.dx) === Number(ex.value || 0) && Number(r.dy) === Number(ey.value || 0)) { aviso('Esa capa ya está en «' + NOMBRE_DESTINO[destino] + '».'); return r; }
     a.guardaHistorial();
     for (const [el, v] of [[ex, r.dx], [ey, r.dy]]) { if (String(el.value) === String(v)) continue; el.value = String(v); el.dispatchEvent(new Event('input', { bubbles: true })); el.dispatchEvent(new Event('change', { bubbles: true })); }
     a.guardaHistorial(); a.programaVista(0); ultimaMedida = cajas;
