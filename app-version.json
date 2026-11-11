@@ -1,7 +1,7 @@
 {
-  "version": "2026-11-11-crm-release-v440-alinear-espera",
+  "version": "2026-11-11-crm-release-v441-alinear-sin-redibujo",
   "channel": "crm",
-  "released_at": "2026-11-11T05:22:35.000Z",
-  "summary": "Editor: alinear espera a que el motor redibuje antes de medir (evita destinos equivocados al pulsar dos veces seguidas).",
+  "released_at": "2026-11-11T05:59:03.000Z",
+  "summary": "Editor: alinear una capa que ya está en su sitio avisa y no redibuja (no bloquea ~10 s la siguiente alineación).",
   "requiere_puente": "2026-11-06-documentos-grandes-v70"
 }
