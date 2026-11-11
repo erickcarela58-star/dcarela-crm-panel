@@ -1,7 +1,7 @@
 {
-  "version": "2026-11-11-crm-release-v442-identidad-negocio",
+  "version": "2026-11-11-crm-release-v443-marca-negocio",
   "channel": "crm",
-  "released_at": "2026-11-11T07:00:07.000Z",
-  "summary": "Multi-negocio: el panel toma el negocio principal y los teléfonos de crm-config.js (mismos valores de siempre).",
+  "released_at": "2026-11-11T07:15:45.000Z",
+  "summary": "Multi-negocio: nombre, @instagram y ciudad del negocio salen de crm-config.js (mismos valores de siempre).",
   "requiere_puente": "2026-11-06-documentos-grandes-v70"
 }
