@@ -21,6 +21,8 @@
 <script src="./editor2-tools-core.js"></script>
 <script src="./editor2-extras-core.js"></script>
 <script src="./editor2-extras.js" defer></script>
+<script src="./editor2-v4-core.js"></script>
+<script src="./editor2-v4.js" defer></script>
 <script src="./editor2-tools.js" defer></script>
 <script src="./estados-cola.js?v=413"></script>
 <script src="./crm-config.js"></script>
@@ -4021,6 +4023,7 @@ const TEL_TXT = Object.freeze(Object.fromEntries(Object.entries(TELS).map(([k, v
 const MARCA = Object.freeze((() => { const t = (v, d, re) => { const x = String(v ?? '').trim(); return x && x.length <= 60 && !/[<>{}`$\\]/.test(x) && (!re || re.test(x)) ? x : d; };
   return { nombre: t(CFG.marca?.nombre, "D' Carela Compufoto"), instagram: t(CFG.marca?.instagram, '@dcarela_compufoto', /^@[A-Za-z0-9._]{1,30}$/), ciudad: t(CFG.marca?.ciudad, 'La Romana') }; })());
 const NEGOCIO = CFG.businessId == null ? NEGOCIO_PRINCIPAL : String(CFG.businessId);
+window.DcarelaIdentidad = Object.freeze({ NEGOCIO_PRINCIPAL, TELS, TEL_TXT, MARCA }); // para los módulos del editor (editor2-v4.js)
 const BRIDGE_ID = NEGOCIO === 'plaza-artesanal' ? 'whatsapp_qr_plaza' : 'whatsapp_qr';
 const SUCURSAL_CONFIG_VALIDA = [NEGOCIO_PRINCIPAL, 'plaza-artesanal'].includes(NEGOCIO)
   && (!CFG.bridgeId || CFG.bridgeId === BRIDGE_ID)
