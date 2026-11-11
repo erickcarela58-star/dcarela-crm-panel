@@ -43,15 +43,72 @@
   }
   const valoresActuales = () => { try { return api().valores() || {}; } catch (_) { return {}; } };
   const opcionesDe = (el) => (el && el.tagName === 'SELECT') ? [...el.options].map((o) => [o.value, o.textContent]) : [];
+  const dormir = (ms) => new Promise((ok) => setTimeout(ok, ms));
+
+  // ---------- el Motor V7 PROPONE y el operador acepta (ZIP V4: «propuestas con diff, nunca sobrescribir sin comando») ----------
+  const CLAVE_PROPONER = 'dcarela.editorV4.proponer';
+  const proponerActivo = () => { try { return localStorage.getItem(CLAVE_PROPONER) !== '0'; } catch (_) { return true; } };
+  function fijaProponer(si) { try { localStorage.setItem(CLAVE_PROPONER, si ? '1' : '0'); } catch (_) { /* vale esta sesión */ } guardaEnServidor(); }
+  function propone(titulo, campos, hecho, alAplicar) {
+    if (!Object.keys(campos).length) return 0;
+    if (!proponerActivo()) { const n = aplica(campos, hecho); if (n && alAplicar) alAplicar(); return n; }
+    const f = formulario(), etiquetas = {};
+    for (const k of Object.keys(campos)) { const el = f && f.elements[k]; if (el && el.tagName === 'SELECT') etiquetas[k] = Object.fromEntries(opcionesDe(el)); }
+    const dif = V.diferencias(campos, valoresActuales(), etiquetas);
+    if (!dif.length) { aviso('No hay nada que cambiar: el diseño ya está así.'); return 0; }
+    $$('.e2-fondo').forEach((n) => n.remove());
+    const fondo = document.createElement('div'); fondo.className = 'e2-fondo';
+    fondo.innerHTML = '<div class="e2-caja e2v4-prop" role="dialog" aria-modal="true" aria-label="' + esc('Propuesta: ' + titulo) + '"><header><b>' + esc('Motor V7 propone: ' + titulo) + '</b><button class="e2-btn" type="button" data-e2v4-no>Descartar</button></header>'
+      + '<table class="e2v4-dif"><thead><tr><th>Qué cambia</th><th>Ahora</th><th>Propuesto</th></tr></thead><tbody>'
+      + dif.map((d) => '<tr><td>' + esc(d.nombre) + '</td><td>' + esc(d.antes) + '</td><td><b>' + esc(d.despues) + '</b></td></tr>').join('') + '</tbody></table>'
+      + '<div class="e2-pie"><label class="e2v4-check"><input type="checkbox" data-e2v4-siempre> Aplicar sin preguntar la próxima vez</label><button class="e2-btn e2v4-si" type="button" data-e2v4-si>Aplicar</button></div></div>';
+    const cierra = (descartada) => { fondo.remove(); if (descartada) aviso('Propuesta descartada: el diseño no cambió.'); };
+    fondo.addEventListener('mousedown', (e) => { if (e.target === fondo) cierra(true); });
+    fondo.addEventListener('keydown', (e) => { if (e.key === 'Escape') cierra(true); });
+    fondo.addEventListener('click', (e) => {
+      if (e.target.closest('[data-e2v4-no]')) { cierra(true); return; }
+      if (!e.target.closest('[data-e2v4-si]')) return;
+      if ($('[data-e2v4-siempre]', fondo).checked) fijaProponer(false);
+      cierra(false); const n = aplica(campos, hecho); if (n && alAplicar) alAplicar();
+    });
+    document.body.appendChild(fondo); const b = $('[data-e2v4-si]', fondo); if (b) b.focus();
+    return dif.length;
+  }
+
+  // ---------- preferencias del editor por usuario (servidor) ----------
+  // La paleta (editor2-tools) guarda perfil, favoritos, ocultas, orden y atajos en este navegador; aquí se copian a
+  // crm_preferencias_usuario/{uid} (solo el propio usuario lee y escribe) y se recuperan en otro equipo.
+  let guardando = 0;
+  function prefsLocales() {
+    const reg = window.DcarelaEditor2 && window.DcarelaEditor2.registro && window.DcarelaEditor2.registro();
+    return V.limpiaPrefs({ ...(reg ? reg.getPreferences() : {}), proponer: proponerActivo() });
+  }
+  function guardaEnServidor() {
+    const S = window.DcarelaPrefsServidor; if (!S) return;
+    clearTimeout(guardando);
+    guardando = setTimeout(() => { S.guarda(prefsLocales()).catch(() => { /* sin red: queda la copia local */ }); }, 1200);
+  }
+  let prefsTraidas = false;
+  async function traePrefs() {
+    const S = window.DcarelaPrefsServidor, reg = window.DcarelaEditor2 && window.DcarelaEditor2.registro && window.DcarelaEditor2.registro();
+    if (prefsTraidas || !S || !reg) return;
+    prefsTraidas = true;
+    let p = null; try { p = await S.lee(); } catch (_) { return; }
+    if (!p) { guardaEnServidor(); return; } // primera vez: sube las de este equipo
+    const limpias = V.limpiaPrefs(p);
+    if (typeof limpias.proponer === 'boolean') { try { localStorage.setItem(CLAVE_PROPONER, limpias.proponer ? '1' : '0'); } catch (_) { /* nada */ } }
+    delete limpias.proponer;
+    if (Object.keys(limpias).length && window.DcarelaEditor2.aplicaPrefs) window.DcarelaEditor2.aplicaPrefs(limpias);
+  }
 
   // ---------- Motor V7 (6 acciones) ----------
   const MOTOR = {
     generar: { puede: () => !!api(), hace: () => { api().previsualiza(); aviso('Componiendo con el motor V7…'); } },
     conservar: { puede: () => !!(api() && E()), hace: () => { const r = E().conserva(); aviso(r.repetido ? 'Ese diseño ya estaba conservado.' : r.ok ? 'Diseño conservado. Lo encuentras en «Mis diseños».' : 'No se pudo guardar en este equipo.'); pintaMisDisenos(); } },
-    recomponer: { puede: () => !!api(), hace: () => { const p = V.planRecomponer(valoresActuales()); if (!Object.keys(p).length) { aviso('Las capas ya están donde las coloca el motor.'); return; } const n = Object.keys(p).length; aplica(p, 'Capas devueltas a su sitio (' + n + (n === 1 ? ' ajuste).' : ' ajustes).')); } },
+    recomponer: { puede: () => !!api(), hace: () => { const p = V.planRecomponer(valoresActuales()); if (!Object.keys(p).length) { aviso('Las capas ya están donde las coloca el motor.'); return; } const n = Object.keys(p).length; propone('Recomponer', p, 'Capas devueltas a su sitio (' + n + (n === 1 ? ' ajuste).' : ' ajustes).')); } },
     adaptar: { puede: () => { const b = $('[data-e238="formatos3"]', raiz() || document); return !!b && !b.disabled; }, hace: () => $('[data-e238="formatos3"]', raiz()).click() },
     tipografia: { puede: () => { const f = formulario(); return !!f && V.siguienteOpcion(opcionesDe(f.elements.tipografia).map((o) => o[0]), f.elements.tipografia && f.elements.tipografia.value) !== null; },
-      hace: () => { const el = formulario().elements.tipografia, ops = opcionesDe(el), sig = V.siguienteOpcion(ops.map((o) => o[0]), el.value); const nombre = (ops.find((o) => o[0] === sig) || [])[1] || sig; aplica({ tipografia: sig }, 'Letra del titular: ' + nombre + '.'); } },
+      hace: () => { const el = formulario().elements.tipografia, ops = opcionesDe(el), sig = V.siguienteOpcion(ops.map((o) => o[0]), el.value); const nombre = (ops.find((o) => o[0] === sig) || [])[1] || sig; propone('Variar tipografía', { tipografia: sig }, 'Letra del titular: ' + nombre + '.'); } },
     referencia: { puede: () => !!$('[data-e238-tool="recrear"]', raiz() || document), hace: () => $('[data-e238-tool="recrear"]', raiz()).click() },
   };
 
@@ -91,7 +148,7 @@
       + '<div class="e2v4-acciones">' + sw('mostrar_marca', 'visible', 'oculto', 'Firma') + sw('mostrar_contactos', 'visible', 'oculto', 'Redes y ciudad') + sw('mostrar_whatsapp', 'si', 'no', 'WhatsApp en el botón') + '</div>'
       + '<p class="e2v4-nota">Los datos salen de la configuración del negocio (crm-config.js). Para escribir otro texto, abre Diseño → «Marca y contacto».</p>';
     c.onclick = (e) => {
-      if (e.target.closest('[data-e2v4-marca-aplica]')) { const p = V.planMarca(m, valoresActuales()); if (!Object.keys(p).length) aviso('La firma, las redes y la ciudad ya están puestas.'); else aplica(p, 'Firma del negocio aplicada.'); pintaMarca(); return; }
+      if (e.target.closest('[data-e2v4-marca-aplica]')) { const p = V.planMarca(m, valoresActuales()); if (!Object.keys(p).length) aviso('La firma, las redes y la ciudad ya están puestas.'); else propone('Firma del negocio', p, 'Firma del negocio aplicada.', pintaMarca); return; }
       const b = e.target.closest('[data-e2v4-sw]'); if (!b) return;
       const k = b.dataset.e2v4Sw, ahora = valoresActuales()[k];
       aplica({ [k]: ahora === b.dataset.si ? b.dataset.no : b.dataset.si }, b.textContent + (ahora === b.dataset.si ? ': oculto.' : ': visible.'));
@@ -140,7 +197,18 @@
     const filas = V.CAMPOS_TIPO.filter(([k]) => f.elements[k] && f.elements[k].tagName === 'SELECT');
     c.innerHTML = filas.length ? '<h3>Tipografía</h3>' + filas.map(([k, t]) => '<label class="e238-campo"><span>' + esc(t) + '</span><select data-e2v4-tipo="' + k + '">' + opcionesDe(f.elements[k]).map(([v, n]) => '<option value="' + esc(v) + '"' + (v === f.elements[k].value ? ' selected' : '') + '>' + esc(n) + '</option>').join('') + '</select></label>').join('')
       : '<p class="e2v4-nota">Esta plantilla no tiene tipografías intercambiables.</p>';
+    // Cuentagotas: toma un color de cualquier punto de la pantalla (la foto del lienzo incluida) con el EyeDropper del navegador.
+    const colores = V.CAMPOS_COLOR.filter(([k]) => f.elements[k]), hayGotero = typeof window.EyeDropper === 'function';
+    if (colores.length) c.innerHTML += '<h3>Cuentagotas</h3>' + (hayGotero ? '' : '<p class="e2v4-nota">Este navegador no tiene cuentagotas: usa Chrome o Edge (o la app de escritorio).</p>')
+      + colores.map(([k, t]) => { const v = V.normalizaColor(f.elements[k].value) || ''; return '<div class="e2v4-gota"><i style="background:' + esc(v || 'transparent') + '"></i><span>' + esc(t) + '<small>' + esc(v || 'de la plantilla') + '</small></span><button type="button" class="e238-btn e238-peq" data-e2v4-gota="' + k + '"' + (hayGotero ? '' : ' disabled') + ' title="Haz clic y luego toca un color de la foto">Tomar color</button></div>'; }).join('');
     c.onchange = (e) => { const s = e.target.closest('[data-e2v4-tipo]'); if (s) aplica({ [s.dataset.e2v4Tipo]: s.value }, 'Tipografía cambiada.'); };
+    c.onclick = async (e) => {
+      const b = e.target.closest('[data-e2v4-gota]'); if (!b || b.disabled || !hayGotero) return;
+      let r1 = null; try { r1 = await new window.EyeDropper().open(); } catch (_) { return; } // Esc cancela
+      const color = V.normalizaColor(r1 && r1.sRGBHex);
+      if (!color) { aviso('No se pudo leer ese color.'); return; }
+      aplica({ [b.dataset.e2v4Gota]: color }, 'Color tomado: ' + color + '.'); pintaTipos(raiz());
+    };
   }
   function montaDerecha(r) {
     const nav = $('.e238-tabs', r); if (!nav || $('[data-e2v4-tab]', nav)) return;
@@ -169,16 +237,74 @@
     $$('[data-e2v4-fmt]', r).forEach((b) => { const ok = !!sel && [...sel.options].some((o) => o.value === b.dataset.e2v4Fmt); b.disabled = !ok; const on = b.dataset.e2v4Fmt === actual; b.classList.toggle('on', on); b.setAttribute('aria-pressed', String(on)); });
   }
   function pintaMotor(r) { $$('[data-e2v4-v7]', r).forEach((b) => { let ok = false; try { ok = MOTOR[b.dataset.e2v4V7].puede(); } catch (_) { ok = false; } b.disabled = !ok; }); }
+  // ---------- Repartir textos con el mismo espacio ----------
+  let medidaReparto = null;
+  function reparte() {
+    const a = api(), XC = window.DcarelaEditor2ExtrasCore; if (!a || !XC) { aviso('El editor no está listo todavía.'); return; }
+    let cajas = []; try { cajas = (a.ultimoMotor() || [])[0] || []; } catch (_) { /* aún sin vista */ }
+    if (cajas === medidaReparto) { aviso('El editor sigue dibujando el cambio anterior; espera un momento y vuelve a repartir.'); return; }
+    const r = V.calculaReparto(cajas, valoresActuales(), XC.CAMPOS_ALINEA);
+    if (r.error) { aviso(r.error); return; }
+    if (!Object.keys(r.cambios).length) { aviso('Los textos ya están repartidos con el mismo espacio.'); return; }
+    propone('Repartir textos', r.cambios, 'Textos repartidos con ' + r.hueco + ' % entre bloques' + (r.limitado ? ' (alguno llegó al tope de movimiento)' : '') + '.', () => { medidaReparto = cajas; });
+  }
+
+  // ---------- Exportar las 3 variantes en lote (el mismo JPG que da «Solo descargar JPG», una por formato) ----------
+  let enLote = false;
+  async function exportaLote(r) {
+    if (enLote) return;
+    const f = formulario(), sel = f && f.elements.formato, btn = $('[data-ceditor-exportar]', raiz());
+    if (!sel || !btn) { aviso('Desde aquí no se puede exportar.'); return; }
+    const inicial = sel.value, orden = V.ordenLote(inicial, [...sel.options].map((o) => o.value));
+    const nombre = (k) => (V.PARIDAD.variantes.find((v) => v[0] === k) || [k, k])[1];
+    const pone = (k) => { if (sel.value === k) return; sel.value = k; sel.dispatchEvent(new Event('input', { bubbles: true })); sel.dispatchEvent(new Event('change', { bubbles: true })); };
+    enLote = true; const loteBtn = $('[data-e2v4-lote]', r); if (loteBtn) loteBtn.disabled = true;
+    const vista = () => { try { return (api().ultimoMotor() || [])[0] || null; } catch (_) { return null; } };
+    const hechos = [], fallidos = [];
+    try {
+      for (const [i, k] of orden.entries()) {
+        aviso('Lote: preparando ' + nombre(k) + ' (' + (i + 1) + ' de ' + orden.length + ')…');
+        if (sel.value !== k) {
+          // Cada formato guarda su propia composición: hay que esperar a que el motor la dibuje antes de exportar,
+          // o el botón ignora el clic (aún no hay foto para ese formato).
+          const antes = vista(); pone(k); pintaVariantes(r);
+          for (let n = 0; n < 150 && vista() === antes; n++) await dormir(400);
+          if (vista() === antes) { fallidos.push(nombre(k) + ' (el motor no terminó)'); continue; }
+          await dormir(600);
+        }
+        btn.click();
+        let arranco = false; for (let n = 0; n < 8 && !arranco; n++) { await dormir(200); arranco = btn.disabled; }
+        if (!arranco) { fallidos.push(nombre(k) + ' (falta la foto o el titular)'); continue; }
+        for (let n = 0; n < 180 && btn.disabled; n++) await dormir(500); // el servidor compone el JPG
+        if (btn.disabled) { fallidos.push(nombre(k) + ' (el servidor tardó demasiado)'); continue; }
+        hechos.push(nombre(k));
+      }
+      aviso(fallidos.length ? 'Lote: ' + hechos.length + ' de ' + orden.length + ' descargados' + (hechos.length ? ' (' + hechos.join(', ') + ')' : '') + '. No salieron: ' + fallidos.join('; ') + '.'
+        : 'Lote listo: ' + hechos.length + ' JPG descargados (' + hechos.join(', ') + ').');
+    } catch (err) { aviso((err && err.message) || 'No se pudo terminar el lote.'); }
+    finally { pone(inicial); pintaVariantes(r); enLote = false; if (loteBtn) loteBtn.disabled = false; }
+    return hechos.length;
+  }
+
   function montaDock(r) {
     const cuerpo = $('.e238-cuerpo', r); if (!cuerpo || $('.e2v4-dock', r)) return;
     const d = document.createElement('section'); d.className = 'e2v4-dock e238-card'; d.setAttribute('aria-label', 'Variantes y Motor V7');
     d.innerHTML = '<div class="e2v4-grupo"><span class="e2v4-tit">' + ICO.variantes + '<b>Variantes</b></span>'
-      + V.PARIDAD.variantes.map(([k, t, dim]) => '<button type="button" class="e2v4-var" data-e2v4-fmt="' + k + '" title="' + esc(t + ' · ' + dim) + '"><i data-r="' + k + '"></i>' + esc(t) + '</button>').join('') + '</div>'
+      + V.PARIDAD.variantes.map(([k, t, dim]) => '<button type="button" class="e2v4-var" data-e2v4-fmt="' + k + '" title="' + esc(t + ' · ' + dim) + '"><i data-r="' + k + '"></i>' + esc(t) + '</button>').join('')
+      + '<button type="button" class="e2v4-v7" data-e2v4-lote title="Descarga el JPG en 4:5, 9:16 y 1:1 con el mismo diseño">' + ICO.json + '<span>Exportar las 3</span></button></div>'
+      + '<div class="e2v4-grupo"><span class="e2v4-tit">' + ICO.recomponer + '<b>Ordenar</b></span>'
+      + '<button type="button" class="e2v4-v7" data-e2v4-ord="alinear" title="Alinea la capa activa a un borde o al centro del lienzo">' + ICO.adaptar + '<span>Alinear</span></button>'
+      + '<button type="button" class="e2v4-v7" data-e2v4-ord="repartir" title="Reparte los textos en vertical con el mismo espacio entre ellos">' + ICO.tipografia + '<span>Repartir textos</span></button></div>'
       + '<div class="e2v4-grupo e2v4-motor"><span class="e2v4-tit">' + ICO.generar + '<b>Motor V7</b></span>'
-      + V.PARIDAD.motor.map(([k, t, nota]) => '<button type="button" class="e2v4-v7" data-e2v4-v7="' + k + '" title="' + esc(nota) + '">' + ICO[k] + '<span>' + esc(t) + '</span></button>').join('') + '</div>';
+      + V.PARIDAD.motor.map(([k, t, nota]) => '<button type="button" class="e2v4-v7" data-e2v4-v7="' + k + '" title="' + esc(nota) + '">' + ICO[k] + '<span>' + esc(t) + '</span></button>').join('')
+      + '<label class="e2v4-check" title="Antes de cambiar el diseño, el motor muestra qué cambiaría y espera su visto bueno"><input type="checkbox" data-e2v4-proponer' + (proponerActivo() ? ' checked' : '') + '> Proponer primero</label></div>';
     cuerpo.after(d);
     r.classList.add('e2v4');
+    d.addEventListener('change', (e) => { if (e.target.matches('[data-e2v4-proponer]')) { fijaProponer(e.target.checked); aviso(e.target.checked ? 'El motor mostrará cada cambio antes de aplicarlo.' : 'El motor aplicará los cambios directamente (Ctrl+Z los deshace).'); } });
     d.addEventListener('click', (e) => {
+      if (e.target.closest('[data-e2v4-lote]')) { exportaLote(r); return; }
+      const ob = e.target.closest('[data-e2v4-ord]');
+      if (ob) { if (ob.dataset.e2v4Ord === 'repartir') reparte(); else if (E() && E().abreAlinear) E().abreAlinear(); return; }
       const fb = e.target.closest('[data-e2v4-fmt]'), mb = e.target.closest('[data-e2v4-v7]');
       if (fb && !fb.disabled) { const sel = formulario().elements.formato; if (sel.value !== fb.dataset.e2v4Fmt) { sel.value = fb.dataset.e2v4Fmt; sel.dispatchEvent(new Event('input', { bubbles: true })); sel.dispatchEvent(new Event('change', { bubbles: true })); } pintaVariantes(r); }
       if (mb && !mb.disabled) { try { MOTOR[mb.dataset.e2v4V7].hace(); } catch (err) { aviso(err.message || 'No se pudo.'); } setTimeout(() => pintaMotor(r), 300); }
@@ -229,15 +355,21 @@
       + '.e2v4-var i{display:inline-block;border:1.5px solid currentColor;border-radius:2px;opacity:.7}.e2v4-var i[data-r=imagen_4x5]{width:10px;height:12px}.e2v4-var i[data-r=imagen_9x16]{width:8px;height:14px}.e2v4-var i[data-r=imagen_1x1]{width:11px;height:11px}'
       + '.e2v4-chip{display:inline-block;margin-left:6px;padding:1px 8px;border-radius:999px;background:var(--accent-suave,rgba(59,130,246,.1));color:var(--e-acc);font-size:11px;font-weight:600}'
       + '.e238.compacto .e2v4-dock{padding:5px 8px}.e238.compacto .e2v4-var,.e238.compacto .e2v4-v7{height:29px;font-size:11px}'
+      + '.e2v4-check{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--e-mut,#64748b);white-space:nowrap;cursor:pointer}'
+      + '.e2v4-prop{width:min(600px,100%)}.e2v4-dif{width:calc(100% - 28px);margin:12px 14px;border-collapse:collapse;font-size:13px}.e2v4-dif th{text-align:left;font-size:11.5px;color:var(--e-mut,#64748b);font-weight:650;padding:6px 8px;border-bottom:1px solid rgba(120,130,150,.25)}'
+      + '.e2v4-dif td{padding:7px 8px;border-bottom:1px solid rgba(120,130,150,.14);vertical-align:top;word-break:break-word}.e2v4-si{background:var(--e-acc,#3b82f6)!important;color:#fff!important;border-color:transparent!important}'
+      + '.e2v4-gota{display:grid;grid-template-columns:22px 1fr auto;gap:8px;align-items:center;font-size:12.5px}.e2v4-gota i{width:22px;height:22px;border-radius:6px;border:1px solid var(--e-borde);background-image:linear-gradient(45deg,#ddd 25%,transparent 25%,transparent 75%,#ddd 75%)}'
+      + '.e2v4-gota small{display:block;color:var(--e-mut);font-size:11px}'
       + '@media(max-width:1280px){.e2v4-v7 span{display:none}.e2v4-v7{padding:0 9px}}';
     document.head.appendChild(s);
   }
   function monta() {
     const r = raiz(); if (!r || !E()) return;
     estilos(); montaIzquierda(r); montaDerecha(r); montaDock(r); montaCabecera(r);
+    traePrefs().then(() => { const c = $('[data-e2v4-proponer]', r); if (c) c.checked = proponerActivo(); });
   }
   let espera = 0;
   new MutationObserver(() => { clearTimeout(espera); espera = setTimeout(monta, 220); }).observe(document.documentElement, { childList: true, subtree: true });
-  window.DcarelaEditorV4 = { paridad, motor: MOTOR, aplica, version: 'v4-paridad' };
+  window.DcarelaEditorV4 = { paridad, motor: MOTOR, aplica, propone, reparte, exportaLote: () => exportaLote(raiz()), guardaPrefs: guardaEnServidor, prefsLocales, version: 'v4-completo' };
   monta();
 })();
