@@ -1,7 +1,7 @@
 {
-  "version": "2026-11-10-crm-release-v437-lista-de-chats-por-lotes",
+  "version": "2026-11-10-crm-release-v438-disenos-como-archivo",
   "channel": "crm",
-  "released_at": "2026-11-10T22:46:14.330Z",
-  "summary": "CRM más ligero: la lista de chats se dibuja por lotes de 120 (con 2.200 chats eran 57.000 elementos y se congelaba medio segundo en cada actualización).",
+  "released_at": "2026-11-11T02:10:29.342Z",
+  "summary": "Editor: guardar el diseño como archivo y abrirlo después (incluso en otra plantilla), en el menú Motor V7.",
   "requiere_puente": "2026-11-06-documentos-grandes-v70"
 }
