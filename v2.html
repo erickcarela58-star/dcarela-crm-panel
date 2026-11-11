@@ -4036,6 +4036,11 @@ const auth = getAuth(app);
 // Las respuestas en streaming quedan retenidas en algunos WebView/proxies de la PC.
 // Cerrar cada respuesta permite recibir los datos sin esperar a que termine el canal.
 const db   = initializeFirestore(app, { experimentalForceLongPolling: true });
+// Preferencias del editor por usuario (editor2-v4.js): un documento por usuario que solo él lee y escribe (firestore.rules).
+window.DcarelaPrefsServidor = Object.freeze({
+  lee: async () => { const u = auth.currentUser; if (!u) return null; const s = await getDoc(doc(db, 'crm_preferencias_usuario', u.uid)); return s.exists() ? (s.data().editor || null) : null; },
+  guarda: async (editor) => { const u = auth.currentUser; if (!u || !editor) return false; await setDoc(doc(db, 'crm_preferencias_usuario', u.uid), { editor, updated_at: new Date().toISOString() }); return true; },
+});
 
 const $ = id => document.getElementById(id);
 const esc = v => String(v ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
