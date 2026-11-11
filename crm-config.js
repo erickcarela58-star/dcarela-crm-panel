@@ -8,6 +8,11 @@ window.CRM_CONFIG = window.DCARELA_CRM_CONFIG = {
   accent: "#3b82f6",
   accent2: "#06b6d4",
 
+  // Identidad del negocio (checklist de comercialización, A). Otra instalación cambia solo esto:
+  // el id del negocio en Firestore y sus números (1 + 10 dígitos). Mal escritos, el panel usa los de siempre.
+  principalBusinessId: "dcarela",
+  telefonos: { oficial: "18495245620", web: "18097575644", dueno: "18094785620" },
+
   notificationTag: "dcarela-crm",
   firebaseFunctionsBase: "https://us-central1-erikccarela.cloudfunctions.net",
   firebaseAgendaUrl: "https://crmagenda-o2uqjp6fra-uc.a.run.app",
