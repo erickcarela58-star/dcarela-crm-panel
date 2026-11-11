@@ -12,6 +12,7 @@ window.CRM_CONFIG = window.DCARELA_CRM_CONFIG = {
   // el id del negocio en Firestore y sus números (1 + 10 dígitos). Mal escritos, el panel usa los de siempre.
   principalBusinessId: "dcarela",
   telefonos: { oficial: "18495245620", web: "18097575644", dueno: "18094785620" },
+  marca: { nombre: "D' Carela Compufoto", instagram: "@dcarela_compufoto", ciudad: "La Romana" },
 
   notificationTag: "dcarela-crm",
   firebaseFunctionsBase: "https://us-central1-erikccarela.cloudfunctions.net",
