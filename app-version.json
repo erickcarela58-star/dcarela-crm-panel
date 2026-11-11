@@ -1,7 +1,7 @@
 {
-  "version": "2026-11-11-crm-release-v441-alinear-sin-redibujo",
+  "version": "2026-11-11-crm-release-v442-identidad-negocio",
   "channel": "crm",
-  "released_at": "2026-11-11T05:59:03.000Z",
-  "summary": "Editor: alinear una capa que ya está en su sitio avisa y no redibuja (no bloquea ~10 s la siguiente alineación).",
+  "released_at": "2026-11-11T07:00:07.000Z",
+  "summary": "Multi-negocio: el panel toma el negocio principal y los teléfonos de crm-config.js (mismos valores de siempre).",
   "requiere_puente": "2026-11-06-documentos-grandes-v70"
 }
