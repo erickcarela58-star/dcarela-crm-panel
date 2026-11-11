@@ -4018,6 +4018,8 @@ const NEGOCIO_PRINCIPAL = /^[a-z0-9][a-z0-9-]{1,39}$/.test(String(CFG.principalB
 const TELS = Object.freeze(Object.fromEntries(Object.entries({ oficial: '18495245620', web: '18097575644', dueno: '18094785620' })
   .map(([k, v]) => { const d = String(CFG.telefonos?.[k] || '').replace(/\D/g, ''); return [k, /^1\d{10}$/.test(d) ? d : v]; })));
 const TEL_TXT = Object.freeze(Object.fromEntries(Object.entries(TELS).map(([k, v]) => [k, v.slice(1, 4) + '-' + v.slice(4, 7) + '-' + v.slice(7)])));
+const MARCA = Object.freeze((() => { const t = (v, d, re) => { const x = String(v ?? '').trim(); return x && x.length <= 60 && !/[<>{}`$\\]/.test(x) && (!re || re.test(x)) ? x : d; };
+  return { nombre: t(CFG.marca?.nombre, "D' Carela Compufoto"), instagram: t(CFG.marca?.instagram, '@dcarela_compufoto', /^@[A-Za-z0-9._]{1,30}$/), ciudad: t(CFG.marca?.ciudad, 'La Romana') }; })());
 const NEGOCIO = CFG.businessId == null ? NEGOCIO_PRINCIPAL : String(CFG.businessId);
 const BRIDGE_ID = NEGOCIO === 'plaza-artesanal' ? 'whatsapp_qr_plaza' : 'whatsapp_qr';
 const SUCURSAL_CONFIG_VALIDA = [NEGOCIO_PRINCIPAL, 'plaza-artesanal'].includes(NEGOCIO)
@@ -13106,7 +13108,7 @@ function abreNuevaPlantilla(){
     +     'en cada envío. Meta exige un ejemplo de cada uno.</p></div>'
     + '<div class="campo" id="tpEjemplosCampo" hidden><label>Ejemplos (uno por variable, separados por coma)</label>'
     +   '<input id="tpEjemplos" placeholder="Luisa, 17 de septiembre"></div>'
-    + '<div class="campo"><label>Pie (opcional)</label><input id="tpPie" placeholder="D’Carela Compufoto"></div>'
+    + '<div class="campo"><label>Pie (opcional)</label><input id="tpPie" placeholder="' + esc(MARCA.nombre) + '"></div>'
     + '<p class="aviso" id="tpAvisoStop" hidden><b>Marketing exige salida de baja.</b> Incluye algo como '
     +   '«Responde STOP para no recibir más promociones», o Meta la rechaza y además degrada el número.</p>'
     + '</div>'
@@ -13720,7 +13722,7 @@ function ccImprime(id){
   const fecha = new Date().toLocaleDateString('es-DO', { day: 'numeric', month: 'long', year: 'numeric' });
   w.document.write('<!doctype html><meta charset="utf-8"><title>Estado de cuenta</title><style>body{font:14px system-ui,Segoe UI,Arial;margin:32px;color:#111}h1{font-size:20px;margin:0}h2{font-size:15px;margin:22px 0 8px}'
     + 'table{width:100%;border-collapse:collapse}td,th{padding:7px 8px;border-bottom:1px solid #ddd;text-align:left;vertical-align:top}th{font-size:12px;color:#555}td.n,th.n{text-align:right}.tot{font-weight:700;font-size:16px}.pie{margin-top:28px;color:#666;font-size:12px}</style>'
-    + '<h1>D’ Carela Compufoto</h1><div>Estado de cuenta · ' + esc(fecha) + '</div>'
+    + '<h1>' + esc(MARCA.nombre.replace(/'/g, '’')) + '</h1><div>Estado de cuenta · ' + esc(fecha) + '</div>'
     + '<h2>' + esc(d.nombre) + (d.telefono ? ' · ' + esc(d.telefono) : '') + (d.folio ? ' · folio ' + esc(d.folio) : '') + '</h2>'
     + '<table><tr><th>Fecha</th><th>Detalle</th><th class="n">Total</th></tr>'
     + d.compras.map(c => '<tr><td>' + esc(String(c.cuando || '').slice(0, 10)) + '</td><td>' + esc(c.articulos.join(', ') || 'Venta') + '</td><td class="n">' + esc(pesos(c.total_centavos)) + '</td></tr>').join('')
@@ -19275,7 +19277,7 @@ function mmPartes(c, clave){
   const intro = mmElige(c, ['Revisando tu conversación vi que ', 'Estuve repasando tu chat y vi que ']);
   const cierre = mmElige(c, ['Quiero que sepas que estoy aquí para cualquier duda o inquietud.', 'Cualquier duda o inquietud que tengas, aquí estoy para ayudarte.', 'Estoy aquí para lo que necesites, sin compromiso.']);
   return [
-    (nombre ? 'Hola ' + nombre + '!' : 'Hola!') + " Soy Erick Gabriel, fotógrafo de D' Carela Compufoto.",
+    (nombre ? 'Hola ' + nombre + '!' : 'Hola!') + " Soy Erick Gabriel, fotógrafo de " + MARCA.nombre + ".",
     intro + mmMotivo(c, clave),
     cierre,
   ];
@@ -23345,10 +23347,10 @@ function estudioV238(m,api){
         +dTiles('sombra','Sombra de lectura',[['original','Plantilla'],['encendida','Con sombra'],['apagada','Sin sombra']])
         +dColor('color_panel','Color de banda o tarjeta',true)+dSel('opacidad_panel','Opacidad de banda o tarjeta')+dSel('margen','Margen seguro')+dSel('orden_lectura','Orden de lectura'),ab('Fondo y legibilidad',true))
       +dSec('Colores',dColor('texto','Color del titular',false)+dColor('acento','Color de acento y botón',false)+dColor('color_subtitulo','Color del subtítulo',true)+dColor('color_marca','Color de la firma',true),ab('Colores',false))
-      +dSec('Marca y contacto',dTxt('marca_texto','Nombre del estudio',36,"D' Carela Compufoto")+dTxt('ubicacion_texto','Ubicación',40,'La Romana')+dSw('mostrar_marca','Mostrar la firma','visible','oculto')
+      +dSec('Marca y contacto',dTxt('marca_texto','Nombre del estudio',36,MARCA.nombre)+dTxt('ubicacion_texto','Ubicación',40,MARCA.ciudad)+dSw('mostrar_marca','Mostrar la firma','visible','oculto')
         +dTxt('cta_texto','Texto del botón',36,'Escríbenos')+dSw('mostrar_whatsapp','Número de WhatsApp en el botón','si','no')
         +dTxt('etiqueta_texto','Etiqueta superior',36,'Ej. TEMPORADA ESCOLAR')+dTxt('mes_texto','Mes o temporada fijo',32,'Vacío = automático')+dSw('mostrar_mes','Mostrar etiqueta','visible','oculto')
-        +dTxt('redes_texto','Redes',40,'@dcarela_compufoto')+dSw('mostrar_contactos','Mostrar redes y ubicación','visible','oculto')+dTxt('copy_secundario','Línea extra bajo el subtítulo',80,'Opcional'),ab('Marca y contacto',false))
+        +dTxt('redes_texto','Redes',40,MARCA.instagram)+dSw('mostrar_contactos','Mostrar redes y ubicación','visible','oculto')+dTxt('copy_secundario','Línea extra bajo el subtítulo',80,'Opcional'),ab('Marca y contacto',false))
       +(piezas.length?dSec('Pieza del calendario',dSel('pieza_id','Editar una pieza ya creada')
         +(leer('pieza_id')?'<label class="e238-campo"><span>Texto de la publicación</span><textarea data-d="pieza_texto" rows="3" maxlength="3000">'+esc(leer('pieza_texto'))+'</textarea></label><button type="button" class="e238-btn e238-prim e238-peq" data-ceditor-guardapieza="1">Guardar cambios en la pieza</button><small class="e238-ayuda">Se recompone con el motor; no se publica.</small>':'<small class="e238-ayuda">Elige una pieza para cambiar su diseño y su texto.</small>'),ab('Pieza del calendario',!!leer('pieza_id'))):'')
       +dSec('Ideas de titular con IA local','<p class="e238-ayuda">Ollama propone 3 titulares para la categoría del flyer. No inventa precios ni promociones; tú eliges cuál usar.</p>'
@@ -23745,7 +23747,7 @@ function abreRevisionEditorV7(pedido,opciones={}){
   const vertical=pedido.formato==='imagen_9x16',seleccion=Array.isArray(opciones.canales)?opciones.canales:['instagram'];
   const m=abreModal('<form data-editor-revision><h2>Preparar publicación</h2><p class="bajada">Se compone con el motor V7 y se guarda en Revisar. No se publica ni se activa automáticamente.</p>'
     +'<div class="estudio-grid-2"><label>Fecha<input type="date" name="fecha" value="'+esc(fecha)+'" required></label><label>Hora<select name="hora" required>'+contHoras('18:30')+'</select></label></div>'
-    +'<label>Texto de la publicación<textarea name="texto" rows="4" maxlength="2200" required>'+esc(pedido.titular.l1+'\n'+pedido.titular.l2+'\nEscríbenos al ' + TEL_TXT.oficial + ' · @dcarela_compufoto')+'</textarea></label>'
+    +'<label>Texto de la publicación<textarea name="texto" rows="4" maxlength="2200" required>'+esc(pedido.titular.l1+'\n'+pedido.titular.l2+'\nEscríbenos al ' + TEL_TXT.oficial + ' · ' + MARCA.instagram)+'</textarea></label>'
     +'<fieldset><legend>Destinos para revisión</legend>'+[['instagram','Instagram'],['facebook','Facebook'],['whatsapp_estado','Estado de WhatsApp'],['tiktok','TikTok']].map(([id,t])=>{const apto=vertical||['instagram','facebook'].includes(id);return '<label style="display:flex;gap:8px"><input type="checkbox" name="canal" value="'+id+'"'+(apto&&seleccion.includes(id)?' checked':'')+(apto?'':' disabled')+'>'+t+(apto?'':' · requiere 9:16')+'</label>';}).join('')+'</fieldset>'
     +'<p data-editor-revision-estado role="status"></p><div class="acciones"><button type="button" class="btn-linea" data-cerrar>Cancelar</button><button type="submit" class="btn-solido">Guardar en revisión</button></div></form>');
   const f=m.querySelector('form');
@@ -23830,7 +23832,7 @@ function capaEnVivoV230(vista, form){
     if (c === 'titulo') return propio || 'Titular';
     if (c === 'subtitulo') return propio || 'Subtítulo';
     if (c === 'cta') return (propio || 'Escríbenos') + (campo('mostrar_whatsapp') === 'no' ? '' : ' · ' + TEL_TXT.oficial);
-    if (c === 'marca') return propio || "D' Carela Compufoto";
+    if (c === 'marca') return propio || MARCA.nombre;
     return propio || 'Mes';
   }
   function estiloDe(c){
@@ -24412,7 +24414,7 @@ function abreEditorPlantilla(id, piezaInicialId = ''){
     +'<label>Mes / temporada fijo<input name="mes_texto" maxlength="32" value="'+esc(p.mes_texto||'')+'" placeholder="Vacío = automático"></label>'
     +'</div>'
     +'<div class="estudio-grid-3">'
-    +'<label>Redes sociales<input name="redes_texto" maxlength="40" value="'+esc(p.redes_texto||'')+'" placeholder="@dcarela_compufoto"></label>'
+    +'<label>Redes sociales<input name="redes_texto" maxlength="40" value="'+esc(p.redes_texto||'')+'" placeholder="'+esc(MARCA.instagram)+'"></label>'
     +'<label>Visibilidad mes'+seleccion('mostrar_mes',p.mostrar_mes||'visible',[['visible','Visible'],['oculto','Oculto']])+'</label>'
     +'<label>Visibilidad redes'+seleccion('mostrar_contactos',p.mostrar_contactos||'visible',[['visible','Visible'],['oculto','Oculto']])+'</label>'
     +'</div></div>'
@@ -29549,7 +29551,7 @@ function abreRecordatorio(c, { editarReserva = false } = {}){
     const combo = $('recCombo').value.trim();
     return 'Hola' + (nombre ? ' ' + nombre : '') + ', ' + (firme ? 'te dejamos agendada tu sesión' : 'anotamos tu sesión como fecha tentativa')
       + (combo ? ' (' + combo + ')' : '') + ' para el ' + fecha + ' a las ' + hora + '. '
-      + (firme ? "¡Te esperamos en D' Carela Compufoto! Si necesitas cambiarla, escríbenos por aquí." : 'Una persona del estudio te confirma la disponibilidad en breve.');
+      + (firme ? "¡Te esperamos en " + MARCA.nombre + "! Si necesitas cambiarla, escríbenos por aquí." : 'Una persona del estudio te confirma la disponibilidad en breve.');
   };
   const refrescaAviso = () => { if (!avisoEditado) $('recAvisoTexto').value = armaAviso(); };
   $('recAvisoTexto').oninput = () => { avisoEditado = true; };
