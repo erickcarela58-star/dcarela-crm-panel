@@ -1,7 +1,7 @@
 {
-  "version": "2026-11-11-crm-release-v446-ordenar-seleccion",
+  "version": "2026-11-11-crm-release-v447-estados-completos",
   "channel": "crm",
-  "released_at": "2026-11-11T13:29:49.000Z",
-  "summary": "Editor: Alinear y Repartir de la banda Ordenar trabajan sobre los objetos seleccionados (Mayús + clic) cuando hay dos o más.",
+  "released_at": "2026-11-11T14:17:18.000Z",
+  "summary": "Estados: los suyos se ven con la foto completa y a pantalla; las miniaturas ya no quedan diminutas mientras carga el archivo.",
   "requiere_puente": "2026-11-06-documentos-grandes-v70"
 }
