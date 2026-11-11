@@ -1,7 +1,7 @@
 {
-  "version": "2026-11-11-crm-release-v445-editor-v4-completo",
+  "version": "2026-11-11-crm-release-v446-ordenar-seleccion",
   "channel": "crm",
-  "released_at": "2026-11-11T09:13:57.000Z",
-  "summary": "Editor V4: el Motor V7 propone y usted acepta (antes → después), repartir textos, alinear desde la banda, cuentagotas en Estilos, exportar las 3 variantes en lote y preferencias del editor guardadas por usuario.",
+  "released_at": "2026-11-11T13:29:49.000Z",
+  "summary": "Editor: Alinear y Repartir de la banda Ordenar trabajan sobre los objetos seleccionados (Mayús + clic) cuando hay dos o más.",
   "requiere_puente": "2026-11-06-documentos-grandes-v70"
 }
