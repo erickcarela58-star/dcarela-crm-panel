@@ -1,7 +1,7 @@
 {
-  "version": "2026-11-11-crm-release-v444-editor-v4",
+  "version": "2026-11-11-crm-release-v445-editor-v4-completo",
   "channel": "crm",
-  "released_at": "2026-11-11T07:35:28.000Z",
-  "summary": "Editor V4: 5 pestañas a cada lado (Mis diseños, Recursos, Marca, Estilos, Efectos), banda de variantes 4:5/9:16/1:1 y las 6 acciones del Motor V7, Guardar JSON.",
+  "released_at": "2026-11-11T09:13:57.000Z",
+  "summary": "Editor V4: el Motor V7 propone y usted acepta (antes → después), repartir textos, alinear desde la banda, cuentagotas en Estilos, exportar las 3 variantes en lote y preferencias del editor guardadas por usuario.",
   "requiere_puente": "2026-11-06-documentos-grandes-v70"
 }
