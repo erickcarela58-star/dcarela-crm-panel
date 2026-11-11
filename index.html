@@ -1027,7 +1027,9 @@ a.ayuda{color:var(--enlace)}
 .st-flecha.izq{left:max(12px,calc(50% - 380px))}
 .st-flecha.der{right:max(12px,calc(50% - 380px))}
 .st-escena{flex:1;min-height:0;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden}
-.st-img{max-width:100%;max-height:100%;object-fit:contain;display:block;transition:filter .25s}
+/* 11/11/2026: la foto ocupa TODA la escena (como en WhatsApp). Con solo max-width/max-height, una miniatura
+   (~100 px, lo que se ve mientras llega el archivo o si no llega) quedaba diminuta en el centro. */
+.st-img{width:100%;height:100%;max-width:100%;max-height:100%;object-fit:contain;display:block;transition:filter .25s}
 .st-img.cargando{filter:blur(10px);transform:scale(1.02)}
 .st-txt{width:100%;height:100%;display:flex;align-items:center;justify-content:center;padding:40px 48px;
   text-align:center;font-size:clamp(24px,3.6vw,40px);line-height:1.3;white-space:pre-wrap;word-break:break-word}
@@ -6177,10 +6179,33 @@ function stMuestra(){
       + ';font-family:' + (ST_FUENTES[Number(e.font) || 0] || ST_FUENTES[0]) + '">' + esc(texto) + '</div>';
     stArranca(Math.min(12000, ST_DURACION_MS + texto.length * 30));
   } else if (mio && e.media_store !== 'bajo_demanda') {
-    // Lo tuyo se publicó desde aquí y el archivo no se guardó: queda su miniatura.
-    escena.innerHTML = e.media_thumb ? '<img class="st-img" src="' + esc(e.media_thumb) + '" alt="">' : '';
+    // Lo tuyo se publicó desde aquí. 11/11/2026: si el servidor da el archivo que salió (media_id), se ve ESE,
+    // completo; mientras llega, la miniatura borrosa a tamaño de pantalla. Antes solo había miniatura (~2 KB):
+    // el dueño veía sus estados diminutos o en blanco.
+    escena.innerHTML = e.media_thumb ? stImgVisor(e.media_thumb) : (e.media_id ? '<span class="cargando"></span>' : '');
     pie.textContent = texto;
-    stArranca(ST_DURACION_MS);
+    if (!e.media_id) { const img = $('stMedio'); if (img) img.classList.remove('cargando'); stArranca(ST_DURACION_MS); }
+    else {
+      const pedido = e.id || e.wamid || e.media_id;
+      const espera = setTimeout(() => { if (ST.visor && !v.arrancado) stArranca(ST_DURACION_MS); }, 5000);
+      urlDeMedio(e.media_id).then(url => {
+        clearTimeout(espera);
+        const actual = stActual();
+        if (!ST.visor || !actual || (actual.id || actual.wamid || actual.media_id) !== pedido) return;
+        if (url) {
+          if (/^video\//.test(String(e.media_mime || '')) || tipo === 'video') {
+            const m = document.createElement('video'); m.src = url; m.autoplay = true; m.playsInline = true; m.className = 'st-img';
+            if (e.media_thumb) m.poster = e.media_thumb;
+            m.onloadedmetadata = () => stArranca(Math.min(60000, Math.max(3000, (m.duration || 6) * 1000)));
+            escena.innerHTML = ''; escena.appendChild(m); m.play().catch(() => { m.muted = true; m.play().catch(() => {}); });
+            return;
+          }
+          const img = $('stMedio');
+          if (img) { img.src = url; img.classList.remove('cargando'); } else escena.innerHTML = '<img class="st-img" src="' + esc(url) + '" alt="">';
+        } else { const img = $('stMedio'); if (img) img.classList.remove('cargando'); }
+        if (!v.arrancado) stArranca(ST_DURACION_MS);
+      });
+    }
   } else {
     pie.textContent = texto;
     let mini = String(e.media_thumb_b64 || '');
