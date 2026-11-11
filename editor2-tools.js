@@ -26,7 +26,8 @@
   const ctx = { permissions: new Set(), selectedIds: [], isReadOnly: false };
   const claveUsuario = () => { try { return C.claveDePrefs(localStorage.getItem('crm_uid') || (window.CRM_USER && (window.CRM_USER.uid || window.CRM_USER.email)) || ''); } catch (_) { return C.claveDePrefs(''); } };
   const cargaPrefs = () => { try { return JSON.parse(localStorage.getItem(claveUsuario()) || 'null'); } catch (_) { return null; } };
-  const guardaPrefs = () => { try { localStorage.setItem(claveUsuario(), JSON.stringify(registro.getPreferences())); } catch (_) { /* sin almacenamiento: vale esta sesión */ } };
+  const guardaPrefs = () => { try { localStorage.setItem(claveUsuario(), JSON.stringify(registro.getPreferences())); } catch (_) { /* sin almacenamiento: vale esta sesión */ }
+    try { if (window.DcarelaEditorV4 && window.DcarelaEditorV4.guardaPrefs) window.DcarelaEditorV4.guardaPrefs(); } catch (_) { /* la copia del servidor es opcional */ } };
 
   function selectorDe(id) { const [tipo, clave] = id.split('.'); return tipo === 'tool' ? '[data-e238-tool="' + clave + '"]' : tipo === 'e2' ? '[data-e2x-sin-boton="' + clave + '"]' : '[data-e238="' + clave + '"]'; }
   const botonDe = (id) => $(selectorDe(id));
@@ -173,6 +174,8 @@
     const t = registro.resolveShortcut(combo, ctx);
     if (t) { e.preventDefault(); registro.execute(t.id, undefined, ctx).catch(() => {}); }
   });
-  window.DcarelaEditor2 = { abrePaleta, abreGestor, registro: () => registro, version: 'etapa-A' };
+  // Preferencias que llegan del servidor (otro equipo del mismo usuario): se aplican y quedan también en este navegador.
+  function aplicaPrefs(p) { if (!registro || !p) return false; registro.setPreferences(p); try { localStorage.setItem(claveUsuario(), JSON.stringify(registro.getPreferences())); } catch (_) { /* nada */ } aplica(); return true; }
+  window.DcarelaEditor2 = { abrePaleta, abreGestor, aplicaPrefs, registro: () => registro, version: 'etapa-A' };
   monta();
 })();
