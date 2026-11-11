@@ -69,6 +69,28 @@
   }
   const puntosDe = (lista, plantilla) => (Array.isArray(lista) ? lista : []).filter((p) => p && p.plantilla === plantilla);
 
+  // ---- Alinear la capa activa al lienzo (V4 del kit: «Alinear y distribuir») ----
+  // El Estudio mueve cada rótulo con campos de desplazamiento en % del lienzo (`dx_*` del ancho, `dy_*` del alto, entre −25 y 25). La caja que dibujó el motor ya incluye el
+  // desplazamiento actual, así que lo que falta para llegar al destino se SUMA al que hay. El subtítulo hereda el del titular: basta con ajustar el suyo.
+  const CAMPOS_ALINEA = Object.freeze({ titulo1: ['dx_titulo', 'dy_titulo'], titulo2: ['dx_subtitulo', 'dy_subtitulo'], cta: ['dx_cta', 'dy_cta'], marca: ['dx_marca', 'dy_marca'], periodo: ['dx_periodo', 'dy_periodo'], zona: ['dx_periodo', 'dy_periodo'] });
+  const CAPA_A_ROL = Object.freeze({ titulo: 'titulo1', subtitulo: 'titulo2', cta: 'cta', marca: 'marca', periodo: 'periodo' });
+  const DESTINOS = Object.freeze(['izquierda', 'centro', 'derecha', 'arriba', 'medio', 'abajo']);
+  const redondea = (v) => Math.round(v * 10) / 10;
+  // `caja` {x,y,w,h} en % del lienzo; `actual` {dx,dy}; `margen` de margenes(). Devuelve {dx,dy,limitado} con SOLO el eje que se pidió cambiado.
+  function calculaAlineacion({ caja, destino, actual = {}, margen } = {}) {
+    if (!caja || !DESTINOS.includes(destino)) return null;
+    // El motor no deja texto a menos de 6 % del borde (12 % arriba y abajo en historias): se alinea a SU zona segura, que es más estricta que la de la revisión.
+    const base = margen || margenes(1080, 1350), m = { lado: Math.max(base.lado, 6), arriba: Math.max(base.arriba, base.historia ? 12 : 6), abajo: Math.max(base.abajo, base.historia ? 12 : 6) };
+    const dx0 = num(actual.dx), dy0 = num(actual.dy);
+    let objetivoX = null, objetivoY = null;
+    if (destino === 'izquierda') objetivoX = m.lado; else if (destino === 'derecha') objetivoX = 100 - m.lado - num(caja.w); else if (destino === 'centro') objetivoX = 50 - num(caja.w) / 2;
+    if (destino === 'arriba') objetivoY = m.arriba; else if (destino === 'abajo') objetivoY = 100 - m.abajo - num(caja.h); else if (destino === 'medio') objetivoY = 50 - num(caja.h) / 2;
+    const fija = (v) => { const c = Math.max(-25, Math.min(25, redondea(v))); return { v: c, lim: c !== redondea(v) }; };
+    const X = objetivoX === null ? { v: dx0, lim: false } : fija(dx0 + objetivoX - num(caja.x));
+    const Y = objetivoY === null ? { v: dy0, lim: false } : fija(dy0 + objetivoY - num(caja.y));
+    return { dx: X.v, dy: Y.v, limitado: X.lim || Y.lim };
+  }
+
   // ---- «Mis diseños»: guardar y abrir un diseño como archivo (V4 del kit: importación/exportación JSON) ----
   // El archivo lleva la plantilla y los ajustes editables (los mismos que los puntos de restauración); NO lleva fotos ni claves, solo el diseño.
   const VERSION_ARCHIVO = 1;
@@ -94,5 +116,5 @@
     const i = serie.indexOf(actual);
     return serie[(i + 1) % serie.length];
   }
-  return { revisa, resumen, margenes, diferencias, agregaPunto, puntosDe, siguientePlantilla, serieDe, soloEditables, NOMBRE_ROL, armaArchivo, leeArchivo, nombreArchivo, VERSION_ARCHIVO };
+  return { revisa, resumen, margenes, diferencias, agregaPunto, puntosDe, siguientePlantilla, serieDe, soloEditables, NOMBRE_ROL, armaArchivo, leeArchivo, nombreArchivo, VERSION_ARCHIVO, calculaAlineacion, CAMPOS_ALINEA, CAPA_A_ROL, DESTINOS };
 });
