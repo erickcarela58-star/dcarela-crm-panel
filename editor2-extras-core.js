@@ -69,6 +69,21 @@
   }
   const puntosDe = (lista, plantilla) => (Array.isArray(lista) ? lista : []).filter((p) => p && p.plantilla === plantilla);
 
+  // ---- «Mis diseños»: guardar y abrir un diseño como archivo (V4 del kit: importación/exportación JSON) ----
+  // El archivo lleva la plantilla y los ajustes editables (los mismos que los puntos de restauración); NO lleva fotos ni claves, solo el diseño.
+  const VERSION_ARCHIVO = 1;
+  function armaArchivo({ plantilla, formato, valores, ahora } = {}) {
+    return { tipo: 'dcarela-diseno', version: VERSION_ARCHIVO, plantilla: String(plantilla || ''), formato: String(formato || ''), guardado: ahora || new Date().toISOString(), valores: soloEditables(valores) };
+  }
+  function leeArchivo(texto) {
+    let j; try { j = JSON.parse(String(texto || '')); } catch (_) { return { ok: false, error: 'No se pudo leer el archivo: no es un diseño válido.' }; }
+    if (!j || typeof j !== 'object' || j.tipo !== 'dcarela-diseno') return { ok: false, error: 'Ese archivo no es un diseño de D\' Carela.' };
+    if (j.version !== VERSION_ARCHIVO) return { ok: false, error: 'Ese diseño es de otra versión y no se puede abrir.' };
+    if (!/^[a-z0-9_-]{1,80}$/i.test(String(j.plantilla || '')) || !j.valores || typeof j.valores !== 'object' || Array.isArray(j.valores)) return { ok: false, error: 'El archivo del diseño está incompleto.' };
+    return { ok: true, plantilla: String(j.plantilla), formato: String(j.formato || ''), valores: soloEditables(j.valores) };
+  }
+  const nombreArchivo = (plantilla, ahora) => 'diseno-' + String(plantilla || 'flyer').replace(/[^a-z0-9_-]/gi, '-').slice(0, 40) + '-' + String(ahora || new Date().toISOString()).slice(0, 10) + '.json';
+
   // ---- variar plantilla ----
   // `lista`: [[id, numero, nombre, color], …] del editor. Devuelve la siguiente de la MISMA serie (pautas con pautas, editoriales con editoriales).
   const serieDe = (id) => (/^v9-pauta/.test(id) ? 'pauta' : /^v9-/.test(id) ? 'v9' : /mosaico/.test(id) ? 'mosaico' : 'v6');
@@ -79,5 +94,5 @@
     const i = serie.indexOf(actual);
     return serie[(i + 1) % serie.length];
   }
-  return { revisa, resumen, margenes, diferencias, agregaPunto, puntosDe, siguientePlantilla, serieDe, soloEditables, NOMBRE_ROL };
+  return { revisa, resumen, margenes, diferencias, agregaPunto, puntosDe, siguientePlantilla, serieDe, soloEditables, NOMBRE_ROL, armaArchivo, leeArchivo, nombreArchivo, VERSION_ARCHIVO };
 });
