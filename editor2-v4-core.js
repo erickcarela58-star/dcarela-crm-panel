@@ -78,5 +78,84 @@
   // Puntos conservados de TODAS las plantillas (para «Mis diseños»), del más nuevo al más viejo.
   const ordenaPuntos = (puntos) => [...(puntos || [])].filter((p) => p && p.plantilla && p.valores).sort((a, b) => texto(b.cuando).localeCompare(texto(a.cuando)));
 
-  return { PARIDAD, RECURSOS, CAMPOS_TIPO, pestanaDeSeccion, seccionVisible, planMarca, planRecomponer, siguienteOpcion, faltantes, ordenaPuntos };
+  // ---------- Propuestas con diferencias (el Motor V7 propone, el operador acepta) ----------
+  // Lista legible de lo que cambiaría: [{campo, nombre, antes, despues}]. Sin cambios reales → lista vacía.
+  const NOMBRES = Object.freeze({ dx_titulo: 'Titular · horizontal', dy_titulo: 'Titular · vertical', dx_subtitulo: 'Subtítulo · horizontal', dy_subtitulo: 'Subtítulo · vertical',
+    dx_cta: 'Botón · horizontal', dy_cta: 'Botón · vertical', dx_marca: 'Firma · horizontal', dy_marca: 'Firma · vertical', dx_periodo: 'Etiqueta · horizontal', dy_periodo: 'Etiqueta · vertical',
+    tipografia: 'Letra del titular', tipografia_subtitulo: 'Letra del subtítulo', tipografia_cta: 'Letra del botón', marca_texto: 'Nombre del estudio', redes_texto: 'Redes',
+    ubicacion_texto: 'Ubicación', mostrar_marca: 'Firma', mostrar_contactos: 'Redes y ubicación', mostrar_whatsapp: 'WhatsApp en el botón', texto: 'Color del titular',
+    acento: 'Color de acento y botón', color_subtitulo: 'Color del subtítulo', color_marca: 'Color de la firma', color_panel: 'Color de banda o tarjeta' });
+  function diferencias(propuesta, actuales, etiquetas) {
+    const out = [];
+    for (const [k, v] of Object.entries(propuesta || {})) {
+      const antes = texto((actuales || {})[k]);
+      if (antes === texto(v)) continue;
+      const et = (etiquetas && etiquetas[k]) || {};
+      out.push({ campo: k, nombre: NOMBRES[k] || k, antes: et[antes] || antes || '—', despues: et[texto(v)] || texto(v) || '—' });
+    }
+    return out;
+  }
+
+  // ---------- Repartir textos (distribuir con el mismo espacio entre bloques) ----------
+  // cajas: las del motor (x, y, w, h en % del lienzo). Se reparten en vertical los bloques de texto presentes (≥3):
+  // el primero y el último se quedan; los del medio se mueven para que los huecos sean iguales. Devuelve los nuevos dy.
+  // La firma (marca) va aparte, normalmente arriba: repartirla arrastraría el titular hacia la foto. Solo el bloque principal.
+  const REPARTIBLES = Object.freeze(['titulo1', 'titulo2', 'zona', 'cta']);
+  function calculaReparto(cajas, actuales, campos, tope = 25) {
+    const bloques = (cajas || []).filter((c) => REPARTIBLES.includes(c.rol) && campos && campos[c.rol] && Number.isFinite(+c.y) && Number.isFinite(+c.h));
+    const unicos = [...new Map(bloques.map((c) => [c.rol, c])).values()].sort((a, b) => a.y - b.y);
+    if (unicos.length < 3) return { error: 'Hacen falta al menos tres textos visibles para repartir.' };
+    const primero = unicos[0], ultimo = unicos[unicos.length - 1];
+    const libre = (ultimo.y + ultimo.h) - primero.y - unicos.reduce((s, c) => s + c.h, 0);
+    if (libre < 0) return { error: 'Los textos están montados: sepáralos antes de repartirlos.' };
+    const hueco = libre / (unicos.length - 1);
+    const cambios = {}; let y = primero.y + primero.h + hueco, limitado = false;
+    for (const c of unicos.slice(1, -1)) {
+      const k = campos[c.rol][1], actual = Number((actuales || {})[k] || 0), nuevo = Math.round((actual + (y - c.y)) * 10) / 10;
+      const acotado = Math.max(-tope, Math.min(tope, nuevo)); if (acotado !== nuevo) limitado = true;
+      if (acotado !== actual) cambios[k] = String(acotado);
+      y += c.h + hueco;
+    }
+    return { cambios, hueco: Math.round(hueco * 10) / 10, bloques: unicos.map((c) => c.rol), limitado };
+  }
+
+  // ---------- Cuentagotas ----------
+  // EyeDropper devuelve «#rrggbb» (o rgb()); los campos de color del Estudio guardan #RRGGBB.
+  function normalizaColor(v) {
+    const s = texto(v).trim();
+    let m = /^#?([0-9a-f]{6})$/i.exec(s); if (m) return '#' + m[1].toUpperCase();
+    m = /^#?([0-9a-f]{3})$/i.exec(s); if (m) return '#' + m[1].split('').map((c) => c + c).join('').toUpperCase();
+    m = /^rgba?\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})/i.exec(s);
+    if (m && [m[1], m[2], m[3]].every((n) => +n <= 255)) return '#' + [m[1], m[2], m[3]].map((n) => (+n).toString(16).padStart(2, '0')).join('').toUpperCase();
+    return null;
+  }
+  const CAMPOS_COLOR = Object.freeze([['texto', 'Color del titular'], ['acento', 'Color de acento y botón'], ['color_subtitulo', 'Color del subtítulo'], ['color_marca', 'Color de la firma'], ['color_panel', 'Color de banda o tarjeta']]);
+
+  // ---------- Lote de exportación ----------
+  // Orden de trabajo: primero el formato actual (ya dibujado), luego los otros; al final se vuelve al de partida.
+  function ordenLote(actual, disponibles) {
+    const todos = PARIDAD.variantes.map((v) => v[0]).filter((k) => !disponibles || disponibles.includes(k));
+    return todos.includes(actual) ? [actual, ...todos.filter((k) => k !== actual)] : todos;
+  }
+  const nombreLote = (plantilla, formato, fecha) => ('flyer-' + texto(plantilla).replace(/[^a-z0-9-]/gi, '-') + '-' + texto(formato).replace('imagen_', '') + '-' + texto(fecha).slice(0, 10)).toLowerCase();
+
+  // ---------- Preferencias por usuario (servidor) ----------
+  // Solo se guardan claves conocidas y pequeñas: nunca el diseño ni datos del negocio.
+  // Forma del registro de herramientas (editor2-tools-core: getPreferences) + «proponer» del Motor V7.
+  const PREFS_CLAVES = Object.freeze(['orderedIds', 'hiddenIds', 'pinnedIds', 'shortcutOverrides', 'perfil', 'proponer']);
+  const idValido = (x) => typeof x === 'string' && /^[\w.-]{1,60}$/.test(x);
+  function limpiaPrefs(p) {
+    const out = {};
+    for (const k of PREFS_CLAVES) {
+      const v = (p || {})[k]; if (v === undefined || v === null) continue;
+      if (Array.isArray(v)) out[k] = v.filter(idValido).slice(0, 120);
+      else if (k === 'shortcutOverrides' && typeof v === 'object') out[k] = Object.fromEntries(Object.entries(v).filter(([id, c]) => idValido(id) && typeof c === 'string' && c.length <= 30).slice(0, 60));
+      else if (k === 'perfil' && typeof v === 'string' && /^[a-z]{2,20}$/.test(v)) out[k] = v;
+      else if (k === 'proponer' && typeof v === 'boolean') out[k] = v;
+    }
+    return out;
+  }
+
+  return { PARIDAD, RECURSOS, CAMPOS_TIPO, CAMPOS_COLOR, pestanaDeSeccion, seccionVisible, planMarca, planRecomponer, siguienteOpcion, faltantes, ordenaPuntos,
+    diferencias, calculaReparto, normalizaColor, ordenLote, nombreLote, PREFS_CLAVES, limpiaPrefs };
 });
