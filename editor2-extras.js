@@ -221,6 +221,6 @@
   document.addEventListener('mousedown', (e) => { if ($('.e2x-menu') && !e.target.closest('.e2x-dock')) cierraMenu(); });
   let espera = 0;
   new MutationObserver(() => { clearTimeout(espera); espera = setTimeout(monta, 200); }).observe(document.documentElement, { childList: true, subtree: true });
-  window.DcarelaEditor2Extras = { comandos, revisa, conserva, restaura, abreRevision, abrePuntos, puntos: leePuntos, guardaArchivo, abreArchivo, aplicaArchivo, alinea, version: 'etapa-B' };
+  window.DcarelaEditor2Extras = { comandos, revisa, conserva, restaura, abreRevision, abrePuntos, puntos: leePuntos, guardaArchivo, abreArchivo, aplicaArchivo, alinea, abreAlinear, version: 'etapa-B' };
   monta();
 })();
