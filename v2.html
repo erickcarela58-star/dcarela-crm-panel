@@ -22129,6 +22129,8 @@ function estudioV238(m,api){
   root.classList.toggle('compacto',S.compacto);
   $q('[data-e238="compacto"]')?.setAttribute('aria-pressed',String(S.compacto));
   const mesas=mesasEditorV243(root,f,api,()=>programaDibujo());
+  // Editor V4 (editor2-v4.js): la banda «Ordenar» alinea y reparte la SELECCIÓN MÚLTIPLE con las mismas acciones del panel Capas.
+  api.seleccionMultipleV4={cuantas:()=>S.multi.length>1?capasOperablesSeleccionadas245().length:0,hace:a=>{if(!/^(al-(izq|ch|der|arr|cv|aba)|dist-[hv])$/.test(String(a)))return false;modificaCapas245(a);return true;}};
   // El formato es el MISMO select del formulario (con su lógica de formato por capa); el lienzo legado queda para comparar.
   const selFmt=campo('formato');if(selFmt){selFmt.querySelectorAll('option').forEach(o=>{const F=FORMATOS_V238[o.value];if(F)o.textContent=F.nombre;});$q('[data-e238-fmt]').appendChild(selFmt);}
   const legado=$q('[data-e238-legacy]');if(api.vista)legado.appendChild(api.vista);
