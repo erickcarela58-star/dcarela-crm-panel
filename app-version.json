@@ -1,7 +1,7 @@
 {
-  "version": "2026-11-11-crm-release-v439-alinear-capa",
+  "version": "2026-11-11-crm-release-v440-alinear-espera",
   "channel": "crm",
-  "released_at": "2026-11-11T04:16:32.877Z",
-  "summary": "Editor: alinear la capa activa al lienzo (izquierda, centro, derecha, arriba, medio, abajo) desde el menú Motor V7.",
+  "released_at": "2026-11-11T05:22:35.000Z",
+  "summary": "Editor: alinear espera a que el motor redibuje antes de medir (evita destinos equivocados al pulsar dos veces seguidas).",
   "requiere_puente": "2026-11-06-documentos-grandes-v70"
 }
