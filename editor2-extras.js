@@ -58,9 +58,12 @@
     const capa = (f.elements.bloque_arrastre && f.elements.bloque_arrastre.value) || 'titulo', rol = X.CAPA_A_ROL[capa] || 'titulo1';
     return { capa, rol, f };
   }
+  let ultimaMedida = null;
   function alinea(destino) {
     const c = capaActiva(), a = api(); if (!c || !a) throw new Error('El editor no está abierto.');
     let cajas = []; try { const m = a.ultimoMotor(); cajas = Array.isArray(m) ? m[0] : []; } catch (_) { /* aún sin vista */ }
+    // Tras un cambio el motor tarda unos segundos en redibujar: medir con la vista anterior daría un destino equivocado, así que se espera la vista nueva.
+    if (cajas === ultimaMedida) { aviso('El editor sigue dibujando el cambio anterior; espera un momento y vuelve a elegir.'); return null; }
     const caja = cajas.find((x) => x.rol === c.rol) || (c.rol === 'periodo' ? cajas.find((x) => x.rol === 'zona') : null);
     if (!caja) { aviso('Esa capa no tiene texto visible para alinear.'); return null; }
     const [kx, ky] = X.CAMPOS_ALINEA[caja.rol] || X.CAMPOS_ALINEA[c.rol], ex = c.f.elements[kx], ey = c.f.elements[ky];
@@ -70,7 +73,7 @@
     if (!r) return null;
     a.guardaHistorial();
     for (const [el, v] of [[ex, r.dx], [ey, r.dy]]) { if (String(el.value) === String(v)) continue; el.value = String(v); el.dispatchEvent(new Event('input', { bubbles: true })); el.dispatchEvent(new Event('change', { bubbles: true })); }
-    a.guardaHistorial(); a.programaVista(0);
+    a.guardaHistorial(); a.programaVista(0); ultimaMedida = cajas;
     aviso(NOMBRE_DESTINO[destino] + ': ' + (X.NOMBRE_ROL[caja.rol] || caja.rol).toLowerCase() + (r.limitado ? ' (llegó al tope de movimiento; el resto lo ajusta el motor)' : '') + '. Ctrl+Z lo deshace.');
     return r;
   }
