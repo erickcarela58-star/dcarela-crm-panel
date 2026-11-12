@@ -8457,7 +8457,8 @@ function cableaChat(c){
     // Fuera de la ventana de 24 h el envio no falla aqui: Meta lo acepta y lo rechaza
     // despues. Preguntar cuesta un clic; no preguntar costo cuatro mensajes que el
     // dueño creyo enviados. La plantilla es la unica via que si llega.
-    if (canalDe(sel) !== 'whatsapp_qr' && (() => {
+    // Marketplace (12/11/2026) tampoco tiene esa regla: lo escribe Hermes en Facebook, como una persona.
+    if (canalDe(sel) !== 'whatsapp_qr' && canalDe(sel) !== 'marketplace' && (() => {
       const u = ultimoDelCliente();
       return !u || (Date.now() - u) / 3600000 >= 24;
     })()) {
@@ -12173,7 +12174,8 @@ function redSocial(c){
 function pintaVentana24(){
   const caja = $('ventana24'); if (!caja) return;
   // El puente de WhatsApp Web no pasa por el API oficial y no tiene esta limitacion.
-  if (!sel || canalDe(sel) === 'whatsapp_qr') { caja.hidden = true; return; }
+  // Marketplace tampoco: no pasa por el API de Meta y no hay plantillas (12/11/2026, salía «Usar plantilla» en esos chats).
+  if (!sel || canalDe(sel) === 'whatsapp_qr' || canalDe(sel) === 'marketplace') { caja.hidden = true; return; }
   const t = ultimoDelCliente();
   const horas = t ? (Date.now() - t) / 3600000 : Infinity;
   if (horas < 24) { caja.hidden = true; return; }
