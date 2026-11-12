@@ -1,7 +1,7 @@
 {
-  "version": "2026-11-12-crm-release-v450-marketplace-combos-bot",
+  "version": "2026-11-12-crm-release-v451-marketplace-sin-ventana24",
   "channel": "crm",
-  "released_at": "2026-11-12T09:20:00.000Z",
-  "summary": "Marketplace: ya se envían los combos (la tarjeta en imagen) y hay bot que contesta, con su interruptor en Configuración («Bot en Marketplace»).",
+  "released_at": "2026-11-12T09:40:00.000Z",
+  "summary": "Marketplace: se envían los combos (tarjeta en imagen) y hay bot con interruptor en Configuración. En esos chats ya no sale el aviso de 24 horas de WhatsApp.",
   "requiere_puente": "2026-11-06-documentos-grandes-v70"
 }
