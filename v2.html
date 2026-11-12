@@ -20658,7 +20658,9 @@ function publicacionV239(g, x){
   if (admin && pendientes.length > 1) acc.push('<button type="button" class="p239-btn" data-p239apruebagrupo="1">Aprobar las ' + pendientes.length + ' redes</button>');
   if (admin && ['aprobada', 'fallida', 'vencida'].includes(x.estado)) acc.push('<button type="button" class="p239-btn" data-cpublica="' + esc(x.id) + '">' + (x.estado === 'aprobada' ? 'Publicar ahora' : 'Reintentar ahora') + '</button>');
   if (admin && ['publicando', 'encola', 'enviada', 'sin_confirmar'].includes(x.estado)) acc.push('<button type="button" class="p239-btn p239-prim" data-ccomprueba="' + esc(x.id) + '" title="Consulta el resultado sin volver a publicar">Comprobar envío</button>');
-  if (x.estado === 'lista' && x.tiene_imagen) acc.push('<button type="button" class="p239-btn p239-prim" data-cdescarga="' + esc(x.id) + '">Descargar</button>', '<button type="button" class="p239-btn" data-ccopia="' + esc(x.id) + '">Copiar texto</button>');
+  // 12/11/2026 (dueño: «necesito poder descargar los flyers que haga el agente»): antes solo las «lista» tenían Descargar; las del
+  // agente nacen «propuesta» y pasan a aprobada/programada/publicada, así que nunca se podían bajar. contenidoImagen no exige estado.
+  if (x.tiene_imagen) acc.push('<button type="button" class="p239-btn' + (x.estado === 'lista' ? ' p239-prim' : '') + '" data-cdescarga="' + esc(x.id) + '">Descargar</button>', '<button type="button" class="p239-btn" data-ccopia="' + esc(x.id) + '">Copiar texto</button>');
   if (editable && x.tiene_imagen && x.origen !== 'propia') acc.push('<button type="button" class="p239-btn" data-cvariaciones="' + esc(x.id) + '" title="Nuevos ganchos, enfoques y composiciones">Variaciones</button>');
   return '<header class="p239-card-cab"><h2>' + ICO_V239.enviar + 'Publicación en redes</h2></header>'
     + '<div class="p239-redes" role="tablist" aria-label="Red de la publicación">' + CANALES_V239.map(([c, t]) => { const p = g.piezas.find((y) => y.canal === c);
