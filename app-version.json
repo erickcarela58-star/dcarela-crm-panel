@@ -1,7 +1,7 @@
 {
-  "version": "2026-11-11-crm-release-v448-estados-a-pantalla",
+  "version": "2026-11-12-crm-release-v449-descarga-piezas",
   "channel": "crm",
-  "released_at": "2026-11-11T15:17:06.000Z",
-  "summary": "Estados de contactos: mientras carga el archivo, la foto ocupa todo el visor (antes la regla del circulito de carga la dejaba de 15 px, redonda y girando).",
+  "released_at": "2026-11-12T04:56:25.000Z",
+  "summary": "Planificador: Descargar en toda pieza con imagen (incluidas las del agente). Marketplace: la respuesta ya no aparece duplicada en el chat.",
   "requiere_puente": "2026-11-06-documentos-grandes-v70"
 }
