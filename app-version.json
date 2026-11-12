@@ -1,7 +1,7 @@
 {
-  "version": "2026-11-12-crm-release-v449-descarga-piezas",
+  "version": "2026-11-12-crm-release-v450-marketplace-combos-bot",
   "channel": "crm",
-  "released_at": "2026-11-12T04:56:25.000Z",
-  "summary": "Planificador: Descargar en toda pieza con imagen (incluidas las del agente). Marketplace: la respuesta ya no aparece duplicada en el chat.",
+  "released_at": "2026-11-12T09:20:00.000Z",
+  "summary": "Marketplace: ya se envían los combos (la tarjeta en imagen) y hay bot que contesta, con su interruptor en Configuración («Bot en Marketplace»).",
   "requiere_puente": "2026-11-06-documentos-grandes-v70"
 }
