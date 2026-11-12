@@ -8561,10 +8561,21 @@ function cableaChat(c){
         return avisa('No se puede enviar por ' + redSocial(sel), pega);
       }
     }
+    // Marketplace (12/11/2026, «no puedo enviar combos desde crm a marketplace»): salen imágenes y texto, cada uno por la cola de
+    // Hermes. Igual que en las redes, los botones del combo se escriben en el texto y la imagen va sin pie.
+    const esMarketplace = canalDe(sel) === 'marketplace';
+    if (esMarketplace) {
+      const pega = COLA.find(a => a.tipo !== 'image' || !/^image\/(jpeg|png|webp)$/i.test(String(a.mime || '').split(';')[0].trim()) || a.grande);
+      if (pega) {
+        env.disabled = false;
+        return avisa('No se puede enviar por Marketplace', (pega.nombre || 'Ese archivo') + ': por Marketplace solo salen imágenes JPG, PNG o WebP en calidad normal, y texto.');
+      }
+    }
+    const sinPie = !!claveRed || esMarketplace;
     // Por esas dos redes no salen botones (el servidor los rechaza con social_sin_botones), y
     // los combos los llevan. Perderlos sin decirlo es lo que ya se quito una vez: las opciones
     // se escriben al final del texto, que el cliente si recibe.
-    const botonesRed = claveRed ? COLA.flatMap(a => Array.isArray(a.botones) ? a.botones : []) : [];
+    const botonesRed = sinPie ? COLA.flatMap(a => Array.isArray(a.botones) ? a.botones : []) : [];
     const opcionesRed = [...new Set(botonesRed.map(b => String(b?.titulo || '').trim()).filter(Boolean))];
     const texto = opcionesRed.length
       ? [t, 'Responde: ' + opcionesRed.join(' / ')].filter(Boolean).join('\n\n')
@@ -8576,7 +8587,7 @@ function cableaChat(c){
     // En Instagram y Messenger el archivo y el texto no pueden ir juntos: Meta no los admite en
     // el mismo mensaje. Con -1 todos los adjuntos salen sin pie ni botones, y el texto va
     // despues, aparte, por sendText.
-    const ultimoConPie = claveRed ? -1 : indiceConPie(COLA);
+    const ultimoConPie = sinPie ? -1 : indiceConPie(COLA);
     // Los que ya salieron se quitan de la cola SOBRE LA MARCHA. Si el tercero falla y
     // se reintenta sin esto, los dos primeros se le mandan al cliente otra vez.
     let enviados = 0;
@@ -16799,7 +16810,7 @@ const CATEGORIAS_CFG = [
 const CAT_DE_TARJETA = {
   'Tu sesión': 'cuenta', 'Usuarios y permisos del panel': 'cuenta', 'Fotógrafos y colaboradores': 'cuenta',
   'Últimos movimientos': 'cuenta',
-  'Instagram y Messenger': 'mensajes', 'Cómo te ve el cliente': 'mensajes', 'Límites de seguridad del 2.º número': 'mensajes',
+  'Instagram y Messenger': 'mensajes', 'Bot en Marketplace': 'mensajes', 'Cómo te ve el cliente': 'mensajes', 'Límites de seguridad del 2.º número': 'mensajes',
   'Número del administrador': 'mensajes',
   'Mensajes por defecto': 'mensajes', 'Avisos al supervisor': 'mensajes', 'Resumen diario del CRM': 'mensajes', 'Bot de WhatsApp': 'mensajes',
 'Satisfacción automática': 'clientes', 'Atendido automático': 'clientes', 'Orden de las etiquetas': 'clientes',
@@ -16821,7 +16832,7 @@ const SECCIONES_CFG = {
     { id: 'registro', nombre: 'Registro', nota: 'Quién hizo qué y cuándo.', tarjetas: ['Últimos movimientos'] },
   ],
   mensajes: [
-    { id: 'lineas', nombre: 'Tus líneas de WhatsApp', nota: 'El bot, las redes y cómo te ve el cliente.', tarjetas: ['Bot de WhatsApp', 'Número del administrador', 'Instagram y Messenger', 'Cómo te ve el cliente', 'Límites de seguridad del 2.º número'] },
+    { id: 'lineas', nombre: 'Tus líneas de WhatsApp', nota: 'El bot, las redes y cómo te ve el cliente.', tarjetas: ['Bot de WhatsApp', 'Número del administrador', 'Instagram y Messenger', 'Bot en Marketplace', 'Cómo te ve el cliente', 'Límites de seguridad del 2.º número'] },
     { id: 'textos', nombre: 'Lo que se le escribe al cliente', nota: 'Atajos y encuesta.', tarjetas: ['Mensajes por defecto'] },
     { id: 'avisos', nombre: 'Avisos para ti', nota: 'Lo que te llega por WhatsApp para que no se te pase nada.', tarjetas: ['Resumen diario del CRM', 'Avisos al supervisor'] },
   ],
@@ -17379,6 +17390,15 @@ async function pintaConfig(){
         interruptorCfg('redes_sociales_activas', 'Instagram y Messenger dentro del CRM',
           'Encendido vuelven a la bandeja. Tras encenderlo, pulsa «Importar historial» en Canales: '
           + 'la importación automática estuvo en pausa.', false))
+
+    // 12/11/2026 (dueño: «el bot no atiende ahí»). La clave la lee el servidor (ajusteActivo('marketplace_bot')).
+    + tarjetaCfg('Bot en Marketplace',
+        'Contesta los chats de Marketplace con las mismas reglas del bot de WhatsApp: precios de los combos reales y, '
+        + 'si piden fecha, pago o a una persona, te pasa el chat a ti. Sus respuestas las escribe Hermes en Facebook, '
+        + 'así que tardan unos minutos en salir. Si contestas tú desde Facebook o desde el CRM, ese chat pasa a «Humano» '
+        + 'y el bot se calla.',
+        interruptorCfg('marketplace_bot', 'Que el bot conteste en Marketplace',
+          'Apagado: los chats nuevos de Marketplace los atiendes tú.', false))
 
     + tarjetaCfg('Cómo te ve el cliente',
         'Detalles de la línea de WhatsApp Web que el cliente sí nota. No mandan ningún mensaje '
