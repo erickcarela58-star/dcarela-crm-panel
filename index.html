@@ -8566,10 +8566,15 @@ function cableaChat(c){
     // Hermes. Igual que en las redes, los botones del combo se escriben en el texto y la imagen va sin pie.
     const esMarketplace = canalDe(sel) === 'marketplace';
     if (esMarketplace) {
-      const pega = COLA.find(a => a.tipo !== 'image' || !/^image\/(jpeg|png|webp)$/i.test(String(a.mime || '').split(';')[0].trim()) || a.grande);
+      // 13/11/2026: cualquier imagen sirve (el servidor la pasa a JPG si hace falta). Un PDF de catálogo se vuelve a elegir en Combos,
+      // que en Marketplace lo prepara como páginas en imagen.
+      const pega = COLA.find(a => a.tipo !== 'image' || a.grande);
       if (pega) {
         env.disabled = false;
-        return avisa('No se puede enviar por Marketplace', (pega.nombre || 'Ese archivo') + ': por Marketplace solo salen imágenes JPG, PNG o WebP en calidad normal, y texto.');
+        const esPdf = /pdf/i.test(String(pega.mime || '')) || /\.pdf$/i.test(String(pega.nombre || ''));
+        return avisa('No se puede enviar por Marketplace', (pega.nombre || 'Ese archivo') + (esPdf
+          ? ': por Marketplace no sale un PDF. Quítalo y elige el catálogo otra vez en Combos: en este chat sale como imágenes.'
+          : ': por Marketplace solo salen imágenes y texto (sin video, audio ni documentos).'));
       }
     }
     const sinPie = !!claveRed || esMarketplace;
@@ -9906,6 +9911,36 @@ async function adjuntaPdfCombos(cat, boton){
     const chatId = sel?.id;
     const sucursal = sucursalComboDelChat(sel);
     if (p.sucursal && p.sucursal !== sucursal) throw new Error('Este catálogo corresponde a La Central.');
+    // Marketplace (13/11/2026, «aun no permite enviar los combos. u otra cosa en marketplace»): ahí no sale un PDF. El catálogo va
+    // como sus páginas en imagen, una por mensaje, que el cliente ve sin abrir nada.
+    if (canalDe(sel) === 'marketplace') {
+      let imagenes = [];
+      if (p.archivo) {
+        for (let n = 1; n <= 30; n++) {
+          const r = await fetch('./catalogos/navidad-2026/pagina-' + n + '.webp', { cache:'no-cache' });
+          if (!r.ok) break;
+          const jpg = (await aJpeg(await cargaImagen(new File([await r.blob()], 'p.webp', { type:'image/webp' })), 1350, 0.86));
+          if (jpg) imagenes.push(jpg);
+        }
+      } else {
+        const r = await llama({ action:'combos', operation:'catalogo_categoria', categoria:cat, sucursal, conversation_id: sel?.id || null, formato:'paginas' });
+        if (!r?.ok || !Array.isArray(r.paginas)) throw new Error(r?.error || 'no se pudo preparar el catálogo');
+        imagenes = r.paginas.map(b64 => new Blob([Uint8Array.from(atob(b64), c => c.charCodeAt(0))], { type:'image/jpeg' }));
+      }
+      if (!imagenes.length) throw new Error('el catálogo no tiene páginas');
+      if (chatId !== sel?.id) return;
+      for (let k = 0; k < imagenes.length; k++) {
+        COLA.push({ tipo:'image', mime:'image/jpeg', nombre:'Combos ' + p.label + ' ' + (k + 1) + ' - DCarela.jpg', datos: await leeBase64(imagenes[k]) });
+      }
+      pintaCola();
+      const caja = $('texto');
+      if (!caja.value.trim()) {
+        caja.value = 'Te comparto nuestros combos de ' + p.label + '. Si te interesa alguno, dime tu fecha tentativa para confirmarte disponibilidad.';
+        caja.dispatchEvent(new Event('input'));
+      }
+      cierraModal();
+      return avisa('Combos ' + p.label, imagenes.length + ' páginas listas como imágenes. Revisa y pulsa enviar.');
+    }
     let archivo, nombre;
     if (p.archivo) {
       const response = await fetch(p.archivo, { cache:'no-cache' });
