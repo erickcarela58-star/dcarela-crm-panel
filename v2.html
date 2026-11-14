@@ -9920,18 +9920,19 @@ async function adjuntaCombosEnImagenes(cat, boton){
   try {
     const chatId = sel?.id, sucursal = sucursalComboDelChat(sel);
     if (p.sucursal && p.sucursal !== sucursal) throw new Error('Este catálogo corresponde a La Central.');
-    const lista = await llama({ action:'combos', operation:'catalogo_categoria', categoria:cat, sucursal, conversation_id: sel?.id || null, formato:'vista' });
-    if (!lista?.ok || !Array.isArray(lista.combos)) throw new Error(lista?.error || 'no se pudo leer la lista de combos');
-    const combos = lista.combos;
-    if (!combos.length) throw new Error('esa categoría no tiene combos activos');
-    const imagenes = [];
+    // La lista sale de los combos ya cargados del CRM (los mismos del PDF): pedir el catálogo completo solo para saber sus nombres tardaba más de un minuto.
+    const combos = (await cargaCombos(false)).filter(c => c.catalogoCat === cat && c.id && c.precioNumero).sort((a, b) => a.precioNumero - b.precioNumero);
+    if (!combos.length) throw new Error('esa categoría no tiene combos activos con precio');
+    const imagenes = [], fallidos = [];
     for (let i = 0; i < combos.length; i++) {
       boton.textContent = 'Preparando ' + (i + 1) + ' de ' + combos.length + '…';
-      const r = await llama({ action:'combos', operation:'flyer_combo', categoria:cat, ref:combos[i].ref, sucursal, conversation_id: sel?.id || null, formato:'jpg' });
-      if (!r?.ok || !r.imagen_b64) throw new Error('«' + (combos[i].nombre || combos[i].ref) + '»: ' + (r?.error || 'no se pudo preparar la imagen'));
-      imagenes.push({ nombre: r.nombre || ('Combo ' + (combos[i].ref || i + 1) + ' - DCarela.jpg'), datos: r.imagen_b64 });
+      const r = await llama({ action:'combos', operation:'flyer_combo', id:combos[i].id, sucursal, formato:'jpg' });
       if (chatId !== sel?.id) return;                          // cambió de chat mientras se preparaban: no se pega en el equivocado
+      if (!r?.ok || !r.imagen_b64) { fallidos.push((combos[i].nombre || combos[i].ref) + ': ' + (r?.error || 'sin imagen')); continue; }
+      imagenes.push({ nombre: r.nombre || ('Combo ' + (combos[i].ref || i + 1) + ' - DCarela.jpg'), datos: r.imagen_b64 });
     }
+    // Nunca se manda un catálogo con combos de menos sin decirlo: si alguno falló, no se prepara nada.
+    if (fallidos.length) throw new Error('no se pudo preparar ' + fallidos.length + ' de ' + combos.length + ' (' + fallidos[0] + ')');
     for (const x of imagenes) COLA.push({ tipo:'image', mime:'image/jpeg', nombre:x.nombre, datos:x.datos });
     pintaCola();
     const caja = $('texto');
