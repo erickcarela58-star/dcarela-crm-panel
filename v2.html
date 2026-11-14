@@ -9803,6 +9803,12 @@ async function abreCombos(){
      + '<div class="pdfs">' + COMBO_PDFS.filter(p => p.cat === 'navidad' ? navidadDisponible : !p.sucursal || p.sucursal === sucursal).map(p =>
          '<button class="tplchip" data-pdf="' + p.cat + '">' + esc(p.label) + '</button>').join('')
     + '</div>'
+    // 14/11/2026 (dueño: «enviale los combos de cumpleaños en imagen 1-1 a nicol, ya que no lo puede abrir [el PDF]… arregla esa opcion para poder
+    // enviarlo de ambas maneras»): el mismo catálogo, pero como un flyer 1 a 1 por combo, que se ve sin abrir ningún archivo.
+    + '<div class="seccion" style="margin:14px 0 6px">Catálogo en imágenes 1 a 1 (sin PDF)</div>'
+    + '<div class="pdfs">' + COMBO_PDFS.filter(p => !p.archivo && (!p.sucursal || p.sucursal === sucursal)).map(p =>
+         '<button class="tplchip" data-imgs="' + p.cat + '">' + esc(p.label) + '</button>').join('')
+    + '</div>'
     + '<div class="seccion" style="margin:14px 0 6px">Vestidos</div>'
     + '<div class="pdfs"><button class="tplchip" data-vestidos>Enviar los vestidos disponibles</button></div>'
      + (navidadDisponible && ['admin','supervisor'].includes(ROL_ACTUAL) ? '<div class="pdfs" style="margin-top:12px"><button class="tplchip" data-navidad-solicitudes>Solicitudes web de Navidad</button></div>' : '')
@@ -9836,6 +9842,8 @@ async function abreCombos(){
     }
     const pdf = ev.target.closest('[data-pdf]');
     if (pdf) return adjuntaPdfCombos(pdf.dataset.pdf, pdf);
+    const imgs = ev.target.closest('[data-imgs]');
+    if (imgs) return adjuntaCombosEnImagenes(imgs.dataset.imgs, imgs);
     const ves = ev.target.closest('[data-vestidos]');
     if (ves) return adjuntaVestidos(ves);
     const b = ev.target.closest('[data-combo]');
@@ -9900,6 +9908,42 @@ async function adjuntaCombo(c, boton){
   } catch (e) {
     boton.disabled = false; boton.innerHTML = antes;
     avisa('No se pudo preparar ' + c.nombre, e?.message || String(e));
+  }
+}
+
+// El catálogo de una categoría como imágenes 1 a 1 (un flyer por combo, 1080×1350): el cliente que no puede abrir el PDF lo ve directo en el chat.
+// Sale por WhatsApp (5644 y oficial), Instagram, Messenger y Marketplace: son imágenes normales en la cola de adjuntos.
+async function adjuntaCombosEnImagenes(cat, boton){
+  const p = COMBO_PDFS.find(x => x.cat === cat); if (!p || p.archivo) return;
+  const antes = boton.textContent;
+  boton.disabled = true; boton.textContent = 'Preparando…';
+  try {
+    const chatId = sel?.id, sucursal = sucursalComboDelChat(sel);
+    if (p.sucursal && p.sucursal !== sucursal) throw new Error('Este catálogo corresponde a La Central.');
+    const lista = await llama({ action:'combos', operation:'catalogo_categoria', categoria:cat, sucursal, conversation_id: sel?.id || null, formato:'vista' });
+    if (!lista?.ok || !Array.isArray(lista.combos)) throw new Error(lista?.error || 'no se pudo leer la lista de combos');
+    const combos = lista.combos;
+    if (!combos.length) throw new Error('esa categoría no tiene combos activos');
+    const imagenes = [];
+    for (let i = 0; i < combos.length; i++) {
+      boton.textContent = 'Preparando ' + (i + 1) + ' de ' + combos.length + '…';
+      const r = await llama({ action:'combos', operation:'flyer_combo', categoria:cat, ref:combos[i].ref, sucursal, conversation_id: sel?.id || null, formato:'jpg' });
+      if (!r?.ok || !r.imagen_b64) throw new Error('«' + (combos[i].nombre || combos[i].ref) + '»: ' + (r?.error || 'no se pudo preparar la imagen'));
+      imagenes.push({ nombre: r.nombre || ('Combo ' + (combos[i].ref || i + 1) + ' - DCarela.jpg'), datos: r.imagen_b64 });
+      if (chatId !== sel?.id) return;                          // cambió de chat mientras se preparaban: no se pega en el equivocado
+    }
+    for (const x of imagenes) COLA.push({ tipo:'image', mime:'image/jpeg', nombre:x.nombre, datos:x.datos });
+    pintaCola();
+    const caja = $('texto');
+    if (!caja.value.trim()) {
+      caja.value = 'Te comparto nuestros combos de ' + p.label + '. Cualquier duda me dices, y si te interesa alguno dime tu fecha tentativa para confirmarte disponibilidad.';
+      caja.dispatchEvent(new Event('input'));
+    }
+    cierraModal();
+    avisa('Combos ' + p.label, imagenes.length + ' imágenes 1 a 1 listas. Revisa y pulsa enviar.');
+  } catch (e) {
+    boton.disabled = false; boton.textContent = antes;
+    avisa('No se pudieron preparar las imágenes', e?.message || String(e));
   }
 }
 
