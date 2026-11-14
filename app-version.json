@@ -1,7 +1,7 @@
 {
-  "version": "2026-11-13-crm-release-v452-marketplace-catalogo-imagenes",
+  "version": "2026-11-14-crm-release-v453-combos-en-imagenes-1a1",
   "channel": "crm",
-  "released_at": "2026-11-13T17:43:45.172Z",
-  "summary": "Marketplace: el catálogo de Combos sale como páginas en imagen (ahí no salen PDF) y se acepta cualquier imagen. Combos 1 a 1 ya preparados de antemano.",
+  "released_at": "2026-11-14T23:00:00.000Z",
+  "summary": "Combos: el catálogo de cada categoría también sale como imágenes 1 a 1 (sin PDF), para quien no puede abrir el archivo. Se elige PDF o imágenes en el mismo menú.",
   "requiere_puente": "2026-11-06-documentos-grandes-v70"
 }
