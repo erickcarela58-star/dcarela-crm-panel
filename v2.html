@@ -20458,7 +20458,7 @@ function pintaContenido(){
 // Todas las imágenes distintas del planificador (una por pieza, aunque salga en tres redes), filtrables y descargables para
 // repartirlas en otros lugares. Solo lee: bajar una imagen usa la misma acción «contenidoImagen» que el planificador.
 const BANCO = { cat: '', pagina: 0, cargando: false, datos: null, error: null, marcadas: new Set() };
-const BANCO_CATS = { graduacion: 'Graduación', xv: 'XV años', embarazo: 'Embarazo', infantil: 'Infantil', cumpleanos: 'Cumpleaños', navidad: 'Navidad', familia: 'Familia', sin_categoria: 'Sin categoría' };
+const BANCO_CATS = { graduacion: 'Graduación', xv: 'XV años', embarazo: 'Embarazo', embarazadas: 'Embarazo', productos: 'Productos', infantil: 'Infantil', cumpleanos: 'Cumpleaños', navidad: 'Navidad', familia: 'Familia', sin_categoria: 'Sin categoría' };
 async function cargaBancoFlyers(){
   BANCO.cargando = true; BANCO.error = null; if (CONT.tab === 'banco') pintaContenido();
   let r; try { r = await llama({ action: 'contenidoBanco', categoria: BANCO.cat || undefined, pagina: BANCO.pagina, por_pagina: 40 }); }
