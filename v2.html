@@ -19805,7 +19805,7 @@ function cableaLotes(){
 let CONT = { items: [], conteo: {}, calendario: [], canales: [], activos: [], activo: true, tab: null, grupos: [], propias: [], quitadas: [], cargando: false, abiertos: new Set(),
   autonomia: 'manual', cantidad: 0, historiasDiarias: 8, igCuentas: [], igColaboradores: new Set(), tiktok: null, estilos: [], tendencias: null, amandine: true, gen: null, mes: null, mesItems: null, dia: null, diaItems: null, vistas: {}, nuevosIA: [], ref: null, subida: null };
 const CONT_TABS = [['crear', 'Crear'], ['porAprobar', 'Revisar'], ['calendario', 'Programar'], ['publicadas', 'Resultados']];
-const CONT_VISTAS = [['estilos', 'Plantillas'], ['fotos', 'Fototeca'], ['navidad','Set navideño'], ['programadas', 'Cola y pendientes'], ['tendencias', 'Ideas y tendencias'], ['redes', 'Conexiones'], ['paquete', 'Paquetes y Marketplace'], ['fechas', 'Fechas del negocio']];
+const CONT_VISTAS = [['banco', 'Banco de flyers'], ['estilos', 'Plantillas'], ['fotos', 'Fototeca'], ['navidad','Set navideño'], ['programadas', 'Cola y pendientes'], ['tendencias', 'Ideas y tendencias'], ['redes', 'Conexiones'], ['paquete', 'Paquetes y Marketplace'], ['fechas', 'Fechas del negocio']];
 const CONT_ESTADOS = { propuesta: 'Por aprobar', aprobada: 'Aprobada', publicando: 'Enviando…', encola: 'Procesando en el canal', enviada: 'Enviada · esperando confirmación', sin_confirmar: 'Sin confirmación', publicada: 'Registrada como publicada', fallida: 'Falló', rechazada: 'Rechazada', vencida: 'Vencida', lista: 'Lista para subir' };
 const CONT_CORTO = { instagram: 'IG', facebook: 'FB', whatsapp_estado: 'Estado', tiktok: 'TikTok', paquete_grupos: 'Grupos' };
 // v235: el tamaño de la pieza se ve en la tarjeta. Antes había que abrirla para saber si era feed,
@@ -20434,7 +20434,7 @@ function pintaContenido(){
   // v239: en escritorio, cabecera y pasos de la referencia 2; en Revisar/Programar/Publicar/Analizar, el tablero.
   if (typeof planificadorV239 === 'function' && planificadorV239(cuerpo)) return;
   if (CONT.tab === 'estadosProgramados') return pintaEstadosProgramados(cuerpo);
-  const vistas = { crear: pintaCrearContenido, fotos: pintaFotosContenido, calendario: pintaCalendario, tendencias: pintaTendencias, subir: pintaSubir, estilos: pintaEstilos, redes: pintaRedes, paquete: pintaPaquete, fechas: pintaFechasNicho };
+  const vistas = { crear: pintaCrearContenido, fotos: pintaFotosContenido, calendario: pintaCalendario, tendencias: pintaTendencias, subir: pintaSubir, estilos: pintaEstilos, redes: pintaRedes, paquete: pintaPaquete, fechas: pintaFechasNicho, banco: c => pintaBancoFlyers(c) };
   if (vistas[CONT.tab]) return vistas[CONT.tab](cuerpo);
   const filtro = { porAprobar: x => x.estado === 'propuesta', programadas: x => ['aprobada', 'publicando', 'encola', 'enviada', 'sin_confirmar', 'lista', 'fallida', 'vencida'].includes(x.estado) && x.canal !== 'paquete_grupos', publicadas: x => x.estado === 'publicada' }[CONT.tab];
   const lista = CONT.items.filter(filtro || (() => false));
@@ -20452,6 +20452,61 @@ function pintaContenido(){
     + avisoCruces
     + (listas.length ? '<div class="cont-lista">' + listas.map(x => tarjetaContenido(x, ROL_ACTUAL === 'admin', cruces.porId.get(x.id) || 0)).join('') + '</div>' : '<div class="plan-vacio">No hay piezas listas para revisar.</div>')
     + (bloqueadas.length ? '<details class="plan-bloqueadas"><summary>' + bloqueadas.length + ' pendientes de foto original</summary><p class="cont-sub">Estas piezas no se pueden aprobar hasta tener una foto en alta calidad.</p><button type="button" class="btn-linea" data-cbiblioteca="1">Subir originales a la fototeca</button><div class="cont-lista">' + bloqueadas.map(x => tarjetaContenido(x, ROL_ACTUAL === 'admin', 0)).join('') + '</div></details>' : '');
+}
+
+// ───────────── Banco de flyers (dueño 15/11/2026) ─────────────
+// Todas las imágenes distintas del planificador (una por pieza, aunque salga en tres redes), filtrables y descargables para
+// repartirlas en otros lugares. Solo lee: bajar una imagen usa la misma acción «contenidoImagen» que el planificador.
+const BANCO = { cat: '', pagina: 0, cargando: false, datos: null, error: null, marcadas: new Set() };
+const BANCO_CATS = { graduacion: 'Graduación', xv: 'XV años', embarazo: 'Embarazo', infantil: 'Infantil', cumpleanos: 'Cumpleaños', navidad: 'Navidad', familia: 'Familia', sin_categoria: 'Sin categoría' };
+async function cargaBancoFlyers(){
+  BANCO.cargando = true; BANCO.error = null; if (CONT.tab === 'banco') pintaContenido();
+  let r; try { r = await llama({ action: 'contenidoBanco', categoria: BANCO.cat || undefined, pagina: BANCO.pagina, por_pagina: 40 }); }
+  catch { r = { ok: false, error: 'La consulta no terminó. Reintenta.' }; }
+  BANCO.cargando = false;
+  if (!r || !r.ok) BANCO.error = (r && r.error) || 'No se pudo leer el banco.'; else BANCO.datos = r;
+  if (CONT.tab === 'banco') pintaContenido();
+}
+function pintaBancoFlyers(cuerpo){
+  if (!BANCO.datos && !BANCO.cargando && !BANCO.error) { void cargaBancoFlyers(); }
+  const d = BANCO.datos;
+  const cats = d ? Object.entries(d.categorias).sort((a, b) => b[1] - a[1]) : [];
+  const fil = '<div class="cont-acc" style="flex-wrap:wrap;gap:6px;margin:8px 0">'
+    + '<button type="button" class="btn-linea" data-bcat=""' + (!BANCO.cat ? ' aria-current="true"' : '') + '>Todos' + (d ? ' · ' + d.total_banco : '') + '</button>'
+    + cats.map(([c, n]) => '<button type="button" class="btn-linea" data-bcat="' + esc(c) + '"' + (BANCO.cat === c ? ' aria-current="true"' : '') + '>' + esc(BANCO_CATS[c] || c) + ' · ' + n + '</button>').join('') + '</div>';
+  const paginas = d ? Math.max(1, Math.ceil(d.total / d.por_pagina)) : 1;
+  const nombreRed = { whatsapp_estado: 'Estado', instagram: 'Instagram', facebook: 'Facebook' };
+  const tarj = d ? d.items.map(x => '<div class="cont" style="flex-direction:column;max-width:210px"><label style="display:flex;gap:6px;align-items:center;font-size:12px"><input type="checkbox" data-bmarca="' + esc(x.id) + '"' + (BANCO.marcadas.has(x.id) ? ' checked' : '') + '> ' + esc(BANCO_CATS[x.categoria] || x.categoria || '—') + '</label>'
+    + (x.miniatura ? '<img class="cont-mini" style="width:100%;height:auto;border-radius:8px" src="' + esc(x.miniatura) + '" alt="Flyer" data-cver="' + esc(x.id) + '">' : '<div class="cont-sub" style="padding:40px 8px">Sin vista previa</div>')
+    + '<small class="cont-sub">' + esc((x.primera_fecha || '') + (x.publicada ? ' · ya publicada' : '')) + '</small>'
+    + '<small class="cont-sub">' + esc(x.canales.map(c => nombreRed[c] || c).join(' · ')) + '</small>'
+    + '<button type="button" class="btn-linea" data-cdescarga="' + esc(x.id) + '">Descargar</button></div>').join('') : '';
+  cuerpo.innerHTML = '<div class="plan-seccion-cab"><h2>Banco de flyers</h2><span class="cont-sub">' + (d ? d.total + ' flyers' + (BANCO.cat ? ' en ' + esc(BANCO_CATS[BANCO.cat] || BANCO.cat) : '') + ' · una imagen por pieza, sin repetir por red' : 'Cargando…') + '</span></div>'
+    + '<p class="cont-sub">Todo lo que se ha creado en el CRM, sin importar la fecha. Descárguelos para repartirlos por otros lugares.</p>'
+    + fil
+    + (BANCO.error ? '<div class="cont-aviso" role="alert">' + esc(BANCO.error) + ' <button type="button" class="btn-linea" data-bcat="' + esc(BANCO.cat) + '">Reintentar</button></div>' : '')
+    + '<div class="cont-acc" style="gap:8px;margin:6px 0"><button type="button" class="btn-solido" data-bbajar="1"' + (BANCO.marcadas.size ? '' : ' disabled') + '>Descargar marcados' + (BANCO.marcadas.size ? ' (' + BANCO.marcadas.size + ')' : '') + '</button>'
+    + '<button type="button" class="btn-linea" data-bpag="-1"' + (BANCO.pagina <= 0 ? ' disabled' : '') + '>Anterior</button><span class="cont-sub">Página ' + (BANCO.pagina + 1) + ' de ' + paginas + '</span>'
+    + '<button type="button" class="btn-linea" data-bpag="1"' + (BANCO.pagina + 1 >= paginas ? ' disabled' : '') + '>Siguiente</button></div>'
+    + (BANCO.cargando ? '<p class="cfgnota">Cargando el banco…</p>' : '')
+    + '<div class="cont-lista" style="display:flex;flex-wrap:wrap;gap:12px">' + tarj + '</div>';
+}
+async function clicBancoFlyers(ev){
+  const c = ev.target.closest('[data-bcat],[data-bpag],[data-bbajar],[data-bmarca]'); if (!c) return false;
+  if (c.dataset.bcat !== undefined) { BANCO.cat = c.dataset.bcat; BANCO.pagina = 0; BANCO.datos = null; BANCO.error = null; void cargaBancoFlyers(); return true; }
+  if (c.dataset.bpag) { BANCO.pagina = Math.max(0, BANCO.pagina + Number(c.dataset.bpag)); void cargaBancoFlyers(); return true; }
+  if (c.dataset.bmarca) { if (c.checked) BANCO.marcadas.add(c.dataset.bmarca); else BANCO.marcadas.delete(c.dataset.bmarca); pintaContenido(); return true; }
+  if (c.dataset.bbajar) {
+    c.disabled = true; let n = 0;
+    for (const id of [...BANCO.marcadas]) {
+      const r = await llama({ action: 'contenidoImagen', id, descarga: true });
+      if (!r || !r.ok || !r.jpeg_b64) { avisa('No se pudo bajar una imagen', (r && r.error) || id); continue; }
+      const bytes = Uint8Array.from(atob(r.jpeg_b64), ch => ch.charCodeAt(0)); descargaComoArchivo(new Blob([bytes], { type: r.mime || 'image/jpeg' }), r.nombre); n++;
+      await new Promise(ok => setTimeout(ok, 350));
+    }
+    avisa('Descarga lista', n + ' flyer' + (n === 1 ? '' : 's') + ' bajados'); BANCO.marcadas.clear(); pintaContenido(); return true;
+  }
+  return false;
 }
 
 function pintaEstadosProgramados(cuerpo){
@@ -25577,6 +25632,7 @@ function verDataUrlEnGrande(src, nombre){
 
 // ---- clics y formularios ----
 async function clicContenido(ev){
+  if (CONT.tab === 'banco' && await clicBancoFlyers(ev)) return;
   const img = ev.target.closest('img[data-cver]'); if (img) return verImagenContenido(img.dataset.cver);
   const imgE = ev.target.closest('img[data-cvistaestilo]'); if (imgE) return verDataUrlEnGrande(imgE.src, 'estilo-' + imgE.dataset.cvistaestilo + '.jpg');
   const cardPlantilla = ev.target.closest('[data-celegirplantilla]');
