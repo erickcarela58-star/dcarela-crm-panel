@@ -1,7 +1,7 @@
 {
-  "version": "2026-11-14-crm-release-v455-envio-por-lotes-en-servidor",
+  "version": "2026-11-15-crm-release-v456-banco-de-flyers",
   "channel": "crm",
-  "released_at": "2026-11-14T23:00:00.000Z",
-  "summary": "Varias imágenes se envían desde el servidor (no se frenan con el CRM en segundo plano). Combos: el catálogo de cada categoría también sale como imágenes 1 a 1 (sin PDF), para quien no puede abrir el archivo. Se elige PDF o imágenes en el mismo menú.",
+  "released_at": "2026-11-15T21:00:00.000Z",
+  "summary": "Banco de flyers: todas las imágenes creadas en el CRM en un solo lugar, filtradas por categoría y listas para descargar y repartir.",
   "requiere_puente": "2026-11-06-documentos-grandes-v70"
 }
