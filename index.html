@@ -8511,6 +8511,12 @@ function cableaChat(c){
     if (porPuente) {
       const pieEnQr = indiceConPie(COLA);
       let salieronQr = 0, falloQr = null;
+      // 14/11/2026 (dueño: «se dejan de enviar si pongo el crm en segundo plano»): varias imágenes ya preparadas las deja en la cola del puente el
+      // SERVIDOR en pocas peticiones (enviaLotePorPuente); una por una desde el navegador se frenaban con la ventana oculta.
+      if (COLA.length > 1 && COLA.every(a => a.tipo === 'image' && !a.gif && !a.grande && a.datos && !a.error)) {
+        const lote = await enviaLotePorPuente(conv, t, pieEnQr, citando);
+        COLA.splice(0, lote.salieron); falloQr = lote.fallo;
+      }
       for (let i = 0; i < COLA.length && !falloQr; i++) {
         const a = COLA[i];
         a.estado = 'enviando'; pintaCola();
@@ -8984,6 +8990,29 @@ async function subeEnTrozos(a){
   return { ok:true, cuerpo:{ media_upload_id:id, media_chunks:total } };
 }
 // Lo que lleva el envio de un adjunto: el base64 de siempre, o la referencia a la subida por trozos si es grande.
+// Manda varias imágenes ya preparadas por el 5644 sin depender del navegador: el servidor las encola todas (bridgeQueueLote, hasta 8 por petición).
+// Devuelve cuántas quedaron en la cola del puente y, si algo falló, el error (las que salieron NO se repiten).
+async function enviaLotePorPuente(conv, t, pieEnQr, citando){
+  let salieron = 0, fallo = null;
+  for (let desde = 0; desde < COLA.length && !fallo; desde += 8) {
+    const tanda = COLA.slice(desde, desde + 8);
+    tanda.forEach(a => { a.estado = 'enviando'; }); pintaCola();
+    const r = await llama({ action:'bridgeQueueLote', conversation_id: conv,
+      items: tanda.map((a, k) => ({ media_kind:a.tipo, media_b64:a.datos, media_filename:a.nombre, media_mime:a.mime,
+        ...(a.thumb ? { media_thumb_b64:a.thumb } : {}), body: (t && desde + k === pieEnQr) ? t : '' })),
+      ...(citando?.wamid && desde === 0 ? { reply_to_wamid:citando.wamid } : {}) });
+    const hechos = Math.max(0, Math.min(tanda.length, Number(r?.enviados) || 0));
+    for (let k = 0; k < hechos; k++) {
+      const a = tanda[k]; salieron++;
+      apuntaEnviando({ conv, tipo:a.tipo, body: (t && desde + k === pieEnQr) ? t : '', mime:a.mime, datos:a.datos });
+    }
+    if (!r?.ok) {
+      fallo = r?.fallo ? { ok:false, error:r.fallo.error, code:r.fallo.code } : (r?.ok === false ? r : { ok:false, error:r?.error || 'No se pudo enviar el lote.' });
+      if (tanda[hechos]) marcaFalloArchivo(tanda[hechos], fallo);
+    }
+  }
+  return { salieron, fallo };
+}
 async function cuerpoDeAdjunto(a){
   if (a.error) return { ok:false, error:a.error };
   if (!a.grande && !a.datos) return { ok:false, error:'El archivo todavía no está preparado. Vuelve a adjuntarlo.' };
