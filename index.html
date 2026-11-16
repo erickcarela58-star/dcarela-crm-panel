@@ -20459,103 +20459,213 @@ function pintaContenido(){
     + (bloqueadas.length ? '<details class="plan-bloqueadas"><summary>' + bloqueadas.length + ' pendientes de foto original</summary><p class="cont-sub">Estas piezas no se pueden aprobar hasta tener una foto en alta calidad.</p><button type="button" class="btn-linea" data-cbiblioteca="1">Subir originales a la fototeca</button><div class="cont-lista">' + bloqueadas.map(x => tarjetaContenido(x, ROL_ACTUAL === 'admin', 0)).join('') + '</div></details>' : '');
 }
 
-// ───────────── Galería de flyers (dueño 15-16/11/2026) ─────────────
-// Todas las imágenes distintas del planificador (una por pieza, aunque salga en tres redes), filtrables y descargables para repartirlas.
-// Rápida: el servidor lee solo campos livianos y trae la miniatura de las 24 de la página; las páginas ya vistas se guardan en memoria.
-// Solo lee: bajar una imagen usa la misma acción «contenidoImagen» que el planificador.
-const BANCO = { cat: '', pagina: 0, cargando: false, datos: null, error: null, marcadas: new Set(), cache: new Map() };
+// ───────────── Banco de flyers (dueño 15-16/11/2026): rediseño premium ─────────────
+// Buscar, filtrar por categoría / tipo / estado, ver NEW, descargar en el tamaño de cada red (panel derecho), crear flyers y colaboraciones sin pedir fecha.
+// Rápido: el servidor lee solo campos livianos y trae la miniatura de las de la página; las páginas ya vistas se guardan en memoria.
+const BANCO = { cat: '', tipo: '', estado: '', q: '', orden: 'recientes', pagina: 0, cargando: false, datos: null, error: null, marcadas: new Set(), cache: new Map(),
+  sel: null, grupo: 'historia', loteFormato: 'original', panel: null, avanzados: false, ocupado: false };
 const BANCO_CATS = { graduacion: 'Graduación', xv: 'XV años', embarazo: 'Embarazo', embarazadas: 'Embarazo', infantil: 'Infantil', cumpleanos: 'Cumpleaños', navidad: 'Navidad', familia: 'Familia', productos: 'Productos', sin_categoria: 'Sin categoría' };
+const BANCO_TIPOS = { historia: 'Historias / Reels', publicacion: 'Publicación', marketplace: 'Marketplace', carrusel: 'Carrusel animado', colaboracion: 'Colaboración' };
 const BANCO_REDES = { whatsapp_estado: 'Estado', instagram: 'Instagram', facebook: 'Facebook', tiktok: 'TikTok', paquete_grupos: 'Grupos' };
-const BANCO_POR_PAGINA = 24;
+const BANCO_ESTADOS = { nuevo: 'Nuevos', publicado: 'Publicado', archivado: 'Archivado', borrado: 'Borrado' };
+const BANCO_FORMATOS = [
+  { id: 'historia_9x16', grupo: 'historia', etiqueta: 'Historia / Reel 9:16', detalle: 'Instagram, TikTok, WhatsApp', tamano: '1080 × 1920' },
+  { id: 'post_4x5', grupo: 'publicacion', etiqueta: 'Publicación 4:5', detalle: 'Instagram y Facebook (feed)', tamano: '1080 × 1350' },
+  { id: 'post_1x1', grupo: 'publicacion', etiqueta: 'Publicación 1:1', detalle: 'Cuadrado universal', tamano: '1080 × 1080' },
+  { id: 'marketplace', grupo: 'marketplace', etiqueta: 'Marketplace', detalle: 'Facebook Marketplace', tamano: '1200 × 1200' }];
+const BANCO_GRUPOS = { historia: 'Historia / Reel 9:16', marketplace: 'Marketplace', publicacion: 'Publicación' };
+const BANCO_POR_PAGINA = 18;
+function bancoClave(){ return [BANCO.cat, BANCO.tipo, BANCO.estado, BANCO.q, BANCO.orden, BANCO.pagina].join('|'); }
 function plantillasGaleria(){ return (typeof CONT !== 'undefined' && Array.isArray(CONT.estilos) ? CONT.estilos : []).filter(e => e.activo !== false && /^v[69]-/.test(String(e.id || ''))); }
-function bancoClave(){ return BANCO.cat + '|' + BANCO.pagina; }
+function bancoTitulo(x){ return x.titulo || ((BANCO_CATS[x.categoria] || 'Flyer') + ' · ' + (BANCO_TIPOS[x.tipo] || '')); }
 async function cargaBancoFlyers({ fuerza = false } = {}){
   const clave = bancoClave();
   if (!fuerza && BANCO.cache.has(clave)) { BANCO.datos = BANCO.cache.get(clave); BANCO.error = null; BANCO.cargando = false; return repintaBanco(); }
   BANCO.cargando = true; BANCO.error = null; repintaBanco();
-  let r; try { r = await llama({ action: 'contenidoBanco', categoria: BANCO.cat || undefined, pagina: BANCO.pagina, por_pagina: BANCO_POR_PAGINA }); }
+  let r; try { r = await llama({ action: 'contenidoBanco', categoria: BANCO.cat || undefined, tipo: BANCO.tipo || undefined, estado: BANCO.estado || undefined, q: BANCO.q || undefined, orden: BANCO.orden, pagina: BANCO.pagina, por_pagina: BANCO_POR_PAGINA }); }
   catch { r = { ok: false, error: 'La consulta no terminó. Reintente.' }; }
   if (clave !== bancoClave()) return;
   BANCO.cargando = false;
-  if (!r || !r.ok) BANCO.error = (r && r.error) || 'No se pudo leer la galería.'; else { BANCO.datos = r; BANCO.cache.set(clave, r); }
+  if (!r || !r.ok) BANCO.error = (r && r.error) || 'No se pudo leer el banco.'; else { BANCO.datos = r; BANCO.cache.set(clave, r); if (BANCO.sel && !r.items.some(x => x.id === BANCO.sel)) BANCO.sel = null; }
   repintaBanco();
 }
+function bancoSeleccionado(){ return (BANCO.datos?.items || []).find(x => x.id === BANCO.sel) || null; }
 function tarjetaBanco(x){
-  const historia = x.formato === 'imagen_9x16' || x.formato === 'video', marcada = BANCO.marcadas.has(x.id);
-  const redes = x.canales.map(c => BANCO_REDES[c] || c).join(' · ');
-  return '<figure class="gal-tarjeta' + (marcada ? ' on' : '') + '" style="--prop:' + (historia ? '9/16' : '4/5') + '">'
-    + '<div class="gal-img">' + (x.miniatura ? '<img loading="lazy" decoding="async" alt="Flyer ' + esc(BANCO_CATS[x.categoria] || '') + '" src="' + esc(x.miniatura) + '" data-cver="' + esc(x.id) + '">' : '<span class="cont-sub">Sin vista previa</span>') + '</div>'
-    + '<label class="gal-marca" title="Marcar para descargar"><input type="checkbox" data-bmarca="' + esc(x.id) + '"' + (marcada ? ' checked' : '') + '></label>'
-    + '<figcaption><b>' + esc(BANCO_CATS[x.categoria] || x.categoria || 'Sin categoría') + '</b><small>' + esc((x.primera_fecha || '') + (x.publicada ? ' · publicada' : '')) + '</small><small>' + esc(redes) + '</small>' + (x.estilo_id ? '<small>Plantilla: ' + esc((typeof contNombreEstilo === 'function' && contNombreEstilo(x.estilo_id)) || x.estilo_id) + '</small>' : '') + '</figcaption>'
-    + '<div class="gal-acc"><button type="button" class="btn-linea" data-cver="' + esc(x.id) + '">Ver</button><button type="button" class="btn-solido" data-cdescarga="' + esc(x.id) + '">Descargar</button></div></figure>';
+  const historia = x.formato === 'imagen_9x16' || x.tipo === 'historia', marcada = BANCO.marcadas.has(x.id), activa = BANCO.sel === x.id;
+  const estado = x.estado_banco === 'publicado' ? ['Publicado', 'ok'] : x.estado_banco === 'archivado' ? ['Archivado', 'gris'] : x.estado_banco === 'borrado' ? ['Borrado', 'mal'] : x.nuevo ? ['Nuevo', 'nuevo'] : ['Pendiente', 'gris'];
+  return '<figure class="gal-tarjeta' + (marcada ? ' on' : '') + (activa ? ' activa' : '') + '" data-bsel="' + esc(x.id) + '" style="--prop:' + (historia ? '9/16' : '4/5') + '">'
+    + '<div class="gal-img">' + (x.miniatura ? '<img alt="' + esc(bancoTitulo(x)) + '" src="' + esc(x.miniatura) + '">' : '<span class="cont-sub">Sin vista previa</span>') + '</div>'
+    + (x.nuevo ? '<span class="gal-new">NEW</span>' : '') + (x.colaboracion ? '<span class="gal-colab">Colaboración</span>' : '')
+    + '<label class="gal-marca" title="Marcar"><input type="checkbox" data-bmarca="' + esc(x.id) + '"' + (marcada ? ' checked' : '') + '></label>'
+    + '<figcaption><b>' + esc(bancoTitulo(x)) + '</b>'
+    + '<span class="gal-tags"><i>' + esc(BANCO_CATS[x.categoria] || 'Sin categoría') + '</i><i>' + esc(BANCO_TIPOS[x.tipo] || '') + '</i></span>'
+    + '<small>' + esc((x.resolucion ? x.resolucion + ' · ' : '') + (x.creada || '')) + '</small>'
+    + '<span class="gal-estado ' + estado[1] + '">' + estado[0] + '</span></figcaption>'
+    + '<div class="gal-acc"><button type="button" data-cver="' + esc(x.id) + '">Ver</button><button type="button" data-bdesc="' + esc(x.id) + '">Descargar</button></div></figure>';
+}
+function panelDescargaBanco(){
+  const x = bancoSeleccionado(), grupos = Object.keys(BANCO_GRUPOS);
+  const tabs = grupos.map(g => '<button type="button" class="gal-tab' + (BANCO.grupo === g ? ' on' : '') + '" data-bgrupo="' + g + '">' + esc(BANCO_GRUPOS[g]) + '</button>').join('');
+  const lista = BANCO_FORMATOS.filter(f => f.grupo === BANCO.grupo);
+  const filas = lista.map(f => '<div class="gal-fila"><div><b>' + esc(f.etiqueta) + '</b><small>' + esc(f.tamano) + ' · ' + esc(f.detalle) + '</small></div>'
+    + '<button type="button" class="btn-solido"' + (x ? '' : ' disabled') + ' data-bdescf="' + f.id + '">Descargar</button></div>').join('');
+  return '<aside class="gal-lado"><section class="gal-card"><h3>Descarga por formato</h3><p class="cont-sub">Cada tamaño sale listo para su red.</p>'
+    + '<div class="gal-tabs">' + tabs + '</div>'
+    + (x ? '<div class="gal-sel"><div class="gal-mini" style="--prop:' + (x.formato === 'imagen_9x16' ? '9/16' : '4/5') + '">' + (x.miniatura ? '<img alt="" src="' + esc(x.miniatura) + '">' : '') + '</div>'
+      + '<div><b>' + esc(bancoTitulo(x)) + '</b><small class="cont-sub">' + esc((BANCO_CATS[x.categoria] || '') + ' · creado ' + (x.creada || '')) + '</small></div></div>'
+      : '<p class="gal-vacio">Elija un flyer de la cuadrícula para descargarlo.</p>')
+    + '<details class="gal-acordeon" open><summary>Tamaño de descarga</summary>' + filas + '</details></section>'
+    + '<section class="gal-card"><h3>Carruseles animados virales <span class="gal-badge">Desde la PC</span></h3>'
+    + '<p class="cont-sub">Carruseles animados hechos con fotos reales del estudio, para publicar con colaboración.</p>'
+    + '<ul class="gal-lista"><li>Fotos + animación + exportación</li><li>Plantillas dinámicas y modernas</li><li>Formatos listos para redes sociales</li></ul>'
+    + '<button type="button" class="btn-linea" data-btipo="carrusel">Ver carruseles</button></section></aside>';
+}
+function formularioCrearBanco(){
+  if (BANCO.panel === 'flyer') {
+    const pl = plantillasGaleria();
+    return '<section class="gal-card gal-form"><h3>Crear nuevo flyer</h3><p class="cont-sub">Las fechas se asignan solas: día siguiente al último con historias programadas. Quedan «Por aprobar»; nada se publica solo.</p>'
+      + '<div class="cont-acc" style="flex-wrap:wrap;gap:10px;align-items:center"><select id="hcCat"><option value="xv">XV años</option><option value="embarazadas">Embarazo</option><option value="infantil">Infantil</option><option value="graduacion">Graduación</option></select>'
+      + '<label class="cont-sub">Cuántos <input id="hcCant" type="number" min="1" max="14" value="6" style="width:64px"></label>'
+      + '<button type="button" class="btn-solido" data-hcrear="1"' + (BANCO.ocupado ? ' disabled' : '') + '>' + (BANCO.ocupado ? 'Creando…' : 'Crear flyers') + '</button><button type="button" class="btn-linea" data-bpanel="">Cerrar</button></div>'
+      + (pl.length ? '<details style="margin-top:8px"><summary class="cont-sub">Plantillas (si no marca ninguna se rotan las recomendadas)</summary><div class="cont-acc" style="flex-wrap:wrap;gap:6px 14px;margin-top:6px">'
+        + pl.map(e => '<label class="cont-sub"><input type="checkbox" data-hcplantilla="' + esc(e.id) + '"> ' + esc(e.nombre || e.id) + '</label>').join('') + '</div></details>' : '') + '</section>';
+  }
+  if (BANCO.panel === 'colab') {
+    return '<section class="gal-card gal-form"><h3>Nueva colaboración de Instagram</h3><p class="cont-sub">Publicación de feed 4:5 que invita a las cuentas elegidas. Si no marca «publicar ya» queda «Por aprobar».</p>'
+      + '<div class="cont-acc" style="flex-wrap:wrap;gap:10px;align-items:center"><select id="hcCatC"><option value="xv">XV años</option><option value="embarazadas">Embarazo</option><option value="infantil">Infantil</option><option value="graduacion">Graduación</option></select>'
+      + '<label class="cont-sub"><input type="checkbox" data-hccuenta="d_carelaphotography" checked> @d_carelaphotography</label>'
+      + '<label class="cont-sub"><input type="checkbox" data-hccuenta="dcarelacompufotoplazaartesanal" checked> @dcarelacompufotoplazaartesanal</label>'
+      + '<label class="cont-sub"><input type="checkbox" id="hcYa"> Publicar ya</label>'
+      + '<button type="button" class="btn-solido" data-hccolab="1"' + (BANCO.ocupado ? ' disabled' : '') + '>' + (BANCO.ocupado ? 'Creando…' : 'Crear colaboración') + '</button><button type="button" class="btn-linea" data-bpanel="">Cerrar</button></div></section>';
+  }
+  return '';
 }
 function pintaBancoFlyers(cuerpo){
   if (!BANCO.datos && !BANCO.cargando && !BANCO.error) { void cargaBancoFlyers(); }
-  const d = BANCO.datos, cats = d ? Object.entries(d.categorias).sort((a, b) => b[1] - a[1]) : [];
-  const paginas = d ? Math.max(1, Math.ceil(d.total / d.por_pagina)) : 1, admin = ROL_ACTUAL === 'admin';
-  const chips = '<div class="gal-chips" role="tablist" aria-label="Categorías">'
-    + '<button type="button" class="gal-chip' + (!BANCO.cat ? ' on' : '') + '" data-bcat="">Todos' + (d ? ' <i>' + d.total_banco + '</i>' : '') + '</button>'
-    + cats.map(([c, n]) => '<button type="button" class="gal-chip' + (BANCO.cat === c ? ' on' : '') + '" data-bcat="' + esc(c) + '">' + esc(BANCO_CATS[c] || c) + ' <i>' + n + '</i></button>').join('') + '</div>';
-  const nav = '<div class="gal-nav"><button type="button" class="btn-linea" data-bpag="-1"' + (BANCO.pagina <= 0 || BANCO.cargando ? ' disabled' : '') + '>← Anterior</button>'
-    + '<span class="cont-sub">Página ' + (BANCO.pagina + 1) + ' de ' + paginas + '</span>'
-    + '<button type="button" class="btn-linea" data-bpag="1"' + (BANCO.pagina + 1 >= paginas || BANCO.cargando ? ' disabled' : '') + '>Siguiente →</button></div>';
-  const barra = '<div class="gal-barra"><button type="button" class="btn-linea" data-bpagina="1"' + (d && d.items.length ? '' : ' disabled') + '>Marcar esta página</button>'
-    + '<button type="button" class="btn-solido" data-bbajar="1"' + (BANCO.marcadas.size ? '' : ' disabled') + '>Descargar marcados' + (BANCO.marcadas.size ? ' (' + BANCO.marcadas.size + ')' : '') + '</button>'
-    + (BANCO.marcadas.size ? '<button type="button" class="btn-linea" data-bquita="1">Quitar marcas</button>' : '')
-    + '<button type="button" class="btn-linea" data-bcat="' + esc(BANCO.cat) + '" data-brefresca="1" title="Volver a leer la galería">Actualizar</button></div>';
+  const d = BANCO.datos, admin = ROL_ACTUAL === 'admin', cats = d ? Object.entries(d.categorias).sort((a, b) => b[1] - a[1]) : [], items = d ? d.items : [];
+  const paginas = d ? Math.max(1, Math.ceil(d.total / d.por_pagina)) : 1, n = BANCO.marcadas.size;
+  const chip = (clave, valor, texto, cuenta, on) => '<button type="button" class="gal-chip' + (on ? ' on' : '') + '" data-bf="' + clave + '" data-bv="' + esc(valor) + '">' + esc(texto) + (cuenta != null ? ' <i>' + cuenta + '</i>' : '') + '</button>';
+  const fila1 = '<div class="gal-chips">' + chip('cat', '', 'Todos', d ? d.total_banco : null, !BANCO.cat && !BANCO.tipo)
+    + cats.map(([c, k]) => chip('cat', c, BANCO_CATS[c] || c, k, BANCO.cat === c)).join('')
+    + Object.entries(BANCO_TIPOS).filter(([t]) => d && d.tipos[t]).map(([t, l]) => chip('tipo', t, l, d.tipos[t], BANCO.tipo === t)).join('') + '</div>';
+  const fila2 = '<div class="gal-chips gal-sub">' + chip('estado', '', 'Todos', null, !BANCO.estado)
+    + Object.entries(BANCO_ESTADOS).map(([e, l]) => chip('estado', e, l, d ? d.estados[e] : null, BANCO.estado === e)).join('') + '</div>';
+  const enPapelera = BANCO.estado === 'borrado' || BANCO.estado === 'archivado';
+  const barra = '<div class="gal-barra"><span class="gal-sels">Seleccionados: <b>' + n + '</b></span>'
+    + '<button type="button" class="btn-linea" data-bpagina="1"' + (items.length ? '' : ' disabled') + '>Marcar página</button>'
+    + (n ? '<button type="button" class="btn-linea" data-bquita="1">Quitar marcas</button>' : '')
+    + '<label class="cont-sub">Tamaño <select id="galLote"><option value="original"' + (BANCO.loteFormato === 'original' ? ' selected' : '') + '>Original</option>'
+    + BANCO_FORMATOS.map(f => '<option value="' + f.id + '"' + (BANCO.loteFormato === f.id ? ' selected' : '') + '>' + esc(f.etiqueta + ' · ' + f.tamano) + '</option>').join('') + '</select></label>'
+    + '<button type="button" class="btn-solido" data-bbajar="1"' + (n ? '' : ' disabled') + '>Descargar seleccionados</button>'
+    + (admin ? (enPapelera ? '<button type="button" class="btn-linea" data-bop="restaurar"' + (n ? '' : ' disabled') + '>Restaurar</button>'
+      : '<button type="button" class="btn-linea" data-bop="archivar"' + (n ? '' : ' disabled') + '>Archivar</button><button type="button" class="btn-linea gal-peligro" data-bop="eliminar"' + (n ? '' : ' disabled') + '>Eliminar publicación</button>') : '') + '</div>';
   const esqueleto = '<div class="gal-grid">' + Array.from({ length: 12 }, () => '<div class="gal-tarjeta gal-esq" style="--prop:9/16"><div class="gal-img"></div></div>').join('') + '</div>';
-  const crear = admin ? '<details class="plan-bloqueadas" style="margin:8px 0"><summary>Crear historias de campaña (estilos aprobados, sin precios)</summary>'
-    + '<p class="cont-sub">Hace una historia por foto distinta, para Estado de WhatsApp, Instagram y Facebook. Quedan «Por aprobar»: nada se publica solo.</p>'
-    + '<div class="cont-acc" style="flex-wrap:wrap;gap:8px;align-items:center"><select id="hcCat"><option value="xv">XV años</option><option value="embarazadas">Embarazo</option><option value="infantil">Infantil</option><option value="graduacion">Graduación</option></select>'
-    + '<label class="cont-sub">Cuántas <input id="hcCant" type="number" min="1" max="14" value="6" style="width:64px"></label>'
-    + '<label class="cont-sub">Desde el <input id="hcFecha" type="date"></label>'
-    + '<button type="button" class="btn-solido" data-hcrear="1">Crear historias</button></div>'
-    + (plantillasGaleria().length ? '<details style="margin-top:8px"><summary class="cont-sub">Plantillas (si no marca ninguna, se rotan las recomendadas)</summary><div class="cont-acc" style="flex-wrap:wrap;gap:6px 14px;margin-top:6px">'
-      + plantillasGaleria().map(e => '<label class="cont-sub"><input type="checkbox" data-hcplantilla="' + esc(e.id) + '"> ' + esc(e.nombre || e.id) + '</label>').join('') + '</div></details>' : '')
-    + '</details>' : '';
-  cuerpo.innerHTML = '<style>.gal-chips{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}.gal-chip{border:1px solid var(--line2,#d7d7dc);background:transparent;color:inherit;border-radius:999px;padding:7px 14px;font:inherit;cursor:pointer}.gal-chip i{font-style:normal;opacity:.6;margin-left:4px}.gal-chip.on{background:var(--accent);border-color:transparent;color:#fff}'
-    + '.gal-barra,.gal-nav{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:8px 0}.gal-nav{justify-content:center}'
-    + '.gal-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(176px,1fr));gap:16px;align-items:start;transition:opacity .15s}.gal-grid.espera{opacity:.45;pointer-events:none}'
-    + '.gal-tarjeta{position:relative;margin:0;border-radius:14px;overflow:hidden;background:var(--hover,#f3f3f5);box-shadow:0 1px 3px rgba(0,0,0,.12)}.gal-tarjeta.on{outline:3px solid var(--accent)}'
-    + '.gal-img{aspect-ratio:var(--prop);width:100%;background:#1c1c20;display:flex;align-items:center;justify-content:center}.gal-img img{width:100%;height:100%;object-fit:cover;display:block;cursor:zoom-in}'
+  const nav = '<div class="gal-nav"><button type="button" class="btn-linea" data-bpag="-1"' + (BANCO.pagina <= 0 || BANCO.cargando ? ' disabled' : '') + '>← Anterior</button><span class="cont-sub">Página ' + (BANCO.pagina + 1) + ' de ' + paginas + '</span>'
+    + '<button type="button" class="btn-linea" data-bpag="1"' + (BANCO.pagina + 1 >= paginas || BANCO.cargando ? ' disabled' : '') + '>Siguiente →</button></div>';
+  cuerpo.innerHTML = '<style>'
+    + '.gal-cab{display:flex;flex-wrap:wrap;gap:14px;align-items:center;justify-content:space-between;padding:18px 20px;border:1px solid var(--line2);border-radius:18px;background:var(--panel)}.gal-cab h1{font-size:26px;margin:0}.gal-cab p{margin:2px 0 0}'
+    + '.gal-auto{display:inline-flex;gap:8px;align-items:center;padding:8px 14px;border:1px solid var(--line2);border-radius:12px;font-size:13px}.gal-auto b{width:34px;height:20px;border-radius:999px;background:var(--accent);position:relative}.gal-auto b::after{content:"";position:absolute;right:3px;top:3px;width:14px;height:14px;border-radius:50%;background:#fff}'
+    + '.gal-herr{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:14px 0}.gal-busca{flex:1;min-width:220px;display:flex;align-items:center;gap:8px;padding:0 14px;border:1px solid var(--line2);border-radius:12px;background:var(--panel)}.gal-busca input{flex:1;height:42px;border:0;background:transparent;color:inherit;font:inherit;outline:none}.gal-busca kbd{opacity:.55;font-size:11px;border:1px solid var(--line2);border-radius:6px;padding:1px 6px}'
+    + '.gal-chips{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0}.gal-chip{border:1px solid var(--line2);background:transparent;color:inherit;border-radius:999px;padding:7px 14px;font:inherit;cursor:pointer}.gal-chip i{font-style:normal;opacity:.6;margin-left:4px;font-size:12px}.gal-chip.on{background:var(--accent);border-color:transparent;color:#fff}.gal-sub .gal-chip{padding:5px 12px;font-size:13px}'
+    + '.gal-barra,.gal-nav{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:10px 0;padding:10px 12px;border:1px solid var(--line2);border-radius:14px;background:var(--panel)}.gal-nav{justify-content:center;border:0;background:transparent}.gal-sels{margin-right:6px}.gal-peligro{color:var(--bad)}'
+    + '.gal-cuerpo{display:grid;grid-template-columns:minmax(0,1fr) 330px;gap:18px;align-items:start}@media (max-width:1100px){.gal-cuerpo{grid-template-columns:1fr}}'
+    + '.gal-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(172px,1fr));gap:16px;align-items:start;transition:opacity .15s}.gal-grid.espera{opacity:.45;pointer-events:none}'
+    + '.gal-tarjeta{position:relative;margin:0;border-radius:16px;overflow:hidden;background:var(--panel);border:1px solid var(--line2);box-shadow:0 1px 3px rgba(0,0,0,.14);cursor:pointer}.gal-tarjeta.on{outline:3px solid var(--accent)}.gal-tarjeta.activa{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent)}'
+    + '.gal-img{aspect-ratio:var(--prop);width:100%;background:#1c1c20;display:flex;align-items:center;justify-content:center}.gal-img img{width:100%;height:100%;object-fit:cover;display:block}'
+    + '.gal-new{position:absolute;top:10px;right:10px;background:var(--accent);color:#fff;font-weight:800;font-size:11px;letter-spacing:.06em;padding:3px 9px;border-radius:7px;box-shadow:0 2px 8px rgba(0,0,0,.35)}.gal-colab{position:absolute;top:10px;left:46px;background:rgba(124,92,255,.92);color:#fff;font-size:11px;padding:3px 9px;border-radius:7px}'
     + '.gal-esq .gal-img{background:linear-gradient(100deg,#e4e4e8 30%,#f2f2f5 50%,#e4e4e8 70%);background-size:300% 100%;animation:galbrilla 1.2s linear infinite}@keyframes galbrilla{to{background-position:-300% 0}}'
-    + '.gal-tarjeta figcaption{display:flex;flex-direction:column;gap:1px;padding:8px 10px 4px}.gal-tarjeta figcaption small{opacity:.7;font-size:12px}'
+    + '.gal-tarjeta figcaption{display:flex;flex-direction:column;gap:4px;padding:10px 12px 4px}.gal-tarjeta figcaption b{font-size:14px;line-height:1.25}.gal-tarjeta figcaption small{opacity:.7;font-size:12px}.gal-tags{display:flex;flex-wrap:wrap;gap:5px}.gal-tags i{font-style:normal;font-size:11px;padding:2px 8px;border-radius:999px;background:var(--hover)}'
+    + '.gal-estado{align-self:flex-start;font-size:11px;font-weight:700;padding:3px 10px;border-radius:999px;background:var(--hover)}.gal-estado.ok{background:rgba(37,211,102,.18);color:var(--ok)}.gal-estado.nuevo{background:rgba(74,134,232,.2);color:var(--accent)}.gal-estado.mal{background:rgba(229,72,77,.18);color:var(--bad)}'
     + '.gal-marca{position:absolute;top:8px;left:8px;background:rgba(0,0,0,.55);border-radius:8px;padding:5px 7px;display:flex}.gal-marca input{width:18px;height:18px;margin:0;cursor:pointer}'
-    + '.gal-acc{display:flex;gap:6px;padding:4px 10px 10px}.gal-acc button{flex:1;padding:7px 4px}@media (max-width:560px){.gal-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}}</style>'
-    + '<div class="plan-seccion-cab"><h2>Galería de flyers</h2><span class="cont-sub">' + (d ? d.total + ' flyers' + (BANCO.cat ? ' en ' + esc(BANCO_CATS[BANCO.cat] || BANCO.cat) : '') + ' · una imagen por pieza' : 'Cargando…') + '</span></div>'
-    + '<p class="cont-sub">Todo lo que se ha creado en el CRM, en un solo lugar. Toque una imagen para verla grande; descárguela o marque varias para bajarlas juntas.</p>'
-    + crear + chips + barra
-    + (BANCO.error ? '<div class="cont-aviso" role="alert">' + esc(BANCO.error) + ' <button type="button" class="btn-linea" data-bcat="' + esc(BANCO.cat) + '" data-brefresca="1">Reintentar</button></div>' : '')
-    + (d && d.items.length ? '<div class="gal-grid' + (BANCO.cargando ? ' espera' : '') + '">' + d.items.map(tarjetaBanco).join('') + '</div>' + nav
-      : (BANCO.cargando || !d ? esqueleto : '<p class="cfgnota">No hay flyers en esta categoría todavía.</p>'));
+    + '.gal-acc{display:flex;gap:6px;padding:6px 12px 12px}.gal-acc button{flex:1;padding:7px 4px;border-radius:9px;border:1px solid var(--line2);background:transparent;color:inherit;font:inherit;font-size:12px;cursor:pointer}.gal-acc button:last-child{background:var(--accent);border-color:transparent;color:#fff}'
+    + '.gal-lado{position:sticky;top:12px;display:flex;flex-direction:column;gap:14px}.gal-card{padding:16px;border:1px solid var(--line2);border-radius:18px;background:var(--panel)}.gal-card h3{margin:0 0 4px;font-size:17px}'
+    + '.gal-tabs{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:12px 0}.gal-tab{padding:10px 6px;border-radius:12px;border:1px solid var(--line2);background:transparent;color:inherit;font:inherit;font-size:12px;cursor:pointer;line-height:1.25}.gal-tab.on{background:var(--accent);border-color:transparent;color:#fff}'
+    + '.gal-sel{display:flex;gap:12px;align-items:center;margin:8px 0}.gal-sel small{display:block;margin-top:2px}.gal-badge{white-space:nowrap}.gal-mini{width:46px;aspect-ratio:var(--prop);border-radius:8px;overflow:hidden;background:#1c1c20;flex:none}.gal-mini img{width:100%;height:100%;object-fit:cover;display:block}.gal-vacio{opacity:.7;font-size:13px}'
+    + '.gal-acordeon summary{cursor:pointer;font-weight:600;margin:6px 0}.gal-fila{display:flex;justify-content:space-between;gap:10px;align-items:center;padding:10px 0;border-top:1px solid var(--line2)}.gal-fila small{display:block;opacity:.7;font-size:12px}'
+    + '.gal-badge{font-size:11px;font-weight:700;padding:2px 9px;border-radius:999px;background:rgba(124,92,255,.2);color:#9b86ff;margin-left:6px;vertical-align:middle}.gal-lista{margin:8px 0 12px;padding-left:18px;font-size:13px}'
+    + '.gal-form{margin:0 0 14px}@media (max-width:560px){.gal-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.gal-tabs{grid-template-columns:1fr}}</style>'
+    + '<header class="gal-cab"><div><h1>Banco de flyers</h1><p class="cont-sub">Todos los flyers creados en el CRM de D\' Carela Compufoto se organizan aquí.</p></div>'
+    + '<div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center"><span class="gal-auto" title="Los flyers nuevos se programan solos: día siguiente al último con historias">Fecha automática activada <b></b></span>'
+    + (admin ? '<button type="button" class="btn-linea" data-bpanel="colab">Nueva colaboración</button><button type="button" class="btn-solido" data-bpanel="flyer">+ Crear nuevo flyer</button>' : '') + '</div></header>'
+    + '<div class="gal-herr"><label class="gal-busca"><span aria-hidden="true">⌕</span><input id="galQ" type="search" placeholder="Buscar flyer por título, categoría o descripción…" value="' + esc(BANCO.q) + '"><kbd>Ctrl + K</kbd></label>'
+    + '<button type="button" class="btn-linea" data-bavanzados="1">Filtros avanzados</button>'
+    + '<label class="cont-sub">Ordenar por <select id="galOrden"><option value="recientes"' + (BANCO.orden === 'recientes' ? ' selected' : '') + '>Más recientes</option><option value="antiguos"' + (BANCO.orden === 'antiguos' ? ' selected' : '') + '>Más antiguos</option><option value="categoria"' + (BANCO.orden === 'categoria' ? ' selected' : '') + '>Categoría</option></select></label></div>'
+    + (BANCO.avanzados ? '<div class="gal-barra"><label class="cont-sub">Tipo <select id="galTipo"><option value="">Todos</option>' + Object.entries(BANCO_TIPOS).map(([t, l]) => '<option value="' + t + '"' + (BANCO.tipo === t ? ' selected' : '') + '>' + esc(l) + '</option>').join('') + '</select></label>'
+      + '<button type="button" class="btn-linea" data-blimpia="1">Quitar filtros</button></div>' : '')
+    + formularioCrearBanco() + fila1 + fila2 + barra
+    + (BANCO.error ? '<div class="cont-aviso" role="alert">' + esc(BANCO.error) + ' <button type="button" class="btn-linea" data-bf="cat" data-bv="' + esc(BANCO.cat) + '" data-brefresca="1">Reintentar</button></div>' : '')
+    + '<div class="gal-cuerpo"><div>' + (items.length ? '<div class="gal-grid' + (BANCO.cargando ? ' espera' : '') + '">' + items.map(tarjetaBanco).join('') + '</div>' + nav
+      : (BANCO.cargando || !d ? esqueleto : '<p class="cfgnota">No hay flyers con esos filtros.</p>')) + '</div>' + panelDescargaBanco() + '</div>';
+}
+function bancoDescarga(r, id){
+  if (r && r.ok && r.jpeg_b64) { const bytes = Uint8Array.from(atob(r.jpeg_b64), ch => ch.charCodeAt(0)); descargaComoArchivo(new Blob([bytes], { type: r.mime || 'image/jpeg' }), r.nombre); return true; }
+  if (r && r.ok && r.video_url) { const a = document.createElement('a'); a.href = r.video_url + '&descarga=1'; a.download = r.nombre || 'video.mp4'; a.rel = 'noopener'; a.target = '_blank'; a.click(); return true; }
+  avisa('No se pudo bajar el flyer', (r && r.error) || id); return false;
 }
 async function clicBancoFlyers(ev){
-  const c = ev.target.closest('[data-bcat],[data-bpag],[data-bbajar],[data-bmarca],[data-hcrear],[data-bpagina],[data-bquita]'); if (!c) return false;
+  const c = ev.target.closest('[data-bf],[data-bpag],[data-bbajar],[data-bmarca],[data-hcrear],[data-hccolab],[data-bpagina],[data-bquita],[data-bsel],[data-bdesc],[data-bdescf],[data-bgrupo],[data-bpanel],[data-bavanzados],[data-blimpia],[data-bop],[data-btipo]');
+  if (!c) return false;
   const d = c.dataset;
-  if (d.bcat !== undefined) { const fuerza = !!d.brefresca; if (fuerza) BANCO.cache.clear(); BANCO.cat = d.bcat; BANCO.pagina = 0; void cargaBancoFlyers({ fuerza }); return true; }
-  if (d.bpag) { BANCO.pagina = Math.max(0, BANCO.pagina + Number(d.bpag)); void cargaBancoFlyers(); return true; }
   if (d.bmarca) { if (c.checked) BANCO.marcadas.add(d.bmarca); else BANCO.marcadas.delete(d.bmarca); repintaBanco(); return true; }
+  if (d.bf !== undefined) { if (d.brefresca) BANCO.cache.clear(); if (d.bf === 'cat') { BANCO.cat = d.bv; if (!d.bv) BANCO.tipo = ''; } else if (d.bf === 'tipo') { BANCO.tipo = BANCO.tipo === d.bv ? '' : d.bv; } else { BANCO.estado = d.bv; } BANCO.pagina = 0; void cargaBancoFlyers({ fuerza: !!d.brefresca }); return true; }
+  if (d.btipo) { BANCO.tipo = d.btipo; BANCO.cat = ''; BANCO.pagina = 0; void cargaBancoFlyers(); return true; }
+  if (d.bpag) { BANCO.pagina = Math.max(0, BANCO.pagina + Number(d.bpag)); void cargaBancoFlyers(); return true; }
+  if (d.bavanzados) { BANCO.avanzados = !BANCO.avanzados; repintaBanco(); return true; }
+  if (d.blimpia) { Object.assign(BANCO, { cat: '', tipo: '', estado: '', q: '', pagina: 0 }); void cargaBancoFlyers(); return true; }
+  if (d.bpanel !== undefined) { BANCO.panel = d.bpanel || null; repintaBanco(); return true; }
+  if (d.bgrupo) { BANCO.grupo = d.bgrupo; repintaBanco(); return true; }
   if (d.bpagina) { for (const x of (BANCO.datos?.items || [])) BANCO.marcadas.add(x.id); repintaBanco(); return true; }
   if (d.bquita) { BANCO.marcadas.clear(); repintaBanco(); return true; }
+  if (d.bdesc) { BANCO.sel = d.bdesc; const x = bancoSeleccionado(); if (x) BANCO.grupo = x.tipo === 'marketplace' ? 'marketplace' : (x.formato === 'imagen_9x16' || x.tipo === 'historia') ? 'historia' : 'publicacion'; repintaBanco(); return true; }
+  if (d.bdescf) {
+    const x = bancoSeleccionado(); if (!x) return true;
+    c.disabled = true; const r = await llama({ action: 'contenidoDescarga', id: x.id, formato: d.bdescf }); c.disabled = false; bancoDescarga(r, x.id); return true;
+  }
+  if (d.bsel) { if (ev.target.closest('button,label,input')) return false; BANCO.sel = BANCO.sel === d.bsel ? null : d.bsel; const x = bancoSeleccionado(); if (x) BANCO.grupo = x.tipo === 'marketplace' ? 'marketplace' : (x.formato === 'imagen_9x16' || x.tipo === 'historia') ? 'historia' : 'publicacion'; repintaBanco(); return true; }
+  if (d.bop) {
+    const ids = [...BANCO.marcadas]; if (!ids.length) return true;
+    const texto = { archivar: 'Se archivarán ' + ids.length + ' flyer(s). Se pueden restaurar.', eliminar: 'Se eliminará la publicación de ' + ids.length + ' flyer(s) (lo ya publicado no se toca). Se puede restaurar desde «Borrado».', restaurar: 'Se restaurarán ' + ids.length + ' flyer(s).' }[d.bop];
+    if (!await confirmaAqui(texto, { si: d.bop === 'eliminar' ? 'Eliminar' : d.bop === 'archivar' ? 'Archivar' : 'Restaurar' })) return true;
+    const r = await llama({ action: 'contenidoBancoAccion', operacion: d.bop, ids });
+    if (!r || !r.ok) { avisa('No se pudo completar', (r && r.error) || ''); return true; }
+    avisa('Listo', r.hechas.length + ' flyer(s)' + (r.omitidas.length ? ' · ' + r.omitidas.length + ' omitido(s): ' + r.omitidas[0].motivo : '')); BANCO.marcadas.clear(); BANCO.cache.clear(); void cargaBancoFlyers({ fuerza: true }); return true;
+  }
   if (d.hcrear) {
-    const cat = $('hcCat').value, cant = Number($('hcCant').value) || 6, fecha = $('hcFecha').value;
-    if (!fecha) return avisa('Falta la fecha', 'Elija desde qué día se programan.'), true;
-    c.disabled = true; c.textContent = 'Creando… (puede tardar un minuto)';
-    const estilos = [...document.querySelectorAll('[data-hcplantilla]:checked')].map(x => x.dataset.hcplantilla);
-    let r; try { r = await llama({ action: 'contenidoHistoriasCrear', categoria: cat, cantidad: cant, fecha, ...(estilos.length ? { estilos } : {}) }); } catch { r = { ok: false, error: 'La creación no terminó. Revise la galería antes de repetirla.' }; }
-    if (!r || !r.ok) { avisa('No se crearon las historias', (r && r.error) || 'Error desconocido'); c.disabled = false; c.textContent = 'Crear historias'; return true; }
-    avisa('Historias creadas', r.creadas + ' por aprobar en Revisar y en la galería'); BANCO.cache.clear(); BANCO.datos = null; BANCO.pagina = 0; void cargaBancoFlyers({ fuerza: true }); return true;
+    const cat = $('hcCat').value, cant = Number($('hcCant').value) || 6, estilos = [...document.querySelectorAll('[data-hcplantilla]:checked')].map(x => x.dataset.hcplantilla);
+    BANCO.ocupado = true; repintaBanco();
+    let r; try { r = await llama({ action: 'contenidoHistoriasCrear', categoria: cat, cantidad: cant, ...(estilos.length ? { estilos } : {}) }); } catch { r = { ok: false, error: 'La creación no terminó. Revise el banco antes de repetirla.' }; }
+    BANCO.ocupado = false;
+    if (!r || !r.ok) { avisa('No se crearon los flyers', (r && r.error) || 'Error desconocido'); repintaBanco(); return true; }
+    avisa('Flyers creados', r.creadas + ' nuevos, programados desde el ' + r.fecha_inicio + ' · por aprobar'); BANCO.panel = null; Object.assign(BANCO, { estado: 'nuevo', pagina: 0 }); BANCO.cache.clear(); void cargaBancoFlyers({ fuerza: true }); return true;
+  }
+  if (d.hccolab) {
+    const cat = $('hcCatC').value, cuentas = [...document.querySelectorAll('[data-hccuenta]:checked')].map(x => x.dataset.hccuenta), ya = !!$('hcYa')?.checked;
+    if (!cuentas.length) { avisa('Elija una cuenta', 'Marque al menos una cuenta colaboradora.'); return true; }
+    if (ya && !await confirmaAqui('Se publicará YA en Instagram una publicación con colaboración con ' + cuentas.map(x => '@' + x).join(' y ') + '. ¿Continuar?', { si: 'Publicar' })) return true;
+    BANCO.ocupado = true; repintaBanco();
+    let r; try { r = await llama({ action: 'contenidoColaboracion', categoria: cat, cuentas, publicar_ya: ya }); } catch { r = { ok: false, error: 'La creación no terminó.' }; }
+    BANCO.ocupado = false;
+    if (!r || !r.ok) { avisa('No se creó la colaboración', (r && r.error) || 'Error desconocido'); repintaBanco(); return true; }
+    avisa('Colaboración creada', ya ? 'Sale en el próximo ciclo del publicador.' : 'Queda por aprobar en Revisar.'); BANCO.panel = null; BANCO.cache.clear(); void cargaBancoFlyers({ fuerza: true }); return true;
   }
   if (d.bbajar) {
-    c.disabled = true; let n = 0;
+    c.disabled = true; let k = 0;
     for (const id of [...BANCO.marcadas]) {
-      const r = await llama({ action: 'contenidoImagen', id, descarga: true });
-      if (!r || !r.ok || !r.jpeg_b64) { avisa('No se pudo bajar una imagen', (r && r.error) || id); continue; }
-      const bytes = Uint8Array.from(atob(r.jpeg_b64), ch => ch.charCodeAt(0)); descargaComoArchivo(new Blob([bytes], { type: r.mime || 'image/jpeg' }), r.nombre); n++;
+      const r = BANCO.loteFormato === 'original' ? await llama({ action: 'contenidoImagen', id, descarga: true }) : await llama({ action: 'contenidoDescarga', id, formato: BANCO.loteFormato });
+      if (bancoDescarga(r, id)) k++;
       await new Promise(ok => setTimeout(ok, 350));
     }
-    avisa('Descarga lista', n + ' flyer' + (n === 1 ? '' : 's') + ' bajados'); BANCO.marcadas.clear(); repintaBanco(); return true;
+    avisa('Descarga lista', k + ' flyer' + (k === 1 ? '' : 's') + ' bajados'); BANCO.marcadas.clear(); repintaBanco(); return true;
   }
+  return false;
+}
+let bancoBusquedaTimer = null;
+function cambioBanco(ev){
+  const t = ev.target;
+  if (t.id === 'galQ') { clearTimeout(bancoBusquedaTimer); bancoBusquedaTimer = setTimeout(() => { BANCO.q = t.value.trim(); BANCO.pagina = 0; void cargaBancoFlyers(); }, 350); return true; }
+  if (t.id === 'galOrden') { BANCO.orden = t.value; BANCO.pagina = 0; void cargaBancoFlyers(); return true; }
+  if (t.id === 'galTipo') { BANCO.tipo = t.value; BANCO.pagina = 0; void cargaBancoFlyers(); return true; }
+  if (t.id === 'galLote') { BANCO.loteFormato = t.value; return true; }
   return false;
 }
 
@@ -20626,13 +20736,22 @@ async function clicEstrategia(ev){
 }
 
 // La galería vive en su propia vista (botón del menú lateral); el planificador solo la enlaza.
-function repintaBanco(){ const g = document.getElementById('galCuerpo'); if (g && vistaActual === 'galeria') pintaBancoFlyers(g); else if (CONT.tab === 'banco') pintaContenido(); }
+function repintaBanco(){
+  const g = document.getElementById('galCuerpo');
+  if (g && vistaActual === 'galeria') {
+    const q = document.getElementById('galQ'), foco = q && document.activeElement === q, pos = foco ? q.selectionStart : 0;
+    pintaBancoFlyers(g);
+    if (foco) { const n = document.getElementById('galQ'); if (n) { n.focus(); try { n.setSelectionRange(pos, pos); } catch (_) {} } }
+  } else if (CONT.tab === 'banco') pintaContenido();
+}
 function montaGaleria(){
   if (montadas.has('galeria')) { if (!BANCO.datos && !BANCO.cargando) void cargaBancoFlyers(); else repintaBanco(); return; }
   montadas.add('galeria');
-  hueco('galeria', '<div class="hoja plan-hoja"><header class="plan-cabecera"><div class="plan-cabecera-titulo"><h1>Galería de flyers</h1></div>'
-    + '<p class="bajada">Todo lo que se ha creado en el CRM, en un solo lugar: descárguelo y repártalo donde quiera.</p></header><main id="galCuerpo" aria-label="Galería de flyers"></main></div>');
-  $('galCuerpo').addEventListener('click', async (ev) => { if (await clicBancoFlyers(ev)) return; return clicContenido(ev); });
+  hueco('galeria', '<div class="hoja plan-hoja"><main id="galCuerpo" aria-label="Banco de flyers"></main></div>');
+  const g = $('galCuerpo');
+  g.addEventListener('click', async (ev) => { if (await clicBancoFlyers(ev)) return; return clicContenido(ev); });
+  g.addEventListener('input', cambioBanco); g.addEventListener('change', cambioBanco);
+  document.addEventListener('keydown', (ev) => { if ((ev.ctrlKey || ev.metaKey) && ev.key.toLowerCase() === 'k' && vistaActual === 'galeria') { ev.preventDefault(); $('galQ')?.focus(); } });
   void cargaBancoFlyers();
 }
 
