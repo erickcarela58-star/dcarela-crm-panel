@@ -1,7 +1,7 @@
 {
-  "version": "2026-11-16-crm-release-v462-galeria-rapida",
+  "version": "2026-11-16-crm-release-v463-plantillas-y-colores-adaptables",
   "channel": "crm",
   "released_at": "2026-11-16T12:00:00.000Z",
-  "summary": "Galería de flyers más rápida (de 40 s a 3 s), con cuadrícula grande, filtros por categoría, marcar página y descargar varios.",
+  "summary": "Las historias se crean con las plantillas del CRM; los colores se adaptan a cada foto, la marca va arriba y ya no hay degradado claro arriba. Se pueden elegir plantillas en la Galería.",
   "requiere_puente": "2026-11-06-documentos-grandes-v70"
 }
