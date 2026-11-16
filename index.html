@@ -20439,7 +20439,7 @@ function pintaContenido(){
   // v239: en escritorio, cabecera y pasos de la referencia 2; en Revisar/Programar/Publicar/Analizar, el tablero.
   if (typeof planificadorV239 === 'function' && planificadorV239(cuerpo)) return;
   if (CONT.tab === 'estadosProgramados') return pintaEstadosProgramados(cuerpo);
-  const vistas = { crear: pintaCrearContenido, fotos: pintaFotosContenido, calendario: pintaCalendario, tendencias: pintaTendencias, subir: pintaSubir, estilos: pintaEstilos, redes: pintaRedes, paquete: pintaPaquete, fechas: pintaFechasNicho, banco: c => pintaBancoFlyers(c) };
+  const vistas = { crear: pintaCrearContenido, fotos: pintaFotosContenido, calendario: pintaCalendario, tendencias: pintaTendencias, subir: pintaSubir, estilos: pintaEstilos, redes: pintaRedes, paquete: pintaPaquete, fechas: pintaFechasNicho, banco: c => pintaBancoFlyers(c), estrategia: c => pintaEstrategia(c) };
   if (vistas[CONT.tab]) return vistas[CONT.tab](cuerpo);
   const filtro = { porAprobar: x => x.estado === 'propuesta', programadas: x => ['aprobada', 'publicando', 'encola', 'enviada', 'sin_confirmar', 'lista', 'fallida', 'vencida'].includes(x.estado) && x.canal !== 'paquete_grupos', publicadas: x => x.estado === 'publicada' }[CONT.tab];
   const lista = CONT.items.filter(filtro || (() => false));
@@ -20464,6 +20464,72 @@ function pintaContenido(){
 // repartirlas en otros lugares. Solo lee: bajar una imagen usa la misma acción «contenidoImagen» que el planificador.
 const BANCO = { cat: '', pagina: 0, cargando: false, datos: null, error: null, marcadas: new Set() };
 const BANCO_CATS = { graduacion: 'Graduación', xv: 'XV años', embarazo: 'Embarazo', embarazadas: 'Embarazo', productos: 'Productos', infantil: 'Infantil', cumpleanos: 'Cumpleaños', navidad: 'Navidad', familia: 'Familia', sin_categoria: 'Sin categoría' };
+// ───────────── Estrategia orgánica (dueño 16/11/2026) ─────────────
+// Plan de contenido que arma el modelo local grande con datos reales del negocio y el método de las skills de contenido y redes.
+// Solo guarda el plan: no publica nada. «Crear historias de esta semana» usa el mismo creador del servidor (quedan «Por aprobar»).
+const ESTR = { datos: null, cargando: false, generando: false, error: null, semanas: 2 };
+const ESTR_PILARES = { prueba_portafolio: 'Prueba y portafolio', educar_sesion: 'Educar sobre la sesión', detras_de_camara: 'Detrás de cámara', temporada_fechas: 'Temporada y fechas', cliente_historia: 'Historias de clientes' };
+const ESTR_RED = { whatsapp_estado: 'Estado', instagram: 'Instagram', facebook: 'Facebook' };
+const ESTR_DIAS = ['domingo', 'lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado'];
+const ESTR_HISTORIAS = ['xv', 'embarazadas', 'infantil', 'graduacion'];
+function estrFecha(desde, semana, dia){
+  const base = new Date(desde + 'T12:00:00Z'); base.setUTCDate(base.getUTCDate() + (semana - 1) * 7);
+  const d = new Date(base); for (let i = 0; i < 7 && ESTR_DIAS[d.getUTCDay()] !== dia; i++) d.setUTCDate(d.getUTCDate() + 1);
+  return d.toISOString().slice(0, 10);
+}
+async function cargaEstrategia(){
+  ESTR.cargando = true; ESTR.error = null; if (CONT.tab === 'estrategia') pintaContenido();
+  let r; try { r = await llama({ action: 'contenidoEstrategia' }); } catch { r = { ok: false, error: 'No se pudo leer la estrategia.' }; }
+  ESTR.cargando = false; if (!r || !r.ok) ESTR.error = (r && r.error) || 'No se pudo leer la estrategia.'; else ESTR.datos = r.estrategia || null;
+  if (CONT.tab === 'estrategia') pintaContenido();
+}
+function pintaEstrategia(cuerpo){
+  if (!ESTR.datos && !ESTR.cargando && !ESTR.error && !ESTR.generando) void cargaEstrategia();
+  const e = ESTR.datos, admin = ROL_ACTUAL === 'admin';
+  const barra = '<div class="cont-acc" style="flex-wrap:wrap;gap:8px;align-items:center;margin:8px 0">'
+    + (admin ? '<label class="cont-sub">Semanas <select id="estSem"><option value="1">1</option><option value="2" selected>2</option><option value="3">3</option><option value="4">4</option></select></label>'
+      + '<button type="button" class="btn-solido" data-estgen="1"' + (ESTR.generando ? ' disabled' : '') + '>' + (ESTR.generando ? 'Pensando… (hasta 2 minutos)' : 'Generar estrategia') + '</button>' : '')
+    + '</div>';
+  const pilares = e ? '<div class="cont-acc" style="flex-wrap:wrap;gap:6px">' + e.pilares.map(p => '<span class="cont-marca" title="' + esc(p.objetivo) + '">' + esc(ESTR_PILARES[p.nombre] || p.nombre) + ' · ' + p.porcentaje + '%</span>').join('') + '</div>' : '';
+  const semanas = e ? e.semanas.map(s => {
+    const hist = s.publicaciones.filter(p => p.formato === 'historia' && ESTR_HISTORIAS.includes(p.categoria));
+    const cuenta = {}; for (const p of hist) cuenta[p.categoria] = (cuenta[p.categoria] || 0) + 1;
+    return '<section class="plan-bloqueadas" style="margin:12px 0"><h3>Semana ' + s.semana + ' · ' + esc(s.foco) + '</h3>'
+      + '<div style="overflow-x:auto"><table class="cont-sub" style="width:100%;border-collapse:collapse"><thead><tr><th align="left">Día</th><th align="left">Red</th><th align="left">Formato</th><th align="left">Gancho</th><th align="left">Idea</th></tr></thead><tbody>'
+      + s.publicaciones.map(p => '<tr><td>' + esc(p.dia) + '</td><td>' + esc(ESTR_RED[p.canal] || p.canal) + '</td><td>' + esc(p.formato.replace('_', ' ')) + ' · ' + esc(p.categoria) + '</td><td><b>' + esc(p.gancho) + '</b></td><td>' + esc(p.idea) + '</td></tr>').join('')
+      + '</tbody></table></div>'
+      + (admin && hist.length ? '<button type="button" class="btn-linea" style="margin-top:8px" data-estcrear="' + s.semana + '" data-estcuenta="' + esc(JSON.stringify(cuenta)) + '">Crear las ' + hist.length + ' historias de esta semana</button>' : '')
+      + '</section>';
+  }).join('') : '';
+  cuerpo.innerHTML = '<div class="plan-seccion-cab"><h2>Estrategia orgánica</h2><span class="cont-sub">' + (e ? 'Creada ' + esc(String(e.creada_at || '').slice(0, 10)) + ' con ' + esc(e.modelo || 'el modelo local') : 'Todavía no hay una estrategia') + '</span></div>'
+    + '<p class="cont-sub">Un plan de publicaciones con ganchos, ideas y medidas, armado con el modelo grande de la PC y los datos reales del negocio. No publica nada: usted decide.</p>'
+    + barra
+    + (ESTR.error ? '<div class="cont-aviso" role="alert">' + esc(ESTR.error) + '</div>' : '')
+    + (ESTR.cargando ? '<p class="cfgnota">Cargando…</p>' : '')
+    + (e ? '<p>' + esc(e.resumen) + '</p>' + pilares + semanas
+      + (e.medicion?.length ? '<h3>Qué revisar el domingo</h3><ul class="cont-sub">' + e.medicion.map(m => '<li>' + esc(m) + '</li>').join('') + '</ul>' : '') : '');
+}
+async function clicEstrategia(ev){
+  const c = ev.target.closest('[data-estgen],[data-estcrear]'); if (!c) return false;
+  if (c.dataset.estgen) {
+    ESTR.generando = true; ESTR.error = null; pintaContenido();
+    let r; try { r = await llama({ action: 'contenidoEstrategia', operation: 'generar', semanas: Number($('estSem')?.value) || 2 }); } catch { r = { ok: false, error: 'La generación no terminó. Revise la última estrategia antes de repetir.' }; }
+    ESTR.generando = false;
+    if (!r || !r.ok) ESTR.error = (r && r.error) || 'No se pudo generar.'; else { ESTR.datos = r.estrategia; avisa('Estrategia lista', 'Revísela; no se publicó nada.'); }
+    pintaContenido(); return true;
+  }
+  const sem = Number(c.dataset.estcrear), cuenta = JSON.parse(c.dataset.estcuenta || '{}'), e = ESTR.datos; if (!e) return true;
+  const total = Object.values(cuenta).reduce((a, b) => a + b, 0);
+  if (!await confirmaAqui('Se crearán ' + total + ' historias (' + Object.entries(cuenta).map(([k, v]) => v + ' de ' + (BANCO_CATS[k] || k)).join(', ') + ') para la semana ' + sem + '. Quedan «Por aprobar»; no se publica nada.', { si: 'Crear' })) return true;
+  c.disabled = true; let n = 0;
+  const inicio = estrFecha(e.desde, sem, ESTR_DIAS[new Date(e.desde + 'T12:00:00Z').getUTCDay()]);
+  for (const [cat, cant] of Object.entries(cuenta)) {
+    let r; try { r = await llama({ action: 'contenidoHistoriasCrear', categoria: cat, cantidad: cant, fecha: inicio }); } catch { r = null; }
+    if (r && r.ok) n += r.creadas; else avisa('No se crearon las de ' + (BANCO_CATS[cat] || cat), (r && r.error) || 'Error desconocido');
+  }
+  c.disabled = false; if (n) avisa('Historias creadas', n + ' por aprobar en Revisar y en la Galería'); BANCO.datos = null; return true;
+}
+
 // La galería vive en su propia vista (botón del menú lateral); el planificador solo la enlaza.
 function repintaBanco(){ const g = document.getElementById('galCuerpo'); if (g && vistaActual === 'galeria') pintaBancoFlyers(g); else if (CONT.tab === 'banco') pintaContenido(); }
 function montaGaleria(){
@@ -20701,7 +20767,7 @@ function cabeceraV239(P){
     + '<div class="p239-crear"><button type="button" class="p239-btn p239-prim p239-grande" data-p239="menu" aria-haspopup="menu" aria-expanded="' + !!P.menu + '">' + ICO_V239.mas + '<span>Crear contenido</span>' + ICO_V239.flecha + '</button>'
     + '<div class="p239-menu" role="menu"' + (P.menu ? '' : ' hidden') + '>'
     + [['crear', 'Crear con el agente', 'Ideas, textos y flyers con tus fotos'], ['editor', 'Editor de flyers', 'Diseña una pieza a mano'], ['subir', 'Subir foto o video', 'Tu propio contenido, a la fecha que elijas'], ['agente', P.agente ? 'Ocultar agente automático' : 'Agente automático', 'Rutina, autonomía y redes del agente'],
-      ['banco', 'Banco de flyers', 'Todos los flyers hechos, para descargar'], ['estilos', 'Plantillas', ''], ['fotos', 'Fototeca', ''], ['navidad','Set navideño','Sube originales y prepara el lote'], ['redes', 'Conexiones', ''], ['paquete', 'Paquetes y Marketplace', ''], ['fechas', 'Fechas del negocio', '']]
+      ['banco', 'Banco de flyers', 'Todos los flyers hechos, para descargar'], ['estrategia', 'Estrategia orgánica', 'Plan de contenido con el modelo grande'], ['estilos', 'Plantillas', ''], ['fotos', 'Fototeca', ''], ['navidad','Set navideño','Sube originales y prepara el lote'], ['redes', 'Conexiones', ''], ['paquete', 'Paquetes y Marketplace', ''], ['fechas', 'Fechas del negocio', '']]
       .map(([k, t, d]) => '<button type="button" role="menuitem" data-p239crear="' + k + '"><b>' + esc(t) + '</b>' + (d ? '<small>' + esc(d) + '</small>' : '') + '</button>').join('')
     + '</div></div></div></header>'
     + '<nav class="p239-card p239-pasos" aria-label="Flujo de publicación">' + PASOS_V239.map(([id, t, d], i) => '<button type="button" data-ctab="' + id + '" class="p239-paso' + (i === actual ? ' on' : '') + (i < actual ? ' hecho' : '') + '"' + (i === actual ? ' aria-current="step"' : '') + '>'
@@ -25663,6 +25729,7 @@ function verDataUrlEnGrande(src, nombre){
 // ---- clics y formularios ----
 async function clicContenido(ev){
   if (CONT.tab === 'banco' && await clicBancoFlyers(ev)) return;
+  if (CONT.tab === 'estrategia' && await clicEstrategia(ev)) return;
   const img = ev.target.closest('img[data-cver]'); if (img) return verImagenContenido(img.dataset.cver);
   const imgE = ev.target.closest('img[data-cvistaestilo]'); if (imgE) return verDataUrlEnGrande(imgE.src, 'estilo-' + imgE.dataset.cvistaestilo + '.jpg');
   const cardPlantilla = ev.target.closest('[data-celegirplantilla]');
