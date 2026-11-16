@@ -2171,6 +2171,7 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{outline:0}
 .nav a[data-vista="cotizaciones"] svg{--tint:#58b5a0}
 .nav a[data-vista="contenido"] svg{--tint:#d98c5f}
 .nav a[data-vista="editorflyers"] svg{--tint:#b67acb}
+.nav a[data-vista="galeria"] svg{--tint:#e0a458}
 .nav a[data-vista="dashboard"] svg{--tint:#8b8bdf}
 .nav a[data-vista="funnel"] svg{--tint:#dfa25c}
 .nav a[data-vista="prospecting"] svg{--tint:#b08ad6}
@@ -4171,6 +4172,8 @@ const VISTAS = [
   // Planificador de contenido: el agente de marketing (Instagram, Página de Facebook, TikTok, Estados y paquete para grupos). Antes se llamaba «Contenido» y no se encontraba.
   { id:'contenido',     nombre:'Planificador de contenido', fija:true,  icono:ico('<path d="M13.5 2.5 4.5 14h6l-1 7.5L19.5 10h-6V2.5Z"/>') },
   { id:'editorflyers',  nombre:'Editor de flyers',          fija:true,  icono:ico('<rect x="3.5" y="3.5" width="17" height="17" rx="3.2"/><path d="M7.5 8.5h9M7.5 12h5.5M7.5 15.5h4"/><circle cx="16.5" cy="14.5" r="2.3"/>') },
+  // Galería (banco de flyers): todo lo que se ha creado, para descargarlo y repartirlo. Botón propio (dueño, 16/11/2026).
+  { id:'galeria',       nombre:'Galería de flyers',         fija:true,  icono:ico('<rect x="3.5" y="4.5" width="17" height="15" rx="3"/><circle cx="9" cy="10" r="1.6"/><path d="M4 17l5-4.5 4 3.5 3-2.5 4 3.5"/>') },
   { id:'agenda',        nombre:'Agenda',        fija:true,  icono:ico('<rect x="3.5" y="5" width="17" height="15.5" rx="3.6"/><path d="M3.5 10h17M8 3v3.600M16 3v3.600"/><circle cx="8.500" cy="14" r=".7" fill="currentColor"/><circle cx="12" cy="14" r=".7" fill="currentColor"/><circle cx="15.500" cy="14" r=".7" fill="currentColor"/>') },
   { id:'dashboard',     nombre:'Dashboard',     icono:ico('<rect x="3.500" y="4" width="17" height="16" rx="3.600"/><path d="M8.200 16v-3.400M12 16V8.600M15.800 16v-5.400"/>') },
   { id:'funnel',        nombre:'Funnel · Kanban', icono:ico('<path d="M4.200 5.500h15.600a.7.7 0 01.5 1.200L14.500 12.800v5.900a.7.7 0 01-1 .6l-3-1.500a.7.7 0 01-.4-.6v-4.400L3.700 6.700a.7.7 0 01.5-1.200z"/>') },
@@ -5218,6 +5221,7 @@ function monta(id){
   if (id === 'cotizaciones') return montaCotizaciones();
   if (id === 'contenido') return montaContenido();
   if (id === 'editorflyers') return montaEditorFlyers();
+  if (id === 'galeria') return montaGaleria();
   if (id === 'planning') return montaPlanificacion();
   if (id === 'plantillas') return montaPlantillasVista();
   if (id === 'combos') return montaCombos();
@@ -20407,6 +20411,7 @@ async function cargaContenido(){
   if(repetir)return cargaContenido();
 }
 function cambiaTabContenido(tab){
+  if (tab === 'banco') { if (typeof ve === 'function') return ve('galeria'); }
   if (tab === 'navidad') { CONT.fototecaCategoria = 'navidad'; tab = 'fotos'; }
   CONT.tab = tab; pintaContenido();
 }
@@ -20459,13 +20464,23 @@ function pintaContenido(){
 // repartirlas en otros lugares. Solo lee: bajar una imagen usa la misma acción «contenidoImagen» que el planificador.
 const BANCO = { cat: '', pagina: 0, cargando: false, datos: null, error: null, marcadas: new Set() };
 const BANCO_CATS = { graduacion: 'Graduación', xv: 'XV años', embarazo: 'Embarazo', embarazadas: 'Embarazo', productos: 'Productos', infantil: 'Infantil', cumpleanos: 'Cumpleaños', navidad: 'Navidad', familia: 'Familia', sin_categoria: 'Sin categoría' };
+// La galería vive en su propia vista (botón del menú lateral); el planificador solo la enlaza.
+function repintaBanco(){ const g = document.getElementById('galCuerpo'); if (g && vistaActual === 'galeria') pintaBancoFlyers(g); else if (CONT.tab === 'banco') pintaContenido(); }
+function montaGaleria(){
+  if (montadas.has('galeria')) { if (!BANCO.datos && !BANCO.cargando) void cargaBancoFlyers(); else repintaBanco(); return; }
+  montadas.add('galeria');
+  hueco('galeria', '<div class="hoja plan-hoja"><header class="plan-cabecera"><div class="plan-cabecera-titulo"><h1>Galería de flyers</h1></div>'
+    + '<p class="bajada">Todo lo que se ha creado en el CRM, en un solo lugar: descárguelo y repártalo donde quiera.</p></header><main id="galCuerpo" aria-label="Galería de flyers"></main></div>');
+  $('galCuerpo').addEventListener('click', async (ev) => { if (await clicBancoFlyers(ev)) return; return clicContenido(ev); });
+  void cargaBancoFlyers();
+}
 async function cargaBancoFlyers(){
-  BANCO.cargando = true; BANCO.error = null; if (CONT.tab === 'banco') pintaContenido();
+  BANCO.cargando = true; BANCO.error = null; repintaBanco();
   let r; try { r = await llama({ action: 'contenidoBanco', categoria: BANCO.cat || undefined, pagina: BANCO.pagina, por_pagina: 40 }); }
   catch { r = { ok: false, error: 'La consulta no terminó. Reintenta.' }; }
   BANCO.cargando = false;
   if (!r || !r.ok) BANCO.error = (r && r.error) || 'No se pudo leer el banco.'; else BANCO.datos = r;
-  if (CONT.tab === 'banco') pintaContenido();
+  repintaBanco();
 }
 function pintaBancoFlyers(cuerpo){
   if (!BANCO.datos && !BANCO.cargando && !BANCO.error) { void cargaBancoFlyers(); }
@@ -20501,7 +20516,7 @@ async function clicBancoFlyers(ev){
   const c = ev.target.closest('[data-bcat],[data-bpag],[data-bbajar],[data-bmarca],[data-hcrear]'); if (!c) return false;
   if (c.dataset.bcat !== undefined) { BANCO.cat = c.dataset.bcat; BANCO.pagina = 0; BANCO.datos = null; BANCO.error = null; void cargaBancoFlyers(); return true; }
   if (c.dataset.bpag) { BANCO.pagina = Math.max(0, BANCO.pagina + Number(c.dataset.bpag)); void cargaBancoFlyers(); return true; }
-  if (c.dataset.bmarca) { if (c.checked) BANCO.marcadas.add(c.dataset.bmarca); else BANCO.marcadas.delete(c.dataset.bmarca); pintaContenido(); return true; }
+  if (c.dataset.bmarca) { if (c.checked) BANCO.marcadas.add(c.dataset.bmarca); else BANCO.marcadas.delete(c.dataset.bmarca); repintaBanco(); return true; }
   if (c.dataset.hcrear) {
     const cat = $('hcCat').value, cant = Number($('hcCant').value) || 6, fecha = $('hcFecha').value;
     if (!fecha) return avisa('Falta la fecha', 'Elija desde qué día se programan.'), true;
@@ -20518,7 +20533,7 @@ async function clicBancoFlyers(ev){
       const bytes = Uint8Array.from(atob(r.jpeg_b64), ch => ch.charCodeAt(0)); descargaComoArchivo(new Blob([bytes], { type: r.mime || 'image/jpeg' }), r.nombre); n++;
       await new Promise(ok => setTimeout(ok, 350));
     }
-    avisa('Descarga lista', n + ' flyer' + (n === 1 ? '' : 's') + ' bajados'); BANCO.marcadas.clear(); pintaContenido(); return true;
+    avisa('Descarga lista', n + ' flyer' + (n === 1 ? '' : 's') + ' bajados'); BANCO.marcadas.clear(); repintaBanco(); return true;
   }
   return false;
 }
