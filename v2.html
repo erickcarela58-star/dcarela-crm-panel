@@ -20459,11 +20459,101 @@ function pintaContenido(){
     + (bloqueadas.length ? '<details class="plan-bloqueadas"><summary>' + bloqueadas.length + ' pendientes de foto original</summary><p class="cont-sub">Estas piezas no se pueden aprobar hasta tener una foto en alta calidad.</p><button type="button" class="btn-linea" data-cbiblioteca="1">Subir originales a la fototeca</button><div class="cont-lista">' + bloqueadas.map(x => tarjetaContenido(x, ROL_ACTUAL === 'admin', 0)).join('') + '</div></details>' : '');
 }
 
-// ───────────── Banco de flyers (dueño 15/11/2026) ─────────────
-// Todas las imágenes distintas del planificador (una por pieza, aunque salga en tres redes), filtrables y descargables para
-// repartirlas en otros lugares. Solo lee: bajar una imagen usa la misma acción «contenidoImagen» que el planificador.
-const BANCO = { cat: '', pagina: 0, cargando: false, datos: null, error: null, marcadas: new Set() };
-const BANCO_CATS = { graduacion: 'Graduación', xv: 'XV años', embarazo: 'Embarazo', embarazadas: 'Embarazo', productos: 'Productos', infantil: 'Infantil', cumpleanos: 'Cumpleaños', navidad: 'Navidad', familia: 'Familia', sin_categoria: 'Sin categoría' };
+// ───────────── Galería de flyers (dueño 15-16/11/2026) ─────────────
+// Todas las imágenes distintas del planificador (una por pieza, aunque salga en tres redes), filtrables y descargables para repartirlas.
+// Rápida: el servidor lee solo campos livianos y trae la miniatura de las 24 de la página; las páginas ya vistas se guardan en memoria.
+// Solo lee: bajar una imagen usa la misma acción «contenidoImagen» que el planificador.
+const BANCO = { cat: '', pagina: 0, cargando: false, datos: null, error: null, marcadas: new Set(), cache: new Map() };
+const BANCO_CATS = { graduacion: 'Graduación', xv: 'XV años', embarazo: 'Embarazo', embarazadas: 'Embarazo', infantil: 'Infantil', cumpleanos: 'Cumpleaños', navidad: 'Navidad', familia: 'Familia', productos: 'Productos', sin_categoria: 'Sin categoría' };
+const BANCO_REDES = { whatsapp_estado: 'Estado', instagram: 'Instagram', facebook: 'Facebook', tiktok: 'TikTok', paquete_grupos: 'Grupos' };
+const BANCO_POR_PAGINA = 24;
+function bancoClave(){ return BANCO.cat + '|' + BANCO.pagina; }
+async function cargaBancoFlyers({ fuerza = false } = {}){
+  const clave = bancoClave();
+  if (!fuerza && BANCO.cache.has(clave)) { BANCO.datos = BANCO.cache.get(clave); BANCO.error = null; BANCO.cargando = false; return repintaBanco(); }
+  BANCO.cargando = true; BANCO.error = null; repintaBanco();
+  let r; try { r = await llama({ action: 'contenidoBanco', categoria: BANCO.cat || undefined, pagina: BANCO.pagina, por_pagina: BANCO_POR_PAGINA }); }
+  catch { r = { ok: false, error: 'La consulta no terminó. Reintente.' }; }
+  if (clave !== bancoClave()) return;
+  BANCO.cargando = false;
+  if (!r || !r.ok) BANCO.error = (r && r.error) || 'No se pudo leer la galería.'; else { BANCO.datos = r; BANCO.cache.set(clave, r); }
+  repintaBanco();
+}
+function tarjetaBanco(x){
+  const historia = x.formato === 'imagen_9x16' || x.formato === 'video', marcada = BANCO.marcadas.has(x.id);
+  const redes = x.canales.map(c => BANCO_REDES[c] || c).join(' · ');
+  return '<figure class="gal-tarjeta' + (marcada ? ' on' : '') + '" style="--prop:' + (historia ? '9/16' : '4/5') + '">'
+    + '<div class="gal-img">' + (x.miniatura ? '<img loading="lazy" decoding="async" alt="Flyer ' + esc(BANCO_CATS[x.categoria] || '') + '" src="' + esc(x.miniatura) + '" data-cver="' + esc(x.id) + '">' : '<span class="cont-sub">Sin vista previa</span>') + '</div>'
+    + '<label class="gal-marca" title="Marcar para descargar"><input type="checkbox" data-bmarca="' + esc(x.id) + '"' + (marcada ? ' checked' : '') + '></label>'
+    + '<figcaption><b>' + esc(BANCO_CATS[x.categoria] || x.categoria || 'Sin categoría') + '</b><small>' + esc((x.primera_fecha || '') + (x.publicada ? ' · publicada' : '')) + '</small><small>' + esc(redes) + '</small></figcaption>'
+    + '<div class="gal-acc"><button type="button" class="btn-linea" data-cver="' + esc(x.id) + '">Ver</button><button type="button" class="btn-solido" data-cdescarga="' + esc(x.id) + '">Descargar</button></div></figure>';
+}
+function pintaBancoFlyers(cuerpo){
+  if (!BANCO.datos && !BANCO.cargando && !BANCO.error) { void cargaBancoFlyers(); }
+  const d = BANCO.datos, cats = d ? Object.entries(d.categorias).sort((a, b) => b[1] - a[1]) : [];
+  const paginas = d ? Math.max(1, Math.ceil(d.total / d.por_pagina)) : 1, admin = ROL_ACTUAL === 'admin';
+  const chips = '<div class="gal-chips" role="tablist" aria-label="Categorías">'
+    + '<button type="button" class="gal-chip' + (!BANCO.cat ? ' on' : '') + '" data-bcat="">Todos' + (d ? ' <i>' + d.total_banco + '</i>' : '') + '</button>'
+    + cats.map(([c, n]) => '<button type="button" class="gal-chip' + (BANCO.cat === c ? ' on' : '') + '" data-bcat="' + esc(c) + '">' + esc(BANCO_CATS[c] || c) + ' <i>' + n + '</i></button>').join('') + '</div>';
+  const nav = '<div class="gal-nav"><button type="button" class="btn-linea" data-bpag="-1"' + (BANCO.pagina <= 0 || BANCO.cargando ? ' disabled' : '') + '>← Anterior</button>'
+    + '<span class="cont-sub">Página ' + (BANCO.pagina + 1) + ' de ' + paginas + '</span>'
+    + '<button type="button" class="btn-linea" data-bpag="1"' + (BANCO.pagina + 1 >= paginas || BANCO.cargando ? ' disabled' : '') + '>Siguiente →</button></div>';
+  const barra = '<div class="gal-barra"><button type="button" class="btn-linea" data-bpagina="1"' + (d && d.items.length ? '' : ' disabled') + '>Marcar esta página</button>'
+    + '<button type="button" class="btn-solido" data-bbajar="1"' + (BANCO.marcadas.size ? '' : ' disabled') + '>Descargar marcados' + (BANCO.marcadas.size ? ' (' + BANCO.marcadas.size + ')' : '') + '</button>'
+    + (BANCO.marcadas.size ? '<button type="button" class="btn-linea" data-bquita="1">Quitar marcas</button>' : '')
+    + '<button type="button" class="btn-linea" data-bcat="' + esc(BANCO.cat) + '" data-brefresca="1" title="Volver a leer la galería">Actualizar</button></div>';
+  const esqueleto = '<div class="gal-grid">' + Array.from({ length: 12 }, () => '<div class="gal-tarjeta gal-esq" style="--prop:9/16"><div class="gal-img"></div></div>').join('') + '</div>';
+  const crear = admin ? '<details class="plan-bloqueadas" style="margin:8px 0"><summary>Crear historias de campaña (estilos aprobados, sin precios)</summary>'
+    + '<p class="cont-sub">Hace una historia por foto distinta, para Estado de WhatsApp, Instagram y Facebook. Quedan «Por aprobar»: nada se publica solo.</p>'
+    + '<div class="cont-acc" style="flex-wrap:wrap;gap:8px;align-items:center"><select id="hcCat"><option value="xv">XV años</option><option value="embarazadas">Embarazo</option><option value="infantil">Infantil</option><option value="graduacion">Graduación</option></select>'
+    + '<label class="cont-sub">Cuántas <input id="hcCant" type="number" min="1" max="14" value="6" style="width:64px"></label>'
+    + '<label class="cont-sub">Desde el <input id="hcFecha" type="date"></label>'
+    + '<button type="button" class="btn-solido" data-hcrear="1">Crear historias</button></div></details>' : '';
+  cuerpo.innerHTML = '<style>.gal-chips{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}.gal-chip{border:1px solid var(--line2,#d7d7dc);background:transparent;color:inherit;border-radius:999px;padding:7px 14px;font:inherit;cursor:pointer}.gal-chip i{font-style:normal;opacity:.6;margin-left:4px}.gal-chip.on{background:var(--accent);border-color:transparent;color:#fff}'
+    + '.gal-barra,.gal-nav{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:8px 0}.gal-nav{justify-content:center}'
+    + '.gal-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(176px,1fr));gap:16px;align-items:start;transition:opacity .15s}.gal-grid.espera{opacity:.45;pointer-events:none}'
+    + '.gal-tarjeta{position:relative;margin:0;border-radius:14px;overflow:hidden;background:var(--hover,#f3f3f5);box-shadow:0 1px 3px rgba(0,0,0,.12)}.gal-tarjeta.on{outline:3px solid var(--accent)}'
+    + '.gal-img{aspect-ratio:var(--prop);width:100%;background:#1c1c20;display:flex;align-items:center;justify-content:center}.gal-img img{width:100%;height:100%;object-fit:cover;display:block;cursor:zoom-in}'
+    + '.gal-esq .gal-img{background:linear-gradient(100deg,#e4e4e8 30%,#f2f2f5 50%,#e4e4e8 70%);background-size:300% 100%;animation:galbrilla 1.2s linear infinite}@keyframes galbrilla{to{background-position:-300% 0}}'
+    + '.gal-tarjeta figcaption{display:flex;flex-direction:column;gap:1px;padding:8px 10px 4px}.gal-tarjeta figcaption small{opacity:.7;font-size:12px}'
+    + '.gal-marca{position:absolute;top:8px;left:8px;background:rgba(0,0,0,.55);border-radius:8px;padding:5px 7px;display:flex}.gal-marca input{width:18px;height:18px;margin:0;cursor:pointer}'
+    + '.gal-acc{display:flex;gap:6px;padding:4px 10px 10px}.gal-acc button{flex:1;padding:7px 4px}@media (max-width:560px){.gal-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}}</style>'
+    + '<div class="plan-seccion-cab"><h2>Galería de flyers</h2><span class="cont-sub">' + (d ? d.total + ' flyers' + (BANCO.cat ? ' en ' + esc(BANCO_CATS[BANCO.cat] || BANCO.cat) : '') + ' · una imagen por pieza' : 'Cargando…') + '</span></div>'
+    + '<p class="cont-sub">Todo lo que se ha creado en el CRM, en un solo lugar. Toque una imagen para verla grande; descárguela o marque varias para bajarlas juntas.</p>'
+    + crear + chips + barra
+    + (BANCO.error ? '<div class="cont-aviso" role="alert">' + esc(BANCO.error) + ' <button type="button" class="btn-linea" data-bcat="' + esc(BANCO.cat) + '" data-brefresca="1">Reintentar</button></div>' : '')
+    + (d && d.items.length ? '<div class="gal-grid' + (BANCO.cargando ? ' espera' : '') + '">' + d.items.map(tarjetaBanco).join('') + '</div>' + nav
+      : (BANCO.cargando || !d ? esqueleto : '<p class="cfgnota">No hay flyers en esta categoría todavía.</p>'));
+}
+async function clicBancoFlyers(ev){
+  const c = ev.target.closest('[data-bcat],[data-bpag],[data-bbajar],[data-bmarca],[data-hcrear],[data-bpagina],[data-bquita]'); if (!c) return false;
+  const d = c.dataset;
+  if (d.bcat !== undefined) { const fuerza = !!d.brefresca; if (fuerza) BANCO.cache.clear(); BANCO.cat = d.bcat; BANCO.pagina = 0; void cargaBancoFlyers({ fuerza }); return true; }
+  if (d.bpag) { BANCO.pagina = Math.max(0, BANCO.pagina + Number(d.bpag)); void cargaBancoFlyers(); return true; }
+  if (d.bmarca) { if (c.checked) BANCO.marcadas.add(d.bmarca); else BANCO.marcadas.delete(d.bmarca); repintaBanco(); return true; }
+  if (d.bpagina) { for (const x of (BANCO.datos?.items || [])) BANCO.marcadas.add(x.id); repintaBanco(); return true; }
+  if (d.bquita) { BANCO.marcadas.clear(); repintaBanco(); return true; }
+  if (d.hcrear) {
+    const cat = $('hcCat').value, cant = Number($('hcCant').value) || 6, fecha = $('hcFecha').value;
+    if (!fecha) return avisa('Falta la fecha', 'Elija desde qué día se programan.'), true;
+    c.disabled = true; c.textContent = 'Creando… (puede tardar un minuto)';
+    let r; try { r = await llama({ action: 'contenidoHistoriasCrear', categoria: cat, cantidad: cant, fecha }); } catch { r = { ok: false, error: 'La creación no terminó. Revise la galería antes de repetirla.' }; }
+    if (!r || !r.ok) { avisa('No se crearon las historias', (r && r.error) || 'Error desconocido'); c.disabled = false; c.textContent = 'Crear historias'; return true; }
+    avisa('Historias creadas', r.creadas + ' por aprobar en Revisar y en la galería'); BANCO.cache.clear(); BANCO.datos = null; BANCO.pagina = 0; void cargaBancoFlyers({ fuerza: true }); return true;
+  }
+  if (d.bbajar) {
+    c.disabled = true; let n = 0;
+    for (const id of [...BANCO.marcadas]) {
+      const r = await llama({ action: 'contenidoImagen', id, descarga: true });
+      if (!r || !r.ok || !r.jpeg_b64) { avisa('No se pudo bajar una imagen', (r && r.error) || id); continue; }
+      const bytes = Uint8Array.from(atob(r.jpeg_b64), ch => ch.charCodeAt(0)); descargaComoArchivo(new Blob([bytes], { type: r.mime || 'image/jpeg' }), r.nombre); n++;
+      await new Promise(ok => setTimeout(ok, 350));
+    }
+    avisa('Descarga lista', n + ' flyer' + (n === 1 ? '' : 's') + ' bajados'); BANCO.marcadas.clear(); repintaBanco(); return true;
+  }
+  return false;
+}
+
 // ───────────── Estrategia orgánica (dueño 16/11/2026) ─────────────
 // Plan de contenido que arma el modelo local grande con datos reales del negocio y el método de las skills de contenido y redes.
 // Solo guarda el plan: no publica nada. «Crear historias de esta semana» usa el mismo creador del servidor (quedan «Por aprobar»).
@@ -20539,69 +20629,6 @@ function montaGaleria(){
     + '<p class="bajada">Todo lo que se ha creado en el CRM, en un solo lugar: descárguelo y repártalo donde quiera.</p></header><main id="galCuerpo" aria-label="Galería de flyers"></main></div>');
   $('galCuerpo').addEventListener('click', async (ev) => { if (await clicBancoFlyers(ev)) return; return clicContenido(ev); });
   void cargaBancoFlyers();
-}
-async function cargaBancoFlyers(){
-  BANCO.cargando = true; BANCO.error = null; repintaBanco();
-  let r; try { r = await llama({ action: 'contenidoBanco', categoria: BANCO.cat || undefined, pagina: BANCO.pagina, por_pagina: 40 }); }
-  catch { r = { ok: false, error: 'La consulta no terminó. Reintenta.' }; }
-  BANCO.cargando = false;
-  if (!r || !r.ok) BANCO.error = (r && r.error) || 'No se pudo leer el banco.'; else BANCO.datos = r;
-  repintaBanco();
-}
-function pintaBancoFlyers(cuerpo){
-  if (!BANCO.datos && !BANCO.cargando && !BANCO.error) { void cargaBancoFlyers(); }
-  const d = BANCO.datos;
-  const cats = d ? Object.entries(d.categorias).sort((a, b) => b[1] - a[1]) : [];
-  const fil = '<div class="cont-acc" style="flex-wrap:wrap;gap:6px;margin:8px 0">'
-    + '<button type="button" class="btn-linea" data-bcat=""' + (!BANCO.cat ? ' aria-current="true"' : '') + '>Todos' + (d ? ' · ' + d.total_banco : '') + '</button>'
-    + cats.map(([c, n]) => '<button type="button" class="btn-linea" data-bcat="' + esc(c) + '"' + (BANCO.cat === c ? ' aria-current="true"' : '') + '>' + esc(BANCO_CATS[c] || c) + ' · ' + n + '</button>').join('') + '</div>';
-  const paginas = d ? Math.max(1, Math.ceil(d.total / d.por_pagina)) : 1;
-  const nombreRed = { whatsapp_estado: 'Estado', instagram: 'Instagram', facebook: 'Facebook' };
-  const tarj = d ? d.items.map(x => '<div class="cont" style="flex-direction:column;max-width:210px"><label style="display:flex;gap:6px;align-items:center;font-size:12px"><input type="checkbox" data-bmarca="' + esc(x.id) + '"' + (BANCO.marcadas.has(x.id) ? ' checked' : '') + '> ' + esc(BANCO_CATS[x.categoria] || x.categoria || '—') + '</label>'
-    + (x.miniatura ? '<img class="cont-mini" style="width:100%;height:auto;border-radius:8px" src="' + esc(x.miniatura) + '" alt="Flyer" data-cver="' + esc(x.id) + '">' : '<div class="cont-sub" style="padding:40px 8px">Sin vista previa</div>')
-    + '<small class="cont-sub">' + esc((x.primera_fecha || '') + (x.publicada ? ' · ya publicada' : '')) + '</small>'
-    + '<small class="cont-sub">' + esc(x.canales.map(c => nombreRed[c] || c).join(' · ')) + '</small>'
-    + '<button type="button" class="btn-linea" data-cdescarga="' + esc(x.id) + '">Descargar</button></div>').join('') : '';
-  cuerpo.innerHTML = '<div class="plan-seccion-cab"><h2>Banco de flyers</h2><span class="cont-sub">' + (d ? d.total + ' flyers' + (BANCO.cat ? ' en ' + esc(BANCO_CATS[BANCO.cat] || BANCO.cat) : '') + ' · una imagen por pieza, sin repetir por red' : 'Cargando…') + '</span></div>'
-    + '<p class="cont-sub">Todo lo que se ha creado en el CRM, sin importar la fecha. Descárguelos para repartirlos por otros lugares.</p>'
-    + (ROL_ACTUAL === 'admin' ? '<details class="plan-bloqueadas" style="margin:8px 0"><summary>Crear historias de campaña (estilos aprobados, sin precios)</summary>'
-      + '<p class="cont-sub">Hace una historia por foto distinta, para Estado de WhatsApp, Instagram y Facebook. Quedan «Por aprobar»: nada se publica solo.</p>'
-      + '<div class="cont-acc" style="flex-wrap:wrap;gap:8px;align-items:center"><select id="hcCat"><option value="xv">XV años</option><option value="embarazadas">Embarazo</option><option value="infantil">Infantil</option><option value="graduacion">Graduación</option></select>'
-      + '<label class="cont-sub">Cuántas <input id="hcCant" type="number" min="1" max="14" value="6" style="width:64px"></label>'
-      + '<label class="cont-sub">Desde el <input id="hcFecha" type="date"></label>'
-      + '<button type="button" class="btn-solido" data-hcrear="1">Crear historias</button></div></details>' : '')
-    + fil
-    + (BANCO.error ? '<div class="cont-aviso" role="alert">' + esc(BANCO.error) + ' <button type="button" class="btn-linea" data-bcat="' + esc(BANCO.cat) + '">Reintentar</button></div>' : '')
-    + '<div class="cont-acc" style="gap:8px;margin:6px 0"><button type="button" class="btn-solido" data-bbajar="1"' + (BANCO.marcadas.size ? '' : ' disabled') + '>Descargar marcados' + (BANCO.marcadas.size ? ' (' + BANCO.marcadas.size + ')' : '') + '</button>'
-    + '<button type="button" class="btn-linea" data-bpag="-1"' + (BANCO.pagina <= 0 ? ' disabled' : '') + '>Anterior</button><span class="cont-sub">Página ' + (BANCO.pagina + 1) + ' de ' + paginas + '</span>'
-    + '<button type="button" class="btn-linea" data-bpag="1"' + (BANCO.pagina + 1 >= paginas ? ' disabled' : '') + '>Siguiente</button></div>'
-    + (BANCO.cargando ? '<p class="cfgnota">Cargando el banco…</p>' : '')
-    + '<div class="cont-lista" style="display:flex;flex-wrap:wrap;gap:12px">' + tarj + '</div>';
-}
-async function clicBancoFlyers(ev){
-  const c = ev.target.closest('[data-bcat],[data-bpag],[data-bbajar],[data-bmarca],[data-hcrear]'); if (!c) return false;
-  if (c.dataset.bcat !== undefined) { BANCO.cat = c.dataset.bcat; BANCO.pagina = 0; BANCO.datos = null; BANCO.error = null; void cargaBancoFlyers(); return true; }
-  if (c.dataset.bpag) { BANCO.pagina = Math.max(0, BANCO.pagina + Number(c.dataset.bpag)); void cargaBancoFlyers(); return true; }
-  if (c.dataset.bmarca) { if (c.checked) BANCO.marcadas.add(c.dataset.bmarca); else BANCO.marcadas.delete(c.dataset.bmarca); repintaBanco(); return true; }
-  if (c.dataset.hcrear) {
-    const cat = $('hcCat').value, cant = Number($('hcCant').value) || 6, fecha = $('hcFecha').value;
-    if (!fecha) return avisa('Falta la fecha', 'Elija desde qué día se programan.'), true;
-    c.disabled = true; c.textContent = 'Creando… (puede tardar un minuto)';
-    let r; try { r = await llama({ action: 'contenidoHistoriasCrear', categoria: cat, cantidad: cant, fecha }); } catch { r = { ok: false, error: 'La creación no terminó. Revise el banco antes de repetirla.' }; }
-    if (!r || !r.ok) { avisa('No se crearon las historias', (r && r.error) || 'Error desconocido'); c.disabled = false; c.textContent = 'Crear historias'; return true; }
-    avisa('Historias creadas', r.creadas + ' por aprobar en Revisar y en el banco'); BANCO.datos = null; BANCO.pagina = 0; void cargaBancoFlyers(); return true;
-  }
-  if (c.dataset.bbajar) {
-    c.disabled = true; let n = 0;
-    for (const id of [...BANCO.marcadas]) {
-      const r = await llama({ action: 'contenidoImagen', id, descarga: true });
-      if (!r || !r.ok || !r.jpeg_b64) { avisa('No se pudo bajar una imagen', (r && r.error) || id); continue; }
-      const bytes = Uint8Array.from(atob(r.jpeg_b64), ch => ch.charCodeAt(0)); descargaComoArchivo(new Blob([bytes], { type: r.mime || 'image/jpeg' }), r.nombre); n++;
-      await new Promise(ok => setTimeout(ok, 350));
-    }
-    avisa('Descarga lista', n + ' flyer' + (n === 1 ? '' : 's') + ' bajados'); BANCO.marcadas.clear(); repintaBanco(); return true;
-  }
-  return false;
 }
 
 function pintaEstadosProgramados(cuerpo){
