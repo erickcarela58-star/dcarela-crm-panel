@@ -1,7 +1,7 @@
 {
-  "version": "2026-11-16-crm-release-v461-estrategia-organica",
+  "version": "2026-11-16-crm-release-v462-galeria-rapida",
   "channel": "crm",
   "released_at": "2026-11-16T12:00:00.000Z",
-  "summary": "Estrategia orgánica dentro del CRM con el modelo grande y datos reales (Planificador → Estrategia orgánica). La Galería de flyers tiene su botón propio en el menú lateral.",
+  "summary": "Galería de flyers más rápida (de 40 s a 3 s), con cuadrícula grande, filtros por categoría, marcar página y descargar varios.",
   "requiere_puente": "2026-11-06-documentos-grandes-v70"
 }
