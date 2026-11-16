@@ -1,7 +1,7 @@
 {
-  "version": "2026-11-15-crm-release-v460-galeria-boton-propio",
+  "version": "2026-11-16-crm-release-v461-estrategia-organica",
   "channel": "crm",
-  "released_at": "2026-11-15T21:00:00.000Z",
-  "summary": "La Galería de flyers tiene su propio botón en el menú lateral (descargar y repartir todos los flyers). El Planificador la enlaza.",
+  "released_at": "2026-11-16T12:00:00.000Z",
+  "summary": "Estrategia orgánica dentro del CRM con el modelo grande y datos reales (Planificador → Estrategia orgánica). La Galería de flyers tiene su botón propio en el menú lateral.",
   "requiere_puente": "2026-11-06-documentos-grandes-v70"
 }
