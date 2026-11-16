@@ -20483,6 +20483,12 @@ function pintaBancoFlyers(cuerpo){
     + '<button type="button" class="btn-linea" data-cdescarga="' + esc(x.id) + '">Descargar</button></div>').join('') : '';
   cuerpo.innerHTML = '<div class="plan-seccion-cab"><h2>Banco de flyers</h2><span class="cont-sub">' + (d ? d.total + ' flyers' + (BANCO.cat ? ' en ' + esc(BANCO_CATS[BANCO.cat] || BANCO.cat) : '') + ' · una imagen por pieza, sin repetir por red' : 'Cargando…') + '</span></div>'
     + '<p class="cont-sub">Todo lo que se ha creado en el CRM, sin importar la fecha. Descárguelos para repartirlos por otros lugares.</p>'
+    + (ROL_ACTUAL === 'admin' ? '<details class="plan-bloqueadas" style="margin:8px 0"><summary>Crear historias de campaña (estilos aprobados, sin precios)</summary>'
+      + '<p class="cont-sub">Hace una historia por foto distinta, para Estado de WhatsApp, Instagram y Facebook. Quedan «Por aprobar»: nada se publica solo.</p>'
+      + '<div class="cont-acc" style="flex-wrap:wrap;gap:8px;align-items:center"><select id="hcCat"><option value="xv">XV años</option><option value="embarazadas">Embarazo</option><option value="infantil">Infantil</option><option value="graduacion">Graduación</option></select>'
+      + '<label class="cont-sub">Cuántas <input id="hcCant" type="number" min="1" max="14" value="6" style="width:64px"></label>'
+      + '<label class="cont-sub">Desde el <input id="hcFecha" type="date"></label>'
+      + '<button type="button" class="btn-solido" data-hcrear="1">Crear historias</button></div></details>' : '')
     + fil
     + (BANCO.error ? '<div class="cont-aviso" role="alert">' + esc(BANCO.error) + ' <button type="button" class="btn-linea" data-bcat="' + esc(BANCO.cat) + '">Reintentar</button></div>' : '')
     + '<div class="cont-acc" style="gap:8px;margin:6px 0"><button type="button" class="btn-solido" data-bbajar="1"' + (BANCO.marcadas.size ? '' : ' disabled') + '>Descargar marcados' + (BANCO.marcadas.size ? ' (' + BANCO.marcadas.size + ')' : '') + '</button>'
@@ -20492,10 +20498,18 @@ function pintaBancoFlyers(cuerpo){
     + '<div class="cont-lista" style="display:flex;flex-wrap:wrap;gap:12px">' + tarj + '</div>';
 }
 async function clicBancoFlyers(ev){
-  const c = ev.target.closest('[data-bcat],[data-bpag],[data-bbajar],[data-bmarca]'); if (!c) return false;
+  const c = ev.target.closest('[data-bcat],[data-bpag],[data-bbajar],[data-bmarca],[data-hcrear]'); if (!c) return false;
   if (c.dataset.bcat !== undefined) { BANCO.cat = c.dataset.bcat; BANCO.pagina = 0; BANCO.datos = null; BANCO.error = null; void cargaBancoFlyers(); return true; }
   if (c.dataset.bpag) { BANCO.pagina = Math.max(0, BANCO.pagina + Number(c.dataset.bpag)); void cargaBancoFlyers(); return true; }
   if (c.dataset.bmarca) { if (c.checked) BANCO.marcadas.add(c.dataset.bmarca); else BANCO.marcadas.delete(c.dataset.bmarca); pintaContenido(); return true; }
+  if (c.dataset.hcrear) {
+    const cat = $('hcCat').value, cant = Number($('hcCant').value) || 6, fecha = $('hcFecha').value;
+    if (!fecha) return avisa('Falta la fecha', 'Elija desde qué día se programan.'), true;
+    c.disabled = true; c.textContent = 'Creando… (puede tardar un minuto)';
+    let r; try { r = await llama({ action: 'contenidoHistoriasCrear', categoria: cat, cantidad: cant, fecha }); } catch { r = { ok: false, error: 'La creación no terminó. Revise el banco antes de repetirla.' }; }
+    if (!r || !r.ok) { avisa('No se crearon las historias', (r && r.error) || 'Error desconocido'); c.disabled = false; c.textContent = 'Crear historias'; return true; }
+    avisa('Historias creadas', r.creadas + ' por aprobar en Revisar y en el banco'); BANCO.datos = null; BANCO.pagina = 0; void cargaBancoFlyers(); return true;
+  }
   if (c.dataset.bbajar) {
     c.disabled = true; let n = 0;
     for (const id of [...BANCO.marcadas]) {
