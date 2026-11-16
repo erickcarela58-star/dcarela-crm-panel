@@ -1,7 +1,7 @@
 {
-  "version": "2026-11-15-crm-release-v457-banco-de-flyers",
+  "version": "2026-11-15-crm-release-v458-banco-y-historias-en-el-crm",
   "channel": "crm",
   "released_at": "2026-11-15T21:00:00.000Z",
-  "summary": "Banco de flyers: todas las imágenes creadas en el CRM en un solo lugar, filtradas por categoría y listas para descargar y repartir.",
+  "summary": "Banco de flyers y creación de historias de campaña (XV, embarazo, infantil, graduación) dentro del CRM, en los estilos aprobados. Quedan por aprobar.",
   "requiere_puente": "2026-11-06-documentos-grandes-v70"
 }
