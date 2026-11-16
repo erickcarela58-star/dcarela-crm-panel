@@ -20467,6 +20467,7 @@ const BANCO = { cat: '', pagina: 0, cargando: false, datos: null, error: null, m
 const BANCO_CATS = { graduacion: 'Graduación', xv: 'XV años', embarazo: 'Embarazo', embarazadas: 'Embarazo', infantil: 'Infantil', cumpleanos: 'Cumpleaños', navidad: 'Navidad', familia: 'Familia', productos: 'Productos', sin_categoria: 'Sin categoría' };
 const BANCO_REDES = { whatsapp_estado: 'Estado', instagram: 'Instagram', facebook: 'Facebook', tiktok: 'TikTok', paquete_grupos: 'Grupos' };
 const BANCO_POR_PAGINA = 24;
+function plantillasGaleria(){ return (typeof CONT !== 'undefined' && Array.isArray(CONT.estilos) ? CONT.estilos : []).filter(e => e.activo !== false && /^v[69]-/.test(String(e.id || ''))); }
 function bancoClave(){ return BANCO.cat + '|' + BANCO.pagina; }
 async function cargaBancoFlyers({ fuerza = false } = {}){
   const clave = bancoClave();
@@ -20485,7 +20486,7 @@ function tarjetaBanco(x){
   return '<figure class="gal-tarjeta' + (marcada ? ' on' : '') + '" style="--prop:' + (historia ? '9/16' : '4/5') + '">'
     + '<div class="gal-img">' + (x.miniatura ? '<img loading="lazy" decoding="async" alt="Flyer ' + esc(BANCO_CATS[x.categoria] || '') + '" src="' + esc(x.miniatura) + '" data-cver="' + esc(x.id) + '">' : '<span class="cont-sub">Sin vista previa</span>') + '</div>'
     + '<label class="gal-marca" title="Marcar para descargar"><input type="checkbox" data-bmarca="' + esc(x.id) + '"' + (marcada ? ' checked' : '') + '></label>'
-    + '<figcaption><b>' + esc(BANCO_CATS[x.categoria] || x.categoria || 'Sin categoría') + '</b><small>' + esc((x.primera_fecha || '') + (x.publicada ? ' · publicada' : '')) + '</small><small>' + esc(redes) + '</small></figcaption>'
+    + '<figcaption><b>' + esc(BANCO_CATS[x.categoria] || x.categoria || 'Sin categoría') + '</b><small>' + esc((x.primera_fecha || '') + (x.publicada ? ' · publicada' : '')) + '</small><small>' + esc(redes) + '</small>' + (x.estilo_id ? '<small>Plantilla: ' + esc((typeof contNombreEstilo === 'function' && contNombreEstilo(x.estilo_id)) || x.estilo_id) + '</small>' : '') + '</figcaption>'
     + '<div class="gal-acc"><button type="button" class="btn-linea" data-cver="' + esc(x.id) + '">Ver</button><button type="button" class="btn-solido" data-cdescarga="' + esc(x.id) + '">Descargar</button></div></figure>';
 }
 function pintaBancoFlyers(cuerpo){
@@ -20508,7 +20509,10 @@ function pintaBancoFlyers(cuerpo){
     + '<div class="cont-acc" style="flex-wrap:wrap;gap:8px;align-items:center"><select id="hcCat"><option value="xv">XV años</option><option value="embarazadas">Embarazo</option><option value="infantil">Infantil</option><option value="graduacion">Graduación</option></select>'
     + '<label class="cont-sub">Cuántas <input id="hcCant" type="number" min="1" max="14" value="6" style="width:64px"></label>'
     + '<label class="cont-sub">Desde el <input id="hcFecha" type="date"></label>'
-    + '<button type="button" class="btn-solido" data-hcrear="1">Crear historias</button></div></details>' : '';
+    + '<button type="button" class="btn-solido" data-hcrear="1">Crear historias</button></div>'
+    + (plantillasGaleria().length ? '<details style="margin-top:8px"><summary class="cont-sub">Plantillas (si no marca ninguna, se rotan las recomendadas)</summary><div class="cont-acc" style="flex-wrap:wrap;gap:6px 14px;margin-top:6px">'
+      + plantillasGaleria().map(e => '<label class="cont-sub"><input type="checkbox" data-hcplantilla="' + esc(e.id) + '"> ' + esc(e.nombre || e.id) + '</label>').join('') + '</div></details>' : '')
+    + '</details>' : '';
   cuerpo.innerHTML = '<style>.gal-chips{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}.gal-chip{border:1px solid var(--line2,#d7d7dc);background:transparent;color:inherit;border-radius:999px;padding:7px 14px;font:inherit;cursor:pointer}.gal-chip i{font-style:normal;opacity:.6;margin-left:4px}.gal-chip.on{background:var(--accent);border-color:transparent;color:#fff}'
     + '.gal-barra,.gal-nav{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:8px 0}.gal-nav{justify-content:center}'
     + '.gal-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(176px,1fr));gap:16px;align-items:start;transition:opacity .15s}.gal-grid.espera{opacity:.45;pointer-events:none}'
@@ -20537,7 +20541,8 @@ async function clicBancoFlyers(ev){
     const cat = $('hcCat').value, cant = Number($('hcCant').value) || 6, fecha = $('hcFecha').value;
     if (!fecha) return avisa('Falta la fecha', 'Elija desde qué día se programan.'), true;
     c.disabled = true; c.textContent = 'Creando… (puede tardar un minuto)';
-    let r; try { r = await llama({ action: 'contenidoHistoriasCrear', categoria: cat, cantidad: cant, fecha }); } catch { r = { ok: false, error: 'La creación no terminó. Revise la galería antes de repetirla.' }; }
+    const estilos = [...document.querySelectorAll('[data-hcplantilla]:checked')].map(x => x.dataset.hcplantilla);
+    let r; try { r = await llama({ action: 'contenidoHistoriasCrear', categoria: cat, cantidad: cant, fecha, ...(estilos.length ? { estilos } : {}) }); } catch { r = { ok: false, error: 'La creación no terminó. Revise la galería antes de repetirla.' }; }
     if (!r || !r.ok) { avisa('No se crearon las historias', (r && r.error) || 'Error desconocido'); c.disabled = false; c.textContent = 'Crear historias'; return true; }
     avisa('Historias creadas', r.creadas + ' por aprobar en Revisar y en la galería'); BANCO.cache.clear(); BANCO.datos = null; BANCO.pagina = 0; void cargaBancoFlyers({ fuerza: true }); return true;
   }
