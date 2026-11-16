@@ -1,7 +1,7 @@
 {
-  "version": "2026-11-16-crm-release-v464-banco-premium",
+  "version": "2026-11-16-crm-release-v465-banco-redes",
   "channel": "crm",
-  "released_at": "2026-11-16T12:00:00.000Z",
-  "summary": "Banco de flyers rediseñado: búsqueda, filtros por categoría, tipo y estado, banner NEW, descarga por tamaño (historia 9:16, publicación, Marketplace), crear flyers y colaboraciones sin pedir fecha.",
+  "released_at": "2026-11-16T18:00:00.000Z",
+  "summary": "Banco de flyers simplificado: botones de Instagram, TikTok, WhatsApp, Publicación y Marketplace con un clic de descarga; acciones masivas solo al marcar; carruseles animados en el banco.",
   "requiere_puente": "2026-11-06-documentos-grandes-v70"
 }
