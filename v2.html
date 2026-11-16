@@ -20681,11 +20681,12 @@ function cabeceraV239(P){
   const pendientes = gruposV239(CONT.items || []).filter((g) => g.piezas.some((x) => x.estado === 'propuesta' && x.tiene_imagen)).length;
   return '<header class="p239-card p239-titulo"><span class="p239-titulo-ico">' + ICO_V239.rayo + '</span><div class="p239-titulo-txt"><h1>Planificador de contenido</h1><p>Organiza tus publicaciones, fotos y videos en un solo lugar.</p></div>'
     + '<div class="p239-titulo-acc">' + (vistaHabilitada('estados') ? '<button type="button" class="p239-btn" data-p239="estados">Estados</button>' : '')
+    + '<button type="button" class="p239-btn" data-p239crear="banco" title="Todos los flyers hechos, para descargar y repartir">Banco de flyers</button>'
     + '<button type="button" class="p239-ia" data-p239="ia">' + ICO_V239.ia + '<span><b>Sugerencias con IA</b><small>Ideas de contenido para tu negocio</small></span></button>'
     + '<div class="p239-crear"><button type="button" class="p239-btn p239-prim p239-grande" data-p239="menu" aria-haspopup="menu" aria-expanded="' + !!P.menu + '">' + ICO_V239.mas + '<span>Crear contenido</span>' + ICO_V239.flecha + '</button>'
     + '<div class="p239-menu" role="menu"' + (P.menu ? '' : ' hidden') + '>'
     + [['crear', 'Crear con el agente', 'Ideas, textos y flyers con tus fotos'], ['editor', 'Editor de flyers', 'Diseña una pieza a mano'], ['subir', 'Subir foto o video', 'Tu propio contenido, a la fecha que elijas'], ['agente', P.agente ? 'Ocultar agente automático' : 'Agente automático', 'Rutina, autonomía y redes del agente'],
-      ['estilos', 'Plantillas', ''], ['fotos', 'Fototeca', ''], ['navidad','Set navideño','Sube originales y prepara el lote'], ['redes', 'Conexiones', ''], ['paquete', 'Paquetes y Marketplace', ''], ['fechas', 'Fechas del negocio', '']]
+      ['banco', 'Banco de flyers', 'Todos los flyers hechos, para descargar'], ['estilos', 'Plantillas', ''], ['fotos', 'Fototeca', ''], ['navidad','Set navideño','Sube originales y prepara el lote'], ['redes', 'Conexiones', ''], ['paquete', 'Paquetes y Marketplace', ''], ['fechas', 'Fechas del negocio', '']]
       .map(([k, t, d]) => '<button type="button" role="menuitem" data-p239crear="' + k + '"><b>' + esc(t) + '</b>' + (d ? '<small>' + esc(d) + '</small>' : '') + '</button>').join('')
     + '</div></div></div></header>'
     + '<nav class="p239-card p239-pasos" aria-label="Flujo de publicación">' + PASOS_V239.map(([id, t, d], i) => '<button type="button" data-ctab="' + id + '" class="p239-paso' + (i === actual ? ' on' : '') + (i < actual ? ' hecho' : '') + '"' + (i === actual ? ' aria-current="step"' : '') + '>'
