@@ -1,7 +1,7 @@
 {
-  "version": "2026-11-16-crm-release-v467-banco-tarjetas-limpias",
+  "version": "2026-11-16-crm-release-v468-galeria-eliminar-colab",
   "channel": "crm",
   "released_at": "2026-11-16T18:00:00.000Z",
-  "summary": "Banco de flyers simplificado: botones de Instagram, TikTok, WhatsApp, Publicación y Marketplace con un clic de descarga; acciones masivas solo al marcar; carruseles animados en el banco.",
+  "summary": "Galería: Eliminar visible por tarjeta para piezas no publicadas, con confirmación y restauración; Colab junto a NEW.",
   "requiere_puente": "2026-11-06-documentos-grandes-v70"
 }
