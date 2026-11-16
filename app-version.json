@@ -1,7 +1,7 @@
 {
-  "version": "2026-11-15-crm-release-v459-banco-visible-y-flyers-sin-recorte",
+  "version": "2026-11-15-crm-release-v460-galeria-boton-propio",
   "channel": "crm",
   "released_at": "2026-11-15T21:00:00.000Z",
-  "summary": "El Banco de flyers ahora está a la vista en el Planificador (botón y menú). Los flyers del agente ya no recortan a la persona ni ponen degradado detrás.",
+  "summary": "La Galería de flyers tiene su propio botón en el menú lateral (descargar y repartir todos los flyers). El Planificador la enlaza.",
   "requiere_puente": "2026-11-06-documentos-grandes-v70"
 }
