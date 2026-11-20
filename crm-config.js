@@ -49,5 +49,6 @@ window.CRM_CONFIG = window.DCARELA_CRM_CONFIG = {
   businessDisplayNumber: "849-524-5620",
   whatsAppWebRecovery: true,
   whatsAppManualSend: true,
+  galleryCollaborationDrafts: true,
   defaultView: "conversations"
 };

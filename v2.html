@@ -25,7 +25,7 @@
 <script src="./editor2-v4.js" defer></script>
 <script src="./editor2-tools.js" defer></script>
 <script src="./estados-cola.js?v=413"></script>
-<script src="./crm-config.js?v=472"></script>
+<script src="./crm-config.js?v=473"></script>
 <script src="./firebase-config.js"></script>
 <!-- opus-recorder graba OGG/Opus de verdad por WASM. MediaRecorder no sirve aqui: en
      Chrome produce webm o mp4-con-opus, y WhatsApp Cloud descarta los dos EN SILENCIO
@@ -4040,6 +4040,7 @@ const SUCURSAL_CONFIG_VALIDA = [NEGOCIO_PRINCIPAL, 'plaza-artesanal'].includes(N
   && (!CFG.bridgeId || CFG.bridgeId === BRIDGE_ID)
   && (NEGOCIO !== 'plaza-artesanal' || (Array.isArray(CFG.enabledViews) && CFG.enabledViews.length > 0));
 const CRM_WEB_RECUPERADO = CFG.whatsAppWebRecovery === true;
+const GALERIA_BORRADORES = CFG.galleryCollaborationDrafts === true;
 if (CRM_WEB_RECUPERADO) document.documentElement.classList.add('wa-web-recuperado');
 const VISTAS_HABILITADAS = Array.isArray(CFG.enabledViews) ? new Set(CFG.enabledViews.map(String)) : null;
 const vistaHabilitada = id => !VISTAS_HABILITADAS || VISTAS_HABILITADAS.has(id);
@@ -20627,12 +20628,14 @@ function formularioCrearBanco(){
         + pl.map(e => '<label class="cont-sub"><input type="checkbox" data-hcplantilla="' + esc(e.id) + '"> ' + esc(e.nombre || e.id) + '</label>').join('') + '</div></details>' : '') + '</section>';
   }
   if (BANCO.panel === 'colab') {
-    return '<section class="gal-card gal-form"><h3>Nueva colaboración de Instagram</h3><p class="cont-sub">Publicación de feed 4:5 que invita a las cuentas elegidas. Si no marca «publicar ya» queda «Por aprobar».</p>'
+    return '<section class="gal-card gal-form"><h3>Nueva colaboración de Instagram</h3><p class="cont-sub">'
+      + (GALERIA_BORRADORES ? 'Crea un borrador 4:5 con las cuentas elegidas y guárdalo para revisión.' : 'Publicación de feed 4:5 que invita a las cuentas elegidas. Si no marca «publicar ya» queda «Por aprobar».')
+      + '</p>'
       + '<div class="cont-acc" style="flex-wrap:wrap;gap:10px;align-items:center"><select id="hcCatC"><option value="xv">XV años</option><option value="embarazadas">Embarazo</option><option value="infantil">Infantil</option><option value="graduacion">Graduación</option></select>'
       + '<label class="cont-sub"><input type="checkbox" data-hccuenta="d_carelaphotography" checked> @d_carelaphotography</label>'
       + '<label class="cont-sub"><input type="checkbox" data-hccuenta="dcarelacompufotoplazaartesanal" checked> @dcarelacompufotoplazaartesanal</label>'
-      + '<label class="cont-sub"><input type="checkbox" id="hcYa"> Publicar ya</label>'
-      + '<button type="button" class="btn-solido" data-hccolab="1"' + (BANCO.ocupado ? ' disabled' : '') + '>' + (BANCO.ocupado ? 'Creando…' : 'Crear colaboración') + '</button><button type="button" class="btn-linea" data-bpanel="">Cerrar</button></div></section>';
+      + (GALERIA_BORRADORES ? '' : '<label class="cont-sub"><input type="checkbox" id="hcYa"> Publicar ya</label>')
+      + '<button type="button" class="btn-solido" data-hccolab="1"' + (BANCO.ocupado ? ' disabled' : '') + '>' + (BANCO.ocupado ? 'Creando…' : GALERIA_BORRADORES ? 'Crear borrador' : 'Crear colaboración') + '</button><button type="button" class="btn-linea" data-bpanel="">Cerrar</button></div></section>';
   }
   return '';
 }
@@ -20734,10 +20737,14 @@ async function clicBancoFlyers(ev){
     const cat = $('hcCatC').value, cuentas = [...document.querySelectorAll('[data-hccuenta]:checked')].map(x => x.dataset.hccuenta), ya = !!$('hcYa')?.checked;
     if (!cuentas.length) { avisa('Elija una cuenta', 'Marque al menos una cuenta colaboradora.'); return true; }
     if (ya && !await confirmaAqui('Se publicará YA en Instagram una publicación con colaboración con ' + cuentas.map(x => '@' + x).join(' y ') + '. ¿Continuar?', { si: 'Publicar' })) return true;
+    const clave = JSON.stringify([cat, cuentas]);
+    if (GALERIA_BORRADORES && BANCO.colabRequest?.clave !== clave) BANCO.colabRequest = { clave, id: crypto.randomUUID() };
     BANCO.ocupado = true; repintaBanco();
-    let r; try { r = await llama({ action: 'contenidoColaboracion', categoria: cat, cuentas, publicar_ya: ya }); } catch { r = { ok: false, error: 'La creación no terminó.' }; }
+    let r; try { r = await llama({ action: 'contenidoColaboracion', categoria: cat, cuentas, publicar_ya: ya,
+      ...(GALERIA_BORRADORES ? { request_id: BANCO.colabRequest.id } : {}) }); } catch { r = { ok: false, error: 'La creación no terminó.' }; }
     BANCO.ocupado = false;
     if (!r || !r.ok) { avisa('No se creó la colaboración', (r && r.error) || 'Error desconocido'); repintaBanco(); return true; }
+    BANCO.colabRequest = null;
     avisa('Colaboración creada', ya ? 'Sale en el próximo ciclo del publicador.' : 'Queda por aprobar en Revisar.'); BANCO.panel = null; BANCO.cache.clear(); void cargaBancoFlyers({ fuerza: true }); return true;
   }
   if (d.bbajar) {

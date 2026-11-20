@@ -1,7 +1,7 @@
 {
-  "version": "2026-11-20-crm-v472-herramientas",
+  "version": "2026-11-20-crm-v473-colaboraciones",
   "channel": "crm",
-  "released_at": "2026-11-20T22:39:51Z",
-  "summary": "Restablece la navegación completa de Central y conserva la bandeja WhatsApp Web.",
+  "released_at": "2026-11-20T22:58:16Z",
+  "summary": "Restauración de Eliminar y borradores de colaboración en la Galería de Central.",
   "requiere_puente": "2026-11-06-documentos-grandes-v70"
 }
