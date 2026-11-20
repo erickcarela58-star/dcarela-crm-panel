@@ -25,7 +25,7 @@
 <script src="./editor2-v4.js" defer></script>
 <script src="./editor2-tools.js" defer></script>
 <script src="./estados-cola.js?v=413"></script>
-<script src="./crm-config.js"></script>
+<script src="./crm-config.js?v=472"></script>
 <script src="./firebase-config.js"></script>
 <!-- opus-recorder graba OGG/Opus de verdad por WASM. MediaRecorder no sirve aqui: en
      Chrome produce webm o mp4-con-opus, y WhatsApp Cloud descarta los dos EN SILENCIO
@@ -32090,11 +32090,11 @@ onAuthStateChanged(auth, async u => {
   // Los Estados se cargan en segundo plano nada mas entrar: son cientos de contactos y bajarlos
   // al pulsar «Estados» eran 7 s de lista vacia. Un par de segundos despues, para no competir con
   // lo primero que se ve (la bandeja).
-  if (vistaHabilitada('estados')) setTimeout(escuchaEstados, 2500);
+  if (!CRM_WEB_RECUPERADO && vistaHabilitada('estados')) setTimeout(escuchaEstados, 2500);
   // Google Calendar se lee solo desde el principio (y se refresca cada 2 min con la Agenda abierta).
-  if (vistaHabilitada('agenda')) setTimeout(() => { relojGoogleAgenda(); cargaGoogleAgenda(); }, 4000);
+  if (!CRM_WEB_RECUPERADO && vistaHabilitada('agenda')) setTimeout(() => { relojGoogleAgenda(); cargaGoogleAgenda(); }, 4000);
   // Las propuestas del agente de marketing (numerito en Campañas), al entrar y cada 30 min.
-  if (vistaHabilitada('campanas') && ['admin', 'supervisor'].includes(ROL_ACTUAL)) {
+  if (!CRM_WEB_RECUPERADO && vistaHabilitada('campanas') && ['admin', 'supervisor'].includes(ROL_ACTUAL)) {
     setTimeout(() => cargaMarketing({ silencioso: true }), 6000);
     setInterval(() => { if (!document.hidden) cargaMarketing({ silencioso: true }); }, 1800000);
   }
@@ -32105,7 +32105,7 @@ onAuthStateChanged(auth, async u => {
   vigilaVersion();
   setInterval(vigilaVersion, 300000);
   ve(location.hash.slice(1) || CFG.defaultView || 'conversations');
-  if (vistaHabilitada('informes') && ['admin','supervisor'].includes(ROL_ACTUAL)) {
+  if (!CRM_WEB_RECUPERADO && vistaHabilitada('informes') && ['admin','supervisor'].includes(ROL_ACTUAL)) {
     void cargaCalidad({ silencioso:true });
     // Las burbujas de atención al cliente salen aunque no se abra «Informes»: se revisa cada minuto.
     if (!CALIDAD_TIMER) CALIDAD_TIMER = setInterval(() => cargaCalidad({ silencioso:true }), 60000);

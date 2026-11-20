@@ -1,7 +1,7 @@
 {
-  "version": "2026-11-20-crm-v471-whatsapp-texto",
+  "version": "2026-11-20-crm-v472-herramientas",
   "channel": "crm",
-  "released_at": "2026-11-20T22:27:48Z",
-  "summary": "Respuesta manual de texto desde la bandeja WhatsApp Web del CRM.",
+  "released_at": "2026-11-20T22:39:51Z",
+  "summary": "Restablece la navegación completa de Central y conserva la bandeja WhatsApp Web.",
   "requiere_puente": "2026-11-06-documentos-grandes-v70"
 }
