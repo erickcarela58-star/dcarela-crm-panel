@@ -1,3 +1,4 @@
+window.DCARELA_NUBE_URL = "https://dcarela-api.dcarela-compufoto.workers.dev";
 window.CRM_CONFIG = window.DCARELA_CRM_CONFIG = {
   brandName: "D'Carela Compufoto",
   productName: "CRM",
@@ -15,9 +16,9 @@ window.CRM_CONFIG = window.DCARELA_CRM_CONFIG = {
   marca: { nombre: "D' Carela Compufoto", instagram: "@dcarela_compufoto", ciudad: "La Romana" },
 
   notificationTag: "dcarela-crm",
-  firebaseFunctionsBase: "https://us-central1-erikccarela.cloudfunctions.net",
-  firebaseAgendaUrl: "https://crmagenda-o2uqjp6fra-uc.a.run.app",
-  firebaseReviewsUrl: "https://crmreviews-o2uqjp6fra-uc.a.run.app",
+  firebaseFunctionsBase: "https://dcarela-api.dcarela-compufoto.workers.dev/functions",
+  firebaseAgendaUrl: "https://dcarela-api.dcarela-compufoto.workers.dev/functions/crmAgenda",
+  firebaseReviewsUrl: "https://dcarela-api.dcarela-compufoto.workers.dev/functions/crmReviews",
   firebaseTransportEnabled: true,
   historyRecoveryOnly: false,
   appVersionUrl: "./app-version.json",
