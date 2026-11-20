@@ -70,7 +70,7 @@ export function querySnapshot(data,previous){const docs=(data.documents||[]).map
 }};}
 export function queryBody(ref){
   const body={collection:ref.path,filters:[],orderBy:[]};
-  for(const c of ref.constraints||[]){if(c.type==='where')body.filters.push({field:c.field,op:c.op,value:encode(c.value)});else if(c.type==='orderBy')body.orderBy.push({field:c.field,direction:c.direction});else if(c.type==='limit')body.limit=c.n;else if(!['startAfter','startAt','endAt','endBefore'].includes(c.type))throw new Error('Consulta no admitida');}
+  for(const c of ref.constraints||[]){if(c.type==='where')body.filters.push({field:c.field,op:c.op,value:encode(c.value)});else if(c.type==='orderBy')body.orderBy.push({field:c.field,direction:c.direction});else if(c.type==='limit')body.limit=c.n;else if(c.type==='select')body.select=c.fields;else if(!['startAfter','startAt','endAt','endBefore'].includes(c.type))throw new Error('Consulta no admitida');}
   for(const c of ref.constraints||[]){if(!['startAfter','startAt','endAt','endBefore'].includes(c.type))continue;
     if(c.values.length===1&&c.values[0]?._wire){
       const snap=c.values[0];if(!body.orderBy.some(o=>o.field==='__name__'))body.orderBy.push({field:'__name__',direction:body.orderBy.at(-1)?.direction||'asc'});
@@ -82,6 +82,6 @@ const watches=new Map();let watchTimer,busy=false;
 export function watch(ref,next,error){const id=crypto.randomUUID();watches.set(id,{ref,next,error,hash:null,previous:null});if(!watchTimer){watchTimer=setInterval(poll,5000);}void poll();return()=>{watches.delete(id);if(!watches.size){clearInterval(watchTimer);watchTimer=null;}};}
 async function poll(){if(busy||!watches.size)return;busy=true;try{
   const all=[...watches];for(let i=0;i<all.length;i+=12){const group=all.slice(i,i+12),result=await api('/v1/client/poll',{queries:group.map(([id,w])=>({id,hash:w.hash,...(w.ref.type==='document'?{path:w.ref.path}:queryBody(w.ref))}))});
-    for(const r of result.results){const w=watches.get(r.id);if(!w)continue;if(r.error){w.error?.(Object.assign(new Error(r.error),{code:String(r.status)}));continue;}w.hash=r.hash;if(r.unchanged)continue;const snap=w.ref.type==='document'?snapshot(r.value):querySnapshot(r.value,w.previous);w.previous=snap;w.next(snap);}
+    for(const r of result.results){const w=watches.get(r.id);if(!w)continue;if(r.error){w.error?.(Object.assign(new Error(r.error),{code:String(r.status)}));continue;}if(r.unchanged)continue;try{const snap=w.ref.type==='document'?snapshot(r.value):querySnapshot(r.value,w.previous);w.next(snap);w.hash=r.hash;w.previous=snap;}catch(error){w.error?.(error);}}
   }
-}catch(e){for(const w of watches.values())w.error?.(e);}finally{busy=false;}}
+}catch(e){const error=e.code?e:Object.assign(new Error('Conexión interrumpida'),{code:'unavailable'});for(const w of [...watches.values()])w.error?.(error);}finally{busy=false;}}

@@ -3932,7 +3932,7 @@ input[type="checkbox"],input[type="radio"]{accent-color:var(--accent)}
 @media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 
 </style>
-<script type="importmap" id="dcarela-local-cloud">{"imports":{"https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js":"./nube-sdk/app.mjs","https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js":"./nube-sdk/auth.mjs","https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js":"./nube-sdk/firestore.mjs"}}</script>
+<script type="importmap" id="dcarela-local-cloud">{"imports":{"https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js":"./nube-sdk/app.mjs?v=470","https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js":"./nube-sdk/auth.mjs?v=470","https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js":"./nube-sdk/firestore.mjs?v=470"}}</script>
 </head>
 <body>
 
@@ -4016,7 +4016,7 @@ input[type="checkbox"],input[type="radio"]{accent-color:var(--accent)}
 import { initializeApp, getApps } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js';
 import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut }
   from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js';
-import { initializeFirestore, collection, query, where, onSnapshot, doc, setDoc, getDoc, getDocs, limit, orderBy }
+import { initializeFirestore, collection, query, where, onSnapshot, doc, setDoc, getDoc, getDocs, limit, orderBy, select }
   from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
 
 const CFG = window.CRM_CONFIG || window.DCARELA_CRM_CONFIG || {};
@@ -4661,6 +4661,32 @@ function aplicaConversaciones(s, modo = 'en vivo'){
     vigilaAtencion();
     vigilaLlamadas();
 }
+const CAMPOS_CRM_WEB = ['id','channel','source','business_number','wa_phone','wa_chat_jid','wa_lid_only','contact_id','contact_name','display_name','customer_name','contact_alias','last_message_at','last_message_preview','last_inbound_preview','last_customer_reply_at','unread','unread_count','mode','bot_paused','lifecycle_stage','lead_status','priority','reservation_status','human_handoff_required','human_handoff_requested_at','human_handoff_reason','human_handoff_latest','ignored_at','ignored_kind','proactive_blocked_at','muted_until','pinned','pinned_at','labels','etiquetas','merged_into','last_call_at','last_call_status','last_outbound_at','last_inbound_at','first_seen_at','status'];
+let rosterCrmWeb = null;
+function consultaConversaciones(recientes = true){
+  const ref = collection(db,'crm_conversations'), empresa = where('business_id','==',NEGOCIO);
+  if (!CRM_WEB_RECUPERADO) return query(ref, empresa);
+  const cuerpo = [empresa, where('source','==','whatsapp_qr'), select(...CAMPOS_CRM_WEB)];
+  return recientes ? query(ref,...cuerpo,orderBy('last_message_at','desc'),limit(120)) : query(ref,...cuerpo);
+}
+function aplicaConvsCrmWeb(s, modo){
+  if (!CRM_WEB_RECUPERADO || s?.metadata?.fromCache === true) return aplicaConversaciones(s, modo);
+  let actual = rosterCrmWeb;
+  if (!actual || actual.uid !== auth.currentUser?.uid) {
+    actual = {uid:auth.currentUser?.uid, rows:new Map(), leyendo:false, completo:false};
+    rosterCrmWeb = actual;
+  }
+  for (const doc of s.docs) actual.rows.set(doc.id,doc);
+  aplicaConversaciones({docs:[...actual.rows.values()],metadata:s.metadata},modo);
+  if (actual.completo || actual.leyendo) return;
+  actual.leyendo = true;
+  getDocs(consultaConversaciones(false)).then(todo => {
+    if (rosterCrmWeb !== actual || auth.currentUser?.uid !== actual.uid) return;
+    for (const doc of todo.docs) if (!actual.rows.has(doc.id)) actual.rows.set(doc.id,doc);
+    actual.completo = true;
+    aplicaConversaciones({docs:[...actual.rows.values()],metadata:s.metadata},modo);
+  }).catch(()=>{}).finally(()=>{actual.leyendo = false;});
+}
 function detieneRespaldoConvs(){
   if (sondeoConvs) { clearInterval(sondeoConvs); sondeoConvs = null; }
   if (reintentoConvs) { clearTimeout(reintentoConvs); reintentoConvs = null; }
@@ -4670,9 +4696,9 @@ async function sondeaConversaciones(){
   sondeoConvsEnCurso = true;
   const revision = revisionConvs;
   try {
-    const q = query(collection(db,'crm_conversations'), where('business_id','==',NEGOCIO));
+    const q = consultaConversaciones();
     const s = await getDocs(q);
-    if (revision === revisionConvs) aplicaConversaciones(s, 'respaldo cada 8 s');
+    if (revision === revisionConvs) aplicaConvsCrmWeb(s, 'respaldo cada 8 s');
   } catch (error) {
     if (revision !== revisionConvs) return;
     convsDesdeServidor = false;
@@ -4692,16 +4718,16 @@ function activaRespaldoConvs(){
 function escuchaConversaciones(){
   revisionConvs++;
   if (paraConvs) { paraConvs(); paraConvs = null; }
-  const q = query(collection(db,'crm_conversations'), where('business_id','==',NEGOCIO));
+  const q = consultaConversaciones();
   // El primer snapshot puede venir de IndexedDB. No lo confundimos con una conexión viva:
   // mientras siga siendo local, dejamos activo el sondeo y esperamos el cambio de metadata.
   paraConvs = onSnapshot(q, { includeMetadataChanges: true }, s => {
     revisionConvs++;
     if (s?.metadata?.fromCache === true) activaRespaldoConvs();
     else detieneRespaldoConvs();
-    aplicaConversaciones(s, s?.metadata?.fromCache === true ? 'copia local' : 'en vivo');
+    aplicaConvsCrmWeb(s, s?.metadata?.fromCache === true ? 'copia local' : 'en vivo');
   }, err => {
-    paraConvs = null;
+    const stop = paraConvs; paraConvs = null; stop?.();
     convsDesdeServidor = false;
     marcaEstado(false, 'En vivo interrumpido: ' + (err?.code || 'error') + ' · usando respaldo');
     activaRespaldoConvs();
@@ -4726,11 +4752,12 @@ function aplicaMensajes(s, idConv){
   pintaMensajes();
   pintaComboCatalogo();
 }
+const CAMPOS_MENSAJE_CRM_WEB = ['id','conversation_id','direction','sender','body','msg_type','created_at','occurred_at','updated_at','delivery_status','wamid','read_at','deleted_at','edited_at','media_id','media_url','media_mime','metadata','attachments','quoted_message_id','normalized_text'];
 async function sondeaMensajes(idConv){
   if (escuchaMsgId !== idConv || sondeoMsgsEnCurso.has(idConv)) return;
   sondeoMsgsEnCurso.add(idConv);
   const revision = revisionMsgs;
-  const base = [where('business_id','==',NEGOCIO), where('conversation_id','==',idConv)];
+  const base = [where('business_id','==',NEGOCIO), where('conversation_id','==',idConv), ...(CRM_WEB_RECUPERADO ? [select(...CAMPOS_MENSAJE_CRM_WEB)] : [])];
   try {
     let s;
     try { s = await getDocs(query(collection(db,'crm_messages'), ...base, orderBy('created_at','desc'), limit(400))); }
@@ -4760,7 +4787,7 @@ function activaRespaldoMsgs(idConv){
 }
 function abreEscuchaMensajes(idConv, esRespaldo){
   if (paraMsgs) { paraMsgs(); paraMsgs = null; }
-  const base = [where('business_id','==',NEGOCIO), where('conversation_id','==',idConv)];
+  const base = [where('business_id','==',NEGOCIO), where('conversation_id','==',idConv), ...(CRM_WEB_RECUPERADO ? [select(...CAMPOS_MENSAJE_CRM_WEB)] : [])];
   const q = esRespaldo
     ? query(collection(db,'crm_messages'), ...base, limit(400))
     : query(collection(db,'crm_messages'), ...base, orderBy('created_at','desc'), limit(400));
@@ -4771,7 +4798,7 @@ function abreEscuchaMensajes(idConv, esRespaldo){
     else detieneRespaldoMsgs();
     aplicaMensajes(s, idConv);
   }, err => {
-    paraMsgs = null;
+    const stop = paraMsgs; paraMsgs = null; stop?.();
     msgsDesdeServidor = false;
     actualizaEstadoSincronizacion();
     if (!esRespaldo && err?.code === 'failed-precondition' && escuchaMsgId === idConv) {
@@ -6908,6 +6935,7 @@ function estadoQr(c, linea){
 // esconde, pero NO se borra: el filtro de su linea la trae, y reaparece sola al volver a vincular.
 // La pausa NO esconde: la linea sigue recibiendo y se reanuda con un boton.
 function oculta(c){
+  if (CRM_WEB_RECUPERADO && c.source === 'whatsapp_qr' && lineaDe(c) === TELS.web) return false;
   const e = estadoQr(c, LINEA_QR);
   return e === 'otra_linea' || e === 'sin_puente';
 }
@@ -31951,6 +31979,7 @@ onAuthStateChanged(auth, async u => {
   for (const url of STQ.urls.values()) URL.revokeObjectURL(url);
   STQ.urls.clear();
   if (!u) {
+    rosterCrmWeb = null;
     $('acceso').classList.remove('oculto');
     $('app').classList.remove('on');
     if (paraMsgs) { paraMsgs(); paraMsgs = null; }

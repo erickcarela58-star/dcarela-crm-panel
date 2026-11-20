@@ -1,4 +1,4 @@
-import {api,db,docRef,collectionRef,snapshot,querySnapshot,queryBody,watch,encode,Timestamp} from './core.mjs';
+import {api,db,docRef,collectionRef,snapshot,querySnapshot,queryBody,watch,encode,Timestamp} from './core.mjs?v=470';
 export {Timestamp};
 export const getFirestore=()=>db;
 export const initializeFirestore=()=>db;
@@ -8,6 +8,7 @@ export const query=(ref,...constraints)=>({...ref,type:'query',constraints:[...(
 export const where=(field,op,value)=>({type:'where',field,op,value});
 export const orderBy=(field,direction='asc')=>({type:'orderBy',field,direction});
 export const limit=n=>({type:'limit',n});
+export const select=(...fields)=>({type:'select',fields});
 export const startAfter=(...values)=>({type:'startAfter',values});
 export const startAt=(...values)=>({type:'startAt',values});
 export const endAt=(...values)=>({type:'endAt',values});
@@ -18,8 +19,9 @@ export async function getDocs(ref){
   const body=queryBody(ref);if(body.limit)return querySnapshot(await api('/v1/client/query',body));
   // Exhaust unbounded legacy reads by pages; never silently truncate a financial history.
   if(!body.orderBy.some(o=>o.field==='__name__'))body.orderBy.push({field:'__name__',direction:body.orderBy.at(-1)?.direction||'asc'});
-  body.limit=1000;const documents=[];
-  while(true){const page=await api('/v1/client/query',body);documents.push(...page.documents);if(page.documents.length<1000)break;
+  const pageSize=body.select?160:1000;
+  body.limit=pageSize;const documents=[];
+  while(true){const page=await api('/v1/client/query',body);documents.push(...page.documents);if(page.documents.length<pageSize)break;
     if(documents.length>=100000)throw new Error('Consulta muy grande; filtra por fecha');
     const last=snapshot(page.documents.at(-1));body.startAfter=body.orderBy.map(o=>encode(o.field==='__name__'?last.ref:last.get(o.field)));
   }return querySnapshot({documents});
