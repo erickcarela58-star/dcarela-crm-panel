@@ -1,7 +1,7 @@
 {
-  "version": "2026-11-16-crm-release-v468-galeria-eliminar-colab",
+  "version": "2026-11-20-crm-release-v469-nube-local",
   "channel": "crm",
-  "released_at": "2026-11-16T09:45:00.000Z",
-  "summary": "Galería: Eliminar visible por tarjeta para piezas no publicadas, con confirmación y restauración; Colab junto a NEW.",
+  "released_at": null,
+  "summary": "CRM en Servicios: transporte local y sesión compatible de conversaciones, galería, estados y anuncios.",
   "requiere_puente": "2026-11-06-documentos-grandes-v70"
 }
