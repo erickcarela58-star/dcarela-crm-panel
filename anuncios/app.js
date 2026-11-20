@@ -17,7 +17,7 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 
 const BUILD = "2026-08-30-saleads-meta-insights-v9";
-const CRM_API = "https://crmapi-o2uqjp6fra-uc.a.run.app";
+const CRM_API = String(window.CRM_CONFIG?.firebaseFunctionsBase || '').replace(/\/$/, '') + '/crmApi';
 const saleAds = window.SaleAdsCore;
 if (!saleAds) throw new Error("No se cargó el motor seguro de SaleAds.");
 const SALEADS_UI = new URLSearchParams(location.search).get("saleads_ui") === "classic" ? "classic" : "phase1";

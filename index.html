@@ -5568,7 +5568,7 @@ async function stLeeLista(){
   ST.leyendo = true;
   try {
     const token = await auth.currentUser.getIdToken();
-    const r = await fetch('https://firestore.googleapis.com/v1/projects/' + encodeURIComponent(FB.projectId || 'erikccarela')
+    const r = await fetch(String(window.DCARELA_NUBE_URL || '').replace(/\/$/, '') + '/firestore/v1/projects/' + encodeURIComponent(FB.projectId || 'erikccarela')
       + '/databases/(default)/documents:runQuery', {
       method: 'POST', headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' },
       body: JSON.stringify(consultaEstados(NEGOCIO)),
