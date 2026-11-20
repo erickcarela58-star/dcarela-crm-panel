@@ -1,7 +1,7 @@
 {
-  "version": "2026-11-20-crm-release-v469-nube-local",
+  "version": "2026-11-20-crm-v469-whatsapp-web",
   "channel": "crm",
-  "released_at": null,
-  "summary": "CRM en Servicios: transporte local y sesión compatible de conversaciones, galería, estados y anuncios.",
+  "released_at": "2026-11-20T22:08:53Z",
+  "summary": "Conversaciones de WhatsApp Web en el CRM conectado a Servicios.",
   "requiere_puente": "2026-11-06-documentos-grandes-v70"
 }

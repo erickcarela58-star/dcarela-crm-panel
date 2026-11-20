@@ -1894,6 +1894,8 @@ a.ayuda{color:var(--enlace)}
 .error{margin-top:13px;padding:10px 12px;border-radius:var(--r);font-size:12.5px;
   background:rgba(178,26,26,.1);color:var(--bad);display:none}
 .error.on{display:block}
+.wa-web-recuperado .escribir,.wa-web-recuperado #chatFlujo,.wa-web-recuperado #barraSeleccion,.wa-web-recuperado #barraCita{display:none!important}
+.wa-web-recuperado .wa-abrir-chat{padding:8px 12px;flex:none;border-top:1px solid var(--border);font-size:13px}
 
 /* --- Aviso flotante -------------------------------------------------------- */
 /* El aviso se apartaba con translate(-50%,140%): 140% de SU alto, que en un aviso de
@@ -4036,6 +4038,8 @@ const BRIDGE_ID = NEGOCIO === 'plaza-artesanal' ? 'whatsapp_qr_plaza' : 'whatsap
 const SUCURSAL_CONFIG_VALIDA = [NEGOCIO_PRINCIPAL, 'plaza-artesanal'].includes(NEGOCIO)
   && (!CFG.bridgeId || CFG.bridgeId === BRIDGE_ID)
   && (NEGOCIO !== 'plaza-artesanal' || (Array.isArray(CFG.enabledViews) && CFG.enabledViews.length > 0));
+const CRM_WEB_RECUPERADO = CFG.whatsAppWebRecovery === true;
+if (CRM_WEB_RECUPERADO) document.documentElement.classList.add('wa-web-recuperado');
 const VISTAS_HABILITADAS = Array.isArray(CFG.enabledViews) ? new Set(CFG.enabledViews.map(String)) : null;
 const vistaHabilitada = id => !VISTAS_HABILITADAS || VISTAS_HABILITADAS.has(id);
 
@@ -4630,7 +4634,7 @@ function actualizaEstadoSincronizacion(){
 }
 function aplicaConversaciones(s, modo = 'en vivo'){
     convsDesdeServidor = s?.metadata?.fromCache !== true;
-    const siguientes = s.docs.map(d => ({ ...d.data(), _id:d.id })).filter(perteneceAlCanal).filter(c => !c.merged_into)
+    const siguientes = s.docs.map(d => ({ ...d.data(), _id:d.id })).filter(perteneceAlCanal).filter(c => !c.merged_into && (!CRM_WEB_RECUPERADO || c.source === 'whatsapp_qr'))
       .sort((a,b) => String(b.last_message_at||'').localeCompare(String(a.last_message_at||'')));
     // Un cambio de conexión o un sondeo idéntico no reconstruye cientos de filas.
     if (siguientes.length && JSON.stringify(siguientes) === JSON.stringify(CONVS_TODAS)) { actualizaEstadoSincronizacion(); return; }
@@ -7825,14 +7829,15 @@ function abre(c){
     +   '<button class="enviar" id="btnEnviar" aria-label="Enviar">'
     +   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.600" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5.500M5.800 11.500L12 5.300l6.200 6.200"/></svg>'
     +   '</button></div>'
-    + '<div class="cola" id="cola" hidden></div>';
+    + '<div class="cola" id="cola" hidden></div>'
+    + (CRM_WEB_RECUPERADO ? '<div class="wa-abrir-chat"><a href="https://web.whatsapp.com/" target="_blank" rel="noopener noreferrer">Responder en WhatsApp Web</a></div>' : '');
   // La foto de la cabecera, si es del 2.o numero y aun no esta en cache.
   resuelveAvatares();
   cableaChat(c);
   pintaAvisoLinea();
-  pintaFicha(c);
+  if (!CRM_WEB_RECUPERADO) pintaFicha(c);
   escuchaMensajes(c.id || c._id);
-  marcaLeido(c);
+  if (!CRM_WEB_RECUPERADO) marcaLeido(c);
   pintaChats();
 }
 
@@ -31979,7 +31984,7 @@ onAuthStateChanged(auth, async u => {
   $('app').classList.add('on');
   $('quien').textContent = u.email || '';
   ROL_ACTUAL = String(identidad.rol_efectivo || '');
-  if (ROL_ACTUAL === 'admin') void stqInicia().catch(e => console.warn('cola de estados', e?.message || e));
+  if (!CRM_WEB_RECUPERADO && ROL_ACTUAL === 'admin') void stqInicia().catch(e => console.warn('cola de estados', e?.message || e));
   pintaMenu();
   // El historial se carga solo al entrar. No hay boton de "actualizar": la escucha
   // en vivo trae los cambios sin que nadie tenga que pedirlos.
@@ -32001,7 +32006,7 @@ onAuthStateChanged(auth, async u => {
   // Si Instagram y Messenger estan encendidos, hay que saberlo YA: arrancan ocultos a proposito,
   // asi que lo unico que esta llamada puede hacer es traerlos de vuelta, nunca hacerlos
   // desaparecer delante de quien mira. socialStatus lo contesta a cualquier rol.
-  if (vistaHabilitada('conversations')) cargaEstadoRedes();
+  if (!CRM_WEB_RECUPERADO && vistaHabilitada('conversations')) cargaEstadoRedes();
   vigilaVersion();
   setInterval(vigilaVersion, 300000);
   ve(location.hash.slice(1) || CFG.defaultView || 'conversations');
