@@ -1896,6 +1896,7 @@ a.ayuda{color:var(--enlace)}
 .error.on{display:block}
 .wa-web-recuperado .escribir,.wa-web-recuperado #chatFlujo,.wa-web-recuperado #barraSeleccion,.wa-web-recuperado #barraCita{display:none!important}
 .wa-web-recuperado .wa-abrir-chat{padding:8px 12px;flex:none;border-top:1px solid var(--border);font-size:13px}
+.wa-envio-manual{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;margin-bottom:6px}.wa-envio-manual textarea{min-width:0;resize:vertical;background:var(--bg);color:var(--fg);padding:8px;border-radius:8px;border:1px solid var(--border)}.wa-envio-manual [role=status]{grid-column:1/-1;color:var(--mut)}
 
 /* --- Aviso flotante -------------------------------------------------------- */
 /* El aviso se apartaba con translate(-50%,140%): 140% de SU alto, que en un aviso de
@@ -7858,15 +7859,80 @@ function abre(c){
     +   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.600" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5.500M5.800 11.500L12 5.300l6.200 6.200"/></svg>'
     +   '</button></div>'
     + '<div class="cola" id="cola" hidden></div>'
-    + (CRM_WEB_RECUPERADO ? '<div class="wa-abrir-chat"><a href="https://web.whatsapp.com/" target="_blank" rel="noopener noreferrer">Responder en WhatsApp Web</a></div>' : '');
+    + (CRM_WEB_RECUPERADO ? '<div class="wa-abrir-chat">'
+        + (CFG.whatsAppManualSend === true ? '<form id="waManualForm" class="wa-envio-manual">'
+          + '<textarea id="waManualTexto" maxlength="4000" rows="2" placeholder="Escribe tu respuesta…" aria-label="Respuesta por WhatsApp"></textarea>'
+          + '<button class="btn-solido" type="submit">Enviar texto</button><div id="waManualEstado" role="status"></div></form>' : '')
+        + '<a href="https://web.whatsapp.com/" target="_blank" rel="noopener noreferrer">Abrir WhatsApp Web</a></div>' : '');
   // La foto de la cabecera, si es del 2.o numero y aun no esta en cache.
   resuelveAvatares();
   cableaChat(c);
+  if (CRM_WEB_RECUPERADO) cableaEnvioManualWeb(c);
   pintaAvisoLinea();
   if (!CRM_WEB_RECUPERADO) pintaFicha(c);
   escuchaMensajes(c.id || c._id);
   if (!CRM_WEB_RECUPERADO) marcaLeido(c);
   pintaChats();
+}
+
+function cableaEnvioManualWeb(c){
+  const form=$('waManualForm'),input=$('waManualTexto'),status=$('waManualEstado');
+  const uid=auth.currentUser?.uid,conversation=c._id||c.id;
+  if(!form||!input||!status||!uid||!conversation)return;
+  const button=form.querySelector('button');
+  const endpoint=String(CFG.firebaseFunctionsBase||'').replace(/\/$/,'')+'/crmWebSend';
+  const key='dcarela-wa-envio:'+uid+':'+conversation;
+  let pendiente='';
+  try{pendiente=sessionStorage.getItem(key)||'';}catch{}
+  let revisando=false;
+  const setPending=id=>{
+    pendiente=id;
+    try{if(id)sessionStorage.setItem(key,id);else sessionStorage.removeItem(key);}catch{}
+    button.disabled=Boolean(id);
+  };
+  const show=value=>{if(form.isConnected)status.textContent=value;};
+  function acepta(res){
+    if(res.status==='submitted'){
+      setPending('');input.value='';show('Enviado a WhatsApp.');return true;
+    }
+    if(res.status==='review'){
+      show('Envío sin confirmación. Revisa el chat en WhatsApp Web antes de repetirlo.');return true;
+    }
+    if(res.status==='expired'||res.status==='canceled'){
+      setPending('');show(res.status==='expired'?'El envío venció en la cola.':'El envío se canceló porque cambió la conversación.');return true;
+    }
+    show(res.status==='sending'?'Enviando…':'En cola…');
+    return false;
+  }
+  async function confirma(){
+    if(revisando||!pendiente)return;
+    revisando=true;
+    try{
+      const id=pendiente;
+      for(let intento=0;intento<24&&form.isConnected&&id===pendiente;intento++){
+        await new Promise(resolve=>setTimeout(resolve,2500));
+        if(!form.isConnected||id!==pendiente)return;
+        const res=await llama({action:'status',request_id:id},{endpoint});
+        if(res.ok&&acepta(res))return;
+      }
+      if(id===pendiente)show('Aún no hay confirmación. Vuelve a abrir el chat para revisar.');
+    }finally{revisando=false;}
+  }
+  if(pendiente){button.disabled=true;show('Verificando el último envío…');void confirma();}
+  form.onsubmit=async event=>{
+    event.preventDefault();
+    const text=input.value.trim();
+    if(!text||pendiente)return;
+    const id=crypto.randomUUID();
+    setPending(id);show('Guardando respuesta…');
+    const res=await llama({action:'send',request_id:id,conversation_id:conversation,text},{endpoint});
+    if(!res.ok){
+      if(Number(res.status)>=400&&Number(res.status)<500){setPending('');show(res.error);}
+      else{show('Comprobando si se guardó la respuesta…');void confirma();}
+      return;
+    }
+    if(!acepta(res))void confirma();
+  };
 }
 
 // La cabecera del chat abierto, repintada sin volver a montarlo. `sel` es una copia de la ficha

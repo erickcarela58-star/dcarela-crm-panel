@@ -1,7 +1,7 @@
 {
-  "version": "2026-11-20-crm-v470-whatsapp-web-estable",
+  "version": "2026-11-20-crm-v471-whatsapp-texto",
   "channel": "crm",
-  "released_at": "2026-11-20T22:24:33Z",
-  "summary": "Estabiliza la bandeja de WhatsApp Web y conserva historial paginado desde Servicios.",
+  "released_at": "2026-11-20T22:27:48Z",
+  "summary": "Respuesta manual de texto desde la bandeja WhatsApp Web del CRM.",
   "requiere_puente": "2026-11-06-documentos-grandes-v70"
 }
