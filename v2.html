@@ -1894,9 +1894,12 @@ a.ayuda{color:var(--enlace)}
 .error{margin-top:13px;padding:10px 12px;border-radius:var(--r);font-size:12.5px;
   background:rgba(178,26,26,.1);color:var(--bad);display:none}
 .error.on{display:block}
-.wa-web-recuperado .escribir,.wa-web-recuperado #chatFlujo,.wa-web-recuperado #barraSeleccion,.wa-web-recuperado #barraCita{display:none!important}
-.wa-web-recuperado .wa-abrir-chat{padding:8px 12px;flex:none;border-top:1px solid var(--border);font-size:13px}
-.wa-envio-manual{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;margin-bottom:6px}.wa-envio-manual textarea{min-width:0;resize:vertical;background:var(--bg);color:var(--fg);padding:8px;border-radius:8px;border:1px solid var(--border)}.wa-envio-manual [role=status]{grid-column:1/-1;color:var(--mut)}
+.wa-web-recuperado #waManualEstado{padding:4px 14px 8px;font-size:11px;color:var(--mut)}
+.wa-web-recuperado #waManualEstado:empty{display:none}
+.wa-web-recuperado [data-sin-respaldo]:disabled{opacity:.48;cursor:not-allowed}
+.wa-web-recuperado #modoPorque{display:none!important}
+.wa-web-recuperado #chatEtiquetas{pointer-events:none;opacity:.5}
+.wa-web-recuperado .escribir .hd:disabled{background:transparent;color:var(--mut)}
 
 /* --- Aviso flotante -------------------------------------------------------- */
 /* El aviso se apartaba con translate(-50%,140%): 140% de SU alto, que en un aviso de
@@ -7654,6 +7657,7 @@ const ESCRIBIENDO_CADA_MS = 4000;
 let ESCRIBIENDO = { conv:'', en:0 };
 
 function avisaEscribiendo(c, hayTexto){
+  if(CRM_WEB_RECUPERADO)return;
   const id = c && (c.id || c._id);
   if (!id || canalDe(c) !== 'whatsapp_qr') return;
   if (AJUSTES.escribiendo === 'false') return;
@@ -7791,6 +7795,7 @@ function abre(c){
     +   (['whatsapp_qr','whatsapp_cloud'].includes(canalDe(c)) && ['admin','supervisor'].includes(ROL_ACTUAL)
           ? '<button data-mas="sucursal-intenciones">Revisar avisos de sucursal</button>' : '')
     +   '<button data-mas="asistente">Preguntar al asistente</button>'
+    + (CRM_WEB_RECUPERADO ? '<button data-mas="abrir-wa">Abrir WhatsApp Web</button>' : '')
     +   '<button data-mas="cerrar">Cerrar conversación</button></div></div>'
     + '</div>'
     + '<div class="chat-flujo" id="chatFlujo" aria-label="Estado de esta conversación">'
@@ -7860,27 +7865,32 @@ function abre(c){
     +   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.600" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5.500M5.800 11.500L12 5.300l6.200 6.200"/></svg>'
     +   '</button></div>'
     + '<div class="cola" id="cola" hidden></div>'
-    + (CRM_WEB_RECUPERADO ? '<div class="wa-abrir-chat">'
-        + (CFG.whatsAppManualSend === true ? '<form id="waManualForm" class="wa-envio-manual">'
-          + '<textarea id="waManualTexto" maxlength="4000" rows="2" placeholder="Escribe tu respuesta…" aria-label="Respuesta por WhatsApp"></textarea>'
-          + '<button class="btn-solido" type="submit">Enviar texto</button><div id="waManualEstado" role="status"></div></form>' : '')
-        + '<a href="https://web.whatsapp.com/" target="_blank" rel="noopener noreferrer">Abrir WhatsApp Web</a></div>' : '');
+    + (CRM_WEB_RECUPERADO ? '<div id="waManualEstado" role="status"></div>' : '');
   // La foto de la cabecera, si es del 2.o numero y aun no esta en cache.
   resuelveAvatares();
   cableaChat(c);
-  if (CRM_WEB_RECUPERADO) cableaEnvioManualWeb(c);
   pintaAvisoLinea();
-  if (!CRM_WEB_RECUPERADO) pintaFicha(c);
+  if (CRM_WEB_RECUPERADO) cableaEnvioManualWeb(c);
+  pintaFichaActual(c);
   escuchaMensajes(c.id || c._id);
   if (!CRM_WEB_RECUPERADO) marcaLeido(c);
   pintaChats();
 }
 
 function cableaEnvioManualWeb(c){
-  const form=$('waManualForm'),input=$('waManualTexto'),status=$('waManualEstado');
+  const input=$('texto'),button=$('btnEnviar'),status=$('waManualEstado');
   const uid=auth.currentUser?.uid,conversation=c._id||c.id;
-  if(!form||!input||!status||!uid||!conversation)return;
-  const button=form.querySelector('button');
+  if(!input||!button||!status||!uid||!conversation)return;
+  input.maxLength=4000;
+  // Las piezas originales del chat permanecen a la vista. Se bloquean solo las
+  // acciones cuyo crmApi anterior no está disponible en el acceso de recuperación.
+  const sinRespaldo=['adjImg','adjHd','adjDoc','adjRapida','adjCombo','adjCotiza','adjTpl','adjMic',
+    'btnModo','btnAtendido','btnTransferir','btnAgendar','btnSesionRealizada','chatEtapa','chatEtiquetaNueva'];
+  for(const id of sinRespaldo){const el=$(id);if(el){el.disabled=true;el.dataset.sinRespaldo='';el.title='Aún no disponible en el acceso de recuperación';}}
+  $('mas')?.querySelectorAll('[data-mas]')?.forEach(el=>{
+    if(['buscar','contacto','abrir-wa'].includes(el.dataset.mas))return;
+    el.disabled=true;el.dataset.sinRespaldo='';el.title='Aún no disponible en el acceso de recuperación';
+  });
   const endpoint=String(CFG.firebaseFunctionsBase||'').replace(/\/$/,'')+'/crmWebSend';
   const key='dcarela-wa-envio:'+uid+':'+conversation;
   let pendiente='';
@@ -7891,7 +7901,7 @@ function cableaEnvioManualWeb(c){
     try{if(id)sessionStorage.setItem(key,id);else sessionStorage.removeItem(key);}catch{}
     button.disabled=Boolean(id);
   };
-  const show=value=>{if(form.isConnected)status.textContent=value;};
+  const show=value=>{if(input.isConnected)status.textContent=value;};
   function acepta(res){
     if(res.status==='submitted'){
       setPending('');input.value='';show('Enviado a WhatsApp.');return true;
@@ -7910,9 +7920,9 @@ function cableaEnvioManualWeb(c){
     revisando=true;
     try{
       const id=pendiente;
-      for(let intento=0;intento<24&&form.isConnected&&id===pendiente;intento++){
+      for(let intento=0;intento<24&&input.isConnected&&id===pendiente;intento++){
         await new Promise(resolve=>setTimeout(resolve,2500));
-        if(!form.isConnected||id!==pendiente)return;
+        if(!input.isConnected||id!==pendiente)return;
         const res=await llama({action:'status',request_id:id},{endpoint});
         if(res.ok&&acepta(res))return;
       }
@@ -7920,8 +7930,7 @@ function cableaEnvioManualWeb(c){
     }finally{revisando=false;}
   }
   if(pendiente){button.disabled=true;show('Verificando el último envío…');void confirma();}
-  form.onsubmit=async event=>{
-    event.preventDefault();
+  button.onclick=async()=>{
     const text=input.value.trim();
     if(!text||pendiente)return;
     const id=crypto.randomUUID();
@@ -7934,6 +7943,15 @@ function cableaEnvioManualWeb(c){
     }
     if(!acepta(res))void confirma();
   };
+}
+
+function pintaFichaActual(c){
+  pintaFicha(c);
+  if(!CRM_WEB_RECUPERADO)return;
+  const ficha=$('ficha');
+  ficha?.querySelectorAll('input,textarea,select,button:not(#cerrarFicha):not([data-fccopia])').forEach(el=>{
+    el.disabled=true;el.dataset.sinRespaldo='';el.title='Consulta disponible; edición pendiente de la conexión del servidor';
+  });
 }
 
 // La cabecera del chat abierto, repintada sin volver a montarlo. `sel` es una copia de la ficha
@@ -8240,12 +8258,12 @@ function refrescaSeleccion(){
       refrescaSeleccion.esperando = true;
       ficha.addEventListener('focusout', () => {
         refrescaSeleccion.esperando = false;
-        if (sel) pintaFicha(sel);
+        if (sel) pintaFichaActual(sel);
       }, { once: true });
     }
     return;
   }
-  pintaFicha(sel);
+  pintaFichaActual(sel);
 }
 
 // El compositor dice por que no se puede escribir en este chat y no deja intentarlo. Antes se
@@ -8263,9 +8281,11 @@ function pintaAvisoLinea(){
   const consulta = sucursalEnConsulta(NEGOCIO);
   const av = consulta ? {bloquea:true,titulo:'Plaza en preparación.',
     texto:'Puedes consultar, calcular cotizaciones y guardar notas internas. Los envíos y la automatización se habilitarán al completar el canal propio de Plaza.'}
-    : red.bloquea ? red : avisoLineaQr(sel, LINEA_QR);
+    : red.bloquea ? red
+    : CRM_WEB_RECUPERADO && sel.source === 'whatsapp_qr' ? {bloquea:false,titulo:'',texto:''}
+    : avisoLineaQr(sel, LINEA_QR);
   for (const id of ['texto', 'btnEnviar', 'adjImg', 'adjHd', 'adjDoc', 'adjRapida', 'adjCombo', 'adjCotiza', 'adjTpl', 'adjMic']) {
-    const e = $(id); if (e) e.disabled = av.bloquea;
+    const e = $(id); if (e) e.disabled = av.bloquea || (CRM_WEB_RECUPERADO && id !== 'texto' && id !== 'btnEnviar');
   }
   if (consulta) {
     const cotiza = $('adjCotiza'); if (cotiza) cotiza.disabled = false;
@@ -8319,7 +8339,7 @@ function cableaChat(c){
   pintaFlujoChat();
   const refrescaFichaDeFlujo = () => {
     const ficha = $('ficha');
-    if (ficha && !ficha.contains(document.activeElement) && sel) pintaFicha(sel);
+    if (ficha && !ficha.contains(document.activeElement) && sel) pintaFichaActual(sel);
   };
   const etapaChat = $('chatEtapa');
   if (etapaChat) etapaChat.onchange = async () => {
@@ -8485,6 +8505,7 @@ function cableaChat(c){
     // llega a Planificacion: abrir un chat ya no cambia el contacto de ningun hilo.
     if (b.dataset.mas === 'asistente') return preguntaAlAsistente(sel);
     if (b.dataset.mas === 'contacto') return abreGuardarContacto(sel);
+    if (b.dataset.mas === 'abrir-wa') return window.open('https://web.whatsapp.com/','_blank','noopener,noreferrer');
     if (b.dataset.mas === 'ubicacion') return abreEnviarUbicacion(sel);
     if (b.dataset.mas === 'tarjeta') return abreEnviarContacto(sel);
     if (b.dataset.mas === 'silenciar') return abreSilencio(sel);
@@ -10983,6 +11004,11 @@ function pintaBarraSeleccion(){
   else{const b=barra.querySelector('[data-bs="descargar"]');if(b)b.querySelector('span').textContent='Descargar';}
   pon('eliminar', a.vivos.length);
   const r = barra.querySelector('[data-bs="retirar"]'); if (r) r.hidden = !a.retirables;
+  if(CRM_WEB_RECUPERADO){
+    barra.querySelectorAll('[data-bs]:not([data-bs="copiar"]),.bsreenviar').forEach(b=>{
+      b.disabled=true;b.dataset.sinRespaldo='';b.title='Aún no disponible en el acceso de recuperación';
+    });
+  }
 }
 async function accionSeleccion(op){
   const msgs = mensajesElegidos(), a = accionesSeleccion(msgs);
@@ -11107,6 +11133,9 @@ document.addEventListener('click', async ev => {
     + (puedeEditar ? '<button data-op="editar">Editar</button>' : '')
     + (puedeRetirar ? '<button data-op="retirar" class="peligro">Eliminar para todos</button>' : '')
     + '<button data-op="borrar" class="peligro">Eliminar</button>');
+  if(CRM_WEB_RECUPERADO)menu.querySelectorAll('[data-op]:not([data-op="seleccionar"]):not([data-op="info"]):not([data-op="copiar"])').forEach(b=>{
+    b.disabled=true;b.dataset.sinRespaldo='';b.title='Aún no disponible en el acceso de recuperación';
+  });
   globo.appendChild(menu);
   // Si el mensaje esta pegado a la barra de escribir, el menu se abre hacia arriba; si arriba tampoco cabe, se desplaza el hilo lo justo.
   const contMsgs = menu.closest('.mensajes');
@@ -13230,7 +13259,8 @@ function pintaFicha(c){
   // de volver a abrirla sin cambiar de conversacion y regresar.
   cableaEtiquetas(c);
   cableaNotas(c);
-  cableaHistorial(c);
+  if(CRM_WEB_RECUPERADO){const historial=$('fichaHistorial');if(historial)historial.textContent='El historial de mensajes está en el chat.';}
+  else cableaHistorial(c);
   cableaAnalisisFicha(c);
   cableaCajaFicha(c);
   pintaComboCatalogo();
