@@ -1,7 +1,7 @@
 {
-  "version": "2026-11-22-crm-v475-chat-local",
+  "version": "2026-11-22-crm-v476-chat-nuevo-local",
   "channel": "crm",
-  "released_at": "2026-11-22T05:49:33Z",
-  "summary": "Chat estable con etapa, etiquetas, atención y exclusión de la ficha guardadas en el servicio local.",
+  "released_at": "2026-11-22T06:08:00Z",
+  "summary": "Nuevo chat de Central crea o reutiliza una ficha local; el número de WhatsApp se confirma únicamente con acuse.",
   "requiere_puente": "2026-11-06-documentos-grandes-v70"
 }
