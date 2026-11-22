@@ -16647,7 +16647,7 @@ async function pintaCanalesPlaza(cont){
     + '</p></div>';
 }
 
-function pintaCanalesRecuperado(cont, aviso = ''){
+function pintaCanalesRecuperado(cont, aviso = '', estadoWeb = null){
   const todas = CONVS_TODAS.filter(c => canalDe(c) === 'whatsapp_qr');
   const capturadas = todas.filter(c => lineaDe(c) === TELS.web);
   const heredadas = todas.filter(c => lineaDe(c) !== TELS.web);
@@ -16655,21 +16655,29 @@ function pintaCanalesRecuperado(cont, aviso = ''){
     .filter(Number.isFinite).sort((a,b) => b-a)[0];
   const ultimaActividad = ultimo ? ' Última actividad registrada: '
     + new Date(ultimo).toLocaleString('es-DO',{day:'numeric',month:'short',hour:'numeric',minute:'2-digit'}) + '.' : '';
-  const tarjetaRecuperada = (nombre, resumen, detalle, acciones = '') =>
+  const tarjetaRecuperada = (nombre, resumen, detalle, acciones = '', estado = 'sin verificar') =>
     '<div class="canal"><div class="cabecera-canal">'
     + '<span class="clogo" style="background:#0b7f6b22;color:#0b7f6b">' + LOGO_WA + '</span>'
     + '<div class="cinfo"><b>' + esc(nombre) + '</b><span>' + esc(resumen) + '</span></div>'
-    + '<i class="chip medio">sin verificar</i></div><p class="cdetalle">' + detalle + '</p>'
+    + '<i class="chip ' + (estado === 'captura conectada' ? 'ok' : 'medio') + '">' + esc(estado) + '</i></div><p class="cdetalle">' + detalle + '</p>'
     + (acciones ? '<div class="cacciones">' + acciones + '</div>' : '') + '</div>';
   cont.innerHTML = tarjetaRecuperada('WhatsApp Web · ' + telefonoLegible(TELS.web),
     capturadas.length + ' conversación(es) cargadas en esta vista',
-    'Esta vista muestra mensajes guardados en el CRM, no el estado en vivo de la captura dedicada.'
-      + esc(ultimaActividad) + ' Comprueba un mensaje nuevo y su acuse antes de dar por conectada la línea.',
+    'Esta vista muestra mensajes guardados en el CRM.' + esc(ultimaActividad)
+      + (estadoWeb?.verified ? ' Captura observada: ' + esc(new Date(estadoWeb.observedAt).toLocaleString('es-DO'))
+        + '. Comprueba un mensaje y su acuse antes de dar por completa la recepción.'
+        : ' El estado vivo de la captura dedicada aún no está disponible.'),
     '<button class="btn-linea" id="canalesRecuperadosActualizar">Actualizar conversaciones</button>'
-      + '<button class="btn-linea" id="canalesRecuperadosAbrir">Abrir bandeja</button>')
+      + '<button class="btn-linea" id="canalesRecuperadosAbrir">Abrir bandeja</button>',
+    estadoWeb?.verified ? (estadoWeb.state === 'connected' ? 'captura conectada' : 'captura desconectada') : 'sin verificar')
     + tarjetaRecuperada('WhatsApp oficial (API)',
       'Historial no cargado durante esta recuperación',
-      'El transporte oficial no se puede verificar desde esta recuperación parcial. No se activan envíos ni bot desde esta tarjeta.')
+      estadoWeb?.official?.verified
+        ? 'Meta aceptó el token y confirmó la suscripción de mensajes a este receptor. Última comprobación: '
+          + esc(new Date(estadoWeb.official.observedAt).toLocaleString('es-DO'))
+          + '. Falta comprobar un mensaje entrante y su acuse antes de confirmar la entrega.'
+        : 'La API oficial no tiene una comprobación vigente. No se activan envíos ni bot desde esta tarjeta.',
+      '', estadoWeb?.official?.verified ? 'API configurada' : 'sin verificar')
     + (heredadas.length ? tarjetaRecuperada('WhatsApp Web · otros números',
       heredadas.length + ' conversación(es) históricas',
       'Estas fichas no pertenecen al receptor dedicado del ' + esc(telefonoLegible(TELS.web))
@@ -16678,9 +16686,9 @@ function pintaCanalesRecuperado(cont, aviso = ''){
   const refresh = $('canalesRecuperadosActualizar');
   if(refresh)refresh.onclick=async()=>{
     refresh.disabled=true;refresh.textContent='Actualizando…';
-    await sondeaConversaciones();
+    const [,status] = await Promise.all([sondeaConversaciones(),llama({action:'waWebStatus',sucursal_de_trabajo:'dcarela'})]);
     if($('canalesLista')===cont)pintaCanalesRecuperado(cont,
-      convsDesdeServidor ? '' : 'No se pudieron actualizar las conversaciones. Conservamos la última lista visible.');
+      convsDesdeServidor ? '' : 'No se pudieron actualizar las conversaciones. Conservamos la última lista visible.',status.ok ? status : null);
   };
   const abrir = $('canalesRecuperadosAbrir');
   if(abrir)abrir.onclick=()=>ve('conversations');
@@ -16689,7 +16697,10 @@ function pintaCanalesRecuperado(cont, aviso = ''){
 async function pintaCanales(){
   const cont = $('canalesLista'); if (!cont) return;
   cont.innerHTML = '<p class="bajada"><span class="cargando"></span> Comprobando…</p>';
-  if (CRM_WEB_RECUPERADO) return pintaCanalesRecuperado(cont);
+  if (CRM_WEB_RECUPERADO) {
+    const status = await llama({action:'waWebStatus',sucursal_de_trabajo:'dcarela'});
+    return pintaCanalesRecuperado(cont,'',status.ok ? status : null);
+  }
   if (NEGOCIO === 'plaza-artesanal') return pintaCanalesPlaza(cont);
 
   const [estado, puente] = await Promise.all([

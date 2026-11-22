@@ -1,7 +1,7 @@
 {
-  "version": "2026-11-22-crm-v480-canales-recuperados",
+  "version": "2026-11-22-crm-v481-canales-verificados",
   "channel": "crm",
   "released_at": "2026-11-22T10:15:53Z",
-  "summary": "Canales separa el historial cargado del estado no verificable del receptor; deja de presentar el control heredado como conexión del 5644.",
+  "summary": "Canales muestra la captura viva del 5644 y la configuracion comprobada de Meta por separado, sin confundirlas con entregas de mensajes.",
   "requiere_puente": "2026-11-06-documentos-grandes-v70"
 }
