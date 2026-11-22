@@ -78,24 +78,42 @@ export function queryBody(ref){
     }else body[c.type]=c.values.map(encode);
   }return body;
 }
-const watches=new Map();let watchTimer,busy=false,pollFailures=0,nextPollAt=0;
+const watches=new Map();let watchTimer,busy=false;
 const pageVisible=()=>typeof document==='undefined'||!document.hidden;
 function pollWhenVisible(){if(pageVisible())void poll();}
-function onVisibilityChange(){if(pageVisible()){nextPollAt=0;pollWhenVisible();}}
+function onVisibilityChange(){if(pageVisible()){for(const w of watches.values())w.nextPollAt=0;pollWhenVisible();}}
+const chatLane=ref=>/^(?:crm_conversations|crm_messages)(?:\/|$)/.test(ref.path||'')||ref.path==='crm_channel_state/whatsapp_qr';
+const retryDelay=failures=>Math.min(60000,5000*2**Math.min(failures,4))+Math.floor(Math.random()*2000);
+function reportPollError(group,cause){
+  const error=cause?.code?cause:Object.assign(new Error('Conexión interrumpida'),{code:'unavailable'});
+  for(const [id,w] of group){
+    if(watches.get(id)!==w)continue;
+    w.failures++;w.nextPollAt=Date.now()+retryDelay(w.failures);
+    try{w.error?.(error);}catch{/* Una vista no debe interrumpir las demás. */}
+  }
+}
 export function watch(ref,next,error){
-  const id=crypto.randomUUID();watches.set(id,{ref,next,error,hash:null,previous:null});
+  const id=crypto.randomUUID();watches.set(id,{ref,next,error,hash:null,previous:null,failures:0,nextPollAt:0});
   if(!watchTimer){watchTimer=setInterval(pollWhenVisible,5000);if(typeof document!=='undefined')document.addEventListener('visibilitychange',onVisibilityChange);}
   pollWhenVisible();
-  return()=>{watches.delete(id);if(!watches.size){clearInterval(watchTimer);watchTimer=null;pollFailures=0;nextPollAt=0;if(typeof document!=='undefined')document.removeEventListener('visibilitychange',onVisibilityChange);}};
+  return()=>{watches.delete(id);if(!watches.size){clearInterval(watchTimer);watchTimer=null;if(typeof document!=='undefined')document.removeEventListener('visibilitychange',onVisibilityChange);}};
 }
-async function poll(){if(busy||!watches.size||!pageVisible()||Date.now()<nextPollAt)return;busy=true;try{
-  const all=[...watches];for(let i=0;i<all.length;i+=12){const group=all.slice(i,i+12),result=await api('/v1/client/poll',{queries:group.map(([id,w])=>({id,hash:w.hash,...(w.ref.type==='document'?{path:w.ref.path}:queryBody(w.ref))}))});
-    for(const r of result.results){const w=watches.get(r.id);if(!w)continue;if(r.error){w.error?.(Object.assign(new Error(r.error),{code:String(r.status)}));continue;}if(r.unchanged)continue;try{const snap=w.ref.type==='document'?snapshot(r.value):querySnapshot(r.value,w.previous);w.next(snap);w.hash=r.hash;w.previous=snap;}catch(error){w.error?.(error);}}
+async function poll(){if(busy||!watches.size||!pageVisible())return;busy=true;try{
+  const due=[...watches].filter(([,w])=>Date.now()>=w.nextPollAt);
+  // Durante el corte parcial una consulta ajena al chat recibe 503; no debe arrastrar al chat.
+  const lanes=[due.filter(([,w])=>chatLane(w.ref)),due.filter(([,w])=>!chatLane(w.ref))];
+  for(const lane of lanes)for(let i=0;i<lane.length;i+=12){
+    const group=lane.slice(i,i+12);let result;
+    try{result=await api('/v1/client/poll',{queries:group.map(([id,w])=>({id,hash:w.hash,...(w.ref.type==='document'?{path:w.ref.path}:queryBody(w.ref))}))});
+      if(!Array.isArray(result.results))throw new Error('Respuesta de sondeo incompleta');
+    }catch(error){reportPollError(group,error);continue;}
+    for(const r of result.results){
+      const w=watches.get(r.id);if(!w)continue;
+      if(r.error){reportPollError([[r.id,w]],Object.assign(new Error(r.error),{code:String(r.status)}));continue;}
+      w.failures=0;w.nextPollAt=0;
+      if(r.unchanged)continue;
+      try{const snap=w.ref.type==='document'?snapshot(r.value):querySnapshot(r.value,w.previous);w.next(snap);w.hash=r.hash;w.previous=snap;}
+      catch(error){try{w.error?.(error);}catch{/* La siguiente consulta aún puede continuar. */}}
+    }
   }
-  pollFailures=0;nextPollAt=0;
-}catch(e){
-  pollFailures=Math.min(pollFailures+1,4);
-  nextPollAt=Date.now()+Math.min(60000,5000*2**pollFailures)+Math.floor(Math.random()*2000);
-  const error=e.code?e:Object.assign(new Error('Conexión interrumpida'),{code:'unavailable'});
-  for(const w of [...watches.values()])w.error?.(error);
 }finally{busy=false;}}

@@ -1,4 +1,4 @@
-import {auth,onAuth,login,logout,ready} from './core.mjs?v=478';
+import {auth,onAuth,login,logout,ready} from './core.mjs?v=479';
 export const getAuth=()=>auth;
 auth.authStateReady=ready;
 export const onAuthStateChanged=(instance,next,error)=>onAuth(next,error);

@@ -1,7 +1,7 @@
 {
-  "version": "2026-11-22-crm-v478-sondeo-acotado",
+  "version": "2026-11-22-crm-v479-chat-aislado",
   "channel": "crm",
-  "released_at": "2026-11-22T09:54:00Z",
-  "summary": "Pestañas ocultas pausan sondeos y los reintentos retroceden al fallar el servidor; la recepción del 5644 conserva su flujo.",
+  "released_at": "2026-11-22T10:07:00Z",
+  "summary": "El chat consulta en lote propio; módulos todavía cerrados no interrumpen su escucha. Pestañas ocultas pausan sondeos y los fallos retroceden.",
   "requiere_puente": "2026-11-06-documentos-grandes-v70"
 }

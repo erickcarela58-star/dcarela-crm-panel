@@ -1,4 +1,4 @@
-import {api,db,docRef,collectionRef,snapshot,querySnapshot,queryBody,watch,encode,Timestamp} from './core.mjs?v=478';
+import {api,db,docRef,collectionRef,snapshot,querySnapshot,queryBody,watch,encode,Timestamp} from './core.mjs?v=479';
 export {Timestamp};
 export const getFirestore=()=>db;
 export const initializeFirestore=()=>db;
