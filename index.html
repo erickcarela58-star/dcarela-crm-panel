@@ -7885,8 +7885,11 @@ function cableaEnvioManualWeb(c){
   // Las piezas originales del chat permanecen a la vista. Se bloquean solo las
   // acciones cuyo crmApi anterior no está disponible en el acceso de recuperación.
   const sinRespaldo=['adjImg','adjHd','adjDoc','adjRapida','adjCombo','adjCotiza','adjTpl','adjMic',
-    'btnModo','btnAtendido','btnTransferir','btnAgendar','btnSesionRealizada','chatEtapa','chatEtiquetaNueva'];
+    'btnTransferir','btnAgendar'];
   for(const id of sinRespaldo){const el=$(id);if(el){el.disabled=true;el.dataset.sinRespaldo='';el.title='Aún no disponible en el acceso de recuperación';}}
+  if(c.mode!=='bot'&&$('btnModo')){
+    $('btnModo').disabled=true;$('btnModo').title='El bot requiere una prueba física antes de activarlo. Los chats humanos no cambian.';
+  }
   $('mas')?.querySelectorAll('[data-mas]')?.forEach(el=>{
     if(['buscar','contacto','abrir-wa'].includes(el.dataset.mas))return;
     el.disabled=true;el.dataset.sinRespaldo='';el.title='Aún no disponible en el acceso de recuperación';
@@ -7949,7 +7952,9 @@ function pintaFichaActual(c){
   pintaFicha(c);
   if(!CRM_WEB_RECUPERADO)return;
   const ficha=$('ficha');
+  for(const id of ['ignSoloFicha','ignSoloFichaDes']){const el=$(id);if(el){el.checked=true;el.disabled=true;el.title='Esta ficha del 5644';}}
   ficha?.querySelectorAll('input,textarea,select,button:not(#cerrarFicha):not([data-fccopia])').forEach(el=>{
+    if(el.matches('[data-c="lifecycle_stage"],#etqNueva,#ignTipo,#ignMotivo,#ignMarcar,#ignDeshacer,#etiquetas button'))return;
     el.disabled=true;el.dataset.sinRespaldo='';el.title='Consulta disponible; edición pendiente de la conexión del servidor';
   });
 }
