@@ -1894,10 +1894,9 @@ a.ayuda{color:var(--enlace)}
 .error{margin-top:13px;padding:10px 12px;border-radius:var(--r);font-size:12.5px;
   background:rgba(178,26,26,.1);color:var(--bad);display:none}
 .error.on{display:block}
-.wa-web-recuperado .escribir,.wa-web-recuperado #chatFlujo,.wa-web-recuperado #barraCita{display:none!important}
-.wa-web-recuperado .wa-abrir-chat{padding:10px 16px;flex:none;border-top:1px solid var(--line);background:var(--vidrio-fuerte);-webkit-backdrop-filter:var(--desenfoque);backdrop-filter:var(--desenfoque);font-size:12px}
-.wa-envio-manual{display:flex;align-items:flex-end;flex-wrap:wrap;gap:8px;margin-bottom:5px}.wa-envio-manual textarea{flex:1 1 180px;min-width:0;min-height:42px;max-height:150px;resize:vertical;background:var(--hover);color:var(--fg);padding:10px 15px;border-radius:20px;border:1px solid transparent}.wa-envio-manual textarea:focus{background:var(--panel);border-color:var(--accent);outline:0;box-shadow:var(--foco)}.wa-envio-manual button{min-height:40px;border-radius:20px;padding:0 17px}.wa-envio-manual [role=status]{flex-basis:100%;color:var(--mut)}
-.wa-web-recuperado #barraSeleccion .bsacciones [data-bs]:not([data-bs="copiar"]),.wa-web-recuperado #barraSeleccion .bsreenviar{display:none!important}
+.wa-web-recuperado .escribir,.wa-web-recuperado #chatFlujo,.wa-web-recuperado #barraSeleccion,.wa-web-recuperado #barraCita{display:none!important}
+.wa-web-recuperado .wa-abrir-chat{padding:8px 12px;flex:none;border-top:1px solid var(--border);font-size:13px}
+.wa-envio-manual{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;margin-bottom:6px}.wa-envio-manual textarea{min-width:0;resize:vertical;background:var(--bg);color:var(--fg);padding:8px;border-radius:8px;border:1px solid var(--border)}.wa-envio-manual [role=status]{grid-column:1/-1;color:var(--mut)}
 
 /* --- Aviso flotante -------------------------------------------------------- */
 /* El aviso se apartaba con translate(-50%,140%): 140% de SU alto, que en un aviso de
@@ -7871,7 +7870,7 @@ function abre(c){
   cableaChat(c);
   if (CRM_WEB_RECUPERADO) cableaEnvioManualWeb(c);
   pintaAvisoLinea();
-  pintaFichaActual(c);
+  if (!CRM_WEB_RECUPERADO) pintaFicha(c);
   escuchaMensajes(c.id || c._id);
   if (!CRM_WEB_RECUPERADO) marcaLeido(c);
   pintaChats();
@@ -7935,30 +7934,6 @@ function cableaEnvioManualWeb(c){
     }
     if(!acepta(res))void confirma();
   };
-}
-
-// La ficha completa usa acciones del crmApi anterior que esta ruta local aún no ofrece.
-// Mantener el botón visible con un resumen verificable, sin presentar controles que fallarían.
-function pintaFichaWeb(c){
-  const f=$('ficha'); if(!f)return;
-  const nombre=nombreDe(c),telefono=telefonoLegible(c.wa_phone||c.contact_id||'');
-  const etiquetas=etiquetasDe(c).filter(Boolean);
-  f.innerHTML='<div class="cabeza"><b>Ficha del contacto</b><button id="cerrarFicha" aria-label="Cerrar ficha">×</button></div>'
-    +'<div class="cuerpo"><div class="dato"><div class="k">Nombre</div><div class="v">'+esc(nombre)+'</div></div>'
-    +'<div class="dato"><div class="k">WhatsApp Web</div><div class="v">'+esc(telefono)+'</div></div>'
-    +'<div class="dato"><div class="k">Etapa</div><div class="v">'+esc(String(c.lifecycle_stage||'nuevo').replaceAll('_',' '))+'</div></div>'
-    +'<div class="dato"><div class="k">Último mensaje</div><div class="v">'+esc(c.last_message_preview||'Sin vista previa')+'</div></div>'
-    +(etiquetas.length?'<div class="dato"><div class="k">Etiquetas</div><div class="v">'+etiquetas.map(esc).join(' · ')+'</div></div>':'')
-    +'<p class="aviso">Consulta del historial. La edición de la ficha aún no está habilitada en este acceso.</p></div>';
-  $('cerrarFicha').onclick=()=>{f.classList.remove('on');f.style.display='none';};
-  const ver=$('verFicha'); if(ver)ver.onclick=()=>{
-    const abrir=f.style.display==='none'||!f.classList.contains('on');
-    f.style.display=abrir?'flex':'none';f.classList.toggle('on',abrir);
-  };
-}
-function pintaFichaActual(c){
-  if(CRM_WEB_RECUPERADO)pintaFichaWeb(c);
-  else pintaFicha(c);
 }
 
 // La cabecera del chat abierto, repintada sin volver a montarlo. `sel` es una copia de la ficha
@@ -8265,12 +8240,12 @@ function refrescaSeleccion(){
       refrescaSeleccion.esperando = true;
       ficha.addEventListener('focusout', () => {
         refrescaSeleccion.esperando = false;
-        if (sel) pintaFichaActual(sel);
+        if (sel) pintaFicha(sel);
       }, { once: true });
     }
     return;
   }
-  pintaFichaActual(sel);
+  pintaFicha(sel);
 }
 
 // El compositor dice por que no se puede escribir en este chat y no deja intentarlo. Antes se
@@ -8288,11 +8263,7 @@ function pintaAvisoLinea(){
   const consulta = sucursalEnConsulta(NEGOCIO);
   const av = consulta ? {bloquea:true,titulo:'Plaza en preparación.',
     texto:'Puedes consultar, calcular cotizaciones y guardar notas internas. Los envíos y la automatización se habilitarán al completar el canal propio de Plaza.'}
-    : red.bloquea ? red
-    // El receptor de recuperación no usa el bridgeStatus heredado. Ese espejo puede
-    // indicar «envíos desactivados» aunque el capturador y crmWebSend estén activos.
-    : CRM_WEB_RECUPERADO && sel.source === 'whatsapp_qr' ? {bloquea:false,titulo:'',texto:''}
-    : avisoLineaQr(sel, LINEA_QR);
+    : red.bloquea ? red : avisoLineaQr(sel, LINEA_QR);
   for (const id of ['texto', 'btnEnviar', 'adjImg', 'adjHd', 'adjDoc', 'adjRapida', 'adjCombo', 'adjCotiza', 'adjTpl', 'adjMic']) {
     const e = $(id); if (e) e.disabled = av.bloquea;
   }
@@ -8348,7 +8319,7 @@ function cableaChat(c){
   pintaFlujoChat();
   const refrescaFichaDeFlujo = () => {
     const ficha = $('ficha');
-    if (ficha && !ficha.contains(document.activeElement) && sel) pintaFichaActual(sel);
+    if (ficha && !ficha.contains(document.activeElement) && sel) pintaFicha(sel);
   };
   const etapaChat = $('chatEtapa');
   if (etapaChat) etapaChat.onchange = async () => {
@@ -11125,11 +11096,7 @@ document.addEventListener('click', async ev => {
   // rechaza con un error claro; igual que con los plazos de editar y retirar, no se ofrece un
   // botón que solo puede acabar en error.
   const puedeCitar = !redSocial(sel);
-  // En la ruta local de recuperación, solo estas acciones tienen un resultado real.
-  // No ofrecer editar, borrar, reenviar o reaccionar si el servidor aún las rechaza.
-  if(CRM_WEB_RECUPERADO)menu.innerHTML = '<button data-op="seleccionar">Seleccionar</button>'
-    + '<button data-op="info">Info del mensaje</button><button data-op="copiar">Copiar texto</button>';
-  else menu.innerHTML = yaEliminado ? '<button data-op="copiar">Copiar texto</button>' : (puedeCitar ? '<button data-op="citar">Responder</button>' : '')
+  menu.innerHTML = yaEliminado ? '<button data-op="copiar">Copiar texto</button>' : (puedeCitar ? '<button data-op="citar">Responder</button>' : '')
     + (yaEliminado ? '' : (puedeReaccionar ? '<button data-op="reaccionar">Reaccionar</button>' : '')
     + '<button data-op="reenviar">Reenviar</button>'
     + '<button data-op="seleccionar">Seleccionar</button>'
