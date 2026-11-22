@@ -3936,7 +3936,7 @@ input[type="checkbox"],input[type="radio"]{accent-color:var(--accent)}
 @media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 
 </style>
-<script type="importmap" id="dcarela-local-cloud">{"imports":{"https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js":"./nube-sdk/app.mjs?v=470","https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js":"./nube-sdk/auth.mjs?v=470","https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js":"./nube-sdk/firestore.mjs?v=470"}}</script>
+<script type="importmap" id="dcarela-local-cloud">{"imports":{"https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js":"./nube-sdk/app.mjs?v=478","https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js":"./nube-sdk/auth.mjs?v=478","https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js":"./nube-sdk/firestore.mjs?v=478"}}</script>
 </head>
 <body>
 
@@ -4484,6 +4484,10 @@ let paraConvs = null, sondeoConvs = null, reintentoConvs = null;
 let paraMsgs = null, sondeoMsgs = null, reintentoMsgs = null, escuchaMsgId = '';
 let sondeoConvsEnCurso = false, revisionConvs = 0, revisionMsgs = 0;
 const sondeoMsgsEnCurso = new Set();
+let fallosRespaldoConvs = 0, proximoRespaldoConvs = 0, fallosRespaldoMsgs = 0, proximoRespaldoMsgs = 0;
+function esperaRespaldo(base, fallos){
+  return Math.min(60000, base * 2 ** Math.min(fallos, 4)) + Math.floor(Math.random() * 2000);
+}
 let convsDesdeServidor = false, msgsDesdeServidor = false;
 // Los mismos tipos que firebase-functions/src/ignore-core.js (TIPOS): solo dicen POR QUE se ignora.
 const TIPOS_IGNORAR = { propio:'número propio', linea_negocio:'línea del negocio', familia:'familia',
@@ -4631,8 +4635,8 @@ function actualizaEstadoSincronizacion(){
     return;
   }
   const respaldo = [];
-  if (sondeoConvs) respaldo.push('conversaciones cada 8 s');
-  if (sondeoMsgs) respaldo.push('mensajes cada 5 s');
+  if (sondeoConvs) respaldo.push('conversaciones con reintento');
+  if (sondeoMsgs) respaldo.push('mensajes con reintento');
   marcaEstado(true, respaldo.length
     ? 'Datos actualizados · respaldo ' + respaldo.join(' y ')
     : 'Datos sincronizados · en vivo');
@@ -4695,17 +4699,23 @@ function aplicaConvsCrmWeb(s, modo){
 function detieneRespaldoConvs(){
   if (sondeoConvs) { clearInterval(sondeoConvs); sondeoConvs = null; }
   if (reintentoConvs) { clearTimeout(reintentoConvs); reintentoConvs = null; }
+  fallosRespaldoConvs = 0; proximoRespaldoConvs = 0;
 }
 async function sondeaConversaciones(){
-  if (sondeoConvsEnCurso) return;
+  if (document.hidden || sondeoConvsEnCurso || Date.now() < proximoRespaldoConvs) return;
   sondeoConvsEnCurso = true;
   const revision = revisionConvs;
   try {
     const q = consultaConversaciones();
     const s = await getDocs(q);
-    if (revision === revisionConvs) aplicaConvsCrmWeb(s, 'respaldo cada 8 s');
+    if (revision === revisionConvs) {
+      fallosRespaldoConvs = 0; proximoRespaldoConvs = 0;
+      aplicaConvsCrmWeb(s, 'respaldo de conversaciones');
+    }
   } catch (error) {
     if (revision !== revisionConvs) return;
+    fallosRespaldoConvs++;
+    proximoRespaldoConvs = Date.now() + esperaRespaldo(8000, fallosRespaldoConvs);
     convsDesdeServidor = false;
     marcaEstado(false, 'Sincronización interrumpida: ' + (error?.code || 'sin red'));
   } finally { sondeoConvsEnCurso = false; }
@@ -4713,12 +4723,12 @@ async function sondeaConversaciones(){
 function activaRespaldoConvs(){
   if (!sondeoConvs) {
     void sondeaConversaciones();
-    sondeoConvs = setInterval(() => { if (!document.hidden) void sondeaConversaciones(); }, 8000);
+    sondeoConvs = setInterval(() => { void sondeaConversaciones(); }, 8000);
   }
   if (!reintentoConvs) reintentoConvs = setTimeout(() => {
     reintentoConvs = null;
     escuchaConversaciones();
-  }, 30000);
+  }, 30000 + Math.floor(Math.random() * 5000));
 }
 function escuchaConversaciones(){
   revisionConvs++;
@@ -4741,6 +4751,7 @@ function escuchaConversaciones(){
 function detieneRespaldoMsgs(){
   if (sondeoMsgs) { clearInterval(sondeoMsgs); sondeoMsgs = null; }
   if (reintentoMsgs) { clearTimeout(reintentoMsgs); reintentoMsgs = null; }
+  fallosRespaldoMsgs = 0; proximoRespaldoMsgs = 0;
 }
 function aplicaMensajes(s, idConv){
   if (!sel || (sel.id !== idConv && sel._id !== idConv)) return;
@@ -4759,7 +4770,7 @@ function aplicaMensajes(s, idConv){
 }
 const CAMPOS_MENSAJE_CRM_WEB = ['id','conversation_id','direction','sender','body','msg_type','created_at','occurred_at','updated_at','delivery_status','wamid','read_at','deleted_at','edited_at','media_id','media_url','media_mime','metadata','attachments','quoted_message_id','normalized_text'];
 async function sondeaMensajes(idConv){
-  if (escuchaMsgId !== idConv || sondeoMsgsEnCurso.has(idConv)) return;
+  if (document.hidden || escuchaMsgId !== idConv || sondeoMsgsEnCurso.has(idConv) || Date.now() < proximoRespaldoMsgs) return;
   sondeoMsgsEnCurso.add(idConv);
   const revision = revisionMsgs;
   const base = [where('business_id','==',NEGOCIO), where('conversation_id','==',idConv), ...(CRM_WEB_RECUPERADO ? [select(...CAMPOS_MENSAJE_CRM_WEB)] : [])];
@@ -4770,9 +4781,14 @@ async function sondeaMensajes(idConv){
       if (error?.code !== 'failed-precondition') throw error;
       s = await getDocs(query(collection(db,'crm_messages'), ...base, limit(400)));
     }
-    if (escuchaMsgId === idConv && revision === revisionMsgs) aplicaMensajes(s, idConv);
+    if (escuchaMsgId === idConv && revision === revisionMsgs) {
+      fallosRespaldoMsgs = 0; proximoRespaldoMsgs = 0;
+      aplicaMensajes(s, idConv);
+    }
   } catch (error) {
     if (escuchaMsgId !== idConv || revision !== revisionMsgs) return;
+    fallosRespaldoMsgs++;
+    proximoRespaldoMsgs = Date.now() + esperaRespaldo(5000, fallosRespaldoMsgs);
     msgsDesdeServidor = false;
     actualizaEstadoSincronizacion();
     const cont = $('mensajes');
@@ -4783,12 +4799,12 @@ async function sondeaMensajes(idConv){
 function activaRespaldoMsgs(idConv){
   if (!sondeoMsgs) {
     void sondeaMensajes(idConv);
-    sondeoMsgs = setInterval(() => { if (!document.hidden) void sondeaMensajes(idConv); }, 5000);
+    sondeoMsgs = setInterval(() => { void sondeaMensajes(idConv); }, 5000);
   }
   if (!reintentoMsgs) reintentoMsgs = setTimeout(() => {
     reintentoMsgs = null;
     if (escuchaMsgId === idConv) abreEscuchaMensajes(idConv, false);
-  }, 30000);
+  }, 30000 + Math.floor(Math.random() * 5000));
 }
 function abreEscuchaMensajes(idConv, esRespaldo){
   if (paraMsgs) { paraMsgs(); paraMsgs = null; }

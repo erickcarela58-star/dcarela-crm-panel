@@ -78,10 +78,24 @@ export function queryBody(ref){
     }else body[c.type]=c.values.map(encode);
   }return body;
 }
-const watches=new Map();let watchTimer,busy=false;
-export function watch(ref,next,error){const id=crypto.randomUUID();watches.set(id,{ref,next,error,hash:null,previous:null});if(!watchTimer){watchTimer=setInterval(poll,5000);}void poll();return()=>{watches.delete(id);if(!watches.size){clearInterval(watchTimer);watchTimer=null;}};}
-async function poll(){if(busy||!watches.size)return;busy=true;try{
+const watches=new Map();let watchTimer,busy=false,pollFailures=0,nextPollAt=0;
+const pageVisible=()=>typeof document==='undefined'||!document.hidden;
+function pollWhenVisible(){if(pageVisible())void poll();}
+function onVisibilityChange(){if(pageVisible()){nextPollAt=0;pollWhenVisible();}}
+export function watch(ref,next,error){
+  const id=crypto.randomUUID();watches.set(id,{ref,next,error,hash:null,previous:null});
+  if(!watchTimer){watchTimer=setInterval(pollWhenVisible,5000);if(typeof document!=='undefined')document.addEventListener('visibilitychange',onVisibilityChange);}
+  pollWhenVisible();
+  return()=>{watches.delete(id);if(!watches.size){clearInterval(watchTimer);watchTimer=null;pollFailures=0;nextPollAt=0;if(typeof document!=='undefined')document.removeEventListener('visibilitychange',onVisibilityChange);}};
+}
+async function poll(){if(busy||!watches.size||!pageVisible()||Date.now()<nextPollAt)return;busy=true;try{
   const all=[...watches];for(let i=0;i<all.length;i+=12){const group=all.slice(i,i+12),result=await api('/v1/client/poll',{queries:group.map(([id,w])=>({id,hash:w.hash,...(w.ref.type==='document'?{path:w.ref.path}:queryBody(w.ref))}))});
     for(const r of result.results){const w=watches.get(r.id);if(!w)continue;if(r.error){w.error?.(Object.assign(new Error(r.error),{code:String(r.status)}));continue;}if(r.unchanged)continue;try{const snap=w.ref.type==='document'?snapshot(r.value):querySnapshot(r.value,w.previous);w.next(snap);w.hash=r.hash;w.previous=snap;}catch(error){w.error?.(error);}}
   }
-}catch(e){const error=e.code?e:Object.assign(new Error('Conexión interrumpida'),{code:'unavailable'});for(const w of [...watches.values()])w.error?.(error);}finally{busy=false;}}
+  pollFailures=0;nextPollAt=0;
+}catch(e){
+  pollFailures=Math.min(pollFailures+1,4);
+  nextPollAt=Date.now()+Math.min(60000,5000*2**pollFailures)+Math.floor(Math.random()*2000);
+  const error=e.code?e:Object.assign(new Error('Conexión interrumpida'),{code:'unavailable'});
+  for(const w of [...watches.values()])w.error?.(error);
+}finally{busy=false;}}
