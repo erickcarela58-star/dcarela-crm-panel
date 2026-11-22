@@ -22,3 +22,13 @@
 
 - Envío real de texto desde esta revisión a un cliente y un mensaje nuevo recibido después del despliegue. No se enviaron mensajes de prueba a clientes.
 - Acciones heredadas de media, edición, borrado, transferencia, cambio de etapa, notas y bot necesitan respaldo seguro del servidor local antes de reactivarse. Su presencia visual no equivale a funcionamiento.
+
+## Actualización de la auditoría, 22/11/2026: estado de v480
+
+La lista anterior describe la primera recuperación de las 05:25 UTC y no el estado final del día. Se cotejó `CONTINUIDAD.md`, el código público v480 (`75dfeff0c9cfd22325658ffff377dcdcbb3eab6d`), siete recursos HTTP iguales a Git y el Worker desplegado `7cccfb79-92a4-4b41-a107-93ff03e11ad2` al 100 %.
+
+- **Presentes en el CRM publicado:** compositor y ficha originales, flujo, selección/información/copia, envío manual de texto con `request_id` y consulta de estado, Nuevo chat, etapa, etiquetas, Atendido, confirmación de sesión realizada y la página Canales que ya no confunde el puente heredado con el 5644. El adaptador separa las consultas del chat y pausa o retrasa sondeos en pestañas ocultas y tras errores.
+- **Pruebas aisladas:** `dcarela-crm-v480-canales-qa.cjs` usó usuario/PostgreSQL ficticios: tarjeta, navegación, chat, ficha y un envío al receptor falso, sin errores JS ni escrituras productivas. `crm-web-chat.test.cjs` con `DCARELA_TEST_POSTGRES=1` pasó 1/1, incluidos negocio, etapa, sesión, modo humano y Nuevo chat idempotente. La prueba local anterior de v475 guardó y releyó etapa/Atendido. Etiquetas tienen ruta y controlador pero no un clic autenticado comprobado.
+- **No certificados en producción:** envío real de un texto nuevo y su acuse, clics con sesión del dueño, respuesta del bot, medios antiguos, recuperación completa de historial y causa individual de los 503. Adjuntos, transferencia, edición/borrado y reactivación del bot siguen bloqueados en el acceso de recuperación. El capturador dedicado informó `connected=true` y 19 mensajes directos guardados desde su reinicio, pero el panel no lee aún su heartbeat y por eso Canales muestra «sin verificar».
+
+Esta actualización documental queda en la rama local de trabajo; no se republicó el panel para cambiar el MD.
