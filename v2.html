@@ -7628,7 +7628,9 @@ async function iniciaChat(tel, nombre = ''){
     const caja = $('buscaChat');
     if (caja && caja.value) { caja.value = ''; cierraBusquedaMensajes(); pintaChats(); }
     abre(c);
-    if (r.nueva) avisa('Chat nuevo abierto', 'Tiene WhatsApp. Ya puedes escribirle.');
+    if (r.nueva) avisa('Chat nuevo abierto', r.verificado === false
+      ? 'El número aún no está verificado en WhatsApp. Comprueba el acuse del primer mensaje antes de repetirlo.'
+      : 'Tiene WhatsApp. Ya puedes escribirle.');
   } finally {
     INICIANDO_CHAT = false;
   }
