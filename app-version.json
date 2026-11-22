@@ -1,7 +1,7 @@
 {
-  "version": "2026-11-22-crm-v479-chat-aislado",
+  "version": "2026-11-22-crm-v480-canales-recuperados",
   "channel": "crm",
-  "released_at": "2026-11-22T10:07:00Z",
-  "summary": "El chat consulta en lote propio; módulos todavía cerrados no interrumpen su escucha. Pestañas ocultas pausan sondeos y los fallos retroceden.",
+  "released_at": "2026-11-22T10:15:53Z",
+  "summary": "Canales separa el historial cargado del estado no verificable del receptor; deja de presentar el control heredado como conexión del 5644.",
   "requiere_puente": "2026-11-06-documentos-grandes-v70"
 }
