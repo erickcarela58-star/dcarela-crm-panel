@@ -6048,20 +6048,13 @@ async function stAudiencias(){
     + '<span style="flex:1;font-size:13px">' + esc(nombre)
       + '<i style="display:block;color:var(--meta);font-style:normal;font-size:11.5px">'
       + total + (total === 1 ? ' contacto' : ' contactos') + '</i></span>'
-    + '<button class="btn-linea" data-audpub="' + esc(aud) + '" data-audtipo="texto"' + (total ? '' : ' disabled') + '>Publicar</button>'
     + '<button class="btn-linea" data-audetq="' + esc(aud) + '"' + (total ? '' : ' disabled') + '>Etiquetar</button></div>';
   const filas = (d.familias || []).map((f) => fila('familia:' + f.clave, f.nombre, f.total)).join('')
     + fila('dormidos', 'Dormidos (' + (d.dias || 120) + ' días sin volver a comprar)', d.dormidos || 0)
     + fila('mejores', 'Mejores clientes', d.mejores || 0);
-  c.innerHTML = '<p class="bajada">Quién compró qué, según la caja. <b>Publicar</b> manda un Estado '
-    + 'solo a ese grupo (pasa por las mismas reglas de siempre: nada de ignorados ni de quien '
-    + 'pidió baja). <b>Etiquetar</b> les pone una etiqueta en el chat, para encontrarlos después '
-    + 'desde el buscador de Conversaciones.</p>' + filas;
-  c.querySelectorAll('[data-audpub]').forEach((b) => b.onclick = () => {
-    cierraModal();
-    ST_AUDIENCIA_PENDIENTE = b.dataset.audpub;
-    stCompositor(b.dataset.audtipo);
-  });
+  c.innerHTML = '<p class="bajada">Quién compró qué, según la caja. <b>Etiquetar</b> les pone una '
+    + 'etiqueta en el chat, para encontrarlos después desde el buscador de Conversaciones. '
+    + 'Los Estados se publican siempre a todos los contactos.</p>' + filas;
   c.querySelectorAll('[data-audetq]').forEach((b) => b.onclick = () => stEtiquetaAudiencia(b.dataset.audetq));
 }
 
@@ -6486,10 +6479,10 @@ async function stCompositor(tipo, opciones = {}){
       ? '<button class="st-ctl" data-stc="fuente" title="Tipo de letra" aria-label="Tipo de letra">' + ST_ICO.letra + '</button>'
       + '<button class="st-ctl" data-stc="color" title="Color de fondo" aria-label="Color de fondo">' + ST_ICO.paleta + '</button>'
       : '')
-    + '<select id="stcQuien" aria-label="A quién se le publica">'
-    +   '<option value="prueba">' + esc(ES_ETIQUETAS.prueba) + '</option>'
-    +   '<option value="activos" selected>' + esc(ES_ETIQUETAS.activos) + '</option>'
-    +   '<option value="todos">' + esc(ES_ETIQUETAS.todos) + '</option></select>'
+    // Los Estados se publican siempre a todos los contactos (pedido del dueño, 23/11/2026):
+    // sin filtros de audiencia en el compositor.
+    + '<select id="stcQuien" aria-label="A quién se le publica" title="Se publica a todos los contactos">'
+    +   '<option value="todos" selected>' + esc(ES_ETIQUETAS.todos) + '</option></select>'
     + '<button class="st-enviar" data-stc="enviar" id="stcEnviar" aria-label="Publicar">' + ST_ICO.enviar + '</button></div>';
   d.innerHTML = '<button class="st-ctl st-x" data-stc="cerrar" aria-label="Cerrar">' + ST_ICO.cerrar + '</button>'
     + (tipo === 'texto'
@@ -6566,10 +6559,7 @@ async function stCompositor(tipo, opciones = {}){
     // input abre un selector estable y conserva la primera eleccion.
   }
   // La cifra de cada opción, como en la tarjeta de Difusión.
-  const [r, rFoto] = await Promise.all([
-    llama({ action:'statusAudience', dias: 180 }),
-    llama({ action:'audienciaFoto' }),
-  ]);
+  const r = await llama({ action:'statusAudience', dias: 180 });
   if ($('stComp') !== d) return;
   if (r.ok) {
     ST.comp.conteo = r.data || {};
@@ -6581,27 +6571,6 @@ async function stCompositor(tipo, opciones = {}){
       // rotula con una ventana de días que el servidor no aplica.
       o.textContent = ES_ETIQUETAS[o.value] + ' — ' + n + (n === 1 ? ' contacto' : ' contactos');
     });
-  }
-  // Las audiencias de fotografía, aparte de las tres de siempre: quien compró qué, según la
-  // caja. Un grupo vacío no se ofrece — mandar «a nadie» no es una opción.
-  if (rFoto.ok) {
-    ST.comp.audienciaFoto = rFoto.data || {};
-    const af = ST.comp.audienciaFoto;
-    const opt = (valor, nombre, total) => total
-      ? '<option value="' + esc(valor) + '">' + esc(nombre) + ' — ' + total + (total === 1 ? ' contacto' : ' contactos') + '</option>'
-      : '';
-    const opciones = (af.familias || []).map((f) => opt('familia:' + f.clave, f.nombre, f.total)).join('')
-      + opt('dormidos', 'Dormidos (' + (af.dias || 120) + ' días sin comprar)', af.dormidos)
-      + opt('mejores', 'Mejores clientes', af.mejores);
-    if (opciones) {
-      $('stcQuien').insertAdjacentHTML('beforeend', '<optgroup label="Por fotografía">' + opciones + '</optgroup>');
-    }
-  }
-  if (ST_AUDIENCIA_PENDIENTE) {
-    if ([...$('stcQuien').options].some((o) => o.value === ST_AUDIENCIA_PENDIENTE)) {
-      $('stcQuien').value = ST_AUDIENCIA_PENDIENTE;
-    }
-    ST_AUDIENCIA_PENDIENTE = '';
   }
 }
 
@@ -27728,9 +27697,9 @@ function montaBroadcast(){
     + '<div class="par">'
     +   '<div class="campo"><label>Foto (opcional)</label>'
     +     '<input id="esFoto" type="file" accept="image/*"></div>'
-    +   '<div class="campo"><label>Quién lo ve</label><select id="esQuien">'
-    +     '<option value="prueba">Solo mis números (prueba)</option>'
-    +     '<option value="todos">Todos los clientes</option>'
+    // Los Estados se publican siempre a todos los contactos (pedido del dueño, 23/11/2026).
+    +   '<div class="campo"><label>Quién lo ve</label><select id="esQuien" title="Se publica a todos los contactos">'
+    +     '<option value="todos" selected>Todos los contactos</option>'
     +   '</select></div>'
     + '</div>'
     + '<div id="esPrevia"></div>'
@@ -28200,7 +28169,7 @@ function cableaPackEstados(){
 // el grupo, nunca los telefonos.
 let ES_FOTO = null;
 const ES_ETIQUETAS = { prueba:'Solo mis números (prueba)', activos:'Clientes con movimiento',
-  todos:'Todos los clientes' };
+  todos:'Todos los contactos' };
 
 // Fecha Y hora: en un mismo dia se publica mas de un estado, y '23 sep' no dice cual es cual.
 function esCuando(v){
