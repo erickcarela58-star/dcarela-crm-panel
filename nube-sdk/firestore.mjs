@@ -19,7 +19,7 @@ export async function getDocs(ref){
   const body=queryBody(ref);if(body.limit)return querySnapshot(await api('/v1/client/query',body));
   // Exhaust unbounded legacy reads by pages; never silently truncate a financial history.
   if(!body.orderBy.some(o=>o.field==='__name__'))body.orderBy.push({field:'__name__',direction:body.orderBy.at(-1)?.direction||'asc'});
-  const pageSize=body.select?160:1000;
+  const pageSize=body.select?500:1000;
   body.limit=pageSize;const documents=[];
   while(true){const page=await api('/v1/client/query',body);documents.push(...page.documents);if(page.documents.length<pageSize)break;
     if(documents.length>=100000)throw new Error('Consulta muy grande; filtra por fecha');

@@ -1898,7 +1898,6 @@ a.ayuda{color:var(--enlace)}
 .wa-web-recuperado #waManualEstado:empty{display:none}
 .wa-web-recuperado [data-sin-respaldo]:disabled{opacity:.48;cursor:not-allowed}
 .wa-web-recuperado #modoPorque{display:none!important}
-.wa-web-recuperado #chatEtiquetas{pointer-events:none;opacity:.5}
 .wa-web-recuperado .escribir .hd:disabled{background:transparent;color:var(--mut)}
 
 /* --- Aviso flotante -------------------------------------------------------- */
@@ -3936,7 +3935,7 @@ input[type="checkbox"],input[type="radio"]{accent-color:var(--accent)}
 @media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 
 </style>
-<script type="importmap" id="dcarela-local-cloud">{"imports":{"https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js":"./nube-sdk/app.mjs?v=479","https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js":"./nube-sdk/auth.mjs?v=479","https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js":"./nube-sdk/firestore.mjs?v=479"}}</script>
+<script type="importmap" id="dcarela-local-cloud">{"imports":{"https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js":"./nube-sdk/app.mjs?v=479","https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js":"./nube-sdk/auth.mjs?v=479","https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js":"./nube-sdk/firestore.mjs?v=482"}}</script>
 </head>
 <body>
 
@@ -4643,7 +4642,7 @@ function actualizaEstadoSincronizacion(){
 }
 function aplicaConversaciones(s, modo = 'en vivo'){
     convsDesdeServidor = s?.metadata?.fromCache !== true;
-    const siguientes = s.docs.map(d => ({ ...d.data(), _id:d.id })).filter(perteneceAlCanal).filter(c => !c.merged_into && (!CRM_WEB_RECUPERADO || c.source === 'whatsapp_qr'))
+    const siguientes = s.docs.map(d => ({ ...d.data(), _id:d.id })).filter(perteneceAlCanal).filter(c => !c.merged_into)
       .sort((a,b) => String(b.last_message_at||'').localeCompare(String(a.last_message_at||'')));
     // Un cambio de conexión o un sondeo idéntico no reconstruye cientos de filas.
     if (siguientes.length && JSON.stringify(siguientes) === JSON.stringify(CONVS_TODAS)) { actualizaEstadoSincronizacion(); return; }
@@ -4670,13 +4669,14 @@ function aplicaConversaciones(s, modo = 'en vivo'){
     vigilaAtencion();
     vigilaLlamadas();
 }
-const CAMPOS_CRM_WEB = ['id','channel','source','business_number','wa_phone','wa_chat_jid','wa_lid_only','contact_id','contact_name','display_name','customer_name','contact_alias','last_message_at','last_message_preview','last_inbound_preview','last_customer_reply_at','unread','unread_count','mode','bot_paused','lifecycle_stage','lead_status','priority','reservation_status','human_handoff_required','human_handoff_requested_at','human_handoff_reason','human_handoff_latest','ignored_at','ignored_kind','proactive_blocked_at','muted_until','pinned','pinned_at','labels','etiquetas','merged_into','last_call_at','last_call_status','last_outbound_at','last_inbound_at','first_seen_at','status'];
+const CAMPOS_CRM_WEB = ['id','channel','source','business_id','business_number','wa_phone','wa_chat_jid','wa_lid_only','contact_id','contact_name','display_name','customer_name','contact_alias','profile_picture_url','avatar_url','photo_url','last_message_at','last_message_preview','last_inbound_preview','last_customer_reply_at','last_human_reply_at','unread','unread_count','unread_human_count','mode','bot_paused','bot_pause_reason','lifecycle_stage','lead_status','priority','reservation_status','scheduled_at','tentative_date','follow_up_at','interested_category','interested_service','selected_combo_id','selected_combo_name','selected_combo_price','session_status','attended_at','web_reserva_at','next_step_suggested','reserva_canal','makeup_selection','makeup_price','last_intent','conversation_summary','pos_client_id','pos_client_nombre','assigned_to','budget_range','reminders_opt_in','followups_opt_in','marketing_opt_in','human_handoff_required','human_handoff_requested_at','human_handoff_reason','human_handoff_latest','ignored_at','ignored_kind','proactive_blocked_at','muted_until','pinned','pinned_at','labels','etiquetas','merged_into','last_call_at','last_call_status','last_outbound_at','last_inbound_at','first_seen_at','status','atendido_at','cola_omitida_at'];
 let rosterCrmWeb = null;
 function consultaConversaciones(recientes = true){
   const ref = collection(db,'crm_conversations'), empresa = where('business_id','==',NEGOCIO);
   if (!CRM_WEB_RECUPERADO) return query(ref, empresa);
-  const cuerpo = [empresa, where('source','==','whatsapp_qr'), select(...CAMPOS_CRM_WEB)];
-  return recientes ? query(ref,...cuerpo,orderBy('last_message_at','desc'),limit(120)) : query(ref,...cuerpo);
+  return recientes
+    ? query(ref, empresa, where('source','in',['whatsapp_qr','whatsapp_cloud']), select(...CAMPOS_CRM_WEB), orderBy('last_message_at','desc'), limit(120))
+    : query(ref, empresa, select(...CAMPOS_CRM_WEB));
 }
 function aplicaConvsCrmWeb(s, modo){
   if (!CRM_WEB_RECUPERADO || s?.metadata?.fromCache === true) return aplicaConversaciones(s, modo);
@@ -4691,7 +4691,7 @@ function aplicaConvsCrmWeb(s, modo){
   actual.leyendo = true;
   getDocs(consultaConversaciones(false)).then(todo => {
     if (rosterCrmWeb !== actual || auth.currentUser?.uid !== actual.uid) return;
-    for (const doc of todo.docs) if (!actual.rows.has(doc.id)) actual.rows.set(doc.id,doc);
+    for (const doc of todo.docs) actual.rows.set(doc.id,doc);
     actual.completo = true;
     aplicaConversaciones({docs:[...actual.rows.values()],metadata:s.metadata},modo);
   }).catch(()=>{}).finally(()=>{actual.leyendo = false;});
@@ -6956,7 +6956,8 @@ function estadoQr(c, linea){
 // esconde, pero NO se borra: el filtro de su linea la trae, y reaparece sola al volver a vincular.
 // La pausa NO esconde: la linea sigue recibiendo y se reanuda con un boton.
 function oculta(c){
-  if (CRM_WEB_RECUPERADO && c.source === 'whatsapp_qr' && lineaDe(c) === TELS.web) return false;
+  const lineaActiva = LINEA_QR?.numero || TELS.web;
+  if (CRM_WEB_RECUPERADO && c.source === 'whatsapp_qr' && (!lineaActiva || lineaDe(c) === lineaActiva)) return false;
   const e = estadoQr(c, LINEA_QR);
   return e === 'otra_linea' || e === 'sin_puente';
 }
@@ -7888,7 +7889,7 @@ function abre(c){
   resuelveAvatares();
   cableaChat(c);
   pintaAvisoLinea();
-  if (CRM_WEB_RECUPERADO) cableaEnvioManualWeb(c);
+  if (CRM_WEB_RECUPERADO && canalDe(c) === 'whatsapp_qr') cableaEnvioManualWeb(c);
   pintaFichaActual(c);
   escuchaMensajes(c.id || c._id);
   if (!CRM_WEB_RECUPERADO) marcaLeido(c);
@@ -7900,17 +7901,15 @@ function cableaEnvioManualWeb(c){
   const uid=auth.currentUser?.uid,conversation=c._id||c.id;
   if(!input||!button||!status||!uid||!conversation)return;
   input.maxLength=4000;
-  // Las piezas originales del chat permanecen a la vista. Se bloquean solo las
-  // acciones cuyo crmApi anterior no está disponible en el acceso de recuperación.
-  const sinRespaldo=['adjImg','adjHd','adjDoc','adjRapida','adjCombo','adjCotiza','adjTpl','adjMic',
-    'btnTransferir','btnAgendar'];
-  for(const id of sinRespaldo){const el=$(id);if(el){el.disabled=true;el.dataset.sinRespaldo='';el.title='Aún no disponible en el acceso de recuperación';}}
+  // WhatsApp Web usa el capturador/envío manual de texto; Agenda, ficha, cotizaciones y respuestas rápidas siguen activos.
+  const sinRespaldo=['adjImg','adjHd','adjDoc','adjTpl','adjMic','btnTransferir'];
+  for(const id of sinRespaldo){const el=$(id);if(el){el.disabled=true;el.dataset.sinRespaldo='';el.title='Solo texto manual por WhatsApp Web; usa WhatsApp oficial para plantillas o medios';}}
   if(c.mode!=='bot'&&$('btnModo')){
-    $('btnModo').disabled=true;$('btnModo').title='El bot requiere una prueba física antes de activarlo. Los chats humanos no cambian.';
+    $('btnModo').disabled=true;$('btnModo').title='Los chats humanos responden manualmente en recuperación.';
   }
   $('mas')?.querySelectorAll('[data-mas]')?.forEach(el=>{
-    if(['buscar','contacto','abrir-wa'].includes(el.dataset.mas))return;
-    el.disabled=true;el.dataset.sinRespaldo='';el.title='Aún no disponible en el acceso de recuperación';
+    if(['buscar','contacto','recordar','abrir-wa'].includes(el.dataset.mas))return;
+    el.disabled=true;el.dataset.sinRespaldo='';el.title='Solo disponible en conexión directa';
   });
   const endpoint=String(CFG.firebaseFunctionsBase||'').replace(/\/$/,'')+'/crmWebSend';
   const key='dcarela-wa-envio:'+uid+':'+conversation;
@@ -7968,13 +7967,6 @@ function cableaEnvioManualWeb(c){
 
 function pintaFichaActual(c){
   pintaFicha(c);
-  if(!CRM_WEB_RECUPERADO)return;
-  const ficha=$('ficha');
-  for(const id of ['ignSoloFicha','ignSoloFichaDes']){const el=$(id);if(el){el.checked=true;el.disabled=true;el.title='Esta ficha del 5644';}}
-  ficha?.querySelectorAll('input,textarea,select,button:not(#cerrarFicha):not([data-fccopia])').forEach(el=>{
-    if(el.matches('[data-c="lifecycle_stage"],#etqNueva,#ignTipo,#ignMotivo,#ignMarcar,#ignDeshacer,#etiquetas button'))return;
-    el.disabled=true;el.dataset.sinRespaldo='';el.title='Consulta disponible; edición pendiente de la conexión del servidor';
-  });
 }
 
 // La cabecera del chat abierto, repintada sin volver a montarlo. `sel` es una copia de la ficha
@@ -8307,8 +8299,9 @@ function pintaAvisoLinea(){
     : red.bloquea ? red
     : CRM_WEB_RECUPERADO && sel.source === 'whatsapp_qr' ? {bloquea:false,titulo:'',texto:''}
     : avisoLineaQr(sel, LINEA_QR);
+  const soloTextoQrRec = CRM_WEB_RECUPERADO && canalDe(sel) === 'whatsapp_qr';
   for (const id of ['texto', 'btnEnviar', 'adjImg', 'adjHd', 'adjDoc', 'adjRapida', 'adjCombo', 'adjCotiza', 'adjTpl', 'adjMic']) {
-    const e = $(id); if (e) e.disabled = av.bloquea || (CRM_WEB_RECUPERADO && id !== 'texto' && id !== 'btnEnviar');
+    const e = $(id); if (e) e.disabled = av.bloquea || (soloTextoQrRec && !['texto','btnEnviar','adjRapida','adjCombo','adjCotiza'].includes(id));
   }
   if (consulta) {
     const cotiza = $('adjCotiza'); if (cotiza) cotiza.disabled = false;
@@ -15907,8 +15900,8 @@ function bridgeControlsHtml(p){
   return '<div class="bridge-tools">'
     + '<button class="btn-linea" id="bridgeRefreshBtn">Actualizar estado</button>'
     + '<input id="bridgePairPhone" class="entrada-linea" inputmode="numeric" '
-    +   'placeholder="18091234567" value="' + esc(soloDigitos(p.connected_phone || p.requested_phone || p.last_linked_phone) || TELEFONO_PUENTE) + '" '
-    +   'aria-label="Número a vincular" title="Código de país y solo dígitos">'
+    +   'placeholder="Ej: 18091234567 (este u otro número)" value="' + esc(soloDigitos(p.connected_phone || p.requested_phone || p.last_linked_phone) || TELEFONO_PUENTE) + '" '
+    +   'aria-label="Número a vincular" title="Escribe el mismo u otro número con código de país y solo dígitos">'
     + '<button class="btn-linea" id="bridgePairBtn">Generar código</button>'
     + '<button class="btn-linea" id="bridgeActivateBtn" hidden>Activar envíos de este número</button>'
     + '<button class="btn-linea" id="bridgePauseBtn">Pausar envíos</button>'
@@ -15920,10 +15913,6 @@ function bridgeControlsHtml(p){
     +   (botEnabled ? 'encendido' : 'apagado') + '</button>'
     + '<div class="bridge-code-panel" id="bridgeCodePanel">'
     +   '<div class="codigo" id="bridgePairCode">--</div>'
-    // El codigo de vinculacion va atado a UN numero, y el panel no decia a cual. Este puente
-    // solo admite la linea Fotos --el servidor rechaza cualquier otra-- asi que el codigo
-    // salia siempre para ese numero y quien lo metia en otro telefono recibia de WhatsApp un
-    // "no se puede vincular dispositivo" que no explica nada. Ahora se dice antes de teclear.
     +   '<p class="bridge-meta" id="bridgeCodeFor"></p>'
     +   '<p class="bridge-meta" id="bridgeCodeMeta">Preparando el código seguro…</p>'
     +   '<button class="btn-linea danger" id="bridgeCancelPair">Cancelar</button>'
@@ -15933,6 +15922,26 @@ function bridgeControlsHtml(p){
     + '<p class="bridge-meta" id="bridgeRebuildState"></p>'
     + '<p class="bridge-meta mal" id="bridgeError"></p>'
     + '</div>';
+}
+
+function actualizaBotonParPuente(){
+  const pair = $('bridgePairBtn');
+  if (!pair) return;
+  const status = String(bridgeControlState.status || bridgeControlState.state || 'offline').toLowerCase();
+  const active = ['requested','generating','code_ready','connecting','rebuild_requested','rebuild_clearing'].includes(status);
+  const hostOnline = bridgeControlState.host_online === true;
+  const connected = status === 'connected';
+  const typed = soloDigitos($('bridgePairPhone')?.value);
+  const linked = soloDigitos(bridgeControlState.connected_phone);
+  const sameLinkedPhone = Boolean(typed && linked && linked === typed);
+  const otroNumero = Boolean(connected && typed && !sameLinkedPhone && /^[1-9][0-9]{7,14}$/.test(typed));
+  const retry = sameLinkedPhone && ['disconnected','error'].includes(status)
+    && !['logged_out','connection_replaced','pairing_connection_closed','pairing_code_expired'].includes(String(bridgeControlState.last_error_code || ''));
+  pair.disabled = !hostOnline || active || (connected && !otroNumero);
+  pair.textContent = active ? 'Procesando…'
+    : (otroNumero ? 'Conectar otro número'
+      : (connected ? 'Ya vinculado'
+        : (retry ? 'Reintentar conexión' : 'Generar código')));
 }
 
 function renderBridgeControlState(state, explicitError = ''){
@@ -15956,13 +15965,7 @@ function renderBridgeControlState(state, explicitError = ''){
   const historyStatus = String(bridgeControlState.history_sync_status || 'idle');
   const historyActive = ['requested','running','waiting'].includes(historyStatus);
   const pair = $('bridgePairBtn');
-  if (pair) {
-    const sameLinkedPhone = soloDigitos(bridgeControlState.connected_phone) === soloDigitos($('bridgePairPhone')?.value);
-    const retry = sameLinkedPhone && ['disconnected','error'].includes(status)
-      && !['logged_out','connection_replaced','pairing_connection_closed','pairing_code_expired'].includes(String(bridgeControlState.last_error_code || ''));
-    pair.disabled = !hostOnline || active || connected;
-    pair.textContent = active ? 'Procesando…' : (connected ? 'Ya vinculado' : (retry ? 'Reintentar conexión' : 'Generar código'));
-  }
+  actualizaBotonParPuente();
   const activar = $('bridgeActivateBtn');
   if (activar) {
     const bloqueado = String(bridgeControlState.transport_mode || 'reconnect_only') !== 'active';
@@ -16111,6 +16114,10 @@ async function requestBridgePairing(){
   }
   // Se deja dicho ANTES de que salga el codigo: es lo unico que evita teclearlo donde no va.
   const bonito = phone.replace(/^1(\d{3})(\d{3})(\d{4})$/, '$1-$2-$3');
+  const actual = soloDigitos(bridgeControlState.connected_phone);
+  if (actual && actual !== phone && String(bridgeControlState.status || '').toLowerCase() === 'connected') {
+    if (!await confirmaAqui('Se cerrará la sesión del ' + telefonoLegible(actual) + ' para vincular el ' + bonito + '.\n\nLos chats guardados se conservan.\n\n¿Conectar otro WhatsApp?')) return;
+  }
   const para = $('bridgeCodeFor');
   const reintento = $('bridgePairBtn')?.textContent === 'Reintentar conexión';
   if (para) para.innerHTML = reintento
@@ -16180,6 +16187,7 @@ async function togglePhotoBot(){
 }
 
 function bindBridgeControls(){
+  if ($('bridgePairPhone')) $('bridgePairPhone').oninput = actualizaBotonParPuente;
   if ($('bridgePairBtn')) $('bridgePairBtn').onclick = requestBridgePairing;
   if ($('bridgeCancelPair')) $('bridgeCancelPair').onclick = cancelBridgePairing;
   if ($('bridgePauseBtn')) $('bridgePauseBtn').onclick = toggleBridgePause;
@@ -16647,73 +16655,37 @@ async function pintaCanalesPlaza(cont){
     + '</p></div>';
 }
 
-function pintaCanalesRecuperado(cont, aviso = '', estadoWeb = null){
-  const todas = CONVS_TODAS.filter(c => canalDe(c) === 'whatsapp_qr');
-  const capturadas = todas.filter(c => lineaDe(c) === TELS.web);
-  const heredadas = todas.filter(c => lineaDe(c) !== TELS.web);
-  const ultimo = capturadas.map(c => Date.parse(c.last_message_at || ''))
-    .filter(Number.isFinite).sort((a,b) => b-a)[0];
-  const ultimaActividad = ultimo ? ' Última actividad registrada: '
-    + new Date(ultimo).toLocaleString('es-DO',{day:'numeric',month:'short',hour:'numeric',minute:'2-digit'}) + '.' : '';
-  const tarjetaRecuperada = (nombre, resumen, detalle, acciones = '', estado = 'sin verificar') =>
-    '<div class="canal"><div class="cabecera-canal">'
-    + '<span class="clogo" style="background:#0b7f6b22;color:#0b7f6b">' + LOGO_WA + '</span>'
-    + '<div class="cinfo"><b>' + esc(nombre) + '</b><span>' + esc(resumen) + '</span></div>'
-    + '<i class="chip ' + (estado === 'captura conectada' ? 'ok' : 'medio') + '">' + esc(estado) + '</i></div><p class="cdetalle">' + detalle + '</p>'
-    + (acciones ? '<div class="cacciones">' + acciones + '</div>' : '') + '</div>';
-  cont.innerHTML = tarjetaRecuperada('WhatsApp Web · ' + telefonoLegible(TELS.web),
-    capturadas.length + ' conversación(es) cargadas en esta vista',
-    'Esta vista muestra mensajes guardados en el CRM.' + esc(ultimaActividad)
-      + (estadoWeb?.verified ? ' Captura observada: ' + esc(new Date(estadoWeb.observedAt).toLocaleString('es-DO'))
-        + '. Comprueba un mensaje y su acuse antes de dar por completa la recepción.'
-        : ' El estado vivo de la captura dedicada aún no está disponible.'),
-    '<button class="btn-linea" id="canalesRecuperadosActualizar">Actualizar conversaciones</button>'
-      + '<button class="btn-linea" id="canalesRecuperadosAbrir">Abrir bandeja</button>',
-    estadoWeb?.verified ? (estadoWeb.state === 'connected' ? 'captura conectada' : 'captura desconectada') : 'sin verificar')
-    + tarjetaRecuperada('WhatsApp oficial (API)',
-      'Historial no cargado durante esta recuperación',
-      estadoWeb?.official?.verified
-        ? 'Meta aceptó el token y confirmó la suscripción de mensajes a este receptor. Última comprobación: '
-          + esc(new Date(estadoWeb.official.observedAt).toLocaleString('es-DO'))
-          + '. Falta comprobar un mensaje entrante y su acuse antes de confirmar la entrega.'
-        : 'La API oficial no tiene una comprobación vigente. No se activan envíos ni bot desde esta tarjeta.',
-      '', estadoWeb?.official?.verified ? 'API configurada' : 'sin verificar')
-    + (heredadas.length ? tarjetaRecuperada('WhatsApp Web · otros números',
-      heredadas.length + ' conversación(es) históricas',
-      'Estas fichas no pertenecen al receptor dedicado del ' + esc(telefonoLegible(TELS.web))
-        + '. El control del puente anterior no verifica su sesión actual.') : '')
-    + (aviso ? '<p class="bridge-meta mal">' + esc(aviso) + '</p>' : '');
-  const refresh = $('canalesRecuperadosActualizar');
-  if(refresh)refresh.onclick=async()=>{
-    refresh.disabled=true;refresh.textContent='Actualizando…';
-    const [,status] = await Promise.all([sondeaConversaciones(),llama({action:'waWebStatus',sucursal_de_trabajo:'dcarela'})]);
-    if($('canalesLista')===cont)pintaCanalesRecuperado(cont,
-      convsDesdeServidor ? '' : 'No se pudieron actualizar las conversaciones. Conservamos la última lista visible.',status.ok ? status : null);
-  };
-  const abrir = $('canalesRecuperadosAbrir');
-  if(abrir)abrir.onclick=()=>ve('conversations');
+function pintaCanalesRecuperado(){
+  return pintaCanales();
 }
 
-async function pintaCanales(){
+async function pintaCanales(forzarProbe = false){
   const cont = $('canalesLista'); if (!cont) return;
   cont.innerHTML = '<p class="bajada"><span class="cargando"></span> Comprobando…</p>';
-  if (CRM_WEB_RECUPERADO) {
-    const status = await llama({action:'waWebStatus',sucursal_de_trabajo:'dcarela'});
-    return pintaCanalesRecuperado(cont,'',status.ok ? status : null);
-  }
   if (NEGOCIO === 'plaza-artesanal') return pintaCanalesPlaza(cont);
 
-  const [estado, puente] = await Promise.all([
+  const [estado, puente, estadoWeb] = await Promise.all([
     llama({ action:'transportStatus' }),
     llama({ action:'bridgeStatus' }),
+    llama({ action:'waWebStatus', sucursal_de_trabajo:'dcarela', ...(forzarProbe ? { probe:true } : {}) }),
   ]);
   const t = estado.ok ? (estado.transport || estado) : {};
-  const p = puente.ok ? (puente.bridge || puente) : {};
+  let p = puente.ok ? (puente.bridge || puente) : {};
+  if (!puente.ok && estadoWeb?.ok) {
+    p = {
+      status: estadoWeb.state === 'connected' ? 'connected' : 'disconnected',
+      connected: estadoWeb.state === 'connected',
+      connected_phone: estadoWeb.line || TELS.web,
+      last_linked_phone: estadoWeb.line || TELS.web,
+      host_online: estadoWeb.verified === true,
+      host_last_seen_at: estadoWeb.observedAt || null,
+      paused: estadoWeb.paused === true,
+    };
+  } else if (estadoWeb?.ok && estadoWeb.verified && !p.host_online) {
+    p = { ...p, host_online: true, host_last_seen_at: estadoWeb.observedAt || p.host_last_seen_at };
+  }
   bridgeControlState = p;
-  // Esta vista ya sabe como esta la linea: se comparte con la bandeja por la MISMA formula que usa
-  // la escucha en vivo. Antes aqui habia otra (con la pausa), que escondia las 580 fichas del
-  // numero conectado solo por tener los envios en pausa.
-  if (puente.ok) fijaLineaQr(p, { enVivo:false });
+  if (puente.ok || estadoWeb?.ok) fijaLineaQr(p, { enVivo:false });
 
   // Las cuentas incluyen las ocultas: esta tarjeta es donde se mira que hay en cada canal.
   const cuenta = clave => CONVS_TODAS.filter(c => canalDe(c) === clave).length;
@@ -16730,15 +16702,6 @@ async function pintaCanales(){
     return [...agrupa(CONVS).map(([k, n]) => n + ' de ' + nombre(k)),
       ...agrupa(CONVS_OCULTAS).map(([k, n]) => n + ' ocultas de ' + nombre(k))].join(' · ');
   };
-  // "Conectado" no quiere decir que llegue nada. Una red puede estar suscrita, con su token
-  // vivo y su historial importado, y aun asi no entregar un solo mensaje nuevo -- que es
-  // exactamente lo que pasa con Instagram y Messenger mientras la app siga sin publicar en
-  // Meta. La tarjeta se veia en verde igual, y eso hace creer que el canal esta atendiendo
-  // clientes cuando lleva meses mudo.
-  //
-  // La fecha del ultimo mensaje ENTRANTE no se puede discutir ni se queda vieja: si hoy
-  // entra uno, se actualiza sola. Vale para los cuatro canales, no solo para las redes: un
-  // WhatsApp callado tres semanas tambien es algo que hay que ver.
   const ultimoEntrante = (clave) => {
     const fechas = CONVS.filter(c => canalDe(c) === clave)
       .map(c => String(c.last_customer_reply_at || '')).filter(Boolean).sort();
@@ -16749,9 +16712,6 @@ async function pintaCanales(){
     return ' · último recibido ' + (dias <= 0 ? 'hoy' : dias === 1 ? 'ayer' : 'hace ' + dias + ' días');
   };
 
-  // 'etiqueta' permite un cuarto estado cuando 'conectado / sin conectar / sin usar' no
-  // alcanza. El caso real: vinculado pero en pausa, que salia como "sin conectar" -- y por eso
-  // se volvia a vincular una y otra vez algo que solo necesitaba pulsar Reanudar.
   const tarjeta = (clave, listo, detalle, acciones, etiqueta) => {
     const d = CANALES[clave];
     return '<div class="canal">'
@@ -16769,29 +16729,14 @@ async function pintaCanales(){
       + '</div>';
   };
 
-  // El estado de una red no es "hay conversaciones": es si la pagina esta suscrita. Sin
-  // suscripcion Meta no manda un solo webhook, y la tarjeta decia "conectado" igual.
-  // El estado viene de socialStatus, que devuelve solo lo que se puede enseñar. Los
-  // tokens de usuario y de pagina se quedan en el servidor: sacarlos por la via generica
-  // de datos habria puesto dos credenciales en el navegador.
   const est = await llama({ action:'socialStatus' });
   const redes = est.ok ? (est.redes || {}) : {};
-  // El mismo interruptor que ve la bandeja. Si alguien lo cambio en otra pestana, entrar aqui lo
-  // trae y la lista se rehace sola, igual que hace fijaLineaQr con el puente.
   if (est.ok) fijaRedesActivas(est.activas === true);
-  // El resultado de una importacion vivia SOLO en un aviso que se borra a los 4,2 segundos,
-  // y la importacion tarda unos veinte. O sea que quien pulsa el boton, mira a otro lado
-  // mientras espera --que es lo que se hace-- y vuelve, no encuentra el resultado en ninguna
-  // parte. Y si no entro ningun mensaje, la pantalla queda exactamente igual que antes: la
-  // unica lectura posible es "no hizo nada". Paso de verdad, tres veces seguidas.
-  //
-  // Ahora el resultado se queda escrito en la tarjeta del canal hasta la siguiente.
   const tarjetaRed = (clave, estadoGuardado, detalle) => {
     const hay = cuenta(clave);
     const suscrita = estadoGuardado?.suscrita === true;
     const conectada = estadoGuardado?.conectado === true;
     const listo = suscrita ? true : (conectada || hay ? false : null);
-    // Facebook invalida la sesion (p. ej. al cambiar la contrasena): el CRM lo detecta solo y lo dice aqui, con el remedio.
     const caida = estadoGuardado?.token_caido === true;
     return tarjeta(clave, caida ? false : listo,
       detalle
@@ -16815,51 +16760,52 @@ async function pintaCanales(){
       + (conectada ? '<button class="btn-linea" data-sync="' + clave + '">Importar historial</button>' : ''));
   };
 
-  const oficialListo = t.ready === true || t.state === 'ready';
+  const oficialListo = t.ready === true || t.state === 'ready' || estadoWeb?.official?.verified === true;
+  const oficialObsAt = t.observedAt || estadoWeb?.official?.observedAt || '';
+  const oficialVerificadoTexto = oficialListo
+    ? 'verificado · conectado'
+    : (t.state === 'missing_credentials' ? 'sin credenciales' : 'sin conectar');
   const estadoPuente = String(p.state || p.status || '').toLowerCase();
   const puenteVinculado = (p.connected === true || estadoPuente === 'connected' || estadoPuente === 'ready')
     && p.host_online !== false;
   const puenteVinculadoEnPausa = puenteVinculado && p.paused === true;
   const puenteListo = puenteVinculado && p.paused !== true;
+  const lineaActivaLabel = telefonoLegible(p.connected_phone || estadoWeb?.line || p.last_linked_phone || TELS.web);
 
   cont.innerHTML =
     tarjeta('whatsapp_cloud', oficialListo,
       oficialListo
-        ? 'Número ' + esc(CFG.businessDisplayNumber || CFG.businessNumber || '') + '. Entregando mensajes.'
+        ? 'Número <b>' + esc(CFG.businessDisplayNumber || CFG.businessNumber || '') + '</b>'
+          + (t.display_phone_number ? ' (' + esc(t.display_phone_number) + ')' : '')
+          + '. Token y suscripción verificados con Meta'
+          + (t.quality_rating ? ' · calidad ' + esc(t.quality_rating) : '')
+          + (Number(t.pending_webhooks) > 0 ? ' · <b>' + Number(t.pending_webhooks) + '</b> webhook(s) pendientes' : '')
+          + (oficialObsAt ? ' · comprobado ' + esc(new Date(oficialObsAt).toLocaleString('es-DO',{hour:'numeric',minute:'2-digit'})) : '') + '.'
         : 'Meta no está conectada al transporte' + (t.last_error_code ? ' (error ' + esc(String(t.last_error_code)) + ')' : '')
-          + '. Reconectar exige el App Secret y se hace con scripts/conectar_meta_firebase.ps1, no desde aquí.',
-      '<button class="btn-linea" data-canal-bot="official">Bot de este canal: '
-        + (estado.bot_enabled ? 'encendido' : 'apagado') + '</button>')
+          + '. Pulsa «Verificar API ahora» para comprobar credenciales y suscripción con Meta.',
+      '<button class="btn-linea" data-probar-api="1">Verificar API ahora</button>'
+      + '<button class="btn-linea" data-canal-bot="official">Bot de este canal: '
+        + ((estado.bot_enabled ?? t.bot_enabled) ? 'encendido' : 'apagado') + '</button>'
+      + '<button class="btn-linea" data-ver-bandeja="whatsapp_cloud">Abrir bandeja oficial</button>',
+      { clase: oficialListo ? 'ok' : 'mal', texto: oficialVerificadoTexto })
 
-    // Vinculado-pero-en-pausa salia como "sin conectar", igual que sin vincular. El dueno
-    // cerraba sesion y volvia a vincular una y otra vez para arreglar algo que solo necesitaba
-    // un boton. Se distingue.
     + tarjeta('whatsapp_qr', puenteListo ? true : (cuenta('whatsapp_qr') ? false : null),
       (puenteListo
-        ? 'Segundo número conectado por WhatsApp Web. <b>No hay ventana de 24 h ni plantillas</b>: '
-          + 'se escribe como desde el teléfono, a cualquier contacto y en cualquier momento.'
+        ? 'Línea <b>' + esc(lineaActivaLabel) + '</b> conectada por WhatsApp Web. <b>No hay ventana de 24 h ni plantillas</b>: '
+          + 'se escribe a cualquier contacto y puedes desconectar o cambiar a otro número aquí mismo.'
         : puenteVinculadoEnPausa
-        // El motivo lo guarda quien pausa (pause_reason). Sin el, la pausa de vincular --que se
-        // levanta sola al quedar estable-- se veia igual que una por calidad, que no debe quitarse
-        // sin revisar el numero.
-        ? '<b>Vinculado, pero con los envíos en pausa.</b> '
-          + esc(MOTIVO_PAUSA[p.pause_reason] || 'No consta el motivo: la pausa es de antes de que se guardara.') + ' '
-          + 'Pulsa <b>Reanudar envíos</b> y ya se puede escribir por este número.'
-        // Decia "no admite difusiones, solo conversacion dentro de la ventana normal". Las
-        // dos cosas eran falsas y se contradecian con los frenos de difusion de dos lineas
-        // mas abajo: WhatsApp Web SI hace envios masivos (wa-bridge/src/bulk.js) y NO tiene
-        // ventana de 24 h -- esa es una regla del API oficial, no de WhatsApp Web. Quien lo
-        // leia daba por hecho que no podia escribirle a un cliente de hace un mes.
-        : 'Sin sesión activa. Este canal usa WhatsApp Web, no el API: <b>no hay ventana de '
-          + '24 h ni plantillas</b>, se escribe como desde el teléfono.')
-      // Los frenos no son un detalle: son la diferencia entre una campana y un numero
-      // bloqueado. Se dicen aqui porque es donde se decide usar este canal.
+        ? '<b>Línea ' + esc(lineaActivaLabel) + ' vinculada, pero con los envíos en pausa.</b> '
+          + esc(MOTIVO_PAUSA[p.pause_reason] || 'En pausa manual.') + ' '
+          + 'Pulsa <b>Reanudar envíos</b> para escribir por este número.'
+        : 'Sin sesión activa. Este canal usa WhatsApp Web: escribe un número y pulsa <b>Generar código</b> para vincularlo.')
       + '<br>Sus conversaciones <b>sí</b> se ven aquí, junto a las del número oficial. '
       + 'En envíos masivos va con freno: <b>40 a 120 s entre mensajes</b>, pausa de '
       + '<b>10 min cada 20</b>, tope de <b>80 al día</b>, texto variado por destinatario y '
       + 'solo a quien ya te escribió y no se dio de baja.',
       bridgeControlsHtml(p),
-      puenteVinculadoEnPausa ? { clase: 'medio', texto: 'en pausa' } : null)
+      puenteVinculadoEnPausa ? { clase: 'medio', texto: 'en pausa' }
+        : (['requested','generating','code_ready','connecting'].includes(estadoPuente)
+            ? { clase: 'medio', texto: 'vinculando' } : null))
 
     // Con las redes ocultas, en vez de dos tarjetas abiertas --que invitan a atender por ahi--
     // va una sola nota con lo guardado y la conexion tecnica PLEGADA debajo. Las dos llamadas a
@@ -16879,6 +16825,25 @@ async function pintaCanales(){
     + (REDES_ACTIVAS === true ? '' : '</details>');
 
   cont.onclick = async ev => {
+    const probarApi = ev.target.closest('[data-probar-api]');
+    if (probarApi) {
+      probarApi.disabled = true; probarApi.textContent = 'Verificando…';
+      const [probeWeb, probeCon] = await Promise.all([
+        llama({ action:'waWebStatus', sucursal_de_trabajo:'dcarela', probe:true }),
+        llama({ action:'conexiones', operation:'probar', id:'wa_oficial' }),
+      ]);
+      probarApi.disabled = false; probarApi.textContent = 'Verificar API ahora';
+      const okApi = probeWeb?.official?.verified || probeCon?.estado === 'ok';
+      avisa(okApi ? 'API oficial verificada' : 'API oficial sin verificar',
+        probeCon?.detalle || probeWeb?.official?.verifiedName || probeWeb?.error || '');
+      return pintaCanales(true);
+    }
+    const verBandeja = ev.target.closest('[data-ver-bandeja]');
+    if (verBandeja) {
+      filtro = 'can:' + verBandeja.dataset.verBandeja;
+      ve('conversations');
+      return;
+    }
     // La salida de las redes ocultas: pone su filtro de canal y abre Conversaciones. Sin esto,
     // esconder seria borrar -- no quedaria ninguna forma de llegar a esos chats desde el panel.
     const verOcultas = ev.target.closest('[data-ver-ocultas]');
@@ -32191,7 +32156,7 @@ onAuthStateChanged(auth, async u => {
   $('app').classList.add('on');
   $('quien').textContent = u.email || '';
   ROL_ACTUAL = String(identidad.rol_efectivo || '');
-  if (!CRM_WEB_RECUPERADO && ROL_ACTUAL === 'admin') void stqInicia().catch(e => console.warn('cola de estados', e?.message || e));
+  if (ROL_ACTUAL === 'admin') void stqInicia().catch(e => console.warn('cola de estados', e?.message || e));
   pintaMenu();
   // El historial se carga solo al entrar. No hay boton de "actualizar": la escucha
   // en vivo trae los cambios sin que nadie tenga que pedirlos.
@@ -32202,9 +32167,9 @@ onAuthStateChanged(auth, async u => {
   // Los Estados se cargan en segundo plano nada mas entrar: son cientos de contactos y bajarlos
   // al pulsar «Estados» eran 7 s de lista vacia. Un par de segundos despues, para no competir con
   // lo primero que se ve (la bandeja).
-  if (!CRM_WEB_RECUPERADO && vistaHabilitada('estados')) setTimeout(escuchaEstados, 2500);
+  if (vistaHabilitada('estados')) setTimeout(escuchaEstados, 2500);
   // Google Calendar se lee solo desde el principio (y se refresca cada 2 min con la Agenda abierta).
-  if (!CRM_WEB_RECUPERADO && vistaHabilitada('agenda')) setTimeout(() => { relojGoogleAgenda(); cargaGoogleAgenda(); }, 4000);
+  if (vistaHabilitada('agenda')) setTimeout(() => { relojGoogleAgenda(); cargaGoogleAgenda(); }, 4000);
   // Las propuestas del agente de marketing (numerito en Campañas), al entrar y cada 30 min.
   if (!CRM_WEB_RECUPERADO && vistaHabilitada('campanas') && ['admin', 'supervisor'].includes(ROL_ACTUAL)) {
     setTimeout(() => cargaMarketing({ silencioso: true }), 6000);

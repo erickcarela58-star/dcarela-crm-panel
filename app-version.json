@@ -1,7 +1,7 @@
 {
-  "version": "2026-11-22-crm-v481-canales-verificados",
+  "version": "2026-11-22-crm-v482-agenda-estados-canales",
   "channel": "crm",
-  "released_at": "2026-11-22T10:15:53Z",
-  "summary": "Canales muestra la captura viva del 5644 y la configuracion comprobada de Meta por separado, sin confundirlas con entregas de mensajes.",
+  "released_at": "2026-11-23T01:20:00Z",
+  "summary": "Restaura Agenda multi-origen + Google Calendar, Estados (feed, propios y vistas), controles de WhatsApp Web (desconectar y conectar otro numero) y API oficial verificada en vivo.",
   "requiere_puente": "2026-11-06-documentos-grandes-v70"
 }
