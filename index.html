@@ -1045,6 +1045,7 @@ a.ayuda{color:var(--enlace)}
 .st-resp input{flex:1;height:44px;border-radius:22px;border:0;outline:0;padding:0 20px;font-size:15px;
   background:rgba(255,255,255,.12);color:#fff}
 .st-resp input::placeholder{color:rgba(255,255,255,.65)}
+.st-resp.st-sin-tel{justify-content:center;text-align:center;font-size:13px;line-height:1.45;color:rgba(255,255,255,.82);padding:6px 10px}
 .st-enviar{width:44px;height:44px;border-radius:50%;background:var(--st-verde);color:#fff;display:grid;place-items:center;flex:0 0 auto}
 .st-enviar svg{width:22px;height:22px}
 .st-ojo{display:flex;align-items:center;gap:8px;padding:8px 16px;border-radius:20px;font-size:15px;color:#fff}
@@ -5410,6 +5411,9 @@ function stConv(tel){
 }
 function stNombre(tel, e){
   const c = stConv(tel);
+  // Sin ficha: el nombre que se puso en WhatsApp. Un autor sin teléfono (clave 'lid:…', ver stGrupos)
+  // nunca se rotula con un número: los dígitos de un LID no son un teléfono.
+  if (!c && String(tel || '').startsWith('lid:')) return String(e?.push_name || '').trim() || 'Contacto sin número';
   return c ? nombreDe(c) : (e?.push_name || '+' + telefonoLegible(tel));
 }
 function stAvatar(tel, e){
@@ -5427,7 +5431,11 @@ function stGrupos(){
   const porTel = new Map();
   for (const e of ST.feed) {
     if (e.revoked_at || !(Date.parse(String(e.expires_at || '')) > ahora)) continue;
-    const tel = soloDigitos(e.wa_phone);
+    // La clave del grupo es el teléfono. 23/11/2026: WhatsApp no siempre da el teléfono del autor (llega
+    // como LID); ese estado antes se perdía y ahora llega con author_lid y sin wa_phone. Se agrupa por
+    // su LID --'lid:…', que nunca choca con un teléfono-- y se rotula con su push_name.
+    const lid = soloDigitos(e.author_lid);
+    const tel = (e.phone_unresolved !== true && soloDigitos(e.wa_phone)) || (lid ? 'lid:' + lid : '');
     if (!tel) continue;
     if (!porTel.has(tel)) porTel.set(tel, []);
     porTel.get(tel).push(e);
@@ -5477,13 +5485,14 @@ function stFila(g){
   return '<button class="st-fila' + (ST.sel === g.tel ? ' on' : '') + '" data-sttel="' + esc(g.tel) + '">'
     + '<span class="st-anillo">' + stAro(g.lista.map(stVisto)) + stAvatar(g.tel, g.ultimo) + '</span>'
     + '<span class="st-texto"><b>' + esc(stNombre(g.tel, g.ultimo)) + '</b>'
-    + '<i>' + esc(stCuando(g.ultimo.posted_at)) + '</i></span></button>';
+    + '<i>' + esc(stCuando(g.ultimo.posted_at)) + (String(g.tel).startsWith('lid:') ? ' · teléfono sin resolver' : '') + '</i></span></button>';
 }
 
 function stFilaMia(){
   const mios = stMios();
   const propios = STG.publicados || ST.mios;
-  const pendientes = propios.filter(f => ['pending','sending'].includes(f.status)).map(f => f.id);
+  // También cuenta el que sigue saliendo por lotes: su primer lote ya está «enviado», pero falta gente.
+  const pendientes = propios.filter(f => ['pending','sending'].includes(f.status) || (f.automatico === true && Number(f.pendientes) > 0)).map(f => f.id);
   for (const j of STQ.jobs) if (j.phase !== 'failed') pendientes.push(j.server_id || j.id);
   const enCola = new Set(pendientes).size;
   const falloReciente = propios.some(f => ['failed','expired'].includes(f.status) && stVencePublicacion(f.created_at) > Date.now())
@@ -5581,7 +5590,8 @@ function stAdelanta(estados){
 // proyectar campos) y la miniatura se pide de una en una, cuando se va a ver ese estado.
 const ST_CAMPOS_LISTA = ['id', 'wamid', 'wa_phone', 'author_jid', 'business_number', 'kind', 'body', 'push_name',
   'posted_at', 'expires_at', 'received_at', 'media_store', 'media_size', 'media_mime', 'media_w', 'media_h',
-  'media_seconds', 'revoked_at', 'bg_color', 'text_color', 'color', 'font', 'media_waveform_b64', 'media_ptt', 'seen_at'];
+  'media_seconds', 'revoked_at', 'bg_color', 'text_color', 'color', 'font', 'media_waveform_b64', 'media_ptt', 'seen_at',
+  'author_lid', 'phone_unresolved'];
 function valorFirestore(v){
   if (!v || typeof v !== 'object') return null;
   if ('stringValue' in v) return v.stringValue;
@@ -5841,12 +5851,22 @@ function stgElementos(){
     // v374 · Fase 4: «Enviado» solo dice que WhatsApp aceptó la orden; pasa a «Visto» con una vista real
     // (crm_status_views) o con confirmed_at. El anillo del avatar dice lo mismo de un vistazo.
     const nVistas = Number(f.vistas) || 0, visto = ['sent', 'published'].includes(f.status) && (nVistas > 0 || !!f.confirmed_at);
-    const anillo = ['failed', 'expired'].includes(f.status) ? 'mal' : ['pending', 'sending'].includes(f.status) ? 'espera' : visto || desdeTelefono ? 'visto' : 'sinver';
+    // 23/11/2026: un estado para toda la cartera sale en lotes. Mientras falte gente no se rotula
+    // «Enviado» ni «Visto»: se dice cuántos van y cuántos faltan.
+    const faltan = desdeTelefono ? 0 : Number(f.pendientes) || 0, destinatarios = Number(f.destinatarios) || 0;
+    const avance = faltan && destinatarios ? { falta: faltan, automatico: f.automatico === true,
+      texto: f.automatico === true ? 'Enviando por lotes · ' + (Number(f.enviados) || 0) + ' de ' + destinatarios
+        : 'Faltan ' + faltan + ' de ' + destinatarios + ' por enviar' } : null;
+    const anillo = ['failed', 'expired'].includes(f.status) ? 'mal' : ['pending', 'sending'].includes(f.status) ? 'espera'
+      : avance ? (avance.automatico ? 'espera' : 'mal') : visto || desdeTelefono ? 'visto' : 'sinver';
     return { clave: f.id, fuente: desdeTelefono ? 'telefono' : 'crm', fila: f, t, anillo,
       tipo: f.kind === 'video' ? 'video' : f.kind === 'image' ? 'foto' : f.kind === 'audio' ? 'audio' : 'texto', thumb: f.media_thumb || '', color: f.color || '#128c7e',
       titulo: lineas[0] || (f.kind === 'video' ? 'Video' : f.kind === 'image' ? 'Foto' : f.kind === 'audio' ? 'Nota de voz' : 'Estado de texto'), texto: f.body || '',
-      chip: desdeTelefono ? ['Publicado desde WhatsApp', 'ok'] : visto ? [nVistas ? 'Visto por ' + nVistas : 'Visto', 'ok']
+      chip: desdeTelefono ? ['Publicado desde WhatsApp', 'ok']
+        : avance && ['sent', 'published'].includes(f.status) ? [avance.texto, avance.automatico ? 'espera' : 'mal']
+        : visto ? [nVistas ? 'Visto por ' + nVistas : 'Visto', 'ok']
         : (STG_ESTADO[f.status] || [f.status || 'Sin estado', 'espera']),
+      avance,
       aud: desdeTelefono ? 'Audiencia elegida en WhatsApp' : (ES_ETIQUETAS[f.modo] || String(f.modo || '').replace(/^familia:/, 'Familia ') || 'Contactos'),
       vistas: f.vistas };
   });
@@ -5896,13 +5916,22 @@ function stgDetalle(clave){
   const f = e.fila; const hora = v => v ? esCuando(v) : '—';
   const media = e.thumb ? '<img class="stg-det-img" src="' + esc(e.thumb) + '" alt="">' : e.tipo === 'texto'
     ? '<div class="stg-det-img stg-det-texto" style="--stg-color:' + esc(e.color) + '">' + esc(e.texto) + '</div>' : '';
-  const datos = [['Estado', e.chip[0]], ['Origen', e.fuente === 'telefono' ? 'WhatsApp / teléfono' : 'CRM'], ['Audiencia', e.aud], ['Contactos', e.fuente === 'telefono' ? 'no informados por WhatsApp' : String(f.total || 0)], ['Vistas', e.vistas == null ? 'sin contar todavía' : String(e.vistas)],
+  // Con varios lotes: a cuántos les llegó ya, de cuántos, y cómo va cada lote.
+  const lotes = Array.isArray(f.lotes) && f.lotes.length > 1 ? f.lotes : null;
+  const LOTE_COMO = { sent:'enviado', published:'enviado', pending:'en cola', sending:'saliendo', failed:'no salió', expired:'caducó' };
+  const contactos = e.fuente === 'telefono' ? 'no informados por WhatsApp'
+    : Number(f.destinatarios) > Number(f.total || 0) ? (f.total || 0) + ' de ' + f.destinatarios : String(f.total || 0);
+  const datos = [['Estado', e.chip[0]], ['Origen', e.fuente === 'telefono' ? 'WhatsApp / teléfono' : 'CRM'], ['Audiencia', e.aud], ['Contactos', contactos],
+      ...(lotes ? [['Lotes', lotes.map(l => l.total + ' ' + (LOTE_COMO[l.status] || l.status || '')).join(' · ')]] : []),
+      ['Vistas', e.vistas == null ? 'sin contar todavía' : String(e.vistas)],
       ['Creado', hora(f.created_at)], ['Enviado', hora(f.sent_at)], ['Primera vista', hora(f.confirmed_at)]];
   abreModal('<div class="mtapa"><b>' + esc(e.titulo) + '</b><button class="cerrarm" data-cerrar>×</button></div>'
     + '<div class="mcuerpo stg-det">' + media + '<div><dl class="stg-det-datos">' + datos.map(([k, v]) => '<dt>' + esc(k) + '</dt><dd>' + esc(v) + '</dd>').join('') + '</dl>'
     + (f.status === 'sent' ? '<p class="bajada">«Enviado» quiere decir que WhatsApp recibió la orden. Pasa a «Visto» cuando un contacto lo abre.</p>' : '')
     + (f.error ? '<p class="aviso">No salió: ' + esc(f.error) + '</p>' : '')
     + (e.texto && e.tipo !== 'texto' && e.texto.trim() !== e.titulo ? '<p class="stg-det-cuerpo">' + esc(e.texto) + '</p>' : '')
+    + (e.avance && e.avance.automatico ? '<p class="bajada">Faltan <b>' + e.avance.falta + '</b> contactos: salen solos, en lotes de hasta mil, '
+      + 'cuando WhatsApp confirma el anterior. No hace falta hacer nada.</p>' : '')
     + (f.resto_total ? '<p class="bajada">Quedan <b>' + Number(f.resto_total) + '</b> contactos sin enviar de este estado.</p>' : '') + '</div></div>'
     + '<div class="mpatas"><button class="btn-linea" data-cerrar>Cerrar</button>'
     + (['sent', 'published'].includes(f.status) && f.wamid && (f.media_thumb || f.media_store === 'bajo_demanda' || f.kind === 'text') ? '<button class="btn-solido" id="stgVerEstado">Ver estado</button>' : '')
@@ -6219,7 +6248,8 @@ function stMuestra(){
   $('stQuienAv').innerHTML = mio ? stAvatarPropio() : stAvatar(v.grupos[v.gi].tel, e);
   $('stQuienN').textContent = mio ? 'Mi estado' : stNombre(v.grupos[v.gi].tel, e);
   $('stBorrar').hidden = !(mio && e.wamid && ['admin', 'supervisor'].includes(ROL_ACTUAL));
-  $('stQuienT').textContent = stCuando(mio ? e.sent_at : e.posted_at);
+  $('stQuienT').textContent = stCuando(mio ? e.sent_at : e.posted_at)
+    + (!mio && String(v.grupos[v.gi].tel).startsWith('lid:') ? ' · teléfono sin resolver' : '');
   const escena = $('stEscena');
   const pie = $('stPie');
   escena.querySelectorAll('video,audio').forEach(m => { try { m.pause(); } catch (x) {} });
@@ -6332,6 +6362,13 @@ function stPintaAbajo(){
     const vistas = (ST.vistas.get(e.wamid) || []);
     abajo.innerHTML = '<button class="st-ojo" data-st="vistas">' + ST_ICO.ojo + '<span>' + vistas.length + '</span></button>';
     if (v.hoja) stHoja(true);
+    return;
+  }
+  // Un estado cuyo autor solo se conoce por su LID se ve, pero todavía no se le puede escribir: la
+  // respuesta sale por teléfono. Se dice aquí, en vez de ofrecer una caja que el servidor rechaza.
+  if (String(v.grupos[v.gi].tel).startsWith('lid:')) {
+    abajo.innerHTML = '<div class="st-resp st-sin-tel" role="note">WhatsApp aún no ha informado el teléfono de este contacto. '
+      + 'Podrás responderle en cuanto se conozca.</div>';
     return;
   }
   if ($('stResp')) return;
@@ -6540,8 +6577,9 @@ async function stCompositor(tipo, opciones = {}){
     [...$('stcQuien').options].forEach(o => {
       if (!Object.prototype.hasOwnProperty.call(ES_ETIQUETAS, o.value)) return;
       const n = c[o.value] ? c[o.value].total : 0;
-      o.textContent = ES_ETIQUETAS[o.value] + (o.value === 'activos' ? ' (180 días)' : '') + ' — ' + n
-        + (n === 1 ? ' contacto' : ' contactos');
+      // «Clientes con movimiento» ya no deja a nadie fuera por antigüedad (regla del 09/11/2026): no se
+      // rotula con una ventana de días que el servidor no aplica.
+      o.textContent = ES_ETIQUETAS[o.value] + ' — ' + n + (n === 1 ? ' contacto' : ' contactos');
     });
   }
   // Las audiencias de fotografía, aparte de las tres de siempre: quien compró qué, según la
@@ -6659,6 +6697,11 @@ async function stcPublica(){
   const nFotos = c.tipo === 'foto' ? c.fotos.length : 1;
   if (!await confirmaAqui('Se va a publicar en Estados para ' + total + ' contacto(s): '
     + nombreQuien + (nFotos > 1 ? ' (' + nFotos + ' publicaciones, una tras otra)' : '') + '.' + '\n\n'
+    // Más de mil contactos salen en lotes encadenados de hasta mil (el tope de UNA llamada a WhatsApp):
+    // el servidor crea cada lote cuando el anterior se confirma. Nadie se queda fuera ni lo recibe dos veces.
+    + (Number(d.tope_estado) > 0 && total > Number(d.tope_estado) ? 'Sale en ' + Math.ceil(total / Number(d.tope_estado))
+      + ' lotes de hasta ' + Number(d.tope_estado) + ', uno tras otro y sin repetir a nadie: los siguientes salen solos '
+      + 'cuando WhatsApp confirma el anterior.\n\n' : '')
     + 'Dura 24 horas y no se le puede quitar a quien ya lo haya visto.'
     + (!d.listo ? '\n\nSe guardarán en cola hasta reconectar o reanudar WhatsApp.' : '')
     + '\n\n' + '¿Publicar?')) return;
@@ -28194,25 +28237,24 @@ async function esCuenta(silencioso){
   const sel = $('esQuien');
   if (sel) [...sel.options].forEach(o => {
     const n = c[o.value] ? c[o.value].total : 0;
-    o.textContent = ES_ETIQUETAS[o.value] + (o.value === 'activos' ? ' (' + (d.dias || 180) + ' días)' : '')
-      + ' — ' + n + (n === 1 ? ' contacto' : ' contactos');
+    o.textContent = ES_ETIQUETAS[o.value] + ' — ' + n + (n === 1 ? ' contacto' : ' contactos');
   });
   const recorte = c.todos && c.todos.recortado
     ? '<p class="bajada">De « todos » entran los ' + c.todos.total + ' con movimiento más '
       + 'reciente; ' + c.todos.recortado + ' se quedan fuera. Un estado se manda en una sola '
       + 'operación con la lista dentro, y una lista sin tope la paga el número del negocio.</p>'
     : '';
-  // El tope de UNA publicación. No es un recorte silencioso: lo que no cabe queda en cola y se
-  // publica después, cuando el dueño lo pida. Antes entraba todo en una sola lista de más de mil
-  // números, que es justo donde la librería del puente falla.
+  // El tope de UNA llamada a WhatsApp. No es un recorte: lo que no cabe en el primer lote sale solo
+  // en los siguientes (23/11/2026; antes había que pedirlo a mano desde el historial). Una sola lista
+  // de más de mil números es justo donde la librería del puente falla.
   const tope = Number(d.tope_estado) || 0;
   const elegidos = c[$('esQuien')?.value] ? c[$('esQuien').value].total : 0;
   const enCola = tope && elegidos > tope ? elegidos - tope : 0;
   const reparto = enCola
-    ? '<p class="bajada">Van ' + tope + ' en este estado y los otros <b>' + enCola + '</b> quedan en '
-      + 'cola: se publican aparte, desde el historial de abajo, para no mandarlos dos veces. Se '
-      + 'parte a propósito: una lista de más de mil números en la misma operación es donde el '
-      + 'envío falla sin avisar.</p>'
+    ? '<p class="bajada">Sale en ' + Math.ceil(elegidos / tope) + ' lotes de hasta ' + tope + ': van ' + tope
+      + ' en el primero y los otros <b>' + enCola + '</b> salen solos, uno tras otro, cuando WhatsApp '
+      + 'confirma el anterior. Nadie lo recibe dos veces. Se parte a propósito: una lista de más de mil '
+      + 'números en la misma operación es donde el envío falla sin avisar.</p>'
     : '';
   s.innerHTML = (d.listo
     ? '<p class="bajada">Línea lista: ' + esc(d.linea || '') + '.</p>'
@@ -28234,6 +28276,11 @@ async function esPublicaEstado(){
   // ensenarselo a todos los clientes del negocio.
   if (!await confirmaAqui('Se va a publicar en Estados para ' + total + ' contacto(s): '
     + ES_ETIQUETAS[quien] + '.' + '\n\n'
+    // Más de mil contactos salen en lotes encadenados de hasta mil (el tope de UNA llamada a WhatsApp):
+    // el servidor crea cada lote cuando el anterior se confirma. Nadie se queda fuera ni lo recibe dos veces.
+    + (Number(d.tope_estado) > 0 && total > Number(d.tope_estado) ? 'Sale en ' + Math.ceil(total / Number(d.tope_estado))
+      + ' lotes de hasta ' + Number(d.tope_estado) + ', uno tras otro y sin repetir a nadie: los siguientes salen solos '
+      + 'cuando WhatsApp confirma el anterior.\n\n' : '')
     + 'Dura 24 horas y no se le puede quitar a quien ya lo haya visto.'
     + '\n\n' + '¿Publicar?')) return;
   ir.disabled = true; ir.textContent = 'Publicando…';
@@ -28257,9 +28304,11 @@ async function esPublicaEstado(){
   ir.disabled = false; ir.textContent = 'Publicar';
   if (!r.ok) return avisa('No se pudo publicar', r.error);
   const res = r.data || {};
-  avisa('Estado en camino', 'Sale para ' + res.total + ' contacto(s). Aparece abajo en cuanto el '
+  // El acuse dice el total de destinatarios y cuántos van en el primer lote; lo demás sale solo.
+  avisa('Estado en camino', 'Sale para ' + (res.destinatarios || res.total) + ' contacto(s). Aparece abajo en cuanto el '
     + 'puente lo publique; tarda unos segundos.'
-    + (res.en_cola ? ' Quedan ' + res.en_cola + ' en cola: salen desde el historial, con su botón, cuando este termine.' : ''));
+    + (res.en_cola ? ' Van ' + res.total + ' en el primer lote y los otros ' + res.en_cola + ' salen solos en '
+      + (Math.max(2, Number(res.lotes) || 2) - 1) + ' lote(s) más, sin repetir a nadie.' : ''));
   $('esTexto').value = ''; ES_FOTO = null; esPintaPrevia();
   setTimeout(esHistorialEstados, 3500);
   esHistorialEstados();
@@ -28297,6 +28346,9 @@ async function esHistorialEstados(){
       + (f.status === 'published' && f.confirmed_at ? ' · lo abrieron ' + esc(esCuando(f.confirmed_at)) : '')
       + (f.status === 'sent' ? ' · aún nadie lo ha abierto' : '')
       + (f.error ? ' · ' + esc(f.error) : '') + '</p>'
+      // Sigue saliendo por lotes: se dice cuánto falta para no dar por publicado lo que aún no llegó a todos.
+      + (f.automatico === true && Number(f.pendientes) > 0 ? '<p class="bajada" style="margin:2px 0 0">Faltan <b>' + Number(f.pendientes)
+        + '</b> contactos: salen solos en los lotes siguientes.</p>' : '')
       // La cola de ese mismo estado: lo que no cabía en una sola llamada. Se ve, con su botón, y
       // no se puede publicar mientras el de arriba sigue saliendo (dos estados seguidos se ven
       // como si se hubiera publicado dos veces).

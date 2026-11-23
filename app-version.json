@@ -1,7 +1,7 @@
 {
-  "version": "2026-11-22-crm-v482-agenda-estados-canales",
+  "version": "2026-11-23-crm-v483-estados-lid-lotes",
   "channel": "crm",
-  "released_at": "2026-11-23T01:20:00Z",
-  "summary": "Restaura Agenda multi-origen + Google Calendar, Estados (feed, propios y vistas), controles de WhatsApp Web (desconectar y conectar otro numero) y API oficial verificada en vivo.",
+  "released_at": "2026-11-23T16:06:35Z",
+  "summary": "Estados de contactos sin telefono resuelto se muestran con su nombre de perfil, y la publicacion a todos indica el avance por lotes hasta que sale el ultimo.",
   "requiere_puente": "2026-11-06-documentos-grandes-v70"
 }
