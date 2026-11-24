@@ -3936,7 +3936,7 @@ input[type="checkbox"],input[type="radio"]{accent-color:var(--accent)}
 @media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 
 </style>
-<script type="importmap" id="dcarela-local-cloud">{"imports":{"https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js":"./nube-sdk/app.mjs?v=479","https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js":"./nube-sdk/auth.mjs?v=479","https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js":"./nube-sdk/firestore.mjs?v=482"}}</script>
+<script type="importmap" id="dcarela-local-cloud">{"imports":{"https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js":"./nube-sdk/app.mjs?v=485","https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js":"./nube-sdk/auth.mjs?v=485","https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js":"./nube-sdk/firestore.mjs?v=485"}}</script>
 </head>
 <body>
 
@@ -5604,10 +5604,16 @@ function valorFirestore(v){
   return null;
 }
 function consultaEstados(negocio){
+  const desde = new Date(Date.now() - 24 * 3600 * 1000).toISOString();
   return { structuredQuery: {
     from: [{ collectionId: 'crm_status_feed' }],
     select: { fields: ST_CAMPOS_LISTA.map(fieldPath => ({ fieldPath })) },
-    where: { fieldFilter: { field: { fieldPath: 'business_id' }, op: 'EQUAL', value: { stringValue: negocio } } },
+    where: { compositeFilter: { op: 'AND', filters: [
+      { fieldFilter: { field: { fieldPath: 'business_id' }, op: 'EQUAL', value: { stringValue: negocio } } },
+      { fieldFilter: { field: { fieldPath: 'expires_at' }, op: 'GREATER_THAN_OR_EQUAL', value: { stringValue: desde } } },
+    ] } },
+    orderBy: [{ field: { fieldPath: 'expires_at' }, direction: 'DESCENDING' }],
+    limit: 2000,
   } };
 }
 // Lo que devuelve runQuery -> filas planas. Las que ya traian su miniatura la conservan: no se
@@ -5645,7 +5651,8 @@ async function stLeeLista(){
     // Si la lectura ligera no se puede, se cae a la escucha completa de siempre: mas lenta, pero funciona.
     if (!ST.listaLigera && !ST.escuchaCompleta) {
       ST.escuchaCompleta = true;
-      onSnapshot(query(collection(db, 'crm_status_feed'), where('business_id', '==', NEGOCIO)), s => {
+      const desdeFallback = new Date(Date.now() - 24 * 3600 * 1000).toISOString();
+      onSnapshot(query(collection(db, 'crm_status_feed'), where('business_id', '==', NEGOCIO), where('expires_at', '>=', desdeFallback), orderBy('expires_at', 'desc'), limit(300)), s => {
         ST.feed = s.docs.map(d => ({ ...d.data(), _id: d.id }));
         pintaEstadosPronto();
       }, e => console.warn('estados de contactos', e?.code || e));
@@ -5689,7 +5696,7 @@ function escuchaEstados(){
 function escuchaVistasEstados(){
   if (ST.escuchandoVistas) return;
   ST.escuchandoVistas = true;
-  onSnapshot(query(collection(db, 'crm_status_views'), where('business_id', '==', NEGOCIO)), s => {
+  onSnapshot(query(collection(db, 'crm_status_views'), where('business_id', '==', NEGOCIO), limit(1000)), s => {
     const m = new Map();
     for (const d of s.docs) {
       const v = d.data();

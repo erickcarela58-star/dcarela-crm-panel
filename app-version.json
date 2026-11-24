@@ -1,7 +1,7 @@
 {
-  "version": "2026-11-23-crm-v484-estados-todos",
+  "version": "2026-11-24-crm-v485-mensajes-estados-fluidez",
   "channel": "crm",
-  "released_at": "2026-11-23T19:56:22Z",
-  "summary": "Los Estados se publican siempre a todos los contactos: el compositor y la tarjeta de Estados ya no ofrecen filtros de audiencia.",
+  "released_at": "2026-11-24T23:00:00Z",
+  "summary": "Sondeo de chat separado en carril independiente y consulta acotada de Estados recientes con indice por expires_at.",
   "requiere_puente": "2026-11-06-documentos-grandes-v70"
 }

@@ -78,9 +78,9 @@ export function queryBody(ref){
     }else body[c.type]=c.values.map(encode);
   }return body;
 }
-const watches=new Map();let watchTimer,busy=false;
+const watches=new Map();let watchTimer,busyChat=false,busyAux=false;
 const pageVisible=()=>typeof document==='undefined'||!document.hidden;
-function pollWhenVisible(){if(pageVisible())void poll();}
+function pollWhenVisible(){if(pageVisible()){void pollLane(true);void pollLane(false);}}
 function onVisibilityChange(){if(pageVisible()){for(const w of watches.values())w.nextPollAt=0;pollWhenVisible();}}
 const chatLane=ref=>/^(?:crm_conversations|crm_messages)(?:\/|$)/.test(ref.path||'')||ref.path==='crm_channel_state/whatsapp_qr';
 const retryDelay=failures=>Math.min(60000,5000*2**Math.min(failures,4))+Math.floor(Math.random()*2000);
@@ -94,26 +94,28 @@ function reportPollError(group,cause){
 }
 export function watch(ref,next,error){
   const id=crypto.randomUUID();watches.set(id,{ref,next,error,hash:null,previous:null,failures:0,nextPollAt:0});
-  if(!watchTimer){watchTimer=setInterval(pollWhenVisible,5000);if(typeof document!=='undefined')document.addEventListener('visibilitychange',onVisibilityChange);}
+  if(!watchTimer){watchTimer=setInterval(pollWhenVisible,3500);if(typeof document!=='undefined')document.addEventListener('visibilitychange',onVisibilityChange);}
   pollWhenVisible();
   return()=>{watches.delete(id);if(!watches.size){clearInterval(watchTimer);watchTimer=null;if(typeof document!=='undefined')document.removeEventListener('visibilitychange',onVisibilityChange);}};
 }
-async function poll(){if(busy||!watches.size||!pageVisible())return;busy=true;try{
-  const due=[...watches].filter(([,w])=>Date.now()>=w.nextPollAt);
-  // Durante el corte parcial una consulta ajena al chat recibe 503; no debe arrastrar al chat.
-  const lanes=[due.filter(([,w])=>chatLane(w.ref)),due.filter(([,w])=>!chatLane(w.ref))];
-  for(const lane of lanes)for(let i=0;i<lane.length;i+=12){
-    const group=lane.slice(i,i+12);let result;
-    try{result=await api('/v1/client/poll',{queries:group.map(([id,w])=>({id,hash:w.hash,...(w.ref.type==='document'?{path:w.ref.path}:queryBody(w.ref))}))});
-      if(!Array.isArray(result.results))throw new Error('Respuesta de sondeo incompleta');
-    }catch(error){reportPollError(group,error);continue;}
-    for(const r of result.results){
-      const w=watches.get(r.id);if(!w)continue;
-      if(r.error){reportPollError([[r.id,w]],Object.assign(new Error(r.error),{code:String(r.status)}));continue;}
-      w.failures=0;w.nextPollAt=0;
-      if(r.unchanged)continue;
-      try{const snap=w.ref.type==='document'?snapshot(r.value):querySnapshot(r.value,w.previous);w.next(snap);w.hash=r.hash;w.previous=snap;}
-      catch(error){try{w.error?.(error);}catch{/* La siguiente consulta aún puede continuar. */}}
+async function pollLane(isChat){
+  if((isChat?busyChat:busyAux)||!watches.size||!pageVisible())return;
+  if(isChat)busyChat=true;else busyAux=true;
+  try{
+    const lane=[...watches].filter(([,w])=>Boolean(chatLane(w.ref))===isChat&&Date.now()>=w.nextPollAt);
+    for(let i=0;i<lane.length;i+=12){
+      const group=lane.slice(i,i+12);let result;
+      try{result=await api('/v1/client/poll',{queries:group.map(([id,w])=>({id,hash:w.hash,...(w.ref.type==='document'?{path:w.ref.path}:queryBody(w.ref))}))});
+        if(!Array.isArray(result.results))throw new Error('Respuesta de sondeo incompleta');
+      }catch(error){reportPollError(group,error);continue;}
+      for(const r of result.results){
+        const w=watches.get(r.id);if(!w)continue;
+        if(r.error){reportPollError([[r.id,w]],Object.assign(new Error(r.error),{code:String(r.status)}));continue;}
+        w.failures=0;w.nextPollAt=0;
+        if(r.unchanged)continue;
+        try{const snap=w.ref.type==='document'?snapshot(r.value):querySnapshot(r.value,w.previous);w.next(snap);w.hash=r.hash;w.previous=snap;}
+        catch(error){try{w.error?.(error);}catch{/* La siguiente consulta aún puede continuar. */}}
+      }
     }
-  }
-}finally{busy=false;}}
+  }finally{if(isChat)busyChat=false;else busyAux=false;}
+}
