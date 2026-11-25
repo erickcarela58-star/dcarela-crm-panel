@@ -7641,8 +7641,8 @@ async function esperaConversacion(id, ms = 8000){
 let INICIANDO_CHAT = false;
 async function iniciaChat(tel, nombre = ''){
   if (INICIANDO_CHAT) return;
-  // Si ya está abierto ese chat no hay nada que iniciar.
-  if (sel && canalDe(sel) === 'whatsapp_qr' && soloDigitos(sel.wa_phone) === tel) return avisa('Ya estás en ese chat');
+  // Una ficha de un vínculo Web anterior puede tener el mismo teléfono.
+  // El servidor decide cuál conversación pertenece a la línea activa.
   INICIANDO_CHAT = true;
   avisa('Comprobando si tiene WhatsApp…', telefonoLegible(tel));
   try {
