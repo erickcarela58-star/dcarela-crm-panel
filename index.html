@@ -4670,7 +4670,7 @@ function aplicaConversaciones(s, modo = 'en vivo'){
     vigilaAtencion();
     vigilaLlamadas();
 }
-const CAMPOS_CRM_WEB = ['id','channel','source','business_id','business_number','wa_phone','wa_chat_jid','wa_lid_only','contact_id','contact_name','display_name','customer_name','contact_alias','profile_picture_url','avatar_url','photo_url','last_message_at','last_message_preview','last_inbound_preview','last_customer_reply_at','last_human_reply_at','unread','unread_count','unread_human_count','mode','bot_paused','bot_pause_reason','lifecycle_stage','lead_status','priority','reservation_status','scheduled_at','tentative_date','follow_up_at','interested_category','interested_service','selected_combo_id','selected_combo_name','selected_combo_price','session_status','attended_at','web_reserva_at','next_step_suggested','reserva_canal','makeup_selection','makeup_price','last_intent','conversation_summary','pos_client_id','pos_client_nombre','assigned_to','budget_range','reminders_opt_in','followups_opt_in','marketing_opt_in','human_handoff_required','human_handoff_requested_at','human_handoff_reason','human_handoff_latest','ignored_at','ignored_kind','proactive_blocked_at','muted_until','pinned','pinned_at','labels','etiquetas','merged_into','last_call_at','last_call_status','last_outbound_at','last_inbound_at','first_seen_at','status','atendido_at','cola_omitida_at'];
+const CAMPOS_CRM_WEB = ['id','channel','source','business_id','business_number','wa_phone','wa_chat_jid','wa_lid_only','contact_id','contact_name','display_name','customer_name','contact_alias','profile_picture_url','avatar_url','photo_url','last_message_at','last_message_preview','last_inbound_preview','last_customer_reply_at','last_human_reply_at','unread','unread_count','unread_human_count','mode','bot_paused','bot_pause_reason','lifecycle_stage','lead_status','priority','reservation_status','scheduled_at','tentative_date','follow_up_at','interested_category','interested_service','selected_combo_id','selected_combo_name','selected_combo_price','session_status','attended_at','web_reserva_at','next_step_suggested','reserva_canal','makeup_selection','makeup_price','last_intent','conversation_summary','pos_client_id','pos_client_nombre','assigned_to','budget_range','reminders_opt_in','all_messages_opt_out_at','do_not_contact','followups_opt_in','marketing_opt_in','human_handoff_required','human_handoff_requested_at','human_handoff_reason','human_handoff_latest','ignored_at','ignored_kind','proactive_blocked_at','muted_until','pinned','pinned_at','labels','etiquetas','merged_into','last_call_at','last_call_status','last_outbound_at','last_inbound_at','first_seen_at','status','atendido_at','cola_omitida_at'];
 let rosterCrmWeb = null;
 function consultaConversaciones(recientes = true){
   const ref = collection(db,'crm_conversations'), empresa = where('business_id','==',NEGOCIO);
@@ -7982,6 +7982,52 @@ function cableaEnvioManualWeb(c){
     }
     if(!acepta(res))void confirma();
   };
+}
+
+// La confirmación de una cita usa el mismo despacho durable que el compositor.
+// Consultar el estado no crea un segundo mensaje si tarda WhatsApp.
+async function enviaAvisoDeReserva(c, texto){
+  const conversation_id = c._id || c.id;
+  if (!conversation_id || !texto) return { ok:false, error:'Falta el chat o el mensaje.' };
+  if (c.reminders_opt_in === false || c.all_messages_opt_out_at || c.proactive_blocked_at || c.do_not_contact)
+    return { ok:false, error:'Esta persona no recibe avisos automáticos.' };
+  if (CRM_WEB_RECUPERADO && canalDe(c) === 'whatsapp_qr') {
+    const endpoint = String(CFG.firebaseFunctionsBase || '').replace(/\/$/, '') + '/crmWebSend';
+    const request_id = crypto.randomUUID();
+    let r = await llama({ action:'send', request_id, conversation_id, text:texto }, { endpoint });
+    if (!r.ok) {
+      if (Number(r.status)>=400 && Number(r.status)<500) return r;
+      const estado = await llama({ action:'status', request_id }, { endpoint });
+      if (!estado.ok) return { ok:true, status:'review' };
+      r = estado;
+    }
+    for (let intento=0; intento<8 && ['queued','sending'].includes(r.status); intento++) {
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      const estado = await llama({ action:'status', request_id }, { endpoint });
+      if (!estado.ok) return { ok:true, status:'review' };
+      r = estado;
+    }
+    return r;
+  }
+  return llama(canalDe(c) === 'whatsapp_qr'
+    ? { action:'bridgeQueue', conversation_id, body:texto }
+    : { action:'sendText', conversation_id, body:texto });
+}
+function informaAvisoDeReserva(r){
+  if (!r?.ok) return avisa('La cita se guardó; el aviso no salió', traduceErrorMeta(r?.error || 'Sin respuesta del servidor', r?.code));
+  if (r.status === 'review') return avisa('La cita se guardó; aviso sin confirmar', 'Revisa WhatsApp antes de repetirlo.');
+  if (r.status === 'queued' || r.status === 'sending') return avisa('La cita se guardó; aviso en curso', 'El puente aún no confirmó la salida. No lo repitas.');
+  if (r.status === 'expired' || r.status === 'canceled') return avisa('La cita se guardó; el aviso no salió', 'El despacho venció o se canceló.');
+  avisa('Aviso aceptado por WhatsApp', 'La entrega al cliente todavía requiere acuse.');
+}
+function puedeAvisarReservaAhora(c){
+  if (!c?.wa_phone || c.reminders_opt_in === false || c.all_messages_opt_out_at || c.proactive_blocked_at || c.do_not_contact) return false;
+  if (canalDe(c) === 'whatsapp_qr') return true;
+  if (esOficial(c)) {
+    const ultima = Date.parse(c.last_customer_reply_at || '');
+    return Number.isFinite(ultima) && Date.now() - ultima < 23.5 * 3600000;
+  }
+  return false;
 }
 
 function pintaFichaActual(c){
@@ -15729,6 +15775,8 @@ function abreAgendar(c){
     + canalRecordatorioHtml('agCanal', c?.reserva_canal)
     + '<label class="cfgsw"><input type="checkbox" id="agFirme" checked><span><b>Confirmada</b>'
     +   '<i>Sin marcar queda como fecha tentativa, que no bloquea el hueco.</i></span></label>'
+    + '<label class="cfgsw"><input type="checkbox" id="agAvisar"' + (puedeAvisarReservaAhora(c) ? ' checked' : ' disabled') + '><span><b>Avisar al cliente al guardar</b>'
+    +   '<i>Se envía una confirmación por el canal de esta ficha. Fuera de la ventana oficial se guarda la cita sin enviar texto libre.</i></span></label>'
     + '</div>'
     + '<div class="mpatas"><button class="btn-linea" data-cerrar>Cancelar</button>'
     +   '<button class="btn-solido" id="agGuardar">Agendar</button></div>');
@@ -15741,6 +15789,9 @@ function abreAgendar(c){
     // (nombre y, si se quiere, teléfono). A las dos últimas se les crea una ficha mínima para guardar la reserva; si el teléfono ya tiene ficha, se usa esa.
     const elige = (conv) => {
       elegido = conv;
+      const aviso = $('agAvisar');
+      aviso.disabled = !puedeAvisarReservaAhora(conv);
+      aviso.checked = !aviso.disabled;
       $('agBusca').value = nombreDe(conv);
       $('agRes').innerHTML = '<p class="cfgnota">Elegido: <b>' + esc(nombreDe(conv)) + '</b></p>';
       if (conv.interested_category) $('agCat').value = conv.interested_category;
@@ -15813,10 +15864,20 @@ function abreAgendar(c){
     const r = await llama({ action:'updateLead', conversation_id: elegido.id || elegido._id, fields: campos });
     $('agGuardar').disabled = false;
     if (!r.ok) return avisa('No se pudo agendar', r.error);
+    const avisar = $('agAvisar').checked && !$('agAvisar').disabled;
+    const nombre = String(nombreReal(elegido) || '').trim().split(/\s+/)[0];
+    const fecha = inst.toLocaleDateString('es-DO', { timeZone:'America/Santo_Domingo', weekday:'long', day:'numeric', month:'long' });
+    const hora = inst.toLocaleTimeString('es-DO', { timeZone:'America/Santo_Domingo', hour:'numeric', minute:'2-digit' }).replace(/\.$/, '');
+    const combo = campos.selected_combo_name || elegido.selected_combo_name || '';
+    const textoAviso = 'Hola' + (nombre ? ' ' + nombre : '') + ', '
+      + ($('agFirme').checked ? 'te dejamos agendada tu sesión' : 'anotamos tu sesión como fecha tentativa')
+      + (combo ? ' (' + combo + ')' : '') + ' para el ' + fecha + ' a las ' + hora + '. '
+      + ($('agFirme').checked ? '¡Te esperamos! Si necesitas cambiarla, escríbenos por aquí.' : 'Una persona del estudio te confirma la disponibilidad en breve.');
     Object.assign(elegido, campos);
     cierraModal();
     avisa('Agendada', nombreDe(elegido) + ' · ' + inst.toLocaleString('es-DO', { timeZone:'America/Santo_Domingo', dateStyle:'medium', timeStyle:'short' }));
     pintaAgenda(); pintaChats();
+    if (avisar) informaAvisoDeReserva(await enviaAvisoDeReserva(elegido, textoAviso));
   };
 }
 
@@ -30283,12 +30344,7 @@ function abreRecordatorio(c, { editarReserva = false } = {}){
       cierraModal();
       avisa(cancelar ? 'Reservación cancelada' : firme ? 'Reservación confirmada' : 'Reservación tentativa', cancelar ? nombreDe(c) : nombreDe(c) + ' · ' + inst.toLocaleString('es-DO', { timeZone:'America/Santo_Domingo', dateStyle:'medium', timeStyle:'short' }));
       if (aviso) {
-        const conv = c.id || c._id;
-        const porPuente = canalDe(c) === 'whatsapp_qr';
-        const env2 = await llama(porPuente ? { action:'bridgeQueue', conversation_id: conv, body: aviso }
-          : { action:'sendText', conversation_id: conv, body: aviso });
-        if (env2.ok) { if (porPuente) apuntaEnviando({ conv, tipo:'text', body: aviso }); }
-        else avisa('La cita se guardó, pero el aviso al cliente no salió', traduceErrorMeta(env2.error, env2.code));
+        informaAvisoDeReserva(await enviaAvisoDeReserva(c, aviso));
       }
       if (typeof pintaAgenda === 'function') pintaAgenda();
       if (typeof pintaChats === 'function') pintaChats();
