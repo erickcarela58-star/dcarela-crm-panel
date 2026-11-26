@@ -16184,6 +16184,10 @@ function vigilaPuente(){
   const historial = String(bridgeControlState.history_sync_status || 'idle');
   const enMarcha = ['requested','generating','code_ready','connecting','rebuild_requested','rebuild_clearing'].includes(estado)
     || ['requested','running','waiting'].includes(historial);
+  if (!enMarcha) {
+    if (relojPuente) { clearInterval(relojPuente); relojPuente = null; }
+    return;
+  }
   if (relojPuente || !$('bridgePairBtn')) return;
   relojPuente = setInterval(async () => {
     // Si se cambio de vista, el panel del puente ya no existe: se corta y no se deja el
